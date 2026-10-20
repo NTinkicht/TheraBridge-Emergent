@@ -26,4 +26,6 @@ Multi-tenant isolation, deny-by-default authorization, server-side sessions, aud
 - P2: TB-EM-006 responsive/a11y pass + handover; Phase 2/3.
 
 ## Next tasks
+- 2026-10-20 TB-EM-D01 design direction "Calm Precision, with warmth at home": `/design-preview` with 5 representative screens plus family dark, a shared design kit and token additions. Awaiting owner approval before it is applied across V1.
+
 Wait for owner review of TB-EM-000 and the exported SHA.
