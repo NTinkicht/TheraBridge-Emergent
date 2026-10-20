@@ -21,6 +21,21 @@
 
 **Mocked/disabled:** nothing mocked. No auth, no tenants, no mailbox endpoint (TB-EM-001, PLANNED).
 
+## Design direction TB-EM-D01 r2 (2026-10-20): approved direction, acceptance corrections
+
+**Owner decision:** the direction is approved. Headings use Plus Jakarta Sans; body, data and numbers use IBM Plex Sans.
+**Changes:**
+- Typography tokens.
+- Platform metrics follow the data state.
+- `ScrollStrip` scroll cues.
+- No-flash family theme through an inline script and `.theme-family-auto`.
+- Theme-aware focus ring and More-sheet focus trap.
+- Client-only dates through `useNow`.
+- Alignment fixes at 320px.
+- Playwright (root devDependency) and `scripts/design/capture-screenshots.mjs`, with 21 screenshots committed.
+**Evidence:** TEST_RESULTS D5–D11.
+**Next:** independent visual acceptance. Broad implementation is not to start until then.
+
 ## Design direction milestone TB-EM-D01 (2026-10-20), PROPOSED and awaiting owner approval
 
 **Objective:** propose a visual direction and show it on 5 representative screens before any broad UI work.

@@ -10,6 +10,8 @@
 
 ## Design direction review (owner)
 
+**r2 status:** direction approved, typography decided (Jakarta headings, Plex body and data). Waiting for independent visual acceptance of `docs/emergent/design/screenshots/` and the live `/design-preview`. After acceptance, apply this kit across V1. Do not use the old Figma layouts and do not create competing systems.
+
 1. Review `/design-preview` and the five screens at 320–1440px. Use the preview bar's Data and Type controls, and `?theme=dark` for the family home.
 2. Decide: approve the direction, or request changes; and keep IBM Plex Sans only, or adopt Plus Jakarta Sans for headings.
 3. Only after approval: apply the kit to product screens, starting with the TB-EM-001 sign-in and shell.

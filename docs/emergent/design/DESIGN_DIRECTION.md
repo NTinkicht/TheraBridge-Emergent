@@ -1,6 +1,6 @@
 # Design direction v1: "Calm Precision, with warmth at home"
 
-Status: **PROPOSED, awaiting owner approval.** It is not to be applied to product screens until approved.
+Status: **APPROVED by owner as the official direction, subject to final visual acceptance** (revision r2). Do not scale it to all V1 screens until it is accepted.
 Preview: `/design-preview` (Next.js, `apps/web/src/app/design-preview/**`). All data comes from synthetic fixtures in `apps/web/src/lib/design/fixtures.ts`; nothing is read from or written to the API.
 
 ## Principles
@@ -19,7 +19,34 @@ Preview: `/design-preview` (Next.js, `apps/web/src/app/design-preview/**`). All 
 - Family light/dark themes are exposed as `--fam-*` CSS variables through `.theme-family-light` / `.theme-family-dark`, and as the Tailwind colors `fam.*`.
 - Violet appears only as a brand accent (the "Fictional record" pill, signature band). It is never used for selection.
 
-## Typography
+## Typography (owner decision, r2)
+- **Headings (h1–h3, `font-display`): Plus Jakarta Sans 600/700.**
+- **Body, forms, clinical data, tables and numbers: IBM Plex Sans.** Numbers use tabular figures (`.tnum`), and metric values are deliberately set in Plex.
+- Both faces are defined once in `tokens.ts` (`typography`, which emits `--font-display` and `--font-body`) and applied through Tailwind (`font-sans`, `font-display`) and the base styles in `globals.css`. The earlier Type comparison control has been removed.
+- Sizes:
+  - Page title: 31px desktop / 25px mobile.
+  - Section title: 20px.
+  - Card title: 17–18px.
+  - Body: 15–16px.
+  - Labels: 13–14px.
+  - Metadata: 12px.
+
+## Revision r2 changes
+- **Platform metrics** and Pending/Decided counts follow every preview data state:
+  - Loading: skeleton.
+  - Empty: 0, with empty-state subtitles.
+  - Error: an em dash plus a retry hint.
+  - The trial alert shows only when data is populated.
+- **`ScrollStrip` scroll cues:** edge fades plus 44px chevrons whenever a strip overflows. Used on child tabs, the specialty switcher and the preview screen links. Child tabs support Arrow keys plus Home/End and scroll the focused tab into view.
+- **No family dark-mode flash:** an inline script sets `<html data-family-theme>` before first paint, and `.theme-family-auto` reads it. The logo chip and the Sun/Moon icon switch through CSS.
+- **Accessibility:**
+  - The focus ring follows the surface (`--focus-ring`: blue for clinical, teal for family light, `#5CCFDB` for family dark, `#7DB3E8` on the preview bar), keeping at least 3:1 contrast.
+  - The More sheet moves focus into the sheet, traps Tab, and returns focus to its opener on close.
+  - The family dark theme has its own success, caution and error-state colors.
+- **Dates and greetings** come from the client clock after mount (`useNow`), so there are no server/client hydration mismatches. The greeting changes with the time of day.
+- **320px alignment fixes:** grid min-widths, wrapping pills, provider rows.
+
+## Typography (r1, superseded)
 - **IBM Plex Sans throughout** (approved). Sizes:
   - Page title: 31px desktop / 25px mobile, weight 600.
   - Section title: 20px.

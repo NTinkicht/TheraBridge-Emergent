@@ -4,6 +4,18 @@ Environment: Emergent workspace, Debian 12, Node 20.20.2, Yarn 1.22.22, PostgreS
 Branch: `phase-1-center-foundation`. First export `b86028eb1c64bb3941cc04064c68d29273de64af`. Corrections in local commit `d170878` plus a docs commit; corrected export SHA **PENDING**.  
 Date: 2026-10-20 (UTC)
 
+## Design direction TB-EM-D01 r2 (owner-approved direction, corrections for acceptance)
+
+| # | Check | Status |
+|---|---|---|
+| D5 | Testing agent iteration_3: full regression at 320/390/768/1024/1440 covering contrast, keyboard, states and alignment | TESTED: FAIL on 5 UI defects + 2 integration defects (More-sheet focus, focus-ring contrast on dark, tab keyboard scroll, 320 alignment, tab counts, family SSR date) → all fixed |
+| D6 | Testing agent iteration_4: re-verify | TESTED: PASS 8/9. One new 320 provider-row overlap and 2 pill overflows → fixed |
+| D7 | Testing agent iteration_5: re-verify | TESTED: PASS 13/14. Server-clock greeting/date on center/therapist → fixed with `useNow` |
+| D8 | Testing agent iteration_6: client clock mocked to other times and days; regression at 320/1440 on all 6 routes; dark theme from first paint | TESTED: PASS 100%, no open issues |
+| D9 | Dark theme applied before hydration (JS chunks blocked, shell background rgb(13,18,38)) | TESTED: PASS |
+| D10 | `scripts/design/capture-screenshots.mjs`: 21 captures, 0px overflow everywhere | TESTED: PASS |
+| D11 | Web typecheck | TESTED: PASS |
+
 ## Design direction milestone TB-EM-D01 (design preview, fixtures only)
 
 | # | Check | Status |
