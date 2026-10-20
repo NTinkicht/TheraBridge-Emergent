@@ -14,9 +14,9 @@ Updated: 2026-10-20 (UTC)
 | First export defects (owner review) | root `yarn.lock` missing; `.env.example`, `apps/api/.env.example`, `apps/web/.env.example` missing |
 | Root cause | (1) Emergent appended `.env`, `.env.*`, `*.env` to `.gitignore`, which ignored every `.env.example`. (2) Emergent's auto-commit never staged `yarn.lock` (it stayed untracked). |
 | Fix | `.gitignore` ends with `!.env.example` / `!**/.env.example`; `yarn.lock` and templates committed explicitly in local commit `d170878`; CI fails fast if any of them is missing |
-| Corrected export SHA | **PENDING: owner re-exports and reports the SHA** |
-| Export status of corrections | **UNEXPORTED / AT RISK** |
-| `main` unchanged | Owner-verified for the first export: NOT RECORDED. Re-check after re-export |
+| Corrected export SHA | `fa9f7f4cdb570f04a4c0756abdfc14e7271841a2` (verified on GitHub) |
+| Export status of corrections | **EXPORTED / VERIFIED** (branch `phase-1-center-foundation`) |
+| `main` unchanged | **VERIFIED**: `b951f1c6d04ed465f1c990a997b5dbcbe51dfe0c` after corrected export |
 | Common ancestor with `main` | **None** (unrelated history). Integrate with `scripts/integration/import-emergent-export.sh` (see `EXIT_FROM_EMERGENT.md`) |
 
 ## Work-unit status
@@ -33,8 +33,8 @@ Updated: 2026-10-20 (UTC)
 | Probe write protection (flag, server labels, row cap, rate limit) | IMPLEMENTED, TESTED: PASS |
 | Integration script against a simulated `main` with unrelated history | TESTED: PASS |
 | `next build` / `nest build` production builds | TESTED: PASS (in workspace) |
-| Dockerfiles + `docker-compose.yml` | IMPLEMENTED, **NOT RUN** (no Docker in Emergent) |
-| GitHub Actions CI `.github/workflows/ci.yml` | First export: **TESTED: FAIL** (run 39445386310). Corrected version: **NOT RUN** until re-export |
+| Dockerfiles + `docker-compose.yml` | **TESTED: PASS** in GitHub Actions, run `39448713740` on exact export SHA |
+| GitHub Actions CI `.github/workflows/ci.yml` | **TESTED: PASS**: both `test` and `compose` jobs on exact corrected export SHA (`39448713740`); earlier first export failed |
 | Cold-clone drill | **NOT RUN** |
 | Logo derivatives (light surfaces) | IMPLEMENTED, checked against original (see `docs/emergent/brand/LOGO_DERIVATIVES.md`) |
 | TB-EM-001 to TB-EM-006 | PLANNED (not authorized) |
