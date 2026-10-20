@@ -26,6 +26,8 @@ services:
       PORT: "8001"
       HOST: 0.0.0.0
       CORS_ORIGINS: ${CORS_ORIGINS:?set in .env}
+      # Explicit opt-in; required at NestJS bootstrap. Disabled by default.
+      PROBE_WRITES_ENABLED: ${PROBE_WRITES_ENABLED:-false}
       PROBE_WRITES_ENABLED: ${PROBE_WRITES_ENABLED:?set in .env}
     ports:
       - "${API_PORT:?set in .env}:8001"
