@@ -21,6 +21,35 @@
 
 **Mocked/disabled:** nothing mocked. No auth, no tenants, no mailbox endpoint (TB-EM-001, PLANNED).
 
+## TB-EM-001 checkpoint 0: corrections recorded, probe retired (2026-10-20)
+
+**Owner decision:**
+- The design polish was ACCEPTED.
+- TB-EM-001 was APPROVED WITH CHANGES R1–R5:
+  - R1: owner bootstrap kept separate from seeding;
+  - R2: no secrets in Git;
+  - R3: session-bound CSRF, Origin checks and rotation;
+  - R4: deny-by-default, with escalation protection;
+  - R5: multi-instance rate limits and trusted proxies.
+- Only checkpoint 0 is authorized.
+
+**Recorded:**
+- Rewrote `workunits/TB-EM-001.md`: corrections, 22 acceptance criteria, test plan.
+- Updated ADR-0006.
+- `memory/test_credentials.md` now holds pointers only.
+
+**CI confirmed:** run 39474586243 on `66254a1`, with `test` and `compose` both green (the first real Compose run).
+
+**Changed:**
+- Removed the probe controller routes, guard, DTO, `PROBE_WRITES_ENABLED` (env templates, Compose, CI) and the web probe panel.
+- Migration `20261020190000_tb_em_001_retire_feasibility_probe` drops `feasibility_probe` and adds the placeholder `schema_info`, because Prisma refuses to generate a client for a schema with zero models.
+- The CI compose smoke test now asserts the probe returns 404.
+
+**Tests:** 8/8 API tests pass; checks against the public preview pass.
+
+**Stop:** export, then wait for independent review. Checkpoint A is not authorized.
+
+
 ## Design baseline accepted + TB-EM-D01 r3 polish + TB-EM-001 proposal (2026-10-20)
 
 **Owner decision:** "Calm Precision, with warmth at home" is the official V1 design baseline.

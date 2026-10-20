@@ -1,6 +1,6 @@
 # RUN_LOCAL: clean-machine steps (no Emergent)
 
-Status of these instructions: **NOT RUN** outside Emergent yet. CI (`.github/workflows/ci.yml`) executes the same steps on every push.
+Status of these instructions: Option A was executed by GitHub Actions (`compose` job, run 39474586243 on `66254a1`: TESTED: PASS). A manual run on a clean machine outside Emergent: **NOT RUN**.
 
 ## Option A: Docker Compose (recommended)
 
@@ -9,13 +9,11 @@ Requirements: Docker 24+ with Compose v2, git.
 ```bash
 git clone git@github.com:NTinkicht/TheraBridge-Emergent.git
 cd TheraBridge-Emergent
-git checkout emergent/phase-1-center-foundation
-cp .env.example .env                    # placeholders only; set PROBE_WRITES_ENABLED=true to try the probe write
+git checkout phase-1-center-foundation
+cp .env.example .env                    # placeholders only
 docker compose up --build -d --wait     # postgres, api (runs prisma migrate deploy), web
-curl -s http://localhost:8001/api/health
-curl -s -X POST http://localhost:8001/api/health/probe -H 'Content-Type: application/json' -d '{"source":"cli"}'   # 404 unless PROBE_WRITES_ENABLED=true
-curl -s http://localhost:8001/api/health/probe
-open http://localhost:3000              # page shows Responding on all 4 rows and the probe rows
+curl -s http://localhost:8001/api/health  # latest migration: 20261020190000_tb_em_001_retire_feasibility_probe
+open http://localhost:3000              # page shows Responding on all 4 rows
 docker compose down -v                  # remove containers and the synthetic DB volume
 ```
 
@@ -35,7 +33,7 @@ yarn dev:web     # http://localhost:3000
 
 ## Tests
 
-The integration tests refuse to run unless `DATABASE_URL` names a database ending in `_test`. They delete rows from `feasibility_probe` in that database.
+The integration tests refuse to run unless `DATABASE_URL` names a database ending in `_test`.
 
 ```bash
 export DATABASE_URL=postgresql://USER:PASS@127.0.0.1:5432/therabridge_test?schema=public
@@ -53,7 +51,6 @@ yarn build
 | `DATABASE_URL_TEST` | humans/scripts only (tests read `DATABASE_URL`) | Local Postgres |
 | `PORT`, `HOST` | api | Deployment config |
 | `CORS_ORIGINS` | api | Web origin(s), comma-separated |
-| `PROBE_WRITES_ENABLED` | api (required, `true`/`false`, no default) | `false` everywhere except demos of the gate |
 | `NEXT_PUBLIC_API_BASE_URL` | web (build time) | Public API origin |
 | `POSTGRES_*`, `API_PORT`, `WEB_PORT` | docker compose | `.env` copied from `.env.example` |
 

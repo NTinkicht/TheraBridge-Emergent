@@ -6,7 +6,11 @@ Updated: 2026-10-20 (UTC)
 
 | Field | Value |
 |---|---|
-| Work unit | TB-EM-000 feasibility and portability gate (correction round 1) |
+| Work unit | TB-EM-001 **checkpoint 0** (design polish ACCEPTED; probe retirement IMPLEMENTED, awaiting independent review) |
+| Last verified export | `66254a1` on `phase-1-center-foundation`. It matched local history (checked via the GitHub API). GitHub Actions run `39474586243`: `test` **TESTED: PASS**, `compose` **TESTED: PASS** |
+| Checkpoint 0 export SHA | **PENDING: owner exports and reports the SHA** |
+| Export status of checkpoint 0 | **UNEXPORTED / AT RISK** until exported |
+| Other remote branches | `review/fix-compose-probe-env` (a net-zero add/revert pair) and `review/record-tb-em-000-checkpoint` belong to independent reviewers. They are not merged and were not touched |
 | Repository | `NTinkicht/TheraBridge-Emergent` |
 | Actual exported branch | `phase-1-center-foundation` (Emergent created it without the planned `emergent/` prefix) |
 | First export SHA | `b86028eb1c64bb3941cc04064c68d29273de64af` (reported by owner) |
@@ -14,8 +18,8 @@ Updated: 2026-10-20 (UTC)
 | First export defects (owner review) | root `yarn.lock` missing; `.env.example`, `apps/api/.env.example`, `apps/web/.env.example` missing |
 | Root cause | (1) Emergent appended `.env`, `.env.*`, `*.env` to `.gitignore`, which ignored every `.env.example`. (2) Emergent's auto-commit never staged `yarn.lock` (it stayed untracked). |
 | Fix | `.gitignore` ends with `!.env.example` / `!**/.env.example`; `yarn.lock` and templates committed explicitly in local commit `d170878`; CI fails fast if any of them is missing |
-| Corrected export SHA | **PENDING: owner re-exports and reports the SHA** |
-| Export status of corrections | **UNEXPORTED / AT RISK** |
+| Corrected export SHA | Verified: `4c077b2` (run 39470630845 PASS), then `66254a1` (run 39474586243 PASS) |
+| Export status of corrections | Exported and verified |
 | `main` unchanged | Owner-verified for the first export: NOT RECORDED. Re-check after re-export |
 | Common ancestor with `main` | **None** (unrelated history). Integrate with `scripts/integration/import-emergent-export.sh` (see `EXIT_FROM_EMERGENT.md`) |
 
@@ -26,20 +30,20 @@ Updated: 2026-10-20 (UTC)
 | Next.js App Router web app on :3000 | IMPLEMENTED, TESTED: PASS (preview check) |
 | NestJS on Fastify API under `/api` | IMPLEMENTED, TESTED: PASS |
 | PostgreSQL in workspace (ADR-0004) | IMPLEMENTED, TESTED: PASS |
-| Prisma migration `tb_em_000_feasibility_probe` | IMPLEMENTED, TESTED: PASS (dev + test DB) |
-| Probe write/read through public preview URL | IMPLEMENTED, TESTED: PASS |
-| API integration tests (Jest + Supertest, real PostgreSQL) | TESTED: PASS (16/16) |
+| Prisma migration `tb_em_000_feasibility_probe` | IMPLEMENTED; table retired by `20261020190000_tb_em_001_retire_feasibility_probe` (TESTED: PASS, dev + test DB) |
+| Probe write/read endpoints | **RETIRED** in checkpoint 0 (404, TESTED: PASS on API tests and the public preview URL) |
+| API integration tests (Jest + Supertest, real PostgreSQL) | TESTED: PASS (8/8 after checkpoint 0) |
 | Clean clone of the local commit: frozen-lockfile install, generate, migrate, typecheck, tests, both builds | TESTED: PASS (workspace, not GitHub) |
-| Probe write protection (flag, server labels, row cap, rate limit) | IMPLEMENTED, TESTED: PASS |
+| Probe write protection | Superseded: the endpoint was removed in checkpoint 0 |
 | Integration script against a simulated `main` with unrelated history | TESTED: PASS |
 | `next build` / `nest build` production builds | TESTED: PASS (in workspace) |
-| Dockerfiles + `docker-compose.yml` | IMPLEMENTED, **NOT RUN** (no Docker in Emergent) |
-| GitHub Actions CI `.github/workflows/ci.yml` | First export: **TESTED: FAIL** (run 39445386310). Corrected version: **NOT RUN** until re-export |
+| Dockerfiles + `docker-compose.yml` | IMPLEMENTED, TESTED: PASS in GitHub Actions (`compose` job, run 39474586243). Not runnable inside Emergent (no Docker) |
+| GitHub Actions CI `.github/workflows/ci.yml` | TESTED: PASS on `4c077b2` and `66254a1`. The checkpoint 0 changes to the smoke test are NOT RUN until export |
 | Cold-clone drill | **NOT RUN** |
 | Logo derivatives (light surfaces) | IMPLEMENTED, checked against original (see `docs/emergent/brand/LOGO_DERIVATIVES.md`) |
-| TB-EM-001 to TB-EM-006 | PLANNED (not authorized) |
-| Design direction TB-EM-D01 (`/design-preview`, fixtures only) | **ACCEPTED as the V1 design baseline** (owner, 2026-10-20). r3 polish (desktop spacing, wrapping activity names, outdated doc statements removed): IMPLEMENTED, verification in `TEST_RESULTS.md`. Screenshots in `docs/emergent/design/screenshots/` |
-| TB-EM-001 auth, sessions, roles | PLANNED in `docs/emergent/workunits/TB-EM-001.md`. **Not approved; not started.** Owner decisions so far: ADR-0006 local sign-in (OIDC-ready), independent review after every checkpoint |
+| TB-EM-001 | APPROVED WITH CHANGES (R1–R5 recorded in `docs/emergent/workunits/TB-EM-001.md`). Checkpoint 0 IMPLEMENTED. Checkpoints A–C **not authorized** |
+| TB-EM-002 to TB-EM-006 | PLANNED (not authorized) |
+| Design direction TB-EM-D01 (`/design-preview`, fixtures only) | **ACCEPTED as the V1 design baseline** (owner, 2026-10-20). r3 polish: **ACCEPTED** by independent review (2026-10-20). Screenshots in `docs/emergent/design/screenshots/` |
 
 ## Working URLs (Emergent preview, ephemeral)
 
@@ -51,9 +55,10 @@ Updated: 2026-10-20 (UTC)
 1. **NestJS does not bind :8001 directly inside Emergent.** The read-only supervisor always runs `uvicorn server:app` on :8001, so `backend/server.py` is a pass-through proxy to NestJS on 127.0.0.1:8002 (ADR-0005). In Compose, CI and local runs NestJS binds :8001 itself.
 2. PostgreSQL is not Emergent-managed. Binaries under `/usr` may vanish on pod restore; `scripts/workspace/ensure-postgres.sh` reinstalls them (first request after restore can return 503 for about 1 minute). Data dir `.workspace/pgdata` is gitignored and synthetic-only.
 3. Workspace runs PostgreSQL 15.19 (Debian bookworm package); Compose and CI use PostgreSQL 16. The single migration uses only portable SQL.
-4. `POST /api/health/probe` has no login. Protections: `PROBE_WRITES_ENABLED` is required with no default (it is `false` in every `.env.example`; when false the route returns 404). Clients cannot send any text, because the label is generated by the server and only a `source` from a fixed list is accepted. Only JSON bodies are accepted (415 otherwise). At most 200 rows are kept, with the oldest pruned. Writes are limited to 10 per minute per IP, counted in memory on a single instance. It is enabled only on the Emergent preview so the gate can be shown. It must be removed before TB-EM-001 ships.
+4. The TB-EM-000 public probe write endpoint was removed in checkpoint 0. The API has no write endpoints at all. `schema_info` is a temporary non-domain table (Prisma needs one model) and will be dropped in checkpoint A.
 5. Emergent preview cannot be deployed with this stack (Emergent deploy supports React/FastAPI/MongoDB only).
 6. Root `README.md`, `backend/`, `frontend/`, `memory/`, `plan/`, `tests/`, `test_reports/`, `test_result.md`, `.emergent/` are Emergent template/platform files. The integration script never copies them.
 8. Emergent's auto-commit may again skip `yarn.lock` or re-append `.env*` ignore lines. After every export, check on GitHub that `yarn.lock` and the three `.env.example` files exist (the CI guard step also fails if they don't).
-9. The CI failure cause for run 39445386310 is **inferred, not confirmed**. Its logs are not visible from Emergent. The most likely cause is that `actions/setup-node` with `cache: yarn` aborts when no `yarn.lock` exists.
+9. The CI failure cause for run 39445386310 was **inferred, not confirmed** (most likely `actions/setup-node` with `cache: yarn` and no `yarn.lock`). Every later run is green.
+10. `memory/test_credentials.md` is Git-tracked. Per owner correction R2 it holds pointers only, never passwords.
 7. Logo derivatives are valid on light surfaces only; on dark backgrounds they wash out (rejected for dark use).

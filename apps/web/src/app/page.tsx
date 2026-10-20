@@ -2,7 +2,7 @@ import nextPkg from 'next/package.json';
 import { ShieldAlert } from 'lucide-react';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { SignatureBand } from '@/components/brand/SignatureBand';
-import { ProbePanel } from '@/components/feasibility/ProbePanel';
+import { StackPanel } from '@/components/feasibility/StackPanel';
 import { WorkUnits } from '@/components/feasibility/WorkUnits';
 
 export default function FeasibilityPage() {
@@ -37,7 +37,7 @@ export default function FeasibilityPage() {
           </p>
         </div>
 
-        <ProbePanel nextVersion={nextPkg.version} />
+        <StackPanel nextVersion={nextPkg.version} />
         <WorkUnits />
 
         <footer className="pb-6 text-[12px] text-brand-inkMuted" data-testid="page-footer">

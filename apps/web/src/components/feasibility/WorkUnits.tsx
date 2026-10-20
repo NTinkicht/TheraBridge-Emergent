@@ -3,9 +3,10 @@ import { StatusPill, type WorkStatus } from '@/components/ui/StatusPill';
 const UNITS: { id: string; name: string; status: WorkStatus }[] = [
   { id: 'TB-EM-000', name: 'Feasibility and portability gate', status: 'IMPLEMENTED' },
   { id: 'TB-EM-000-api-tests', name: 'API integration tests against real PostgreSQL', status: 'TESTED: PASS' },
-  { id: 'TB-EM-000-compose', name: 'Docker Compose (web, api, postgres)', status: 'NOT RUN' },
-  { id: 'TB-EM-000-ci', name: 'GitHub Actions CI workflow', status: 'NOT RUN' },
-  { id: 'TB-EM-001', name: 'Authentication and sessions', status: 'PLANNED' },
+  { id: 'TB-EM-000-compose', name: 'Docker Compose (web, api, postgres) in GitHub Actions', status: 'TESTED: PASS' },
+  { id: 'TB-EM-000-ci', name: 'GitHub Actions CI workflow', status: 'TESTED: PASS' },
+  { id: 'TB-EM-001-cp0', name: 'Checkpoint 0: design polish and probe retirement', status: 'IMPLEMENTED' },
+  { id: 'TB-EM-001', name: 'Authentication, sessions and permissions (checkpoints A to C)', status: 'PLANNED' },
   { id: 'TB-EM-002', name: 'Public center application', status: 'PLANNED' },
   { id: 'TB-EM-003', name: 'Platform review and provisioning', status: 'PLANNED' },
   { id: 'TB-EM-004', name: 'Invitations, outbox and center onboarding', status: 'PLANNED' },
@@ -17,7 +18,7 @@ export function WorkUnits() {
   return (
     <section className="rounded-card border border-border-light bg-surface-white p-5 md:p-6" data-testid="work-units-card">
       <h2 className="text-[20px] font-semibold">Work-unit status</h2>
-      <p className="mt-1 text-[14px] text-brand-inkMuted">Labels follow the owner vocabulary. Nothing outside TB-EM-000 is built.</p>
+      <p className="mt-1 text-[14px] text-brand-inkMuted">Labels follow the owner vocabulary. Only TB-EM-000 and TB-EM-001 checkpoint 0 are built.</p>
       <ul className="mt-3 divide-y divide-border-light">
         {UNITS.map((u) => (
           <li key={u.id} className="flex flex-col gap-1.5 py-3 sm:flex-row sm:items-center sm:justify-between" data-testid={`work-unit-${u.id}`}>

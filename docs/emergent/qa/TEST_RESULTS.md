@@ -122,6 +122,21 @@ GET  https://therabridge.preview.emergentagent.com/ → 200
 - `SCREENSHOT_BASE_URL=http://localhost:3000 node scripts/design/capture-screenshots.mjs`: 21/21 captured, 0px horizontal overflow on every page: TESTED: PASS.
 - Visual check of platform 1440, family light 1440/320 and family dark 1440: cards keep their natural height, and activity names wrap on mobile. Checked by the developer only; independent review is pending with the next export.
 
+## TB-EM-001 checkpoint 0: probe retirement (2026-10-20)
+
+Environment: Emergent workspace, PostgreSQL 15.19 (restarted with `scripts/workspace/ensure-postgres.sh` after a workspace restore).
+
+| Command / check | Result |
+|---|---|
+| GitHub Actions on the pre-checkpoint SHA `66254a1` (run 39474586243), via the public GitHub API | `test` PASS, `compose` PASS |
+| `prisma generate`; `prisma migrate deploy` on `therabridge` and `therabridge_test` | TESTED: PASS (2 migrations applied) |
+| `tsc --noEmit` for api and web | TESTED: PASS |
+| `jest --runInBand` against `therabridge_test` | TESTED: PASS, 8/8: health with retirement migration as latest and `schemaCheckpoint`; table dropped (`to_regclass` null); POST and GET `/api/health/probe` return 404; 415 for form and text bodies; `/api` prefix only; CORS allow/deny |
+| Public preview `GET /api/health` | 200, latest `20261020190000_tb_em_001_retire_feasibility_probe` |
+| Public preview POST and GET `/api/health/probe` | 404 / 404 |
+| Preview page at 1920 and 390 | All 4 stack rows "Responding", no probe card, 0 overflow |
+| CI on the checkpoint 0 SHA | **NOT RUN** until export |
+
 ## Not run (explicit)
 
 - Docker Compose, Dockerfiles, CI workflow, cold-clone drill: authored, **NOT RUN**.

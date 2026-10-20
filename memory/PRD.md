@@ -32,3 +32,7 @@ Multi-tenant isolation, deny-by-default authorization, server-side sessions, aud
 - 2026-10-20 Design baseline ACCEPTED by owner. r3 polish done locally (desktop platform/family spacing, wrapping mobile activity names, outdated doc lines removed). TB-EM-001 proposal written at docs/emergent/workunits/TB-EM-001.md; ADR-0006 (local sign-in, OIDC-ready) chosen; review after every checkpoint. TB-EM-001 NOT approved, NOT started. Owner account for seeding: nassim.tinkicht@gmail.com (password from env).
 
 Wait for owner approval of TB-EM-001 and the next exported SHA.
+
+- 2026-10-20 TB-EM-001 APPROVED WITH CHANGES (R1 owner bootstrap separate from seed and never in preview; R2 no secrets in Git, memory/test_credentials.md pointers only; R3 session-bound CSRF + Origin + rotation; R4 deny-by-default + escalation protection, clinical DENY; R5 multi-instance PG-backed rate limits + trusted proxies). Recorded in workunits/TB-EM-001.md and ADR-0006. CI run 39474586243 (66254a1) green, test + compose. Checkpoint 0 IMPLEMENTED: probe endpoints, guard and env flag removed, table dropped, schema_info placeholder added; 8/8 API tests. Owner account is NOT seeded; it is created only via a future bootstrap:owner CLI run by the owner outside the preview.
+
+STOP: export checkpoint 0 and wait for independent review. Checkpoint A is not authorized.

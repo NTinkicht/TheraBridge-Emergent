@@ -34,18 +34,5 @@ export interface HealthResponse {
   framework: string;
   database: { status: string; engine: string; version: string; latencyMs: number };
   migrations: { applied: number; latest: string | null };
-  probeWrites: { enabled: boolean; maxRows: number; perMinutePerIp: number };
   time: string;
-}
-
-export interface Probe {
-  id: string;
-  label: string;
-  source: string;
-  createdAt: string;
-}
-
-export interface ProbeList {
-  total: number;
-  items: Probe[];
 }

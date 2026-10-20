@@ -1,4 +1,4 @@
-// TheraBridge API schema. TB-EM-000 contains only the feasibility probe.
+// TheraBridge API schema. TB-EM-001 checkpoint 0 retired the feasibility probe.
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-3.0.x"]
@@ -9,12 +9,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model FeasibilityProbe {
-  id        String   @id @default(uuid()) @db.Uuid
-  label     String   @db.VarChar(64)
-  source    String   @db.VarChar(32)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+// Non-domain placeholder (Prisma needs at least one model). Dropped once checkpoint A adds identity models.
+model SchemaInfo {
+  key       String   @id @db.VarChar(64)
+  value     String   @db.VarChar(128)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(3)
 
-  @@index([createdAt])
-  @@map("feasibility_probe")
+  @@map("schema_info")
 }
