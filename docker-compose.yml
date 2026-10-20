@@ -26,6 +26,7 @@ services:
       PORT: "8001"
       HOST: 0.0.0.0
       CORS_ORIGINS: ${CORS_ORIGINS:?set in .env}
+      PROBE_WRITES_ENABLED: ${PROBE_WRITES_ENABLED:?set in .env}
     ports:
       - "${API_PORT:?set in .env}:8001"
     depends_on:

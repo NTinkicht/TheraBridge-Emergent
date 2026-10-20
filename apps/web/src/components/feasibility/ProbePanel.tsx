@@ -34,7 +34,7 @@ export function ProbePanel({ nextVersion }: { nextVersion: string }) {
     try {
       const created = await apiFetch<Probe>('/api/health/probe', {
         method: 'POST',
-        body: JSON.stringify({ label: `preview-${Date.now()}`, source: 'web-preview' }),
+        body: JSON.stringify({ source: 'web-preview' }),
       });
       setLastWritten(created);
       setList(await apiFetch<ProbeList>('/api/health/probe'));
@@ -45,6 +45,7 @@ export function ProbePanel({ nextVersion }: { nextVersion: string }) {
     }
   };
 
+  const writesDisabled = health ? !health.probeWrites.enabled : false;
   const readBack = lastWritten && list?.items.some((p) => p.id === lastWritten.id) ? lastWritten.id : null;
 
   return (
@@ -65,6 +66,13 @@ export function ProbePanel({ nextVersion }: { nextVersion: string }) {
               Rows in table <code className="font-mono text-[13px]">feasibility_probe</code>:{' '}
               <strong data-testid="probe-total">{list ? list.total : '—'}</strong>
             </p>
+            {health && (
+              <p className="mt-1 text-[13px] text-brand-inkMuted" data-testid="probe-write-policy">
+                {health.probeWrites.enabled
+                  ? `Server-generated synthetic labels only · max ${health.probeWrites.maxRows} rows · ${health.probeWrites.perMinutePerIp} writes/min`
+                  : 'Probe writes are disabled on this deployment (PROBE_WRITES_ENABLED=false).'}
+              </p>
+            )}
           </div>
           <div className="flex gap-2">
             <button
@@ -78,12 +86,12 @@ export function ProbePanel({ nextVersion }: { nextVersion: string }) {
             <button
               type="button"
               onClick={() => void write()}
-              disabled={writing}
+              disabled={writing || writesDisabled}
               className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-brand-action px-4 text-[14px] font-semibold text-white transition-colors hover:bg-brand-actionHover disabled:opacity-60"
               data-testid="probe-write-button"
             >
               {writing ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <DatabaseZap size={16} aria-hidden="true" />}
-              {writing ? 'Writing…' : 'Write probe row'}
+              {writesDisabled ? 'Writes disabled' : writing ? 'Writing…' : 'Write probe row'}
             </button>
           </div>
         </div>

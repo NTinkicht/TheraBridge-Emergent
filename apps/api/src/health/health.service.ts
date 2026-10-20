@@ -1,7 +1,9 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { Inject, Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { FeasibilityProbe } from '@prisma/client';
+import { randomBytes } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProbeDto } from './create-probe.dto';
+import { PROBE_CONFIG, PROBE_MAX_ROWS, PROBE_WRITES_PER_MINUTE, type ProbeConfig } from './probe-write.guard';
 
 export interface ProbeView {
   id: string;
@@ -19,7 +21,10 @@ const toView = (p: FeasibilityProbe): ProbeView => ({
 
 @Injectable()
 export class HealthService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(PROBE_CONFIG) private readonly probeConfig: ProbeConfig,
+  ) {}
 
   async status() {
     const started = Date.now();
@@ -33,6 +38,11 @@ export class HealthService {
         framework: 'nestjs-fastify',
         database: { status: 'up', engine: 'postgresql', version: server_version, latencyMs: Date.now() - started },
         migrations: { applied: migrations.length, latest: migrations.at(-1)?.migration_name ?? null },
+        probeWrites: {
+          enabled: this.probeConfig.writesEnabled,
+          maxRows: PROBE_MAX_ROWS,
+          perMinutePerIp: PROBE_WRITES_PER_MINUTE,
+        },
         time: new Date().toISOString(),
       };
     } catch {
@@ -41,7 +51,14 @@ export class HealthService {
   }
 
   async createProbe(dto: CreateProbeDto): Promise<ProbeView> {
-    return toView(await this.prisma.feasibilityProbe.create({ data: { label: dto.label, source: dto.source } }));
+    const label = `probe-${dto.source}-${Date.now().toString(36)}-${randomBytes(3).toString('hex')}`;
+    const [created] = await this.prisma.$transaction([
+      this.prisma.feasibilityProbe.create({ data: { label, source: dto.source } }),
+      // Runs in the same transaction as the insert, so the new row is visible here.
+      this.prisma.$executeRaw`DELETE FROM feasibility_probe WHERE id IN (
+        SELECT id FROM feasibility_probe ORDER BY created_at DESC, id DESC OFFSET ${PROBE_MAX_ROWS})`,
+    ]);
+    return toView(created);
   }
 
   async listProbes(): Promise<{ total: number; items: ProbeView[] }> {

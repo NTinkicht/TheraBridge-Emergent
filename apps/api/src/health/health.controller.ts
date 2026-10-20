@@ -1,6 +1,7 @@
-import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { CreateProbeDto } from './create-probe.dto';
 import { HealthService } from './health.service';
+import { ProbeWriteGuard } from './probe-write.guard';
 
 @Controller('health')
 export class HealthController {
@@ -18,6 +19,7 @@ export class HealthController {
 
   @Post('probe')
   @HttpCode(201)
+  @UseGuards(ProbeWriteGuard)
   create(@Body() dto: CreateProbeDto) {
     return this.health.createProbe(dto);
   }
