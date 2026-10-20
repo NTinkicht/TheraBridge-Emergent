@@ -9,20 +9,19 @@
 - The optional manual cold-clone/takeover demonstration (including making an external code change) is not yet executed.
 - **Next work unit TB-EM-001 remains unauthorized** until explicit owner approval. Clinical/production NO-GO.
 
-## Immediate (owner): re-export the TB-EM-000 corrections
+## Immediate next actions
 
-1. In Emergent: Save to GitHub → `NTinkicht/TheraBridge-Emergent` → choose the **existing** branch `phase-1-center-foundation`. The local history is `b86028e` plus new commits, so this is a fast-forward and needs no force.
-2. If Emergent shows a conflict or offers **Force Push**: cancel. Save to a **new** branch `phase-1-center-foundation-fix1` instead.
-3. On GitHub, check that the branch tip contains `yarn.lock`, `.env.example`, `apps/api/.env.example` and `apps/web/.env.example`, and that `main` has the same SHA as before.
-4. Check the Actions run for the new SHA. Both `test` and `compose` must be green. Report the SHA and run ID so they can be recorded.
-5. Integrate only via `scripts/integration/import-emergent-export.sh` and a reviewed PR (`EXIT_FROM_EMERGENT.md`).
+1. Review and merge the documentation-only acceptance PR into `phase-1-center-foundation` when satisfied. Do not merge unrelated histories directly into `main`.
+2. Perform the optional independent human/agent cold-clone and takeover demonstration from `docs/emergent/operations/RUN_LOCAL.md` and record evidence.
+3. Stage an allowlisted integration into a **new branch from canonical `main`** with `scripts/integration/import-emergent-export.sh phase-1-center-foundation`. Inspect every staged file, especially vendor shims and existing branding, before opening a PR.
+4. Request explicit owner authorization before starting TB-EM-001. Clinical pilot and production remain NO-GO.
 
-## Remaining blockers before TB-EM-000 can be accepted
+## Remaining tasks before integration into canonical main
 
-- CI on the corrected SHA: NOT RUN.
-- Docker Compose: NOT RUN anywhere yet.
-- ADR-0005 (workspace proxy shim): needs owner acceptance.
-- Cold-clone drill by an independent person/agent: NOT RUN.
+- Optional manual developer takeover test (edit + test + PR outside Emergent): NOT RUN.
+- Source history consolidation by allowlisted integration PR: NOT RUN.
+- ADR-0005 workspace proxy: accepted as Emergent-only compatibility shim; never required outside Emergent.
+- CI test and Docker Compose run against exact corrected export SHA: PASS (run `39448713740`).
 
 ## Next work unit (requires separate approval): TB-EM-001 authentication and sessions
 
