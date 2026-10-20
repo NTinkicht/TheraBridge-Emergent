@@ -136,6 +136,7 @@ Environment: Emergent workspace, PostgreSQL 15.19 (restarted with `scripts/works
 | Public preview POST and GET `/api/health/probe` | 404 / 404 |
 | Preview page at 1920 and 390 | All 4 stack rows "Responding", no probe card, 0 overflow |
 | CI on the checkpoint 0 SHA | **NOT RUN** until export |
+| Clean clone of local commit `8d0a5b8`: frozen-lockfile install, prisma generate, migrate on the test DB, api typecheck, 8/8 tests, nest build, next build | TESTED: PASS (workspace) |
 
 ## Not run (explicit)
 
