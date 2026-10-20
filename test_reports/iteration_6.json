@@ -1,0 +1,17 @@
+{
+  "summary": "Focused frontend re-check of the iteration_5 fixes, run with Playwright against the public URL. No code was modified. CLIENT CLOCK: server time was Tue 20 Oct 2026 17:46 UTC. Browser contexts used timezone_id=Asia/Tokyo with page.clock.set_fixed_time at 2026-10-21T08:15+09:00 and 2026-10-21T21:30+09:00, so the client is on a different calendar day and a different greeting bucket from the server. Center: title 'Good morning, Maya' / 'Good evening, Maya', and the trial banner reads 'Your trial ends in 3 days, on 24 Oct' (client day + 3). Therapist: 'Good morning/evening, Leila', with context 'Wednesday, 21 October · Speech therapy workspace'. Platform: context 'Wednesday, 21 October · operational metadata only'. All 6 runs had zero console errors or warnings and no hydration messages. Family also shows 'Good morning, Sara' and 'Wednesday, 21 October' on the next day with a clean console. REGRESSION: 6 routes (/, platform, center, therapist, child, family) at 320 and 1440: 12/12 have scrollWidth equal to clientWidth and zero console errors or warnings. Family ?theme=dark with _next chunks blocked: html data-family-theme=dark and the shell-family background is rgb(13,18,38) from first paint at 320 and 1440, and it stays dark after hydration.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "useNow + placeholder ('Hello, <name>') pattern is correct, and suppressHydrationWarning has been removed from PageHeader.",
+    "Optional cleanup: family/page.tsx still uses suppressHydrationWarning with direct new Date() calls in render (lines 49, 64, 107, 138-155). The behaviour tested correct here, but for consistency it could use useNow like the other pages."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100% (6/6 clock checks, 12/12 regression checks, family dark first paint OK)"},
+  "seed_data_creation": "None. Static fixtures.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "To test greetings, create contexts with browser.new_context(timezone_id='Asia/Tokyo') and set p.clock.set_fixed_time. To check first paint, block **/_next/static/chunks/** rather than disabling JS, because the theme is set by an inline script. All iteration_5 issues are resolved."
+}
