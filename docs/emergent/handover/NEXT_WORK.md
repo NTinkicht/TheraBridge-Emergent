@@ -1,12 +1,19 @@
 # NEXT_WORK
 
-## Immediate (owner)
+## Immediate (owner): re-export the TB-EM-000 corrections
 
-1. In Emergent: Save to GitHub → repository `NTinkicht/TheraBridge-Emergent` → **Create new branch** `emergent/phase-1-center-foundation`. **Never choose Force Push.**
-2. On GitHub: confirm `main` is unchanged; record the branch SHA in `CURRENT_STATE.md` (Emergent agent records it once reported).
-3. Check the GitHub Actions run for that SHA. Jobs `test` and `compose` replace the **NOT RUN** rows with real PASS/FAIL.
-4. Optional: cold-clone drill per `docs/emergent/operations/RUN_LOCAL.md`.
-5. Decide: continue in this job, or start a fresh Emergent job imported from the branch.
+1. In Emergent: Save to GitHub → `NTinkicht/TheraBridge-Emergent` → choose the **existing** branch `phase-1-center-foundation`. The local history is `b86028e` plus new commits, so this is a fast-forward and needs no force.
+2. If Emergent shows a conflict or offers **Force Push**: cancel. Save to a **new** branch `phase-1-center-foundation-fix1` instead.
+3. On GitHub, check that the branch tip contains `yarn.lock`, `.env.example`, `apps/api/.env.example` and `apps/web/.env.example`, and that `main` has the same SHA as before.
+4. Check the Actions run for the new SHA. Both `test` and `compose` must be green. Report the SHA and run ID so they can be recorded.
+5. Integrate only via `scripts/integration/import-emergent-export.sh` and a reviewed PR (`EXIT_FROM_EMERGENT.md`).
+
+## Remaining blockers before TB-EM-000 can be accepted
+
+- CI on the corrected SHA: NOT RUN.
+- Docker Compose: NOT RUN anywhere yet.
+- ADR-0005 (workspace proxy shim): needs owner acceptance.
+- Cold-clone drill by an independent person/agent: NOT RUN.
 
 ## Next work unit (requires separate approval): TB-EM-001 authentication and sessions
 
@@ -14,7 +21,7 @@
 - Login lockout (5 failures / 15 min), generic errors, CSRF double-submit + Origin check.
 - `User`, `AuthIdentity`, `Session`, `LoginAttempt`, `VerificationToken` (hashed tokens only).
 - Dev mailbox module registered only when `NODE_ENV!=production` AND `DEV_MAILBOX_ENABLED=true` AND request from localhost; disabled on the Emergent preview; test asserts 404 when disabled.
-- Remove or protect the public `/api/health/probe` write endpoint.
+- Remove the `/api/health/probe` write endpoint (or put it behind platform-admin auth) as the first TB-EM-001 change. Until then it stays behind `PROBE_WRITES_ENABLED` (default `false` in all templates).
 - Acceptance: Jest/Supertest against real PostgreSQL for happy path, lockout, expired session, logout, revoke-all.
 
 ## Risks / dependencies

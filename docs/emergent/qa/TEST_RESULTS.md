@@ -1,8 +1,23 @@
 # TEST_RESULTS
 
 Environment: Emergent workspace, Debian 12, Node 20.20.2, Yarn 1.22.22, PostgreSQL 15.19, Prisma 5.22.0, Next.js 14.2.35, NestJS 10.4.  
-Commit: **not yet exported** (results apply to the workspace state that will be exported as the first SHA on `emergent/phase-1-center-foundation`).  
+Branch: `phase-1-center-foundation`. First export `b86028eb1c64bb3941cc04064c68d29273de64af`. Corrections in local commit `d170878` plus a docs commit; corrected export SHA **PENDING**.  
 Date: 2026-10-20 (UTC)
+
+## Correction round 1 (after owner review of b86028e)
+
+| # | Check | Status |
+|---|---|---|
+| C1 | GitHub Actions run 39445386310 on b86028e | **TESTED: FAIL** (owner-reported). `compose` job skipped. Cause inferred: missing `yarn.lock`. Logs not visible from Emergent |
+| C2 | `yarn.lock`, `.env.example`, `apps/api/.env.example`, `apps/web/.env.example` tracked in git (`git ls-files`) | TESTED: PASS |
+| C3 | Clean `git clone` of the local commit → files present → `yarn install --frozen-lockfile` → `prisma generate` → `prisma migrate deploy` (fresh `therabridge_ci_test` DB) → api typecheck → api tests 16/16 → `nest build` → `next build` | TESTED: PASS (`PIPELINE_EXIT=0`) |
+| C4 | API tests 16/16 incl. disabled-flag 404, required flag, client label rejected, 200-row cap, 10/min rate limit | TESTED: PASS |
+| C5 | `scripts/integration/import-emergent-export.sh` against a simulated origin (`main` with README.md, AGENTS.md, blueprint; export branch with unrelated history) | TESTED: PASS: `main` SHA unchanged, canonical README kept, no template/platform files copied, 79 allow-listed paths staged |
+| C6 | Preview URL: health shows `probeWrites.enabled=true`; client `label` → 400; `{source}` → 201 with server label; browser write + read-back | TESTED: PASS |
+| C7 | Docker Compose build/up | **NOT RUN** (no Docker in Emergent; runs in CI `compose` job) |
+| C8 | GitHub Actions on corrected export | **NOT RUN** (needs re-export) |
+
+The tables below are the original first-round results. The API suite has since grown from 13 to 16 cases.
 
 ## Summary
 

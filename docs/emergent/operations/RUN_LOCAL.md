@@ -10,10 +10,10 @@ Requirements: Docker 24+ with Compose v2, git.
 git clone git@github.com:NTinkicht/TheraBridge-Emergent.git
 cd TheraBridge-Emergent
 git checkout emergent/phase-1-center-foundation
-cp .env.example .env                    # local-only example values
+cp .env.example .env                    # placeholders only; set PROBE_WRITES_ENABLED=true to try the probe write
 docker compose up --build -d --wait     # postgres, api (runs prisma migrate deploy), web
 curl -s http://localhost:8001/api/health
-curl -s -X POST http://localhost:8001/api/health/probe -H 'Content-Type: application/json' -d '{"label":"local-probe","source":"cli"}'
+curl -s -X POST http://localhost:8001/api/health/probe -H 'Content-Type: application/json' -d '{"source":"cli"}'   # 404 unless PROBE_WRITES_ENABLED=true
 curl -s http://localhost:8001/api/health/probe
 open http://localhost:3000              # page shows Responding on all 4 rows and the probe rows
 docker compose down -v                  # remove containers and the synthetic DB volume
@@ -53,6 +53,7 @@ yarn build
 | `DATABASE_URL_TEST` | humans/scripts only (tests read `DATABASE_URL`) | Local Postgres |
 | `PORT`, `HOST` | api | Deployment config |
 | `CORS_ORIGINS` | api | Web origin(s), comma-separated |
+| `PROBE_WRITES_ENABLED` | api (required, `true`/`false`, no default) | `false` everywhere except demos of the gate |
 | `NEXT_PUBLIC_API_BASE_URL` | web (build time) | Public API origin |
 | `POSTGRES_*`, `API_PORT`, `WEB_PORT` | docker compose | `.env` copied from `.env.example` |
 

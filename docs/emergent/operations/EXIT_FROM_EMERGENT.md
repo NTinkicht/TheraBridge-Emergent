@@ -15,28 +15,33 @@ Data export: not needed (synthetic only, schema is in Prisma migrations).
 
 ## Exporting from Emergent safely
 
-1. Save to GitHub → repository `NTinkicht/TheraBridge-Emergent` → **Create new branch** `emergent/phase-1-center-foundation`.
-2. **Never choose Force Push.** A new branch cannot modify `main`.
-3. Verify on GitHub that `main` has the same SHA as before the export.
+The actual export branch is `phase-1-center-foundation` (first SHA `b86028e`).
+
+1. Save to GitHub → `NTinkicht/TheraBridge-Emergent` → existing branch `phase-1-center-foundation`. New local commits sit on top of `b86028e`, so this is a fast-forward.
+2. **Never choose Force Push.** If a conflict or Force Push prompt appears, cancel and save to a new branch (`phase-1-center-foundation-fixN`). Exporting to a branch other than `main` cannot modify `main`.
+3. Verify on GitHub: `main` has the same SHA as before; the branch contains `yarn.lock` and all three `.env.example` files. Emergent's auto-commit has dropped these before.
 
 ## Merging into existing history
 
-The export may have **unrelated history** (this job was not imported from the repo). Integrate outside Emergent via a reviewed PR:
+**Confirmed:** `phase-1-center-foundation` has **no common ancestor** with `main`. Do not merge it, and do not use `--allow-unrelated-histories`, because that would pull in the Emergent template history and its files. Instead, copy an allow-list of paths onto a branch made from `main`:
 
 ```bash
-git fetch origin
-git checkout -b integrate/phase-1 origin/main
-git merge --allow-unrelated-histories --no-commit origin/emergent/phase-1-center-foundation
-# Keep canonical files: restore any collision from main
-git checkout origin/main -- README.md AGENTS.md 2>/dev/null || true
-# Drop Emergent template/platform files
-git rm -r --cached --ignore-unmatch backend frontend memory plan tests test_reports test_result.md .emergent
-git status        # review every remaining path; all generated content is under apps/, assets/, scripts/, docs/emergent/
-git commit -m "Integrate TB-EM-000 from Emergent"
-git push origin integrate/phase-1   # open PR, require CI green
+git clone git@github.com:NTinkicht/TheraBridge-Emergent.git && cd TheraBridge-Emergent
+bash <(git show origin/phase-1-center-foundation:scripts/integration/import-emergent-export.sh) phase-1-center-foundation integrate/tb-em-000
+# review: git diff --cached --stat ; git diff --cached
+git commit -m "Import TB-EM-000 from Emergent export <sha>"
+git push -u origin integrate/tb-em-000      # normal push of a NEW branch
+# open PR integrate/tb-em-000 -> main, require CI green, squash-merge
 ```
 
-Files known to collide or be Emergent-only: root `README.md` (template), `backend/`, `frontend/`, `memory/`, `plan/`, `tests/`, `test_reports/`, `test_result.md`, `.emergent/`, root `.gitignore` (merge by hand).
+What the script guarantees (tested against a simulated repo, see TEST_RESULTS C5):
+- It branches from `origin/main`, so the existing documentation and history are kept as they are.
+- It copies only: `apps assets scripts docs/emergent .github/workflows/ci.yml docker-compose.yml .dockerignore .nvmrc .env.example package.json yarn.lock README.emergent.md`.
+- It never copies: `README.md` (template), `backend/`, `frontend/`, `memory/`, `plan/`, `tests/`, `test_reports/`, `test_result.md`, `.emergent/`.
+- It aborts without changing anything if an allow-listed path is missing from the export, or if a file exists in `main` with different content.
+- It prints the `.gitignore` lines `main` lacks, so you can merge them by hand. It never pushes.
+
+Later exports: re-run the script on a fresh branch from `main`. Its diff then shows only that work unit's changes.
 
 ## Continuing in a new Emergent job
 
