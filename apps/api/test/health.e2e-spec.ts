@@ -82,6 +82,15 @@ describe('TB-EM-000 feasibility probe (real PostgreSQL via Prisma)', () => {
     expect(await app.get(PrismaService).feasibilityProbe.count()).toBe(1);
   });
 
+  it.each([
+    ['application/x-www-form-urlencoded', 'label=form&source=cli'],
+    ['text/plain', '{"label":"plain","source":"cli"}'],
+    ['multipart/form-data; boundary=x', '--x\r\nContent-Disposition: form-data; name="label"\r\n\r\nm\r\n--x--'],
+  ])('POST /api/health/probe rejects %s bodies with 415 and writes nothing', async (type, body) => {
+    await request(app.getHttpServer()).post('/api/health/probe').set('Content-Type', type).send(body).expect(415);
+    expect(await app.get(PrismaService).feasibilityProbe.count()).toBe(1);
+  });
+
   it('routes exist only under the /api prefix', async () => {
     await request(app.getHttpServer()).get('/health').expect(404);
   });

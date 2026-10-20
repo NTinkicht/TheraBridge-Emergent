@@ -23,7 +23,7 @@ export function StackCheck({ nextVersion, health, failed }: { nextVersion: strin
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-[15px] font-semibold">{name}</span>
-            <span className="block truncate text-[13px] text-brand-inkMuted">{detail}</span>
+            <span className="block break-words text-[13px] text-brand-inkMuted">{detail}</span>
           </span>
           <span
             className={`text-[13px] font-semibold ${ok === null ? 'text-brand-inkMuted' : ok ? 'text-status-success' : 'text-status-danger'}`}

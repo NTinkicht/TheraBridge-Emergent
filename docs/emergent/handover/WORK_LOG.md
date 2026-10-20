@@ -15,6 +15,8 @@
 
 **Decisions:** ADR-0001 (stack), ADR-0004 (Postgres in workspace), ADR-0005 (workspace process shim, deviation from "NestJS binds 8001" inside Emergent only).
 
+- After independent testing: API rejects non-JSON request bodies with 415 (cross-site form-post hardening); stack-check text wraps on mobile.
+
 **Test evidence:** `docs/emergent/qa/TEST_RESULTS.md`.
 
 **Mocked/disabled:** nothing mocked. No auth, no tenants, no mailbox endpoint (TB-EM-001, PLANNED).

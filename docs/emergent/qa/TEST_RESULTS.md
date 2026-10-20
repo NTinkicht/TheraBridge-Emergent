@@ -8,13 +8,14 @@ Date: 2026-10-20 (UTC)
 
 | # | Check | Status |
 |---|---|---|
-| 1 | API integration tests vs real PostgreSQL (10 cases) | TESTED: PASS |
+| 1 | API integration tests vs real PostgreSQL (13 cases) | TESTED: PASS |
 | 2 | API typecheck (`tsc --noEmit`) | TESTED: PASS |
 | 3 | `nest build` | TESTED: PASS |
 | 4 | `next build` (includes type check) | TESTED: PASS |
 | 5 | Prisma migration applied to dev and `_test` DBs | TESTED: PASS |
 | 6 | Public preview URL: GET health, POST probe, GET probe (curl) | TESTED: PASS |
 | 7 | Preview browser check: page loads, 4 stack rows "Responding", Write probe row → row read back, persists after reload; 390px no horizontal overflow | TESTED: PASS |
+| 7b | Independent Emergent testing agent (API + UI, iteration_1) | TESTED: PASS (1 minor security finding, fixed, see below) |
 | 8 | Docker Compose build/up | **NOT RUN** (Docker unavailable in Emergent) |
 | 9 | GitHub Actions CI | **NOT RUN** (runs on first push) |
 | 10 | Cold-clone drill | **NOT RUN** |
@@ -39,9 +40,12 @@ PASS test/health.e2e-spec.ts
     ✓ POST /api/health/probe rejects unknown source with 400 and writes nothing
     ✓ POST /api/health/probe rejects unexpected field with 400 and writes nothing
     ✓ POST /api/health/probe rejects missing body fields with 400 and writes nothing
+    ✓ POST /api/health/probe rejects application/x-www-form-urlencoded bodies with 415 and writes nothing
+    ✓ POST /api/health/probe rejects text/plain bodies with 415 and writes nothing
+    ✓ POST /api/health/probe rejects multipart/form-data; boundary=x bodies with 415 and writes nothing
     ✓ routes exist only under the /api prefix
     ✓ CORS allows the configured origin and not others
-Tests:       10 passed, 10 total
+Tests:       13 passed, 13 total
 ```
 
 ## 2-4. Typecheck and builds
@@ -66,6 +70,13 @@ GET  https://therabridge.preview.emergentagent.com/ → 200
 
 - 1920x800: all 4 stack rows "Responding"; click `probe-write-button` → total 1 → 2 and `probe-readback-confirmed` shown; after reload total still 2.
 - 390x844: horizontal overflow check returned `[]` after fixing a grid min-width defect found during the check (first run: overflow in stack-check card, TESTED: FAIL → fixed → TESTED: PASS).
+
+## 7b. Independent testing agent (iteration_1)
+
+- Backend 100%, frontend 100%; Jest re-run 10/10 at that time.
+- Finding (minor, security): POST accepted `application/x-www-form-urlencoded` (Fastify form parser), letting a cross-site HTML form write without CORS preflight. **Fixed** in `apps/api/src/bootstrap.ts`: any request body that is not `application/json` gets 415. Three regression tests added (13/13 PASS). Public URL re-check: form post → 415, JSON post → 201.
+- Cosmetic: stack-check detail text truncated at 390px → now wraps.
+- Rows created during testing were deleted from the dev DB.
 
 ## Not run (explicit)
 

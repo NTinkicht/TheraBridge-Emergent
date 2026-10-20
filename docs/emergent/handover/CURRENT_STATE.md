@@ -22,7 +22,7 @@ Updated: 2026-10-20 (UTC)
 | PostgreSQL in workspace (ADR-0004) | IMPLEMENTED, TESTED: PASS |
 | Prisma migration `tb_em_000_feasibility_probe` | IMPLEMENTED, TESTED: PASS (dev + test DB) |
 | Probe write/read through public preview URL | IMPLEMENTED, TESTED: PASS |
-| API integration tests (Jest + Supertest, real PostgreSQL) | TESTED: PASS (10/10) |
+| API integration tests (Jest + Supertest, real PostgreSQL) | TESTED: PASS (13/13) |
 | `next build` / `nest build` production builds | TESTED: PASS (in workspace) |
 | Dockerfiles + `docker-compose.yml` | IMPLEMENTED, **NOT RUN** (no Docker in Emergent) |
 | GitHub Actions CI `.github/workflows/ci.yml` | IMPLEMENTED, **NOT RUN** (runs on first push) |
@@ -40,7 +40,7 @@ Updated: 2026-10-20 (UTC)
 1. **NestJS does not bind :8001 directly inside Emergent.** The read-only supervisor always runs `uvicorn server:app` on :8001, so `backend/server.py` is a pass-through proxy to NestJS on 127.0.0.1:8002 (ADR-0005). In Compose, CI and local runs NestJS binds :8001 itself.
 2. PostgreSQL is not Emergent-managed. Binaries under `/usr` may vanish on pod restore; `scripts/workspace/ensure-postgres.sh` reinstalls them (first request after restore can return 503 for about 1 minute). Data dir `.workspace/pgdata` is gitignored and synthetic-only.
 3. Workspace runs PostgreSQL 15.19 (Debian bookworm package); Compose and CI use PostgreSQL 16. The single migration uses only portable SQL.
-4. `POST /api/health/probe` is public and unauthenticated (no rate limit, no CSRF). It accepts only a constrained label and is to be removed or protected in TB-EM-001.
+4. `POST /api/health/probe` is public and unauthenticated (no rate limit, no CSRF token). Only `application/json` bodies are accepted (415 otherwise) and the label is constrained. To be removed or protected in TB-EM-001.
 5. Emergent preview cannot be deployed with this stack (Emergent deploy supports React/FastAPI/MongoDB only).
 6. Root `README.md`, `backend/`, `frontend/`, `memory/`, `plan/`, `tests/`, `test_reports/`, `.emergent/` are Emergent template/platform files. They must not overwrite canonical repo files on merge.
 7. Logo derivatives are valid on light surfaces only; on dark backgrounds they wash out (rejected for dark use).

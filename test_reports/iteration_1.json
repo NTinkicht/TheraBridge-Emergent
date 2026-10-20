@@ -1,0 +1,34 @@
+{
+  "summary": "Independent verification of TB-EM-000 via public preview URL. Backend: /api/health 200 (status ok, nestjs-fastify, postgresql up v15.19, migrations.applied=1). POST /api/health/probe {label:'TEST_agent-probe',source:'cli'} -> 201 with valid UUID; GET readback contains id; total incremented 2->3. Validation: label 65 chars, '<script>', source 'mobile', extra field, {} , empty body, empty label, numeric label, malformed JSON all -> 400 with clear messages; 64-char label accepted (boundary). Unknown /api route -> 404 JSON; DELETE probe -> 404. GET /health (no /api) -> Next.js 404 text/html (not API). Jest e2e re-run: 10/10 pass against therabridge_test DB. Frontend (1920x1080): title, signature-band, brand-mark symbol (naturalWidth 64) and wordmark (160) load, synthetic-data-badge visible, all 4 stack rows 'Responding'; Write probe row increments total 3->4 and shows probe-readback-confirmed; after reload the new row (id 5dcc22eb...) still listed first, total 4. Work units: TB-EM-000 IMPLEMENTED, -api-tests TESTED: PASS, -compose/-ci NOT RUN, 001-006 PLANNED. Mobile 390x844: scrollWidth 390 == clientWidth 390, no overflow. No console errors.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/health/probe", "issue": "Accepts application/x-www-form-urlencoded bodies (FastifyAdapter's default formbody parser), e.g. curl -d 'label=x&source=cli' -> 201. A cross-site HTML form 'simple request' can therefore write rows without a CORS preflight. Low risk now (no auth, synthetic data) but worth restricting to application/json before auth/tenant work units."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Mobile 390px stack check", "issues": ["Row sub-text truncated with ellipsis ('next 14.2.35 rendered this p…', 'v15.19 (Debian 15.19-0+de…', migration name). Cosmetic only; consider wrapping."]}
+    ]
+  },
+  "test_report_links": ["/app/tests/tb_em_000_api_check.sh", "/app/apps/api/test/health.e2e-spec.ts"],
+  "action_items": [
+    "Optional: restrict POST /api/health/probe to application/json (remove/disable urlencoded parser) before later work units",
+    "Optional: allow stack-check row detail text to wrap on mobile",
+    "Cleanup: TEST_agent-probe row (id 98e01506-a6d4-4cdb-bd1e-dabd18340dc8) and one 'preview-1792507214752' web-preview row were created by testing in the dev DB"
+  ],
+  "critical_code_review_comments": [
+    "Code is small and clean: ValidationPipe whitelist+forbidNonWhitelisted+transform, strict label regex, IsIn source enum, $transaction for count+list, 503 on DB failure.",
+    "listProbes caps at 20 items without pagination - fine for TB-EM-000.",
+    "Frontend: error state with retry, loading skeleton, disabled write button while writing - good."
+  ],
+  "updated_files": ["/app/tests/tb_em_000_api_check.sh"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "Created TEST_agent-probe (cli) via API and one preview-* row via UI button. Also created 'x' and a 64x'a' row during edge-case checks; these two were deleted directly from the dev DB via psql.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "None needed - no auth in TB-EM-000; /app/memory/test_credentials.md is an empty template, which is expected.",
+  "context_for_next_testing_agent": "Run: bash /app/tests/tb_em_000_api_check.sh (public URL checks, 13 checks; note it creates a form-encoded 'x' row and a 64-char 'a' row - delete afterwards). Jest e2e: cd /app/apps/api && DATABASE_URL=$(grep ^DATABASE_URL_TEST .env | cut -d= -f2-) yarn test. Probe rows have data-testid probe-row-{uuid}; readback badge is probe-readback-confirmed."
+}
