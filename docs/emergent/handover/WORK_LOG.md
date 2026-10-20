@@ -21,6 +21,19 @@
 
 **Mocked/disabled:** nothing mocked. No auth, no tenants, no mailbox endpoint (TB-EM-001, PLANNED).
 
+## Design baseline accepted + TB-EM-D01 r3 polish + TB-EM-001 proposal (2026-10-20)
+
+**Owner decision:** "Calm Precision, with warmth at home" is the official V1 design baseline.
+**Changed (polish, authorized):**
+- Desktop platform: events moved under applications, so cards no longer stretch.
+- Desktop family: week moved under today's activity.
+- Mobile activity names wrap instead of truncating.
+- Outdated statements removed from the design docs (the dark-flash limitation, the r1 type comparison, "awaiting acceptance").
+
+**Proposed (not approved):** `docs/emergent/workunits/TB-EM-001.md`. ADR-0006 recorded as the owner's chosen sign-in approach.
+**Not done:** probe write retirement (part of TB-EM-001, waits for approval).
+
+
 ## Design direction TB-EM-D01 r2 (2026-10-20): approved direction, acceptance corrections
 
 **Owner decision:** the direction is approved. Headings use Plus Jakarta Sans; body, data and numbers use IBM Plex Sans.

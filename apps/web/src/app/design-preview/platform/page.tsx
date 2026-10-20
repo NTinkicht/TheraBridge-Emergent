@@ -68,8 +68,8 @@ export default function PlatformPreview() {
         {platformMetrics(dataState).map((m) => <Metric key={m.testId} {...m} loading={dataState === 'loading'} />)}
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-        <Card className="p-5 md:p-6" testId="applications-card">
+      <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] xl:items-start">
+        <Card className="p-5 md:p-6 xl:col-start-1" testId="applications-card">
           <CardHeader title="Center applications" subtitle="Decisions need a written rationale and are audited."
             action={
               <div role="tablist" aria-label="Application status" className="inline-flex rounded-control bg-surface-subtle p-1">
@@ -88,7 +88,7 @@ export default function PlatformPreview() {
           </div>
         </Card>
 
-        <Card className="p-5 md:p-6" testId="trials-card">
+        <Card className="p-5 md:p-6 xl:col-start-2 xl:row-span-2 xl:row-start-1" testId="trials-card">
           <CardHeader title="Trials & restrictions" subtitle="30 days · 1 child · 3 therapists per trial" />
           {dataState === 'populated' && (
           <div className="mt-3 flex items-start gap-2 rounded-control bg-status-cautionSurface px-3 py-2.5 text-[13px] text-status-caution" data-testid="trial-alert">
@@ -112,9 +112,8 @@ export default function PlatformPreview() {
             </ul>
           </StateGate>
         </Card>
-      </div>
 
-      <Card className="mt-6 p-5 md:p-6" testId="events-card">
+      <Card className="p-5 md:p-6 xl:col-start-1" testId="events-card">
         <CardHeader title="Operational events" subtitle="Metadata only. No clinical content is ever shown to the platform."
           action={
             <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter events">
@@ -143,6 +142,7 @@ export default function PlatformPreview() {
           </ol>
         </StateGate>
       </Card>
+      </div>
 
       <Dialog open={!!review} onClose={() => setReview(null)} title={review ? review.name : ''} testId="application-dialog"
         footer={review?.status === 'pending' ? (

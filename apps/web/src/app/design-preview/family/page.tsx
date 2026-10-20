@@ -76,8 +76,8 @@ export default function FamilyPreview() {
         </label>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-        <Card tone="family" className="relative overflow-hidden p-6 md:p-7" testId="today-activity-card">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] xl:items-start">
+        <Card tone="family" className="relative overflow-hidden p-6 md:p-7 xl:col-start-1" testId="today-activity-card">
           <StateGate tone="family" testId="today-activity" empty={<EmptyState tone="family" icon={Sparkles} title="Nothing planned yet" body="When your therapist shares a home plan, today’s activity will appear here." />}>
             {released && !featured ? (
               <EmptyState tone="family" icon={Coffee} title="No more activities this week" body="Enjoy the rest days. Next week’s activities appear on Monday." testId="rest-state" />
@@ -99,7 +99,7 @@ export default function FamilyPreview() {
           </StateGate>
         </Card>
 
-        <div className="space-y-5">
+        <div className="space-y-5 xl:col-start-2 xl:row-span-2 xl:row-start-1">
           <Card tone="family" className="p-5" testId="next-appointment-card">
             <CardHeader tone="family" title="Next appointment" />
             <div className="mt-4 flex items-center gap-4">
@@ -123,9 +123,8 @@ export default function FamilyPreview() {
             <div className="mt-4"><LockedAction id="reply-locked" tone="family" size="sm" label="Reply" reason="Messaging is off until your center enables it." /></div>
           </Card>
         </div>
-      </div>
 
-      <Card tone="family" className="mt-5 p-5 md:p-6" testId="week-card">
+      <Card tone="family" className="p-5 md:p-6 lg:col-span-2 xl:col-span-1 xl:col-start-1" testId="week-card">
         <CardHeader tone="family" title="Your week together" subtitle={released ? 'From the shared home plan · tap a day' : 'Activities appear once a plan is shared'} />
         {released ? (
           <>
@@ -153,8 +152,8 @@ export default function FamilyPreview() {
                 return (
                   <li key={d.i} className={`flex items-center gap-4 rounded-[16px] border p-4 ${d.rel === 'today' ? 'border-fam-accent bg-fam-accentTint' : 'border-fam-border bg-fam-raised'}`}>
                     <span className="w-12 shrink-0 text-center"><span className="block text-[11px] font-semibold uppercase text-fam-muted" suppressHydrationWarning>{d.rel === 'today' ? 'Today' : weekdayShort(d.date)}</span><span className="tnum block text-[20px] font-semibold" suppressHydrationWarning>{d.date.getDate()}</span></span>
-                    <span className="min-w-0 flex-1"><span className="block truncate text-[15px] font-semibold">{d.activity?.title}</span><span className="text-[13px] text-fam-muted">{d.activity?.minutes} minutes</span></span>
-                    {o && <span className={`inline-flex items-center gap-1 text-[13px] font-medium ${o.cls}`}><o.icon size={14} aria-hidden="true" />{o.label}</span>}
+                    <span className="min-w-0 flex-1"><span className="block break-words text-[15px] font-semibold leading-snug">{d.activity?.title}</span><span className="text-[13px] text-fam-muted">{d.activity?.minutes} minutes</span></span>
+                    {o && <span className={`inline-flex shrink-0 items-center gap-1 text-[13px] font-medium ${o.cls}`}><o.icon size={14} aria-hidden="true" />{o.label}</span>}
                   </li>
                 );
               })}
@@ -164,6 +163,7 @@ export default function FamilyPreview() {
           <div className="mt-4 flex items-center gap-3 rounded-[16px] bg-fam-instruction p-4 text-[14px] text-fam-muted"><CalendarClock size={18} aria-hidden="true" /> You asked for a home plan on {shortDate(new Date(Date.now() - 6 * 864e5))}. <Pill tone="caution">Pending</Pill></div>
         )}
       </Card>
+      </div>
 
       <Dialog open={open && !!featured} onClose={() => setOpen(false)} tone="family" title={featured?.title ?? ''} testId="activity-dialog"
         footer={<>

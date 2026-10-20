@@ -29,4 +29,6 @@ Multi-tenant isolation, deny-by-default authorization, server-side sessions, aud
 - 2026-10-20 TB-EM-D01 design direction "Calm Precision, with warmth at home": `/design-preview` with 5 representative screens plus family dark, a shared design kit and token additions. Awaiting owner approval before it is applied across V1.
 - 2026-10-20 TB-EM-D01 r2: owner approved the direction, with Jakarta headings and Plex body/data. Fixed platform metric states, added scroll cues, removed the dark flash, added focus and accessibility fixes and client-only dates. Testing agent iteration_6 passed 100%. 21 acceptance screenshots committed. Awaiting independent visual acceptance.
 
-Wait for owner review of TB-EM-000 and the exported SHA.
+- 2026-10-20 Design baseline ACCEPTED by owner. r3 polish done locally (desktop platform/family spacing, wrapping mobile activity names, outdated doc lines removed). TB-EM-001 proposal written at docs/emergent/workunits/TB-EM-001.md; ADR-0006 (local sign-in, OIDC-ready) chosen; review after every checkpoint. TB-EM-001 NOT approved, NOT started. Owner account for seeding: nassim.tinkicht@gmail.com (password from env).
+
+Wait for owner approval of TB-EM-001 and the next exported SHA.

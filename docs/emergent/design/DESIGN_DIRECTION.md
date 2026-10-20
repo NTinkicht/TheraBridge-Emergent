@@ -1,6 +1,6 @@
 # Design direction v1: "Calm Precision, with warmth at home"
 
-Status: **APPROVED by owner as the official direction, subject to final visual acceptance** (revision r2). Do not scale it to all V1 screens until it is accepted.
+Status: **ACCEPTED by owner as the official V1 design baseline** (2026-10-20, after independent review of screenshots and source). Apply it to every V1 screen; do not create competing systems. Layouts and interaction patterns may be refined within this system.
 Preview: `/design-preview` (Next.js, `apps/web/src/app/design-preview/**`). All data comes from synthetic fixtures in `apps/web/src/lib/design/fixtures.ts`; nothing is read from or written to the API.
 
 ## Principles
@@ -46,19 +46,10 @@ Preview: `/design-preview` (Next.js, `apps/web/src/app/design-preview/**`). All 
 - **Dates and greetings** come from the client clock after mount (`useNow`), so there are no server/client hydration mismatches. The greeting changes with the time of day.
 - **320px alignment fixes:** grid min-widths, wrapping pills, provider rows.
 
-## Typography (r1, superseded)
-- **IBM Plex Sans throughout** (approved). Sizes:
-  - Page title: 31px desktop / 25px mobile, weight 600.
-  - Section title: 20px.
-  - Card title: 17–18px.
-  - Body: 15–16px.
-  - Labels: 13–14px.
-  - Metadata: 12px.
-  - Numbers use tabular figures (`.tnum`).
-- **Alternative proposed:** Plus Jakarta Sans for display headings only (`font-display`). Body and data stay in Plex.
-  - It can be compared live with the preview bar's "Type" control.
-  - Cost: one extra font family.
-  - Recommendation: keep Plex unless the family screens feel too technical in review.
+## Revision r3 polish (post-acceptance)
+- Desktop platform (≥1280): Operational events sit under Center applications in the wide column; Trials & restrictions sits alone in the narrow column. Cards no longer stretch to match their neighbour's height.
+- Desktop family (≥1280): Your week together sits under Today's activity; Next appointment and the therapist message stack in the narrow column. Cards keep their natural height.
+- Activity names on mobile wrap instead of being cut off with an ellipsis.
 
 ## Shell
 | Width | Behavior |
@@ -95,6 +86,5 @@ Preview: `/design-preview` (Next.js, `apps/web/src/app/design-preview/**`). All 
 - Discrete four-color signature band instead of a gradient (blueprint 2.4).
 
 ## Known limitations of the preview
-- The family theme is read after hydration, so a dark-theme visitor can see a brief light flash. The product will read the stored preference on the server.
 - Navigation items outside the five screens show a notice instead of navigating.
 - The family plan is shown as an *illustration* of a future approved release. Release is disabled in TheraBridge, and the scenario switch shows the honest current state.

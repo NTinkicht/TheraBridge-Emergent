@@ -38,7 +38,8 @@ Updated: 2026-10-20 (UTC)
 | Cold-clone drill | **NOT RUN** |
 | Logo derivatives (light surfaces) | IMPLEMENTED, checked against original (see `docs/emergent/brand/LOGO_DERIVATIVES.md`) |
 | TB-EM-001 to TB-EM-006 | PLANNED (not authorized) |
-| Design direction TB-EM-D01 (`/design-preview`, fixtures only) | **APPROVED direction (r2)**, IMPLEMENTED, TESTED: PASS (iteration_6, 100%). **Awaiting final independent visual acceptance.** Screenshots in `docs/emergent/design/screenshots/` |
+| Design direction TB-EM-D01 (`/design-preview`, fixtures only) | **ACCEPTED as the V1 design baseline** (owner, 2026-10-20). r3 polish (desktop spacing, wrapping activity names, outdated doc statements removed): IMPLEMENTED, verification in `TEST_RESULTS.md`. Screenshots in `docs/emergent/design/screenshots/` |
+| TB-EM-001 auth, sessions, roles | PLANNED in `docs/emergent/workunits/TB-EM-001.md`. **Not approved; not started.** Owner decisions so far: ADR-0006 local sign-in (OIDC-ready), independent review after every checkpoint |
 
 ## Working URLs (Emergent preview, ephemeral)
 

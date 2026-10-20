@@ -8,13 +8,9 @@
 4. Check the Actions run for the new SHA. Both `test` and `compose` must be green. Report the SHA and run ID so they can be recorded.
 5. Integrate only via `scripts/integration/import-emergent-export.sh` and a reviewed PR (`EXIT_FROM_EMERGENT.md`).
 
-## Design direction review (owner)
+## Design baseline
 
-**r2 status:** direction approved, typography decided (Jakarta headings, Plex body and data). Waiting for independent visual acceptance of `docs/emergent/design/screenshots/` and the live `/design-preview`. After acceptance, apply this kit across V1. Do not use the old Figma layouts and do not create competing systems.
-
-1. Review `/design-preview` and the five screens at 320–1440px. Use the preview bar's Data and Type controls, and `?theme=dark` for the family home.
-2. Decide: approve the direction, or request changes; and keep IBM Plex Sans only, or adopt Plus Jakarta Sans for headings.
-3. Only after approval: apply the kit to product screens, starting with the TB-EM-001 sign-in and shell.
+Accepted by the owner on 2026-10-20. Apply the kit to every V1 screen, starting with the TB-EM-001 sign-in and shell. Do not use the old Figma layouts and do not create competing systems. r3 polish (checkpoint 0) is done locally; review it with the next export.
 
 ## Remaining blockers before TB-EM-000 can be accepted
 
@@ -24,6 +20,8 @@
 - Cold-clone drill by an independent person/agent: NOT RUN.
 
 ## Next work unit (requires separate approval): TB-EM-001 authentication and sessions
+
+Full proposal: `docs/emergent/workunits/TB-EM-001.md` (scope, acceptance criteria, migrations, tests, estimate). Owner is reviewing it. Already decided: local sign-in designed for later OIDC (ADR-0006), and an independent review stop after each checkpoint (0, A, B, C). Summary:
 
 - Argon2id passwords; opaque session token in HttpOnly/Secure/SameSite=Lax cookie; PostgreSQL `Session` table; 30 min idle / 12 h absolute.
 - Login lockout (5 failures / 15 min), generic errors, CSRF double-submit + Origin check.

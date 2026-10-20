@@ -116,6 +116,12 @@ GET  https://therabridge.preview.emergentagent.com/ → 200
 - Cosmetic: stack-check detail text truncated at 390px → now wraps.
 - Rows created during testing were deleted from the dev DB.
 
+## TB-EM-D01 r3 polish (2026-10-20)
+
+- `tsc --noEmit` (apps/web): TESTED: PASS.
+- `SCREENSHOT_BASE_URL=http://localhost:3000 node scripts/design/capture-screenshots.mjs`: 21/21 captured, 0px horizontal overflow on every page: TESTED: PASS.
+- Visual check of platform 1440, family light 1440/320 and family dark 1440: cards keep their natural height, and activity names wrap on mobile. Checked by the developer only; independent review is pending with the next export.
+
 ## Not run (explicit)
 
 - Docker Compose, Dockerfiles, CI workflow, cold-clone drill: authored, **NOT RUN**.
