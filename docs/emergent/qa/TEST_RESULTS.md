@@ -19,7 +19,9 @@ Date: 2026-10-20 (UTC)
 
 The tables below are the original first-round results. The API suite has since grown from 13 to 16 cases.
 
-## Summary
+## Historical first-round summary (superseded by correction round 1 above)
+
+The 13-test and Docker/CI NOT RUN entries below describe the original uncorrected workspace only. For corrected-checkpoint acceptance, rely on the C1–C8 table and exact-SHA independent GitHub Actions run `39448713740`.
 
 | # | Check | Status |
 |---|---|---|
