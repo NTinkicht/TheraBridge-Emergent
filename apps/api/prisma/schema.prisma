@@ -1,0 +1,20 @@
+// TheraBridge API schema. TB-EM-000 contains only the feasibility probe.
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model FeasibilityProbe {
+  id        String   @id @default(uuid()) @db.Uuid
+  label     String   @db.VarChar(64)
+  source    String   @db.VarChar(32)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([createdAt])
+  @@map("feasibility_probe")
+}

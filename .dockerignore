@@ -1,0 +1,14 @@
+**/node_modules
+**/.next
+**/dist
+**/.env
+**/.env.local
+.workspace
+.git
+frontend
+backend
+memory
+test_reports
+tests
+plan
+.emergent
