@@ -1,7 +1,7 @@
 # TEST_RESULTS
 
 Environment: Emergent workspace, Debian 12, Node 20.20.2, Yarn 1.22.22, PostgreSQL 15.19, Prisma 5.22.0, Next.js 14.2.35, NestJS 10.4.  
-Branch: `phase-1-center-foundation`. First export `b86028eb1c64bb3941cc04064c68d29273de64af`. Corrections in local commit `d170878` plus a docs commit; corrected export SHA **PENDING**.  
+Branch: `phase-1-center-foundation`. First export `b86028eb1c64bb3941cc04064c68d29273de64af`. Corrected export `fa9f7f4cdb570f04a4c0756abdfc14e7271841a2`. Verified GitHub Actions run `39448713740` (triggered on an audit/review branch pointing at this exact SHA): **test PASS, compose PASS**.  
 Date: 2026-10-20 (UTC)
 
 ## Correction round 1 (after owner review of b86028e)
@@ -14,8 +14,8 @@ Date: 2026-10-20 (UTC)
 | C4 | API tests 16/16 incl. disabled-flag 404, required flag, client label rejected, 200-row cap, 10/min rate limit | TESTED: PASS |
 | C5 | `scripts/integration/import-emergent-export.sh` against a simulated origin (`main` with README.md, AGENTS.md, blueprint; export branch with unrelated history) | TESTED: PASS: `main` SHA unchanged, canonical README kept, no template/platform files copied, 79 allow-listed paths staged |
 | C6 | Preview URL: health shows `probeWrites.enabled=true`; client `label` → 400; `{source}` → 201 with server label; browser write + read-back | TESTED: PASS |
-| C7 | Docker Compose build/up | **NOT RUN** (no Docker in Emergent; runs in CI `compose` job) |
-| C8 | GitHub Actions on corrected export | **NOT RUN** (needs re-export) |
+| C7 | Docker Compose build/up | **TESTED: PASS** on Ubuntu GitHub Actions, run `39448713740` (`compose` job built and started web/api/PostgreSQL, smoke tests passed) |
+| C8 | GitHub Actions on corrected export SHA | **TESTED: PASS**: 16/16 Jest integration tests, typecheck/builds, and Docker Compose smoke test in run `39448713740` |
 
 The tables below are the original first-round results. The API suite has since grown from 13 to 16 cases.
 
