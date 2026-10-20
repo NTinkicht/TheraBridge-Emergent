@@ -62,9 +62,9 @@ export default function DirectionPage() {
       <main className="mx-auto max-w-[1160px] space-y-10 px-4 py-8 md:px-8 md:py-12">
         <section className="tb-rise">
           <BrandMark variant="lockup" height={96} />
-          <p className="mt-6 text-[13px] font-semibold uppercase tracking-[0.1em] text-brand-action">Visual direction proposal · v1</p>
+          <p className="mt-6 text-[13px] font-semibold uppercase tracking-[0.1em] text-brand-action">Visual direction · approved, pending final visual acceptance</p>
           <h1 className="mt-2 max-w-3xl font-display text-[30px] font-semibold leading-tight tracking-[-0.015em] md:text-[44px]" data-testid="page-title">Calm Precision, with warmth at home.</h1>
-          <p className="mt-3 max-w-2xl text-[16px] text-brand-inkMuted">One TheraBridge system that feels exact for clinical and administrative work and welcoming for families. Review the five representative screens below at any width. The Data and Type controls in the dark bar switch states and typefaces live.</p>
+          <p className="mt-3 max-w-2xl text-[16px] text-brand-inkMuted">One TheraBridge system that feels exact for clinical and administrative work and welcoming for families. Review the five representative screens below at any width. The Data control in the dark bar switches every screen between populated, loading, empty and error states.</p>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             {PRINCIPLES.map(([t, b]) => <Card key={t} className="p-5"><p className="font-display text-[17px] font-semibold">{t}</p><p className="mt-2 text-[14px] text-brand-inkMuted">{b}</p></Card>)}
           </div>
@@ -94,13 +94,13 @@ export default function DirectionPage() {
         </Card>
 
         <Card className="p-5 md:p-6" testId="type-card">
-          <CardHeader title="Typography" subtitle="IBM Plex Sans throughout, with tabular figures for data. Alternative: Plus Jakarta Sans for display headings only." />
+          <CardHeader title="Typography" subtitle="Approved: Plus Jakarta Sans for headings. IBM Plex Sans for body, forms, clinical data, tables and numbers (tabular figures)." />
           <div className="mt-5 grid gap-6 lg:grid-cols-2">
             <ul className="space-y-3">{SCALE.map(([n, cls, spec]) => <li key={n} className="flex items-baseline justify-between gap-4 border-b border-border-light pb-2"><span className={cls}>{n}</span><span className="tnum shrink-0 text-[12px] text-brand-inkMuted">{spec}</span></li>)}</ul>
             <div className="space-y-4">
-              <div className="rounded-control bg-surface-subtle p-4"><p className="text-[12px] text-brand-inkMuted">IBM Plex Sans 600 (approved)</p><p className="mt-1 text-[26px] font-semibold" style={{ fontFamily: 'IBM Plex Sans' }}>Good morning, Sara</p></div>
-              <div className="rounded-control bg-surface-subtle p-4"><p className="text-[12px] text-brand-inkMuted">Plus Jakarta Sans 600 (proposed alternative for headings)</p><p className="mt-1 text-[26px] font-semibold" style={{ fontFamily: 'Plus Jakarta Sans' }}>Good morning, Sara</p></div>
-              <p className="text-[13px] text-brand-inkMuted">Why consider it: rounder, friendlier forms soften the family experience while Plex keeps data and body text precise. Cost: a second font file (~25 KB per weight). Recommendation: keep Plex unless the family screens feel too technical in review.</p>
+              <div className="rounded-control bg-surface-subtle p-4"><p className="text-[12px] text-brand-inkMuted">Headings: Plus Jakarta Sans 600 (approved)</p><p className="mt-1 text-[26px] font-semibold" style={{ fontFamily: 'Plus Jakarta Sans' }}>Good morning, Sara</p></div>
+              <div className="rounded-control bg-surface-subtle p-4"><p className="text-[12px] text-brand-inkMuted">Body, forms and data: IBM Plex Sans (approved)</p><p className="tnum mt-1 text-[16px]" style={{ fontFamily: 'IBM Plex Sans' }}>10:30–11:15 · Room 2 · 3 of 3 seats · 27 / 30 days</p></div>
+              <p className="text-[13px] text-brand-inkMuted">Both faces are set once in tokens.ts (--font-display, --font-body) and applied by Tailwind and base styles, so screens can’t drift.</p>
             </div>
           </div>
         </Card>

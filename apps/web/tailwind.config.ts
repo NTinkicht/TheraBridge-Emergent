@@ -1,6 +1,6 @@
 import type { Config } from 'tailwindcss';
 import plugin from 'tailwindcss/plugin';
-import { colors, cssVariables, familySlots, familyThemeCss } from './src/styles/tokens';
+import { colors, cssVariables, familySlots, familyThemeCss, typography } from './src/styles/tokens';
 
 const fam = Object.fromEntries(familySlots.map((slot) => [slot, `var(--fam-${slot})`]));
 
@@ -10,7 +10,7 @@ export default {
     extend: {
       colors: { ...colors, fam },
       fontFamily: {
-        sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
+        sans: [`"${typography.body}"`, 'system-ui', 'sans-serif'],
         display: ['var(--font-display)', 'system-ui', 'sans-serif'],
         serif: ['"IBM Plex Serif"', 'Georgia', 'serif'],
       },

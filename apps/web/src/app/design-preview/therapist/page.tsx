@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { CalendarX2, ClipboardCheck, Clock, FileClock, Inbox, LayoutList, Lock, MapPin, Rows3 } from 'lucide-react';
 import { AppShell } from '@/components/design/AppShell';
+import { ScrollStrip } from '@/components/design/ScrollStrip';
 import { PageHeader } from '@/components/design/PageHeader';
 import { EmptyState, StateGate } from '@/components/design/states';
 import { Avatar, Card, CardHeader, LockedAction, Pill, SpecialtyTag, btn } from '@/components/design/ui';
@@ -52,14 +53,14 @@ export default function TherapistPreview() {
         actions={<div className="flex flex-wrap gap-2"><Pill tone="info" icon={Clock} testId="badge-today">{count(filter)} appointments today</Pill><Pill tone="caution" icon={FileClock} testId="badge-reviews">2 pending reviews</Pill></div>} />
 
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div role="radiogroup" aria-label="Active specialty" className="flex w-full gap-1 overflow-x-auto rounded-control border border-border-light bg-surface-white p-1 sm:w-auto" data-testid="specialty-switcher">
+        <ScrollStrip role="radiogroup" ariaLabel="Active specialty" className="w-full rounded-control border border-border-light bg-surface-white sm:w-auto" innerClassName="gap-1 p-1" testId="specialty-switcher">
           {(['speech', 'ot', 'all'] as Filter[]).map((f) => (
             <button key={f} role="radio" aria-checked={filter === f} onClick={() => setFilter(f)} data-testid={`specialty-${f}`}
               className={`inline-flex min-h-[40px] flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-[9px] px-3 text-[13px] font-medium transition-colors sm:flex-none ${filter === f ? 'bg-brand-action text-white' : 'text-brand-inkMuted hover:bg-surface-subtle'}`}>
               {FILTER_LABEL[f]} <span className={`tnum rounded-full px-1.5 text-[11px] ${filter === f ? 'bg-white/20' : 'bg-surface-subtle'}`}>{count(f)}</span>
             </button>
           ))}
-        </div>
+        </ScrollStrip>
         <div className="hidden gap-1 md:flex" role="group" aria-label="Agenda layout">
           <button onClick={() => setView('timeline')} aria-pressed={view === 'timeline'} className={`${btn('ghost', 'clinical', 'sm')} ${view === 'timeline' ? 'bg-brand-actionTint ring-1 ring-brand-action/30' : '!text-brand-inkMuted'}`} data-testid="view-timeline"><Rows3 size={15} aria-hidden="true" /> Timeline</button>
           <button onClick={() => setView('list')} aria-pressed={view === 'list'} className={`${btn('ghost', 'clinical', 'sm')} ${view === 'list' ? 'bg-brand-actionTint ring-1 ring-brand-action/30' : '!text-brand-inkMuted'}`} data-testid="view-list"><LayoutList size={15} aria-hidden="true" /> List</button>

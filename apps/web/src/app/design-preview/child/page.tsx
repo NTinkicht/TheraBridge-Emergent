@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { ArrowLeft, Camera, CircleCheck, FileText, Lock, ShieldCheck, Target, UserX } from 'lucide-react';
 import { AppShell } from '@/components/design/AppShell';
+import { ScrollStrip } from '@/components/design/ScrollStrip';
 import { AccessDenied, EmptyState, StateGate } from '@/components/design/states';
 import { Avatar, Card, CardHeader, LockedAction, Pill, SpecialtyTag } from '@/components/design/ui';
 import { childSessions, daysFromNow, goals, observations, shortDate } from '@/lib/design/fixtures';
@@ -145,7 +146,7 @@ export default function ChildPreview() {
             </select>
           </label>
         </div>
-        <div role="tablist" aria-label="Child workspace" className="flex gap-1 overflow-x-auto border-t border-border-light px-3 md:px-5" data-testid="child-tabs">
+        <ScrollStrip role="tablist" ariaLabel="Child workspace" className="border-t border-border-light" innerClassName="gap-1 px-3 md:px-5" testId="child-tabs">
           {TABS.map((t, i) => (
             <button key={t} ref={(el) => { refs.current[i] = el; }} role="tab" aria-selected={tab === t} tabIndex={tab === t ? 0 : -1} onKeyDown={(e) => onKey(e, i)} onClick={() => setTab(t)} data-testid={`child-tab-${t.toLowerCase()}`}
               className={`relative min-h-[48px] whitespace-nowrap px-3 text-[14px] font-medium transition-colors ${tab === t ? 'text-brand-action' : 'text-brand-inkMuted hover:text-brand-ink'}`}>
@@ -153,7 +154,7 @@ export default function ChildPreview() {
               {tab === t && <span className="absolute inset-x-2 bottom-0 h-[3px] rounded-t-full bg-brand-action" aria-hidden="true" />}
             </button>
           ))}
-        </div>
+        </ScrollStrip>
       </Card>
       <Card className="mt-6 p-5 md:p-6" testId={`child-panel-${tab.toLowerCase()}`}>
         <div role="tabpanel" aria-label={tab}>

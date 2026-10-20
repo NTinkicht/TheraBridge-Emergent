@@ -4,10 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { FlaskConical } from 'lucide-react';
+import { ScrollStrip } from './ScrollStrip';
 
 export type DataState = 'populated' | 'loading' | 'empty' | 'error';
-type Typeface = 'plex' | 'jakarta';
-interface PreviewCtx { dataState: DataState; setDataState: (s: DataState) => void; typeface: Typeface; notify: (msg: string) => void }
+interface PreviewCtx { dataState: DataState; setDataState: (s: DataState) => void; notify: (msg: string) => void }
 
 const Ctx = createContext<PreviewCtx | null>(null);
 export function usePreview(): PreviewCtx {
@@ -27,40 +27,34 @@ const SCREENS: [string, string][] = [
 
 export function PreviewProvider({ children }: { children: ReactNode }) {
   const [dataState, setDataState] = useState<DataState>('populated');
-  const [typeface, setTypeface] = useState<Typeface>('plex');
   const [notice, setNotice] = useState<string | null>(null);
   const path = usePathname();
 
-  useEffect(() => {
-    if (localStorage.getItem('tb-preview-typeface') === 'jakarta') setTypeface('jakarta');
-  }, []);
   useEffect(() => {
     if (!notice) return;
     const id = setTimeout(() => setNotice(null), 3800);
     return () => clearTimeout(id);
   }, [notice]);
 
-  const changeType = (t: Typeface) => {
-    setTypeface(t);
-    localStorage.setItem('tb-preview-typeface', t);
-  };
   const select = 'min-h-[32px] max-w-[150px] rounded-[8px] border border-white/20 bg-white/10 px-2 text-[12px] text-white';
 
   return (
-    <Ctx.Provider value={{ dataState, setDataState, typeface, notify: setNotice }}>
-      <div className={typeface === 'jakarta' ? 'type-jakarta' : ''}>
+    <Ctx.Provider value={{ dataState, setDataState, notify: setNotice }}>
+      <div>
         <div className="bg-[#0B1530] text-white" data-testid="preview-bar">
           <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 text-[12px]">
             <span className="inline-flex items-center gap-1.5 font-semibold text-[#FFD991]" data-testid="preview-synthetic-label">
               <FlaskConical size={14} aria-hidden="true" /> Design preview · Synthetic fixture data · Not connected to the API
             </span>
-            <nav aria-label="Preview screens" className="-mx-1 flex max-w-full gap-1 overflow-x-auto px-1">
+            <nav aria-label="Preview screens" className="min-w-0 max-w-full">
+              <ScrollStrip tone="dark" innerClassName="gap-1" testId="preview-screens">
               {SCREENS.map(([href, label]) => (
                 <Link key={href} href={href} aria-current={path === href ? 'page' : undefined} data-testid={`preview-link-${label.toLowerCase().replace(' ', '-')}`}
                   className={`whitespace-nowrap rounded-full px-2.5 py-1 transition-colors ${path === href ? 'bg-white/20 font-semibold' : 'text-white/80 hover:bg-white/10'}`}>
                   {label}
                 </Link>
               ))}
+              </ScrollStrip>
             </nav>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 md:ml-auto">
               <label className="flex items-center gap-1.5 text-white/80">
@@ -70,13 +64,6 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
                   <option className="text-brand-ink" value="loading">Loading</option>
                   <option className="text-brand-ink" value="empty">Empty</option>
                   <option className="text-brand-ink" value="error">Error</option>
-                </select>
-              </label>
-              <label className="flex items-center gap-1.5 text-white/80">
-                Type
-                <select className={select} value={typeface} onChange={(e) => changeType(e.target.value as Typeface)} data-testid="preview-typeface">
-                  <option className="text-brand-ink" value="plex">IBM Plex Sans</option>
-                  <option className="text-brand-ink" value="jakarta">Plex + Jakarta headings</option>
                 </select>
               </label>
             </div>

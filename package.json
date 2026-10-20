@@ -15,5 +15,8 @@
     "build": "yarn workspace @therabridge/api build && yarn workspace @therabridge/web build",
     "test": "yarn workspace @therabridge/api test",
     "brand:derive": "python3 scripts/brand/derive-logo.py"
+  },
+  "devDependencies": {
+    "playwright": "1.48.2"
   }
 }

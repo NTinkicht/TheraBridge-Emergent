@@ -11,10 +11,10 @@ import { Avatar, LockedAction } from './ui';
 
 type Theme = 'light' | 'dark';
 
-function Logo({ collapsed, dark }: { collapsed: boolean; dark: boolean }) {
-  // Raster logo is only valid on light surfaces; on dark it sits on a light chip.
+function Logo({ collapsed, family }: { collapsed: boolean; family: boolean }) {
+  // Raster logo is only valid on light surfaces; the family theme puts it on a chip that turns white in dark mode.
   return (
-    <span className={`inline-flex items-center gap-2 ${dark ? 'rounded-[10px] bg-white px-2 py-1' : ''}`}>
+    <span className={`inline-flex items-center gap-2 ${family ? 'rounded-[10px] bg-fam-logoChip px-1.5 py-1' : ''}`}>
       <BrandMark variant="symbol" height={collapsed ? 24 : 26} />
       {!collapsed && <BrandMark variant="wordmark" height={17} />}
     </span>
@@ -48,9 +48,7 @@ export function AppShell({ workspace, active, title, children }: { workspace: Wo
   useEffect(() => {
     setCollapsed(window.innerWidth < 1280);
     if (!family) return;
-    const q = new URLSearchParams(window.location.search).get('theme');
-    const stored = localStorage.getItem('tb-family-theme');
-    setTheme(q === 'dark' || q === 'light' ? q : stored === 'dark' ? 'dark' : 'light');
+    setTheme(document.documentElement.dataset.familyTheme === 'dark' ? 'dark' : 'light');
   }, [family]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenu(null); };
@@ -61,6 +59,7 @@ export function AppShell({ workspace, active, title, children }: { workspace: Wo
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
     setTheme(next);
+    document.documentElement.dataset.familyTheme = next;
     localStorage.setItem('tb-family-theme', next);
   };
   const unavailable = (label: string) => { setMenu(null); notify(`“${label}” is outside this design preview.`); };
@@ -72,10 +71,10 @@ export function AppShell({ workspace, active, title, children }: { workspace: Wo
   const moreItems = ws.items.filter((i) => !ws.mobile.includes(i.key));
 
   return (
-    <div className={`flex min-h-screen ${family ? `${theme === 'dark' ? 'theme-family-dark' : 'theme-family-light'} bg-fam-canvas text-fam-ink` : 'bg-canvas-clinical text-brand-ink'}`} data-testid={`shell-${workspace}`} data-theme={family ? theme : undefined}>
+    <div className={`flex min-h-screen ${family ? 'theme-family-auto bg-fam-canvas text-fam-ink' : 'bg-canvas-clinical text-brand-ink'}`} data-testid={`shell-${workspace}`} data-theme={family ? theme : undefined}>
       <aside className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r transition-[width] duration-200 md:flex ${surface} ${collapsed ? 'w-[76px]' : 'w-sidebar'}`} data-testid="sidebar">
         <SignatureBand />
-        <div className={`flex h-16 items-center ${collapsed ? 'justify-center' : 'px-5'}`}><Logo collapsed={collapsed} dark={dark} /></div>
+        <div className={`flex h-16 items-center ${collapsed ? 'justify-center' : 'px-5'}`}><Logo collapsed={collapsed} family={family} /></div>
         {!collapsed && (
           <button type="button" onClick={() => notify('Switching center or role arrives with sign-in (TB-EM-001).')} data-testid="workspace-switcher"
             className={`mx-3 mb-3 flex items-center gap-2 rounded-control border px-3 py-2 text-left transition-colors ${family ? 'border-fam-border hover:bg-fam-tile' : 'border-border-light hover:bg-surface-subtle'}`}>
@@ -99,12 +98,13 @@ export function AppShell({ workspace, active, title, children }: { workspace: Wo
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className={`sticky top-0 z-20 flex h-16 items-center gap-3 border-b px-4 md:px-8 ${surface}`} data-testid="top-bar">
-          <span className="md:hidden"><Logo collapsed dark={dark} /></span>
+          <span className="md:hidden"><Logo collapsed family={family} /></span>
           <p className="min-w-0 flex-1 truncate text-[15px] font-semibold md:hidden">{title}</p>
           <p className={`hidden min-w-0 flex-1 truncate text-[14px] md:block ${muted}`}>{ws.context} · {ws.role}</p>
           {family && (
             <button type="button" onClick={toggleTheme} className={iconBtn} aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'} aria-pressed={dark} data-testid="theme-toggle">
-              {dark ? <Sun size={19} aria-hidden="true" /> : <Moon size={19} aria-hidden="true" />}
+              <Sun size={19} aria-hidden="true" className="hidden [html[data-family-theme=dark]_&]:block" />
+              <Moon size={19} aria-hidden="true" className="[html[data-family-theme=dark]_&]:hidden" />
             </button>
           )}
           <div className="relative">

@@ -126,7 +126,7 @@ export function Meter({ label, value, max, hint, state = 'ok', testId }: { label
   );
 }
 
-export function Metric({ label, value, sub, icon: Icon, accent = 'action', testId }: { label: string; value: string | number; sub: string; icon: LucideIcon; accent?: 'action' | 'caution' | 'danger' | 'success'; testId?: string }) {
+export function Metric({ label, value, sub, icon: Icon, accent = 'action', loading = false, testId }: { label: string; value: string | number; sub: string; icon: LucideIcon; accent?: 'action' | 'caution' | 'danger' | 'success'; loading?: boolean; testId?: string }) {
   const ic = { action: 'bg-brand-actionTint text-brand-action', caution: 'bg-status-cautionSurface text-status-caution', danger: 'bg-status-dangerSurface text-status-danger', success: 'bg-status-successSurface text-status-success' }[accent];
   return (
     <Card className="p-4 transition-[border-color,box-shadow] duration-200 hover:border-border-strong hover:shadow-[0_6px_20px_-12px_rgba(20,33,61,0.25)] md:p-5" testId={testId}>
@@ -136,8 +136,17 @@ export function Metric({ label, value, sub, icon: Icon, accent = 'action', testI
           <Icon size={17} strokeWidth={1.9} aria-hidden="true" />
         </span>
       </div>
-      <p className="tnum mt-2 font-display text-[30px] font-semibold leading-none tracking-tight md:text-[34px]">{value}</p>
-      <p className="mt-2 text-[12px] text-brand-inkMuted">{sub}</p>
+      {loading ? (
+        <div aria-busy="true" aria-label={`Loading ${label}`} data-testid={testId ? `${testId}-loading` : undefined}>
+          <span className="mt-2 block h-[34px] w-14 animate-pulse rounded-control bg-surface-subtle" />
+          <span className="mt-2 block h-3 w-3/4 animate-pulse rounded bg-surface-subtle" />
+        </div>
+      ) : (
+        <>
+          <p className="tnum mt-2 text-[30px] font-semibold leading-none tracking-tight md:text-[34px]" data-testid={testId ? `${testId}-value` : undefined}>{value}</p>
+          <p className="mt-2 text-[12px] text-brand-inkMuted">{sub}</p>
+        </>
+      )}
     </Card>
   );
 }
