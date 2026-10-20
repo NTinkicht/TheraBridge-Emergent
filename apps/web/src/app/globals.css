@@ -6,6 +6,20 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+:root {
+  --font-display: 'IBM Plex Sans';
+}
+
+/* Typeface comparison (design preview): Plus Jakarta Sans for display headings only. */
+.type-jakarta {
+  --font-display: 'Plus Jakarta Sans';
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
 body {
   background: var(--tb-canvas-clinical);
   color: var(--tb-brand-ink);

@@ -1,0 +1,182 @@
+{
+  "visual_direction": {
+    "name": "Clinical Precision Meets Human Warmth (Humanist Healthcare Minimal)",
+    "rationale": "TheraBridge bridges high-stakes pediatric clinical therapy with compassionate, parent-facing care. The visual system pairs structured, high-density data grids for clinicians/administrators with a tactile, warm, reassuring interface for guardians. It rejects flat, sterile AI templates in favor of crisp borders, layered micro-elevations, multi-tone signature accents, and responsive layout adaptations tailored to role-specific emotional contexts."
+  },
+  "color_palette": {
+    "brand_core": {
+      "deep_navy": "#052464",
+      "primary_blue": "#0F5692",
+      "cyan_teal": "#0DA8B8",
+      "purple_accent": "#7A4AB7",
+      "text_dark": "#14213D",
+      "family_teal": "#0A7385",
+      "clinical_bg": "#F6F7F9",
+      "family_bg": "#FAF8F5"
+    },
+    "signature_band": [
+      "#052464",
+      "#0F5692",
+      "#0DA8B8",
+      "#7A4AB7"
+    ],
+    "blueprint_extended_tokens": {
+      "inkMuted": "#4B566B",
+      "actionHover": "#0B4577",
+      "actionTint": "#E8F0F8",
+      "familyTint": "#E3F3F5",
+      "surfaceSubtle": "#F3F6F9",
+      "borderLight": "#E4EAF3",
+      "borderStrong": "#AABDD1",
+      "success": "#146A50",
+      "caution": "#945900",
+      "danger": "#AA343F",
+      "cautionSurface": "#FFF3DC",
+      "dangerSurface": "#FDECEA",
+      "parentBodyStrong": "#1A3354",
+      "parentMuted": "#5C6E8A",
+      "parentTile": "#EDF2FA",
+      "parentInstructionTile": "#F0F5FB",
+      "parentLink": "#1F668A"
+    },
+    "family_dark_palette": {
+      "canvas": "#0D1226",
+      "surface": "#151B33",
+      "raised": "#1C2342",
+      "border": "#2A3256",
+      "ink": "#E9ECF5",
+      "inkMuted": "#AAB3CB",
+      "action": "#7DB3E8",
+      "family": "#5CCFDB",
+      "familySurface": "#13394A",
+      "parentTile": "#263346",
+      "parentInstructionTile": "#243241"
+    }
+  },
+  "typography": {
+    "primary_font": "IBM Plex Sans, -apple-system, BlinkMacSystemFont, sans-serif",
+    "tabular_nums": "font-mono tabular-nums",
+    "alternative_typeface_proposal": {
+      "name": "Plus Jakarta Sans or Outfit for Hero & Section Headings",
+      "reasoning": "While IBM Plex Sans offers technical authority and optimal tabular legibility for clinical metrics, pairing it with Plus Jakarta Sans for top-level headers introduces warm, friendly geometric curves that soften the clinical environment for parents and pediatric therapists."
+    },
+    "type_scale": {
+      "h1_hero": "text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight",
+      "h2_section": "text-xl sm:text-2xl lg:text-3xl font-semibold tracking-tight leading-snug",
+      "h3_subsection": "text-lg sm:text-xl font-medium text-slate-900 leading-snug",
+      "h4_card": "text-base sm:text-lg font-semibold text-slate-900",
+      "body_lg": "text-base font-normal leading-relaxed text-slate-700",
+      "body_md": "text-sm font-normal leading-normal text-slate-600",
+      "caption": "text-xs font-medium tracking-wide text-slate-500 uppercase",
+      "data_metric": "font-mono font-bold tracking-tight tabular-nums text-slate-900"
+    }
+  },
+  "layout_and_shell": {
+    "logo_rules": {
+      "light_surface": "Display raw transparent PNG (infinity/puzzle icon + 'TheraBridge' wordmark) directly on light backgrounds (#FFFFFF, #F6F7F9, #FAF8F5).",
+      "dark_surface": "CRITICAL: Raster logo washes out on dark surfaces. ALWAYS wrap logo inside a crisp rounded chip (e.g. `bg-white/95 px-3 py-1.5 rounded-lg shadow-sm border border-slate-200/50`)."
+    },
+    "signature_band_usage": "3px horizontal strip (`h-[3px] w-full bg-gradient-to-r from-[#052464] via-[#0F5692] via-[#0DA8B8] to-[#7A4AB7]`) applied at the top edge of headers, cards, or hero banners."
+  },
+  "breakpoints_and_responsive": {
+    "320px_390px": "Mobile Portrait: Hidden sidebar. Top bar with brand logo chip, role switcher pill, and notifications. Fixed bottom nav bar with 4 primary action icons + 'More' menu button. Data tables collapse into stacked cards. Horizontal day chips stack vertically.",
+    "768px": "Tablet: Collapsed left sidebar (icon-only, 64px wide). Drawer menu for sub-navigation. 2-column bento grids for cards and charts.",
+    "1024px_1440px": "Desktop: Collapsible full desktop sidebar (~254px width). Dynamic breadcrumb header. Selected nav item displays tinted background (`#E8F0F8` for clinicians/admins, `#E3F3F5` for family), 3-4px left indicator bar, and role-colored icon (`#0F5692` for clinicians, `#0A7385` for family)."
+  },
+  "component_inventory": {
+    "cards": "Subtle 1px border (`border-[#E4EAF3]`), rounded-xl (`rounded-xl`), smooth hover transition (`hover:border-[#AABDD1] hover:shadow-md transition-all duration-200`).",
+    "buttons": {
+      "primary": "bg-[#0F5692] text-white hover:bg-[#0B4577] active:scale-[0.98] transition-all font-medium rounded-lg px-4 py-2 flex items-center gap-2 shadow-sm",
+      "family_primary": "bg-[#0A7385] text-white hover:bg-[#075360] active:scale-[0.98] transition-all font-medium rounded-lg px-4 py-2 flex items-center gap-2 shadow-sm",
+      "secondary": "bg-white text-[#14213D] border border-[#E4EAF3] hover:bg-[#F3F6F9] hover:border-[#AABDD1] font-medium rounded-lg px-4 py-2",
+      "disabled": "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-70 relative group"
+    },
+    "badges": {
+      "speech_specialty": "bg-blue-50 text-[#0F5692] border border-blue-200 text-xs px-2.5 py-0.5 rounded-full font-medium",
+      "ot_specialty": "bg-teal-50 text-[#0A7385] border border-teal-200 text-xs px-2.5 py-0.5 rounded-full font-medium",
+      "trial_status": "bg-amber-50 text-[#945900] border border-amber-200 text-xs px-2.5 py-0.5 rounded-full font-medium",
+      "active_status": "bg-emerald-50 text-[#146A50] border border-emerald-200 text-xs px-2.5 py-0.5 rounded-full font-medium",
+      "purple_accent_tag": "bg-purple-50 text-[#7A4AB7] border border-purple-200 text-xs px-2.5 py-0.5 rounded-full font-medium (Brand accent ONLY, never selection state)"
+    },
+    "disabled_states": "Unbuilt or restricted clinical actions (e.g., signing notes, releasing records without approval) display a lock icon, muted opacity, and a hover tooltip explaining the regulatory or system reason."
+  },
+  "screen_layouts": {
+    "screen_1_platform_admin": {
+      "title": "Platform Admin Dashboard",
+      "purpose": "System-wide monitoring of centers, trial health, pending applications, and operational audit log with zero access to protected clinical data.",
+      "components": [
+        "Header with system health indicator & quick filter",
+        "KPI Metric Grid: Total Active Centers, Pending Applications, Active 30-Day Trials, Critical Alerts",
+        "Pending Center Applications Queue with quick approve/review modal triggers",
+        "Trial Centers Usage Monitor (Days remaining, child count, therapist limit meters)",
+        "Platform Event & Audit Timeline with severity filter pills"
+      ]
+    },
+    "screen_2_center_admin": {
+      "title": "Center Administrator Dashboard",
+      "purpose": "Operational management of pediatric therapy center, staff onboarding, trial quota enforcement, and session schedules.",
+      "components": [
+        "Trial Quota Consumption Meter Card (1 Child, 3 Therapists, 30-Day Limit)",
+        "Operational Snapshot Metrics (Sessions Completed Today, Staff Invitations Pending, Compliance Score)",
+        "Onboarding & Setup Checklist Widget with interactive completion steps",
+        "Staff & Therapist Invitation Table with specialty tags and status badges",
+        "Upcoming Session Feed for the Center"
+      ]
+    },
+    "screen_3_therapist_daily": {
+      "title": "Therapist Daily Workspace",
+      "purpose": "High-efficiency agenda for clinicians to manage daily appointments across multiple specialties.",
+      "components": [
+        "Dynamic Context Line: 'Monday, 19 October · Speech & OT Therapy Workspace'",
+        "Specialty Switcher Pill Toggle: 'Speech Therapy', 'Occupational Therapy', or 'All Specialties'",
+        "Interactive Day Calendar & Time-Slot Agenda",
+        "Appointment Cards with specialty tags, child avatar, goal focus, and session status",
+        "Clinical Task & Action Items Side Panel"
+      ]
+    },
+    "screen_4_child_profile": {
+      "title": "Child Profile & Clinical Workspace",
+      "purpose": "Comprehensive 360-degree pediatric workspace with strict permission gates.",
+      "components": [
+        "Child Context Header: Name, Age, Primary Diagnosis, Care Team Avatars, Guardian Quick-Link",
+        "Sticky Context Tab Bar: Overview, Providers, Goals, Sessions, Progress, Reports, Plans, Evidence, Guardians, Access",
+        "Active Goals & Progress Milestones Tracker",
+        "Recent Clinical Session Notes & Evidence Gallery",
+        "Guardian Access & Consent Management Card",
+        "Disabled Note Signing & Records Release Controls with inline regulatory explanation tooltip"
+      ]
+    },
+    "screen_5_parent_home": {
+      "title": "Parent Home (Dual Light & Dark Theme Support)",
+      "purpose": "Reassuring, mobile-first guardian experience tailored for daily therapy tracking and therapist communication.",
+      "themes": {
+        "light_theme": "Warm & Inviting (#FAF8F5 background, #0A7385 teal highlights, soft sand tiles)",
+        "dark_theme": "Cozy Night Mode (#0D1226 canvas, #151B33 surface, #5CCFDB family accents)"
+      },
+      "components": [
+        "Warm Personal Greeting & Selected Child Switcher Pill",
+        "Next Scheduled Appointment Spotlight Card with location & therapist details",
+        "This Week's Plan: Desktop horizontal spacious day chips / Mobile stacked activity cards",
+        "Released Progress & Daily Home Practice CTA",
+        "Therapist Messaging & Request Status Feed"
+      ]
+    }
+  },
+  "image_urls": {
+    "therapy_sessions": [
+      "https://images.unsplash.com/photo-1708687045030-26702e62fc65?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "https://images.unsplash.com/photo-1587323655395-b1c77a12c89a?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "https://images.pexels.com/photos/30483031/pexels-photo-30483031.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    ],
+    "therapist_avatars": [
+      "https://images.unsplash.com/photo-1622253694238-3b22139576c6?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "https://images.unsplash.com/photo-1749700332258-775b1b6b9cd5?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "https://images.pexels.com/photos/4989135/pexels-photo-4989135.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    ]
+  },
+  "general_ui_ux_guidelines": {
+    "data_testid_rule": "ALL interactive components, buttons, inputs, tabs, modal triggers, and status indicators MUST include explicit `data-testid` attributes formatted in kebab-case (e.g. `data-testid=\"specialty-switcher-speech\"`).",
+    "accessibility": "Maintain minimum 4.5:1 text contrast. Interactive elements require minimum 44x44px touch targets on mobile.",
+    "state_coverage": "Every screen must handle 6 essential UI states: Loading, Empty, Error, Success, Disabled (with hover reason), and Confirmation Modal."
+  }
+}

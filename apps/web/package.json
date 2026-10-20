@@ -11,6 +11,7 @@
   "dependencies": {
     "@fontsource/ibm-plex-sans": "^5.1.0",
     "@fontsource/ibm-plex-serif": "^5.1.0",
+    "@fontsource/plus-jakarta-sans": "^5.1.0",
     "lucide-react": "^0.460.0",
     "next": "^14.2.30",
     "react": "^18.3.1",
