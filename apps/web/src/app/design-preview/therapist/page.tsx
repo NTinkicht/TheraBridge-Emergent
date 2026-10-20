@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { CalendarX2, ClipboardCheck, Clock, FileClock, Inbox, LayoutList, Lock, MapPin, Rows3 } from 'lucide-react';
 import { AppShell } from '@/components/design/AppShell';
 import { ScrollStrip } from '@/components/design/ScrollStrip';
+import { useNow } from '@/components/design/useNow';
 import { PageHeader } from '@/components/design/PageHeader';
 import { EmptyState, StateGate } from '@/components/design/states';
 import { Avatar, Card, CardHeader, LockedAction, Pill, SpecialtyTag, btn } from '@/components/design/ui';
@@ -39,6 +40,7 @@ function ApptCard({ a, selected, onSelect, compact = false }: { a: AppointmentFx
 }
 
 export default function TherapistPreview() {
+  const now = useNow();
   const [filter, setFilter] = useState<Filter>('speech');
   const [view, setView] = useState<'timeline' | 'list'>('timeline');
   const [selectedId, setSelectedId] = useState('a3');
@@ -48,8 +50,8 @@ export default function TherapistPreview() {
 
   return (
     <AppShell workspace="therapist" active="dashboard" title="Dashboard">
-      <PageHeader crumbs={[{ label: 'Harbor Child Development Center' }, { label: 'Dashboard' }]} title={`${greeting(new Date())}, Leila`}
-        context={`${longDate(new Date())} · ${FILTER_LABEL[filter]} workspace`}
+      <PageHeader crumbs={[{ label: 'Harbor Child Development Center' }, { label: 'Dashboard' }]} title={now ? `${greeting(now)}, Leila` : 'Hello, Leila'}
+        context={`${now ? `${longDate(now)} · ` : ''}${FILTER_LABEL[filter]} workspace`}
         actions={<div className="flex flex-wrap gap-2"><Pill tone="info" icon={Clock} testId="badge-today">{count(filter)} appointments today</Pill><Pill tone="caution" icon={FileClock} testId="badge-reviews">2 pending reviews</Pill></div>} />
 
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

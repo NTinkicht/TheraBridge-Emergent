@@ -5,6 +5,7 @@ import { CalendarClock, Check, Circle, Lock, MailPlus, RotateCw, Timer, Users } 
 import { AppShell } from '@/components/design/AppShell';
 import { PageHeader } from '@/components/design/PageHeader';
 import { usePreview } from '@/components/design/PreviewContext';
+import { useNow } from '@/components/design/useNow';
 import { Dialog, EmptyState, StateGate } from '@/components/design/states';
 import { Avatar, Button, Card, CardHeader, LockedAction, Meter, Pill, SpecialtyTag } from '@/components/design/ui';
 import { centerSessions, daysFromNow, greeting, shortDate, staff } from '@/lib/design/fixtures';
@@ -24,6 +25,7 @@ const STATUS = {
 
 export default function CenterPreview() {
   const { notify } = usePreview();
+  const now = useNow();
   const [revoke, setRevoke] = useState<string | null>(null);
   const done = STEPS.filter((s) => s.done).length;
 
@@ -32,13 +34,13 @@ export default function CenterPreview() {
       <div className="tb-rise mb-6 flex flex-col gap-3 rounded-card border border-[#F2DDB4] bg-status-cautionSurface px-4 py-4 md:flex-row md:items-center md:px-5" data-testid="trial-banner">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/70 text-status-caution"><Timer size={20} aria-hidden="true" /></span>
         <div className="flex-1">
-          <p className="text-[15px] font-semibold text-[#6B4100]">Your trial ends in 3 days, on {shortDate(daysFromNow(3))}</p>
+          <p className="text-[15px] font-semibold text-[#6B4100]">Your trial ends in 3 days{now ? `, on ${shortDate(daysFromNow(3))}` : ''}</p>
           <p className="text-[13px] text-[#7A4D06]">When it ends the center becomes read-only. Nothing is deleted.</p>
         </div>
         <LockedAction id="convert-locked" label="Convert to a plan" reason="Billing isn’t configured in V1. Contact the platform team." size="sm" align="end" />
       </div>
 
-      <PageHeader crumbs={[{ label: 'Cedar Grove Kids Clinic' }, { label: 'Overview' }]} title={`${greeting(new Date())}, Maya`}
+      <PageHeader crumbs={[{ label: 'Cedar Grove Kids Clinic' }, { label: 'Overview' }]} title={now ? `${greeting(now)}, Maya` : 'Hello, Maya'}
         context="Cedar Grove Kids Clinic · Trial plan · Europe/London"
         actions={<LockedAction id="invite-therapist-locked" label="Invite therapist" reason="Trial limit reached: 3 of 3 seats, including pending invitations." align="end" />} />
 

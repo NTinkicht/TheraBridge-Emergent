@@ -5,6 +5,7 @@ import { AlertTriangle, Building2, CircleCheck, CircleX, Clock, Gauge, Inbox, Ke
 import { AppShell } from '@/components/design/AppShell';
 import { PageHeader } from '@/components/design/PageHeader';
 import { usePreview, type DataState } from '@/components/design/PreviewContext';
+import { useNow } from '@/components/design/useNow';
 import { Dialog, EmptyState, StateGate } from '@/components/design/states';
 import { Avatar, Button, Card, CardHeader, LockedAction, Meter, Metric, Pill, SpecialtyTag } from '@/components/design/ui';
 import { ago, applications, centers, events, longDate, type ApplicationFx, type EventType } from '@/lib/design/fixtures';
@@ -50,6 +51,7 @@ function platformMetrics(state: DataState) {
 
 export default function PlatformPreview() {
   const { dataState } = usePreview();
+  const now = useNow();
   const [tab, setTab] = useState<'pending' | 'decided'>('pending');
   const [filter, setFilter] = useState<'all' | EventType>('all');
   const [review, setReview] = useState<ApplicationFx | null>(null);
@@ -59,7 +61,7 @@ export default function PlatformPreview() {
   return (
     <AppShell workspace="platform" active="overview" title="Overview">
       <PageHeader crumbs={[{ label: 'Platform' }, { label: 'Overview' }]} title="Platform overview"
-        context={`${longDate(new Date())} · operational metadata only`}
+        context={`${now ? `${longDate(now)} · ` : ''}operational metadata only`}
         actions={<LockedAction id="create-center-locked" label="Create center" reason="Direct provisioning ships in TB-EM-003." align="end" />} />
 
       <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4" data-testid="platform-metrics" data-state={dataState}>
