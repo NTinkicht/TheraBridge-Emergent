@@ -1,5 +1,14 @@
 # NEXT_WORK
 
+## TB-EM-000 verification (owner-side GitHub review, 2026-10-20)
+
+- Export present: `phase-1-center-foundation` at `fa9f7f4cdb570f04a4c0756abdfc14e7271841a2`.
+- GitHub Actions run `39448713740` checked out this exact SHA: `test` PASS (16/16) and `compose` PASS (Docker build, healthy containers and smoke checks).
+- `main` remains unchanged at `b951f1c6d04ed465f1c990a997b5dbcbe51dfe0c`.
+- Original export has **unrelated Git history**; the allowlist integration PR into `main` is a separate uncompleted step.
+- The optional manual cold-clone/takeover demonstration (including making an external code change) is not yet executed.
+- **Next work unit TB-EM-001 remains unauthorized** until explicit owner approval. Clinical/production NO-GO.
+
 ## Immediate (owner): re-export the TB-EM-000 corrections
 
 1. In Emergent: Save to GitHub → `NTinkicht/TheraBridge-Emergent` → choose the **existing** branch `phase-1-center-foundation`. The local history is `b86028e` plus new commits, so this is a fast-forward and needs no force.
