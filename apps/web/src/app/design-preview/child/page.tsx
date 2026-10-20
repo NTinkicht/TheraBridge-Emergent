@@ -18,8 +18,8 @@ function GoalList() {
       {goals.map((g) => (
         <li key={g.id} className="flex flex-col gap-2 rounded-control border border-border-light p-4 sm:flex-row sm:items-center" data-testid={`goal-${g.id}`}>
           <Target size={18} className="shrink-0 text-brand-action" aria-hidden="true" />
-          <div className="min-w-0 flex-1"><p className="text-[15px] font-semibold">{g.title}</p><p className="text-[13px] text-brand-inkMuted"><span className="tnum">{g.observations}</span> observations · last {g.last} days ago</p></div>
-          <div className="flex gap-2"><SpecialtyTag s={g.specialty} /><Pill tone={g.observations >= 3 ? 'info' : 'neutral'}>{g.status}</Pill></div>
+          <div className="min-w-[9rem] flex-1"><p className="text-[15px] font-semibold">{g.title}</p><p className="text-[13px] text-brand-inkMuted"><span className="tnum">{g.observations}</span> observations · last {g.last} days ago</p></div>
+          <div className="flex flex-wrap gap-2"><SpecialtyTag s={g.specialty} /><Pill tone={g.observations >= 3 ? 'info' : 'neutral'}>{g.status}</Pill></div>
         </li>
       ))}
     </ul>
@@ -74,8 +74,8 @@ function TabBody({ tab }: { tab: Tab }) {
     case 'Providers':
       return (
         <ul className="space-y-3">
-          <li className="flex flex-wrap items-center gap-3 rounded-control border border-border-light p-4"><Avatar name="Leila Hassan" /><div className="min-w-0 flex-1"><p className="font-semibold">Leila Hassan</p><p className="text-[13px] text-brand-inkMuted">Assigned therapist</p></div><SpecialtyTag s="speech" /><SpecialtyTag s="ot" /></li>
-          <li className="flex flex-wrap items-center gap-3 rounded-control border border-border-light p-4"><Avatar name="Jonas Weber" /><div className="min-w-0 flex-1"><p className="font-semibold">Jonas Weber</p><p className="text-[13px] text-brand-inkMuted">Coordinator · scheduling only, no clinical access</p></div></li>
+          <li className="flex flex-wrap items-center gap-3 rounded-control border border-border-light p-4"><Avatar name="Leila Hassan" /><div className="min-w-[9rem] flex-1"><p className="font-semibold">Leila Hassan</p><p className="text-[13px] text-brand-inkMuted">Assigned therapist</p></div><SpecialtyTag s="speech" /><SpecialtyTag s="ot" /></li>
+          <li className="flex flex-wrap items-center gap-3 rounded-control border border-border-light p-4"><Avatar name="Jonas Weber" /><div className="min-w-[9rem] flex-1"><p className="font-semibold">Jonas Weber</p><p className="text-[13px] text-brand-inkMuted">Coordinator · scheduling only, no clinical access</p></div></li>
         </ul>
       );
     case 'Goals':
@@ -98,8 +98,8 @@ function TabBody({ tab }: { tab: Tab }) {
     case 'Guardians':
       return (
         <ul className="space-y-3">
-          <li className="flex flex-wrap items-center gap-3 rounded-control border border-border-light p-4"><Avatar name="Sara Morgan" /><div className="min-w-0 flex-1"><p className="font-semibold">Sara Morgan</p><p className="text-[13px] text-brand-inkMuted">Guardian · appointments and released plans</p></div><Pill tone="success" icon={ShieldCheck}>Active grant</Pill></li>
-          <li className="flex flex-wrap items-center gap-3 rounded-control border border-border-light p-4"><Avatar name="Jordan Morgan" /><div className="min-w-0 flex-1"><p className="font-semibold">Jordan Morgan</p><p className="text-[13px] text-brand-inkMuted">Listed guardian · not invited</p></div><Pill icon={UserX}>No access</Pill></li>
+          <li className="flex flex-wrap items-center gap-3 rounded-control border border-border-light p-4"><Avatar name="Sara Morgan" /><div className="min-w-[9rem] flex-1"><p className="font-semibold">Sara Morgan</p><p className="text-[13px] text-brand-inkMuted">Guardian · appointments and released plans</p></div><Pill tone="success" icon={ShieldCheck}>Active grant</Pill></li>
+          <li className="flex flex-wrap items-center gap-3 rounded-control border border-border-light p-4"><Avatar name="Jordan Morgan" /><div className="min-w-[9rem] flex-1"><p className="font-semibold">Jordan Morgan</p><p className="text-[13px] text-brand-inkMuted">Listed guardian · not invited</p></div><Pill icon={UserX}>No access</Pill></li>
         </ul>
       );
     case 'Access':
@@ -134,7 +134,7 @@ export default function ChildPreview() {
       <Card className="tb-rise overflow-hidden" testId="child-context-header">
         <div className="flex flex-col gap-5 p-5 md:flex-row md:items-center md:p-6">
           <Avatar name="Alex Morgan" size={64} />
-          <div className="min-w-0 flex-1">
+          <div className="min-w-[9rem] flex-1">
             <div className="flex flex-wrap items-center gap-2"><h1 className="font-display text-[25px] font-semibold md:text-[31px]" data-testid="page-title">Alex Morgan</h1><Pill tone="brand" testId="fictional-record">Fictional record</Pill></div>
             <p className="mt-1 text-[14px] text-brand-inkMuted">6 years · Harbor Child Development Center · Guardian: Sara Morgan</p>
             <div className="mt-3 flex flex-wrap gap-2"><SpecialtyTag s="speech" long /><SpecialtyTag s="ot" long /></div>
@@ -150,7 +150,7 @@ export default function ChildPreview() {
         <ScrollStrip role="tablist" ariaLabel="Child workspace" className="border-t border-border-light" innerClassName="gap-1 px-3 md:px-5" testId="child-tabs">
           {TABS.map((t, i) => (
             <button key={t} ref={(el) => { refs.current[i] = el; }} role="tab" aria-selected={tab === t} tabIndex={tab === t ? 0 : -1} onKeyDown={(e) => onKey(e, i)} onClick={() => setTab(t)} data-testid={`child-tab-${t.toLowerCase()}`}
-              className={`relative min-h-[48px] whitespace-nowrap px-3 text-[14px] font-medium transition-colors ${tab === t ? 'text-brand-action' : 'text-brand-inkMuted hover:text-brand-ink'}`}>
+              className={`relative min-h-[48px] whitespace-nowrap px-3 text-[14px] font-medium transition-colors focus-visible:outline-offset-[-3px] ${tab === t ? 'text-brand-action' : 'text-brand-inkMuted hover:text-brand-ink'}`}>
               {t}
               {tab === t && <span className="absolute inset-x-2 bottom-0 h-[3px] rounded-t-full bg-brand-action" aria-hidden="true" />}
             </button>

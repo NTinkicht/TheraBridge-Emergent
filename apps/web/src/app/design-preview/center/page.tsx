@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/design/PageHeader';
 import { usePreview } from '@/components/design/PreviewContext';
 import { Dialog, EmptyState, StateGate } from '@/components/design/states';
 import { Avatar, Button, Card, CardHeader, LockedAction, Meter, Pill, SpecialtyTag } from '@/components/design/ui';
-import { centerSessions, daysFromNow, shortDate, staff } from '@/lib/design/fixtures';
+import { centerSessions, daysFromNow, greeting, shortDate, staff } from '@/lib/design/fixtures';
 
 const STEPS: { label: string; done: boolean; locked?: string }[] = [
   { label: 'Confirm center profile', done: true },
@@ -38,7 +38,7 @@ export default function CenterPreview() {
         <LockedAction id="convert-locked" label="Convert to a plan" reason="Billing isn’t configured in V1. Contact the platform team." size="sm" align="end" />
       </div>
 
-      <PageHeader crumbs={[{ label: 'Cedar Grove Kids Clinic' }, { label: 'Overview' }]} title="Good morning, Maya"
+      <PageHeader crumbs={[{ label: 'Cedar Grove Kids Clinic' }, { label: 'Overview' }]} title={`${greeting(new Date())}, Maya`}
         context="Cedar Grove Kids Clinic · Trial plan · Europe/London"
         actions={<LockedAction id="invite-therapist-locked" label="Invite therapist" reason="Trial limit reached: 3 of 3 seats, including pending invitations." align="end" />} />
 

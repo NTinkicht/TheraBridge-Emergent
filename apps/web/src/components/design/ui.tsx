@@ -57,7 +57,7 @@ const PILLS = {
 };
 export function Pill({ tone = 'neutral', icon: Icon, children, testId }: { tone?: keyof typeof PILLS; icon?: LucideIcon; children: ReactNode; testId?: string }) {
   return (
-    <span data-testid={testId} className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${PILLS[tone]}`}>
+    <span data-testid={testId} className={`inline-flex max-w-full items-center gap-1 whitespace-normal rounded-full px-2.5 py-0.5 text-[12px] font-semibold sm:whitespace-nowrap ${PILLS[tone]}`}>
       {Icon && <Icon size={13} strokeWidth={2.25} aria-hidden="true" />}
       {children}
     </span>

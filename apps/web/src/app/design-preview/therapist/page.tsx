@@ -8,7 +8,7 @@ import { ScrollStrip } from '@/components/design/ScrollStrip';
 import { PageHeader } from '@/components/design/PageHeader';
 import { EmptyState, StateGate } from '@/components/design/states';
 import { Avatar, Card, CardHeader, LockedAction, Pill, SpecialtyTag, btn } from '@/components/design/ui';
-import { appointments, longDate, type AppointmentFx } from '@/lib/design/fixtures';
+import { appointments, greeting, longDate, type AppointmentFx } from '@/lib/design/fixtures';
 
 type Filter = 'speech' | 'ot' | 'all';
 const FILTER_LABEL: Record<Filter, string> = { speech: 'Speech therapy', ot: 'Occupational therapy', all: 'All specialties' };
@@ -48,7 +48,7 @@ export default function TherapistPreview() {
 
   return (
     <AppShell workspace="therapist" active="dashboard" title="Dashboard">
-      <PageHeader crumbs={[{ label: 'Harbor Child Development Center' }, { label: 'Dashboard' }]} title="Good morning, Leila"
+      <PageHeader crumbs={[{ label: 'Harbor Child Development Center' }, { label: 'Dashboard' }]} title={`${greeting(new Date())}, Leila`}
         context={`${longDate(new Date())} · ${FILTER_LABEL[filter]} workspace`}
         actions={<div className="flex flex-wrap gap-2"><Pill tone="info" icon={Clock} testId="badge-today">{count(filter)} appointments today</Pill><Pill tone="caution" icon={FileClock} testId="badge-reviews">2 pending reviews</Pill></div>} />
 

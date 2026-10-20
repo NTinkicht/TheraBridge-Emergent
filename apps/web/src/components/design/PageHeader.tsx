@@ -15,7 +15,7 @@ export function PageHeader({ crumbs, title, context, actions, tone = 'clinical' 
             </span>
           ))}
         </nav>
-        <h1 className={`font-display text-[25px] font-semibold leading-tight tracking-[-0.01em] md:text-[31px] ${tone === 'family' ? 'text-fam-ink' : ''}`} data-testid="page-title">{title}</h1>
+        <h1 className={`font-display text-[25px] font-semibold leading-tight tracking-[-0.01em] md:text-[31px] ${tone === 'family' ? 'text-fam-ink' : ''}`} data-testid="page-title" suppressHydrationWarning>{title}</h1>
         {context && <p className={`mt-1.5 text-[15px] ${muted}`} data-testid="page-context" suppressHydrationWarning>{context}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-start gap-3">{actions}</div>}

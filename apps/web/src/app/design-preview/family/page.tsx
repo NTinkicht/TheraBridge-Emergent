@@ -6,7 +6,7 @@ import { AppShell } from '@/components/design/AppShell';
 import { usePreview } from '@/components/design/PreviewContext';
 import { Dialog, EmptyState, SkeletonRows, StateGate } from '@/components/design/states';
 import { Avatar, Button, Card, CardHeader, LockedAction, Pill } from '@/components/design/ui';
-import { activitySteps, longDate, pastOutcomes, shortDate, weekPlan, weekdayShort } from '@/lib/design/fixtures';
+import { activitySteps, greeting, longDate, pastOutcomes, shortDate, weekPlan, weekdayShort } from '@/lib/design/fixtures';
 
 type Scenario = 'illustration' | 'today';
 const OUTCOME = {
@@ -62,7 +62,7 @@ export default function FamilyPreview() {
       <div className="tb-rise mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-[14px] text-fam-muted" suppressHydrationWarning>{longDate(new Date())}</p>
-          <h1 className="mt-1 font-display text-[28px] font-semibold leading-tight text-fam-ink md:text-[34px]" data-testid="page-title">Good morning, Sara</h1>
+          <h1 className="mt-1 font-display text-[28px] font-semibold leading-tight text-fam-ink md:text-[34px]" data-testid="page-title">{greeting(now)}, Sara</h1>
           <p className="mt-2 inline-flex items-center gap-2 rounded-full border border-fam-border bg-fam-surface py-1 pl-1 pr-3 text-[14px] font-medium" data-testid="child-context">
             <Avatar name="Alex Morgan" size={28} /> Alex · Harbor Child Development Center
           </p>
