@@ -21,6 +21,18 @@
 
 **Mocked/disabled:** nothing mocked. No auth, no tenants, no mailbox endpoint (TB-EM-001, PLANNED).
 
+## Design direction milestone TB-EM-D01 (2026-10-20), PROPOSED and awaiting owner approval
+
+**Objective:** propose a visual direction and show it on 5 representative screens before any broad UI work.
+**Changes:**
+- Routes `/design-preview` (direction, tokens, type, components, states) plus `platform`, `center`, `therapist`, `child` and `family` (light and dark).
+- Shared kit in `apps/web/src/components/design/`.
+- Fixtures in `apps/web/src/lib/design/`.
+- Token additions in `apps/web/src/styles/tokens.ts`: info and success surfaces, specialty tags, and family light/dark semantic slots with dark success/caution colors.
+- Plus Jakarta Sans (headings) offered as an alternative font.
+**Not changed:** API, database, auth, and the feasibility page at `/`. The preview pages make no API calls.
+**Evidence:** TEST_RESULTS D1–D4. Full rationale in `docs/emergent/design/DESIGN_DIRECTION.md`.
+
 ## TB-EM-000 correction round 1 (2026-10-20)
 
 **Trigger:** owner review of export `b86028e` on `phase-1-center-foundation`. CI run 39445386310 failed, the root `yarn.lock` and all `.env.example` files were missing, and the branch has no common ancestor with `main`.

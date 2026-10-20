@@ -101,9 +101,27 @@ export const weekPlan: ({ title: string; minutes: number } | null)[] = [
   null,
 ];
 export const pastOutcomes = ['done', 'done', 'needs-help', 'skipped', 'done'] as const;
-export const activitySteps = [
-  'Sit together somewhere calm and hold a bubble wand between you.',
-  'Take a slow breath in together, then blow gently to make bubbles.',
-  'Ask Alex to "pop three bubbles, then clap", a two-step direction.',
-  'Take turns giving the directions. Stop whenever Alex wants a break.',
-];
+export const activitySteps: Record<string, string[]> = {
+  'Bubble breaths': [
+    'Sit together somewhere calm and hold a bubble wand between you.',
+    'Take a slow breath in together, then blow gently to make bubbles.',
+    'Ask Alex to "pop three bubbles, then clap", a two-step direction.',
+    'Take turns giving the directions. Stop whenever Alex wants a break.',
+  ],
+  'Picture talk': [
+    'Choose a picture book with busy pages.',
+    'Point to one picture and ask Alex to tell you what is happening.',
+    'Repeat back what Alex said, adding one more word.',
+    'Swap roles so Alex asks you about a picture.',
+  ],
+  'Sound hunt': [
+    'Pick three toys whose names start with the same sound.',
+    'Hide them around one room together.',
+    'Say each name slowly when Alex finds it, then let Alex say it too.',
+  ],
+  'Story retell': [
+    'Read a short story together.',
+    'Ask Alex what happened first, next and last.',
+    'Use the pictures as clues if Alex gets stuck.',
+  ],
+};

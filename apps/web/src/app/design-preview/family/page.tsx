@@ -10,9 +10,9 @@ import { activitySteps, longDate, pastOutcomes, shortDate, weekPlan, weekdayShor
 
 type Scenario = 'illustration' | 'today';
 const OUTCOME = {
-  done: { label: 'Done', icon: Check, cls: 'text-status-success' },
+  done: { label: 'Done', icon: Check, cls: 'text-fam-success' },
   skipped: { label: 'Skipped', icon: SkipForward, cls: 'text-fam-muted' },
-  'needs-help': { label: 'Needs help', icon: CircleHelp, cls: 'text-status-caution' },
+  'needs-help': { label: 'Needs help', icon: CircleHelp, cls: 'text-fam-caution' },
 };
 
 function useWeek() {
@@ -38,6 +38,7 @@ export default function FamilyPreview() {
   const today = week.find((d) => d.rel === 'today');
   const next = week.find((d) => d.rel !== 'past' && d.activity);
   const released = scenario === 'illustration';
+  const featured = today?.activity ?? next?.activity ?? null;
   const chosen = week[day];
   const nextAppt = new Date();
   nextAppt.setDate(nextAppt.getDate() + (nextAppt.getDay() === 5 ? 3 : nextAppt.getDay() === 6 ? 2 : 1));
@@ -64,12 +65,14 @@ export default function FamilyPreview() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
         <Card tone="family" className="relative overflow-hidden p-6 md:p-7" testId="today-activity-card">
           <StateGate tone="family" testId="today-activity" empty={<EmptyState tone="family" icon={Sparkles} title="Nothing planned yet" body="When your therapist shares a home plan, today’s activity will appear here." />}>
-            {released ? (
+            {released && !featured ? (
+              <EmptyState tone="family" icon={Coffee} title="No more activities this week" body="Enjoy the rest days. Next week’s activities appear on Monday." testId="rest-state" />
+            ) : released && featured ? (
               <>
                 <Pill tone="family" icon={Sparkles}>{today?.activity ? 'Today’s activity' : 'Next activity'}</Pill>
-                <h2 className="mt-4 font-display text-[24px] font-semibold text-fam-ink md:text-[28px]">{(today?.activity ?? next?.activity)?.title ?? 'A restful day'}</h2>
+                <h2 className="mt-4 font-display text-[24px] font-semibold text-fam-ink md:text-[28px]">{featured.title}</h2>
                 <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-fam-strong">
-                  <span className="inline-flex items-center gap-1.5"><Clock size={16} aria-hidden="true" /> <span className="tnum">{(today?.activity ?? next?.activity)?.minutes ?? 0}</span> minutes</span>
+                  <span className="inline-flex items-center gap-1.5"><Clock size={16} aria-hidden="true" /> <span className="tnum">{featured.minutes}</span> minutes</span>
                   <span className="inline-flex items-center gap-1.5"><BookOpen size={16} aria-hidden="true" /> Home plan v2</span>
                 </p>
                 <p className="mt-4 max-w-md text-[15px] text-fam-muted">Ready to try? It’s a calm game you can play together, no special equipment needed.</p>
@@ -148,7 +151,7 @@ export default function FamilyPreview() {
         )}
       </Card>
 
-      <Dialog open={open} onClose={() => setOpen(false)} tone="family" title={(today?.activity ?? next?.activity)?.title ?? 'Activity'} testId="activity-dialog"
+      <Dialog open={open && !!featured} onClose={() => setOpen(false)} tone="family" title={featured?.title ?? ''} testId="activity-dialog"
         footer={<>
           {(['done', 'skipped', 'needs-help'] as const).map((k) => {
             const o = OUTCOME[k];
@@ -156,7 +159,7 @@ export default function FamilyPreview() {
           })}
         </>}>
         <ol className="space-y-3">
-          {activitySteps.map((s, i) => (
+          {(featured ? activitySteps[featured.title] : []).map((s, i) => (
             <li key={i} className="flex gap-3 rounded-[14px] bg-fam-instruction p-3 text-[15px] text-fam-strong"><span className="tnum grid h-7 w-7 shrink-0 place-items-center rounded-full bg-fam-accent text-[13px] font-semibold text-fam-onAccent">{i + 1}</span>{s}</li>
           ))}
         </ol>

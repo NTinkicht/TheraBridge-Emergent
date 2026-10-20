@@ -38,6 +38,7 @@ Updated: 2026-10-20 (UTC)
 | Cold-clone drill | **NOT RUN** |
 | Logo derivatives (light surfaces) | IMPLEMENTED, checked against original (see `docs/emergent/brand/LOGO_DERIVATIVES.md`) |
 | TB-EM-001 to TB-EM-006 | PLANNED (not authorized) |
+| Design direction TB-EM-D01 (`/design-preview`, fixtures only) | IMPLEMENTED, TESTED: PASS (testing agent iteration_2, defects fixed and re-checked). **PROPOSED: awaiting owner approval** |
 
 ## Working URLs (Emergent preview, ephemeral)
 

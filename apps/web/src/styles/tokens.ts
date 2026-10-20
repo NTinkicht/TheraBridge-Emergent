@@ -63,17 +63,17 @@ export const colors = {
 } as const;
 
 // Family themes map official light (2.2) and dark (2.3) values onto one set of semantic slots.
-// border/warm/accentHover (light) and accentHover (dark) are complementary additions.
+// border/warm/accentHover/success/caution are complementary additions (dark success/caution meet 4.5:1 on dark.raised).
 export const familyThemes = {
   light: {
     canvas: '#FAF8F5', surface: '#FFFFFF', raised: '#FFFFFF', border: '#ECE6DC', ink: '#14213D', strong: '#1A3354',
     muted: '#5C6E8A', accent: '#0A7385', accentHover: '#085E6D', accentTint: '#E3F3F5', onAccent: '#FFFFFF',
-    tile: '#EDF2FA', instruction: '#F0F5FB', link: '#1F668A', warm: '#F4EEE4',
+    tile: '#EDF2FA', instruction: '#F0F5FB', link: '#1F668A', warm: '#F4EEE4', success: '#146A50', caution: '#945900',
   },
   dark: {
     canvas: '#0D1226', surface: '#151B33', raised: '#1C2342', border: '#2A3256', ink: '#E9ECF5', strong: '#E9ECF5',
     muted: '#AAB3CB', accent: '#5CCFDB', accentHover: '#86DDE6', accentTint: '#13394A', onAccent: '#0D1226',
-    tile: '#263346', instruction: '#243241', link: '#7DB3E8', warm: '#1C2342',
+    tile: '#263346', instruction: '#243241', link: '#7DB3E8', warm: '#1C2342', success: '#6FD3A8', caution: '#F0B95C',
   },
 } as const;
 

@@ -44,7 +44,7 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
     setTypeface(t);
     localStorage.setItem('tb-preview-typeface', t);
   };
-  const select = 'min-h-[32px] rounded-[8px] border border-white/20 bg-white/10 px-2 text-[12px] text-white';
+  const select = 'min-h-[32px] max-w-[150px] rounded-[8px] border border-white/20 bg-white/10 px-2 text-[12px] text-white';
 
   return (
     <Ctx.Provider value={{ dataState, setDataState, typeface, notify: setNotice }}>
@@ -62,7 +62,7 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
                 </Link>
               ))}
             </nav>
-            <div className="flex items-center gap-3 md:ml-auto">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 md:ml-auto">
               <label className="flex items-center gap-1.5 text-white/80">
                 Data
                 <select className={select} value={dataState} onChange={(e) => setDataState(e.target.value as DataState)} data-testid="preview-data-state">

@@ -61,8 +61,8 @@ export default function TherapistPreview() {
           ))}
         </div>
         <div className="hidden gap-1 md:flex" role="group" aria-label="Agenda layout">
-          <button onClick={() => setView('timeline')} aria-pressed={view === 'timeline'} className={`${btn(view === 'timeline' ? 'secondary' : 'ghost', 'clinical', 'sm')}`} data-testid="view-timeline"><Rows3 size={15} aria-hidden="true" /> Timeline</button>
-          <button onClick={() => setView('list')} aria-pressed={view === 'list'} className={`${btn(view === 'list' ? 'secondary' : 'ghost', 'clinical', 'sm')}`} data-testid="view-list"><LayoutList size={15} aria-hidden="true" /> List</button>
+          <button onClick={() => setView('timeline')} aria-pressed={view === 'timeline'} className={`${btn('ghost', 'clinical', 'sm')} ${view === 'timeline' ? 'bg-brand-actionTint ring-1 ring-brand-action/30' : '!text-brand-inkMuted'}`} data-testid="view-timeline"><Rows3 size={15} aria-hidden="true" /> Timeline</button>
+          <button onClick={() => setView('list')} aria-pressed={view === 'list'} className={`${btn('ghost', 'clinical', 'sm')} ${view === 'list' ? 'bg-brand-actionTint ring-1 ring-brand-action/30' : '!text-brand-inkMuted'}`} data-testid="view-list"><LayoutList size={15} aria-hidden="true" /> List</button>
         </div>
       </div>
 

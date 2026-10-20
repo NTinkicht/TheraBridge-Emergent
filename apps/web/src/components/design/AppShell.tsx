@@ -112,7 +112,7 @@ export function AppShell({ workspace, active, title, children }: { workspace: Wo
               <Bell size={19} aria-hidden="true" />
             </button>
             {menu === 'bell' && (
-              <div className={`tb-rise absolute right-0 top-12 z-30 w-72 rounded-card border p-4 shadow-xl ${surface}`} data-testid="notifications-panel">
+              <div className={`tb-rise fixed inset-x-4 top-[72px] z-30 rounded-card border p-4 shadow-xl md:absolute md:inset-x-auto md:right-0 md:top-12 md:w-72 ${surface}`} data-testid="notifications-panel">
                 <p className="text-[14px] font-semibold">Notifications</p>
                 <p className={`mt-2 text-[13px] ${muted}`}>You’re all caught up. The notification center arrives in Phase 3.</p>
               </div>
@@ -124,7 +124,7 @@ export function AppShell({ workspace, active, title, children }: { workspace: Wo
               <span className="hidden text-[14px] font-medium lg:inline">{ws.user}</span>
             </button>
             {menu === 'account' && (
-              <div className={`tb-rise absolute right-0 top-12 z-30 w-72 rounded-card border p-4 shadow-xl ${surface}`} data-testid="account-panel">
+              <div className={`tb-rise fixed inset-x-4 top-[72px] z-30 rounded-card border p-4 shadow-xl md:absolute md:inset-x-auto md:right-0 md:top-12 md:w-72 ${surface}`} data-testid="account-panel">
                 <p className="text-[14px] font-semibold">{ws.user}</p>
                 <p className={`text-[13px] ${muted}`}>{ws.role} · fictional account</p>
                 <div className="mt-3"><LockedAction id="sign-out-locked" label="Sign out" reason="Sessions and sign-in arrive in TB-EM-001." tone={ws.tone} size="sm" /></div>

@@ -8,6 +8,12 @@
 4. Check the Actions run for the new SHA. Both `test` and `compose` must be green. Report the SHA and run ID so they can be recorded.
 5. Integrate only via `scripts/integration/import-emergent-export.sh` and a reviewed PR (`EXIT_FROM_EMERGENT.md`).
 
+## Design direction review (owner)
+
+1. Review `/design-preview` and the five screens at 320–1440px. Use the preview bar's Data and Type controls, and `?theme=dark` for the family home.
+2. Decide: approve the direction, or request changes; and keep IBM Plex Sans only, or adopt Plus Jakarta Sans for headings.
+3. Only after approval: apply the kit to product screens, starting with the TB-EM-001 sign-in and shell.
+
 ## Remaining blockers before TB-EM-000 can be accepted
 
 - CI on the corrected SHA: NOT RUN.

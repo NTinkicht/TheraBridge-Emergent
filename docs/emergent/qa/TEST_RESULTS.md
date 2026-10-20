@@ -4,6 +4,17 @@ Environment: Emergent workspace, Debian 12, Node 20.20.2, Yarn 1.22.22, PostgreS
 Branch: `phase-1-center-foundation`. First export `b86028eb1c64bb3941cc04064c68d29273de64af`. Corrections in local commit `d170878` plus a docs commit; corrected export SHA **PENDING**.  
 Date: 2026-10-20 (UTC)
 
+## Design direction milestone TB-EM-D01 (design preview, fixtures only)
+
+| # | Check | Status |
+|---|---|---|
+| D1 | `yarn workspace @therabridge/web typecheck` and `next build` (8 static routes incl. 6 `/design-preview/*`) | TESTED: PASS |
+| D2 | Independent testing agent iteration_2 (Playwright, 320/390/768/1024/1440, all 6 routes, every interaction listed in the report) | TESTED: PASS for interactions. It found 6 defects: 320px overflow (HIGH), clipped notifications popover, activity steps not matching the title, weekend state, dark-theme status contrast, unclear toggle selection |
+| D3 | Fixes for all 6 defects, re-checked: `scrollWidth` == viewport at 320 and 390 on all 6 routes; notifications panel within 16–374px at 390; dialog steps match the activity | TESTED: PASS |
+| D4 | Re-run of the full testing agent after fixes | NOT RUN (targeted re-checks only) |
+
+Not done in this milestone: platform metric counts don't follow the Data=Empty control; there are no scroll cues on horizontally scrolling tab strips; the family theme can briefly show light before dark is applied.
+
 ## Correction round 1 (after owner review of b86028e)
 
 | # | Check | Status |
