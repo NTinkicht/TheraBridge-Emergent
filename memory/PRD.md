@@ -17,6 +17,8 @@ Multi-tenant isolation, deny-by-default authorization, server-side sessions, aud
 ## Implemented
 - 2026-10-20 TB-EM-000: health + probe endpoints, Prisma migration, preview page, logo derivatives, Compose/Dockerfiles/CI (NOT RUN), handover pack under `docs/emergent/`. API e2e 13/13 PASS; testing agent iteration_1 PASS; 415 for non-JSON bodies added after test finding.
 
+- 2026-10-20 TB-EM-000 correction round 1: first export b86028e (branch `phase-1-center-foundation`) failed CI 39445386310 because yarn.lock and the .env.example files were missing (Emergent .gitignore lines plus auto-commit). Fixed and committed locally (d170878 + docs commit). Probe writes are now behind a flag, use server-generated labels, and have a row cap and rate limit. Added an allow-list integration script. Clean-clone pipeline PASS; 16/16 API tests. The corrected export SHA is pending.
+
 ## Backlog
 - P0: Owner exports to `emergent/phase-1-center-foundation` (no Force Push), reports SHA; CI result on SHA.
 - P0 (needs approval): TB-EM-001 auth & sessions.
