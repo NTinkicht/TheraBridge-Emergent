@@ -16,7 +16,7 @@ const FILTERS: { key: 'all' | EventType; label: string }[] = [
 
 function ApplicationRow({ a, onReview }: { a: ApplicationFx; onReview: () => void }) {
   return (
-    <li className="grid gap-3 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center" data-testid={`application-${a.id}`}>
+    <li className="grid grid-cols-1 gap-3 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center" data-testid={`application-${a.id}`}>
       <div className="flex min-w-0 items-start gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[11px] bg-surface-subtle text-brand-action"><Building2 size={18} aria-hidden="true" /></span>
         <div className="min-w-0">
@@ -74,7 +74,7 @@ export default function PlatformPreview() {
                 {(['pending', 'decided'] as const).map((t) => (
                   <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)} data-testid={`applications-tab-${t}`}
                     className={`min-h-[36px] rounded-[9px] px-3 text-[13px] font-medium capitalize transition-colors ${tab === t ? 'bg-surface-white text-brand-ink shadow-sm' : 'text-brand-inkMuted'}`}>
-                    {t} <span className="tnum">({applications.filter((a) => (t === 'pending' ? a.status === 'pending' : a.status !== 'pending')).length})</span>
+                    {t}{dataState !== 'loading' && dataState !== 'error' && <span className="tnum"> ({dataState === 'empty' ? 0 : applications.filter((a) => (t === 'pending' ? a.status === 'pending' : a.status !== 'pending')).length})</span>}
                   </button>
                 ))}
               </div>

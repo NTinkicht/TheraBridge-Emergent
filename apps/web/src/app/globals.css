@@ -11,6 +11,11 @@ h1, h2, h3 {
   font-family: var(--font-display), system-ui, sans-serif;
 }
 
+/* Focus ring follows the surface so it keeps 3:1 contrast on family light and dark themes. */
+.theme-family-auto, .theme-family-light, .theme-family-dark {
+  --focus-ring: var(--fam-focus);
+}
+
 .tnum {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
@@ -23,7 +28,7 @@ body {
 }
 
 :focus-visible {
-  outline: 3px solid var(--tb-brand-action);
+  outline: 3px solid var(--focus-ring, var(--tb-brand-action));
   outline-offset: 2px;
 }
 

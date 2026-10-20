@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Bell, ChevronsUpDown, Menu, Moon, PanelLeftClose, PanelLeftOpen, Sun, X } from 'lucide-react';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { SignatureBand } from '@/components/brand/SignatureBand';
@@ -43,6 +43,24 @@ export function AppShell({ workspace, active, title, children }: { workspace: Wo
   const { notify } = usePreview();
   const [collapsed, setCollapsed] = useState(false);
   const [menu, setMenu] = useState<'bell' | 'account' | 'more' | null>(null);
+  const moreBtn = useRef<HTMLButtonElement>(null);
+  const sheet = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (menu !== 'more') return;
+    const el = sheet.current;
+    if (!el) return;
+    const focusables = () => [...el.querySelectorAll<HTMLElement>('a[href], button:not([disabled])')];
+    focusables()[0]?.focus();
+    const trap = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const f = focusables();
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1]?.focus(); }
+      else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0]?.focus(); }
+    };
+    el.addEventListener('keydown', trap);
+    const opener = moreBtn.current;
+    return () => { el.removeEventListener('keydown', trap); opener?.focus(); };
+  }, [menu]);
   const [theme, setTheme] = useState<Theme>('light');
 
   useEffect(() => {
@@ -146,7 +164,7 @@ export function AppShell({ workspace, active, title, children }: { workspace: Wo
             </>
           );
           const cls = `flex min-h-[60px] flex-col items-center justify-center gap-0.5 text-[11px] font-medium ${isActive ? (family ? 'text-fam-accent' : 'text-brand-action') : muted}`;
-          if (item.key === 'more') return <button key="more" type="button" onClick={() => setMenu('more')} className={cls} aria-expanded={menu === 'more'} data-testid="bottom-nav-more">{content}</button>;
+          if (item.key === 'more') return <button key="more" ref={moreBtn} type="button" onClick={() => setMenu('more')} className={cls} aria-expanded={menu === 'more'} data-testid="bottom-nav-more">{content}</button>;
           if (item.href) return <Link key={item.key} href={item.href} aria-current={isActive ? 'page' : undefined} className={cls} data-testid={`bottom-nav-${item.key}`}>{content}</Link>;
           return <button key={item.key} type="button" onClick={() => unavailable(item.label)} className={cls} data-testid={`bottom-nav-${item.key}`}>{content}</button>;
         })}
@@ -155,7 +173,7 @@ export function AppShell({ workspace, active, title, children }: { workspace: Wo
       {menu === 'more' && (
         <div className="fixed inset-0 z-40 md:hidden" role="dialog" aria-modal="true" aria-label="More navigation" data-testid="more-sheet">
           <button type="button" className="absolute inset-0 bg-[#0D1226]/50" aria-label="Close menu" onClick={() => setMenu(null)} />
-          <div className={`tb-rise absolute inset-x-0 bottom-0 rounded-t-[22px] border-t p-4 pb-8 ${surface}`}>
+          <div ref={sheet} className={`tb-rise absolute inset-x-0 bottom-0 rounded-t-[22px] border-t p-4 pb-8 ${surface}`}>
             <div className="mb-2 flex items-center justify-between">
               <p className="text-[15px] font-semibold">More</p>
               <button type="button" onClick={() => setMenu(null)} className={iconBtn} aria-label="Close" data-testid="more-sheet-close"><X size={18} aria-hidden="true" /></button>

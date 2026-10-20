@@ -65,7 +65,7 @@ function TabBody({ tab }: { tab: Tab }) {
   switch (tab) {
     case 'Overview':
       return (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <div className="rounded-control border border-border-light p-4"><p className="text-[13px] text-brand-inkMuted">Next session</p><p className="mt-1 text-[16px] font-semibold">Today, 13:00 · Sensory room</p><div className="mt-2"><SpecialtyTag s="ot" long /></div></div>
           <div className="rounded-control border border-border-light p-4"><p className="text-[13px] text-brand-inkMuted">Family activity this week</p><p className="mt-1 text-[16px] font-semibold"><span className="tnum">3 of 5</span> marked done</p><p className="text-[13px] text-brand-inkMuted">Reported by the guardian</p></div>
           <div className="lg:col-span-2"><GoalList /></div>
@@ -74,8 +74,8 @@ function TabBody({ tab }: { tab: Tab }) {
     case 'Providers':
       return (
         <ul className="space-y-3">
-          <li className="flex items-center gap-3 rounded-control border border-border-light p-4"><Avatar name="Leila Hassan" /><div className="flex-1"><p className="font-semibold">Leila Hassan</p><p className="text-[13px] text-brand-inkMuted">Assigned therapist</p></div><SpecialtyTag s="speech" /><SpecialtyTag s="ot" /></li>
-          <li className="flex items-center gap-3 rounded-control border border-border-light p-4"><Avatar name="Jonas Weber" /><div className="flex-1"><p className="font-semibold">Jonas Weber</p><p className="text-[13px] text-brand-inkMuted">Coordinator · scheduling only, no clinical access</p></div></li>
+          <li className="flex flex-wrap items-center gap-3 rounded-control border border-border-light p-4"><Avatar name="Leila Hassan" /><div className="min-w-0 flex-1"><p className="font-semibold">Leila Hassan</p><p className="text-[13px] text-brand-inkMuted">Assigned therapist</p></div><SpecialtyTag s="speech" /><SpecialtyTag s="ot" /></li>
+          <li className="flex flex-wrap items-center gap-3 rounded-control border border-border-light p-4"><Avatar name="Jonas Weber" /><div className="min-w-0 flex-1"><p className="font-semibold">Jonas Weber</p><p className="text-[13px] text-brand-inkMuted">Coordinator · scheduling only, no clinical access</p></div></li>
         </ul>
       );
     case 'Goals':
@@ -98,8 +98,8 @@ function TabBody({ tab }: { tab: Tab }) {
     case 'Guardians':
       return (
         <ul className="space-y-3">
-          <li className="flex flex-wrap items-center gap-3 rounded-control border border-border-light p-4"><Avatar name="Sara Morgan" /><div className="flex-1"><p className="font-semibold">Sara Morgan</p><p className="text-[13px] text-brand-inkMuted">Guardian · appointments and released plans</p></div><Pill tone="success" icon={ShieldCheck}>Active grant</Pill></li>
-          <li className="flex flex-wrap items-center gap-3 rounded-control border border-border-light p-4"><Avatar name="Jordan Morgan" /><div className="flex-1"><p className="font-semibold">Jordan Morgan</p><p className="text-[13px] text-brand-inkMuted">Listed guardian · not invited</p></div><Pill icon={UserX}>No access</Pill></li>
+          <li className="flex flex-wrap items-center gap-3 rounded-control border border-border-light p-4"><Avatar name="Sara Morgan" /><div className="min-w-0 flex-1"><p className="font-semibold">Sara Morgan</p><p className="text-[13px] text-brand-inkMuted">Guardian · appointments and released plans</p></div><Pill tone="success" icon={ShieldCheck}>Active grant</Pill></li>
+          <li className="flex flex-wrap items-center gap-3 rounded-control border border-border-light p-4"><Avatar name="Jordan Morgan" /><div className="min-w-0 flex-1"><p className="font-semibold">Jordan Morgan</p><p className="text-[13px] text-brand-inkMuted">Listed guardian · not invited</p></div><Pill icon={UserX}>No access</Pill></li>
         </ul>
       );
     case 'Access':
@@ -120,11 +120,12 @@ export default function ChildPreview() {
     if (new URLSearchParams(window.location.search).get('specialty') === 'ot') setSpecialty('ot');
   }, []);
   const onKey = (e: KeyboardEvent, i: number) => {
-    const next = e.key === 'ArrowRight' ? (i + 1) % TABS.length : e.key === 'ArrowLeft' ? (i - 1 + TABS.length) % TABS.length : -1;
+    const next = e.key === 'ArrowRight' ? (i + 1) % TABS.length : e.key === 'ArrowLeft' ? (i - 1 + TABS.length) % TABS.length : e.key === 'Home' ? 0 : e.key === 'End' ? TABS.length - 1 : -1;
     if (next < 0) return;
     e.preventDefault();
     setTab(TABS[next]);
     refs.current[next]?.focus();
+    refs.current[next]?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
   };
 
   return (

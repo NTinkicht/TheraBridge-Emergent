@@ -41,12 +41,13 @@ export function EmptyState({ icon: Icon, title, body, action, tone = 'clinical',
 }
 
 export function ErrorState({ title = 'We couldn’t load this', body = 'The server didn’t respond. Nothing was changed.', onRetry, tone = 'clinical', testId }: { title?: string; body?: string; onRetry: () => void; tone?: Tone; testId?: string }) {
+  const fam = tone === 'family';
   return (
-    <div role="alert" data-testid={testId} className="flex flex-col items-start gap-3 rounded-control border border-status-danger/25 bg-status-dangerSurface px-4 py-4 sm:flex-row sm:items-center">
-      <AlertTriangle size={20} className="shrink-0 text-status-danger" aria-hidden="true" />
+    <div role="alert" data-testid={testId} className={`flex flex-col items-start gap-3 rounded-control border px-4 py-4 sm:flex-row sm:items-center ${fam ? 'border-fam-border bg-fam-raised' : 'border-status-danger/25 bg-status-dangerSurface'}`}>
+      <AlertTriangle size={20} className={`shrink-0 ${fam ? 'text-fam-caution' : 'text-status-danger'}`} aria-hidden="true" />
       <div className="flex-1">
-        <p className="text-[14px] font-semibold text-status-danger">{title}</p>
-        <p className="text-[13px] text-[#7A2630]">{body}</p>
+        <p className={`text-[14px] font-semibold ${fam ? 'text-fam-ink' : 'text-status-danger'}`}>{title}</p>
+        <p className={`text-[13px] ${fam ? 'text-fam-muted' : 'text-[#7A2630]'}`}>{body}</p>
       </div>
       <Button variant="secondary" tone={tone} size="sm" onClick={onRetry} data-testid={testId ? `${testId}-retry` : undefined}>
         <RotateCw size={14} aria-hidden="true" /> Retry

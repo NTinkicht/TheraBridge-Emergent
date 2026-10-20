@@ -34,7 +34,7 @@ export function ScrollStrip({ children, className = '', innerClassName = '', rol
 
   const mask = MASKS[edges.left && edges.right ? 'both' : edges.left ? 'left' : edges.right ? 'right' : 'none'];
   const scroll = (dir: number) => ref.current?.scrollBy({ left: dir * ref.current.clientWidth * 0.7, behavior: 'smooth' });
-  const chevron = `absolute top-1/2 z-[1] grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full border shadow-sm transition-opacity ${tone === 'dark' ? 'border-white/25 bg-[#0B1530] text-white' : 'border-border-light bg-surface-white text-brand-ink'}`;
+  const chevron = `absolute top-1/2 z-[1] grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border shadow-sm transition-opacity ${tone === 'dark' ? 'border-white/25 bg-[#0B1530] text-white' : 'border-border-light bg-surface-white text-brand-ink'}`;
 
   return (
     <div className={`relative min-w-0 ${className}`} data-testid={testId} data-overflow-left={edges.left} data-overflow-right={edges.right}>

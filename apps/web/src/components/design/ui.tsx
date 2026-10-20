@@ -130,7 +130,7 @@ export function Metric({ label, value, sub, icon: Icon, accent = 'action', loadi
   const ic = { action: 'bg-brand-actionTint text-brand-action', caution: 'bg-status-cautionSurface text-status-caution', danger: 'bg-status-dangerSurface text-status-danger', success: 'bg-status-successSurface text-status-success' }[accent];
   return (
     <Card className="p-4 transition-[border-color,box-shadow] duration-200 hover:border-border-strong hover:shadow-[0_6px_20px_-12px_rgba(20,33,61,0.25)] md:p-5" testId={testId}>
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex min-h-[40px] items-start justify-between gap-2">
         <p className="text-[13px] font-medium text-brand-inkMuted">{label}</p>
         <span className={`grid h-8 w-8 place-items-center rounded-[10px] ${ic}`}>
           <Icon size={17} strokeWidth={1.9} aria-hidden="true" />

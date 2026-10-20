@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, CalendarClock, Check, CircleHelp, Clock, Coffee, Lock, MapPin, MessageCircle, SkipForward, Sparkles } from 'lucide-react';
 import { AppShell } from '@/components/design/AppShell';
 import { usePreview } from '@/components/design/PreviewContext';
-import { Dialog, EmptyState, StateGate } from '@/components/design/states';
+import { Dialog, EmptyState, SkeletonRows, StateGate } from '@/components/design/states';
 import { Avatar, Button, Card, CardHeader, LockedAction, Pill } from '@/components/design/ui';
 import { activitySteps, longDate, pastOutcomes, shortDate, weekPlan, weekdayShort } from '@/lib/design/fixtures';
 
@@ -15,9 +15,9 @@ const OUTCOME = {
   'needs-help': { label: 'Needs help', icon: CircleHelp, cls: 'text-fam-caution' },
 };
 
-function useWeek() {
+function useWeek(now: Date | null) {
   return useMemo(() => {
-    const now = new Date();
+    if (!now) return [];
     const monday = new Date(now);
     monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
     return weekPlan.map((activity, i) => {
@@ -26,14 +26,20 @@ function useWeek() {
       const rel = date.toDateString() === now.toDateString() ? 'today' : date < now ? 'past' : 'future';
       return { i, date, activity, rel, outcome: rel === 'past' && activity ? pastOutcomes[i] : null };
     });
-  }, []);
+  }, [now]);
 }
 
 export default function FamilyPreview() {
   const { notify } = usePreview();
-  const week = useWeek();
+  const [now, setNow] = useState<Date | null>(null);
+  const week = useWeek(now);
   const [scenario, setScenario] = useState<Scenario>('illustration');
-  const [day, setDay] = useState(() => (new Date().getDay() + 6) % 7);
+  const [day, setDay] = useState(0);
+  useEffect(() => {
+    const d = new Date();
+    setNow(d);
+    setDay((d.getDay() + 6) % 7);
+  }, []);
   const [open, setOpen] = useState(false);
   const today = week.find((d) => d.rel === 'today');
   const next = week.find((d) => d.rel !== 'past' && d.activity);
@@ -42,6 +48,14 @@ export default function FamilyPreview() {
   const chosen = week[day];
   const nextAppt = new Date();
   nextAppt.setDate(nextAppt.getDate() + (nextAppt.getDay() === 5 ? 3 : nextAppt.getDay() === 6 ? 2 : 1));
+  // Date-dependent content renders only on the client to avoid server/client date mismatches.
+  if (!now) {
+    return (
+      <AppShell workspace="family" active="home" title="Home">
+        <SkeletonRows rows={5} testId="family-loading" />
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell workspace="family" active="home" title="Home">

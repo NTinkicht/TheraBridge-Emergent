@@ -73,7 +73,7 @@ export default function CenterPreview() {
           <StateGate testId="staff" empty={<EmptyState icon={Users} title="No therapists yet" body="Invite up to three therapists during your trial." testId="staff-empty" />}>
             <ul className="mt-2 divide-y divide-border-light">
               {staff.map((p) => (
-                <li key={p.email} className="grid gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center" data-testid={`staff-${p.name.split(' ')[0].toLowerCase()}`}>
+                <li key={p.email} className="grid grid-cols-1 gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center" data-testid={`staff-${p.name.split(' ')[0].toLowerCase()}`}>
                   <div className="flex min-w-0 items-center gap-3">
                     <Avatar name={p.name} />
                     <div className="min-w-0">
