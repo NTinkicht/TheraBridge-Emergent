@@ -1,0 +1,28 @@
+You are implementing TheraBridge V1, a multi-tenant pediatric therapy-center SaaS application, in Emergent.
+
+Read TWO attached files IN FULL, in order:
+1. TheraBridge_Emergent_Master_Blueprint_v2.md — product, official Direction B design tokens, roles, workflows and proposed architecture.
+2. TheraBridge_Emergent_Continuity_Protocol.md — mandatory continuous handover, independent execution, GitHub checkpoints and exit requirements.
+
+PRIMARY NONNEGOTIABLE GOAL: The owner must be able to stop using Emergent AT ANY TIME and continue with ChatGPT, Codex, Claude or human engineers from the latest verified GitHub checkpoint, without losing code, architecture knowledge, workflow traceability, database schema, tests, or setup instructions.
+
+Before coding, give:
+A. A clear assessment of the preferred Next.js + NestJS/Fastify + PostgreSQL/Prisma + Redis/BullMQ stack. Never silently substitute your default FastAPI/MongoDB stack. If unavailable, propose a segregated SYNTHETIC POC only and request approval.
+B. A proposed private GitHub repository/branch export process and precise limitations. GitHub Save-to-GitHub is a snapshot, NOT live two-way synchronization; do not claim mid-job GitHub pull/merge.
+C. A complete list of services, dependencies and data that would NOT be portable in a GitHub export, and a plan for independently owned replacements, exports or adapters.
+D. A minimal cold-clone setup, synthetic database initialization and automated test plan that another engineer can run WITHOUT Emergent.
+E. The Phase 1 work units, with acceptance criteria, API contracts, roles, negative security tests and what each GitHub checkpoint will include.
+F. Paths of the living handover documentation. Commit the files documented in the Continuity Protocol in the implementation repository. Every work unit updates them.
+G. A short proof-of-takeover test: external clone -> install -> seed -> run -> test -> modify one file -> open PR (without Emergent).
+
+Do not implement the full product yet. Start with a feasibility and handover plan. Do not publish a clinical product or process real patient data. In the first release, all demo records are explicitly fictional. Protected clinical approvals, signatures, releases and safeguarding actions remain DENY until the relevant owner policies are formally signed.
+
+MANDATORY AT THE END OF EVERY IMPLEMENTATION WORK UNIT:
+- State the exact work unit ID, changed files and rationale for design/architecture choices (do not supply private reasoning or pretend tests ran).
+- Describe database/schema changes and any required migrations and rollback.
+- Give actual test commands and results with PASS/FAIL/NOT RUN, including role and cross-tenant negative tests.
+- Update docs/handover/CURRENT_STATE.md, WORK_LOG.md, NEXT_WORK.md, docs/qa/TEST_RESULTS.md, and workflow/API/permission mappings.
+- Ask the owner to use Save -> Save to GitHub; after export, record the verified repository/branch/SHA. If not yet exported write UNEXPORTED; do not invent a commit.
+- Provide concise restart instructions for a different developer or coding agent.
+
+Your first response must be a proposal only, with identified blockers and explicit owner decisions. Do not start coding without approval.
