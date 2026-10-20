@@ -79,7 +79,7 @@ Dark mode is intentionally offered to families as a full, coherent theme. Do not
 
 Add a restrained **3px horizontal signature band** on the brand/navigation header or brand-bearing panels using four adjacent colors in order: `#052464`, `#0F5692`, `#0DA8B8`, `#7A4AB7`. Avoid giant decorative gradients.
 
-Use the product **wordmark “TheraBridge”** in IBM Plex Sans Semibold and a simple neutral placeholder icon during development. **Do not claim a newly generated logo is the approved official emblem.** The real authorized emblem artwork must be separately supplied for exact production fidelity; keep a replaceable `BrandMark` component and never hardcode an invented approximation.
+Use the product **wordmark “TheraBridge”** in IBM Plex Sans Semibold and the actual approved Direction B raster emblem supplied in this repository at `assets/brand/therabridge-official-emblem.png` (exact image bytes extracted from Figma canonical emblem component `153:329`, source size **112×63 pixels**). Render the image proportionally without stretching, cropping, recoloring or regenerating it. Keep `BrandMark` centralized and replaceable, with accessible text alternatives. The original approved vector asset is still desirable before production and for large-scale rendering; do not manufacture a fake vector version.
 
 ### 2.5 Type, iconography, spacing, shape
 
