@@ -27,4 +27,4 @@ Code + tests + migration/seed + design tokens + API + documentation + setup inst
 
 ## Reference documents
 
-The owner's two local files referenced above are the initial self-contained brief. They are **not yet committed** to this repository. When the first Emergent checkpoint is exported, add them to `docs/product/MASTER_BLUEPRINT.md` and `docs/handover/CONTINUITY_PROTOCOL.md` (or commit them separately via PR) without changing the underlying decisions. This placeholder is not a claim the full specification is stored here.
+The documents are now versioned in this repository: [`docs/product/MASTER_BLUEPRINT.md`](docs/product/MASTER_BLUEPRINT.md), [`docs/handover/CONTINUITY_PROTOCOL.md`](docs/handover/CONTINUITY_PROTOCOL.md), [`docs/handover/TAKEOVER_CHECKLIST.md`](docs/handover/TAKEOVER_CHECKLIST.md), and [`docs/handover/EMERGENT_KICKOFF_PROMPT.txt`](docs/handover/EMERGENT_KICKOFF_PROMPT.txt). Use the **same committed versions** when starting Emergent. No application code exists yet.
