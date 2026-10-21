@@ -1,7 +1,13 @@
 # TB-EM-001 — Authentication, sessions and foundational role/permission model
 
 Status: **APPROVED WITH CHANGES by the owner (2026-10-20)**. The mandatory corrections (R1–R5) are recorded below.
-Execution authorization: **Checkpoint 0 only.** Checkpoints A, B and C each need independent acceptance of the previous checkpoint and their own explicit authorization.
+Execution authorization: checkpoint 0 ACCEPTED (CI run 39538891912). Checkpoints A, B and C were authorized on 2026-10-21 under the continuous-delivery policy and are **IMPLEMENTED** (see `qa/TEST_RESULTS.md`).
+
+**Deviations recorded during implementation (2026-10-21)**
+- The CSRF token is derived as `HMAC(AUTH_SECRET, session token)` instead of storing `csrf_secret_hash`. It is still session-bound and changes on every rotation, and no extra secret is stored.
+- Fastify `trustProxy` is off; `resolveClientIp()` applies `TRUSTED_PROXY_CIDRS` itself.
+- The `bootstrap:owner` and `seed:synthetic` CLIs landed in checkpoint B, because they need the tenancy tables.
+- `schema_info` was dropped in the checkpoint A migration.
 Owner decisions: ADR-0006 (first-party sign-in, OIDC-ready); an independent review stop after every checkpoint.
 Design baseline: "Calm Precision, with warmth at home" (accepted).
 

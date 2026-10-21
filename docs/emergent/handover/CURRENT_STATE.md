@@ -6,7 +6,7 @@ Updated: 2026-10-20 (UTC)
 
 | Field | Value |
 |---|---|
-| Work unit | TB-EM-001 **checkpoint 0** (design polish ACCEPTED; probe retirement IMPLEMENTED, awaiting independent review) |
+| Work unit | TB-EM-001 checkpoints 0 (ACCEPTED, CI run 39538891912 green), **A, B and C IMPLEMENTED** (local commits `fe61fe1`, `43a6921`, `1a2af51` plus fixes). Export and CI **PENDING** |
 | Last verified export | `66254a1` on `phase-1-center-foundation`. It matched local history (checked via the GitHub API). GitHub Actions run `39474586243`: `test` **TESTED: PASS**, `compose` **TESTED: PASS** |
 | Checkpoint 0 export SHA | `217c94ac87b2`. GitHub Actions run `39538224035`: `test` **TESTED: PASS**, `compose` **TESTED: PASS** (verified via the public GitHub API). The independent review found the secret-scan step missing |
 | Checkpoint 0 correction (secret scan) | IMPLEMENTED locally. Export SHA **PENDING: owner exports and reports it**. CI `secret-scan` job **NOT RUN** until export. Status **UNEXPORTED / AT RISK** until then |
@@ -32,7 +32,10 @@ Updated: 2026-10-20 (UTC)
 | PostgreSQL in workspace (ADR-0004) | IMPLEMENTED, TESTED: PASS |
 | Prisma migration `tb_em_000_feasibility_probe` | IMPLEMENTED; table retired by `20261020190000_tb_em_001_retire_feasibility_probe` (TESTED: PASS, dev + test DB) |
 | Probe write/read endpoints | **RETIRED** in checkpoint 0 (404, TESTED: PASS on API tests and the public preview URL) |
-| API integration tests (Jest + Supertest, real PostgreSQL) | TESTED: PASS (8/8 after checkpoint 0) |
+| API integration tests (Jest + Supertest, real PostgreSQL) | TESTED: PASS (133/133 after checkpoint B) |
+| Auth, sessions, CSRF, lockout (checkpoint A) | IMPLEMENTED, TESTED: PASS. Migration `20261021090000_tb_em_001_identity_sessions` |
+| Tenancy, roles, deny-by-default authorization, CLIs (checkpoint B) | IMPLEMENTED, TESTED: PASS. Migration `20261021120000_tb_em_001_tenancy_roles` |
+| Auth screens and authenticated shell (checkpoint C) | IMPLEMENTED. TESTED: PASS by the testing agent (iteration 7) except the reset-token flow, which was fixed and checked by the developer afterwards |
 | Clean clone of the local commit: frozen-lockfile install, generate, migrate, typecheck, tests, both builds | TESTED: PASS (workspace, not GitHub) |
 | Probe write protection | Superseded: the endpoint was removed in checkpoint 0 |
 | Integration script against a simulated `main` with unrelated history | TESTED: PASS |
@@ -42,7 +45,7 @@ Updated: 2026-10-20 (UTC)
 | Secret scan (gitleaks 8.30.1, `.gitleaks.toml`) | Initial historical scan TESTED: PASS. It covered all 45 commits on all 4 public branches (`main`, `phase-1-center-foundation` and both `review/*` branches). 6 raw findings, all reviewed as false positives with no values displayed: a `${VAR}` reference, kebab-case test IDs, and prose in `main`'s README (fingerprinted in `.gitleaksignore`). Re-scan: 0 findings. A planted canary secret was detected and its value was not printed |
 | Cold-clone drill | **NOT RUN** |
 | Logo derivatives (light surfaces) | IMPLEMENTED, checked against original (see `docs/emergent/brand/LOGO_DERIVATIVES.md`) |
-| TB-EM-001 | APPROVED WITH CHANGES (R1–R5 recorded in `docs/emergent/workunits/TB-EM-001.md`). Checkpoint 0 IMPLEMENTED. Checkpoints A–C **not authorized** |
+| TB-EM-001 | APPROVED WITH CHANGES (R1–R5). Checkpoint 0 ACCEPTED. Checkpoints A–C authorized 2026-10-21 and IMPLEMENTED; export and CI pending |
 | TB-EM-002 to TB-EM-006 | PLANNED (not authorized) |
 | Design direction TB-EM-D01 (`/design-preview`, fixtures only) | **ACCEPTED as the V1 design baseline** (owner, 2026-10-20). r3 polish: **ACCEPTED** by independent review (2026-10-20). Screenshots in `docs/emergent/design/screenshots/` |
 

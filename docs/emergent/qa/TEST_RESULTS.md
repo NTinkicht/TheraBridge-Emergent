@@ -153,3 +153,24 @@ Gitleaks **v8.30.1**. Both release tarballs (linux_x64 for CI, linux_arm64 for t
 
 - Docker Compose, Dockerfiles, CI workflow, cold-clone drill: authored, **NOT RUN**.
 - Viewports 320/768/1024/1440: **NOT RUN** for TB-EM-000 (responsive pass is TB-EM-006).
+
+## TB-EM-001 checkpoints A, B, C (2026-10-21)
+
+Environment: Emergent workspace, PostgreSQL 15.19, `therabridge_test` database. No secret values appear in this report.
+
+| Check | Result |
+|---|---|
+| `tsc --noEmit` (api, web) | TESTED: PASS |
+| `jest --runInBand`: `health`, `auth` (A) and `authz` (B) suites | **TESTED: PASS, 133/133** |
+| Clean clone of `1a2af51`+fix: frozen-lockfile install (argon2 native build), prisma generate, migrate, tests, nest build, next build | TESTED: PASS |
+| gitleaks 8.30.1: full local history (all refs) and tracked files | TESTED: PASS (0 findings). Reviewed fingerprints are in `.gitleaksignore` |
+| Independent testing agent (`test_reports/iteration_7.json`) | Backend 18/18 PASS. Frontend 14/15; the failing flow is covered in the next row |
+| Fixes after iteration 7 | Reset page now reads its token reliably, verified in a browser: a bogus token gives "invalid or expired". Sign-out errors are shown instead of swallowed. Login and forgot-password show friendly validation ("Enter a valid email address."). The 320px mobile nav fits (right edge 290px, 0 overflow). Checked by the developer; **no independent re-test yet** |
+| Preview end-to-end (`multi@therabridge.test`) | Login, workspace choice, Harbor/Therapist summary, switch to Cedar/Center administrator; 0 overflow at 390 and 320 |
+| CI on the TB-EM-001 SHA | **NOT RUN** until export |
+
+**Acceptance criteria**
+- AC-1 to AC-20: TESTED: PASS through the API suites.
+- AC-21: TESTED: PASS through the testing agent at 320–1440px, plus developer checks after the fixes.
+- AC-22: pending CI after export.
+

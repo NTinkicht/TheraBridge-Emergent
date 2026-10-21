@@ -50,7 +50,14 @@ yarn build
 | `DATABASE_URL` | api, prisma CLI | Owner vault / local Postgres |
 | `DATABASE_URL_TEST` | humans/scripts only (tests read `DATABASE_URL`) | Local Postgres |
 | `PORT`, `HOST` | api | Deployment config |
-| `CORS_ORIGINS` | api | Web origin(s), comma-separated |
+| `CORS_ORIGINS` | api | Web origin(s), comma-separated. Also the Origin allow-list for every POST |
+| `DEPLOYMENT_ENV` | api (required) | `local`, `ci`, `preview`, `shared-synthetic`, `staging` or `production` |
+| `AUTH_SECRET` | api (required, at least 32 bytes) | Random secret; never commit a real value (`openssl rand -base64 48`) |
+| `COOKIE_SECURE` | api (required) | `true` everywhere except `local`/`ci`; boot fails otherwise |
+| `TRUSTED_PROXY_CIDRS` | api (required, may be empty) | CIDRs of your reverse proxies; empty means trust none |
+| `DEV_MAILBOX_ENABLED` | api (required) | `true` only for local development (`GET /api/dev/mailbox` shows reset links) |
+
+Synthetic accounts: `yarn workspace @therabridge/api seed:synthetic`. Passwords go only to `.workspace/local-credentials/synthetic-accounts.json`, which is gitignored. The real owner account is created only with `yarn workspace @therabridge/api bootstrap:owner --email <you>`, from an interactive terminal, with `DEPLOYMENT_ENV` set to `local`, `staging` or `production` and `BOOTSTRAP_OWNER_ALLOWED=true`. Never run it on a shared or preview environment.
 | `NEXT_PUBLIC_API_BASE_URL` | web (build time) | Public API origin |
 | `POSTGRES_*`, `API_PORT`, `WEB_PORT` | docker compose | `.env` copied from `.env.example` |
 

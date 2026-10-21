@@ -21,6 +21,41 @@
 
 **Mocked/disabled:** nothing mocked. No auth, no tenants, no mailbox endpoint (TB-EM-001, PLANNED).
 
+## TB-EM-001 checkpoints A, B, C (2026-10-21)
+
+**Owner decision:** checkpoint 0 ACCEPTED (run 39538891912). A, B and C authorized under the continuous-delivery policy.
+
+**A: sign-in and sessions** (`fe61fe1`)
+- Argon2id passwords and hashed server sessions with 30 min idle / 12 h absolute limits and rotation.
+- Session-bound CSRF, an HMAC pre-auth token, and Origin/Referer/Sec-Fetch-Site checks.
+- PostgreSQL-backed lockout and IP limits, shared across instances, with trusted-proxy IP resolution.
+- Password reset and change, and a dev mailbox for local use only.
+- Audit events, and a boot-time check that every route declares its access.
+
+**B: tenancy and roles** (`43a6921`)
+- Centers, memberships, role assignments and platform roles, with database constraints against escalation.
+- Deny-by-default policy in which clinical capabilities are always denied, plus context selection with rotation.
+- Two summary endpoints that prove the guards work.
+- `bootstrap:owner` (TTY only, refuses preview and ci) and `seed:synthetic` (disposable passwords in a gitignored file).
+
+**C: screens** (`1a2af51` plus fixes)
+- Login, forgot and reset password, workspace selection, home with live summaries, account security and access denied.
+- Expired-session handling and the middleware redirect.
+
+**Security tooling**
+- Secret-scan rules tightened: quoted literals, plus env-style files only.
+- Test passwords are generated at runtime.
+- 2 historical synthetic fixtures recorded in `.gitleaksignore`.
+- `.emergent/cron/` gitignored.
+
+**Tests**
+- API: 133/133.
+- Testing agent: backend 18/18; frontend 14/15. The failing reset flow and three minor findings are fixed.
+- Clean clone and secret scan pass.
+
+**Open items:** non-blocking issues are listed in `qa/OPEN_ISSUES.md`. Export and CI are pending.
+
+
 ## TB-EM-001 checkpoint 0 correction: secret scan (2026-10-20)
 
 **Review finding:** the spec claimed a CI secret scan, but `ci.yml` had none (export `217c94ac87b2`, whose CI test and compose jobs were green).

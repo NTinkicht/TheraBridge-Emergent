@@ -38,3 +38,6 @@ Wait for owner approval of TB-EM-001 and the next exported SHA.
 STOP: export checkpoint 0 and wait for independent review. Checkpoint A is not authorized.
 
 - 2026-10-20 Review of the checkpoint 0 export 217c94ac87b2 (CI green) found the secret scan missing. Added the `secret-scan` CI job (gitleaks 8.30.1, checksum-pinned, full history + tracked files, redacted), `.gitleaks.toml` and `.gitleaksignore`. The initial historical scan of all public branches is clean. STOP for independent verification; checkpoint A is not authorized.
+
+- 2026-10-21 Owner: checkpoint 0 ACCEPTED (CI 39538891912). New continuous policy: implement work units in order, export per checkpoint, record non-blocking issues instead of pausing, and stop only for genuine blockers. Issues #3 and #4 are left alone.
+- 2026-10-21 TB-EM-001 checkpoints A, B and C IMPLEMENTED: sign-in, sessions, CSRF, lockout, tenancy, roles, deny-by-default authorization, CLIs, and the auth screens with the authenticated shell. 133/133 API tests; testing agent iteration 7 (fixes applied after it). Synthetic seed loaded on the preview. Export and CI pending. Non-blocking issues are in docs/emergent/qa/OPEN_ISSUES.md. Next: TB-EM-002.
