@@ -60,6 +60,9 @@ STOP: export checkpoint 0 and wait for independent review. Checkpoint A is not a
   - Verification: 329/329 API tests; testing agent iteration 13 plus fixes. Docs: workunits/TB-EM-007.md. Export pending.
 
 ## Backlog (current)
+- 2026-10-21 Owner ACCEPTED TB-EM-007 (CI 329/329; N20–N24 = #30–#34; messaging safeguarding #35). TB-EM-008 Therapist Clinical Workspace IMPLEMENTED (synthetic drafts only). It covers assessments, versioned plans and goals with supervisor review, session drafts, observations with history, activity templates with steps and safety guidance, home activities with a staff-only family preview, and family sample activity screens. Signing, approval and release stay DENY. Messaging is now recipient-specific and demo-gated. 367/367 API tests; testing agent iteration 14 plus validation fixes. Docs: workunits/TB-EM-008.md.
+- P0: owner export of TB-EM-008 + CI; confirm N25 (new version withdraws the one in review).
+- P1: owner-approved clinical policy before any signing, approval or release; approved email provider; D-NEW-5 safeguarding for messaging.
 - P0: owner export of TB-EM-007 + CI; confirm household-thread and post-trial messaging policies.
 - P1: clinical milestone (needs approved clinical policy); approved email provider; nav unread badge / push.
 - P2: N20–N24 (series split, drag-to-move, configurable notice window).

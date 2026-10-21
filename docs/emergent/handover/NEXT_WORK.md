@@ -1,6 +1,11 @@
 # NEXT_WORK
 
-## Immediate (owner): export TB-EM-007 Parent Experience Round 2 + Scheduling
+## Immediate (owner): export TB-EM-008 Clinical Workspace foundations
+
+1. Save to GitHub on `phase-1-center-foundation`. Never Force Push. CI should show 367 API tests. New migration: `20261025090000_tb_em_008_clinical_workspace`.
+2. File N25–N27 from `workunits/TB-EM-008.md`.
+
+## Previous: export TB-EM-007 Parent Experience Round 2 + Scheduling (accepted)
 
 1. Save to GitHub on `phase-1-center-foundation`. Never Force Push.
 2. CI: `secret-scan` and `test` (329 API tests) should be green. Newest migrations: `20261024090000_tb_em_007_parent_messaging_scheduling`, `20261024091000_tb_em_007_thread_child_fk`.

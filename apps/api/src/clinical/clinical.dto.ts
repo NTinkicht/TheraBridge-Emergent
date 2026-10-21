@@ -12,7 +12,7 @@ export class AreaDto {
 export class AssessmentDto {
   @IsIn(SPECIALTIES) service!: string;
   @Matches(DATE) assessedOn!: string;
-  @IsString() @MaxLength(4000) summary!: string;
+  @IsString() @MinLength(3, { message: 'Write a summary of at least 3 characters' }) @MaxLength(4000) summary!: string;
   @IsArray() @ArrayMaxSize(12) @ValidateNested({ each: true }) @Type(() => AreaDto) areas!: AreaDto[];
 }
 export class AssessmentUpdateDto extends AssessmentDto {

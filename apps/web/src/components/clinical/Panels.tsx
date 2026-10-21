@@ -38,7 +38,7 @@ export function AssessmentsPanel({ centerId, ws, run }: { centerId: string; ws: 
             <Field label="Area (optional)" value={f.area} onChange={(e) => setF({ ...f, area: e.target.value })} testId="assessment-area" />
             <Field label="Finding" value={f.finding} onChange={(e) => setF({ ...f, finding: e.target.value })} testId="assessment-finding" />
           </div>
-          <Button onClick={() => void (async () => { if (await run(() => clinicalApi.assess(centerId, ws.child.id, { service: f.service, assessedOn: f.assessedOn, summary: f.summary, areas: f.area.trim().length > 1 ? [{ area: f.area.trim(), finding: f.finding }] : [] }), 'Assessment draft saved.')) setF({ ...f, summary: '', area: '', finding: '' }); })()} data-testid="assessment-save">Save assessment draft</Button>
+          <Button onClick={() => void (async () => { if (f.summary.trim().length < 3) return run(() => Promise.reject(Object.assign(new Error('Write a summary of at least 3 characters.'), { status: 422 })), ''); if (await run(() => clinicalApi.assess(centerId, ws.child.id, { service: f.service, assessedOn: f.assessedOn, summary: f.summary, areas: f.area.trim().length > 1 ? [{ area: f.area.trim(), finding: f.finding }] : [] }), 'Assessment draft saved.')) setF({ ...f, summary: '', area: '', finding: '' }); })()} data-testid="assessment-save">Save assessment draft</Button>
         </Card>
       )}
     </div>
@@ -116,7 +116,7 @@ export function ProgressPanel({ centerId, ws, run }: { centerId: string; ws: Wor
           <SelectField label="Goal" value={f.goal} onChange={(goal) => setF({ ...f, goal })} testId="observation-goal" options={goals.map((g) => ({ value: `${g.versionId}|${g.key}`, label: g.title }))} />
           <Field label="Value" type="number" value={f.value} onChange={(e) => setF({ ...f, value: e.target.value })} testId="observation-value" />
           <Field label="Observed on" type="date" value={f.observedOn} onChange={(e) => setF({ ...f, observedOn: e.target.value })} testId="observation-date" />
-          <Button onClick={() => void (async () => { const [planVersionId, goalKey] = f.goal.split('|'); if (await run(() => clinicalApi.observe(centerId, ws.child.id, { planVersionId, goalKey, value: Number(f.value), observedOn: f.observedOn }), 'Observation recorded.')) setF({ ...f, value: '' }); })()} data-testid="observation-save">Record</Button>
+          <Button onClick={() => void (async () => { if (f.value.trim() === '' || Number.isNaN(Number(f.value))) return run(() => Promise.reject(Object.assign(new Error('Enter a number for the observation.'), { status: 422 })), ''); const [planVersionId, goalKey] = f.goal.split('|'); if (await run(() => clinicalApi.observe(centerId, ws.child.id, { planVersionId, goalKey, value: Number(f.value), observedOn: f.observedOn }), 'Observation recorded.')) setF({ ...f, value: '' }); })()} data-testid="observation-save">Record</Button>
         </Card>
       )}
     </div>
