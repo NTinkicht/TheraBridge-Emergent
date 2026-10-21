@@ -1,0 +1,43 @@
+{
+  "summary": "Frontend retest of the iteration-11 follow-up fixes on the public preview. Browsers used: UTC, Asia/Tokyo and America/New_York, with Harbor's center time zone America/New_York. PASS: (1) Family theme: the family-home wrapper has class theme-family-light and a warm canvas rgb(250,248,245). family-child cards are white (--fam-surface #FFFFFF) with a warm border rgb(236,230,220), no longer a navy outline. (2) Center time zone: book-timezone-note reads 'Times are in the center's time zone (America/New York)'. Booking 15:00 stored 19:00Z (EDT) from both the UTC and the Tokyo browser, and 22:00 stored 02:00Z the next day. The today card, child appointments, family upcoming and Leila's My day all show 3:00 PM. The 22:00 appointment is grouped under Wednesday Oct 21 (the center's day). The Move dialog prefills 2026-10-21 / 22:00 / 45, and moving it to 21:30 worked. (3) History: child-history and the platform center-history show human labels for every event, with no raw keys. (4) Adding a guardian with an existing account's email (sara.morgan@family) shows Invited, not connected. Before accepting, Sara saw family-empty. After invite-accept-button she saw the child. (5) BookDialog preselects 'speech' for a single-service child, from the child page and after picking the child on /app/schedule. (6) Parent regression: a new invite was activated and landed on family-home with team and upcoming. Nav is Home and Account security only, and /app/children and /app/schedule are forbidden. The DOM has no DOB and no other guardians' emails, and there is no horizontal overflow at 390px. (7) Therapist Leila: My day shows her appointments, with no trial banner and no book, move or cancel buttons. FAIL/PARTIAL: (a) The archive and cancel/no-show short-reason red notice does render, but on the page behind the modal overlay, so the user cannot see it while the dialog is open. elementFromPoint confirms the dialog covers it. (b) The schedule week window still uses the browser's time zone (weekStart uses local setHours/getDay), so appointments go missing in non-center time zones.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Child archive dialog (children/[id]/page.tsx) and appointment cancel/no-show dialog (schedule/page.tsx)",
+        "issue": "For a reason under 3 characters, the code calls setNotice(...) on the page-level FormAlert (child-notice-danger / schedule-notice-danger). That alert sits behind the dialog's blurred overlay; elementFromPoint at its center returns the dialog's textarea. To the user, Confirm still appears to do nothing. Render the error inside the dialog (e.g. a local error state shown above ReasonField, or an error prop on ReasonField).",
+        "selector": "[data-testid=child-archive-dialog], [data-testid=appointment-close-dialog]",
+        "priority": "MEDIUM"
+      },
+      {
+        "component": "Schedule week window (schedule/page.tsx weekStart, from/to, days)",
+        "issue": "weekStart builds browser-local midnights and the API is queried with them, while grouping uses the center's dayKey. In a UTC browser, a Sunday 21:00 NY appointment (01:00Z Mon) is missing from 'Oct 19–25'. Next week's query fetches it but no day matches, so 'Oct 26 – Nov 1' renders an empty schedule-week div with no empty state. In an Asia/Tokyo browser, both Sunday Oct 25 appointments show only under 'Oct 26 – Nov 1', and 'Oct 19 – 25' has no Sunday. America/New_York shows correctly. Fix: compute the week start and the 7 day keys in the center time zone (zonedToUtc(mondayDateStr,'00:00')), and render the empty state when no day matches. The schedule-day-{getDay()} testids also use the browser's weekday (Wednesday was schedule-day-4 in Tokyo).",
+        "selector": "[data-testid=schedule-week], [data-testid=week-label], [data-testid^=schedule-day-]",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      { "screen": "Family home", "issues": ["The warm canvas is only a 4px (p-1) frame around the cards. The page header ('Welcome, …') and the 'Coming next' card stay on the clinical gray canvas rgb(246,247,249), so the family theme is barely visible. Consider applying theme-family-light and bg-fam-canvas to the whole guardian page or shell content area."] },
+      { "screen": "History cards", "issues": ["History timestamps (formatDate) use the browser's time zone (7:30 AM in a UTC browser), while appointments use the center's (3:30 AM NY). Consider formatting history times in the center's time zone too, for consistency."] }
+    ]
+  },
+  "test_report_links": ["/app/tests/tb_api_helper.py", "/app/tests/tb_iter12_sunday_probe.py"],
+  "action_items": [
+    "Show the archive and cancel/no-show short-reason error INSIDE the dialog, not on the page behind the overlay.",
+    "Make the schedule week window center-zone based (weekStart/from/to/days from the center's calendar, e.g. via zonedToUtc). Show the schedule-empty state when items exist but none fall on a shown day. Use the center weekday for the schedule-day-* testids."
+  ],
+  "critical_code_review_comments": [
+    "schedule/page.tsx weekStart uses d.setHours(0)/getDay() in the browser's time zone. This is the root cause of the cross-zone week bug.",
+    "operations.ts zonedToUtc computes the offset at the 'guess' instant. Within ±offset hours of a DST switch this can be off by 1h (e.g. 01:30 on the fall-back day). Low risk, but worth a second iteration: recompute the offset at the result.",
+    "centerTz is module-level mutable state set as a side effect of API calls. BookDialog's default date (localDate) runs before any fetch on a cold page, which falls back to the browser's zone. It works today because the page fetch completes first. Prefer passing the time zone explicitly from session/center data.",
+    "BookDialog keeps the previous date between openings (setF spreads x). This is fine, but the 'tomorrow' default only applies on first mount."
+  ],
+  "updated_files": ["/app/tests/tb_api_helper.py", "/app/tests/tb_iter12_sunday_probe.py"],
+  "success_rate": { "backend": "not tested (frontend only)", "frontend": "85% (6 of 7 requested items fully pass; the reason-notice fix is only partial, and a new cross-time-zone week-window bug was found)" },
+  "seed_data_creation": "Harbor child TEST_Avery TEST_Quinn (a60518ff-…) restored to ACTIVE. New Leila assignment. Appointments: 2026-10-21 15:00 NY (scheduled); 21:30 NY (moved, then cancelled); Oct 22 15:00, Oct 23 15:00, and Sunday Oct 25 15:00 and 21:00 NY (room TEST_sunday, booked via API to probe week boundaries). Guardians added: TEST_Iter Twelve (test-parent-iter12@example.test; new account activated, password in /app/.workspace/local-credentials/iter12_parent.json) and TEST_Sara Morgan (sara.morgan@family; accepted, now connected).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Use browser.new_context(timezone_id=...) to test UTC, Tokyo and NY. Harbor's one trial child is a60518ff-e715-41f6-b0a7-aee542b1c311 (ACTIVE). Sunday Oct 25 TEST_sunday appointments (19:00Z and 01:00Z Oct 26) reproduce the week-window bug: in UTC, week+0 shows 1 of 2 and week+1 shows a blank list. Parent login: test-parent-iter12@example.test (password in /app/.workspace/local-credentials/iter12_parent.json). Sara Morgan is now connected to the child. Helpers: /app/tests/tb_em_005_helpers.py (login, latest_token_for).",
+  "rca of the issue": "Reason notice: the archive and cancel handlers reuse the page-level setNotice, whose FormAlert renders outside the Dialog portal, behind the overlay. Week bug: from/to/days come from browser-local midnights. Only per-item grouping (dayKey) and labels were switched to the center's time zone, so the window boundaries and the day buckets disagree whenever the browser's offset differs from the center's."
+}
