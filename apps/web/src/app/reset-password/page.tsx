@@ -16,9 +16,8 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Token travels in the URL fragment so it is never sent to servers or written to access logs.
+    // Token travels in the URL fragment, so it is never sent to servers or written to access logs.
     setToken(new URLSearchParams(window.location.hash.slice(1)).get('token') ?? '');
-    history.replaceState(null, '', window.location.pathname);
   }, []);
 
   async function submit(e: FormEvent) {

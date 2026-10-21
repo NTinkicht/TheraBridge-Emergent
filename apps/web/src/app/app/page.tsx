@@ -62,7 +62,7 @@ function Home({ session, onError }: { session: SessionInfo; onError: (e: unknown
   if (!ctx) {
     return (
       <FormAlert tone="info" testId="home-no-context">
-        {session.contexts.length > 1 ? <>Choose a workspace to continue. <Link className="font-semibold underline" href="/select-context">Choose workspace</Link></> : 'Your account is not yet assigned to a center role. Ask your center administrator to add you.'}
+        {session.contexts.length > 1 ? <>Choose a workspace to continue. <Link className="font-semibold underline" href="/select-context">Choose workspace</Link></> : 'You don’t have an active center role right now. If you expected access, ask your center administrator.'}
       </FormAlert>
     );
   }

@@ -14,10 +14,11 @@ export default function ForgotPasswordPage() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) return setError('Enter a valid email address.');
     setBusy(true);
     setError(null);
     try {
-      setDone((await authApi.forgot(email)).message);
+      setDone((await authApi.forgot(email.trim())).message);
     } catch (err) {
       setError((err as Error).message);
     } finally {

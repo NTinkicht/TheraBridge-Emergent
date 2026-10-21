@@ -8,6 +8,7 @@ import { BrandMark } from '@/components/brand/BrandMark';
 import { SignatureBand } from '@/components/brand/SignatureBand';
 import { Avatar } from '@/components/design/ui';
 import { ROLE_LABELS, authApi, contextLabel, type SessionInfo } from '@/lib/auth';
+import { ApiError } from '@/lib/api';
 
 export interface PlannedModule {
   label: string;
@@ -18,7 +19,7 @@ export interface PlannedModule {
 function NavLink({ href, icon: Icon, label, active, testId }: { href: string; icon: LucideIcon; label: string; active: boolean; testId: string }) {
   return (
     <Link href={href} aria-current={active ? 'page' : undefined} data-testid={testId}
-      className={`relative flex min-h-[44px] items-center gap-3 rounded-control px-3 text-[14px] font-medium transition-colors ${active ? 'bg-brand-actionTint text-brand-action' : 'text-brand-inkMuted hover:bg-surface-subtle hover:text-brand-ink'}`}>
+      className={`relative flex min-h-[44px] shrink-0 items-center gap-2 rounded-control px-2.5 text-[14px] font-medium transition-colors md:gap-3 md:px-3 ${active ? 'bg-brand-actionTint text-brand-action' : 'text-brand-inkMuted hover:bg-surface-subtle hover:text-brand-ink'}`}>
       {active && <span aria-hidden="true" className="absolute bottom-2 left-0 top-2 w-[3px] rounded-r-full bg-brand-action" />}
       <Icon size={19} strokeWidth={1.8} aria-hidden="true" />
       {label}
@@ -29,13 +30,21 @@ function NavLink({ href, icon: Icon, label, active, testId }: { href: string; ic
 export function ProductShell({ session, active, planned, children }: { session: SessionInfo; active: 'home' | 'security'; planned: PlannedModule[]; children: ReactNode }) {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
   const ctx = session.activeContext;
   const where = ctx ? `${contextLabel(ctx)} · ${ROLE_LABELS[ctx.role]}` : 'No workspace selected';
 
   async function signOut() {
     setSigningOut(true);
-    await authApi.logout().catch(() => undefined);
-    router.replace('/login?signedout=1');
+    setSignOutError(null);
+    try {
+      await authApi.logout();
+      router.replace('/login?signedout=1');
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) return router.replace('/login?signedout=1');
+      setSignOutError('Sign-out did not complete. Check your connection and try again.');
+      setSigningOut(false);
+    }
   }
 
   return (
@@ -77,7 +86,8 @@ export function ProductShell({ session, active, planned, children }: { session: 
             <LogOut size={16} aria-hidden="true" /> {signingOut ? 'Signing out…' : 'Sign out'}
           </button>
         </header>
-        <nav aria-label="Primary" className="flex gap-2 overflow-x-auto border-b border-border-light bg-surface-white px-4 py-2 md:hidden" data-testid="mobile-nav">
+        {signOutError && <p role="alert" className="bg-status-dangerSurface px-4 py-2 text-[14px] font-medium text-status-danger md:px-8" data-testid="sign-out-error">{signOutError}</p>}
+        <nav aria-label="Primary" className="flex gap-1 overflow-x-auto border-b border-border-light bg-surface-white px-2 py-2 md:hidden" data-testid="mobile-nav">
           <NavLink href="/app" icon={Home} label="Home" active={active === 'home'} testId="mobile-nav-home" />
           <NavLink href="/account/security" icon={KeyRound} label="Security" active={active === 'security'} testId="mobile-nav-security" />
           {session.contexts.length > 1 && <NavLink href="/select-context" icon={ArrowLeftRight} label="Switch" active={false} testId="mobile-nav-switch" />}

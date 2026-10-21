@@ -53,12 +53,25 @@ function ChangePassword({ onRotated }: { onRotated: () => void }) {
 function SignOutEverywhere() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function run() {
+    setBusy(true);
+    setError(null);
+    try {
+      await authApi.logoutAll();
+      router.replace('/login?signedout=1');
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) return router.replace('/login?expired=1');
+      setError(`We could not sign you out everywhere. Your sessions may still be active. ${(e as Error).message}`);
+      setBusy(false);
+    }
+  }
   return (
     <Card className="p-5 md:p-6" testId="sign-out-everywhere-card">
       <h2 className="text-[18px] font-semibold">Sign out everywhere</h2>
       <p className="mt-1 max-w-[560px] text-[14px] text-brand-inkMuted">Ends every TheraBridge session for your account, including this one. Use it if you signed in on a shared or lost device.</p>
-      <button type="button" disabled={busy} data-testid="sign-out-everywhere-button"
-        onClick={async () => { setBusy(true); await authApi.logoutAll().catch(() => undefined); router.replace('/login?signedout=1'); }}
+      {error && <div className="mt-4"><FormAlert tone="danger" testId="sign-out-everywhere-error">{error}</FormAlert></div>}
+      <button type="button" disabled={busy} data-testid="sign-out-everywhere-button" onClick={() => void run()}
         className="mt-4 inline-flex min-h-[44px] items-center rounded-control bg-status-danger px-4 text-[14px] font-semibold text-white transition-[filter] hover:brightness-95">
         {busy ? 'Signing out…' : 'Sign out on all devices'}
       </button>

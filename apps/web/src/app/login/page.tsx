@@ -25,13 +25,15 @@ export default function LoginPage() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) return setError('Enter a valid email address.');
+    if (!password) return setError('Enter your password.');
     setBusy(true);
     setError(null);
     try {
-      const s = await authApi.login(email, password);
+      const s = await authApi.login(email.trim(), password);
       router.replace(!s.activeContext && s.contexts.length > 1 ? '/select-context' : '/app');
     } catch (err) {
-      setError(err instanceof ApiError && err.status === 429 ? err.message : err instanceof ApiError && err.status === 401 ? 'Email or password is incorrect.' : (err as Error).message);
+      setError(err instanceof ApiError && err.status === 429 ? err.message : err instanceof ApiError && err.status === 401 ? 'Email or password is incorrect.' : err instanceof ApiError && err.status === 400 ? 'Enter a valid email address and password.' : (err as Error).message);
       setBusy(false);
     }
   }
