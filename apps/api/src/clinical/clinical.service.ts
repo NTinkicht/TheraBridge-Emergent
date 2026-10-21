@@ -68,12 +68,12 @@ export class ClinicalService {
     const center = await this.prisma.center.findUniqueOrThrow({ where: { id: centerId }, select: { timezone: true } });
     return {
       timezone: center.timezone, synthetic: true, locked: LOCKED, canEdit: v.role === 'THERAPIST', canReview: v.role === 'CLINICAL_SUPERVISOR',
-      child: { id: c.id, name: `${c.preferredName ?? c.firstName} ${c.lastName}`, services: c.services, dateOfBirth: day(c.dateOfBirth) },
+      child: { id: c.id, name: `${c.preferredName ?? c.firstName} ${c.lastName}`, services: assignedServices ?? c.services, dateOfBirth: day(c.dateOfBirth) },
       assessments: assessments.map((a) => ({ id: a.id, service: a.service, assessedOn: day(a.assessedOn), summary: a.summary, areas: a.areas, status: a.status, version: a.version, author: who(a.membershipId), mine: a.membershipId === v.membershipId, updatedAt: a.updatedAt })),
       plans: plans.map((p) => ({ id: p.id, service: p.service, title: p.title, versions: p.versions.map((x) => ({ id: x.id, number: x.number, status: x.status, summary: x.summary, goals: x.goals, homeActivities: x.homeActivities, reviewNotes: x.reviewNotes, version: x.version, mine: x.authorId === v.userId, author: users.find((u) => u.id === x.authorId)?.displayName ?? '', updatedAt: x.updatedAt })) })),
-      notes: notes.map((n) => ({ id: n.id, service: n.service, sessionDate: day(n.sessionDate), appointmentId: n.appointmentId, sections: n.sections, status: n.status, version: n.version, author: who(n.membershipId), mine: n.membershipId === v.membershipId, updatedAt: n.updatedAt })),
+      notes: notes.map((n) => ({ id: n.id, service: n.service, sessionDate: day(n.sessionDate), appointmentId: n.appointmentId, sections: n.sections, status: n.status, executionStatus: n.executionStatus, actualStart: n.actualStart, actualEnd: n.actualEnd, attendance: n.attendance, activities: n.activities, version: n.version, author: who(n.membershipId), mine: n.membershipId === v.membershipId, updatedAt: n.updatedAt })),
       observations: observations.map((o) => ({ id: o.id, planVersionId: o.planVersionId, goalKey: o.goalKey, value: o.value, observedOn: day(o.observedOn), note: o.note, sessionNoteId: o.sessionNoteId, author: who(o.membershipId) })),
-      appointments: appointments.map((a) => ({ id: a.id, service: a.service, startsAt: a.startsAt, status: a.status, hasNote: notes.some((n) => n.appointmentId === a.id) })),
+      appointments: appointments.map((a) => ({ id: a.id, service: a.service, startsAt: a.startsAt, endsAt: a.endsAt, room: a.room, status: a.status, hasNote: notes.some((n) => n.appointmentId === a.id) })),
       templates,
     };
   }
@@ -152,7 +152,7 @@ export class ClinicalService {
   async createNote(centerId: string, v: Viewer, childId: string, dto: SessionNoteDto) {
     if (dto.appointmentId && !(await this.prisma.appointment.findFirst({ where: { id: dto.appointmentId, centerId, childId, membershipId: v.membershipId } }))) throw new UnprocessableEntityException('Choose one of your own appointments with this child.');
     return this.write(centerId, v, childId, dto.service, async (tx, now) => {
-      if (dto.appointmentId && !await tx.appointment.findFirst({ where: { id: dto.appointmentId, centerId, childId, service: dto.service, membershipId: v.membershipId } })) throw new UnprocessableEntityException('Choose your own appointment for this child and service.');
+      if (dto.appointmentId && !await tx.appointment.findFirst({ where: { id: dto.appointmentId, centerId, childId, service: dto.service, membershipId: v.membershipId, status: 'SCHEDULED' } })) throw new UnprocessableEntityException('Choose your own scheduled appointment for this child and service.');
       if (dto.appointmentId && (await tx.sessionNote.findUnique({ where: { appointmentId: dto.appointmentId } }))) throw new ConflictException('This appointment already has a session draft.');
       const n = await tx.sessionNote.create({ data: { centerId, childId, membershipId: v.membershipId, appointmentId: dto.appointmentId ?? null, service: dto.service, sessionDate: asDate(dto.sessionDate), createdAt: now, updatedAt: now } });
       await logCenterEvent(tx, centerId, 'clinical.session_drafted', now, { actorUserId: v.userId, meta: { childId, sessionNoteId: n.id } });
@@ -164,7 +164,7 @@ export class ClinicalService {
     const n = await this.prisma.sessionNote.findFirst({ where: { id, centerId } });
     if (!n) throw new NotFoundException('Session draft not found');
     return this.write(centerId, v, n.childId, n.service, async (tx, now) => {
-      const r = await tx.sessionNote.updateMany({ where: { id, membershipId: v.membershipId, version: dto.version }, data: { sections: { ...dto.sections } as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
+      const r = await tx.sessionNote.updateMany({ where: { id, membershipId: v.membershipId, version: dto.version, executionStatus: 'IN_PROGRESS' }, data: { sections: { ...dto.sections } as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
       if (r.count !== 1) throw new ConflictException(n.membershipId !== v.membershipId ? 'Only the author can edit this draft.' : 'This draft changed since you opened it. Reload to see the latest version.');
       await logCenterEvent(tx, centerId, 'clinical.session_saved', now, { actorUserId: v.userId, meta: { childId: n.childId, sessionNoteId: id } });
       return { ok: true };
