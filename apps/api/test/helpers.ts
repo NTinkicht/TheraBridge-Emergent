@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { randomBytes } from 'node:crypto';
 import { Test } from '@nestjs/testing';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import request from 'supertest';
@@ -10,7 +11,9 @@ import { AUTH_CONFIG, loadAuthConfig } from '../src/config/env';
 import { PrismaService } from '../src/prisma/prisma.service';
 
 export const ORIGIN = 'http://localhost:3000';
-export const PASSWORD = 'Synthetic-Pass-For-Tests-42';
+// Synthetic, generated per test run; never a literal credential in source (R2).
+export const freshPassword = () => `Synthetic-${randomBytes(12).toString('base64url')}`;
+export const PASSWORD = freshPassword();
 
 export function assertTestDatabase(): void {
   const url = process.env.DATABASE_URL;

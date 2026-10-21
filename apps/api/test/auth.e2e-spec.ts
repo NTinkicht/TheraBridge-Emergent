@@ -7,7 +7,7 @@ import { ipPrefix, parseTrustedProxiesForTest, resolveClientIp, sha256 } from '.
 import { loadAuthConfig } from '../src/config/env';
 import { passwordPolicyError } from '../src/auth/password';
 import {
-  FakeClock, Harness, ORIGIN, PASSWORD, cookieFrom, createUser, login, makeApp, post, preAuth, rawCookie, resetDb, signIn,
+  FakeClock, Harness, ORIGIN, PASSWORD, cookieFrom, createUser, freshPassword, login, makeApp, post, preAuth, rawCookie, resetDb, signIn,
 } from './helpers';
 
 const MIN = 60_000;
@@ -188,7 +188,7 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
       const u = await createUser(h.prisma);
       const s = await signIn(h, u.email);
       const other = await signIn(h, u.email);
-      const res = await post(h, '/api/auth/password/change', s, { currentPassword: PASSWORD, newPassword: 'A-New-Synthetic-Pass-77' }).expect(200);
+      const res = await post(h, '/api/auth/password/change', s, { currentPassword: PASSWORD, newPassword: freshPassword() }).expect(200);
       const next = cookieFrom(res, 'tb_session')!;
       expect(next).not.toBe(s.token);
       await h.http().get('/api/auth/session').set('Cookie', s.cookie).expect(401);

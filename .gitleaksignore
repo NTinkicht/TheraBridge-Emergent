@@ -1,3 +1,7 @@
 # Reviewed false positives (fingerprint = commit:file:rule:line; no secret values here).
 # main README line 18: English prose after "secrets:", not a credential. Reviewed 2026-10-20.
 d8ca97c2b05109776a4f3e7cf87d8080624f793c:README.md:therabridge-credential-assignment:18
+# TB-EM-001 checkpoint A (local commit fe61fe1): synthetic test-only password literals in test fixtures, never real credentials.
+# Replaced by runtime-generated passwords in checkpoint C. Reviewed 2026-10-21.
+fe61fe12df2d4ca4c8f9b98d9d4f273c0357417b:apps/api/test/helpers.ts:therabridge-credential-assignment:13
+fe61fe12df2d4ca4c8f9b98d9d4f273c0357417b:apps/api/test/auth.e2e-spec.ts:therabridge-credential-assignment:191

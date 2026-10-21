@@ -68,3 +68,5 @@ credentials.json
 # Env templates must be exported (placeholders only). Keep these negations LAST.
 !.env.example
 !**/.env.example
+# Emergent platform cron dispatcher holds a platform webhook secret; never commit it.
+.emergent/cron/
