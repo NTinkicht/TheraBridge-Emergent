@@ -1,0 +1,26 @@
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Req } from '@nestjs/common';
+import { RequirePermission, TbRequest } from '../auth/access';
+import { GovernanceService } from './governance.service';
+import { TransferDraftDto, TransitionDto } from './governance.dto';
+const uuid = () => new ParseUUIDPipe();
+const viewer = (r: TbRequest) => ({ userId: r.auth!.session.userId, membershipId: r.auth!.session.activeMembershipId!, role: r.auth!.session.activeRole! });
+@Controller('centers/:centerId/governance')
+export class GovernanceController {
+  constructor(private readonly service: GovernanceService) {}
+  @Get('documents') @RequirePermission('center.clinical.read')
+  documents(@Param('centerId', uuid()) c: string, @Req() r: TbRequest) { return this.service.documents(c, viewer(r)); }
+  @Post('documents/:kind/:id/transitions') @RequirePermission('center.clinical.read')
+  transition(@Param('centerId', uuid()) c: string, @Param('kind') k: string, @Param('id', uuid()) id: string, @Body() d: TransitionDto, @Req() r: TbRequest) { return this.service.transition(c, viewer(r), k, id, d); }
+  @Get('documents/:kind/:id/history') @RequirePermission('center.clinical.read')
+  history(@Param('centerId', uuid()) c: string, @Param('kind') k: string, @Param('id', uuid()) id: string, @Req() r: TbRequest) { return this.service.history(c, viewer(r), k, id); }
+  @Get('previews/:id') @RequirePermission('center.clinical.read')
+  preview(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Req() r: TbRequest) { return this.service.preview(c, viewer(r), id); }
+  @Get('access') @RequirePermission('center.governance.read')
+  access(@Param('centerId', uuid()) c: string, @Req() r: TbRequest) { return this.service.access(c, viewer(r)); }
+  @Post('transfer-simulations') @RequirePermission('center.governance.read')
+  transfer(@Param('centerId', uuid()) c: string, @Body() d: TransferDraftDto, @Req() r: TbRequest) { return this.service.transfer(c, viewer(r), d); }
+  @Post('release') @RequirePermission('clinical.report.release')
+  release() { throw new Error('Release is disabled'); }
+  @Post('consent-grants') @RequirePermission('clinical.consent.grant')
+  grant() { throw new Error('Consent grants are disabled'); }
+}

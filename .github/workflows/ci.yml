@@ -1,0 +1,84 @@
+name: ci
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  secret-scan:
+    runs-on: ubuntu-24.04
+    env:
+      GITLEAKS_VERSION: 8.30.1
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks (version- and checksum-pinned)
+        run: |
+          curl -sSfL -o /tmp/gitleaks.tgz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  /tmp/gitleaks.tgz" | sha256sum -c -
+          tar -xzf /tmp/gitleaks.tgz -C /tmp gitleaks
+          /tmp/gitleaks version
+      - name: Scan full Git history (all fetched refs), values redacted
+        run: /tmp/gitleaks git . --config .gitleaks.toml --log-opts="--all" --redact=100 --no-banner --exit-code 1
+      - name: Scan tracked files in this checkout, values redacted
+        run: /tmp/gitleaks dir . --config .gitleaks.toml --redact=100 --no-banner --exit-code 1
+
+  test:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16-bookworm
+        env:
+          POSTGRES_USER: therabridge
+          POSTGRES_PASSWORD: ci_only_password
+          POSTGRES_DB: therabridge_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U therabridge -d therabridge_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://therabridge:ci_only_password@localhost:5432/therabridge_test?schema=public
+    steps:
+      - uses: actions/checkout@v4
+      - name: Required portability files are present
+        run: |
+          for f in yarn.lock .env.example apps/api/.env.example apps/web/.env.example .nvmrc; do
+            test -f "$f" || { echo "::error::missing $f"; exit 1; }
+          done
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: yarn workspace @therabridge/api prisma generate
+      - run: yarn workspace @therabridge/api prisma migrate deploy
+      - run: yarn workspace @therabridge/api typecheck
+      - run: yarn workspace @therabridge/api test
+      - run: yarn workspace @therabridge/api build
+      - run: yarn workspace @therabridge/web build
+        env:
+          NEXT_PUBLIC_API_BASE_URL: http://localhost:8001
+
+  compose:
+    runs-on: ubuntu-24.04
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - run: cp .env.example .env
+      - run: docker compose build
+      - run: docker compose up -d --wait
+      - name: Smoke test through the running containers
+        run: |
+          curl -fsS http://localhost:8001/api/health | python3 -c 'import json,sys; h=json.load(sys.stdin); assert h["status"] == "ok" and h["service"] == "therabridge-api" and h["database"]["status"] == "up" and h["migrations"]["applied"] >= 1'
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8001/api/health/probe -H 'Origin: http://localhost:3000' -H 'Content-Type: application/json' -d '{"source":"cli"}')" = 404
+          curl -fsS http://localhost:3000/ | grep -q TheraBridge
+      - if: failure()
+        run: docker compose logs
+      - if: always()
+        run: docker compose down -v

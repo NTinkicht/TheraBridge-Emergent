@@ -1,0 +1,22 @@
+{
+  "name": "therabridge-emergent",
+  "version": "0.0.0",
+  "private": true,
+  "description": "TheraBridge V1 (synthetic-data proof of concept, NOT for clinical use)",
+  "workspaces": [
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20.11 <21"
+  },
+  "scripts": {
+    "dev:api": "yarn workspace @therabridge/api start:dev",
+    "dev:web": "yarn workspace @therabridge/web dev",
+    "build": "yarn workspace @therabridge/api build && yarn workspace @therabridge/web build",
+    "test": "yarn workspace @therabridge/api test",
+    "brand:derive": "python3 scripts/brand/derive-logo.py"
+  },
+  "devDependencies": {
+    "playwright": "1.48.2"
+  }
+}
