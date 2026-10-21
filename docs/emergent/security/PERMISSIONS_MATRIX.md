@@ -34,8 +34,8 @@ Source of truth: `apps/api/src/auth/policy.ts`. The test `authz.e2e-spec.ts` fai
 | center.appointments.status | CENTER_ADMIN, COORDINATOR, THERAPIST |
 | family.portal.read | GUARDIAN |
 | family.preferences.update | GUARDIAN |
-| center.messages.use | CENTER_ADMIN, COORDINATOR, THERAPIST, CLINICAL_SUPERVISOR, GUARDIAN |
-| center.messages.manage | CENTER_ADMIN, COORDINATOR |
+| center.messages.use | CENTER_ADMIN, COORDINATOR, THERAPIST, GUARDIAN |
+| center.messages.manage | CENTER_ADMIN, COORDINATOR, THERAPIST |
 | platform.reminders.run | PLATFORM_ADMIN |
 | center.clinical.read | THERAPIST, CLINICAL_SUPERVISOR |
 | center.clinical.draft | THERAPIST |
@@ -64,7 +64,7 @@ These capabilities stay denied until an owner-approved clinical policy exists.
 - Trial (TB-EM-005): writes are refused with 403 after `center.trial_ends_at`. Reads keep working. Only `platform.centers.trial` can extend a trial. Two exceptions stay allowed after expiry because they only reduce access, which is the safeguarding direction: removing a guardian and ending a therapist assignment.
 - Clinical drafts (TB-EM-008, synthetic only): a THERAPIST reads and drafts only for children actively assigned to them for that service, and edits only their own assessments and session drafts. A CLINICAL_SUPERVISOR reads the whole center and can return a plan draft with comments. CENTER_ADMIN, COORDINATOR and GUARDIAN have no clinical access. The approve and sign routes exist but require `clinical.plan.approve` / `clinical.note.sign`, which are DENY. Guardians see only synthetic sample activities; no plan content is released.
 - Messages are recipient-specific (issue #35): each thread is addressed to one guardian link, and only that guardian sees it. Family free-text messaging is a synthetic demonstration behind `FAMILY_MESSAGING_DEMO=true`, and it is always off in production and staging.
-- Messages (TB-EM-007): operational, non-clinical only. Row scope is re-checked on every request: a GUARDIAN sees threads about children currently linked to their own account (removing the link ends access at once); a THERAPIST sees threads about children actively assigned to them; CENTER_ADMIN and COORDINATOR see the center and can close or reopen threads. CLINICAL_SUPERVISOR has no message access. Messages are append-only in the database and their text is never copied into the audit history.
+- Messages (TB-EM-013 owner decision, 2026-10-22): operational, non-clinical, synthetic only. **Parents communicate exclusively with therapists who have an active assignment to their child**. A GUARDIAN sees only threads addressed to their exact active guardian link; an assigned THERAPIST can read/reply to and close/reopen that child's GUARDIAN threads. CENTER_ADMIN and COORDINATOR cannot view, create, reply to, or close/reopen GUARDIAN threads; they can use and manage internal CARE_TEAM and SPECIALTY discussions only. CLINICAL_SUPERVISOR has **no discussion access at all**. Every list, read, create, reply and status operation enforces scope server-side. Messages remain append-only, and body text is never copied into audit history.
 - Reminders (TB-EM-007): a GUARDIAN can switch appointment emails on or off only for their own guardian link. Reminders and change notices go to the restricted synthetic outbox only.
 - Guardians are always connected by accepting an invitation, even when the same email already has a guardian account at the center. This stops a mistyped email from exposing a child to another family.
 - CLINICAL_SUPERVISOR reads all children and the whole center schedule (oversight), without making changes.
