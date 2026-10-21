@@ -61,7 +61,7 @@ export class MessagesService {
       const last = t.messages[0];
       const read = t.reads[0]?.lastReadAt;
       return {
-        id: t.id, childId: t.childId, child: `${t.child.preferredName ?? t.child.firstName} ${t.child.lastName}`, subject: t.subject, category: t.category, status: t.status,
+        id: t.id, childId: t.childId, audience: t.audience, service: t.service, child: `${t.child.preferredName ?? t.child.firstName} ${t.child.lastName}`, subject: t.subject, category: t.category, status: t.status,
         lastMessageAt: t.lastMessageAt, preview: last ? last.body.slice(0, 140) : '', lastFrom: last?.authorKind ?? null,
         unread: !!last && last.authorUserId !== v.userId && (!read || read < last.createdAt),
       };
@@ -81,16 +81,55 @@ export class MessagesService {
 
   async create(centerId: string, v: Viewer, dto: ThreadDto) {
     if (!familyMessagingEnabled()) throw new ForbiddenException(DEMO_OFF);
+    const audience = dto.audience ?? 'GUARDIAN'; // Existing recipient-specific API requests remain compatible.
+    if (v.role === 'GUARDIAN' && audience !== 'GUARDIAN') throw new ForbiddenException('Families cannot open internal staff conversations.');
+    if (audience === 'SPECIALTY' && !dto.service) throw new UnprocessableEntityException('Choose a specialty for a restricted conversation.');
+    if (audience !== 'SPECIALTY' && dto.service) throw new UnprocessableEntityException('Only specialty conversations can specify a service.');
+    if (audience !== 'GUARDIAN' && dto.guardianLinkId) throw new UnprocessableEntityException('Staff conversations cannot have a guardian recipient.');
+
     const now = this.trial.now();
     const t = await this.prisma.$transaction(async (tx) => {
       await this.trial.assertWritable(tx, centerId, now);
       await this.assertChild(tx, centerId, v, dto.childId);
-      const link = await tx.guardianLink.findFirst({ where: { centerId, childId: dto.childId, removedAt: null, ...(v.role === 'GUARDIAN' ? { userId: v.userId } : { userId: { not: null }, id: dto.guardianLinkId ?? '00000000-0000-0000-0000-000000000000' }) } });
-      if (!link) throw new UnprocessableEntityException(v.role === 'GUARDIAN' ? 'Child not found' : 'Choose a connected guardian of this child as the recipient.');
-      const t = await tx.messageThread.create({ data: { centerId, childId: dto.childId, guardianLinkId: link.id, subject: dto.subject, category: dto.category, createdById: v.userId, createdAt: now, lastMessageAt: now } });
+      if (audience === 'SPECIALTY') {
+        const child = await tx.child.findFirst({
+          where: {
+            id: dto.childId, centerId, status: 'ACTIVE', services: { has: dto.service! },
+            ...(v.role === 'THERAPIST'
+              ? { assignments: { some: { membershipId: v.membershipId, service: dto.service!, endedAt: null } } }
+              : {}),
+          },
+          select: { id: true },
+        });
+        if (!child) throw new NotFoundException('Child or specialty assignment not found');
+      }
+
+      const link = audience === 'GUARDIAN'
+        ? await tx.guardianLink.findFirst({
+            where: {
+              centerId, childId: dto.childId, removedAt: null,
+              ...(v.role === 'GUARDIAN'
+                ? { userId: v.userId }
+                : { userId: { not: null }, id: dto.guardianLinkId ?? '00000000-0000-0000-0000-000000000000' }),
+            },
+          })
+        : null;
+      if (audience === 'GUARDIAN' && !link) throw new UnprocessableEntityException(
+        v.role === 'GUARDIAN' ? 'Child not found' : 'Choose a connected guardian of this child as the recipient.',
+      );
+      const t = await tx.messageThread.create({
+        data: {
+          centerId, childId: dto.childId, guardianLinkId: link?.id ?? null,
+          audience, service: audience === 'SPECIALTY' ? dto.service! : null,
+          subject: dto.subject, category: dto.category, createdById: v.userId,
+          createdAt: now, lastMessageAt: now,
+        },
+      });
       await tx.message.create({ data: { threadId: t.id, centerId, authorUserId: v.userId, authorKind: v.role === 'GUARDIAN' ? 'FAMILY' : 'STAFF', body: dto.body, createdAt: now } });
       await this.markRead(tx, t.id, v.userId, now);
-      await logCenterEvent(tx, centerId, 'message.thread_opened', now, { actorUserId: v.userId, meta: { childId: dto.childId, threadId: t.id, category: dto.category } });
+      await logCenterEvent(tx, centerId, 'message.thread_opened', now, {
+        actorUserId: v.userId, meta: { childId: dto.childId, threadId: t.id, category: dto.category, audience, service: t.service },
+      });
       return t;
     });
     await this.audit.record('message.thread_opened', { actorUserId: v.userId, meta: { centerId, threadId: t.id } });
