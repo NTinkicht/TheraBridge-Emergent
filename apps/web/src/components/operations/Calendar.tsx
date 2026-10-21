@@ -77,7 +77,7 @@ export function CalendarGrid({ days, items, onOpen, onSlot }: { days: string[]; 
                       style={{ top, height, left: `calc(${(lane / count) * 100}% + 2px)`, width: `calc(${100 / count}% - 4px)` }}>
                       <span className="tnum block font-semibold">{timeRange(a.startsAt, a.endsAt)}</span>
                       <span className="block truncate font-semibold">{a.child}</span>
-                      <span className="block truncate opacity-80">{a.therapist}{a.seriesId ? ' · ↻' : ''}</span>
+                      {height >= 48 && <span className="block truncate opacity-80">{a.therapist}{a.seriesId ? ' · ↻' : ''}</span>}
                     </button>
                   );
                 })}

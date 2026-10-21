@@ -110,7 +110,7 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
             ))}
           </div>
           <Button size="sm" variant="secondary" aria-label={`Previous ${view}`} onClick={() => setAnchor(addDays(anchor, -step))} data-testid="week-prev"><ChevronLeft size={16} aria-hidden="true" /></Button>
-          <p className="tnum min-w-[170px] text-center text-[15px] font-semibold" aria-live="polite" data-testid="week-label">{label}</p>
+          <p className="tnum min-w-[128px] text-center text-[14px] font-semibold sm:min-w-[170px] sm:text-[15px]" aria-live="polite" data-testid="week-label">{label}</p>
           <Button size="sm" variant="secondary" aria-label={`Next ${view}`} onClick={() => setAnchor(addDays(anchor, step))} data-testid="week-next"><ChevronRight size={16} aria-hidden="true" /></Button>
           <Button size="sm" variant="ghost" onClick={() => setAnchor(dayKey(new Date()))} data-testid="week-today">Today</Button>
         </div>
