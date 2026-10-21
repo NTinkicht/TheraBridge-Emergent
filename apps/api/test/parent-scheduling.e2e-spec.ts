@@ -201,4 +201,32 @@ describe('TB-EM-007 parent experience round 2 + scheduling enhancements (real Po
     expect(events.map((e) => e.type)).toEqual(expect.arrayContaining(['message.thread_opened', 'message.sent', 'message.thread_closed', 'message.thread_reopened']));
     expect(JSON.stringify(events)).not.toMatch(/ten minutes late|One more thing/);
   });
+  it('serializes a guardian reply against removal of the recipient link', async () => {
+    const { kid, link, parent } = await family();
+    const id = (await post(h, c('threads'), parent, {
+      childId: kid, category: 'scheduling', subject: 'Synthetic concurrency',
+      body: 'A message before access is revoked',
+    }).expect(201)).body.id;
+    const before = await h.prisma.message.count({ where: { threadId: id } });
+    let pendingReply: Promise<unknown> | undefined;
+
+    // Hold the exact guardian link locked while an HTTP reply is in flight.
+    // The removal commits before the reply can pass its own row-lock check.
+    await h.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM guardian_link WHERE id=${link}::uuid FOR UPDATE`;
+      pendingReply = post(h, c(`threads/${id}/messages`), parent, {
+        body: 'Must not be appended after removal',
+      }).expect(404).then((res) => res);
+      await tx.guardianLink.update({
+        where: { id: link },
+        data: { removedAt: h.clock.now(), isPrimary: false },
+      });
+      // Give the competing HTTP request a chance to reach the blocked row.
+      await tx.$queryRaw`SELECT pg_sleep(0.15)`;
+    });
+    await pendingReply!;
+    expect(await h.prisma.message.count({ where: { threadId: id } })).toBe(before);
+    await get(parent, c(`threads/${id}`)).expect(404);
+  });
+
 });
