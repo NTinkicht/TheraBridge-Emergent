@@ -1,0 +1,63 @@
+{
+  "summary": "TB-EM-007 frontend E2E (Playwright, public URL) covering admin Schedule (day/week grid, nav, filters, legend, appointment panel, this-and-following edit/cancel, move a single visit so it becomes an exception, cancel with reason validation, book dialog filtered by assignments, repeat options, series clash list + skip), the child assign-therapist specialty filter, admin/guardian/therapist/supervisor Messages and permissions, guardian Family Home (visits, status pills, Time changed, attendance, reminders switch persists), forbidden states, mobile 390px (agenda/day grid/messages back/no overflow) and a browser in the Tokyo time zone showing center NY times correctly across the Nov 1 DST change. Found 1 HIGH bug and fixed it: the series clash list never showed in the UI. The cause was that lib/auth.ts call() dropped the error body, so ApiError.details was undefined and BookDialog could not read the conflicts. I retested after the fix and it passes. Also found 1 MEDIUM series bug and several minor UX issues.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PATCH /api/centers/:id/series/:seriesId (this & following)", "issue": "The edit changes the series' own startTime (no split), so earlier visits (Oct 27–Nov 12, still 10:00) now report the series as 'Every week on Tue, Thu at 11:00'. GET series returns only the latest rule, so the summary is wrong for every visit before fromDate."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "BookDialog clash list (lib/auth.ts call())", "issue": "FIXED BY TESTER: ApiError was thrown without the body as details, so e.details.conflicts was always undefined. book-clashes and book-skip-clashes never appeared and users could not book the rest of a clashing series. Now passes body as the 3rd arg. Retested: clash list shows 'Tue, Oct 27 — The therapist already has an appointment', and skip books 1 and shows '1 repeating visits booked, 1 skipped'.", "selector": "[data-testid=book-clashes]", "priority": "HIGH (fixed)"},
+      {"component": "AppointmentPanel series edit", "issue": "series-edit-start is prefilled from series.startTime, not from the visit being opened. After one 'this and following' change, opening an earlier visit (Oct 27, 10:00) prefills 11:00. If the admin then changes only the length, all those visits would also move to 11:00 without the admin noticing. Prefill from zonedParts(appt.startsAt).time and the appointment's duration instead.", "selector": "[data-testid=series-edit-start]", "priority": "MEDIUM"},
+      {"component": "AppointmentPanel SeriesSummary", "issue": "A visit cancelled on its own (Nov 10) shows 'this visit was changed on its own'. The wording suits a moved visit, not a cancelled one.", "selector": "[data-testid=series-summary]", "priority": "LOW"},
+      {"component": "BookDialog move mode", "issue": "On the first render the dialog briefly shows the default tomorrow/09:00 (2026-10-22 09:00) before the effect fills in the visit's own date and time. Read immediately, the inputs give the wrong values.", "selector": "[data-testid=book-date-input]", "priority": "LOW"},
+      {"component": "Schedule notice", "issue": "Grammar: '1 repeating visits booked, 1 skipped because of clashes.'", "selector": "[data-testid=schedule-notice-success]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Calendar grid", "issues": ["45-minute blocks are shorter than 48px, so the therapist and the ↻ repeating marker never show on standard visits. The legend mentions ↻, but it is invisible on the grid (it is only in the aria-label)."]},
+      {"screen": "Book dialog / series edit", "issues": ["Uses the browser's native date/time inputs rather than a styled picker (this matches the existing pattern)."]},
+      {"screen": "Family Home", "issues": ["'Coming up' is capped at 8 visits with no 'show more' (the 9th visit, Nov 19, is hidden). The guardian New conversation child option shows the legal name 'TEST_Alex Morgan' while threads show 'Alex Morgan'."]}
+    ]
+  },
+  "passed_flows": [
+    "Admin week/day toggle, prev/next/today, week-label, legend, empty-state text including 'for this filter'",
+    "Therapist filter (Jordan -> 0 visits, empty text) and child filter",
+    "Appointment panel: when/service/room/status/reminder, series-summary, series-edit 11:00 updates Nov 17 + Nov 19 only",
+    "Move this visit -> exception: summary says 'changed on its own', series-edit hidden, series-cancel still shown; notice 'rest of series unchanged'",
+    "Cancel single visit: reason under 3 characters gives inline appt-error; valid reason -> Cancelled pill with the reason; Move hidden, Close shown",
+    "Series cancel this-and-following requires a reason and works; outbox gets an 'Appointment cancelled' email to Sara (within 2 weeks)",
+    "Book dialog: empty-save validation; child -> service list only 'speech' (auto-selected), therapist list only Leila · lead; slot click prefills date/time and weekday chip; repeat none/weekly/biweekly, ends count/until",
+    "Assign-therapist dialog lists only Leila (Jordan has no specialties)",
+    "Admin messages: list, open, reply, close (closed note, moves to Closed tab), reopen, new-thread validation (subject/body), create, non-clinical notice",
+    "Guardian: family-home with '2 new' unread pill, Booked/Cancelled pills, Time changed, Repeating visit, attendance 0/0/0, history empty state, reminders toggle persists after reload (restored to on), messages reply, no Close button, unread dot clears on open, new conversation; /app/schedule and /app/children show page-forbidden",
+    "Therapist Leila: no Book button, no therapist filter, slots disabled, panel shows only Close, no series actions; messages without the Close toggle",
+    "Supervisor: no Messages nav, /app/messages page-forbidden, schedule read-only",
+    "Mobile 390: week -> schedule-agenda, day -> grid, messages list->conversation->back, no horizontal overflow (scrollWidth 390) for admin and guardian",
+    "Tokyo browser TZ: visits shown at center time 10:00 AM before and after the Nov 1 DST change; slot prefill matches the clicked center hour"
+  ],
+  "test_report_links": [],
+  "action_items": [
+    "Keep the lib/auth.ts fix (ApiError details = body) or apply an equivalent fix.",
+    "Prefill series-edit start and length from the selected visit, not series.startTime. Consider splitting the series at fromDate (or storing the rule per segment) so the summary is correct for earlier visits.",
+    "Use different SeriesSummary wording for a visit cancelled on its own versus one that was moved.",
+    "Avoid the move-dialog first-render flash, e.g. initialise state from editing when opening.",
+    "Pluralise the 'repeating visits booked' notice.",
+    "Show the ↻ marker on short calendar blocks. Add 'show more' to the family Coming up list."
+  ],
+  "critical_code_review_comments": [
+    "lib/auth.ts call() lost the error body (fixed). Any future UI that relies on structured 409 details depends on this.",
+    "AppointmentPanel: series-edit state is seeded from the series rule rather than the occurrence, which risks unintended time changes.",
+    "Messages/FamilyHome: there is no polling or refresh for new messages or the unread count, so a guardian must reload to see staff replies.",
+    "RepeatFields uses [...].sort() with no comparator. It is fine for 1–7, but a numeric comparator is safer."
+  ],
+  "updated_files": ["/app/apps/web/src/lib/auth.ts"],
+  "success_rate": {"backend": "not tested (jest covers)", "frontend": "~93% (1 HIGH fixed, 1 MEDIUM open, minors)"},
+  "test_credentials": "From /app/.workspace/local-credentials/synthetic-accounts.json (unchanged, seed not run).",
+  "seed_data_creation": "Changes to demo data: series 08563b1e now starts at 11:00 from Nov 17 (Nov 17 and Nov 19 are at 11:00); Nov 12 visit dbea734b moved to 1:00 PM (exception); Nov 10 visit b152e09f cancelled (reason 'TEST_ family travelling'); new series with one visit on Sat Oct 31 (2443abda, Room 'TEST_Room clash') created then cancelled; messages: replies on TEST_Running late thread, new threads 'TEST_ Room change next week' (staff) and 'TEST_ Parking question' (guardian, Attendance).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Today in the env is Oct 21 2026; Harbor TZ is America/New_York. Only one child (Alex 8ac02ca1...) and two therapists (Leila e8c2ed95 with speech+OT, Jordan 2362ffb8 with no specialties). The appointments API rejects ranges over ~60 days (422). Calendar slots under an existing appointment are covered by the appt button, so use book-appointment-button and fill the date for those. Reproduce the clash: series Tue+Sat from 2026-10-27 at 10:00, 2 visits. Outbox is /app/apps/api/.outbox.",
+  "rca of the issue": "Clash list missing: BookDialog checks `e instanceof ApiError && Array.isArray(e.details?.conflicts)`. opsApi uses rest.send -> call() in lib/auth.ts, which built `new ApiError(status, msg)` without passing the parsed body. lib/api.ts apiFetch did pass it, so the two error paths were inconsistent. The API correctly returns 409 {message, conflicts:[{date, reason}]}. Fix: pass `body ?? undefined` as details. Verified in the UI."
+}
