@@ -14,7 +14,7 @@ const when = (s: string) => new Date(s).toLocaleString(undefined, { month: 'shor
 export function NonClinicalNotice({ tone }: { tone: Tone }) {
   return (
     <p className={`flex items-start gap-2 rounded-control p-3 text-[13px] ${tone === 'family' ? 'bg-fam-warm' : 'bg-status-infoSurface'}`} data-testid="messages-non-clinical-notice">
-      <ShieldAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" /><span><strong>Synthetic demonstration only.</strong> Real family messaging stays off until the safeguarding, consent and recipient-visibility decisions are approved. Family conversations are visible only to their explicitly addressed guardian; internal staff conversations are never visible to families. {NON_CLINICAL_NOTICE}</span>
+      <ShieldAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" /><span><strong>Synthetic demonstration only.</strong> Real family messaging stays off until the safeguarding, consent and recipient-visibility decisions are approved. Family conversations are visible only to the addressed guardian and therapists actively assigned to the child. Supervisors and center managers cannot access family conversations; supervisors have no discussion access. Internal staff conversations are never visible to families. {NON_CLINICAL_NOTICE}</span>
     </p>
   );
 }
@@ -31,7 +31,7 @@ function ThreadList({ items, active, onPick, family }: { items: ThreadRow[]; act
               {t.unread && <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-brand-action" aria-label="Unread" data-testid={`thread-unread-${t.id}`} />}
             </span>
             <span className="text-[12px] text-brand-inkMuted">{family ? '' : `${t.child} · `}{categoryLabel(t.category)}{!family ? ` · ${audienceLabel(t.audience)}${t.service ? ` (${t.service})` : ''}` : ''} · {when(t.lastMessageAt)}{t.status === 'CLOSED' ? ' · closed' : ''}</span>
-            <span className="line-clamp-1 text-[13px] text-brand-inkMuted">{t.lastFrom === 'STAFF' ? (family ? 'Care team: ' : 'You/team: ') : family ? 'You: ' : 'Family: '}{t.preview}</span>
+            <span className="line-clamp-1 text-[13px] text-brand-inkMuted">{t.lastFrom === 'STAFF' ? (family ? 'Therapist: ' : 'You/team: ') : family ? 'You: ' : 'Family: '}{t.preview}</span>
           </button>
         </li>
       ))}
@@ -82,7 +82,7 @@ function Conversation({ centerId, id, tone, onBack, onChanged, onError }: { cent
       <ol className="flex-1 space-y-3 overflow-y-auto px-4 py-4" aria-label="Messages" data-testid="conversation-messages">
         {data.messages.map((m) => (
           <li key={m.id} className={`flex flex-col ${m.mine ? 'items-end' : 'items-start'}`} data-testid={`message-${m.id}`}>
-            <span className="mb-0.5 text-[12px] text-brand-inkMuted">{m.mine ? 'You' : m.author}{m.authorKind === 'STAFF' && !m.mine ? ' · care team' : ''} · {when(m.createdAt)}</span>
+            <span className="mb-0.5 text-[12px] text-brand-inkMuted">{m.mine ? 'You' : m.author}{m.authorKind === 'STAFF' && !m.mine ? (fam ? ' · therapist' : ' · staff') : ''} · {when(m.createdAt)}</span>
             <p className={`max-w-[85%] whitespace-pre-wrap break-words rounded-[14px] px-3.5 py-2.5 text-[14px] ${m.mine ? (fam ? 'bg-fam-accent text-fam-onAccent' : 'bg-brand-action text-white') : 'bg-surface-subtle'}`}>{m.body}</p>
           </li>
         ))}
@@ -108,12 +108,14 @@ function NewThread({ centerId, open, tone, kids, therapistMembershipId, onClose,
   const [guardians, setGuardians] = useState<{ id: string; displayName: string }[]>([]);
   const [services, setServices] = useState<string[]>([]);
   const staff = tone !== 'family';
+  const managerOnly = staff && !therapistMembershipId;
+  const audienceOptions = managerOnly ? AUDIENCES.filter((item) => item.value !== 'GUARDIAN') : AUDIENCES;
   useEffect(() => {
     if (!open || !staff || !f.childId) { setGuardians([]); setServices([]); return; }
     let active = true;
     opsApi.child(centerId, f.childId).then((d) => {
       if (!active) return;
-      const g = d.guardians.filter((x) => x.portalStatus === 'CONNECTED');
+      const g = managerOnly ? [] : d.guardians.filter((x) => x.portalStatus === 'CONNECTED');
       setGuardians(g);
       const permitted = therapistMembershipId
         ? d.assignments.filter((a) => a.membershipId === therapistMembershipId && a.endedAt === null).map((a) => a.service)
@@ -127,12 +129,13 @@ function NewThread({ centerId, open, tone, kids, therapistMembershipId, onClose,
       }));
     }).catch(() => { if (active) { setGuardians([]); setServices([]); } });
     return () => { active = false; };
-  }, [open, staff, f.childId, centerId, therapistMembershipId]);
+  }, [open, staff, f.childId, centerId, therapistMembershipId, managerOnly]);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  useEffect(() => { if (open) { setErr(null); setF({ childId: kids.length === 1 ? kids[0].id : '', guardianLinkId: '', audience: 'GUARDIAN', service: '', category: 'scheduling', subject: '', body: '' }); } }, [open, kids]);
+  useEffect(() => { if (open) { setErr(null); setF({ childId: kids.length === 1 ? kids[0].id : '', guardianLinkId: '', audience: managerOnly ? 'CARE_TEAM' : 'GUARDIAN', service: '', category: 'scheduling', subject: '', body: '' }); } }, [open, kids, managerOnly]);
   async function send() {
     if (!f.childId) return setErr('Choose which child this is about.');
+    if (managerOnly && f.audience === 'GUARDIAN') return setErr('Only assigned therapists can start family conversations.');
     if (staff && f.audience === 'GUARDIAN' && !f.guardianLinkId) return setErr('Choose the guardian who should receive this conversation.');
     if (staff && f.audience === 'SPECIALTY' && !f.service) return setErr('Choose the specialty team for this conversation.');
     if (f.subject.trim().length < 3) return setErr('Give the conversation a subject of at least 3 characters.');
@@ -157,7 +160,7 @@ function NewThread({ centerId, open, tone, kids, therapistMembershipId, onClose,
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <SelectField label="About" value={f.childId} onChange={(v) => setF({ ...f, childId: v, guardianLinkId: '', service: '' })} testId="new-thread-child" options={[{ value: '', label: 'Choose a child' }, ...kids.map((k) => ({ value: k.id, label: k.name }))]} />
           <SelectField label="Topic" value={f.category} onChange={(v) => setF({ ...f, category: v })} testId="new-thread-category" options={CATEGORIES} />
-          {staff && <SelectField label="Audience" value={f.audience} onChange={(v) => setF({ ...f, audience: v as ThreadAudience, guardianLinkId: v === 'GUARDIAN' ? f.guardianLinkId : '', service: v === 'SPECIALTY' ? f.service : '' })} testId="new-thread-audience" options={AUDIENCES} />}
+          {staff && <SelectField label="Audience" value={f.audience} onChange={(v) => setF({ ...f, audience: v as ThreadAudience, guardianLinkId: v === 'GUARDIAN' ? f.guardianLinkId : '', service: v === 'SPECIALTY' ? f.service : '' })} testId="new-thread-audience" options={audienceOptions} />}
           {staff && f.audience === 'GUARDIAN' && <SelectField label="Recipient" value={f.guardianLinkId} onChange={(v) => setF({ ...f, guardianLinkId: v })} testId="new-thread-recipient" options={[{ value: '', label: guardians.length ? 'Choose a guardian' : 'No connected guardian' }, ...guardians.map((g) => ({ value: g.id, label: g.displayName }))]} />}
           {staff && f.audience === 'SPECIALTY' && <SelectField label="Specialty" value={f.service} onChange={(v) => setF({ ...f, service: v })} testId="new-thread-service" options={[{ value: '', label: 'Choose a specialty' }, ...services.map((service) => ({ value: service, label: service.charAt(0).toUpperCase() + service.slice(1) }))]} />}
         </div>
@@ -185,7 +188,7 @@ export function Messages({ centerId, family, kids, therapistMembershipId, onErro
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className={`${family ? 'font-display' : ''} text-[26px] font-bold`} data-testid="messages-title">Messages</h1>
-          <p className="text-[14px] text-brand-inkMuted">{family ? 'Talk with your child’s care team about visits and everyday arrangements.' : 'Operational coordination with families and the care team.'}{data?.unread ? ` ${data.unread} unread.` : ''}</p>
+          <p className="text-[14px] text-brand-inkMuted">{family ? 'Talk with your child’s therapists about visits and everyday arrangements.' : 'Operational coordination with families and the care team.'}{data?.unread ? ` ${data.unread} unread.` : ''}</p>
         </div>
         <Button tone={tone} onClick={() => setComposing(true)} disabled={!kids.length} data-testid="new-thread-button"><MessageSquarePlus size={17} aria-hidden="true" /> New conversation</Button>
       </div>
