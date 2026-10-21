@@ -73,6 +73,25 @@ export class ProgressQueryDto {
   @IsOptional() @Matches(DATE) from?: string;
   @IsOptional() @Matches(DATE) to?: string;
 }
+export class OutcomeDto {
+  @IsUUID() childId!: string;
+  @IsUUID() templateId!: string;
+  @Matches(DATE) practiceDate!: string;
+  @IsIn(['COMPLETED', 'NEEDED_HELP', 'NOT_COMPLETED', 'SKIPPED']) choice!: string;
+  @IsUUID() idempotencyKey!: string;
+}
+export class PracticeWeekDto {
+  @IsOptional() @Matches(DATE) week?: string;
+  @IsOptional() @IsUUID() childId?: string;
+}
+export class FeedbackQueryDto {
+  @IsOptional() @IsUUID() childId?: string;
+  @IsOptional() @IsUUID() templateId?: string;
+  @IsOptional() @IsIn(['COMPLETED', 'NEEDED_HELP', 'NOT_COMPLETED', 'SKIPPED']) choice?: string;
+  @IsOptional() @IsIn(['new', 'acknowledged']) status?: string;
+  @IsOptional() @Matches(DATE) from?: string;
+  @IsOptional() @Matches(DATE) to?: string;
+}
 export class ReportCreateDto {
   @IsIn(SPECIALTIES) service!: string;
   @IsString() @MinLength(3, { message: 'Give the report a title of at least 3 characters' }) @MaxLength(120) title!: string;

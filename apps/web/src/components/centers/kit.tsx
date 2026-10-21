@@ -11,7 +11,7 @@ import { SkeletonRows } from '@/components/design/states';
 import { ROLE_LABELS, type Role, type SessionInfo } from '@/lib/auth';
 import type { HistoryEvent, InvitationStatus, MemberStatus } from '@/lib/centers';
 
-export type ShellKey = 'home' | 'security' | 'applications' | 'centers' | 'setup' | 'team' | 'center' | 'profile' | 'children' | 'schedule' | 'messages' | 'clinical' | 'activities' | 'progress' | 'family-progress';
+export type ShellKey = 'home' | 'security' | 'applications' | 'centers' | 'setup' | 'team' | 'center' | 'profile' | 'children' | 'schedule' | 'messages' | 'clinical' | 'activities' | 'progress' | 'family-progress' | 'practice' | 'practice-feedback';
 
 // Session gate + permission check + shell, shared by every TB-EM-003/004 screen.
 export function Workspace({ active, permission, deniedText, children }: { active: ShellKey; permission: string; deniedText: string; children: (s: SessionInfo, onError: (e: unknown) => void) => ReactNode }) {

@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeftRight, Baby, Building2, CalendarDays, ClipboardCheck, Home, Inbox, KeyRound, LineChart, Lock, LogOut, MessagesSquare, NotebookPen, Settings2, Sparkles, Sprout, UserRound, Users, type LucideIcon } from 'lucide-react';
+import { ArrowLeftRight, Baby, Building2, CalendarDays, ClipboardCheck, Home, Inbox, KeyRound, LineChart, ListChecks, Lock, LogOut, MessagesSquare, NotebookPen, Settings2, Sparkles, Sprout, UserRound, Users, type LucideIcon } from 'lucide-react';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { SignatureBand } from '@/components/brand/SignatureBand';
 import { Avatar } from '@/components/design/ui';
@@ -37,8 +37,10 @@ const NAV: { key: string; href: string; icon: LucideIcon; label: string; short: 
   { key: 'messages', href: '/app/messages', icon: MessagesSquare, label: 'Messages', short: 'Messages', permission: 'center.messages.use' },
   { key: 'clinical', href: '/app/clinical', icon: NotebookPen, label: 'Clinical workspace', short: 'Clinical', permission: 'center.clinical.read' },
   { key: 'progress', href: '/app/progress', icon: LineChart, label: 'Progress', short: 'Progress', permission: 'center.clinical.read' },
+  { key: 'practice-feedback', href: '/app/practice-feedback', icon: Inbox, label: 'Practice feedback', short: 'Feedback', permission: 'center.practice.read' },
   { key: 'activities', href: '/app/activities', icon: Sparkles, label: 'Activities', short: 'Activities', permission: 'center.activities.read' },
   { key: 'activities', href: '/app/activities', icon: Sparkles, label: 'Activities at home', short: 'Activities', permission: 'family.activities.read' },
+  { key: 'practice', href: '/app/practice', icon: ListChecks, label: 'Home practice', short: 'Practice', permission: 'family.practice.read' },
   { key: 'family-progress', href: '/app/family-progress', icon: Sprout, label: 'Progress updates', short: 'Progress', permission: 'family.progress.demo' },
   { key: 'team', href: '/app/team', icon: Users, label: 'Team', short: 'Team', permission: 'center.staff.read' },
   { key: 'center', href: '/app/center', icon: Settings2, label: 'Center details', short: 'Center', permission: 'center.settings.read' },

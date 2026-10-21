@@ -10,4 +10,5 @@ Object.assign(process.env, {
   DEV_MAILBOX_ENABLED: 'false',
   DEV_OUTBOX_DIR: '',
   FAMILY_MESSAGING_DEMO: 'true',
+  FAMILY_PRACTICE_DEMO: 'true',
 });

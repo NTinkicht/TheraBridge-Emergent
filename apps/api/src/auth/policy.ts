@@ -42,6 +42,11 @@ export const PERMISSIONS: Record<string, readonly Role[]> = {
   'family.activities.read': ['GUARDIAN'],
   // TB-EM-009: guardians only ever see a fixed synthetic progress example, never clinician drafts.
   'family.progress.demo': ['GUARDIAN'],
+  // TB-EM-010: synthetic family practice outcomes. Guardians record fixed choices; therapists read and acknowledge.
+  'center.practice.read': ['THERAPIST', 'CLINICAL_SUPERVISOR'],
+  'center.practice.acknowledge': ['THERAPIST'],
+  'family.practice.read': ['GUARDIAN'],
+  'family.practice.record': ['GUARDIAN'],
 };
 
 // No clinical capability can be granted to anyone until an owner-approved clinical policy exists.

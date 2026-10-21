@@ -87,7 +87,7 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
     it('a guardian in an active context is still denied center admin data', async () => {
       await member('guardian', harbor, ['GUARDIAN']);
       const s = await signIn(h, email('guardian'));
-      expect(s.body.permissions).toEqual(['family.portal.read', 'family.preferences.update', 'center.messages.use', 'family.activities.read', 'family.progress.demo']);
+      expect(s.body.permissions).toEqual(['family.portal.read', 'family.preferences.update', 'center.messages.use', 'family.activities.read', 'family.progress.demo', 'family.practice.read', 'family.practice.record']);
     });
 
     it.each([
@@ -152,9 +152,9 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
         'POST /centers/:centerId/children/:childId/restore', 'POST /centers/:centerId/clinical/children/:childId/assessments',
         'POST /centers/:centerId/clinical/children/:childId/notes', 'POST /centers/:centerId/clinical/children/:childId/observations', 'POST /centers/:centerId/clinical/children/:childId/plans', 'POST /centers/:centerId/clinical/children/:childId/reports',
         'POST /centers/:centerId/clinical/notes/:id/sign', 'POST /centers/:centerId/clinical/plan-versions/:id/approve', 'POST /centers/:centerId/clinical/plan-versions/:id/return',
-        'POST /centers/:centerId/clinical/plan-versions/:id/submit', 'POST /centers/:centerId/clinical/plans/:planId/versions',
+        'POST /centers/:centerId/clinical/plan-versions/:id/submit', 'POST /centers/:centerId/clinical/plans/:planId/versions', 'POST /centers/:centerId/clinical/practice-feedback/:id/acknowledge',
         'POST /centers/:centerId/clinical/reports/:id/comments', 'POST /centers/:centerId/clinical/reports/:id/release', 'POST /centers/:centerId/clinical/reports/:id/return',
-        'POST /centers/:centerId/clinical/reports/:id/submit', 'POST /centers/:centerId/clinical/reports/:id/versions', 'POST /centers/:centerId/family/preferences',
+        'POST /centers/:centerId/clinical/reports/:id/submit', 'POST /centers/:centerId/clinical/reports/:id/versions', 'POST /centers/:centerId/family/practice/outcomes', 'POST /centers/:centerId/family/preferences',
         'POST /centers/:centerId/invitations', 'POST /centers/:centerId/invitations/:invitationId/resend', 'POST /centers/:centerId/invitations/:invitationId/revoke',
         'POST /centers/:centerId/series', 'POST /centers/:centerId/series/:seriesId/cancel',
         'POST /centers/:centerId/setup/:key/complete',
@@ -219,6 +219,10 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
       'center.activities.manage': ['THERAPIST', 'CLINICAL_SUPERVISOR'],
       'family.activities.read': ['GUARDIAN'],
       'family.progress.demo': ['GUARDIAN'],
+      'center.practice.read': ['THERAPIST', 'CLINICAL_SUPERVISOR'],
+      'center.practice.acknowledge': ['THERAPIST'],
+      'family.practice.read': ['GUARDIAN'],
+      'family.practice.record': ['GUARDIAN'],
     };
     const cases = ROLES.flatMap((role) => [...Object.keys(PERMISSIONS), ...CLINICAL_CAPABILITIES].map((p) => [role, p] as const));
     it.each(cases)('%s × %s', (role, permission) => {
