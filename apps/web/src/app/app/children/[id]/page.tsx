@@ -110,6 +110,7 @@ function ChildPage({ id, session, onError }: { id: string; session: SessionInfo;
   const [booking, setBooking] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [reason, setReason] = useState('');
+  const [archiveErr, setArchiveErr] = useState<string | null>(null);
   useEffect(() => { if (new URLSearchParams(window.location.search).get('registered')) setNotice({ tone: 'success', text: 'Child registered. Next: add a guardian and assign a therapist.' }); }, []);
   if (failed) return <ErrorState onRetry={() => void reload()} testId="child-error" />;
   if (!child) return <Card className="p-5"><SkeletonRows rows={5} testId="child-loading" /></Card>;
@@ -165,8 +166,9 @@ function ChildPage({ id, session, onError }: { id: string; session: SessionInfo;
       </div>
       <BookDialog centerId={centerId} open={booking} childId={child.id} onClose={() => setBooking(false)} onError={onError} onDone={(m) => { setBooking(false); setNotice({ tone: 'success', text: m }); void reload(); }} />
       <Dialog open={archiving} onClose={() => setArchiving(false)} title="Archive this record" testId="child-archive-dialog"
-        footer={<><Button variant="secondary" onClick={() => setArchiving(false)}>Cancel</Button><Button variant="danger" data-testid="child-archive-confirm" onClick={() => void (async () => { if (reason.trim().length < 3) return setNotice({ tone: 'danger', text: 'Give a reason of at least 3 characters.' }); if (await run(() => opsApi.archiveChild(centerId, child.id, reason.trim()), 'Record archived. Future appointments were cancelled.')) setArchiving(false); })()}>Archive</Button></>}>
+        footer={<><Button variant="secondary" onClick={() => setArchiving(false)}>Cancel</Button><Button variant="danger" data-testid="child-archive-confirm" onClick={() => void (async () => { if (reason.trim().length < 3) return setArchiveErr('Give a reason of at least 3 characters.'); setArchiveErr(null); if (await run(() => opsApi.archiveChild(centerId, child.id, reason.trim()), 'Record archived. Future appointments were cancelled.')) setArchiving(false); })()}>Archive</Button></>}>
         <p className="mb-3 text-[14px]">Future appointments are cancelled and the care team assignments end. The record stays available under Archived.</p>
+        {archiveErr && <div className="mb-3"><FormAlert tone="danger" testId="child-archive-error">{archiveErr}</FormAlert></div>}
         <ReasonField value={reason} onChange={setReason} testId="child-archive-reason" />
       </Dialog>
     </div>

@@ -9,15 +9,22 @@ import { ApptPill } from '@/components/operations/Dashboards';
 import { Button, Card } from '@/components/design/ui';
 import { Dialog, EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
 import type { SessionInfo } from '@/lib/auth';
-import { dayKey, dayLabel, opsApi, timeRange, type Appointment, type Therapist } from '@/lib/operations';
+import { dayKey, getCenterTz, opsApi, timeRange, zonedToUtc, type Appointment, type Therapist } from '@/lib/operations';
 import { CalendarDays } from 'lucide-react';
 
-const weekStart = (offset: number) => {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + offset * 7);
-  return d;
+const addDays = (day: string, n: number) => {
+  const [y, m, d] = day.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
 };
+// Week days are calendar days in the center's time zone (Monday first).
+const weekDays = (offset: number) => {
+  const today = dayKey(new Date());
+  const [y, m, d] = today.split('-').map(Number);
+  const monday = addDays(today, -((new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7) + offset * 7);
+  return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+};
+const dayTitle = (day: string) => new Date(`${day}T12:00:00Z`).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC' });
+const shortDay = (day: string) => new Date(`${day}T12:00:00Z`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
 function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unknown) => void }) {
   const centerId = session.activeContext?.type === 'center' ? session.activeContext.centerId : '';
@@ -30,11 +37,15 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
   const [editing, setEditing] = useState<Appointment | null>(null);
   const [closing, setClosing] = useState<{ a: Appointment; status: 'CANCELLED' | 'NO_SHOW' } | null>(null);
   const [reason, setReason] = useState('');
+  const [closeErr, setCloseErr] = useState<string | null>(null);
+  const [tz, setTz] = useState(getCenterTz());
   const [notice, setNotice] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
-  const from = useMemo(() => weekStart(week), [week]);
-  const to = useMemo(() => new Date(from.getTime() + 7 * 86_400_000), [from]);
+  const days = useMemo(() => weekDays(week), [week, tz]); // eslint-disable-line react-hooks/exhaustive-deps
+  const from = useMemo(() => zonedToUtc(days[0], '00:00'), [days]);
+  const to = useMemo(() => zonedToUtc(addDays(days[6], 1), '00:00'), [days]);
   const fetcher = useCallback(() => opsApi.appointments(centerId, { from: from.toISOString(), to: to.toISOString(), membershipId: therapist || undefined }), [centerId, from, to, therapist]);
   const { data, failed, reload } = useLoad(fetcher, onError);
+  useEffect(() => { if (data && getCenterTz() !== tz) setTz(getCenterTz()); }, [data, tz]);
   useEffect(() => { if (!isTherapist) void opsApi.therapists(centerId).then((r) => setTherapists(r.items)).catch(() => setTherapists([])); }, [centerId, isTherapist]);
 
   const act = async (fn: () => Promise<unknown>, ok: string) => {
@@ -49,8 +60,8 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
       return false;
     }
   };
-  const days = Array.from({ length: 7 }, (_, i) => new Date(from.getTime() + i * 86_400_000));
   const now = Date.now();
+  const shown = data ? data.items.filter((a) => days.includes(dayKey(a.startsAt))) : [];
   return (
     <div className="space-y-5">
       <PageTitle title="Schedule" body={isTherapist ? 'Your appointments.' : 'Appointments across the center.'} testId="schedule-title"
@@ -59,7 +70,7 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex items-center gap-2">
           <Button size="sm" variant="secondary" aria-label="Previous week" onClick={() => setWeek(week - 1)} data-testid="week-prev"><ChevronLeft size={16} aria-hidden="true" /></Button>
-          <p className="tnum min-w-[180px] text-center text-[15px] font-semibold" data-testid="week-label">{from.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {new Date(to.getTime() - 1).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p>
+          <p className="tnum min-w-[180px] text-center text-[15px] font-semibold" data-testid="week-label">{shortDay(days[0])} – {shortDay(days[6])}</p>
           <Button size="sm" variant="secondary" aria-label="Next week" onClick={() => setWeek(week + 1)} data-testid="week-next"><ChevronRight size={16} aria-hidden="true" /></Button>
           {week !== 0 && <Button size="sm" variant="ghost" onClick={() => setWeek(0)} data-testid="week-today">This week</Button>}
         </div>
@@ -67,15 +78,15 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
       </div>
       {failed && <ErrorState onRetry={() => void reload()} testId="schedule-error" />}
       {!failed && !data && <Card className="p-5"><SkeletonRows rows={5} testId="schedule-loading" /></Card>}
-      {data && !data.items.length && <EmptyState icon={CalendarDays} title="Nothing booked this week" body={manage ? 'Book an appointment for a child with an assigned therapist.' : 'Appointments booked for you will appear here.'} testId="schedule-empty" />}
-      {data && data.items.length > 0 && (
+      {data && !shown.length && <EmptyState icon={CalendarDays} title="Nothing booked this week" body={manage ? 'Book an appointment for a child with an assigned therapist.' : 'Appointments booked for you will appear here.'} testId="schedule-empty" />}
+      {data && shown.length > 0 && (
         <div className="space-y-4" data-testid="schedule-week">
           {days.map((d) => {
-            const items = data.items.filter((a) => dayKey(a.startsAt) === dayKey(new Date(d.getTime() + 12 * 3_600_000)));
+            const items = shown.filter((a) => dayKey(a.startsAt) === d);
             if (!items.length) return null;
             return (
-              <Card key={d.toISOString()} className="p-5" testId={`schedule-day-${d.getDay()}`}>
-                <h2 className="text-[15px] font-semibold">{dayLabel(items[0].startsAt)}</h2>
+              <Card key={d} className="p-5" testId={`schedule-day-${d}`}>
+                <h2 className="text-[15px] font-semibold">{dayTitle(d)}</h2>
                 <ul className="mt-2 divide-y divide-border-light">
                   {items.map((a) => {
                     const started = new Date(a.startsAt).getTime() <= now;
@@ -86,9 +97,9 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
                         <span className="flex flex-wrap items-center gap-2">
                           <ApptPill a={a} />
                           {a.status === 'SCHEDULED' && mine && started && <Button size="sm" variant="secondary" onClick={() => void act(() => opsApi.setStatus(centerId, a.id, 'COMPLETED'), 'Marked as attended.')} data-testid={`appointment-attended-${a.id}`}>Attended</Button>}
-                          {a.status === 'SCHEDULED' && mine && started && <Button size="sm" variant="ghost" onClick={() => { setClosing({ a, status: 'NO_SHOW' }); setReason(''); }} data-testid={`appointment-noshow-${a.id}`}>No-show</Button>}
+                          {a.status === 'SCHEDULED' && mine && started && <Button size="sm" variant="ghost" onClick={() => { setClosing({ a, status: 'NO_SHOW' }); setReason(''); setCloseErr(null); }} data-testid={`appointment-noshow-${a.id}`}>No-show</Button>}
                           {a.status === 'SCHEDULED' && manage && !started && <Button size="sm" variant="secondary" onClick={() => setEditing(a)} data-testid={`appointment-move-${a.id}`}>Move</Button>}
-                          {a.status === 'SCHEDULED' && manage && <Button size="sm" variant="ghost" onClick={() => { setClosing({ a, status: 'CANCELLED' }); setReason(''); }} data-testid={`appointment-cancel-${a.id}`}>Cancel</Button>}
+                          {a.status === 'SCHEDULED' && manage && <Button size="sm" variant="ghost" onClick={() => { setClosing({ a, status: 'CANCELLED' }); setReason(''); setCloseErr(null); }} data-testid={`appointment-cancel-${a.id}`}>Cancel</Button>}
                         </span>
                       </li>
                     );
@@ -102,7 +113,8 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
       <BookDialog centerId={centerId} open={booking || !!editing} editing={editing} onClose={() => { setBooking(false); setEditing(null); }} onError={onError}
         onDone={(m) => { setBooking(false); setEditing(null); setNotice({ tone: 'success', text: m }); void reload(); }} />
       <Dialog open={!!closing} onClose={() => setClosing(null)} title={closing?.status === 'CANCELLED' ? 'Cancel appointment' : 'Record a no-show'} testId="appointment-close-dialog"
-        footer={<><Button variant="secondary" onClick={() => setClosing(null)}>Back</Button><Button variant="danger" data-testid="appointment-close-confirm" onClick={() => void (async () => { if (!closing) return; if (reason.trim().length < 3) return setNotice({ tone: 'danger', text: 'Give a reason of at least 3 characters.' }); if (await act(() => opsApi.setStatus(centerId, closing.a.id, closing.status, reason.trim()), closing.status === 'CANCELLED' ? 'Appointment cancelled.' : 'No-show recorded.')) setClosing(null); })()}>Confirm</Button></>}>
+        footer={<><Button variant="secondary" onClick={() => setClosing(null)}>Back</Button><Button variant="danger" data-testid="appointment-close-confirm" onClick={() => void (async () => { if (!closing) return; if (reason.trim().length < 3) return setCloseErr('Give a reason of at least 3 characters.'); setCloseErr(null); if (await act(() => opsApi.setStatus(centerId, closing.a.id, closing.status, reason.trim()), closing.status === 'CANCELLED' ? 'Appointment cancelled.' : 'No-show recorded.')) setClosing(null); })()}>Confirm</Button></>}>
+        {closeErr && <div className="mb-3"><FormAlert tone="danger" testId="appointment-close-error">{closeErr}</FormAlert></div>}
         <ReasonField value={reason} onChange={setReason} testId="appointment-close-reason" />
       </Dialog>
     </div>

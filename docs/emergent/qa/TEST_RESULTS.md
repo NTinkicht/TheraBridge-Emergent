@@ -201,3 +201,15 @@ Environment: Emergent workspace, PostgreSQL 15.19, `therabridge_test` database. 
 | After iteration 10 | Two cosmetic fixes (stale Invitations banner, `/invite` subtitle). Checked by the developer only |
 | Test data cleanup | Test centers, users, invitations, applications and outbox files removed from the preview database. Seed accounts kept |
 | CI on the TB-EM-003/004 SHA | **NOT RUN** until export. `compose` expects the old migration name (PR #12) |
+
+## TB-EM-005 trials + TB-EM-006 Center Operations (2026-10-21)
+
+| Check | Result |
+|---|---|
+| `tsc --noEmit` (api, web) | TESTED: PASS |
+| `jest --runInBand` (adds `operations.e2e-spec.ts`; route and matrix guards updated) | **TESTED: PASS, 301/301** (one run had a single non-reproducible failure in the centers spec; the next two runs were green) |
+| Migration `20261023090000_tb_em_005_006_trials_center_operations` | Trial backfill, guardian invitation constraint, unique active guardian, single primary, unique active assignment, appointment time and reason checks. TESTED: PASS |
+| Testing agent iteration 11 | Backend 10/10. Every requested browser journey works. Found: family theme not applied, browser time zone used instead of the center's, missing history labels, auto-connect of an existing guardian |
+| Testing agent iteration 12 (after fixes) | 6 of 7 PASS. Remaining items were the short-reason error shown behind the dialog and a week window that did not follow the center's time zone |
+| Fixes after iteration 12 | Error now shown inside the dialog; week window built from center-time-zone calendar days; wider family canvas. Checked by the developer only |
+| CI on this SHA | **NOT RUN** until export |

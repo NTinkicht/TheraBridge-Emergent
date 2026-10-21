@@ -21,3 +21,6 @@ Emergent cannot create GitHub issues. Please file each one, or let a reviewer do
 | N15 | Low | Platform cannot suspend or reactivate a whole center yet (`center.status` exists, no route) | — | Add `platform.centers.suspend` with audit when needed |
 | N16 | Info | Center names are unique platform-wide (case-insensitive) as duplicate prevention | `POST /api/platform/centers` returns 409 | Relax to per-country uniqueness if real centers share names |
 
+| N17 | Low | Book dialog lists every therapist, including ones not assigned to the chosen child; the API rejects unassigned bookings with a clear message | `/app/schedule` → Book | Filter the therapists by assignment and service |
+| N18 | Low | No recurring appointments and no calendar grid view (weekly list only) | `/app/schedule` | Add a recurrence rule and a time grid in a later iteration |
+| N19 | Info | Trial limits apply to every center, because no non-trial state exists without billing | `center.trial_ends_at` | Add an owner-approved "active" state when commercial terms exist |
