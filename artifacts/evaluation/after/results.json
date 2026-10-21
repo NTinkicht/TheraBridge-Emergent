@@ -1,0 +1,104 @@
+[
+  {
+    "width": 320,
+    "name": "practice",
+    "box": {
+      "x": 110,
+      "y": 112,
+      "width": 100,
+      "height": 44
+    },
+    "overflow": 0
+  },
+  {
+    "width": 320,
+    "name": "progress",
+    "box": {
+      "x": 108,
+      "y": 112,
+      "width": 104,
+      "height": 44
+    },
+    "overflow": 0
+  },
+  {
+    "width": 320,
+    "name": "design-light",
+    "box": null,
+    "overflow": 0
+  },
+  {
+    "width": 320,
+    "name": "design-dark",
+    "box": null,
+    "overflow": 0
+  },
+  {
+    "width": 390,
+    "name": "practice",
+    "box": {
+      "x": 145,
+      "y": 75,
+      "width": 100,
+      "height": 44
+    },
+    "overflow": 0
+  },
+  {
+    "width": 390,
+    "name": "progress",
+    "box": {
+      "x": 175,
+      "y": 75,
+      "width": 104,
+      "height": 44
+    },
+    "overflow": 0
+  },
+  {
+    "width": 390,
+    "name": "design-light",
+    "box": null,
+    "overflow": 0
+  },
+  {
+    "width": 390,
+    "name": "design-dark",
+    "box": null,
+    "overflow": 0
+  },
+  {
+    "width": 768,
+    "name": "practice",
+    "box": {
+      "x": 12,
+      "y": 211,
+      "width": 229,
+      "height": 44
+    },
+    "overflow": 0
+  },
+  {
+    "width": 768,
+    "name": "progress",
+    "box": {
+      "x": 12,
+      "y": 259,
+      "width": 229,
+      "height": 44
+    },
+    "overflow": 0
+  },
+  {
+    "width": 768,
+    "name": "design-light",
+    "box": null,
+    "overflow": 0
+  },
+  {
+    "width": 768,
+    "name": "design-dark",
+    "box": null,
+    "overflow": 0
+  }
+]

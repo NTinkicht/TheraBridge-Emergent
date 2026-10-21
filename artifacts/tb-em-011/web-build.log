@@ -1,0 +1,72 @@
+yarn workspace v1.22.22
+yarn run v1.22.22
+$ next build
+  ▲ Next.js 14.2.35
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/37) ...
+   Generating static pages (9/37)
+   Generating static pages (18/37)
+   Generating static pages (27/37)
+ ✓ Generating static pages (37/37)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    2.78 kB          90 kB
+├ ○ /_not-found                          876 B          88.1 kB
+├ ○ /access-denied                       179 B          96.1 kB
+├ ○ /account/security                    1.73 kB         113 kB
+├ ○ /app                                 8.29 kB         128 kB
+├ ○ /app/access-review                   3.36 kB         118 kB
+├ ○ /app/activities                      3.55 kB         123 kB
+├ ○ /app/applications                    2.99 kB         114 kB
+├ ƒ /app/applications/[id]               3.99 kB         115 kB
+├ ○ /app/center                          2.97 kB         118 kB
+├ ○ /app/centers                         3.16 kB         118 kB
+├ ƒ /app/centers/[id]                    6.71 kB         126 kB
+├ ○ /app/centers/new                     4.14 kB         119 kB
+├ ○ /app/children                        2.64 kB         122 kB
+├ ƒ /app/children/[id]                   5.92 kB         125 kB
+├ ○ /app/clinical                        1.13 kB         121 kB
+├ ƒ /app/clinical/[id]                   9.19 kB         129 kB
+├ ○ /app/family-progress                 3.73 kB         123 kB
+├ ○ /app/governance                      3.69 kB         118 kB
+├ ○ /app/messages                        6.75 kB         121 kB
+├ ○ /app/practice                        5.63 kB         120 kB
+├ ○ /app/practice-feedback               3.01 kB         123 kB
+├ ○ /app/profile                         2.97 kB         118 kB
+├ ○ /app/progress                        4.28 kB         124 kB
+├ ƒ /app/reports/[id]                    7.65 kB         127 kB
+├ ○ /app/schedule                        7.87 kB         127 kB
+├ ○ /app/setup                           3.22 kB         118 kB
+├ ○ /app/team                            5.12 kB         120 kB
+├ ƒ /app/team/[id]                       4.58 kB         119 kB
+├ ○ /apply                               4.7 kB          105 kB
+├ ○ /design-preview                      5.97 kB         109 kB
+├ ○ /design-preview/center               3.69 kB         117 kB
+├ ○ /design-preview/child                4.03 kB         117 kB
+├ ○ /design-preview/family               4.45 kB         118 kB
+├ ○ /design-preview/platform             4.29 kB         117 kB
+├ ○ /design-preview/therapist            4.23 kB         117 kB
+├ ○ /forgot-password                     2.23 kB         103 kB
+├ ○ /invite                              5.2 kB          112 kB
+├ ○ /login                               2.67 kB         103 kB
+├ ○ /reset-password                      2.37 kB         103 kB
+└ ○ /select-context                      3.18 kB        94.8 kB
++ First Load JS shared by all            87.2 kB
+  ├ chunks/1528-c29532d6537535dd.js      31.7 kB
+  ├ chunks/1dd3208c-8b0582052a46c793.js  53.6 kB
+  └ other shared chunks (total)          1.9 kB
+
+
+ƒ Middleware                             26.5 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+Done in 21.16s.
+Done in 21.43s.

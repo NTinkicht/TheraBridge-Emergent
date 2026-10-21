@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Headings use the display face (tokens.ts → --font-display); everything else stays on the body face. */
+h1, h2, h3 {
+  font-family: var(--font-display), system-ui, sans-serif;
+}
+
+/* Focus ring follows the surface so it keeps 3:1 contrast on family light and dark themes. */
+.theme-family-auto, .theme-family-light, .theme-family-dark {
+  --focus-ring: var(--fam-focus);
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+body {
+  background: var(--tb-canvas-clinical);
+  color: var(--tb-brand-ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus-ring, var(--tb-brand-action));
+  outline-offset: 2px;
+}
+
+@keyframes tb-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tb-rise {
+  animation: tb-rise 320ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

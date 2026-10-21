@@ -1,0 +1,12 @@
+practice@320: content below navigation identical = True
+progress@320: content below navigation identical = True
+practice@390: content below navigation identical = True
+progress@390: content below navigation identical = True
+practice@768: content below navigation identical = True
+progress@768: content below navigation identical = True
+design-light@320: diff bounds = (16, 219, 304, 452)
+design-dark@320: diff bounds = (16, 219, 304, 452)
+design-light@390: diff bounds = (16, 219, 374, 403)
+design-dark@390: diff bounds = (16, 219, 374, 403)
+design-light@768: diff bounds = (108, 175, 736, 326)
+design-dark@768: diff bounds = None

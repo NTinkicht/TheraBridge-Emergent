@@ -1,0 +1,838 @@
+// TheraBridge API schema. TB-EM-001: identity, sessions, brute-force counters, recovery, audit (A); tenancy and roles (B).
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum VerificationPurpose {
+  PASSWORD_RESET
+}
+
+enum Role {
+  PLATFORM_ADMIN
+  CENTER_ADMIN
+  COORDINATOR
+  THERAPIST
+  CLINICAL_SUPERVISOR
+  GUARDIAN
+}
+
+enum MembershipStatus {
+  ACTIVE
+  SUSPENDED
+  REVOKED
+}
+
+enum CenterStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum CenterSource {
+  APPLICATION
+  DIRECT
+}
+
+enum InvitationKind {
+  FIRST_ADMIN
+  STAFF
+  GUARDIAN
+}
+
+enum ChildStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  REPLACED
+}
+
+model User {
+  id              String                   @id @default(uuid()) @db.Uuid
+  email           String                   @db.VarChar(254)
+  emailNormalized String                   @unique @map("email_normalized") @db.VarChar(254)
+  displayName     String                   @map("display_name") @db.VarChar(120)
+  status          UserStatus               @default(ACTIVE)
+  createdAt       DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(3)
+  identities      AuthIdentity[]
+  sessions        Session[]
+  tokens          VerificationToken[]
+  memberships     Membership[]
+  platformRoles   PlatformRoleAssignment[] @relation("PlatformRoleHolder")
+
+  @@map("app_user")
+}
+
+model AuthIdentity {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  provider          String    @db.VarChar(64)
+  subject           String    @db.VarChar(254)
+  passwordHash      String?   @map("password_hash") @db.VarChar(255)
+  passwordChangedAt DateTime? @map("password_changed_at") @db.Timestamptz(3)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([provider, subject])
+  @@unique([userId, provider])
+  @@map("auth_identity")
+}
+
+model Session {
+  id                 String      @id @default(uuid()) @db.Uuid
+  userId             String      @map("user_id") @db.Uuid
+  tokenHash          String      @unique @map("token_hash") @db.Char(64)
+  createdAt          DateTime    @map("created_at") @db.Timestamptz(3)
+  lastSeenAt         DateTime    @map("last_seen_at") @db.Timestamptz(3)
+  absoluteExpiresAt  DateTime    @map("absolute_expires_at") @db.Timestamptz(3)
+  revokedAt          DateTime?   @map("revoked_at") @db.Timestamptz(3)
+  revokedReason      String?     @map("revoked_reason") @db.VarChar(32)
+  rotatedFromId      String?     @map("rotated_from_id") @db.Uuid
+  ipPrefix           String?     @map("ip_prefix") @db.VarChar(64)
+  userAgent          String?     @map("user_agent") @db.VarChar(256)
+  activePlatform     Boolean     @default(false) @map("active_platform")
+  activeMembershipId String?     @map("active_membership_id") @db.Uuid
+  activeRole         Role?       @map("active_role")
+  user               User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  activeMembership   Membership? @relation(fields: [activeMembershipId], references: [id], onDelete: Restrict)
+
+  @@index([userId, revokedAt])
+  @@map("session")
+}
+
+model RateLimitCounter {
+  key         String   @db.VarChar(128)
+  windowStart DateTime @map("window_start") @db.Timestamptz(3)
+  count       Int
+
+  @@id([key, windowStart])
+  @@map("rate_limit_counter")
+}
+
+model AuthLockout {
+  key         String   @id @db.VarChar(128)
+  lockedUntil DateTime @map("locked_until") @db.Timestamptz(3)
+
+  @@map("auth_lockout")
+}
+
+model VerificationToken {
+  id        String              @id @default(uuid()) @db.Uuid
+  userId    String              @map("user_id") @db.Uuid
+  purpose   VerificationPurpose
+  tokenHash String              @unique @map("token_hash") @db.Char(64)
+  expiresAt DateTime            @map("expires_at") @db.Timestamptz(3)
+  usedAt    DateTime?           @map("used_at") @db.Timestamptz(3)
+  createdAt DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  user      User                @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, purpose])
+  @@map("verification_token")
+}
+
+model AuditEvent {
+  id            BigInt   @id @default(autoincrement())
+  type          String   @db.VarChar(64)
+  actorUserId   String?  @map("actor_user_id") @db.Uuid
+  subjectUserId String?  @map("subject_user_id") @db.Uuid
+  ipPrefix      String?  @map("ip_prefix") @db.VarChar(64)
+  meta          Json     @default("{}")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([type, createdAt])
+  @@map("audit_event")
+}
+
+model Center {
+  id            String             @id @default(uuid()) @db.Uuid
+  slug          String             @unique @db.VarChar(64)
+  name          String             @db.VarChar(160)
+  status        CenterStatus       @default(ACTIVE)
+  timezone      String             @db.VarChar(64)
+  country       String?            @db.VarChar(80)
+  city          String?            @db.VarChar(80)
+  specialties   String[]           @db.VarChar(32)
+  source        CenterSource       @default(DIRECT)
+  applicationId String?            @unique @map("application_id") @db.Uuid
+  createdById   String?            @map("created_by_id") @db.Uuid
+  version       Int                @default(1)
+  trialEndsAt   DateTime?          @map("trial_ends_at") @db.Timestamptz(3)
+  children      Child[]
+  guardianLinks GuardianLink[]
+  appointments  Appointment[]
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  memberships   Membership[]
+  application   CenterApplication? @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  invitations   Invitation[]
+  events        CenterEvent[]
+  setupSteps    CenterSetupStep[]
+
+  @@map("center")
+}
+
+model Membership {
+  id               String           @id @default(uuid()) @db.Uuid
+  userId           String           @map("user_id") @db.Uuid
+  centerId         String           @map("center_id") @db.Uuid
+  status           MembershipStatus @default(ACTIVE)
+  title            String?          @db.VarChar(80)
+  phone            String?          @db.VarChar(40)
+  specialties      String[]         @db.VarChar(32)
+  responsibilities String[]         @db.VarChar(32)
+  statusReason     String?          @map("status_reason") @db.VarChar(500)
+  statusChangedAt  DateTime?        @map("status_changed_at") @db.Timestamptz(3)
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  user             User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  center           Center           @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  roles            RoleAssignment[]
+  sessions         Session[]
+
+  @@unique([userId, centerId])
+  @@map("membership")
+}
+
+model RoleAssignment {
+  id           String     @id @default(uuid()) @db.Uuid
+  membershipId String     @map("membership_id") @db.Uuid
+  role         Role
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Restrict)
+
+  @@unique([membershipId, role])
+  @@map("role_assignment")
+}
+
+// Created only by the bootstrap CLI, the synthetic seed, or (future) an audited grant by another admin. No HTTP route writes here.
+model PlatformRoleAssignment {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  role            Role      @default(PLATFORM_ADMIN)
+  source          String    @db.VarChar(32)
+  grantedByUserId String?   @map("granted_by_user_id") @db.Uuid
+  reason          String    @db.VarChar(240)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  revokedAt       DateTime? @map("revoked_at") @db.Timestamptz(3)
+  user            User      @relation("PlatformRoleHolder", fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, revokedAt])
+  @@map("platform_role_assignment")
+}
+
+// TB-EM-002: public center application and platform review. Approval does not create a center (TB-EM-003 provisions).
+model CenterApplication {
+  id                String             @id @default(uuid()) @db.Uuid
+  reference         String             @unique @db.VarChar(16)
+  organizationName  String             @map("organization_name") @db.VarChar(160)
+  country           String             @db.VarChar(80)
+  city              String             @db.VarChar(80)
+  timezone          String             @db.VarChar(64)
+  contactName       String             @map("contact_name") @db.VarChar(120)
+  contactEmail      String             @map("contact_email") @db.VarChar(254)
+  contactEmailNorm  String             @map("contact_email_norm") @db.VarChar(254)
+  contactPhone      String?            @map("contact_phone") @db.VarChar(40)
+  specialties       String[]           @db.VarChar(32)
+  therapistEstimate Int                @map("therapist_estimate")
+  childEstimate     Int                @map("child_estimate")
+  message           String?            @db.VarChar(2000)
+  status            ApplicationStatus  @default(SUBMITTED)
+  version           Int                @default(1)
+  submittedAt       DateTime           @map("submitted_at") @db.Timestamptz(3)
+  reviewStartedAt   DateTime?          @map("review_started_at") @db.Timestamptz(3)
+  reviewStartedById String?            @map("review_started_by_id") @db.Uuid
+  decidedAt         DateTime?          @map("decided_at") @db.Timestamptz(3)
+  decidedById       String?            @map("decided_by_id") @db.Uuid
+  decisionRationale String?            @map("decision_rationale") @db.VarChar(2000)
+  events            ApplicationEvent[]
+  center            Center?
+
+  @@index([status, submittedAt])
+  @@map("center_application")
+}
+
+// Append-only history (UPDATE/DELETE blocked by a database trigger).
+model ApplicationEvent {
+  id            BigInt             @id @default(autoincrement())
+  applicationId String             @map("application_id") @db.Uuid
+  type          String             @db.VarChar(32)
+  actorUserId   String?            @map("actor_user_id") @db.Uuid
+  fromStatus    ApplicationStatus? @map("from_status")
+  toStatus      ApplicationStatus  @map("to_status")
+  note          String?            @db.VarChar(2000)
+  createdAt     DateTime           @map("created_at") @db.Timestamptz(3)
+  application   CenterApplication  @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+
+  @@index([applicationId, id])
+  @@map("application_event")
+}
+
+// TB-EM-003/004: invitation secrets are stored only as SHA-256 hashes; the raw token exists only in the delivered link.
+model Invitation {
+  id               String           @id @default(uuid()) @db.Uuid
+  centerId         String           @map("center_id") @db.Uuid
+  kind             InvitationKind
+  email            String           @db.VarChar(254)
+  emailNorm        String           @map("email_norm") @db.VarChar(254)
+  displayName      String           @map("display_name") @db.VarChar(120)
+  roles            Role[]
+  specialties      String[]         @db.VarChar(32)
+  responsibilities String[]         @db.VarChar(32)
+  title            String?          @db.VarChar(80)
+  tokenHash        String           @unique @map("token_hash") @db.Char(64)
+  status           InvitationStatus @default(PENDING)
+  expiresAt        DateTime         @map("expires_at") @db.Timestamptz(3)
+  sendCount        Int              @default(1) @map("send_count")
+  lastSentAt       DateTime         @map("last_sent_at") @db.Timestamptz(3)
+  invitedById      String           @map("invited_by_id") @db.Uuid
+  createdAt        DateTime         @map("created_at") @db.Timestamptz(3)
+  acceptedAt       DateTime?        @map("accepted_at") @db.Timestamptz(3)
+  acceptedUserId   String?          @map("accepted_user_id") @db.Uuid
+  revokedAt        DateTime?        @map("revoked_at") @db.Timestamptz(3)
+  revokedById      String?          @map("revoked_by_id") @db.Uuid
+  replacedById     String?          @map("replaced_by_id") @db.Uuid
+  guardianLinkId   String?          @map("guardian_link_id") @db.Uuid
+  center           Center           @relation(fields: [centerId], references: [id], onDelete: Restrict)
+
+  @@index([centerId, status])
+  @@map("invitation")
+}
+
+// Tenant-scoped append-only history (UPDATE/DELETE blocked by a database trigger).
+model CenterEvent {
+  id            BigInt   @id @default(autoincrement())
+  centerId      String   @map("center_id") @db.Uuid
+  type          String   @db.VarChar(48)
+  actorUserId   String?  @map("actor_user_id") @db.Uuid
+  subjectUserId String?  @map("subject_user_id") @db.Uuid
+  membershipId  String?  @map("membership_id") @db.Uuid
+  invitationId  String?  @map("invitation_id") @db.Uuid
+  meta          Json     @default("{}")
+  createdAt     DateTime @map("created_at") @db.Timestamptz(3)
+  center        Center   @relation(fields: [centerId], references: [id], onDelete: Restrict)
+
+  @@index([centerId, id])
+  @@index([membershipId, id])
+  @@map("center_event")
+}
+
+model CenterSetupStep {
+  centerId      String   @map("center_id") @db.Uuid
+  key           String   @db.VarChar(32)
+  completedAt   DateTime @map("completed_at") @db.Timestamptz(3)
+  completedById String   @map("completed_by_id") @db.Uuid
+  center        Center   @relation(fields: [centerId], references: [id], onDelete: Restrict)
+
+  @@id([centerId, key])
+  @@map("center_setup_step")
+}
+
+// TB-EM-006 Center Operations. Operational (non-clinical) child data only; synthetic in Emergent.
+model Child {
+  id            String           @id @default(uuid()) @db.Uuid
+  centerId      String           @map("center_id") @db.Uuid
+  firstName     String           @map("first_name") @db.VarChar(80)
+  lastName      String           @map("last_name") @db.VarChar(80)
+  preferredName String?          @map("preferred_name") @db.VarChar(80)
+  dateOfBirth   DateTime         @map("date_of_birth") @db.Date
+  services      String[]         @db.VarChar(32)
+  status        ChildStatus      @default(ACTIVE)
+  createdById   String           @map("created_by_id") @db.Uuid
+  createdAt     DateTime         @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  version       Int              @default(1)
+  center        Center           @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  guardians     GuardianLink[]
+  assignments   CareAssignment[]
+  appointments  Appointment[]
+  threads       MessageThread[]
+
+  @@index([centerId, status])
+  @@map("child")
+}
+
+model GuardianLink {
+  id           String    @id @default(uuid()) @db.Uuid
+  centerId     String    @map("center_id") @db.Uuid
+  childId      String    @map("child_id") @db.Uuid
+  displayName  String    @map("display_name") @db.VarChar(120)
+  email        String    @db.VarChar(254)
+  emailNorm    String    @map("email_norm") @db.VarChar(254)
+  relationship String    @db.VarChar(32)
+  isPrimary    Boolean   @default(false) @map("is_primary")
+  remindersEnabled Boolean @default(true) @map("reminders_enabled")
+  userId       String?   @map("user_id") @db.Uuid
+  removedAt    DateTime? @map("removed_at") @db.Timestamptz(3)
+  createdAt    DateTime  @map("created_at") @db.Timestamptz(3)
+  center       Center    @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  child        Child     @relation(fields: [childId], references: [id], onDelete: Restrict)
+  threads      MessageThread[]
+  practiceOutcomes PracticeOutcome[]
+
+  @@index([userId])
+  @@map("guardian_link")
+}
+
+model CareAssignment {
+  id           String    @id @default(uuid()) @db.Uuid
+  centerId     String    @map("center_id") @db.Uuid
+  childId      String    @map("child_id") @db.Uuid
+  membershipId String    @map("membership_id") @db.Uuid
+  service      String    @db.VarChar(32)
+  isLead       Boolean   @default(false) @map("is_lead")
+  startedAt    DateTime  @map("started_at") @db.Timestamptz(3)
+  endedAt      DateTime? @map("ended_at") @db.Timestamptz(3)
+  child        Child     @relation(fields: [childId], references: [id], onDelete: Restrict)
+
+  @@index([membershipId])
+  @@map("care_assignment")
+}
+
+model Appointment {
+  id           String            @id @default(uuid()) @db.Uuid
+  centerId     String            @map("center_id") @db.Uuid
+  childId      String            @map("child_id") @db.Uuid
+  membershipId String            @map("membership_id") @db.Uuid
+  service      String            @db.VarChar(32)
+  startsAt     DateTime          @map("starts_at") @db.Timestamptz(3)
+  endsAt       DateTime          @map("ends_at") @db.Timestamptz(3)
+  room         String?           @db.VarChar(80)
+  status       AppointmentStatus @default(SCHEDULED)
+  statusReason String?           @map("status_reason") @db.VarChar(500)
+  createdById  String            @map("created_by_id") @db.Uuid
+  createdAt    DateTime          @map("created_at") @db.Timestamptz(3)
+  version      Int               @default(1)
+  seriesId     String?           @map("series_id") @db.Uuid
+  occurrenceDate DateTime?       @map("occurrence_date") @db.Date
+  isException  Boolean           @default(false) @map("is_exception")
+  center       Center            @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  child        Child             @relation(fields: [childId], references: [id], onDelete: Restrict)
+  series       AppointmentSeries? @relation(fields: [seriesId], references: [id], onDelete: Restrict)
+  notices      AppointmentNotice[]
+
+  @@unique([seriesId, occurrenceDate])
+  @@index([centerId, startsAt])
+  @@index([membershipId, startsAt])
+  @@index([childId, startsAt])
+  @@map("appointment")
+}
+
+enum SeriesStatus {
+  ACTIVE
+  ENDED
+}
+
+enum ThreadStatus {
+  OPEN
+  CLOSED
+}
+
+// Weekly recurrence in the center's local time; occurrences are materialized as Appointment rows.
+model AppointmentSeries {
+  id            String        @id @default(uuid()) @db.Uuid
+  centerId      String        @map("center_id") @db.Uuid
+  childId       String        @map("child_id") @db.Uuid
+  membershipId  String        @map("membership_id") @db.Uuid
+  service       String        @db.VarChar(32)
+  room          String?       @db.VarChar(80)
+  startTime     String        @map("start_time") @db.VarChar(5)
+  durationMin   Int           @map("duration_min")
+  weekdays      Int[]
+  intervalWeeks Int           @map("interval_weeks")
+  startDate     DateTime      @map("start_date") @db.Date
+  untilDate     DateTime      @map("until_date") @db.Date
+  status        SeriesStatus  @default(ACTIVE)
+  createdById   String        @map("created_by_id") @db.Uuid
+  createdAt     DateTime      @map("created_at") @db.Timestamptz(3)
+  version       Int           @default(1)
+  appointments  Appointment[]
+
+  @@index([centerId, childId])
+  @@map("appointment_series")
+}
+
+// Restricted synthetic outbox log of reminders and change notices sent to guardians.
+model AppointmentNotice {
+  id             String      @id @default(uuid()) @db.Uuid
+  centerId       String      @map("center_id") @db.Uuid
+  appointmentId  String      @map("appointment_id") @db.Uuid
+  guardianLinkId String      @map("guardian_link_id") @db.Uuid
+  kind           String      @db.VarChar(24)
+  startsAt       DateTime    @map("starts_at") @db.Timestamptz(3)
+  sentAt         DateTime    @map("sent_at") @db.Timestamptz(3)
+  appointment    Appointment @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+
+  @@index([appointmentId])
+  @@map("appointment_notice")
+}
+
+// Non-clinical operational messages between a child's guardians and the care team.
+model MessageThread {
+  id            String       @id @default(uuid()) @db.Uuid
+  centerId      String       @map("center_id") @db.Uuid
+  childId       String       @map("child_id") @db.Uuid
+  guardianLinkId String?     @map("guardian_link_id") @db.Uuid
+  // GUARDIAN (specific recipient), CARE_TEAM (assigned staff), or SPECIALTY (assigned specialty).
+  audience      String       @default("GUARDIAN") @db.VarChar(16)
+  service       String?      @db.VarChar(32)
+  subject       String       @db.VarChar(120)
+  category      String       @db.VarChar(24)
+  status        ThreadStatus @default(OPEN)
+  createdById   String       @map("created_by_id") @db.Uuid
+  createdAt     DateTime     @map("created_at") @db.Timestamptz(3)
+  lastMessageAt DateTime     @map("last_message_at") @db.Timestamptz(3)
+  closedAt      DateTime?    @map("closed_at") @db.Timestamptz(3)
+  child         Child        @relation(fields: [childId], references: [id], onDelete: Restrict)
+  guardianLink  GuardianLink? @relation(fields: [guardianLinkId], references: [id], onDelete: Restrict)
+  messages      Message[]
+  reads         ThreadRead[]
+
+  @@index([centerId, childId])
+  @@index([centerId, lastMessageAt])
+  @@map("message_thread")
+}
+
+model Message {
+  id           String        @id @default(uuid()) @db.Uuid
+  threadId     String        @map("thread_id") @db.Uuid
+  centerId     String        @map("center_id") @db.Uuid
+  authorUserId String        @map("author_user_id") @db.Uuid
+  authorKind   String        @map("author_kind") @db.VarChar(8)
+  body         String        @db.VarChar(2000)
+  createdAt    DateTime      @map("created_at") @db.Timestamptz(3)
+  thread       MessageThread @relation(fields: [threadId], references: [id], onDelete: Restrict)
+
+  @@index([threadId, createdAt])
+  @@map("message")
+}
+
+model ThreadRead {
+  threadId   String        @map("thread_id") @db.Uuid
+  userId     String        @map("user_id") @db.Uuid
+  lastReadAt DateTime      @map("last_read_at") @db.Timestamptz(3)
+  thread     MessageThread @relation(fields: [threadId], references: [id], onDelete: Restrict)
+
+  @@id([threadId, userId])
+  @@map("thread_read")
+}
+
+// TB-EM-008 clinical foundations. Synthetic drafts only: signing, approval and release stay DENY.
+model Assessment {
+  id           String   @id @default(uuid()) @db.Uuid
+  centerId     String   @map("center_id") @db.Uuid
+  childId      String   @map("child_id") @db.Uuid
+  membershipId String   @map("membership_id") @db.Uuid
+  service      String   @db.VarChar(32)
+  assessedOn   DateTime @map("assessed_on") @db.Date
+  summary      String   @db.VarChar(4000)
+  areas        Json     @default("[]")
+  status       String   @default("DRAFT") @db.VarChar(16)
+  version      Int      @default(1)
+  createdAt    DateTime @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @map("updated_at") @db.Timestamptz(3)
+
+  @@index([centerId, childId])
+  @@map("assessment")
+}
+
+model TherapyPlan {
+  id        String        @id @default(uuid()) @db.Uuid
+  centerId  String        @map("center_id") @db.Uuid
+  childId   String        @map("child_id") @db.Uuid
+  service   String        @db.VarChar(32)
+  title     String        @db.VarChar(120)
+  createdById String      @map("created_by_id") @db.Uuid
+  createdAt DateTime      @map("created_at") @db.Timestamptz(3)
+  versions  PlanVersion[]
+
+  @@index([centerId, childId])
+  @@map("therapy_plan")
+}
+
+model PlanVersion {
+  id             String      @id @default(uuid()) @db.Uuid
+  planId         String      @map("plan_id") @db.Uuid
+  centerId       String      @map("center_id") @db.Uuid
+  number         Int
+  status         String      @default("DRAFT") @db.VarChar(32)
+  summary        String      @default("") @db.VarChar(4000)
+  goals          Json        @default("[]")
+  homeActivities Json        @default("[]") @map("home_activities")
+  reviewNotes    Json        @default("[]") @map("review_notes")
+  authorId       String      @map("author_id") @db.Uuid
+  version        Int         @default(1)
+  createdAt      DateTime    @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime    @map("updated_at") @db.Timestamptz(3)
+  plan           TherapyPlan @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@unique([planId, number])
+  @@map("plan_version")
+}
+
+model SessionNote {
+  id            String   @id @default(uuid()) @db.Uuid
+  centerId      String   @map("center_id") @db.Uuid
+  childId       String   @map("child_id") @db.Uuid
+  membershipId  String   @map("membership_id") @db.Uuid
+  appointmentId String?  @unique @map("appointment_id") @db.Uuid
+  service       String   @db.VarChar(32)
+  sessionDate   DateTime @map("session_date") @db.Date
+  sections      Json     @default("{}")
+  status        String   @default("DRAFT") @db.VarChar(16)
+  version       Int      @default(1)
+  createdAt     DateTime @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @map("updated_at") @db.Timestamptz(3)
+
+  @@index([centerId, childId])
+  @@map("session_note")
+}
+
+model Observation {
+  id            String   @id @default(uuid()) @db.Uuid
+  centerId      String   @map("center_id") @db.Uuid
+  childId       String   @map("child_id") @db.Uuid
+  planVersionId String   @map("plan_version_id") @db.Uuid
+  goalKey       String   @map("goal_key") @db.VarChar(40)
+  membershipId  String   @map("membership_id") @db.Uuid
+  sessionNoteId String?  @map("session_note_id") @db.Uuid
+  value         Float
+  observedOn    DateTime @map("observed_on") @db.Date
+  note          String?  @db.VarChar(500)
+  createdAt     DateTime @map("created_at") @db.Timestamptz(3)
+
+  @@index([childId, goalKey, observedOn])
+  @@map("observation")
+}
+
+model ActivityTemplate {
+  id          String   @id @default(uuid()) @db.Uuid
+  centerId    String?  @map("center_id") @db.Uuid
+  title       String   @db.VarChar(120)
+  service     String   @db.VarChar(32)
+  ageBand     String   @map("age_band") @db.VarChar(32)
+  minutes     Int
+  materials   String[] @db.VarChar(120)
+  steps       String[] @db.VarChar(400)
+  safety      String[] @db.VarChar(400)
+  createdById String?  @map("created_by_id") @db.Uuid
+  createdAt   DateTime @map("created_at") @db.Timestamptz(3)
+  version     Int      @default(1)
+  practiceOutcomes PracticeOutcome[]
+
+  @@index([centerId])
+  @@map("activity_template")
+}
+
+// TB-EM-010 synthetic family practice outcomes. Separate from clinical observations; never progress evidence.
+model PracticeOutcome {
+  id               String           @id @default(uuid()) @db.Uuid
+  centerId         String           @map("center_id") @db.Uuid
+  childId          String           @map("child_id") @db.Uuid
+  guardianLinkId   String           @map("guardian_link_id") @db.Uuid
+  templateId       String           @map("template_id") @db.Uuid
+  service          String           @db.VarChar(32)
+  practiceDate     DateTime         @map("practice_date") @db.Date
+  choice           String           @db.VarChar(16)
+  idempotencyKey   String           @unique @map("idempotency_key") @db.Uuid
+  synthetic        Boolean          @default(true)
+  recordedById     String           @map("recorded_by_id") @db.Uuid
+  recordedAt       DateTime         @map("recorded_at") @db.Timestamptz(3)
+  acknowledgedAt   DateTime?        @map("acknowledged_at") @db.Timestamptz(3)
+  acknowledgedById String?          @map("acknowledged_by_id") @db.Uuid
+  guardianLink     GuardianLink     @relation(fields: [guardianLinkId], references: [id], onDelete: Restrict)
+  template         ActivityTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+
+  @@unique([guardianLinkId, templateId, practiceDate])
+  @@index([centerId, childId])
+  @@map("practice_outcome")
+}
+
+// TB-EM-009 progress reports. Drafts, immutable versions and future release records are separate tables.
+model ProgressReport {
+  id           String          @id @default(uuid()) @db.Uuid
+  centerId     String          @map("center_id") @db.Uuid
+  childId      String          @map("child_id") @db.Uuid
+  membershipId String          @map("membership_id") @db.Uuid
+  service      String          @db.VarChar(32)
+  title        String          @db.VarChar(120)
+  periodStart  DateTime        @map("period_start") @db.Date
+  periodEnd    DateTime        @map("period_end") @db.Date
+  status       String          @default("DRAFT") @db.VarChar(32)
+  sections     Json            @default("{}")
+  reviewNotes  Json            @default("[]") @map("review_notes")
+  version      Int             @default(1)
+  createdAt    DateTime        @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime        @map("updated_at") @db.Timestamptz(3)
+  versions     ReportVersion[]
+  releases     ReportRelease[]
+
+  @@index([centerId, childId])
+  @@map("progress_report")
+}
+
+model ReportVersion {
+  id        String         @id @default(uuid()) @db.Uuid
+  reportId  String         @map("report_id") @db.Uuid
+  centerId  String         @map("center_id") @db.Uuid
+  number    Int
+  kind      String         @db.VarChar(16)
+  sections  Json
+  evidence  Json
+  authorId  String         @map("author_id") @db.Uuid
+  createdAt DateTime       @map("created_at") @db.Timestamptz(3)
+  report    ProgressReport @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  releases  ReportRelease[]
+
+  @@unique([reportId, number])
+  @@map("report_version")
+}
+
+// Never written: inserts are refused by a database trigger until report release is authorized.
+model ReportRelease {
+  id              String         @id @default(uuid()) @db.Uuid
+  reportId        String         @map("report_id") @db.Uuid
+  reportVersionId String         @map("report_version_id") @db.Uuid
+  centerId        String         @map("center_id") @db.Uuid
+  audience        String         @db.VarChar(32)
+  releasedById    String         @map("released_by_id") @db.Uuid
+  releasedAt      DateTime       @map("released_at") @db.Timestamptz(3)
+  report          ProgressReport @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  reportVersion   ReportVersion  @relation(fields: [reportVersionId], references: [id], onDelete: Restrict)
+
+  @@map("report_release")
+}
+
+// Internal snapshots are immutable and non-authorizing, independently of the mutable draft.
+model GovernanceSnapshot {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  childId String @map("child_id") @db.Uuid
+  kind String @db.VarChar(8)
+  documentId String @map("document_id") @db.Uuid
+  sourceVersion Int @map("source_version")
+  content Json
+  evidence Json
+  fingerprint String @db.Char(64)
+  authorId String @map("author_id") @db.Uuid
+  generatedById String @map("generated_by_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  @@index([centerId, kind, documentId])
+  @@map("governance_snapshot")
+}
+model GovernanceHistory {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  childId String @map("child_id") @db.Uuid
+  kind String @db.VarChar(8)
+  documentId String @map("document_id") @db.Uuid
+  sourceVersion Int @map("source_version")
+  fromStatus String @map("from_status") @db.VarChar(32)
+  toStatus String @map("to_status") @db.VarChar(32)
+  reason String @db.VarChar(1000)
+  actorId String @map("actor_id") @db.Uuid
+  snapshotId String @map("snapshot_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  @@index([centerId, kind, documentId])
+  @@map("governance_history")
+}
+model ConsentPolicyDraft {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  purpose String @db.VarChar(120)
+  number Int
+  restrictions Json
+  status String @default("DRAFT_NON_AUTHORIZING") @db.VarChar(32)
+  createdById String @map("created_by_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  @@unique([centerId, purpose, number])
+  @@map("consent_policy_draft")
+}
+// Each row is a new immutable proposal/revocation revision; never an authorization grant.
+model ConsentRecordDraft {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  childId String @map("child_id") @db.Uuid
+  guardianLinkId String @map("guardian_link_id") @db.Uuid
+  policyId String @map("policy_id") @db.Uuid
+  previousId String? @unique @map("previous_id") @db.Uuid
+  effectiveAt DateTime? @map("effective_at") @db.Timestamptz(3)
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz(3)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
+  restrictions Json
+  authorizationEvidence Json @default("{}") @map("authorization_evidence")
+  status String @default("DRAFT_NON_AUTHORIZING") @db.VarChar(32)
+  authorizes Boolean @default(false)
+  createdById String @map("created_by_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  @@index([centerId, childId, guardianLinkId])
+  @@map("consent_record_draft")
+}
+model ClinicalAuthorizationDecision {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  snapshotId String @map("snapshot_id") @db.Uuid
+  status String @default("BLOCKED_POLICY") @db.VarChar(32)
+  @@map("clinical_authorization_decision")
+}
+model RecipientRelease {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  childId String @map("child_id") @db.Uuid
+  snapshotId String @map("snapshot_id") @db.Uuid
+  decisionId String @map("decision_id") @db.Uuid
+  guardianLinkId String @map("guardian_link_id") @db.Uuid
+  status String @default("BLOCKED_POLICY") @db.VarChar(32)
+  @@map("recipient_release")
+}
+model RecipientReleaseHistory {
+  id String @id @default(uuid()) @db.Uuid
+  releaseId String @map("release_id") @db.Uuid
+  action String @db.VarChar(32)
+  reason String @db.VarChar(1000)
+  actorId String @map("actor_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  @@map("recipient_release_history")
+}
+model CaseloadTransferDraft {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  childId String @map("child_id") @db.Uuid
+  fromMembershipId String @map("from_membership_id") @db.Uuid
+  toMembershipId String @map("to_membership_id") @db.Uuid
+  service String @db.VarChar(32)
+  reason String @db.VarChar(1000)
+  status String @default("SIMULATION_ONLY") @db.VarChar(32)
+  createdById String @map("created_by_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  @@index([centerId])
+  @@map("caseload_transfer_draft")
+}

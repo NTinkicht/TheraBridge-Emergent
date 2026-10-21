@@ -1,0 +1,41 @@
+# Gitleaks configuration (TB-EM-001, owner correction R2).
+# Default gitleaks rules plus two TheraBridge rules for credential literals in any tracked file.
+title = "TheraBridge secret scan"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "therabridge-credential-assignment"
+description = "Password, secret, token or API key assigned a quoted literal value"
+regex = '''(?i)\b[a-z0-9_]*(?:password|passwd|secret|token|api[_-]?key)[a-z0-9_]*["']?\s*[:=]\s*["'`]([^"'`\s]{8,})["'`]'''
+secretGroup = 1
+keywords = ["password", "passwd", "secret", "token", "api_key", "apikey", "api-key"]
+
+[[rules.allowlists]]
+description = "Placeholders, env references, CI-only throwaways and kebab-case test IDs (checked on the captured value)"
+regexTarget = "secret"
+regexes = [
+  '''^CHANGE_ME[A-Z0-9_]*$''',
+  '''^ci_only_[a-z_]+$''',
+  '''^\$\{?[A-Z_][A-Z0-9_]*''',
+  '''\$\{''',
+  '''^[a-z0-9]+(-[a-z0-9]+)+$''',
+]
+
+[[rules]]
+id = "therabridge-env-credential"
+description = "Unquoted KEY=value credential in env-style files"
+regex = '''(?m)^\s*(?:export\s+)?[A-Z0-9_]*(?:PASSWORD|PASSWD|SECRET|TOKEN|API_KEY)[A-Z0-9_]*\s*[=:]\s*([^\s"'#]{8,})'''
+secretGroup = 1
+path = '''(^|/)\.env[^/]*$|\.ya?ml$|\.sh$|\.toml$|\.ini$|\.properties$'''
+keywords = ["password", "passwd", "secret", "token", "api_key"]
+
+[[rules.allowlists]]
+description = "Documented placeholders and env references"
+regexTarget = "secret"
+regexes = [
+  '''^CHANGE_ME[A-Z0-9_]*$''',
+  '''^ci_only_[a-z_]+$''',
+  '''^\$\{?[A-Z_][A-Z0-9_]*''',
+]
