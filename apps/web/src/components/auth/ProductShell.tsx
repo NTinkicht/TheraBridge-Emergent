@@ -7,6 +7,7 @@ import { ArrowLeftRight, Baby, Building2, CalendarDays, ClipboardCheck, Home, In
 import { BrandMark } from '@/components/brand/BrandMark';
 import { SignatureBand } from '@/components/brand/SignatureBand';
 import { Avatar } from '@/components/design/ui';
+import { ScrollStrip } from '@/components/design/ScrollStrip';
 import { ROLE_LABELS, authApi, contextLabel, type SessionInfo } from '@/lib/auth';
 import { ApiError } from '@/lib/api';
 
@@ -108,10 +109,10 @@ export function ProductShell({ session, active, planned, children }: { session: 
           </button>
         </header>
         {signOutError && <p role="alert" className="bg-status-dangerSurface px-4 py-2 text-[14px] font-medium text-status-danger md:px-8" data-testid="sign-out-error">{signOutError}</p>}
-        <nav aria-label="Primary" className="flex gap-1 overflow-x-auto border-b border-border-light bg-surface-white px-2 py-2 md:hidden" data-testid="mobile-nav">
+        <ScrollStrip role="navigation" ariaLabel="Primary" className="border-b border-border-light bg-surface-white md:hidden" innerClassName="gap-1 px-2 py-2" testId="mobile-nav" activeItemKey={`${active}:${nav.map((n) => n.key).join(',')}:${session.contexts.length}`}>
           {nav.map((n) => <NavLink key={n.key} href={n.href} icon={n.icon} label={n.short} active={active === n.key} testId={`mobile-nav-${n.key}`} />)}
           {session.contexts.length > 1 && <NavLink href="/select-context" icon={ArrowLeftRight} label="Switch" active={false} testId="mobile-nav-switch" />}
-        </nav>
+        </ScrollStrip>
         <main id="main" className="mx-auto w-full max-w-[1160px] flex-1 px-4 pb-14 pt-6 md:px-8 md:pt-8">{children}</main>
       </div>
     </div>
