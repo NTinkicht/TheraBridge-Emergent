@@ -46,7 +46,9 @@ These capabilities stay denied until an owner-approved clinical policy exists.
 - THERAPIST and CLINICAL_SUPERVISOR: center summary and own profile. Clinical permissions remain denied.
 - GUARDIAN: `family.portal.read` only. They see the children linked to their own account through an active guardian link, those children's care team names and upcoming appointments. They never see staff emails, other families or dates of birth.
 - Scoping inside a center (TB-EM-006): a THERAPIST sees only children with an active care assignment to them, and only their own appointments. They can record attendance (completed / no-show) on their own appointments after the start time. Cancelling and rescheduling need `center.schedule.manage`. Guardian emails are shown only to center administrators and coordinators.
-- Trial (TB-EM-005): writes are refused with 403 after `center.trial_ends_at`. Reads keep working. Only `platform.centers.trial` can extend a trial.
+- Trial (TB-EM-005): writes are refused with 403 after `center.trial_ends_at`. Reads keep working. Only `platform.centers.trial` can extend a trial. Two exceptions stay allowed after expiry because they only reduce access, which is the safeguarding direction: removing a guardian and ending a therapist assignment.
+- Guardians are always connected by accepting an invitation, even when the same email already has a guardian account at the center. This stops a mistyped email from exposing a child to another family.
+- CLINICAL_SUPERVISOR reads all children and the whole center schedule (oversight), without making changes.
 
 **Who can assign roles (TB-EM-003/004)**
 - CENTER_ADMIN is granted only by a platform-issued administrator invitation (`platform.centers.invite_admin`).

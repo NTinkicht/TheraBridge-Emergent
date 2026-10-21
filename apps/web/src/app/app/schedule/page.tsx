@@ -9,7 +9,7 @@ import { ApptPill } from '@/components/operations/Dashboards';
 import { Button, Card } from '@/components/design/ui';
 import { Dialog, EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
 import type { SessionInfo } from '@/lib/auth';
-import { dayLabel, opsApi, timeRange, type Appointment, type Therapist } from '@/lib/operations';
+import { dayKey, dayLabel, opsApi, timeRange, type Appointment, type Therapist } from '@/lib/operations';
 import { CalendarDays } from 'lucide-react';
 
 const weekStart = (offset: number) => {
@@ -71,11 +71,11 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
       {data && data.items.length > 0 && (
         <div className="space-y-4" data-testid="schedule-week">
           {days.map((d) => {
-            const items = data.items.filter((a) => new Date(a.startsAt).toDateString() === d.toDateString());
+            const items = data.items.filter((a) => dayKey(a.startsAt) === dayKey(new Date(d.getTime() + 12 * 3_600_000)));
             if (!items.length) return null;
             return (
               <Card key={d.toISOString()} className="p-5" testId={`schedule-day-${d.getDay()}`}>
-                <h2 className="text-[15px] font-semibold">{dayLabel(d.toISOString())}</h2>
+                <h2 className="text-[15px] font-semibold">{dayLabel(items[0].startsAt)}</h2>
                 <ul className="mt-2 divide-y divide-border-light">
                   {items.map((a) => {
                     const started = new Date(a.startsAt).getTime() <= now;
@@ -102,7 +102,7 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
       <BookDialog centerId={centerId} open={booking || !!editing} editing={editing} onClose={() => { setBooking(false); setEditing(null); }} onError={onError}
         onDone={(m) => { setBooking(false); setEditing(null); setNotice({ tone: 'success', text: m }); void reload(); }} />
       <Dialog open={!!closing} onClose={() => setClosing(null)} title={closing?.status === 'CANCELLED' ? 'Cancel appointment' : 'Record a no-show'} testId="appointment-close-dialog"
-        footer={<><Button variant="secondary" onClick={() => setClosing(null)}>Back</Button><Button variant="danger" data-testid="appointment-close-confirm" onClick={() => void (async () => { if (closing && reason.trim().length >= 3 && await act(() => opsApi.setStatus(centerId, closing.a.id, closing.status, reason.trim()), closing.status === 'CANCELLED' ? 'Appointment cancelled.' : 'No-show recorded.')) setClosing(null); })()}>Confirm</Button></>}>
+        footer={<><Button variant="secondary" onClick={() => setClosing(null)}>Back</Button><Button variant="danger" data-testid="appointment-close-confirm" onClick={() => void (async () => { if (!closing) return; if (reason.trim().length < 3) return setNotice({ tone: 'danger', text: 'Give a reason of at least 3 characters.' }); if (await act(() => opsApi.setStatus(centerId, closing.a.id, closing.status, reason.trim()), closing.status === 'CANCELLED' ? 'Appointment cancelled.' : 'No-show recorded.')) setClosing(null); })()}>Confirm</Button></>}>
         <ReasonField value={reason} onChange={setReason} testId="appointment-close-reason" />
       </Dialog>
     </div>

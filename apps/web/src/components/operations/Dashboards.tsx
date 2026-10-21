@@ -80,9 +80,9 @@ export function FamilyHome({ centerId, onError }: { centerId: string; onError: (
   const { data, failed, reload } = useLoad(fetcher, onError);
   if (failed) return <ErrorState onRetry={() => void reload()} testId="family-error" />;
   if (!data) return <Card tone="family" className="p-5"><SkeletonRows rows={3} testId="family-loading" /></Card>;
-  if (!data.children.length) return <EmptyState tone="family" icon={HeartHandshake} title="No children linked yet" body={`${data.center.name} will connect your child to your account.`} testId="family-empty" />;
+  if (!data.children.length) return <div className="theme-family-light rounded-card bg-fam-canvas"><EmptyState tone="family" icon={HeartHandshake} title="No children linked yet" body={`${data.center.name} will connect your child to your account.`} testId="family-empty" /></div>;
   return (
-    <div className="space-y-6" data-testid="family-home">
+    <div className="theme-family-light space-y-6 rounded-card bg-fam-canvas p-1 text-fam-ink" data-testid="family-home">
       {data.children.map((c) => (
         <Card key={c.id} tone="family" className="p-5 md:p-7" testId={`family-child-${c.id}`}>
           <h2 className="font-display text-[22px] font-bold">{c.name}</h2>

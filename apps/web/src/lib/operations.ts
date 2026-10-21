@@ -33,12 +33,12 @@ export const opsApi = {
   trial: (centerId: string) => rest.get<Trial>(c(centerId, 'trial')),
   platformTrial: (centerId: string) => rest.get<Trial>(`/api/platform/centers/${centerId}/trial`),
   extendTrial: (centerId: string, days: number, reason: string) => rest.send<Trial>('POST', `/api/platform/centers/${centerId}/trial/extend`, { days, reason }),
-  dashboard: (centerId: string) => rest.get<Dashboard>(c(centerId, 'dashboard')),
-  family: (centerId: string) => rest.get<FamilyOverview>(c(centerId, 'family')),
+  dashboard: (centerId: string) => rest.get<Dashboard>(c(centerId, 'dashboard')).then((r) => { setCenterTz(r.timezone); return r; }),
+  family: (centerId: string) => rest.get<FamilyOverview>(c(centerId, 'family')).then((r) => { setCenterTz(r.center.timezone); return r; }),
   therapists: (centerId: string) => rest.get<{ items: Therapist[] }>(c(centerId, 'therapists')),
   children: (centerId: string, q: { q?: string; status?: string }) => rest.get<{ items: ChildRow[] }>(`${c(centerId, 'children')}?${qs(q)}`),
   createChild: (centerId: string, body: ChildInput) => rest.send<{ id: string }>('POST', c(centerId, 'children'), body),
-  child: (centerId: string, id: string) => rest.get<ChildDetail>(c(centerId, `children/${id}`)),
+  child: (centerId: string, id: string) => rest.get<ChildDetail & { timezone: string }>(c(centerId, `children/${id}`)).then((r) => { setCenterTz(r.timezone); return r; }),
   updateChild: (centerId: string, id: string, body: Partial<ChildInput> & { version: number }) => rest.send<ChildDetail>('PATCH', c(centerId, `children/${id}`), body),
   archiveChild: (centerId: string, id: string, reason: string) => rest.send<ChildDetail>('POST', c(centerId, `children/${id}/archive`), { reason }),
   restoreChild: (centerId: string, id: string) => rest.send<ChildDetail>('POST', c(centerId, `children/${id}/restore`)),
@@ -48,17 +48,36 @@ export const opsApi = {
   removeGuardian: (centerId: string, id: string, linkId: string, reason: string) => rest.send('POST', c(centerId, `children/${id}/guardians/${linkId}/remove`), { reason }),
   assign: (centerId: string, id: string, body: { membershipId: string; service: string; isLead: boolean }) => rest.send('POST', c(centerId, `children/${id}/assignments`), body),
   endAssignment: (centerId: string, id: string, aid: string) => rest.send('POST', c(centerId, `children/${id}/assignments/${aid}/end`)),
-  appointments: (centerId: string, q: { from: string; to: string; membershipId?: string; childId?: string }) => rest.get<{ items: Appointment[] }>(`${c(centerId, 'appointments')}?${qs(q)}`),
+  appointments: (centerId: string, q: { from: string; to: string; membershipId?: string; childId?: string }) => rest.get<{ items: Appointment[]; timezone: string }>(`${c(centerId, 'appointments')}?${qs(q)}`).then((r) => { setCenterTz(r.timezone); return r; }),
   book: (centerId: string, body: { childId: string; membershipId: string; service: string; startsAt: string; endsAt: string; room?: string }) => rest.send<{ id: string }>('POST', c(centerId, 'appointments'), body),
   reschedule: (centerId: string, id: string, body: { startsAt: string; endsAt: string; version: number; room?: string }) => rest.send('PATCH', c(centerId, `appointments/${id}`), body),
   setStatus: (centerId: string, id: string, status: 'COMPLETED' | 'CANCELLED' | 'NO_SHOW', reason?: string) => rest.send('POST', c(centerId, `appointments/${id}/status`), { status, ...(reason ? { reason } : {}) }),
 };
 
+// All times are shown and entered in the center's time zone (set from API responses), not the browser's.
+let centerTz: string | undefined;
+export const setCenterTz = (tz: string | undefined) => {
+  if (tz) centerTz = tz;
+};
+export const getCenterTz = () => centerTz;
+const offset = (d: Date, tz: string) => new Date(d.toLocaleString('en-US', { timeZone: tz })).getTime() - new Date(d.toLocaleString('en-US', { timeZone: 'UTC' })).getTime();
+export function zonedToUtc(date: string, time: string): Date {
+  const [y, m, d] = date.split('-').map(Number);
+  const [h, mi] = time.split(':').map(Number);
+  const guess = Date.UTC(y, m - 1, d, h, mi);
+  return new Date(guess - (centerTz ? offset(new Date(guess), centerTz) : -new Date(guess).getTimezoneOffset() * 60000));
+}
+export const zonedParts = (s: string) => {
+  const d = new Date(s);
+  return { date: d.toLocaleDateString('en-CA', { timeZone: centerTz }), time: d.toLocaleTimeString('en-GB', { timeZone: centerTz, hour: '2-digit', minute: '2-digit' }) };
+};
+export const dayKey = (s: string | Date) => new Date(s).toLocaleDateString('en-CA', { timeZone: centerTz });
+
 export const timeRange = (startsAt: string, endsAt: string) => {
-  const f = (s: string) => new Date(s).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  const f = (s: string) => new Date(s).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', timeZone: centerTz });
   return `${f(startsAt)}–${f(endsAt)}`;
 };
-export const dayLabel = (s: string) => new Date(s).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+export const dayLabel = (s: string) => new Date(s).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric', timeZone: centerTz });
 export const ageFrom = (dob: string) => {
   const d = new Date(`${dob}T00:00:00`);
   const n = new Date();

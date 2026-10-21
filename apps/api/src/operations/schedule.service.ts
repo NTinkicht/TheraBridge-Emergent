@@ -45,7 +45,8 @@ export class ScheduleService {
       },
       include: { child: true }, orderBy: [{ startsAt: 'asc' }, { id: 'asc' }], take: 500,
     });
-    return { items: await this.view(rows) };
+    const center = await this.prisma.center.findUniqueOrThrow({ where: { id: centerId }, select: { timezone: true } });
+    return { items: await this.view(rows), timezone: center.timezone };
   }
 
   // Double-booking is checked under the center row lock taken by assertWritable.

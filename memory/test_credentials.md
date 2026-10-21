@@ -12,7 +12,7 @@ Passwords are written ONLY to `/app/.workspace/local-credentials/synthetic-accou
 | admin@cedar.therabridge.test | CENTER_ADMIN, Cedar Grove Therapy Collective |
 | coordinator@harbor.therabridge.test | COORDINATOR, Harbor |
 | leila.hassan@harbor.therabridge.test | THERAPIST, Harbor |
-| supervisor@harbor.therabridge.test | CLINICAL_SUPERVISOR, Harbor (center summary + own profile) |
+| supervisor@harbor.therabridge.test | CLINICAL_SUPERVISOR, Harbor (center summary, own profile, all children and schedule read-only for oversight) |
 | multi@therabridge.test | THERAPIST at Harbor + CENTER_ADMIN at Cedar (must choose a workspace) |
 | sara.morgan@family.therabridge.test | GUARDIAN, Harbor (no permissions yet) |
 | norole@harbor.therabridge.test | Harbor membership with no role (no access) |

@@ -93,7 +93,9 @@ export class ChildrenService {
     const invites = await this.prisma.invitation.findMany({ where: { centerId, kind: 'GUARDIAN', guardianLinkId: { in: c.guardians.map((g) => g.id) } }, orderBy: { createdAt: 'desc' } });
     const events = await this.prisma.centerEvent.findMany({ where: { centerId, meta: { path: ['childId'], equals: id } }, orderBy: { id: 'desc' }, take: 50 });
     const manager = v.role === 'CENTER_ADMIN' || v.role === 'COORDINATOR';
+    const { timezone } = await this.prisma.center.findUniqueOrThrow({ where: { id: centerId }, select: { timezone: true } });
     return {
+      timezone,
       id: c.id, firstName: c.firstName, lastName: c.lastName, preferredName: c.preferredName, dateOfBirth: c.dateOfBirth.toISOString().slice(0, 10),
       services: c.services, status: c.status, version: c.version, createdAt: c.createdAt,
       guardians: c.guardians.map((g) => {
@@ -157,13 +159,12 @@ export class ChildrenService {
       const child = await tx.child.findFirst({ where: { id: childId, centerId, status: 'ACTIVE' } });
       if (!child) throw new NotFoundException('Child not found');
       if (dto.isPrimary) await tx.guardianLink.updateMany({ where: { childId, removedAt: null, isPrimary: true }, data: { isPrimary: false } });
-      // A parent already connected at this center is linked straight away; nobody else gets access without accepting an invitation.
-      const connected = await tx.membership.findFirst({ where: { centerId, status: 'ACTIVE', user: { emailNormalized: emailNorm }, roles: { some: { role: 'GUARDIAN' } } } });
+      // Every guardian, even one already connected at this center, must accept an invitation before seeing this child.
       const link = await tx.guardianLink.create({
-        data: { centerId, childId, displayName: clean(dto.displayName), email: dto.email.trim(), emailNorm, relationship: dto.relationship, isPrimary: !!dto.isPrimary, userId: connected?.userId ?? null, createdAt: now },
+        data: { centerId, childId, displayName: clean(dto.displayName), email: dto.email.trim(), emailNorm, relationship: dto.relationship, isPrimary: !!dto.isPrimary, userId: null, createdAt: now },
       });
-      await logCenterEvent(tx, centerId, 'guardian.added', now, { actorUserId, meta: { childId, guardianLinkId: link.id, invitee: link.displayName, connected: !!connected } });
-      const sent = !connected && dto.invite ? await this.invite(tx, centerId, link, actorUserId, now) : null;
+      await logCenterEvent(tx, centerId, 'guardian.added', now, { actorUserId, meta: { childId, guardianLinkId: link.id, invitee: link.displayName } });
+      const sent = dto.invite ? await this.invite(tx, centerId, link, actorUserId, now) : null;
       return { link, sent, centerName: center.name };
     }), 'This guardian is already linked to the child, or a pending invitation already exists for this email.');
     if (result.sent) this.invitations.deliver(result.sent.invitation, result.centerName, result.sent.token);
