@@ -57,7 +57,20 @@ jobs:
           cache: yarn
       - run: yarn install --frozen-lockfile
       - run: yarn workspace @therabridge/api prisma generate
-      - run: yarn workspace @therabridge/api prisma migrate deploy
+      - name: Check additive migration after TB-EM-012 was already applied
+        run: |
+          # Migrate the CI database using the original through-012 chain first,
+          # then deploy current migrations against the SAME persisted database.
+          # This catches in-place migration edits that fresh-database CI misses.
+          mkdir -p /tmp/therabridge-prior
+          cp apps/api/prisma/schema.prisma /tmp/therabridge-prior/schema.prisma
+          cp -a apps/api/prisma/migrations /tmp/therabridge-prior/migrations
+          rm -rf /tmp/therabridge-prior/migrations/20261030090000_tb_em_013_guardian_audience_requires_recipient
+          yarn workspace @therabridge/api prisma migrate deploy --schema /tmp/therabridge-prior/schema.prisma
+          yarn workspace @therabridge/api prisma migrate deploy
+          # The strengthened guardian constraint must now be present.
+          # Prisma confirms all migrations applied on the previously migrated database.
+          yarn workspace @therabridge/api prisma migrate status
       - run: yarn workspace @therabridge/api typecheck
       - run: yarn workspace @therabridge/api test
       - run: yarn workspace @therabridge/api build
