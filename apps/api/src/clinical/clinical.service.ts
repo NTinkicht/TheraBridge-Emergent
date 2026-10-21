@@ -90,6 +90,8 @@ export class ClinicalService {
     const a = await this.prisma.assessment.findFirst({ where: { id, centerId } });
     if (!a) throw new NotFoundException('Assessment not found');
     return this.write(centerId, v, a.childId, a.service, async (tx, now) => {
+      // Authorize against the persisted specialty before exposing any validation detail.
+      if (dto.service !== a.service) throw new UnprocessableEntityException('Assessment specialty cannot be changed.');
       const r = await tx.assessment.updateMany({ where: { id, membershipId: v.membershipId, service: a.service, version: dto.version }, data: { assessedOn: asDate(dto.assessedOn), summary: dto.summary, areas: dto.areas as unknown as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
       if (r.count !== 1) throw new ConflictException(a.membershipId !== v.membershipId ? 'Only the author can edit this draft.' : 'This draft changed since you opened it. Reload to see the latest version.');
       await logCenterEvent(tx, centerId, 'clinical.assessment_updated', now, { actorUserId: v.userId, meta: { childId: a.childId, assessmentId: id } });
