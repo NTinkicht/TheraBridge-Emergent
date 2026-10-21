@@ -501,6 +501,9 @@ model MessageThread {
   centerId      String       @map("center_id") @db.Uuid
   childId       String       @map("child_id") @db.Uuid
   guardianLinkId String?     @map("guardian_link_id") @db.Uuid
+  // GUARDIAN (specific recipient), CARE_TEAM (assigned staff), or SPECIALTY (assigned specialty).
+  audience      String       @default("GUARDIAN") @db.VarChar(16)
+  service       String?      @db.VarChar(32)
   subject       String       @db.VarChar(120)
   category      String       @db.VarChar(24)
   status        ThreadStatus @default(OPEN)
