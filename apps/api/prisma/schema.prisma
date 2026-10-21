@@ -38,6 +38,13 @@ enum CenterStatus {
   SUSPENDED
 }
 
+enum ApplicationStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
 model User {
   id              String              @id @default(uuid()) @db.Uuid
   email           String              @db.VarChar(254)
@@ -187,4 +194,50 @@ model PlatformRoleAssignment {
 
   @@index([userId, revokedAt])
   @@map("platform_role_assignment")
+}
+
+// TB-EM-002: public center application and platform review. Approval does not create a center (TB-EM-003 provisions).
+model CenterApplication {
+  id                  String             @id @default(uuid()) @db.Uuid
+  reference           String             @unique @db.VarChar(16)
+  organizationName    String             @map("organization_name") @db.VarChar(160)
+  country             String             @db.VarChar(80)
+  city                String             @db.VarChar(80)
+  timezone            String             @db.VarChar(64)
+  contactName         String             @map("contact_name") @db.VarChar(120)
+  contactEmail        String             @map("contact_email") @db.VarChar(254)
+  contactEmailNorm    String             @map("contact_email_norm") @db.VarChar(254)
+  contactPhone        String?            @map("contact_phone") @db.VarChar(40)
+  specialties         String[]           @db.VarChar(32)
+  therapistEstimate   Int                @map("therapist_estimate")
+  childEstimate       Int                @map("child_estimate")
+  message             String?            @db.VarChar(2000)
+  status              ApplicationStatus  @default(SUBMITTED)
+  version             Int                @default(1)
+  submittedAt         DateTime           @map("submitted_at") @db.Timestamptz(3)
+  reviewStartedAt     DateTime?          @map("review_started_at") @db.Timestamptz(3)
+  reviewStartedById   String?            @map("review_started_by_id") @db.Uuid
+  decidedAt           DateTime?          @map("decided_at") @db.Timestamptz(3)
+  decidedById         String?            @map("decided_by_id") @db.Uuid
+  decisionRationale   String?            @map("decision_rationale") @db.VarChar(2000)
+  events              ApplicationEvent[]
+
+  @@index([status, submittedAt])
+  @@map("center_application")
+}
+
+// Append-only history (UPDATE/DELETE blocked by a database trigger).
+model ApplicationEvent {
+  id            BigInt             @id @default(autoincrement())
+  applicationId String             @map("application_id") @db.Uuid
+  type          String             @db.VarChar(32)
+  actorUserId   String?            @map("actor_user_id") @db.Uuid
+  fromStatus    ApplicationStatus? @map("from_status")
+  toStatus      ApplicationStatus  @map("to_status")
+  note          String?            @db.VarChar(2000)
+  createdAt     DateTime           @map("created_at") @db.Timestamptz(3)
+  application   CenterApplication  @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+
+  @@index([applicationId, id])
+  @@map("application_event")
 }

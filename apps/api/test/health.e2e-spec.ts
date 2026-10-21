@@ -40,7 +40,7 @@ describe('Health and TB-EM-001 checkpoint 0 probe retirement (real PostgreSQL)',
     expect(res.body.framework).toBe('nestjs-fastify');
     expect(res.body.database).toMatchObject({ status: 'up', engine: 'postgresql' });
     expect(res.body.migrations.applied).toBeGreaterThanOrEqual(3);
-    expect(res.body.migrations.latest).toMatch(/_tb_em_001_/);
+    expect(res.body.migrations.latest).toMatch(/_tb_em_00\d_/);
     expect(res.body).not.toHaveProperty('probeWrites');
   });
 

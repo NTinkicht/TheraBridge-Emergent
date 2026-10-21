@@ -8,7 +8,8 @@ export type AuditType =
   | 'auth.logout' | 'auth.logout_all' | 'auth.session.rotated'
   | 'auth.password.reset_requested' | 'auth.password.reset_completed' | 'auth.password.changed'
   | 'auth.context.switched' | 'security.csrf_rejected' | 'security.origin_rejected'
-  | 'platform.owner_bootstrapped' | 'seed.synthetic';
+  | 'platform.owner_bootstrapped' | 'seed.synthetic'
+  | 'application.submitted' | 'application.review_started' | 'application.approved' | 'application.rejected';
 
 interface AuditInput {
   actorUserId?: string | null;

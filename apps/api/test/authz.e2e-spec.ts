@@ -140,6 +140,7 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
       expect(unsafe).toEqual([
         'POST /auth/context', 'POST /auth/login', 'POST /auth/logout', 'POST /auth/logout-all',
         'POST /auth/password/change', 'POST /auth/password/forgot', 'POST /auth/password/reset',
+        'POST /center-applications', 'POST /platform/applications/:id/decision', 'POST /platform/applications/:id/start-review',
       ]);
     });
 
@@ -160,6 +161,8 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
   describe('AC-12 permission matrix', () => {
     const expected: Record<string, Role[]> = {
       'platform.summary.read': ['PLATFORM_ADMIN'],
+      'platform.applications.read': ['PLATFORM_ADMIN'],
+      'platform.applications.decide': ['PLATFORM_ADMIN'],
       'center.summary.read': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST'],
     };
     const cases = ROLES.flatMap((role) => [...Object.keys(PERMISSIONS), ...CLINICAL_CAPABILITIES].map((p) => [role, p] as const));

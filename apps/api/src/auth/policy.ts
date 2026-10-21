@@ -6,6 +6,8 @@ export const CENTER_ROLES: Role[] = ROLES.filter((r) => r !== 'PLATFORM_ADMIN');
 // Deny by default: a role has a permission only if it is listed here. Mirrored in docs/emergent/security/PERMISSIONS_MATRIX.md.
 export const PERMISSIONS: Record<string, readonly Role[]> = {
   'platform.summary.read': ['PLATFORM_ADMIN'],
+  'platform.applications.read': ['PLATFORM_ADMIN'],
+  'platform.applications.decide': ['PLATFORM_ADMIN'],
   'center.summary.read': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST'],
 };
 

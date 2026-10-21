@@ -10,11 +10,12 @@ export class TenancyController {
   @Get('platform/summary')
   @RequirePermission('platform.summary.read')
   async platformSummary() {
-    const [centers, activeCenters] = await Promise.all([
+    const [centers, activeCenters, pendingApplications] = await Promise.all([
       this.prisma.center.count(),
       this.prisma.center.count({ where: { status: 'ACTIVE' } }),
+      this.prisma.centerApplication.count({ where: { status: { in: ['SUBMITTED', 'UNDER_REVIEW'] } } }),
     ]);
-    return { centers, activeCenters };
+    return { centers, activeCenters, pendingApplications };
   }
 
   @Get('centers/:centerId/summary')

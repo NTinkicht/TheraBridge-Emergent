@@ -10,6 +10,8 @@ Source of truth: `apps/api/src/auth/policy.ts`. The test `authz.e2e-spec.ts` fai
 | Permission | Roles |
 |---|---|
 | platform.summary.read | PLATFORM_ADMIN |
+| platform.applications.read | PLATFORM_ADMIN |
+| platform.applications.decide | PLATFORM_ADMIN |
 | center.summary.read | CENTER_ADMIN, COORDINATOR, THERAPIST |
 
 **Clinical capabilities: DENY for every role, PLATFORM_ADMIN included**
