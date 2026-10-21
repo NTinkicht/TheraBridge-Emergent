@@ -111,6 +111,53 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     expect(await h.prisma.assessment.findUniqueOrThrow({ where: { id } })).toMatchObject({ service: 'occupational', summary: 'OT baseline', version: 1 });
   });
 
+  it('rejects an assessment DTO specialty mismatch without modifying an authorized assessment', async () => {
+    const { therapist, kid } = await setup();
+    const id = (await post(h, c(`clinical/children/${kid}/assessments`), therapist, {
+      service: 'speech', assessedOn: '2026-10-19', summary: 'Original synthetic speech assessment', areas: [],
+    }).expect(201)).body.id;
+    await patch(therapist, c(`clinical/assessments/${id}`), {
+      service: 'occupational', assessedOn: '2026-10-19', summary: 'Wrong specialty', areas: [], version: 1,
+    }).expect(422);
+    expect(await h.prisma.assessment.findUniqueOrThrow({ where: { id } })).toMatchObject({
+      service: 'speech', summary: 'Original synthetic speech assessment', version: 1,
+    });
+  });
+
+  it.each(['staging', 'production'])('denies all existing synthetic message routes in %s with demo flag enabled', async (environment) => {
+    const { therapist, kid, link, rosa } = await setup();
+    const threadId = (await post(h, c('threads'), therapist, {
+      childId: kid, guardianLinkId: link, category: 'scheduling',
+      subject: 'Pre-existing synthetic thread', body: 'Synthetic scheduling only',
+    }).expect(201)).body.id;
+    const oldEnvironment = process.env.DEPLOYMENT_ENV;
+    const oldFlag = process.env.FAMILY_MESSAGING_DEMO;
+    try {
+      process.env.DEPLOYMENT_ENV = environment;
+      process.env.FAMILY_MESSAGING_DEMO = 'true';
+      const attempts = [
+        () => get(therapist, c('threads')),
+        () => get(rosa, c(`threads/${threadId}`)),
+        () => post(h, c('threads'), therapist, {
+          childId: kid, guardianLinkId: link, category: 'scheduling',
+          subject: 'Must not open', body: 'Denied synthetic message',
+        }),
+        () => post(h, c(`threads/${threadId}/messages`), therapist, { body: 'Must not reply' }),
+        () => post(h, c(`threads/${threadId}/close`), admin),
+        () => post(h, c(`threads/${threadId}/reopen`), admin),
+      ];
+      for (const attempt of attempts) {
+        const response = await attempt().expect(403);
+        expect(response.body.message).toMatch(/synthetic demonstration/);
+      }
+    } finally {
+      if (oldEnvironment === undefined) delete process.env.DEPLOYMENT_ENV;
+      else process.env.DEPLOYMENT_ENV = oldEnvironment;
+      if (oldFlag === undefined) delete process.env.FAMILY_MESSAGING_DEMO;
+      else process.env.FAMILY_MESSAGING_DEMO = oldFlag;
+    }
+  });
+
   it('scopes synthetic family, team and specialty threads after specialty revocation', async () => {
     const { therapist, other, sup, kid, link, rosa } = await setup(['speech', 'occupational']);
     const dual = await staff('dual@clin.test', ['THERAPIST'], ['speech', 'occupational']);
