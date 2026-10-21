@@ -1,0 +1,36 @@
+{
+  "summary": "TB-EM-010 frontend E2E with Playwright on the public URL (1920px and 390px). All requested flows pass. GUARDIAN (Sara): the nav 'Home practice' opens /app/practice. The sample banner shows. Today shows 2 sample cards (Bubble breath and sounds: Every day; Snack-time choices: Mon/Wed/Fri) with 'Sample activity', 10 min, frequency and slot chips. 'Show how to do it' reveals materials, steps and safety. This week shows Oct 19-25 with Next disabled; future days are 'Coming up'. Prev week (Oct 12-18): Oct 12-14 are 'Not recorded yet' and not recordable, Oct 15-18 are recordable (7-day window is correct), and Next is enabled. Record flow: Continue is disabled until a choice is made. The dialog has no textarea, text or file inputs. Change answer keeps the earlier choice. The confirm text matches the choice. Save shows record-success with the server time and makes exactly 1 POST. After Done the chip becomes a non-clickable span showing the choice. Cancel closes the dialog. History lists items with dates and choices. With network abort forced, the dialog shows record-unknown. 'Check if it was saved' gives 404 and 'Nothing was saved yet'. Resend uses the SAME idempotency key and succeeds. A forced 422 shows record-failure with the server message, and 'Try again' returns to the choices. THERAPIST (Leila): the nav 'Practice feedback' opens /app/practice-feedback. The not-clinical title and synthetic banner show, and rows say 'Family chose: X' with no interpretation. The child, activity, answer, status, from and to filters all work. from>to shows feedback-period-error and hides the list. Acknowledge shows 'Acknowledged by Leila Hassan' and counts update. Status New/Acknowledged filters work. Guardian history then shows 'Seen by care team'. SUPERVISOR: read-only (0 acknowledge buttons, 'New' pills, 'supervisors can read but not acknowledge'). ACCESS: the guardian on /app/practice-feedback and the admin on /app/practice and /app/practice-feedback get page-forbidden, and the nav items are hidden. E2E: Leila added 'Playdough pinch and roll' plus summary 'TEST_ DRAFT_SECRET...' to the draft TEST_ Speech plan and saved. Preview as family shows the staff-only preview. The guardian's /app/practice, /app/activities, /app/family-progress and /app contain neither 'Playdough' nor 'DRAFT_SECRET'. The clinical Progress tab and /app/progress contain no practice outcomes. MOBILE 390px: no horizontal overflow on /app/practice (all tabs), the dialog or /app/practice-feedback. Record and acknowledge both work on mobile. No functional bugs; only minor issues.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "practice-feedback InboxView", "issue": "When from>to, the page still sends GET /clinical/practice-feedback, which returns 422 and logs a console error. The UI hides it, but the request is wasted and it sets failed=true behind the scenes. Pass a null fetcher to useLoad when invalid.", "selector": "[data-testid=feedback-period-error]", "priority": "LOW"},
+      {"component": "practice-feedback ack()", "issue": "ack() calls errorText(e, onError) and throws away the returned message. A 4xx on acknowledge (409/422, e.g. trial read-only) is silently swallowed: the button re-enables and the user sees no message.", "selector": "[data-testid^=feedback-ack-]", "priority": "LOW"},
+      {"component": "practice page week state", "issue": "Clicking 'This week' does not reset `week`. After Prev week -> History -> This week, the tab labelled 'This week' shows the previous week. Only 'Today' resets it.", "selector": "[data-testid=practice-view-week]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/app/practice", "issues": ["With a single linked child, the child's name (Alex) never appears on the page, only inside the record dialog. Consider a 'For Alex' subtitle.", "On mobile the top nav scrolls sideways and 'Practice' is cut off at 390px (scrollable, but the current tab is hard to see)."]},
+      {"screen": "/app/practice-feedback", "issues": ["From/To filters use the native browser date picker, not the shadcn calendar (same as earlier iterations)."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Skip the inbox fetch while from>to (fetcher=null when invalid)",
+    "Show the acknowledge error message (use the errorText return value in a notice)",
+    "Reset week to the current week when the 'This week' tab is clicked, or label the tab by its week range",
+    "Optional: show the child's name on the practice page when only one child is linked"
+  ],
+  "critical_code_review_comments": [
+    "practice.service.ts history(): links.find(...) is called twice and uses a non-null assertion. Safe because of the guardianLinkId filter, but it could be simplified.",
+    "practice.service.ts inbox(): it runs 2 findMany calls (filtered rows plus all rows for counts/options) over the full scope with no limit on 'all'. Fine for synthetic data, but use groupBy/count at scale.",
+    "RecordDialog: the unknown -> check path for the case 'server saved but response lost' could not be exercised in the browser (Playwright route.fetch was missing the auth cookie and got 401). The jest e2e covers byKey and idempotency."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend only)", "frontend": "100% of requested flows pass (3 LOW issues)"},
+  "test_credentials": "From /app/.workspace/local-credentials/synthetic-accounts.json (no reseed).",
+  "seed_data_creation": "Guardian outcomes recorded through the UI for Alex: Snack-time 2026-10-21 Completed; Bubble 2026-10-20 Skipped; Snack-time 2026-10-19 Needed help (acknowledged by Leila); Bubble 2026-10-19 Completed (mobile, acknowledged on mobile). Draft TEST_ Speech plan v1: added home activity 'Playdough pinch and roll' and summary 'TEST_ DRAFT_SECRET summary not for family' (was 'Synthetic plan').",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Today in this env is 2026-10-21 (Wed). Alex id b21cf048-d08b-4a7c-abf7-7fa4bda22ee7. Template ids: Bubble b789cf5b-fcf2-4219-8bac-f64d6883711c, Snack a5046910-a267-4ee9-beba-329d74f8d0b8. Slot testid: practice-activity-<tid>-slot-<YYYY-MM-DD>. The clinical plan tab testid is clinical-tab-plan (not plans) and is the default. The inbox has 5 outcomes, 2 acknowledged. Remaining recordable slots this week: none for Bubble on Oct 19-21, Snack Oct 19/21 recorded. Earlier days (Oct 15-18) are still recordable from the Prev week view.",
+  "rca of the issue": "Wasted 422: InboxView always builds a fetcher from f, even when `invalid`. Silent ack error: ack() in practice-feedback/page.tsx ignores the string returned by errorText. Week tab: the 'This week' onClick only calls setView('week') and leaves the `week` state from earlier prev/next navigation."
+}
