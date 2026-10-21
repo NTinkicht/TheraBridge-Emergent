@@ -4,14 +4,16 @@ import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
 import { configureApp } from './bootstrap';
-import { loadEnv } from './config/env';
+import { loadAuthConfig, loadEnv } from './config/env';
 
 async function main(): Promise<void> {
   const env = loadEnv();
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter({ trustProxy: true }), {
+  loadAuthConfig();
+  // Client IPs are resolved by resolveClientIp() using TRUSTED_PROXY_CIDRS, never by Fastify's trustProxy.
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter({ trustProxy: false }), {
     logger: ['log', 'warn', 'error'],
   });
-  configureApp(app, env.CORS_ORIGINS);
+  configureApp(app);
   await app.listen(env.PORT, env.HOST);
 }
 

@@ -9,7 +9,6 @@ export class HealthService {
     const started = Date.now();
     try {
       const [{ server_version }] = await this.prisma.$queryRaw<{ server_version: string }[]>`SHOW server_version`;
-      const checkpoint = await this.prisma.schemaInfo.findUnique({ where: { key: 'checkpoint' } });
       const migrations = await this.prisma.$queryRaw<{ migration_name: string }[]>`
         SELECT migration_name FROM _prisma_migrations WHERE finished_at IS NOT NULL ORDER BY finished_at, migration_name`;
       return {
@@ -18,7 +17,6 @@ export class HealthService {
         framework: 'nestjs-fastify',
         database: { status: 'up', engine: 'postgresql', version: server_version, latencyMs: Date.now() - started },
         migrations: { applied: migrations.length, latest: migrations.at(-1)?.migration_name ?? null },
-        schemaCheckpoint: checkpoint?.value ?? null,
         time: new Date().toISOString(),
       };
     } catch {

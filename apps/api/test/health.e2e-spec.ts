@@ -25,7 +25,7 @@ describe('Health and TB-EM-001 checkpoint 0 probe retirement (real PostgreSQL)',
     assertTestDatabase();
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
-    configureApp(app, [ORIGIN]);
+    configureApp(app);
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
   });
@@ -39,9 +39,8 @@ describe('Health and TB-EM-001 checkpoint 0 probe retirement (real PostgreSQL)',
     expect(res.body.status).toBe('ok');
     expect(res.body.framework).toBe('nestjs-fastify');
     expect(res.body.database).toMatchObject({ status: 'up', engine: 'postgresql' });
-    expect(res.body.migrations.applied).toBeGreaterThanOrEqual(2);
-    expect(res.body.migrations.latest).toBe('20261020190000_tb_em_001_retire_feasibility_probe');
-    expect(res.body.schemaCheckpoint).toBe('TB-EM-001-cp0');
+    expect(res.body.migrations.applied).toBeGreaterThanOrEqual(3);
+    expect(res.body.migrations.latest).toMatch(/_tb_em_001_/);
     expect(res.body).not.toHaveProperty('probeWrites');
   });
 
@@ -54,7 +53,7 @@ describe('Health and TB-EM-001 checkpoint 0 probe retirement (real PostgreSQL)',
     ['POST', '/api/health/probe'],
     ['GET', '/api/health/probe'],
   ])('%s %s is gone (404)', async (method, path) => {
-    const req = method === 'POST' ? http().post(path).send({ source: 'cli' }) : http().get(path);
+    const req = method === 'POST' ? http().post(path).set('Origin', ORIGIN).send({ source: 'cli' }) : http().get(path);
     await req.expect(404);
   });
 
@@ -62,7 +61,7 @@ describe('Health and TB-EM-001 checkpoint 0 probe retirement (real PostgreSQL)',
     ['application/x-www-form-urlencoded', 'source=cli'],
     ['text/plain', '{"source":"cli"}'],
   ])('non-JSON %s bodies are rejected with 415', async (type, body) => {
-    await http().post('/api/health').set('Content-Type', type).send(body).expect(415);
+    await http().post('/api/health').set('Origin', ORIGIN).set('Content-Type', type).send(body).expect(415);
   });
 
   it('routes exist only under the /api prefix', async () => {

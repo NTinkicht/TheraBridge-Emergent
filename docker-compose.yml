@@ -26,6 +26,11 @@ services:
       PORT: "8001"
       HOST: 0.0.0.0
       CORS_ORIGINS: ${CORS_ORIGINS:?set in .env}
+      DEPLOYMENT_ENV: ${DEPLOYMENT_ENV:?set in .env}
+      AUTH_SECRET: ${AUTH_SECRET:?set in .env}
+      COOKIE_SECURE: ${COOKIE_SECURE:?set in .env}
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS?set in .env (may be empty)}
+      DEV_MAILBOX_ENABLED: ${DEV_MAILBOX_ENABLED:?set in .env}
     ports:
       - "${API_PORT:?set in .env}:8001"
     depends_on:

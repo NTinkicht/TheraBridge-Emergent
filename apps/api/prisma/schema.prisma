@@ -1,4 +1,4 @@
-// TheraBridge API schema. TB-EM-001 checkpoint 0 retired the feasibility probe.
+// TheraBridge API schema. TB-EM-001 checkpoint A: identity, sessions, brute-force counters, recovery, audit.
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-3.0.x"]
@@ -9,11 +9,102 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Non-domain placeholder (Prisma needs at least one model). Dropped once checkpoint A adds identity models.
-model SchemaInfo {
-  key       String   @id @db.VarChar(64)
-  value     String   @db.VarChar(128)
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(3)
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
 
-  @@map("schema_info")
+enum VerificationPurpose {
+  PASSWORD_RESET
+}
+
+model User {
+  id              String              @id @default(uuid()) @db.Uuid
+  email           String              @db.VarChar(254)
+  emailNormalized String              @unique @map("email_normalized") @db.VarChar(254)
+  displayName     String              @map("display_name") @db.VarChar(120)
+  status          UserStatus          @default(ACTIVE)
+  createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  identities      AuthIdentity[]
+  sessions        Session[]
+  tokens          VerificationToken[]
+
+  @@map("app_user")
+}
+
+model AuthIdentity {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  provider          String    @db.VarChar(64)
+  subject           String    @db.VarChar(254)
+  passwordHash      String?   @map("password_hash") @db.VarChar(255)
+  passwordChangedAt DateTime? @map("password_changed_at") @db.Timestamptz(3)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([provider, subject])
+  @@unique([userId, provider])
+  @@map("auth_identity")
+}
+
+model Session {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  tokenHash         String    @unique @map("token_hash") @db.Char(64)
+  createdAt         DateTime  @map("created_at") @db.Timestamptz(3)
+  lastSeenAt        DateTime  @map("last_seen_at") @db.Timestamptz(3)
+  absoluteExpiresAt DateTime  @map("absolute_expires_at") @db.Timestamptz(3)
+  revokedAt         DateTime? @map("revoked_at") @db.Timestamptz(3)
+  revokedReason     String?   @map("revoked_reason") @db.VarChar(32)
+  rotatedFromId     String?   @map("rotated_from_id") @db.Uuid
+  ipPrefix          String?   @map("ip_prefix") @db.VarChar(64)
+  userAgent         String?   @map("user_agent") @db.VarChar(256)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, revokedAt])
+  @@map("session")
+}
+
+model RateLimitCounter {
+  key         String   @db.VarChar(128)
+  windowStart DateTime @map("window_start") @db.Timestamptz(3)
+  count       Int
+
+  @@id([key, windowStart])
+  @@map("rate_limit_counter")
+}
+
+model AuthLockout {
+  key         String   @id @db.VarChar(128)
+  lockedUntil DateTime @map("locked_until") @db.Timestamptz(3)
+
+  @@map("auth_lockout")
+}
+
+model VerificationToken {
+  id        String              @id @default(uuid()) @db.Uuid
+  userId    String              @map("user_id") @db.Uuid
+  purpose   VerificationPurpose
+  tokenHash String              @unique @map("token_hash") @db.Char(64)
+  expiresAt DateTime            @map("expires_at") @db.Timestamptz(3)
+  usedAt    DateTime?           @map("used_at") @db.Timestamptz(3)
+  createdAt DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  user      User                @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, purpose])
+  @@map("verification_token")
+}
+
+model AuditEvent {
+  id            BigInt   @id @default(autoincrement())
+  type          String   @db.VarChar(64)
+  actorUserId   String?  @map("actor_user_id") @db.Uuid
+  subjectUserId String?  @map("subject_user_id") @db.Uuid
+  ipPrefix      String?  @map("ip_prefix") @db.VarChar(64)
+  meta          Json     @default("{}")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([type, createdAt])
+  @@map("audit_event")
 }
