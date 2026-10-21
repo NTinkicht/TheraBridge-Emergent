@@ -18,15 +18,13 @@ export const threadScope = (
   if (v.role === 'GUARDIAN') return { centerId, audience: 'GUARDIAN', child: { status: 'ACTIVE' }, guardianLink: { userId: v.userId, removedAt: null } };
   if (v.role === 'THERAPIST') return {
     centerId,
+    // Never emit an empty nested Prisma OR: each specialty branch requires its exact live assignment.
     OR: [
       { audience: { in: ['GUARDIAN', 'CARE_TEAM'] }, child: { status: 'ACTIVE', assignments: { some: { membershipId: v.membershipId, endedAt: null } } } },
-      {
-        audience: 'SPECIALTY',
-        OR: assignments.map(({ childId, service }) => ({
-          childId, service,
-          child: { status: 'ACTIVE', assignments: { some: { membershipId: v.membershipId, service, endedAt: null } } },
-        })),
-      },
+      ...assignments.map(({ childId, service }) => ({
+        audience: 'SPECIALTY', childId, service,
+        child: { status: 'ACTIVE', assignments: { some: { membershipId: v.membershipId, service, endedAt: null } } },
+      })),
     ],
   };
   return isManager(v) || v.role === 'CLINICAL_SUPERVISOR' ? { centerId } : { centerId, id: { in: [] } };
