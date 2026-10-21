@@ -89,8 +89,8 @@ export class ClinicalService {
   async updateAssessment(centerId: string, v: Viewer, id: string, dto: AssessmentUpdateDto) {
     const a = await this.prisma.assessment.findFirst({ where: { id, centerId } });
     if (!a) throw new NotFoundException('Assessment not found');
-    return this.write(centerId, v, a.childId, dto.service, async (tx, now) => {
-      const r = await tx.assessment.updateMany({ where: { id, membershipId: v.membershipId, version: dto.version }, data: { service: dto.service, assessedOn: asDate(dto.assessedOn), summary: dto.summary, areas: dto.areas as unknown as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
+    return this.write(centerId, v, a.childId, a.service, async (tx, now) => {
+      const r = await tx.assessment.updateMany({ where: { id, membershipId: v.membershipId, service: a.service, version: dto.version }, data: { assessedOn: asDate(dto.assessedOn), summary: dto.summary, areas: dto.areas as unknown as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
       if (r.count !== 1) throw new ConflictException(a.membershipId !== v.membershipId ? 'Only the author can edit this draft.' : 'This draft changed since you opened it. Reload to see the latest version.');
       await logCenterEvent(tx, centerId, 'clinical.assessment_updated', now, { actorUserId: v.userId, meta: { childId: a.childId, assessmentId: id } });
       return { ok: true };
