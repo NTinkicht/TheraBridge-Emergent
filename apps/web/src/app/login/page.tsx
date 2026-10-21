@@ -31,6 +31,7 @@ export default function LoginPage() {
     setError(null);
     try {
       const s = await authApi.login(email.trim(), password);
+      if (new URLSearchParams(window.location.search).get('next') === 'invite') return router.replace('/invite');
       router.replace(!s.activeContext && s.contexts.length > 1 ? '/select-context' : '/app');
     } catch (err) {
       setError(err instanceof ApiError && err.status === 429 ? err.message : err instanceof ApiError && err.status === 401 ? 'Email or password is incorrect.' : err instanceof ApiError && err.status === 400 ? 'Enter a valid email address and password.' : (err as Error).message);

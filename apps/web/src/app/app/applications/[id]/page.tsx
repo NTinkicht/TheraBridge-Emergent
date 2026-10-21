@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Building2, Lock, PlayCircle } from 'lucide-react';
+import { ArrowLeft, Building2, PlayCircle } from 'lucide-react';
 import { ProductShell } from '@/components/auth/ProductShell';
 import { FormAlert, SubmitButton } from '@/components/auth/Field';
 import { useSession } from '@/components/auth/useSession';
@@ -13,7 +13,7 @@ import { ErrorState, SkeletonRows } from '@/components/design/states';
 import { ApiError } from '@/lib/api';
 import { SPECIALTY_OPTIONS, STATUS_LABELS, authApi, type ApplicationDetail } from '@/lib/auth';
 
-const EVENT_LABELS: Record<string, string> = { submitted: 'Application submitted', review_started: 'Review started', approved: 'Approved', rejected: 'Rejected' };
+const EVENT_LABELS: Record<string, string> = { submitted: 'Application submitted', review_started: 'Review started', approved: 'Approved', rejected: 'Rejected', provisioned: 'Center provisioned' };
 const specialtyLabel = (v: string) => SPECIALTY_OPTIONS.find((s) => s.value === v)?.label ?? v;
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -66,11 +66,16 @@ function DecisionPanel({ app, canDecide, onChanged, onError }: { app: Applicatio
         </dl>
         {app.provisioning && (
           <div className="mt-4 flex flex-col gap-3 rounded-control border border-dashed border-border-strong bg-surface-subtle p-4 sm:flex-row sm:items-center sm:justify-between" data-testid="provisioning-pending">
-            <p className="text-[14px]"><span className="font-semibold">Awaiting center provisioning.</span> Creating the center and inviting its first administrator arrives in {app.provisioning.workUnit}.</p>
-            <button type="button" disabled aria-disabled="true" title={`Arrives in ${app.provisioning.workUnit}`} data-testid="provision-center-button"
-              className="inline-flex min-h-[44px] shrink-0 cursor-not-allowed items-center gap-2 rounded-control border border-border-strong px-4 text-[14px] font-medium text-brand-inkMuted">
-              <Lock size={15} aria-hidden="true" /> Provision center
-            </button>
+            <p className="text-[14px]">{app.provisioning.status === 'PROVISIONED' ? <><span className="font-semibold">Center provisioned.</span> {app.provisioning.center?.name} is live and its administrator onboarding can be tracked from the center page.</> : <><span className="font-semibold">Awaiting center provisioning.</span> Create the center and invite its first administrator.</>}</p>
+            {app.provisioning.status === 'PROVISIONED' && app.provisioning.center ? (
+              <Link href={`/app/centers/${app.provisioning.center.id}`} data-testid="view-center-button" className="inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-control border border-border-strong bg-surface-white px-4 text-[14px] font-medium hover:bg-surface-subtle">
+                <Building2 size={15} aria-hidden="true" /> Open center
+              </Link>
+            ) : (
+              <Link href={`/app/centers/new?applicationId=${app.id}`} data-testid="provision-center-button" className="inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-control bg-brand-action px-4 text-[14px] font-semibold text-white hover:bg-brand-actionHover">
+                <Building2 size={15} aria-hidden="true" /> Provision center
+              </Link>
+            )}
           </div>
         )}
       </Card>

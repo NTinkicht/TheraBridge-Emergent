@@ -90,7 +90,7 @@ export interface ApplicationDetail extends ApplicationSummary, Omit<ApplicationI
   reviewStartedBy: string | null;
   decidedBy: string | null;
   decisionRationale: string | null;
-  provisioning: { status: string; workUnit: string } | null;
+  provisioning: { status: 'AWAITING_PROVISIONING' | 'PROVISIONED'; center: { id: string; name: string; slug: string } | null } | null;
   events: { id: number; type: string; fromStatus: ApplicationStatus | null; toStatus: ApplicationStatus; note: string | null; createdAt: string; actor: string | null }[];
 }
 
@@ -125,6 +125,14 @@ const remember = (s: SessionInfo): SessionInfo => {
 };
 
 const preToken = async () => (await call<{ csrfToken: string }>('/api/auth/csrf')).csrfToken;
+
+// Generic authenticated requests for feature modules; CSRF is attached automatically for writes.
+export const rest = {
+  get: <T>(path: string) => call<T>(path),
+  send: <T>(method: 'POST' | 'PATCH', path: string, body: unknown = {}) => call<T>(path, { method, body, csrf }),
+  publicPost: async <T>(path: string, body: unknown) => call<T>(path, { method: 'POST', body, csrf: await preToken() }),
+  remember,
+};
 
 export const authApi = {
   login: async (email: string, password: string) =>

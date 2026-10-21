@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeftRight, Home, Inbox, KeyRound, Lock, LogOut, type LucideIcon } from 'lucide-react';
+import { ArrowLeftRight, Building2, ClipboardCheck, Home, Inbox, KeyRound, Lock, LogOut, Settings2, UserRound, Users, type LucideIcon } from 'lucide-react';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { SignatureBand } from '@/components/brand/SignatureBand';
 import { Avatar } from '@/components/design/ui';
@@ -27,12 +27,24 @@ function NavLink({ href, icon: Icon, label, active, testId }: { href: string; ic
   );
 }
 
-export function ProductShell({ session, active, planned, children }: { session: SessionInfo; active: 'home' | 'security' | 'applications'; planned: PlannedModule[]; children: ReactNode }) {
+const NAV: { key: string; href: string; icon: LucideIcon; label: string; short: string; permission?: string }[] = [
+  { key: 'home', href: '/app', icon: Home, label: 'Home', short: 'Home' },
+  { key: 'applications', href: '/app/applications', icon: Inbox, label: 'Center applications', short: 'Applications', permission: 'platform.applications.read' },
+  { key: 'centers', href: '/app/centers', icon: Building2, label: 'Centers', short: 'Centers', permission: 'platform.centers.read' },
+  { key: 'setup', href: '/app/setup', icon: ClipboardCheck, label: 'Center setup', short: 'Setup', permission: 'center.setup.manage' },
+  { key: 'team', href: '/app/team', icon: Users, label: 'Team', short: 'Team', permission: 'center.staff.read' },
+  { key: 'center', href: '/app/center', icon: Settings2, label: 'Center details', short: 'Center', permission: 'center.settings.read' },
+  { key: 'profile', href: '/app/profile', icon: UserRound, label: 'My profile', short: 'Profile', permission: 'center.profile.self' },
+  { key: 'security', href: '/account/security', icon: KeyRound, label: 'Account security', short: 'Security' },
+];
+
+export function ProductShell({ session, active, planned, children }: { session: SessionInfo; active: string; planned: PlannedModule[]; children: ReactNode }) {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const ctx = session.activeContext;
   const where = ctx ? `${contextLabel(ctx)} · ${ROLE_LABELS[ctx.role]}` : 'No workspace selected';
+  const nav = NAV.filter((n) => !n.permission || session.permissions.includes(n.permission));
 
   async function signOut() {
     setSigningOut(true);
@@ -62,9 +74,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
           </Link>
         )}
         <nav aria-label="Primary" className="flex-1 space-y-1 overflow-y-auto px-3">
-          <NavLink href="/app" icon={Home} label="Home" active={active === 'home'} testId="nav-home" />
-          {session.permissions.includes('platform.applications.read') && <NavLink href="/app/applications" icon={Inbox} label="Center applications" active={active === 'applications'} testId="nav-applications" />}
-          <NavLink href="/account/security" icon={KeyRound} label="Account security" active={active === 'security'} testId="nav-security" />
+          {nav.map((n) => <NavLink key={n.key} href={n.href} icon={n.icon} label={n.label} active={active === n.key} testId={`nav-${n.key}`} />)}
           {planned.length > 0 && <p className="px-3 pb-1 pt-5 text-[12px] font-semibold uppercase tracking-[0.06em] text-brand-inkMuted">Coming next</p>}
           {planned.map((m) => (
             <span key={m.label} aria-disabled="true" title={`Arrives in ${m.unit}`} data-testid={`nav-planned-${m.label.toLowerCase().replace(/\W+/g, '-')}`}
@@ -89,9 +99,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
         </header>
         {signOutError && <p role="alert" className="bg-status-dangerSurface px-4 py-2 text-[14px] font-medium text-status-danger md:px-8" data-testid="sign-out-error">{signOutError}</p>}
         <nav aria-label="Primary" className="flex gap-1 overflow-x-auto border-b border-border-light bg-surface-white px-2 py-2 md:hidden" data-testid="mobile-nav">
-          <NavLink href="/app" icon={Home} label="Home" active={active === 'home'} testId="mobile-nav-home" />
-          {session.permissions.includes('platform.applications.read') && <NavLink href="/app/applications" icon={Inbox} label="Applications" active={active === 'applications'} testId="mobile-nav-applications" />}
-          <NavLink href="/account/security" icon={KeyRound} label="Security" active={active === 'security'} testId="mobile-nav-security" />
+          {nav.map((n) => <NavLink key={n.key} href={n.href} icon={n.icon} label={n.short} active={active === n.key} testId={`mobile-nav-${n.key}`} />)}
           {session.contexts.length > 1 && <NavLink href="/select-context" icon={ArrowLeftRight} label="Switch" active={false} testId="mobile-nav-switch" />}
         </nav>
         <main id="main" className="mx-auto w-full max-w-[1160px] flex-1 px-4 pb-14 pt-6 md:px-8 md:pt-8">{children}</main>

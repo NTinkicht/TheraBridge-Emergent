@@ -6,20 +6,35 @@ import { Building2, CalendarDays, ClipboardList, FileCheck2, Gauge, Inbox, Lock,
 import { ProductShell, type PlannedModule } from '@/components/auth/ProductShell';
 import { useSession } from '@/components/auth/useSession';
 import { FormAlert } from '@/components/auth/Field';
-import { Card, Metric } from '@/components/design/ui';
+import { Card, Meter, Metric } from '@/components/design/ui';
+import { centersApi } from '@/lib/centers';
 import { SkeletonRows } from '@/components/design/states';
 import { ROLE_LABELS, authApi, contextLabel, type SessionInfo } from '@/lib/auth';
 
 const PLATFORM_PLANNED: PlannedModule[] = [
-  { label: 'Center provisioning', unit: 'TB-EM-003', icon: Building2 },
   { label: 'Trials and limits', unit: 'TB-EM-005', icon: Gauge },
 ];
 const CENTER_PLANNED: PlannedModule[] = [
-  { label: 'Team invitations', unit: 'TB-EM-004', icon: UserPlus },
-  { label: 'Children and families', unit: 'a later phase', icon: Users },
+  { label: 'Children and families', unit: 'the next milestone', icon: Users },
+  { label: 'Parent portal', unit: 'the next milestone', icon: UserPlus },
   { label: 'Schedule', unit: 'a later phase', icon: CalendarDays },
   { label: 'Messages', unit: 'a later phase', icon: MessagesSquare },
 ];
+
+function SetupBanner({ centerId }: { centerId: string }) {
+  const [s, setS] = useState<{ done: number; total: number } | null>(null);
+  useEffect(() => { centersApi.setup(centerId).then(setS).catch(() => setS(null)); }, [centerId]);
+  if (!s || s.done === s.total) return null;
+  return (
+    <Card className="flex flex-col gap-4 border-brand-action/40 p-5 sm:flex-row sm:items-center sm:justify-between md:p-6" testId="home-setup-banner">
+      <div className="min-w-0 flex-1">
+        <p className="text-[16px] font-semibold">Finish setting up your center</p>
+        <div className="mt-2 max-w-md"><Meter label="Setup progress" value={s.done} max={s.total} state="warn" testId="home-setup-meter" /></div>
+      </div>
+      <Link href="/app/setup" className="inline-flex min-h-[44px] items-center justify-center rounded-control bg-brand-action px-4 text-[14px] font-semibold text-white hover:bg-brand-actionHover" data-testid="home-setup-link">Continue setup</Link>
+    </Card>
+  );
+}
 
 type Summary = { kind: 'platform'; centers: number; activeCenters: number; pendingApplications: number } | { kind: 'center'; name: string; timezone: string; activeMembers: number };
 
@@ -73,6 +88,7 @@ function Home({ session, onError }: { session: SessionInfo; onError: (e: unknown
         <h1 className="mt-1 break-words font-display text-[28px] font-bold leading-tight md:text-[32px]" data-testid="home-title">Welcome, {session.user.displayName.split(' ')[0]}</h1>
         <p className="mt-1 text-[15px] text-brand-inkMuted">{contextLabel(ctx)}</p>
       </div>
+      {ctx.type === 'center' && can('center.setup.manage') && <SetupBanner centerId={ctx.centerId} />}
       {hasSummary ? (
         summary ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="home-summary">
@@ -81,7 +97,9 @@ function Home({ session, onError }: { session: SessionInfo; onError: (e: unknown
                 <Link href="/app/applications?status=OPEN" className="rounded-card focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-brand-action/40" data-testid="metric-pending-link">
                   <Metric label="Pending applications" value={summary.pendingApplications} sub="Submitted or under review" icon={Inbox} accent={summary.pendingApplications ? 'caution' : undefined} testId="metric-pending-applications" />
                 </Link>
-                <Metric label="Centers" value={summary.centers} sub="All tenants on the platform" icon={Building2} testId="metric-centers" />
+                <Link href="/app/centers" className="rounded-card focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-brand-action/40" data-testid="metric-centers-link">
+                  <Metric label="Centers" value={summary.centers} sub="All tenants on the platform" icon={Building2} testId="metric-centers" />
+                </Link>
                 <Metric label="Active centers" value={summary.activeCenters} sub="Not suspended" icon={FileCheck2} accent="success" testId="metric-active-centers" />
               </>
             ) : (

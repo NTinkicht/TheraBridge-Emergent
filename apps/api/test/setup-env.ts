@@ -8,4 +8,5 @@ Object.assign(process.env, {
   TRUSTED_PROXY_CIDRS: '',
   CORS_ORIGINS: 'http://localhost:3000',
   DEV_MAILBOX_ENABLED: 'false',
+  DEV_OUTBOX_DIR: '',
 });
