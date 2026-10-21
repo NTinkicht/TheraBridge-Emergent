@@ -158,6 +158,40 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     }
   });
 
+  it('allows supervisors/managers to open restricted operational threads without leaking across centers', async () => {
+    const { sup, kid } = await setup(['speech', 'occupational']);
+    const requested = [
+      { creator: sup, audience: 'CARE_TEAM', service: undefined },
+      { creator: sup, audience: 'SPECIALTY', service: 'speech' },
+      { creator: admin, audience: 'CARE_TEAM', service: undefined },
+      { creator: admin, audience: 'SPECIALTY', service: 'occupational' },
+    ];
+    const threadIds: string[] = [];
+    for (const choice of requested) {
+      const created = await post(h, c('threads'), choice.creator, {
+        childId: kid, audience: choice.audience,
+        ...(choice.service ? { service: choice.service } : {}),
+        category: 'logistics', subject: 'Synthetic staff coordination', body: 'Synthetic staff-only message',
+      }).expect(201);
+      threadIds.push(created.body.id);
+    }
+    for (const id of threadIds) await get(sup, c(`threads/${id}`)).expect(200);
+
+    const otherCenterId = (await post(h, '/api/platform/centers', ops, {
+      name: 'Separate Clin Center', timezone: 'UTC', country: 'France', city: 'Lyon',
+      specialties: ['speech'], firstAdmin: { email: 'otherlead@clin.test', displayName: 'Other Lead' },
+    }).expect(201)).body.id;
+    const otherAdmin = await accept('otherlead@clin.test', 'Other Lead');
+    await get(otherAdmin, c('threads')).expect(404);
+    expect((await get(otherAdmin, `/api/centers/${otherCenterId}/threads`).expect(200)).body.items).toHaveLength(0);
+    for (const id of threadIds) {
+      await get(otherAdmin, `/api/centers/${otherCenterId}/threads/${id}`).expect(404);
+      await post(h, `/api/centers/${otherCenterId}/threads/${id}/messages`, otherAdmin, {
+        body: 'Cross-tenant attempt',
+      }).expect(404);
+    }
+  });
+
   it('scopes synthetic family, team and specialty threads after specialty revocation', async () => {
     const { therapist, other, sup, kid, link, rosa } = await setup(['speech', 'occupational']);
     const dual = await staff('dual@clin.test', ['THERAPIST'], ['speech', 'occupational']);
@@ -204,6 +238,17 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     await get(dual, c(`threads/${specialtyId}`)).expect(404);
     await post(h, c(`threads/${specialtyId}/messages`), dual, { body: 'Should not send' }).expect(404);
     await get(dual, c(`threads/${teamId}`)).expect(200);
+
+    // A therapist who loses the final remaining assignment must lose even shared-team and guardian threads.
+    const activeSpeech = await h.prisma.careAssignment.findFirstOrThrow({
+      where: { centerId, childId: kid, membershipId, service: 'speech', endedAt: null },
+    });
+    await post(h, c(`children/${kid}/assignments/${activeSpeech.id}/end`), admin).expect(200);
+    expect(await ids(dual)).toEqual([]);
+    for (const id of [guardianId, teamId, specialtyId]) {
+      await get(dual, c(`threads/${id}`)).expect(404);
+      await post(h, c(`threads/${id}/messages`), dual, { body: 'No assignments' }).expect(404);
+    }
   });
 
   it('messages are recipient-specific, demo-gated, and blocked after trial expiry while consented reminders continue', async () => {
