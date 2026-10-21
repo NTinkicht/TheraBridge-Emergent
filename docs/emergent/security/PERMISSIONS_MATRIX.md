@@ -43,6 +43,7 @@ Source of truth: `apps/api/src/auth/policy.ts`. The test `authz.e2e-spec.ts` fai
 | center.activities.read | CENTER_ADMIN, COORDINATOR, THERAPIST, CLINICAL_SUPERVISOR |
 | center.activities.manage | THERAPIST, CLINICAL_SUPERVISOR |
 | family.activities.read | GUARDIAN |
+| family.progress.demo | GUARDIAN |
 
 **Clinical capabilities: DENY for every role, PLATFORM_ADMIN included**
 

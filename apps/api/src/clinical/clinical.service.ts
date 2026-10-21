@@ -6,8 +6,8 @@ import type { Viewer } from '../operations/children.service';
 import { TrialService } from '../operations/trial.service';
 import type { AssessmentDto, AssessmentUpdateDto, ObservationDto, PlanDto, PlanVersionUpdateDto, ReviewDto, SessionNoteDto, SessionNoteUpdateDto, TemplateDto } from './clinical.dto';
 
-const asDate = (d: string) => new Date(`${d}T00:00:00Z`);
-const day = (d: Date) => d.toISOString().slice(0, 10);
+export const asDate = (d: string) => new Date(`${d}T00:00:00Z`);
+export const day = (d: Date) => d.toISOString().slice(0, 10);
 export const LOCKED = 'Signing, approval and release are disabled until an owner-approved clinical policy exists.';
 type Goal = { key: string; title: string; measure: string; baseline: number; target: number };
 type HomeActivity = { templateId: string; frequency: string; note?: string };
@@ -18,14 +18,14 @@ type HomeActivity = { templateId: string; frequency: string; note?: string };
 export class ClinicalService {
   constructor(private readonly prisma: PrismaService, private readonly trial: TrialService) {}
 
-  private async child(db: Tx | PrismaService, centerId: string, v: Viewer, childId: string, service?: string) {
+  async child(db: Tx | PrismaService, centerId: string, v: Viewer, childId: string, service?: string) {
     const where: Prisma.ChildWhereInput = v.role === 'THERAPIST' ? { assignments: { some: { membershipId: v.membershipId, endedAt: null, ...(service ? { service } : {}) } } } : {};
     const c = await db.child.findFirst({ where: { id: childId, centerId, status: 'ACTIVE', ...where } });
     if (!c) throw new NotFoundException('Child not found');
     return c;
   }
 
-  private async write<T>(centerId: string, v: Viewer, childId: string, service: string | undefined, fn: (tx: Tx, now: Date) => Promise<T>) {
+  async write<T>(centerId: string, v: Viewer, childId: string, service: string | undefined, fn: (tx: Tx, now: Date) => Promise<T>) {
     if (v.role !== 'THERAPIST') throw new ForbiddenException('Only an assigned therapist can edit clinical drafts.');
     const now = this.trial.now();
     return this.prisma.$transaction(async (tx) => {

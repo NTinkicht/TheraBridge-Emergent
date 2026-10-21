@@ -101,7 +101,7 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     expect(therapistView.body.guardians[0]).not.toHaveProperty('email');
     const parent = (await accept('rosa@family.test', 'Rosa Stone')).s;
     expect(parent.body.activeContext).toMatchObject({ role: 'GUARDIAN', centerId });
-    expect(parent.body.permissions).toEqual(['family.portal.read', 'family.preferences.update', 'center.messages.use', 'family.activities.read']);
+    expect(parent.body.permissions).toEqual(['family.portal.read', 'family.preferences.update', 'center.messages.use', 'family.activities.read', 'family.progress.demo']);
     await get(parent, c('children')).expect(403);
     const detail = await get(coordinator, c(`children/${kid}`)).expect(200);
     expect(detail.body.guardians[0]).toMatchObject({ portalStatus: 'CONNECTED', isPrimary: true });

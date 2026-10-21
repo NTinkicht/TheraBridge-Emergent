@@ -40,6 +40,8 @@ export const PERMISSIONS: Record<string, readonly Role[]> = {
   'center.activities.read': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'CLINICAL_SUPERVISOR'],
   'center.activities.manage': ['THERAPIST', 'CLINICAL_SUPERVISOR'],
   'family.activities.read': ['GUARDIAN'],
+  // TB-EM-009: guardians only ever see a fixed synthetic progress example, never clinician drafts.
+  'family.progress.demo': ['GUARDIAN'],
 };
 
 // No clinical capability can be granted to anyone until an owner-approved clinical policy exists.

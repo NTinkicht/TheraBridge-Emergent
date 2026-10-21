@@ -646,3 +646,58 @@ model ActivityTemplate {
   @@index([centerId])
   @@map("activity_template")
 }
+
+// TB-EM-009 progress reports. Drafts, immutable versions and future release records are separate tables.
+model ProgressReport {
+  id           String          @id @default(uuid()) @db.Uuid
+  centerId     String          @map("center_id") @db.Uuid
+  childId      String          @map("child_id") @db.Uuid
+  membershipId String          @map("membership_id") @db.Uuid
+  service      String          @db.VarChar(32)
+  title        String          @db.VarChar(120)
+  periodStart  DateTime        @map("period_start") @db.Date
+  periodEnd    DateTime        @map("period_end") @db.Date
+  status       String          @default("DRAFT") @db.VarChar(16)
+  sections     Json            @default("{}")
+  reviewNotes  Json            @default("[]") @map("review_notes")
+  version      Int             @default(1)
+  createdAt    DateTime        @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime        @map("updated_at") @db.Timestamptz(3)
+  versions     ReportVersion[]
+  releases     ReportRelease[]
+
+  @@index([centerId, childId])
+  @@map("progress_report")
+}
+
+model ReportVersion {
+  id        String         @id @default(uuid()) @db.Uuid
+  reportId  String         @map("report_id") @db.Uuid
+  centerId  String         @map("center_id") @db.Uuid
+  number    Int
+  kind      String         @db.VarChar(16)
+  sections  Json
+  evidence  Json
+  authorId  String         @map("author_id") @db.Uuid
+  createdAt DateTime       @map("created_at") @db.Timestamptz(3)
+  report    ProgressReport @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  releases  ReportRelease[]
+
+  @@unique([reportId, number])
+  @@map("report_version")
+}
+
+// Never written: inserts are refused by a database trigger until report release is authorized.
+model ReportRelease {
+  id              String         @id @default(uuid()) @db.Uuid
+  reportId        String         @map("report_id") @db.Uuid
+  reportVersionId String         @map("report_version_id") @db.Uuid
+  centerId        String         @map("center_id") @db.Uuid
+  audience        String         @db.VarChar(32)
+  releasedById    String         @map("released_by_id") @db.Uuid
+  releasedAt      DateTime       @map("released_at") @db.Timestamptz(3)
+  report          ProgressReport @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  reportVersion   ReportVersion  @relation(fields: [reportVersionId], references: [id], onDelete: Restrict)
+
+  @@map("report_release")
+}

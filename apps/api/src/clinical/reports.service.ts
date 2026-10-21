@@ -1,0 +1,249 @@
+import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import type { Prisma, ProgressReport } from '@prisma/client';
+import { Tx, logCenterEvent, uniq } from '../centers/history';
+import { PrismaService } from '../prisma/prisma.service';
+import type { Viewer } from '../operations/children.service';
+import { TrialService } from '../operations/trial.service';
+import { ClinicalService, LOCKED, asDate, day } from './clinical.service';
+import type { ProgressQueryDto, ReportCreateDto, ReportSaveDto, ReviewDto } from './clinical.dto';
+
+const DAY = 86_400_000;
+type Goal = { key: string; title: string; measure: string; baseline: number; target: number };
+type Point = { date: string; value: number; note: string | null };
+type Obs = { observedOn: Date; value: number; note: string | null };
+type Sections = Record<string, string>;
+type Note = { by: string; byName: string; at: string; comment: string; kind: 'comment' | 'returned' };
+export type GoalEvidence = Goal & { points: Point[]; prior: Point | null; status: 'none' | 'insufficient' | 'recorded' };
+export type Evidence = Awaited<ReturnType<ReportsService['evidence']>>;
+
+// Progress is only ever what was recorded: points inside the period, plus the last value before it for comparison.
+export function goalEvidence(g: Goal, rows: Obs[], from: Date): GoalEvidence {
+  const all = rows.map((o) => ({ date: day(o.observedOn), value: o.value, note: o.note }));
+  const start = day(from);
+  const points = all.filter((p) => p.date >= start);
+  const before = all.filter((p) => p.date < start);
+  return { ...g, points, prior: before.length ? before[before.length - 1] : null, status: points.length === 0 ? 'none' : points.length < 2 ? 'insufficient' : 'recorded' };
+}
+
+function goalLine(g: GoalEvidence) {
+  const head = `${g.title}\nBaseline ${g.baseline}, target ${g.target} (${g.measure}).`;
+  if (g.status === 'none') return `${head}\nNo observations recorded in this period.`;
+  const [f, l] = [g.points[0], g.points[g.points.length - 1]];
+  if (g.status === 'insufficient') return `${head}\nOne observation recorded in this period (${f.date}: ${f.value}). Not enough recorded data to describe change.`;
+  return `${head}\n${g.points.length} observations recorded between ${f.date} and ${l.date}. First recorded value ${f.value}; most recent ${l.value}.`;
+}
+
+// Factual starting text only: copied assessment summaries and recorded values. Interpretation is left blank for the clinician.
+const prefill = (e: Evidence): Sections => ({
+  summary: '',
+  assessment: e.assessments.map((a) => `Initial assessment (${a.assessedOn}): ${a.summary}`).join('\n\n'),
+  goals: e.goals.map(goalLine).join('\n\n'),
+  sessions: `${e.sessions.drafts} session drafts and ${e.sessions.completedVisits} completed visits recorded in this period.`,
+  recommendations: '',
+  familySummary: '',
+});
+
+export const FAMILY_PROGRESS_SAMPLE = {
+  sample: true, released: false, childName: 'Juniper (sample child)', service: 'speech', period: { from: '2026-07-01', to: '2026-09-30' },
+  message: 'This is a made-up example to show how a progress update could look one day. Juniper is not a real child, and none of this comes from your child’s records.',
+  goals: [
+    { title: 'Uses two-word phrases during play', measure: 'percent', baseline: 20, target: 80, status: 'recorded', points: [{ date: '2026-07-08', value: 25 }, { date: '2026-07-29', value: 30 }, { date: '2026-08-19', value: 40 }, { date: '2026-09-09', value: 45 }, { date: '2026-09-30', value: 55 }] },
+    { title: 'Takes turns in a simple game', measure: 'count', baseline: 1, target: 5, status: 'insufficient', points: [{ date: '2026-09-16', value: 2 }] },
+    { title: 'Names familiar objects in pictures', measure: 'count', baseline: 3, target: 15, status: 'none', points: [] },
+  ],
+};
+
+@Injectable()
+export class ReportsService {
+  constructor(private readonly prisma: PrismaService, private readonly trial: TrialService, private readonly clinical: ClinicalService) {}
+
+  async evidence(db: Tx | PrismaService, centerId: string, childId: string, service: string, from: Date, to: Date) {
+    const [assessments, plan, drafts, completedVisits] = await Promise.all([
+      db.assessment.findMany({ where: { centerId, childId, service, assessedOn: { lte: to } }, orderBy: { assessedOn: 'asc' } }),
+      db.therapyPlan.findFirst({ where: { centerId, childId, service }, include: { versions: { orderBy: { number: 'desc' } } }, orderBy: { createdAt: 'asc' } }),
+      db.sessionNote.count({ where: { centerId, childId, service, sessionDate: { gte: from, lte: to } } }),
+      db.appointment.count({ where: { centerId, childId, service, status: 'COMPLETED', startsAt: { gte: from, lt: new Date(to.getTime() + DAY) } } }),
+    ]);
+    const current = plan?.versions.find((v) => v.status !== 'SUPERSEDED') ?? plan?.versions[0];
+    const goals = (current?.goals ?? []) as Goal[];
+    const obs = plan && goals.length ? await db.observation.findMany({ where: { centerId, childId, planVersionId: { in: plan.versions.map((v) => v.id) }, goalKey: { in: goals.map((g) => g.key) }, observedOn: { lte: to } }, orderBy: [{ observedOn: 'asc' }, { createdAt: 'asc' }] }) : [];
+    return {
+      period: { from: day(from), to: day(to) },
+      assessments: assessments.map((a) => ({ id: a.id, assessedOn: day(a.assessedOn), summary: a.summary })),
+      plan: plan && current ? { id: plan.id, title: plan.title, versionNumber: current.number, status: current.status } : null,
+      goals: goals.map((g) => goalEvidence(g, obs.filter((o) => o.goalKey === g.key), from)),
+      sessions: { drafts, completedVisits },
+    };
+  }
+
+  private period(fromS: string | undefined, toS: string | undefined, fallbackDays: number) {
+    const today = asDate(day(this.trial.now()));
+    const to = toS ? asDate(toS) : today;
+    const from = fromS ? asDate(fromS) : new Date(to.getTime() - (fallbackDays - 1) * DAY);
+    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) throw new UnprocessableEntityException('Enter valid dates.');
+    if (from > to) throw new UnprocessableEntityException('The start of the period must be on or before its end.');
+    if (to.getTime() - from.getTime() > 731 * DAY) throw new UnprocessableEntityException('Choose a period of two years or less.');
+    return { from, to, today };
+  }
+
+  async dashboard(centerId: string, v: Viewer, q: ProgressQueryDto) {
+    const { from, to } = this.period(q.from, q.to, 90);
+    const pairs = v.role === 'THERAPIST' ? await this.prisma.careAssignment.findMany({ where: { centerId, membershipId: v.membershipId, endedAt: null }, select: { childId: true, service: true } }) : null;
+    const kids = await this.prisma.child.findMany({ where: { centerId, status: 'ACTIVE', ...(pairs ? { id: { in: uniq(pairs.map((p) => p.childId)) } } : {}) }, orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }] });
+    const name = (id: string) => { const k = kids.find((x) => x.id === id)!; return `${k.preferredName ?? k.firstName} ${k.lastName}`; };
+    const scope = q.childId ? kids.filter((k) => k.id === q.childId) : kids;
+    const plans = (await this.prisma.therapyPlan.findMany({ where: { centerId, childId: { in: scope.map((k) => k.id) }, ...(q.service ? { service: q.service } : {}) }, include: { versions: { orderBy: { number: 'desc' } } }, orderBy: { createdAt: 'asc' } }))
+      .filter((p) => !pairs || pairs.some((x) => x.childId === p.childId && x.service === p.service));
+    const obs = await this.prisma.observation.findMany({ where: { centerId, planVersionId: { in: plans.flatMap((p) => p.versions.map((x) => x.id)) }, observedOn: { lte: to } }, orderBy: [{ observedOn: 'asc' }, { createdAt: 'asc' }] });
+    const goals = plans.flatMap((p) => {
+      const cur = p.versions.find((x) => x.status !== 'SUPERSEDED') ?? p.versions[0];
+      const ids = new Set(p.versions.map((x) => x.id));
+      return ((cur?.goals ?? []) as Goal[]).filter((g) => !q.goalKey || g.key === q.goalKey)
+        .map((g) => ({ childId: p.childId, childName: name(p.childId), service: p.service, planTitle: p.title, ...goalEvidence(g, obs.filter((o) => o.goalKey === g.key && ids.has(o.planVersionId)), from) }));
+    });
+    return {
+      synthetic: true, period: { from: day(from), to: day(to) },
+      children: kids.map((k) => ({ id: k.id, name: name(k.id), services: pairs ? uniq(pairs.filter((x) => x.childId === k.id).map((x) => x.service)) : k.services })),
+      goals,
+      summary: { goals: goals.length, recorded: goals.filter((g) => g.status === 'recorded').length, insufficient: goals.filter((g) => g.status === 'insufficient').length, none: goals.filter((g) => g.status === 'none').length },
+    };
+  }
+
+  private async names(ids: string[]) {
+    const users = await this.prisma.user.findMany({ where: { id: { in: uniq(ids) } }, select: { id: true, displayName: true } });
+    return (id: string) => users.find((u) => u.id === id)?.displayName ?? '';
+  }
+
+  private async report(centerId: string, v: Viewer, id: string) {
+    const r = await this.prisma.progressReport.findFirst({ where: { id, centerId } });
+    if (!r) throw new NotFoundException('Report not found');
+    await this.clinical.child(this.prisma, centerId, v, r.childId, v.role === 'THERAPIST' ? r.service : undefined);
+    return r;
+  }
+
+  async list(centerId: string, v: Viewer, childId: string) {
+    await this.clinical.child(this.prisma, centerId, v, childId);
+    const services = v.role === 'THERAPIST' ? (await this.prisma.careAssignment.findMany({ where: { centerId, childId, membershipId: v.membershipId, endedAt: null } })).map((a) => a.service) : null;
+    const rows = await this.prisma.progressReport.findMany({ where: { centerId, childId, ...(services ? { service: { in: services } } : {}) }, include: { _count: { select: { versions: true } } }, orderBy: { updatedAt: 'desc' } });
+    const team = await this.prisma.membership.findMany({ where: { id: { in: uniq(rows.map((r) => r.membershipId)) } }, select: { id: true, user: { select: { displayName: true } } } });
+    return { items: rows.map((r) => ({ id: r.id, title: r.title, service: r.service, periodStart: day(r.periodStart), periodEnd: day(r.periodEnd), status: r.status, versions: r._count.versions, author: team.find((t) => t.id === r.membershipId)?.user.displayName ?? '', mine: r.membershipId === v.membershipId, updatedAt: r.updatedAt })) };
+  }
+
+  async create(centerId: string, v: Viewer, childId: string, dto: ReportCreateDto) {
+    const { from, to, today } = this.period(dto.periodStart, dto.periodEnd, 90);
+    if (to > today) throw new UnprocessableEntityException('A report period cannot end in the future.');
+    return this.clinical.write(centerId, v, childId, dto.service, async (tx, now) => {
+      const ev = await this.evidence(tx, centerId, childId, dto.service, from, to);
+      const sections = prefill(ev);
+      const r = await tx.progressReport.create({ data: { centerId, childId, membershipId: v.membershipId, service: dto.service, title: dto.title.trim(), periodStart: from, periodEnd: to, sections, createdAt: now, updatedAt: now } });
+      await tx.reportVersion.create({ data: { reportId: r.id, centerId, number: 1, kind: 'CREATED', sections, evidence: ev as unknown as Prisma.InputJsonValue, authorId: v.userId, createdAt: now } });
+      await logCenterEvent(tx, centerId, 'clinical.report_drafted', now, { actorUserId: v.userId, meta: { childId, reportId: r.id } });
+      return { id: r.id };
+    });
+  }
+
+  async detail(centerId: string, v: Viewer, id: string) {
+    const r = await this.report(centerId, v, id);
+    const [ev, versions, child] = await Promise.all([
+      this.evidence(this.prisma, centerId, r.childId, r.service, r.periodStart, r.periodEnd),
+      this.prisma.reportVersion.findMany({ where: { reportId: id }, orderBy: { number: 'desc' }, select: { id: true, number: true, kind: true, authorId: true, createdAt: true } }),
+      this.prisma.child.findUniqueOrThrow({ where: { id: r.childId } }),
+    ]);
+    const author = await this.prisma.membership.findUnique({ where: { id: r.membershipId }, select: { user: { select: { displayName: true } } } });
+    const who = await this.names(versions.map((x) => x.authorId));
+    const mine = r.membershipId === v.membershipId;
+    return {
+      synthetic: true, locked: LOCKED, released: false,
+      report: { id: r.id, childId: r.childId, childName: `${child.preferredName ?? child.firstName} ${child.lastName}`, title: r.title, service: r.service, periodStart: day(r.periodStart), periodEnd: day(r.periodEnd), status: r.status, sections: r.sections as Sections, reviewNotes: r.reviewNotes as Note[], version: r.version, author: author?.user.displayName ?? '', mine, updatedAt: r.updatedAt },
+      canEdit: v.role === 'THERAPIST' && mine && r.status === 'DRAFT',
+      canReview: v.role === 'CLINICAL_SUPERVISOR' && r.status === 'IN_REVIEW',
+      evidence: ev,
+      versions: versions.map((x) => ({ id: x.id, number: x.number, kind: x.kind, author: who(x.authorId), createdAt: x.createdAt })),
+    };
+  }
+
+  private why(r: ProgressReport, v: Viewer) {
+    if (r.membershipId !== v.membershipId) return new ForbiddenException('Only the author can edit this report.');
+    if (r.status !== 'DRAFT') return new ConflictException('This report is with the supervisor for review. You can edit it again once it is returned.');
+    return new ConflictException('This report changed in another window or tab. Reload to see the latest text before you keep editing.');
+  }
+
+  // Lock the draft at the version the author is looking at; every write bumps the version.
+  private async bump(tx: Tx, r: ProgressReport, v: Viewer, version: number, now: Date, data: Prisma.ProgressReportUpdateManyMutationInput = {}) {
+    const n = await tx.progressReport.updateMany({ where: { id: r.id, membershipId: v.membershipId, status: 'DRAFT', version }, data: { ...data, updatedAt: now, version: { increment: 1 } } });
+    if (n.count !== 1) throw this.why(r, v);
+    return tx.progressReport.findUniqueOrThrow({ where: { id: r.id } });
+  }
+
+  async autosave(centerId: string, v: Viewer, id: string, dto: ReportSaveDto) {
+    const r = await this.report(centerId, v, id);
+    return this.clinical.write(centerId, v, r.childId, r.service, async (tx, now) => {
+      const sections = { ...(r.sections as Sections), ...Object.fromEntries(Object.entries(dto.sections).filter(([, x]) => typeof x === 'string')) };
+      const fresh = await this.bump(tx, r, v, dto.version, now, { sections });
+      await logCenterEvent(tx, centerId, 'clinical.report_autosaved', now, { actorUserId: v.userId, meta: { childId: r.childId, reportId: id } });
+      return { version: fresh.version, savedAt: now };
+    });
+  }
+
+  private async snapshot(tx: Tx, r: ProgressReport, v: Viewer, kind: 'SAVED' | 'SUBMITTED', now: Date) {
+    const last = await tx.reportVersion.aggregate({ where: { reportId: r.id }, _max: { number: true } });
+    const ev = await this.evidence(tx, r.centerId, r.childId, r.service, r.periodStart, r.periodEnd);
+    return tx.reportVersion.create({ data: { reportId: r.id, centerId: r.centerId, number: (last._max.number ?? 0) + 1, kind, sections: r.sections as Prisma.InputJsonValue, evidence: ev as unknown as Prisma.InputJsonValue, authorId: v.userId, createdAt: now } });
+  }
+
+  async saveVersion(centerId: string, v: Viewer, id: string, version: number) {
+    const r = await this.report(centerId, v, id);
+    return this.clinical.write(centerId, v, r.childId, r.service, async (tx, now) => {
+      const fresh = await this.bump(tx, r, v, version, now);
+      const s = await this.snapshot(tx, fresh, v, 'SAVED', now);
+      await logCenterEvent(tx, centerId, 'clinical.report_version_saved', now, { actorUserId: v.userId, meta: { childId: r.childId, reportId: id, number: s.number } });
+      return { number: s.number, version: fresh.version };
+    });
+  }
+
+  async submit(centerId: string, v: Viewer, id: string, version: number) {
+    const r = await this.report(centerId, v, id);
+    if (!((r.sections as Sections).summary ?? '').trim()) throw new UnprocessableEntityException('Write the clinician summary before sending the report for review.');
+    return this.clinical.write(centerId, v, r.childId, r.service, async (tx, now) => {
+      const fresh = await this.bump(tx, r, v, version, now, { status: 'IN_REVIEW' });
+      const s = await this.snapshot(tx, fresh, v, 'SUBMITTED', now);
+      await logCenterEvent(tx, centerId, 'clinical.report_submitted', now, { actorUserId: v.userId, meta: { childId: r.childId, reportId: id, number: s.number } });
+      return { number: s.number, version: fresh.version };
+    });
+  }
+
+  // Supervisors comment on, or return, a report in review. Approval and release stay DENY.
+  async review(centerId: string, v: Viewer, id: string, dto: ReviewDto, returned: boolean) {
+    if (v.role !== 'CLINICAL_SUPERVISOR') throw new ForbiddenException('Only a clinical supervisor can review a report.');
+    const r = await this.report(centerId, v, id);
+    const now = this.trial.now();
+    const byName = (await this.names([v.userId]))(v.userId);
+    await this.prisma.$transaction(async (tx) => {
+      await this.trial.assertWritable(tx, centerId, now);
+      const notes = [...(r.reviewNotes as Note[]), { by: v.userId, byName, at: now.toISOString(), comment: dto.comment.trim(), kind: returned ? 'returned' : 'comment' }];
+      const n = await tx.progressReport.updateMany({ where: { id, status: 'IN_REVIEW', version: r.version }, data: { reviewNotes: notes as Prisma.InputJsonValue, ...(returned ? { status: 'DRAFT' } : {}), updatedAt: now, version: { increment: 1 } } });
+      if (n.count !== 1) throw new ConflictException(r.status !== 'IN_REVIEW' ? 'Only a report in review can be reviewed.' : 'This report changed since you opened it. Reload to see the latest version.');
+      await logCenterEvent(tx, centerId, returned ? 'clinical.report_returned' : 'clinical.report_commented', now, { actorUserId: v.userId, meta: { childId: r.childId, reportId: id } });
+    });
+    return { ok: true };
+  }
+
+  async versionDetail(centerId: string, v: Viewer, versionId: string) {
+    const x = await this.prisma.reportVersion.findFirst({ where: { id: versionId, centerId } });
+    if (!x) throw new NotFoundException('Report version not found');
+    await this.report(centerId, v, x.reportId);
+    const who = await this.names([x.authorId]);
+    return { id: x.id, reportId: x.reportId, number: x.number, kind: x.kind, sections: x.sections as Sections, evidence: x.evidence as unknown as Evidence, author: who(x.authorId), createdAt: x.createdAt };
+  }
+
+  // Internal, staff-only look at the future family-safe format. Only the family summary and recorded values appear.
+  async familyPreview(centerId: string, v: Viewer, id: string) {
+    const r = await this.report(centerId, v, id);
+    const [ev, child] = await Promise.all([this.evidence(this.prisma, centerId, r.childId, r.service, r.periodStart, r.periodEnd), this.prisma.child.findUniqueOrThrow({ where: { id: r.childId } })]);
+    return {
+      preview: true, released: false, locked: LOCKED, childName: child.preferredName ?? child.firstName, service: r.service, period: ev.period,
+      message: (r.sections as Sections).familySummary ?? '',
+      goals: ev.goals.map((g) => ({ title: g.title, measure: g.measure, baseline: g.baseline, target: g.target, status: g.status, points: g.points.map((p) => ({ date: p.date, value: p.value })) })),
+    };
+  }
+}

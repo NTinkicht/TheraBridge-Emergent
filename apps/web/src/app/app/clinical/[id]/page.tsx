@@ -8,12 +8,13 @@ import { FormAlert } from '@/components/auth/Field';
 import { Workspace, errorText, useLoad } from '@/components/centers/kit';
 import { AssessmentsPanel, ProgressPanel, SessionsPanel } from '@/components/clinical/Panels';
 import { PlansPanel } from '@/components/clinical/PlanEditor';
+import { ReportsPanel } from '@/components/clinical/ReportsPanel';
 import { Card } from '@/components/design/ui';
 import { ErrorState, SkeletonRows } from '@/components/design/states';
 import type { SessionInfo } from '@/lib/auth';
 import { clinicalApi } from '@/lib/clinical';
 
-const TABS = [['plan', 'Therapy plan'], ['assessments', 'Assessments'], ['sessions', 'Sessions'], ['progress', 'Progress']] as const;
+const TABS = [['plan', 'Therapy plan'], ['assessments', 'Assessments'], ['sessions', 'Sessions'], ['progress', 'Progress'], ['reports', 'Reports']] as const;
 
 function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e: unknown) => void }) {
   const { id } = useParams<{ id: string }>();
@@ -47,6 +48,7 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
         {tab === 'assessments' && <AssessmentsPanel centerId={centerId} ws={data} run={run} />}
         {tab === 'sessions' && <SessionsPanel centerId={centerId} ws={data} run={run} />}
         {tab === 'progress' && <ProgressPanel centerId={centerId} ws={data} run={run} />}
+        {tab === 'reports' && <ReportsPanel centerId={centerId} ws={data} run={run} onError={onError} />}
       </div>
     </div>
   );

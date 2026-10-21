@@ -66,6 +66,34 @@ export class ObservationDto {
   @IsOptional() @IsUUID() sessionNoteId?: string;
   @IsOptional() @IsString() @MaxLength(500) note?: string;
 }
+export class ProgressQueryDto {
+  @IsOptional() @IsUUID() childId?: string;
+  @IsOptional() @IsIn(SPECIALTIES) service?: string;
+  @IsOptional() @Matches(/^[a-z0-9-]{1,40}$/) goalKey?: string;
+  @IsOptional() @Matches(DATE) from?: string;
+  @IsOptional() @Matches(DATE) to?: string;
+}
+export class ReportCreateDto {
+  @IsIn(SPECIALTIES) service!: string;
+  @IsString() @MinLength(3, { message: 'Give the report a title of at least 3 characters' }) @MaxLength(120) title!: string;
+  @Matches(DATE) periodStart!: string;
+  @Matches(DATE) periodEnd!: string;
+}
+export class ReportSectionsDto {
+  @IsOptional() @IsString() @MaxLength(8000) summary?: string;
+  @IsOptional() @IsString() @MaxLength(8000) assessment?: string;
+  @IsOptional() @IsString() @MaxLength(8000) goals?: string;
+  @IsOptional() @IsString() @MaxLength(8000) sessions?: string;
+  @IsOptional() @IsString() @MaxLength(8000) recommendations?: string;
+  @IsOptional() @IsString() @MaxLength(4000) familySummary?: string;
+}
+export class ReportSaveDto {
+  @ValidateNested() @Type(() => ReportSectionsDto) sections!: ReportSectionsDto;
+  @IsInt() @Min(1) version!: number;
+}
+export class ReportVersionDto {
+  @IsInt() @Min(1) version!: number;
+}
 export class TemplateDto {
   @IsString() @MinLength(3) @MaxLength(120) title!: string;
   @IsIn(SPECIALTIES) service!: string;

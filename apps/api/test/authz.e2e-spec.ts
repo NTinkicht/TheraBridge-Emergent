@@ -87,7 +87,7 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
     it('a guardian in an active context is still denied center admin data', async () => {
       await member('guardian', harbor, ['GUARDIAN']);
       const s = await signIn(h, email('guardian'));
-      expect(s.body.permissions).toEqual(['family.portal.read', 'family.preferences.update', 'center.messages.use', 'family.activities.read']);
+      expect(s.body.permissions).toEqual(['family.portal.read', 'family.preferences.update', 'center.messages.use', 'family.activities.read', 'family.progress.demo']);
     });
 
     it.each([
@@ -140,7 +140,7 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
       const unsafe = h.app.get(RouteAccessVerifier).routes().filter((r) => r.method !== 'GET').map((r) => `${r.method} ${r.route}`).sort();
       expect(unsafe).toEqual([
         'PATCH /centers/:centerId/appointments/:appointmentId', 'PATCH /centers/:centerId/children/:childId',
-        'PATCH /centers/:centerId/clinical/assessments/:id', 'PATCH /centers/:centerId/clinical/notes/:id', 'PATCH /centers/:centerId/clinical/plan-versions/:id',
+        'PATCH /centers/:centerId/clinical/assessments/:id', 'PATCH /centers/:centerId/clinical/notes/:id', 'PATCH /centers/:centerId/clinical/plan-versions/:id', 'PATCH /centers/:centerId/clinical/reports/:id',
         'PATCH /centers/:centerId/me', 'PATCH /centers/:centerId/series/:seriesId', 'PATCH /centers/:centerId/settings', 'PATCH /centers/:centerId/staff/:membershipId',
         'POST /auth/context', 'POST /auth/login', 'POST /auth/logout', 'POST /auth/logout-all',
         'POST /auth/password/change', 'POST /auth/password/forgot', 'POST /auth/password/reset',
@@ -150,9 +150,11 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
         'POST /centers/:centerId/children/:childId/assignments/:assignmentId/end', 'POST /centers/:centerId/children/:childId/guardians',
         'POST /centers/:centerId/children/:childId/guardians/:linkId/invite', 'POST /centers/:centerId/children/:childId/guardians/:linkId/remove',
         'POST /centers/:centerId/children/:childId/restore', 'POST /centers/:centerId/clinical/children/:childId/assessments',
-        'POST /centers/:centerId/clinical/children/:childId/notes', 'POST /centers/:centerId/clinical/children/:childId/observations', 'POST /centers/:centerId/clinical/children/:childId/plans',
+        'POST /centers/:centerId/clinical/children/:childId/notes', 'POST /centers/:centerId/clinical/children/:childId/observations', 'POST /centers/:centerId/clinical/children/:childId/plans', 'POST /centers/:centerId/clinical/children/:childId/reports',
         'POST /centers/:centerId/clinical/notes/:id/sign', 'POST /centers/:centerId/clinical/plan-versions/:id/approve', 'POST /centers/:centerId/clinical/plan-versions/:id/return',
-        'POST /centers/:centerId/clinical/plan-versions/:id/submit', 'POST /centers/:centerId/clinical/plans/:planId/versions', 'POST /centers/:centerId/family/preferences',
+        'POST /centers/:centerId/clinical/plan-versions/:id/submit', 'POST /centers/:centerId/clinical/plans/:planId/versions',
+        'POST /centers/:centerId/clinical/reports/:id/comments', 'POST /centers/:centerId/clinical/reports/:id/release', 'POST /centers/:centerId/clinical/reports/:id/return',
+        'POST /centers/:centerId/clinical/reports/:id/submit', 'POST /centers/:centerId/clinical/reports/:id/versions', 'POST /centers/:centerId/family/preferences',
         'POST /centers/:centerId/invitations', 'POST /centers/:centerId/invitations/:invitationId/resend', 'POST /centers/:centerId/invitations/:invitationId/revoke',
         'POST /centers/:centerId/series', 'POST /centers/:centerId/series/:seriesId/cancel',
         'POST /centers/:centerId/setup/:key/complete',
@@ -216,6 +218,7 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
       'center.activities.read': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'CLINICAL_SUPERVISOR'],
       'center.activities.manage': ['THERAPIST', 'CLINICAL_SUPERVISOR'],
       'family.activities.read': ['GUARDIAN'],
+      'family.progress.demo': ['GUARDIAN'],
     };
     const cases = ROLES.flatMap((role) => [...Object.keys(PERMISSIONS), ...CLINICAL_CAPABILITIES].map((p) => [role, p] as const));
     it.each(cases)('%s × %s', (role, permission) => {

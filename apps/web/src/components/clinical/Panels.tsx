@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Field } from '@/components/auth/Field';
 import { SelectField } from '@/components/centers/kit';
+import { GoalChart } from '@/components/clinical/GoalChart';
 import { Button, Card, LockedAction, Pill } from '@/components/design/ui';
 import { serviceLabel } from '@/components/operations/BookDialog';
 import { LOCKED_REASON, clinicalApi, type Workspace } from '@/lib/clinical';
@@ -91,22 +92,16 @@ export function ProgressPanel({ centerId, ws, run }: { centerId: string; ws: Wor
     <div className="space-y-4" data-testid="progress-panel">
       {!goals.length && <p className="text-[14px] text-brand-inkMuted" data-testid="progress-empty">Add goals to a plan to record observations.</p>}
       {goals.map((g) => {
-        const hist = ws.observations.filter((o) => o.goalKey === g.key);
-        const max = Math.max(g.target, ...hist.map((o) => o.value), 1);
+        const hist = ws.observations.filter((o) => o.goalKey === g.key && ws.plans.some((p) => p.versions.some((v) => v.id === o.planVersionId) && p.versions.some((v) => v.id === g.versionId)));
         return (
           <Card key={`${g.versionId}-${g.key}`} className="p-5" testId={`progress-goal-${g.key}`}>
             <h3 className="text-[16px] font-semibold">{g.title}</h3>
             <p className="text-[13px] text-brand-inkMuted">{g.plan} · baseline {g.baseline} → target {g.target} ({g.measure})</p>
             {hist.length ? (
-              <ol className="mt-3 space-y-1.5" aria-label="Measurement history">
-                {hist.map((o) => (
-                  <li key={o.id} className="grid grid-cols-[90px_1fr_48px] items-center gap-2 text-[13px]">
-                    <span className="tnum text-brand-inkMuted">{o.observedOn}</span>
-                    <span className="h-2.5 rounded-full bg-surface-subtle"><span className="block h-2.5 rounded-full bg-brand-action" style={{ width: `${Math.min(100, (o.value / max) * 100)}%` }} /></span>
-                    <span className="tnum text-right font-semibold">{o.value}</span>
-                  </li>
-                ))}
-              </ol>
+              <div className="mt-3">
+                <GoalChart points={hist.map((o) => ({ date: o.observedOn, value: o.value }))} baseline={g.baseline} target={g.target} measure={g.measure} from={hist[0].observedOn} to={hist[hist.length - 1].observedOn} testId={`progress-chart-${g.key}`} />
+                {hist.length === 1 && <p className="mt-1 text-[13px] text-brand-inkMuted">Only one observation recorded, not enough to show change.</p>}
+              </div>
             ) : <p className="mt-2 text-[14px] text-brand-inkMuted">No observations yet.</p>}
           </Card>
         );
