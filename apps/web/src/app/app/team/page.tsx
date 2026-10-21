@@ -22,9 +22,12 @@ function InviteDialog({ centerId, open, onClose, onSent, onError }: { centerId: 
   const [msg, setMsg] = useState<string | null>(null);
   useEffect(() => { if (open) { setF({ displayName: '', email: '', title: '' }); setRoles([]); setSpecialties([]); setResponsibilities([]); setMsg(null); } }, [open]);
   async function send() {
-    if (f.displayName.trim().length < 2) return setMsg('Enter the person’s full name.');
-    if (!EMAIL.test(f.email.trim())) return setMsg('Enter a valid email address.');
-    if (!roles.length) return setMsg('Choose at least one role.');
+    const missing = [
+      f.displayName.trim().length < 2 && 'their full name',
+      !EMAIL.test(f.email.trim()) && 'a valid email address',
+      !roles.length && 'at least one role',
+    ].filter(Boolean);
+    if (missing.length) return setMsg(`Please add ${missing.join(', ')}.`);
     setBusy(true);
     setMsg(null);
     try {
@@ -55,7 +58,7 @@ function InviteDialog({ centerId, open, onClose, onSent, onError }: { centerId: 
   );
 }
 
-function Invitations({ centerId, canInvite, version, onError }: { centerId: string; canInvite: boolean; version: number; onError: (e: unknown) => void }) {
+function Invitations({ centerId, canInvite, version, onError, onNotice }: { centerId: string; canInvite: boolean; version: number; onError: (e: unknown) => void; onNotice: () => void }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const fetcher = useCallback(() => centersApi.invitations(centerId), [centerId, version]);
   const { data, failed, reload } = useLoad(fetcher, onError);
@@ -64,6 +67,7 @@ function Invitations({ centerId, canInvite, version, onError }: { centerId: stri
   async function act(id: string, action: 'resend' | 'revoke') {
     setBusy(id);
     setMsg(null);
+    onNotice();
     try {
       const r = await centersApi.staffInvitation(centerId, id, action);
       setMsg({ tone: 'success', text: action === 'resend' ? `A new link was sent to ${r.email}.` : `The invitation to ${r.email} was revoked.` });
@@ -166,11 +170,11 @@ function Team({ session, onError }: { session: SessionInfo; onError: (e: unknown
       {notice && <FormAlert tone="success" testId="team-notice">{notice}</FormAlert>}
       <div role="tablist" aria-label="Team views" className="inline-flex gap-1 rounded-control bg-surface-white p-1 shadow-sm">
         {(['members', 'invitations'] as const).map((t) => (
-          <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)} data-testid={`team-tab-${t}`}
+          <button key={t} role="tab" aria-selected={tab === t} onClick={() => { setTab(t); setNotice(null); }} data-testid={`team-tab-${t}`}
             className={`min-h-[40px] rounded-[8px] px-4 text-[14px] font-medium transition-colors ${tab === t ? 'bg-brand-action text-white' : 'text-brand-inkMuted hover:bg-surface-subtle'}`}>{t === 'members' ? 'Members' : 'Invitations'}</button>
         ))}
       </div>
-      {tab === 'members' ? <Directory centerId={centerId} version={version} onError={onError} /> : <Invitations centerId={centerId} canInvite={canInvite} version={version} onError={onError} />}
+      {tab === 'members' ? <Directory centerId={centerId} version={version} onError={onError} /> : <Invitations centerId={centerId} canInvite={canInvite} version={version} onError={onError} onNotice={() => setNotice(null)} />}
       {canInvite && <InviteDialog centerId={centerId} open={inviting} onClose={() => setInviting(false)} onError={onError}
         onSent={(email) => { setInviting(false); setNotice(`Invitation sent to ${email}.`); setTab('invitations'); setVersion((v) => v + 1); }} />}
     </div>

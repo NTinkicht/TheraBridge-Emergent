@@ -42,6 +42,7 @@ function NewCenter({ onError }: { onError: (e: unknown) => void }) {
   const [applicationId, setApplicationId] = useState<string | null>(null);
   const [reference, setReference] = useState<string | null>(null);
   const [prefilling, setPrefilling] = useState(false);
+  const [existing, setExisting] = useState<{ id: string; name: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -53,6 +54,8 @@ function NewCenter({ onError }: { onError: (e: unknown) => void }) {
     if (!id) return;
     setPrefilling(true);
     authApi.application(id).then((a) => {
+      if (a.provisioning?.status === 'PROVISIONED' && a.provisioning.center) return setExisting(a.provisioning.center);
+      if (a.status !== 'APPROVED') setFailure('Only approved applications can be provisioned.');
       setApplicationId(a.id);
       setReference(a.reference);
       setF({ name: a.organizationName, slug: '', city: a.city, country: a.country, timezone: a.timezone, adminName: a.contactName, adminEmail: a.contactEmail });
@@ -81,6 +84,14 @@ function NewCenter({ onError }: { onError: (e: unknown) => void }) {
   }
 
   if (prefilling) return <SkeletonRows rows={5} testId="new-center-prefill-loading" />;
+  if (existing) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-4" data-testid="new-center-already-provisioned">
+        <PageTitle title="Already provisioned" body={`This application already created ${existing.name}.`} testId="new-center-title" />
+        <Link href={`/app/centers/${existing.id}`} className="inline-flex min-h-[44px] items-center rounded-control bg-brand-action px-4 text-[14px] font-semibold text-white hover:bg-brand-actionHover" data-testid="open-existing-center-link">Open {existing.name}</Link>
+      </div>
+    );
+  }
   const zones = ZONES.includes(f.timezone) ? ZONES : [f.timezone, ...ZONES];
   return (
     <div className="mx-auto max-w-3xl space-y-6">

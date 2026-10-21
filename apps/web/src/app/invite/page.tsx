@@ -116,17 +116,28 @@ export default function InvitePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fromHash = new URLSearchParams(window.location.hash.slice(1)).get('token');
-    if (fromHash) {
-      sessionStorage.setItem(KEY, fromHash);
-      window.history.replaceState(null, '', '/invite');
-    }
-    const t = fromHash ?? sessionStorage.getItem(KEY);
-    if (!t) return setError('This page needs the link from your invitation email. Open the link again.');
-    setToken(t);
-    Promise.all([centersApi.inspectInvite(t), authApi.session().catch(() => null)])
-      .then(([p, s]) => { setPreview(p); setSession(s); })
-      .catch((e) => setError(e instanceof ApiError && e.status === 404 ? 'This invitation link is not valid. Ask for a new invitation.' : (e as Error).message));
+    let current = true;
+    const load = () => {
+      const fromHash = new URLSearchParams(window.location.hash.slice(1)).get('token');
+      if (fromHash) {
+        sessionStorage.setItem(KEY, fromHash);
+        window.history.replaceState(null, '', '/invite');
+      }
+      const t = fromHash ?? sessionStorage.getItem(KEY);
+      setPreview(null);
+      setError(null);
+      if (!t) return setError('This page needs the link from your invitation email. Open the link again.');
+      setToken(t);
+      Promise.all([centersApi.inspectInvite(t), authApi.session().catch(() => null)])
+        .then(([p, s]) => { if (current) { setPreview(p); setSession(s); } })
+        .catch((e) => { if (current) setError(e instanceof ApiError && e.status === 404 ? 'This invitation link is not valid. Ask for a new invitation.' : (e as Error).message); });
+    };
+    load();
+    window.addEventListener('hashchange', load);
+    return () => {
+      current = false;
+      window.removeEventListener('hashchange', load);
+    };
   }, []);
 
   const done = () => {

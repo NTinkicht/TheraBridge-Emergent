@@ -124,7 +124,14 @@ const remember = (s: SessionInfo): SessionInfo => {
   return s;
 };
 
-const preToken = async () => (await call<{ csrfToken: string }>('/api/auth/csrf')).csrfToken;
+// Concurrent callers share one in-flight request, because each GET /api/auth/csrf rotates the pre-auth cookie.
+let preTokenInFlight: Promise<string> | null = null;
+const preToken = () => {
+  preTokenInFlight ??= call<{ csrfToken: string }>('/api/auth/csrf').then((r) => r.csrfToken).finally(() => {
+    preTokenInFlight = null;
+  });
+  return preTokenInFlight;
+};
 
 // Generic authenticated requests for feature modules; CSRF is attached automatically for writes.
 export const rest = {
