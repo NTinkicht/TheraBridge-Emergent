@@ -27,7 +27,9 @@ export const threadScope = (
       })),
     ],
   };
-  return isManager(v) || v.role === 'CLINICAL_SUPERVISOR' ? { centerId } : { centerId, id: { in: [] } };
+  // Managers coordinate internal staff discussions; they cannot read or reply to guardian threads.
+  // Supervisors cannot access any discussion, including internal staff messaging.
+  return isManager(v) ? { centerId, audience: { in: ['CARE_TEAM', 'SPECIALTY'] } } : { centerId, id: { in: [] } };
 };
 
 // Family free-text messaging is a synthetic-only demonstration until safeguarding decision D-NEW-5 (issue #35).
@@ -79,7 +81,11 @@ export class MessagesService {
 
   async create(centerId: string, v: Viewer, dto: ThreadDto) {
     if (!familyMessagingEnabled()) throw new ForbiddenException(DEMO_OFF);
+    if (v.role === 'CLINICAL_SUPERVISOR') throw new ForbiddenException('Supervisors cannot use discussions.');
     const audience = dto.audience ?? 'GUARDIAN'; // Existing recipient-specific API requests remain compatible.
+    if (audience === 'GUARDIAN' && v.role !== 'GUARDIAN' && v.role !== 'THERAPIST') {
+      throw new ForbiddenException('Family conversations are only for guardians and assigned therapists.');
+    }
     if (v.role === 'GUARDIAN' && audience !== 'GUARDIAN') throw new ForbiddenException('Families cannot open internal staff conversations.');
     if (audience === 'SPECIALTY' && !dto.service) throw new UnprocessableEntityException('Choose a specialty for a restricted conversation.');
     if (audience !== 'SPECIALTY' && dto.service) throw new UnprocessableEntityException('Only specialty conversations can specify a service.');
@@ -144,7 +150,7 @@ export class MessagesService {
     await this.markRead(this.prisma, t.id, v.userId, now);
     return {
       id: t.id, childId: t.childId, audience: t.audience, service: t.service, child: `${t.child.preferredName ?? t.child.firstName} ${t.child.lastName}`, subject: t.subject, category: t.category, status: t.status, createdAt: t.createdAt, closedAt: t.closedAt,
-      canManage: isManager(v), recipient: t.guardianLink?.displayName ?? null, demo: true,
+      canManage: (isManager(v) && t.audience !== 'GUARDIAN') || (v.role === 'THERAPIST' && t.audience === 'GUARDIAN'), recipient: t.guardianLink?.displayName ?? null, demo: true,
       messages: t.messages.map((m) => ({ id: m.id, body: m.body, authorKind: m.authorKind, author: users.find((u) => u.id === m.authorUserId)?.displayName ?? 'Former member', mine: m.authorUserId === v.userId, createdAt: m.createdAt })),
     };
   }
@@ -206,12 +212,16 @@ export class MessagesService {
 
   async setStatus(centerId: string, v: Viewer, id: string, status: 'OPEN' | 'CLOSED') {
     if (!familyMessagingEnabled()) throw new ForbiddenException(DEMO_OFF);
-    if (!isManager(v)) throw new ForbiddenException('Only center administrators and coordinators can close conversations.');
+    if (!isManager(v) && v.role !== 'THERAPIST') throw new ForbiddenException('Only authorized internal managers or assigned therapists can close conversations.');
     const now = this.trial.now();
     await this.prisma.$transaction(async (tx) => {
       await this.trial.assertWritable(tx, centerId, now);
-      const t = await tx.messageThread.findFirst({ where: { id, centerId } });
+      const scope = await this.scope(tx, centerId, v);
+      const t = await tx.messageThread.findFirst({ where: { id, ...scope } });
       if (!t) throw new NotFoundException('Conversation not found');
+      if (v.role === 'THERAPIST' && t.audience !== 'GUARDIAN') {
+        throw new ForbiddenException('Therapists can manage only their assigned family conversations.');
+      }
       if (t.status === status) throw new ConflictException(status === 'OPEN' ? 'This conversation is already open.' : 'This conversation is already closed.');
       await tx.messageThread.update({ where: { id }, data: { status, closedAt: status === 'CLOSED' ? now : null } });
       await logCenterEvent(tx, centerId, status === 'CLOSED' ? 'message.thread_closed' : 'message.thread_reopened', now, { actorUserId: v.userId, meta: { childId: t.childId, threadId: id } });
