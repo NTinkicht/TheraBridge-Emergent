@@ -1,6 +1,11 @@
 # NEXT_WORK
 
-## Immediate (owner): export TB-EM-008 Clinical Workspace foundations
+## Immediate (owner): export TB-EM-009 Progress Tracking and Report Drafting
+
+1. Save to GitHub on `phase-1-center-foundation`. Never Force Push. CI should show 374 API tests. New migration: `20261026090000_tb_em_009_progress_reports`.
+2. File N28–N29 from `workunits/TB-EM-009.md`.
+
+## Previous: export TB-EM-008 Clinical Workspace foundations (accepted)
 
 1. Save to GitHub on `phase-1-center-foundation`. Never Force Push. CI should show 367 API tests. New migration: `20261025090000_tb_em_008_clinical_workspace`.
 2. File N25–N27 from `workunits/TB-EM-008.md`.

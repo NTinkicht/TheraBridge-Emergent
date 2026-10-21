@@ -97,7 +97,7 @@ export function Compare({ v, current, onClose }: { v: ReportVersion; current: Re
       {SECTIONS.map(([k, label]) => {
         const diff = (v.sections[k] ?? '') !== (current[k] ?? '');
         return (
-          <div key={k} className="space-y-1" data-testid={`compare-${k}`}>
+          <div key={k} className="space-y-1" data-testid={`compare-section-${k}`}>
             <p className="flex items-center gap-2 text-[14px] font-semibold">{label}<Pill tone={diff ? 'caution' : 'neutral'}>{diff ? 'Changed' : 'Same'}</Pill></p>
             {diff && (
               <div className="grid grid-cols-1 gap-2 md:grid-cols-2">

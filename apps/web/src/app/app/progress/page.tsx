@@ -61,9 +61,9 @@ function Board({ session, onError }: { session: SessionInfo; onError: (e: unknow
         </>}
       </Card>
       {invalid && <p className="rounded-control bg-status-dangerSurface p-3 text-[14px] text-status-danger" role="alert" data-testid="progress-period-error">Choose a start date on or before the end date.</p>}
-      {failed && <ErrorState onRetry={() => void reload()} testId="progress-error" />}
+      {!invalid && failed && <ErrorState onRetry={() => void reload()} testId="progress-error" />}
       {!invalid && !failed && !data && <Card className="p-5"><SkeletonRows rows={4} testId="progress-loading" /></Card>}
-      {data && (
+      {data && !invalid && (
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" data-testid="progress-summary">
             <Metric label="Goals shown" value={goals.length} sub={`${data.period.from} to ${data.period.to}`} icon={LineChart} testId="metric-goals" />

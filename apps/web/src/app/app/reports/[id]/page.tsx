@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, EyeOff, FlaskConical } from 'lucide-react';
+import { FormAlert } from '@/components/auth/Field';
 import { Workspace, errorText, useLoad } from '@/components/centers/kit';
 import { FamilyProgress } from '@/components/clinical/FamilyProgress';
 import { ReportEditor } from '@/components/clinical/ReportEditor';
@@ -21,6 +22,10 @@ function Report({ session, onError }: { session: SessionInfo; onError: (e: unkno
   const { data, failed, reload } = useLoad(fetcher, onError);
   const [compare, setCompare] = useState<ReportVersion | null>(null);
   const [preview, setPreview] = useState<FP | null>(null);
+  const [live, setLive] = useState<Record<string, string> | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (preview) { previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }, [preview]);
   const showPreview = async () => {
     try { setPreview(await reportsApi.familyPreview(centerId, id)); } catch (e) { errorText(e, onError); }
   };
@@ -40,7 +45,7 @@ function Report({ session, onError }: { session: SessionInfo; onError: (e: unkno
       </div>
       <p className="flex items-start gap-2 rounded-control bg-status-cautionSurface p-3 text-[13px]" data-testid="report-synthetic-banner"><FlaskConical size={16} className="mt-0.5 shrink-0" aria-hidden="true" />Synthetic data only, not for clinical use. The draft starts from recorded observations and assessment summaries only. {data.locked} AI drafting is not available.</p>
       {preview && (
-        <div className="space-y-2" data-testid="report-family-preview">
+        <div ref={previewRef} className="scroll-mt-4 space-y-2" data-testid="report-family-preview">
           <div className="flex justify-end"><Button size="sm" variant="ghost" onClick={() => setPreview(null)} data-testid="report-preview-close">Close preview</Button></div>
           <FamilyProgress data={preview} testId="family-format" banner={
             <p className="flex items-start gap-2 rounded-control border-2 border-dashed border-status-danger bg-fam-surface p-3 text-[14px] text-status-danger" data-testid="family-format-unreleased">
@@ -51,8 +56,9 @@ function Report({ session, onError }: { session: SessionInfo; onError: (e: unkno
       )}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0 space-y-5">
-          {compare && <Compare v={compare} current={r.sections} onClose={() => setCompare(null)} />}
-          <ReportEditor key={`${r.status}-${r.version}`} centerId={centerId} d={data} onReload={reload} onError={onError} onPreview={() => void showPreview()} />
+          {success && <FormAlert tone="success" testId="report-notice-success">{success}</FormAlert>}
+          {compare && <Compare v={compare} current={live ?? r.sections} onClose={() => setCompare(null)} />}
+          <ReportEditor key={`${r.status}-${r.version}`} centerId={centerId} d={data} onReload={reload} onError={onError} onPreview={() => { setSuccess(null); void showPreview(); }} onSections={setLive} onSuccess={setSuccess} />
         </div>
         <div className="min-w-0 space-y-5">
           <Review centerId={centerId} d={data} onReload={reload} onError={onError} />

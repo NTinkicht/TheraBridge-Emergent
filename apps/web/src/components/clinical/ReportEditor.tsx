@@ -23,7 +23,7 @@ function SaveState({ s, at, onRetry }: { s: Save; at: string | null; onRetry: ()
 }
 
 // Sections autosave about a second after typing stops. Each save carries the version on screen, so a stale tab gets a conflict instead of overwriting.
-export function ReportEditor({ centerId, d, onReload, onError, onPreview }: { centerId: string; d: ReportDetail; onReload: () => Promise<void>; onError: (e: unknown) => void; onPreview: () => void }) {
+export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSections, onSuccess }: { centerId: string; d: ReportDetail; onReload: () => Promise<void>; onError: (e: unknown) => void; onPreview: () => void; onSections: (s: Record<string, string>) => void; onSuccess: (text: string) => void }) {
   const [sections, setSections] = useState<Record<string, string>>(d.report.sections);
   const [state, setState] = useState<Save>('idle');
   const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -57,6 +57,7 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview }: { ce
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => { if (dirty.current) e.preventDefault(); };
     window.addEventListener('beforeunload', warn);
+    onSections(local.current);
     return () => { window.removeEventListener('beforeunload', warn); clearTimeout(timer.current); };
   }, []);
 
@@ -64,6 +65,7 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview }: { ce
     const next = { ...local.current, [k]: v };
     local.current = next;
     setSections(next);
+    onSections(next);
     dirty.current = true;
     if (state === 'conflict') return;
     setState('pending');
@@ -74,7 +76,7 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview }: { ce
   const act = async (fn: (v: number) => Promise<{ number: number }>, ok: (n: number) => string) => {
     setNotice(null);
     if (!(await save())) return;
-    try { const r = await fn(ver.current); setNotice({ tone: 'success', text: ok(r.number) }); await onReload(); }
+    try { const r = await fn(ver.current); onSuccess(ok(r.number)); await onReload(); }
     catch (e) { const t = errorText(e, onError); if (t) setNotice({ tone: 'danger', text: t }); }
   };
 
