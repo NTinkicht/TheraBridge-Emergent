@@ -42,14 +42,26 @@ export class ClinicalService {
 
   async workspace(centerId: string, v: Viewer, childId: string) {
     const c = await this.child(this.prisma, centerId, v, childId);
-    const [assessments, plans, notes, observations, appointments, templates] = await Promise.all([
-      this.prisma.assessment.findMany({ where: { centerId, childId }, orderBy: { assessedOn: 'desc' } }),
-      this.prisma.therapyPlan.findMany({ where: { centerId, childId }, include: { versions: { orderBy: { number: 'desc' } } }, orderBy: { createdAt: 'asc' } }),
-      this.prisma.sessionNote.findMany({ where: { centerId, childId }, orderBy: { sessionDate: 'desc' }, take: 50 }),
-      this.prisma.observation.findMany({ where: { centerId, childId }, orderBy: [{ observedOn: 'asc' }, { createdAt: 'asc' }] }),
-      this.prisma.appointment.findMany({ where: { centerId, childId, status: { in: ['SCHEDULED', 'COMPLETED'] }, startsAt: { gte: new Date(this.trial.now().getTime() - 30 * 86_400_000), lte: new Date(this.trial.now().getTime() + 86_400_000) }, ...(v.role === 'THERAPIST' ? { membershipId: v.membershipId } : {}) }, orderBy: { startsAt: 'desc' } }),
-      this.templates(centerId),
+    // A therapist may see only the services assigned to that therapist for this child.
+    const assignedServices = v.role === 'THERAPIST'
+      ? (await this.prisma.careAssignment.findMany({
+          where: { centerId, childId, membershipId: v.membershipId, endedAt: null },
+          select: { service: true },
+        })).map(a => a.service)
+      : null;
+    const serviceScope = assignedServices ? { service: { in: assignedServices } } : {};
+    const [assessments, plans, notes, appointments, templates] = await Promise.all([
+      this.prisma.assessment.findMany({ where: { centerId, childId, ...serviceScope }, orderBy: { assessedOn: 'desc' } }),
+      this.prisma.therapyPlan.findMany({ where: { centerId, childId, ...serviceScope }, include: { versions: { orderBy: { number: 'desc' } } }, orderBy: { createdAt: 'asc' } }),
+      this.prisma.sessionNote.findMany({ where: { centerId, childId, ...serviceScope }, orderBy: { sessionDate: 'desc' }, take: 50 }),
+      this.prisma.appointment.findMany({ where: { centerId, childId, ...serviceScope, status: { in: ['SCHEDULED', 'COMPLETED'] }, startsAt: { gte: new Date(this.trial.now().getTime() - 30 * 86_400_000), lte: new Date(this.trial.now().getTime() + 86_400_000) }, ...(v.role === 'THERAPIST' ? { membershipId: v.membershipId } : {}) }, orderBy: { startsAt: 'desc' } }),
+      this.templates(centerId).then(rows => assignedServices ? rows.filter(t => assignedServices.includes(t.service)) : rows),
     ]);
+    // Observations must be bound to the exact plan versions that survived the service filter.
+    const observations = await this.prisma.observation.findMany({
+      where: { centerId, childId, planVersionId: { in: plans.flatMap(p => p.versions.map(ver => ver.id)) } },
+      orderBy: [{ observedOn: 'asc' }, { createdAt: 'asc' }],
+    });
     const team = await this.prisma.membership.findMany({ where: { id: { in: uniq([...assessments, ...notes, ...observations].map((x) => x.membershipId)) } }, select: { id: true, user: { select: { displayName: true } } } });
     const users = await this.prisma.user.findMany({ where: { id: { in: uniq(plans.flatMap((p) => p.versions.map((x) => x.authorId))) } }, select: { id: true, displayName: true } });
     const who = (id: string) => team.find((t) => t.id === id)?.user.displayName ?? '';

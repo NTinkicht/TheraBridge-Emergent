@@ -27,6 +27,7 @@ export class MessagesService {
   constructor(private readonly prisma: PrismaService, private readonly trial: TrialService, private readonly audit: AuditService) {}
 
   async list(centerId: string, v: Viewer, q: ThreadListQuery) {
+    if (!familyMessagingEnabled()) throw new ForbiddenException(DEMO_OFF);
     const rows = await this.prisma.messageThread.findMany({
       where: { ...threadScope(centerId, v), ...(q.status ? { status: q.status } : {}), ...(q.childId ? { childId: q.childId } : {}) },
       include: { child: true, messages: { orderBy: { createdAt: 'desc' }, take: 1 }, reads: { where: { userId: v.userId } } },
@@ -73,6 +74,7 @@ export class MessagesService {
   }
 
   async detail(centerId: string, v: Viewer, id: string) {
+    if (!familyMessagingEnabled()) throw new ForbiddenException(DEMO_OFF);
     const now = this.trial.now();
     const t = await this.prisma.messageThread.findFirst({ where: { id, ...threadScope(centerId, v) }, include: { child: true, guardianLink: true, messages: { orderBy: { createdAt: 'asc' }, take: 500 } } });
     if (!t) throw new NotFoundException('Conversation not found');
@@ -102,6 +104,7 @@ export class MessagesService {
   }
 
   async setStatus(centerId: string, v: Viewer, id: string, status: 'OPEN' | 'CLOSED') {
+    if (!familyMessagingEnabled()) throw new ForbiddenException(DEMO_OFF);
     if (!isManager(v)) throw new ForbiddenException('Only center administrators and coordinators can close conversations.');
     const now = this.trial.now();
     await this.prisma.$transaction(async (tx) => {

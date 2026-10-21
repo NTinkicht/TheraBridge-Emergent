@@ -111,6 +111,11 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     await get(dan, c(`threads/${t}`)).expect(404);
     process.env.FAMILY_MESSAGING_DEMO = 'false';
     expect((await post(h, c(`threads/${t}/messages`), rosa, { body: 'hi' }).expect(403)).body.message).toMatch(/synthetic demonstration/);
+    for (const viewer of [rosa, therapist, admin]) {
+      await get(viewer, c('threads')).expect(403);
+      await get(viewer, c(`threads/${t}`)).expect(403);
+    }
+    await post(h, c(`threads/${t}/close`), admin).expect(403);
     process.env.FAMILY_MESSAGING_DEMO = 'true';
 
     const tid = therapist.body.activeContext.membershipId;

@@ -70,6 +70,27 @@ describe('TB-EM-011 non-authorizing governance (real PostgreSQL)', () => {
  it('only one concurrent transition succeeds and creates one snapshot',async()=>{
   const r=await Promise.all([transition(therapist,'FREEZE',1),transition(therapist,'SUBMIT',1)]);expect(r.map(x=>x.status).sort()).toEqual([201,409]);expect(await h.prisma.governanceSnapshot.count()).toBe(1);
  });
+ it('denies cross-specialty clinical records in therapist workspace', async () => {
+  await h.prisma.child.update({where:{id:kid},data:{services:['speech','ot']}});
+  await h.prisma.careAssignment.updateMany({where:{centerId:c,childId:kid,membershipId:otherId},data:{service:'ot'}});
+  const a=await h.prisma.assessment.create({data:{centerId:c,childId:kid,membershipId:otherId,service:'ot',assessedOn:new Date('2026-01-01'),summary:'OT private',areas:[],createdAt:h.clock.now(),updatedAt:h.clock.now()}});
+  const p=await h.prisma.therapyPlan.create({data:{centerId:c,childId:kid,service:'ot',title:'OT plan',createdById:other.body.user.id,createdAt:h.clock.now()}});
+  const v=await h.prisma.planVersion.create({data:{centerId:c,planId:p.id,number:1,authorId:other.body.user.id,goals:[{...goal,key:'ot-goal'}],createdAt:h.clock.now(),updatedAt:h.clock.now()}});
+  const n=await h.prisma.sessionNote.create({data:{centerId:c,childId:kid,membershipId:otherId,service:'ot',sessionDate:new Date('2026-01-01'),sections:{focus:'OT only'},createdAt:h.clock.now(),updatedAt:h.clock.now()}});
+  await h.prisma.observation.create({data:{centerId:c,childId:kid,planVersionId:v.id,goalKey:'ot-goal',membershipId:otherId,value:3,observedOn:new Date('2026-01-01'),createdAt:h.clock.now()}});
+  const speech=(await get(therapist,`clinical/children/${kid}`).expect(200)).body;
+  expect(speech.plans.map((x:any)=>x.service)).toEqual(['speech']);
+  expect(speech.assessments.map((x:any)=>x.id)).not.toContain(a.id);
+  expect(speech.notes.map((x:any)=>x.id)).not.toContain(n.id);
+  expect(speech.observations.map((x:any)=>x.goalKey)).not.toContain('ot-goal');
+  const ot=(await get(other,`clinical/children/${kid}`).expect(200)).body;
+  expect(ot.plans.map((x:any)=>x.service)).toEqual(['ot']);
+  expect(ot.assessments.map((x:any)=>x.id)).toContain(a.id);
+  expect(ot.notes.map((x:any)=>x.id)).toContain(n.id);
+  expect(ot.observations.map((x:any)=>x.goalKey)).toContain('ot-goal');
+  const sup=(await get(supervisor,`clinical/children/${kid}`).expect(200)).body;
+  expect(sup.plans.map((x:any)=>x.service)).toEqual(expect.arrayContaining(['speech','ot']));
+ });
  it('only the plan author can edit, even when another therapist is assigned',async()=>{
   await h.http().patch(path(`clinical/plan-versions/${plan}`)).set('Origin',ORIGIN).set('Cookie',other.cookie).set('X-CSRF-Token',other.csrf).send({summary:'replace',goals:[goal],homeActivities:[],version:1}).expect(403);
  });
