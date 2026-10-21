@@ -9,14 +9,28 @@ import { TrialService } from './trial.service';
 
 const isManager = (v: Viewer) => v.role === 'CENTER_ADMIN' || v.role === 'COORDINATOR';
 
-// Who may see a thread, re-checked on every request so removing a guardian or ending an assignment revokes access at once.
-// Guardians: only threads addressed to their own active guardian link (recipient-specific, issue #35). Therapists: assigned children. Managers: the center.
-export const threadScope = (centerId: string, v: Viewer): Prisma.MessageThreadWhereInput => ({
-  centerId,
-  ...(v.role === 'GUARDIAN' ? { child: { status: 'ACTIVE' }, guardianLink: { userId: v.userId, removedAt: null } }
-    : v.role === 'THERAPIST' ? { child: { assignments: { some: { membershipId: v.membershipId, endedAt: null } } } }
-      : isManager(v) ? {} : { id: { in: [] } }),
-});
+// Explicit audiences: guardian-recipient, general care-team coordination, and restricted specialty.
+// Guardian visibility is always bound to the exact active recipient link.
+// Specialty visibility re-checks an active (child, service, membership) assignment in each query.
+export const threadScope = (
+  centerId: string, v: Viewer, assignments: Array<{ childId: string; service: string }> = [],
+): Prisma.MessageThreadWhereInput => {
+  if (v.role === 'GUARDIAN') return { centerId, audience: 'GUARDIAN', child: { status: 'ACTIVE' }, guardianLink: { userId: v.userId, removedAt: null } };
+  if (v.role === 'THERAPIST') return {
+    centerId,
+    OR: [
+      { audience: { in: ['GUARDIAN', 'CARE_TEAM'] }, child: { status: 'ACTIVE', assignments: { some: { membershipId: v.membershipId, endedAt: null } } } },
+      {
+        audience: 'SPECIALTY',
+        OR: assignments.map(({ childId, service }) => ({
+          childId, service,
+          child: { status: 'ACTIVE', assignments: { some: { membershipId: v.membershipId, service, endedAt: null } } },
+        })),
+      },
+    ],
+  };
+  return isManager(v) || v.role === 'CLINICAL_SUPERVISOR' ? { centerId } : { centerId, id: { in: [] } };
+};
 
 // Family free-text messaging is a synthetic-only demonstration until safeguarding decision D-NEW-5 (issue #35).
 export const familyMessagingEnabled = () => process.env.FAMILY_MESSAGING_DEMO === 'true' && !['production', 'staging'].includes(process.env.DEPLOYMENT_ENV ?? '');
@@ -26,10 +40,20 @@ const DEMO_OFF = 'Family messaging is a synthetic demonstration and is switched 
 export class MessagesService {
   constructor(private readonly prisma: PrismaService, private readonly trial: TrialService, private readonly audit: AuditService) {}
 
+  private async scope(db: PrismaService | Prisma.TransactionClient, centerId: string, v: Viewer): Promise<Prisma.MessageThreadWhereInput> {
+    if (v.role !== 'THERAPIST') return threadScope(centerId, v);
+    const assignments = await db.careAssignment.findMany({
+      where: { centerId, membershipId: v.membershipId, endedAt: null },
+      select: { childId: true, service: true },
+    });
+    return threadScope(centerId, v, assignments);
+  }
+
   async list(centerId: string, v: Viewer, q: ThreadListQuery) {
     if (!familyMessagingEnabled()) throw new ForbiddenException(DEMO_OFF);
+    const scope = await this.scope(this.prisma, centerId, v);
     const rows = await this.prisma.messageThread.findMany({
-      where: { ...threadScope(centerId, v), ...(q.status ? { status: q.status } : {}), ...(q.childId ? { childId: q.childId } : {}) },
+      where: { ...scope, ...(q.status ? { status: q.status } : {}), ...(q.childId ? { childId: q.childId } : {}) },
       include: { child: true, messages: { orderBy: { createdAt: 'desc' }, take: 1 }, reads: { where: { userId: v.userId } } },
       orderBy: [{ lastMessageAt: 'desc' }, { id: 'asc' }], take: 200,
     });
@@ -76,7 +100,8 @@ export class MessagesService {
   async detail(centerId: string, v: Viewer, id: string) {
     if (!familyMessagingEnabled()) throw new ForbiddenException(DEMO_OFF);
     const now = this.trial.now();
-    const t = await this.prisma.messageThread.findFirst({ where: { id, ...threadScope(centerId, v) }, include: { child: true, guardianLink: true, messages: { orderBy: { createdAt: 'asc' }, take: 500 } } });
+    const scope = await this.scope(this.prisma, centerId, v);
+    const t = await this.prisma.messageThread.findFirst({ where: { id, ...scope }, include: { child: true, guardianLink: true, messages: { orderBy: { createdAt: 'asc' }, take: 500 } } });
     if (!t) throw new NotFoundException('Conversation not found');
     const users = await this.prisma.user.findMany({ where: { id: { in: uniq(t.messages.map((m) => m.authorUserId)) } }, select: { id: true, displayName: true } });
     await this.markRead(this.prisma, t.id, v.userId, now);
@@ -92,7 +117,8 @@ export class MessagesService {
     const now = this.trial.now();
     await this.prisma.$transaction(async (tx) => {
       await this.trial.assertWritable(tx, centerId, now);
-      const t = await tx.messageThread.findFirst({ where: { id, ...threadScope(centerId, v) } });
+      const scope = await this.scope(tx, centerId, v);
+      const t = await tx.messageThread.findFirst({ where: { id, ...scope } });
       if (!t) throw new NotFoundException('Conversation not found');
       if (t.status !== 'OPEN') throw new ConflictException('This conversation is closed. Start a new one if you need to.');
       await tx.message.create({ data: { threadId: id, centerId, authorUserId: v.userId, authorKind: v.role === 'GUARDIAN' ? 'FAMILY' : 'STAFF', body: dto.body, createdAt: now } });
