@@ -13,6 +13,7 @@ export type Access =
 export const Public = (opts: { preAuth?: boolean } = {}) =>
   SetMetadata(ACCESS_KEY, { kind: 'public', preAuth: opts.preAuth ?? false } satisfies Access);
 export const Authenticated = () => SetMetadata(ACCESS_KEY, { kind: 'authenticated' } satisfies Access);
+export const RequirePermission = (permission: string) => SetMetadata(ACCESS_KEY, { kind: 'permission', permission } satisfies Access);
 
 export interface AuthState {
   token: string;

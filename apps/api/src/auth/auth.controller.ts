@@ -3,8 +3,9 @@ import type { FastifyReply } from 'fastify';
 import { clearCookie, cookie } from '../common/cookies';
 import { AUTH_CONFIG, AuthConfig } from '../config/env';
 import { Authenticated, Public, TbRequest } from './access';
-import { ChangePasswordDto, ForgotPasswordDto, LoginDto, ResetPasswordDto } from './auth.dto';
+import { ChangePasswordDto, ForgotPasswordDto, LoginDto, ResetPasswordDto, SelectContextDto } from './auth.dto';
 import { AuthService } from './auth.service';
+import { ContextService } from './context.service';
 import { PreAuthService } from './preauth.service';
 import { ClientMeta, SessionService } from './session.service';
 
@@ -16,6 +17,7 @@ export class AuthController {
     private readonly auth: AuthService,
     private readonly sessions: SessionService,
     private readonly preauth: PreAuthService,
+    private readonly contexts: ContextService,
     @Inject(AUTH_CONFIG) private readonly cfg: AuthConfig,
   ) {}
 
@@ -72,6 +74,15 @@ export class AuthController {
   async reset(@Body() dto: ResetPasswordDto, @Req() req: TbRequest, @Res({ passthrough: true }) reply: FastifyReply) {
     await this.auth.reset(dto.token, dto.password, meta(req));
     reply.header('set-cookie', clearCookie(this.cfg.preCookie, this.cfg.cookieSecure));
+  }
+
+  @Post('context')
+  @HttpCode(200)
+  @Authenticated()
+  async context(@Body() dto: SelectContextDto, @Req() req: TbRequest, @Res({ passthrough: true }) reply: FastifyReply) {
+    const token = await this.contexts.select(req.auth!, dto);
+    reply.header('set-cookie', this.sessions.cookieFor(token));
+    return this.auth.describe(token);
   }
 
   @Post('password/change')

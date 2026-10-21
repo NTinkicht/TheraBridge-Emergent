@@ -1,4 +1,4 @@
-// TheraBridge API schema. TB-EM-001 checkpoint A: identity, sessions, brute-force counters, recovery, audit.
+// TheraBridge API schema. TB-EM-001: identity, sessions, brute-force counters, recovery, audit (A); tenancy and roles (B).
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-3.0.x"]
@@ -18,6 +18,26 @@ enum VerificationPurpose {
   PASSWORD_RESET
 }
 
+enum Role {
+  PLATFORM_ADMIN
+  CENTER_ADMIN
+  COORDINATOR
+  THERAPIST
+  CLINICAL_SUPERVISOR
+  GUARDIAN
+}
+
+enum MembershipStatus {
+  ACTIVE
+  SUSPENDED
+  REVOKED
+}
+
+enum CenterStatus {
+  ACTIVE
+  SUSPENDED
+}
+
 model User {
   id              String              @id @default(uuid()) @db.Uuid
   email           String              @db.VarChar(254)
@@ -29,6 +49,8 @@ model User {
   identities      AuthIdentity[]
   sessions        Session[]
   tokens          VerificationToken[]
+  memberships     Membership[]
+  platformRoles   PlatformRoleAssignment[] @relation("PlatformRoleHolder")
 
   @@map("app_user")
 }
@@ -60,7 +82,11 @@ model Session {
   rotatedFromId     String?   @map("rotated_from_id") @db.Uuid
   ipPrefix          String?   @map("ip_prefix") @db.VarChar(64)
   userAgent         String?   @map("user_agent") @db.VarChar(256)
+  activePlatform     Boolean     @default(false) @map("active_platform")
+  activeMembershipId String?     @map("active_membership_id") @db.Uuid
+  activeRole         Role?       @map("active_role")
   user              User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  activeMembership   Membership? @relation(fields: [activeMembershipId], references: [id], onDelete: Restrict)
 
   @@index([userId, revokedAt])
   @@map("session")
@@ -107,4 +133,58 @@ model AuditEvent {
 
   @@index([type, createdAt])
   @@map("audit_event")
+}
+
+model Center {
+  id          String       @id @default(uuid()) @db.Uuid
+  slug        String       @unique @db.VarChar(64)
+  name        String       @db.VarChar(160)
+  status      CenterStatus @default(ACTIVE)
+  timezone    String       @db.VarChar(64)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  memberships Membership[]
+
+  @@map("center")
+}
+
+model Membership {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  centerId  String           @map("center_id") @db.Uuid
+  status    MembershipStatus @default(ACTIVE)
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  center    Center           @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  roles     RoleAssignment[]
+  sessions  Session[]
+
+  @@unique([userId, centerId])
+  @@map("membership")
+}
+
+model RoleAssignment {
+  id           String     @id @default(uuid()) @db.Uuid
+  membershipId String     @map("membership_id") @db.Uuid
+  role         Role
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Restrict)
+
+  @@unique([membershipId, role])
+  @@map("role_assignment")
+}
+
+// Created only by the bootstrap CLI, the synthetic seed, or (future) an audited grant by another admin. No HTTP route writes here.
+model PlatformRoleAssignment {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  role            Role      @default(PLATFORM_ADMIN)
+  source          String    @db.VarChar(32)
+  grantedByUserId String?   @map("granted_by_user_id") @db.Uuid
+  reason          String    @db.VarChar(240)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  revokedAt       DateTime? @map("revoked_at") @db.Timestamptz(3)
+  user            User      @relation("PlatformRoleHolder", fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, revokedAt])
+  @@map("platform_role_assignment")
 }
