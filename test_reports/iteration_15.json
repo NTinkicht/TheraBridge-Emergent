@@ -1,0 +1,43 @@
+{
+  "summary": "TB-EM-009 frontend E2E with Playwright on the public URL (1920px and 390px). All requested flows pass. Therapist /app/progress: metrics 3/1/1/1 for Alex. Filters work: goal filter gives 1/0/1/0; 30/180/365 days and Custom change the range and the prior value correctly; custom from>to shows progress-period-error. The 3 goal cards have charts, status pills and comparison rows. Clinical workspace: the Progress tab shows SVG charts (progress-chart-two-word, progress-chart-turns). The Reports tab lists rows; create with from>to shows an error; created 'TEST_ Q3 report'. Report page: sections are prefilled with recorded facts only and the clinician summary is empty. Autosave goes pending -> saved after about 1.2s and persists after reload. Save version adds history-2. Compare shows Changed/Same per section. Submit with an empty summary is blocked with a message; with a summary it moves to In review and the editor is read-only. Two-tab conflict shows report-conflict; Copy my text and Reload latest version work, and the reloaded tab can save again. Family preview has the unreleased banner and only the family summary and recorded values (no clinician summary, recommendations or assessment). Release to family is a disabled button. Supervisor: the comment validation, add comment and return all work ('Returned for revision' pill), and the therapist can edit again. Guardian: the nav has 'Progress updates', the sample banner and Juniper show, there is no Alex/TEST_ data, and /app/progress and /app/reports/<id> show page-forbidden. Admin: /app/progress, /app/reports and /app/family-progress are denied. Mobile 390px: no horizontal overflow on progress, report or family pages. Found 1 MEDIUM bug and a few minor UX issues.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "ReportSide Compare (reports/[id]/page.tsx)", "issue": "Compare's 'Current' side uses data.report.sections from the last page load, not the editor's autosaved text. Reproduced: Save version (reload), type ' More text TEST_.' and wait for 'saved', then Compare v1. Current showed the text without ' More text TEST_.', so the Changed/Same results and the 'N of 6 sections changed' count can be wrong.", "selector": "[data-testid=report-compare]", "priority": "MEDIUM"},
+      {"component": "Progress dashboard", "issue": "When the custom period is invalid (from>to), the error shows but the summary metrics and goal cards from the previous valid range stay visible below it. The metric sub-line showed '2026-10-15 to 2026-10-21' while the inputs said 10-15 to 10-01. These stale results are misleading.", "selector": "[data-testid=progress-period-error]", "priority": "LOW"},
+      {"component": "ReportEditor", "issue": "The success notices 'Saved as version N.' and 'Sent for review as version N.' are never seen. act() sets the notice and then onReload() changes r.version, which changes the ReportEditor key (status-version), so the editor remounts and the notice is lost.", "selector": "[data-testid=report-notice-success]", "priority": "LOW"},
+      {"component": "Compare", "issue": "data-testid collision: the section wrapper for key 'summary' is compare-summary, the same testid as the compare summary paragraph (strict-mode violation).", "selector": "[data-testid=compare-summary]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Report page", "issues": [
+        "'Preview family format' is at the bottom of the editor, but the preview renders at the top of the page with no scroll-into-view, so the user sees nothing happen.",
+        "The conflict alert and save state sit at the top of the editor. When editing a lower section (e.g. Recommendations), the conflict is off-screen.",
+        "Date inputs use the native browser date picker (report-from/report-to, filter-from/filter-to).",
+        "After a supervisor returns the report, the header pill only says 'Draft'. Consider a 'Returned for revision' status pill in the header."
+      ]},
+      {"screen": "Family progress", "issues": ["Heading reads \"Juniper (sample child)’s progress\" (possessive after a parenthesis). The sample goals have the same titles as Alex's real plan goals, which could make a parent think it is their child."]},
+      {"screen": "Mobile charts", "issues": ["Chart axis and point labels are very small (about 7-8px) at 390px."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Compare: pass the editor's live sections (lift state, or call reload after autosave) instead of the stale data.report.sections",
+    "Progress: hide or clear the summary and goal cards while the period is invalid",
+    "Keep the report success notice across the reload (e.g. hold the notice in page state or a toast) and scroll the family preview into view",
+    "Rename the compare section testid to avoid the collision (e.g. compare-section-<key>)"
+  ],
+  "critical_code_review_comments": [
+    "progress/page.tsx: the goal filter matches only g.key. With several children whose plans share goal keys (e.g. 'two-word'), choosing a goal under 'All my children' shows every child's goal with that key, and goalOptions is deduplicated by key. Consider childId+key.",
+    "ReportEditor: autosave does not update the parent data, so other views (Compare, Evidence) use a stale snapshot. The key={status-version} remount also drops local notices.",
+    "ReportsPanel create(): the client-side from>to check is routed through run() with a fake rejected Error. It works, but the message appears in the page-level clinical notice rather than inline."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend only)", "frontend": "~95% (all requested flows pass; 1 MEDIUM, 3 LOW)"},
+  "test_credentials": "From /app/.workspace/local-credentials/synthetic-accounts.json (no reseed).",
+  "seed_data_creation": "Created through the UI: report 'TEST_ Q3 report' id fb92939f-29fe-425c-a034-d21d263130a4 (v1 started, v2 saved, v3 sent for review, then 2 supervisor TEST_ notes with one return; now Draft with TEST_ summary, recommendations and family summary). Seeded report 2541e571 was not modified.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Alex Morgan child id e1c6ddbf-c650-4ce5-895e-bc5cfff45b11. Report fb92939f is Draft after a return and has 3 versions. Today in this env is 2026-10-21. The compare section for 'summary' collides with the compare-summary testid, so use .first or the text. Guardian family-progress shows sample child Juniper.",
+  "rca of the issue": "Stale compare: reports/[id]/page.tsx line 54 passes current={r.sections} (from the useLoad snapshot), while ReportEditor keeps edits in local state and autosave never refreshes the parent. Lost notices: ReportEditor key={`${r.status}-${r.version}`} remounts after onReload(). Stale dashboard: progress/page.tsx renders {data && ...} regardless of `invalid`."
+}
