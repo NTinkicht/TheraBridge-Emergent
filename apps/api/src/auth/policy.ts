@@ -29,9 +29,10 @@ export const PERMISSIONS: Record<string, readonly Role[]> = {
   'center.appointments.status': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST'],
   'family.portal.read': ['GUARDIAN'],
   'family.preferences.update': ['GUARDIAN'],
-  // Operational (non-clinical) messages; row scope is narrowed per role in MessagesService.
-  'center.messages.use': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'CLINICAL_SUPERVISOR', 'GUARDIAN'],
-  'center.messages.manage': ['CENTER_ADMIN', 'COORDINATOR'],
+  // Operational (non-clinical) messages; supervisors have no discussion access.
+  // Center managers use internal threads only; guardians converse exclusively with assigned therapists.
+  'center.messages.use': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'GUARDIAN'],
+  'center.messages.manage': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST'],
   'platform.reminders.run': ['PLATFORM_ADMIN'],
   // TB-EM-008 synthetic clinical drafts. Row scope (assigned children, own drafts) is enforced in ClinicalService.
   'center.governance.read': ['CENTER_ADMIN', 'COORDINATOR'],
