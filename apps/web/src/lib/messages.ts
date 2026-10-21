@@ -21,7 +21,7 @@ export interface ThreadRow {
   lastMessageAt: string; preview: string; lastFrom: 'FAMILY' | 'STAFF' | null; unread: boolean;
 }
 export interface ThreadDetail {
-  id: string; childId: string; child: string; subject: string; category: string; status: 'OPEN' | 'CLOSED'; createdAt: string; closedAt: string | null; canManage: boolean;
+  id: string; childId: string; child: string; audience: ThreadAudience; service: string | null; subject: string; category: string; status: 'OPEN' | 'CLOSED'; createdAt: string; closedAt: string | null; canManage: boolean;
   messages: { id: string; body: string; authorKind: 'FAMILY' | 'STAFF'; author: string; mine: boolean; createdAt: string }[];
 }
 
