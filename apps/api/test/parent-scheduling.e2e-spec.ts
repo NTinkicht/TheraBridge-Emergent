@@ -157,33 +157,46 @@ describe('TB-EM-007 parent experience round 2 + scheduling enhancements (real Po
     const { therapist, kid, link, parent } = await family();
     const other = await staff('other@ops.test', ['THERAPIST']);
     const supervisor = await staff('super@ops.test', ['CLINICAL_SUPERVISOR'], []);
+    const coordinator = await staff('coord@ops.test', ['COORDINATOR'], []);
     await post(h, c('threads'), parent, { childId: kid, category: 'clinical', subject: 'Hello', body: 'Hi' }).expect(400);
     await post(h, c('threads'), parent, { childId: kid, category: 'scheduling', subject: 'Hi', body: 'x'.repeat(2001) }).expect(400);
     const t = (await post(h, c('threads'), parent, { childId: kid, category: 'scheduling', subject: 'Running late on Tuesday', body: 'We may arrive ten minutes late.' }).expect(201)).body.id;
 
-    const inbox = await get(admin, c('threads')).expect(200);
-    expect(inbox.body).toMatchObject({ unread: 1, items: [{ id: t, subject: 'Running late on Tuesday', lastFrom: 'FAMILY', unread: true, child: 'Mimi Stone' }] });
+    // Families converse with assigned therapists only: no manager or supervisor discussion access.
+    expect((await get(admin, c('threads')).expect(200)).body.items).toHaveLength(0);
+    expect((await get(coordinator, c('threads')).expect(200)).body.items).toHaveLength(0);
+    await get(admin, c(`threads/${t}`)).expect(404);
+    await get(coordinator, c(`threads/${t}`)).expect(404);
+    await get(supervisor, c('threads')).expect(403);
+    await get(supervisor, c(`threads/${t}`)).expect(403);
+    await post(h, c(`threads/${t}/messages`), supervisor, { body: 'No access' }).expect(403);
+    await post(h, c(`threads/${t}/messages`), admin, { body: 'Not for managers' }).expect(404);
+    await post(h, c(`threads/${t}/messages`), coordinator, { body: 'Not for coordinators' }).expect(404);
+    await post(h, c(`threads/${t}/close`), admin, {}).expect(404);
+    await post(h, c(`threads/${t}/reopen`), coordinator, {}).expect(404);
+    await post(h, c('threads'), admin, { childId: kid, guardianLinkId: link, category: 'scheduling', subject: 'Not for admin', body: 'No access' }).expect(403);
+    await post(h, c('threads'), coordinator, { childId: kid, guardianLinkId: link, category: 'scheduling', subject: 'Not for coordinator', body: 'No access' }).expect(403);
+    await post(h, c('threads'), supervisor, { childId: kid, guardianLinkId: link, category: 'scheduling', subject: 'Not for supervisor', body: 'No access' }).expect(403);
     expect((await get(therapist, c('threads')).expect(200)).body.items).toHaveLength(1);
     expect((await get(other, c('threads')).expect(200)).body.items).toHaveLength(0);
     await get(other, c(`threads/${t}`)).expect(404);
     await post(h, c(`threads/${t}/messages`), other, { body: 'sneaky' }).expect(404);
-    expect((await get(supervisor, c('threads')).expect(200)).body.items).toHaveLength(1);
+    expect((await get(therapist, c(`threads/${t}`)).expect(200)).body.canManage).toBe(true);
     await post(h, c('threads'), other, { childId: kid, category: 'other', subject: 'Not mine', body: 'x' }).expect(404);
 
     h.clock.advance(60_000);
     const replied = await post(h, c(`threads/${t}/messages`), therapist, { body: 'No problem, see you then.' }).expect(201);
     expect(replied.body.messages.map((m: { authorKind: string; mine: boolean }) => [m.authorKind, m.mine])).toEqual([['FAMILY', false], ['STAFF', true]]);
-    expect((await get(admin, c('threads')).expect(200)).body.unread).toBe(1);
+    expect((await get(admin, c('threads')).expect(200)).body.unread).toBe(0);
     const famInbox = await get(parent, c('threads')).expect(200);
     expect(famInbox.body.items[0]).toMatchObject({ unread: true, lastFrom: 'STAFF', preview: 'No problem, see you then.' });
     const opened = await get(parent, c(`threads/${t}`)).expect(200);
     expect(opened.body).toMatchObject({ canManage: false, messages: [{ author: 'Rosa Stone' }, { author: 'Staff thera' }] });
     expect((await get(parent, c('threads')).expect(200)).body.unread).toBe(0);
 
-    await post(h, c(`threads/${t}/close`), therapist, {}).expect(403);
-    await post(h, c(`threads/${t}/close`), admin, {}).expect(200);
+    await post(h, c(`threads/${t}/close`), therapist, {}).expect(200);
     expect((await post(h, c(`threads/${t}/messages`), parent, { body: 'One more thing' }).expect(409)).body.message).toMatch(/closed/);
-    await post(h, c(`threads/${t}/reopen`), admin, {}).expect(200);
+    await post(h, c(`threads/${t}/reopen`), therapist, {}).expect(200);
     await post(h, c(`threads/${t}/messages`), parent, { body: 'One more thing' }).expect(201);
     await expect(h.prisma.$executeRawUnsafe(`UPDATE "message" SET body = 'edited'`)).rejects.toThrow(/append-only/);
 
