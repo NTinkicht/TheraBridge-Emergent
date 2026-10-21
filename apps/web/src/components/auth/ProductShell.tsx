@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeftRight, Home, KeyRound, Lock, LogOut, type LucideIcon } from 'lucide-react';
+import { ArrowLeftRight, Home, Inbox, KeyRound, Lock, LogOut, type LucideIcon } from 'lucide-react';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { SignatureBand } from '@/components/brand/SignatureBand';
 import { Avatar } from '@/components/design/ui';
@@ -27,7 +27,7 @@ function NavLink({ href, icon: Icon, label, active, testId }: { href: string; ic
   );
 }
 
-export function ProductShell({ session, active, planned, children }: { session: SessionInfo; active: 'home' | 'security'; planned: PlannedModule[]; children: ReactNode }) {
+export function ProductShell({ session, active, planned, children }: { session: SessionInfo; active: 'home' | 'security' | 'applications'; planned: PlannedModule[]; children: ReactNode }) {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
@@ -63,6 +63,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
         )}
         <nav aria-label="Primary" className="flex-1 space-y-1 overflow-y-auto px-3">
           <NavLink href="/app" icon={Home} label="Home" active={active === 'home'} testId="nav-home" />
+          {session.permissions.includes('platform.applications.read') && <NavLink href="/app/applications" icon={Inbox} label="Center applications" active={active === 'applications'} testId="nav-applications" />}
           <NavLink href="/account/security" icon={KeyRound} label="Account security" active={active === 'security'} testId="nav-security" />
           {planned.length > 0 && <p className="px-3 pb-1 pt-5 text-[12px] font-semibold uppercase tracking-[0.06em] text-brand-inkMuted">Coming next</p>}
           {planned.map((m) => (
@@ -89,6 +90,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
         {signOutError && <p role="alert" className="bg-status-dangerSurface px-4 py-2 text-[14px] font-medium text-status-danger md:px-8" data-testid="sign-out-error">{signOutError}</p>}
         <nav aria-label="Primary" className="flex gap-1 overflow-x-auto border-b border-border-light bg-surface-white px-2 py-2 md:hidden" data-testid="mobile-nav">
           <NavLink href="/app" icon={Home} label="Home" active={active === 'home'} testId="mobile-nav-home" />
+          {session.permissions.includes('platform.applications.read') && <NavLink href="/app/applications" icon={Inbox} label="Applications" active={active === 'applications'} testId="mobile-nav-applications" />}
           <NavLink href="/account/security" icon={KeyRound} label="Security" active={active === 'security'} testId="mobile-nav-security" />
           {session.contexts.length > 1 && <NavLink href="/select-context" icon={ArrowLeftRight} label="Switch" active={false} testId="mobile-nav-switch" />}
         </nav>

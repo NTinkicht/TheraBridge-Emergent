@@ -30,6 +30,70 @@ export const contextLabel = (c: ContextOption): string => (c.type === 'platform'
 
 export const PASSWORD_HINT = 'At least 12 characters. A short phrase is easier to remember than symbols.';
 
+export type ApplicationStatus = 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED';
+
+export const SPECIALTY_OPTIONS = [
+  { value: 'speech', label: 'Speech & language' },
+  { value: 'occupational', label: 'Occupational therapy' },
+  { value: 'physical', label: 'Physical therapy' },
+  { value: 'behavioral', label: 'Behavioral therapy' },
+  { value: 'feeding', label: 'Feeding therapy' },
+  { value: 'developmental', label: 'Developmental therapy' },
+] as const;
+
+export const STATUS_LABELS: Record<ApplicationStatus, string> = {
+  SUBMITTED: 'Application pending',
+  UNDER_REVIEW: 'Under review',
+  APPROVED: 'Approved',
+  REJECTED: 'Rejected',
+};
+
+export interface ApplicationInput {
+  organizationName: string;
+  country: string;
+  city: string;
+  timezone: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone?: string;
+  specialties: string[];
+  therapistEstimate: number;
+  childEstimate: number;
+  message?: string;
+  syntheticDataAcknowledged: boolean;
+}
+
+export interface ApplicationSummary {
+  id: string;
+  reference: string;
+  organizationName: string;
+  city: string;
+  country: string;
+  contactName: string;
+  status: ApplicationStatus;
+  submittedAt: string;
+  decidedAt: string | null;
+  specialties: string[];
+}
+
+export interface ApplicationList {
+  total: number;
+  page: number;
+  pageSize: number;
+  items: ApplicationSummary[];
+  counts: Partial<Record<ApplicationStatus, number>>;
+}
+
+export interface ApplicationDetail extends ApplicationSummary, Omit<ApplicationInput, 'syntheticDataAcknowledged'> {
+  version: number;
+  reviewStartedAt: string | null;
+  reviewStartedBy: string | null;
+  decidedBy: string | null;
+  decisionRationale: string | null;
+  provisioning: { status: string; workUnit: string } | null;
+  events: { id: number; type: string; fromStatus: ApplicationStatus | null; toStatus: ApplicationStatus; note: string | null; createdAt: string; actor: string | null }[];
+}
+
 let csrf: string | null = null;
 
 async function call<T>(path: string, opts: { method?: string; body?: unknown; csrf?: string | null } = {}): Promise<T> {
@@ -74,7 +138,17 @@ export const authApi = {
     remember(await call<SessionInfo>('/api/auth/password/change', { method: 'POST', body: { currentPassword, newPassword }, csrf })),
   forgot: async (email: string) => call<{ message: string }>('/api/auth/password/forgot', { method: 'POST', body: { email }, csrf: await preToken() }),
   reset: async (token: string, password: string) => call<void>('/api/auth/password/reset', { method: 'POST', body: { token, password }, csrf: await preToken() }),
-  platformSummary: () => call<{ centers: number; activeCenters: number }>('/api/platform/summary'),
+  platformSummary: () => call<{ centers: number; activeCenters: number; pendingApplications: number }>('/api/platform/summary'),
+  submitApplication: async (body: ApplicationInput) =>
+    call<{ reference: string; status: string; submittedAt: string }>('/api/center-applications', { method: 'POST', body, csrf: await preToken() }),
+  listApplications: (params: { status?: string; q?: string; page?: number }) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]));
+    return call<ApplicationList>(`/api/platform/applications?${qs}`);
+  },
+  application: (id: string) => call<ApplicationDetail>(`/api/platform/applications/${id}`),
+  startReview: (id: string, version: number) => call<ApplicationDetail>(`/api/platform/applications/${id}/start-review`, { method: 'POST', body: { version }, csrf }),
+  decide: (id: string, decision: 'APPROVED' | 'REJECTED', rationale: string, version: number) =>
+    call<ApplicationDetail>(`/api/platform/applications/${id}/decision`, { method: 'POST', body: { decision, rationale, version }, csrf }),
   centerSummary: (centerId: string) =>
     call<{ center: { id: string; name: string; slug: string; timezone: string }; activeMembers: number }>(`/api/centers/${centerId}/summary`),
 };

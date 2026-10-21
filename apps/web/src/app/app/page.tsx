@@ -11,7 +11,6 @@ import { SkeletonRows } from '@/components/design/states';
 import { ROLE_LABELS, authApi, contextLabel, type SessionInfo } from '@/lib/auth';
 
 const PLATFORM_PLANNED: PlannedModule[] = [
-  { label: 'Center applications', unit: 'TB-EM-002', icon: Inbox },
   { label: 'Center provisioning', unit: 'TB-EM-003', icon: Building2 },
   { label: 'Trials and limits', unit: 'TB-EM-005', icon: Gauge },
 ];
@@ -22,7 +21,7 @@ const CENTER_PLANNED: PlannedModule[] = [
   { label: 'Messages', unit: 'a later phase', icon: MessagesSquare },
 ];
 
-type Summary = { kind: 'platform'; centers: number; activeCenters: number } | { kind: 'center'; name: string; timezone: string; activeMembers: number };
+type Summary = { kind: 'platform'; centers: number; activeCenters: number; pendingApplications: number } | { kind: 'center'; name: string; timezone: string; activeMembers: number };
 
 function Planned({ modules }: { modules: PlannedModule[] }) {
   return (
@@ -76,9 +75,12 @@ function Home({ session, onError }: { session: SessionInfo; onError: (e: unknown
       </div>
       {hasSummary ? (
         summary ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2" data-testid="home-summary">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="home-summary">
             {summary.kind === 'platform' ? (
               <>
+                <Link href="/app/applications?status=OPEN" className="rounded-card focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-brand-action/40" data-testid="metric-pending-link">
+                  <Metric label="Pending applications" value={summary.pendingApplications} sub="Submitted or under review" icon={Inbox} accent={summary.pendingApplications ? 'caution' : undefined} testId="metric-pending-applications" />
+                </Link>
                 <Metric label="Centers" value={summary.centers} sub="All tenants on the platform" icon={Building2} testId="metric-centers" />
                 <Metric label="Active centers" value={summary.activeCenters} sub="Not suspended" icon={FileCheck2} accent="success" testId="metric-active-centers" />
               </>

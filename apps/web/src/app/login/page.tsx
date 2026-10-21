@@ -51,7 +51,8 @@ export default function LoginPage() {
         <SubmitButton busy={busy} testId="login-submit-button">{busy ? 'Signing in…' : 'Sign in'}</SubmitButton>
       </form>
       <p className="mt-8 text-[13px] leading-relaxed text-brand-inkMuted">
-        Accounts are created by your center. New centers apply to TheraBridge first (arrives in TB-EM-002).
+        Accounts are created by your center. Running a therapy center?{' '}
+        <Link href="/apply" className="font-medium text-brand-action underline-offset-4 hover:underline" data-testid="login-apply-link">Apply to join TheraBridge</Link>.
       </p>
     </AuthLayout>
   );

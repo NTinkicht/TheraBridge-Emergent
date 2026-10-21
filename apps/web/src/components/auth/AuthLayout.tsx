@@ -22,7 +22,7 @@ function BrandPanel() {
   );
 }
 
-export function AuthLayout({ title, subtitle, children, testId }: { title: string; subtitle?: ReactNode; children: ReactNode; testId: string }) {
+export function AuthLayout({ title, subtitle, children, testId, wide = false }: { title: string; subtitle?: ReactNode; children: ReactNode; testId: string; wide?: boolean }) {
   return (
     <div className="flex min-h-screen bg-canvas-clinical text-brand-ink" data-testid={testId}>
       <BrandPanel />
@@ -33,7 +33,7 @@ export function AuthLayout({ title, subtitle, children, testId }: { title: strin
           <BrandMark variant="wordmark" height={17} />
         </div>
         <div className="flex flex-1 items-center justify-center px-6 py-10 md:px-10">
-          <div className="tb-rise w-full max-w-[420px]">
+          <div className={`tb-rise w-full ${wide ? 'max-w-[600px]' : 'max-w-[420px]'}`}>
             <h1 className="font-display text-[28px] font-bold leading-tight md:text-[32px]">{title}</h1>
             {subtitle && <p className="mt-2 text-[15px] text-brand-inkMuted">{subtitle}</p>}
             <div className="mt-8">{children}</div>
