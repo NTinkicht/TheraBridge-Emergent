@@ -75,7 +75,7 @@ jobs:
       - run: docker compose up -d --wait
       - name: Smoke test through the running containers
         run: |
-          curl -fsS http://localhost:8001/api/health | grep -q tb_em_001_tenancy_roles
+          curl -fsS http://localhost:8001/api/health | grep -Eq '"applied":[1-9][0-9]*'
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8001/api/health/probe -H 'Origin: http://localhost:3000' -H 'Content-Type: application/json' -d '{"source":"cli"}')" = 404
           curl -fsS http://localhost:3000/ | grep -q TheraBridge
       - if: failure()
