@@ -33,7 +33,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     const u = await createUser(h.prisma, 'ops@ops.therabridge.test');
     await h.prisma.platformRoleAssignment.create({ data: { userId: u.id, source: 'synthetic_seed', reason: 'test' } });
     ops = await signIn(h, u.email);
-    centerId = (await post(h, '/api/platform/centers', ops, { name: 'Clin Center', timezone: 'Europe/Berlin', country: 'Germany', city: 'Berlin', specialties: ['speech', 'ot'], firstAdmin: { email: 'lead@clin.test', displayName: 'Lead Admin' } }).expect(201)).body.id;
+    centerId = (await post(h, '/api/platform/centers', ops, { name: 'Clin Center', timezone: 'Europe/Berlin', country: 'Germany', city: 'Berlin', specialties: ['speech', 'occupational'], firstAdmin: { email: 'lead@clin.test', displayName: 'Lead Admin' } }).expect(201)).body.id;
     admin = await accept('lead@clin.test', 'Lead Admin');
   });
 
@@ -101,14 +101,14 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
   });
 
   it('denies assessment edits after specialty revocation', async () => {
-    const therapist = await staff('dual@clin.test', ['THERAPIST'], ['speech', 'ot']);
-    const kid = (await post(h, c('children'), admin, { firstName: 'Test', lastName: 'Child', dateOfBirth: '2019-04-02', services: ['speech', 'ot'] }).expect(201)).body.id;
+    const therapist = await staff('dual@clin.test', ['THERAPIST'], ['speech', 'occupational']);
+    const kid = (await post(h, c('children'), admin, { firstName: 'Test', lastName: 'Child', dateOfBirth: '2019-04-02', services: ['speech', 'occupational'] }).expect(201)).body.id;
     const membershipId = therapist.body.activeContext.membershipId;
-    for (const service of ['speech', 'ot']) await post(h, c(`children/${kid}/assignments`), admin, { membershipId, service, isLead: service === 'speech' }).expect(201);
-    const id = (await post(h, c(`clinical/children/${kid}/assessments`), therapist, { service: 'ot', assessedOn: '2026-10-19', summary: 'OT baseline', areas: [] }).expect(201)).body.id;
-    await h.prisma.careAssignment.updateMany({ where: { centerId, childId: kid, membershipId, service: 'ot', endedAt: null }, data: { endedAt: h.clock.now() } });
+    for (const service of ['speech', 'occupational']) await post(h, c(`children/${kid}/assignments`), admin, { membershipId, service, isLead: service === 'speech' }).expect(201);
+    const id = (await post(h, c(`clinical/children/${kid}/assessments`), therapist, { service: 'occupational', assessedOn: '2026-10-19', summary: 'OT baseline', areas: [] }).expect(201)).body.id;
+    await h.prisma.careAssignment.updateMany({ where: { centerId, childId: kid, membershipId, service: 'occupational', endedAt: null }, data: { endedAt: h.clock.now() } });
     await patch(therapist, c(`clinical/assessments/${id}`), { service: 'speech', assessedOn: '2026-10-19', summary: 'Relabeled', areas: [], version: 1 }).expect(404);
-    expect(await h.prisma.assessment.findUniqueOrThrow({ where: { id } })).toMatchObject({ service: 'ot', summary: 'OT baseline', version: 1 });
+    expect(await h.prisma.assessment.findUniqueOrThrow({ where: { id } })).toMatchObject({ service: 'occupational', summary: 'OT baseline', version: 1 });
   });
 
   it('messages are recipient-specific, demo-gated, and blocked after trial expiry while consented reminders continue', async () => {
