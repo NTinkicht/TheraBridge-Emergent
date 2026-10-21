@@ -30,7 +30,7 @@ export const PERMISSIONS: Record<string, readonly Role[]> = {
   'family.portal.read': ['GUARDIAN'],
   'family.preferences.update': ['GUARDIAN'],
   // Operational (non-clinical) messages; row scope is narrowed per role in MessagesService.
-  'center.messages.use': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'GUARDIAN'],
+  'center.messages.use': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'CLINICAL_SUPERVISOR', 'GUARDIAN'],
   'center.messages.manage': ['CENTER_ADMIN', 'COORDINATOR'],
   'platform.reminders.run': ['PLATFORM_ADMIN'],
   // TB-EM-008 synthetic clinical drafts. Row scope (assigned children, own drafts) is enforced in ClinicalService.
