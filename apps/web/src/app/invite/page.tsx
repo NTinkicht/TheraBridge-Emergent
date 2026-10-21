@@ -146,7 +146,7 @@ export default function InvitePage() {
   };
   const pending = preview?.status === 'PENDING' ? (preview as Pending) : null;
   return (
-    <AuthLayout title={pending ? (pending.kind === 'FIRST_ADMIN' ? 'Set up your center' : 'Join your team') : 'Your invitation'} subtitle={pending ? `Welcome, ${pending.displayName}.` : 'Checking your invitation…'} testId="invite-page">
+    <AuthLayout title={pending ? (pending.kind === 'FIRST_ADMIN' ? 'Set up your center' : 'Join your team') : 'Your invitation'} subtitle={pending ? `Welcome, ${pending.displayName}.` : error || preview ? 'We could not open this invitation.' : 'Checking your invitation…'} testId="invite-page">
       {error && <FormAlert tone="danger" testId="invite-load-error">{error}</FormAlert>}
       {!error && !preview && <SkeletonRows rows={3} testId="invite-loading" />}
       {preview && !pending && (

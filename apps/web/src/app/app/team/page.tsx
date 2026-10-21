@@ -64,6 +64,7 @@ function Invitations({ centerId, canInvite, version, onError, onNotice }: { cent
   const { data, failed, reload } = useLoad(fetcher, onError);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ tone: 'danger' | 'success'; text: string } | null>(null);
+  useEffect(() => { setMsg(null); }, [version]);
   async function act(id: string, action: 'resend' | 'revoke') {
     setBusy(id);
     setMsg(null);

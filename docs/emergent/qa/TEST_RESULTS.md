@@ -188,3 +188,16 @@ Environment: Emergent workspace, PostgreSQL 15.19, `therabridge_test` database. 
 | Test data cleanup | The testing agent's TEST_ applications and the smoke application were removed from the preview database |
 | CI on the TB-EM-002 SHA | **NOT RUN** until export |
 
+
+## TB-EM-003/004 complete center provisioning & staff onboarding (2026-10-21)
+
+| Check | Result |
+|---|---|
+| `tsc --noEmit` (api, web) | TESTED: PASS |
+| `jest --runInBand` (adds `centers.e2e-spec.ts`, 17 cases; route/matrix guards updated) | **TESTED: PASS, 244/244** |
+| Migration `20261022090000_tb_em_003_004_provisioning_onboarding` | Slug format and source/application checks, one pending invitation per email per center, one pending first-admin per center, invitation role and status checks, append-only `center_event`. TESTED: PASS |
+| Independent testing agent, iteration 9 | Backend 15/15 security spot checks. Frontend: every requested flow passes end to end. One HIGH bug: a CSRF race on a fresh `/invite` load in dev StrictMode. Plus 4 LOW items |
+| Fixes, then independent re-test (iteration 10) | Shared pre-auth CSRF fetch; `/invite` stale-result guard and re-check on hash change; "already provisioned" state; team notices reset; one message listing every missing invite field; status page updated. **TESTED: PASS** 100%, regression of login, password reset and `/apply` included |
+| After iteration 10 | Two cosmetic fixes (stale Invitations banner, `/invite` subtitle). Checked by the developer only |
+| Test data cleanup | Test centers, users, invitations, applications and outbox files removed from the preview database. Seed accounts kept |
+| CI on the TB-EM-003/004 SHA | **NOT RUN** until export. `compose` expects the old migration name (PR #12) |
