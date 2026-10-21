@@ -48,7 +48,8 @@ Updated: 2026-10-20 (UTC)
 | TB-EM-001 | APPROVED WITH CHANGES (R1–R5). Checkpoint 0 ACCEPTED. Checkpoints A–C authorized 2026-10-21 and IMPLEMENTED; export and CI pending |
 | TB-EM-002 | IMPLEMENTED (applications and review) |
 | TB-EM-003/004 (merged) | IMPLEMENTED: provisioning, first-admin and staff invitations, acceptance, setup checklist, team management. Migration `20261022090000_tb_em_003_004_provisioning_onboarding` |
-| TB-EM-005, center operations, parent experience | PLANNED (not authorized) |
+| TB-EM-005 trials + TB-EM-006 Center Operations | IMPLEMENTED 2026-10-21. Children, guardians and the family portal, assignments, scheduling, dashboards. Migration `20261023090000_tb_em_005_006_trials_center_operations`; 301 API tests |
+| Clinical milestone, messaging | PLANNED (not authorized) |
 | Design direction TB-EM-D01 (`/design-preview`, fixtures only) | **ACCEPTED as the V1 design baseline** (owner, 2026-10-20). r3 polish: **ACCEPTED** by independent review (2026-10-20). Screenshots in `docs/emergent/design/screenshots/` |
 
 ## Working URLs (Emergent preview, ephemeral)

@@ -22,7 +22,7 @@ Multi-tenant isolation, deny-by-default authorization, server-side sessions, aud
 ## Backlog
 - P0: Owner exports to `emergent/phase-1-center-foundation` (no Force Push), reports SHA; CI result on SHA.
 - P0 (needs approval): TB-EM-001 auth & sessions.
-- P1: TB-EM-005 trial limits/expiry (no billing invented). Next functional priorities (not authorized): center operational/clinical workflows (children, treatment records, therapy-plan approvals), guardian–child access, parent portal.
+- P1 (not authorized): clinical milestone, covering therapy plans and approvals, session notes and progress reports. It needs an owner-approved clinical policy; clinical capabilities stay DENY until then. Also: parent messaging and notifications, recurring appointments, a calendar grid.
 - P2: TB-EM-006 responsive/a11y pass + handover; Phase 2/3.
 
 ## Next tasks
@@ -45,3 +45,9 @@ STOP: export checkpoint 0 and wait for independent review. Checkpoint A is not a
 - 2026-10-21 TB-EM-001 accepted by the owner (non-blockers are GitHub #5–#11; the Docker smoke fix is PR #12 on GitHub, not to be touched in Emergent). TB-EM-002 center applications IMPLEMENTED: public /apply, platform review and decision with rationale, an append-only history trigger, optimistic concurrency and permissions. Approval stays separate from provisioning (TB-EM-003). 167/167 API tests; testing agent iteration 8 with fixes applied. Export pending. Next: TB-EM-003 provisioning.
 
 - 2026-10-21 TB-EM-003/004 merged into one milestone (GitHub #18) and IMPLEMENTED. Covers platform center creation, both from an approved application and directly: transactional, unique slug, duplicate prevention, history and audit. First-admin invitations support resend, expiry, revoke and replace. Acceptance works for new and existing users, and the session lands in the correct center and role. The setup checklist persists across 4 steps, and center details and own profile can be edited. Staff can be invited with multiple roles, specialties and responsibilities. The directory supports search and filters. Admins can edit roles, suspend, reactivate and revoke, with last-admin and self protection. Tenant isolation is enforced, and center history is append-only. Invitation tokens are stored hashed only and delivered to the local outbox only. 244/244 API tests; testing agents iteration 9 then iteration 10 PASS. Test data cleaned. Export pending. Docs: workunits/TB-EM-003-004.md.
+
+- 2026-10-21 Owner ACCEPTED TB-EM-003/004 (CI 244/244 and secret scan verified; Docker smoke is PR #12; N12–N16 are GitHub #19–#23). TB-EM-005 trials (#24) and TB-EM-006 Center Operations are IMPLEMENTED.
+  - Trials: 30 days, 3 therapist seats including pending invitations, 1 active child. After expiry the center is read-only; platform extension is recorded with a reason.
+  - Center operations: child registration and profiles, archive and restore. Guardians with family-portal invitations, primary contact and removal. Therapist–child assignments per service. Appointments with double-booking prevention, moves, cancellations and attendance, all in the center's time zone. Role dashboards: admin/coordinator, supervisor, therapist "My day".
+  - Parent home: warm theme with children, care team and upcoming visits.
+  - Verification: 301/301 API tests; testing agents iteration 11, then iteration 12, then fixes. Test data cleaned; seed kept. Export pending. Docs: workunits/TB-EM-005-006.md.
