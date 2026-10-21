@@ -47,6 +47,10 @@ function Conversation({ centerId, id, tone, onBack, onChanged, onError }: { cent
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => { if (data) onChanged(); }, [data?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { end.current?.scrollIntoView({ block: 'nearest' }); }, [data?.messages.length]);
+  useEffect(() => {
+    const t = setInterval(() => { if (document.visibilityState === 'visible') void messagesApi.thread(centerId, id).then(setData).catch(() => undefined); }, 30_000);
+    return () => clearInterval(t);
+  }, [centerId, id, setData]);
   const act = async (fn: () => Promise<ThreadDetail>, clear = false) => {
     setBusy(true);
     setErr(null);
@@ -143,6 +147,10 @@ export function Messages({ centerId, family, kids, onError }: { centerId: string
   const { data, failed, reload } = useLoad(fetcher, onError);
   const [active, setActive] = useState<string | null>(null);
   const [composing, setComposing] = useState(false);
+  useEffect(() => {
+    const t = setInterval(() => { if (document.visibilityState === 'visible') void reload(); }, 30_000);
+    return () => clearInterval(t);
+  }, [reload]);
   return (
     <div className={`space-y-4 ${family ? 'theme-family-light rounded-card bg-fam-canvas p-4 text-fam-ink md:p-6' : ''}`} data-testid="messages-page">
       <div className="flex flex-wrap items-end justify-between gap-3">

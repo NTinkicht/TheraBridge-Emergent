@@ -24,3 +24,11 @@ Emergent cannot create GitHub issues. Please file each one, or let a reviewer do
 | N17 | Low | Book dialog lists every therapist, including ones not assigned to the chosen child; the API rejects unassigned bookings with a clear message | `/app/schedule` → Book | Filter the therapists by assignment and service |
 | N18 | Low | No recurring appointments and no calendar grid view (weekly list only) | `/app/schedule` | Add a recurrence rule and a time grid in a later iteration |
 | N19 | Info | Trial limits apply to every center, because no non-trial state exists without billing | `center.trial_ends_at` | Add an owner-approved "active" state when commercial terms exist |
+
+N17 and N18 were resolved in TB-EM-007.
+
+| N20 | Low | A "this and following" change updates visit times but does not split the series, so the series rule shows the newest time for earlier visits too | `PATCH /centers/:id/series/:seriesId` | Split the series at `fromDate` into two segments |
+| N21 | Low | New messages appear by 30-second polling while the page is open; there is no push and no unread badge in the nav | `/app/messages` | Add server-sent events or a nav unread count |
+| N22 | Info | Message threads are shared with all current guardians of a child | `threadScope` in `messages.service.ts` | Owner custody policy; per-guardian visibility if required |
+| N23 | Low | Change notices are limited to visits within 14 days; series created or cancelled further out only show in the family view | `NoticesService.changed` | Make the window configurable |
+| N24 | Low | Calendar grid uses native date/time inputs and fixed 1-hour slot targets (no drag to move) | `/app/schedule` | Add drag-and-drop with the same conflict checks |

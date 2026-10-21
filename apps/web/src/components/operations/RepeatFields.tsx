@@ -7,7 +7,7 @@ export interface Repeat { mode: 'none' | 'weekly' | 'biweekly'; weekdays: number
 export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export function RepeatFields({ value, onChange }: { value: Repeat; onChange: (r: Repeat) => void }) {
-  const toggle = (d: number) => onChange({ ...value, weekdays: value.weekdays.includes(d) ? value.weekdays.filter((x) => x !== d) : [...value.weekdays, d].sort() });
+  const toggle = (d: number) => onChange({ ...value, weekdays: value.weekdays.includes(d) ? value.weekdays.filter((x) => x !== d) : [...value.weekdays, d].sort((a, b) => a - b) });
   return (
     <div className="space-y-3 rounded-control border border-border-light p-3" data-testid="book-repeat">
       <SelectField label="Repeat" value={value.mode} onChange={(v) => onChange({ ...value, mode: v as Repeat['mode'] })} testId="book-repeat-select"

@@ -75,9 +75,9 @@ export function CalendarGrid({ days, items, onOpen, onSlot }: { days: string[]; 
                       aria-label={`${a.childFull}, ${serviceLabel(a.service)} with ${a.therapist}, ${timeRange(a.startsAt, a.endsAt)}, ${a.status.toLowerCase().replace('_', '-')}`}
                       className={`absolute z-[5] overflow-hidden rounded-[8px] border-l-[3px] px-1.5 py-1 text-left text-[12px] leading-tight shadow-sm transition-transform hover:z-20 hover:-translate-y-px focus-visible:z-20 ${TONE[a.status]}`}
                       style={{ top, height, left: `calc(${(lane / count) * 100}% + 2px)`, width: `calc(${100 / count}% - 4px)` }}>
-                      <span className="tnum block font-semibold">{timeRange(a.startsAt, a.endsAt)}</span>
+                      <span className="tnum block font-semibold">{timeRange(a.startsAt, a.endsAt)}{a.seriesId ? ' ↻' : ''}</span>
                       <span className="block truncate font-semibold">{a.child}</span>
-                      {height >= 48 && <span className="block truncate opacity-80">{a.therapist}{a.seriesId ? ' · ↻' : ''}</span>}
+                      {height >= 48 && <span className="block truncate opacity-80">{a.therapist}</span>}
                     </button>
                   );
                 })}

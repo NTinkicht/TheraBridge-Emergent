@@ -64,6 +64,7 @@ function Reminders({ centerId, kid, onError }: { centerId: string; kid: Kid; onE
 
 function ChildCard({ centerId, centerName, kid, onError }: { centerId: string; centerName: string; kid: Kid; onError: (e: unknown) => void }) {
   const [showAll, setShowAll] = useState(false);
+  const [allUp, setAllUp] = useState(false);
   const history = showAll ? kid.history : kid.history.slice(0, 4);
   const t = kid.attendance;
   return (
@@ -73,8 +74,9 @@ function ChildCard({ centerId, centerName, kid, onError }: { centerId: string; c
       <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section aria-labelledby={`up-${kid.id}`}>
           <h3 id={`up-${kid.id}`} className="text-[15px] font-semibold">Coming up</h3>
-          {kid.upcoming.length ? <ul className="mt-2 space-y-2" data-testid={`family-upcoming-${kid.id}`}>{kid.upcoming.slice(0, 8).map((a) => <Visit key={a.id} a={a} />)}</ul>
+          {kid.upcoming.length ? <ul className="mt-2 space-y-2" data-testid={`family-upcoming-${kid.id}`}>{(allUp ? kid.upcoming : kid.upcoming.slice(0, 6)).map((a) => <Visit key={a.id} a={a} />)}</ul>
             : <p className="mt-2 text-[14px] text-fam-muted" data-testid={`family-upcoming-empty-${kid.id}`}>No visits booked in the next 60 days.</p>}
+          {kid.upcoming.length > 6 && <button type="button" onClick={() => setAllUp(!allUp)} className="mt-2 text-[14px] font-semibold text-fam-link hover:underline" data-testid={`family-upcoming-more-${kid.id}`}>{allUp ? 'Show fewer' : `Show all ${kid.upcoming.length}`}</button>}
         </section>
         <section aria-labelledby={`hist-${kid.id}`} className="space-y-3">
           <h3 id={`hist-${kid.id}`} className="text-[15px] font-semibold">Attendance</h3>

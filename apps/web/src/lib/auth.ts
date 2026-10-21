@@ -114,7 +114,7 @@ async function call<T>(path: string, opts: { method?: string; body?: unknown; cs
   const body = await res.json().catch(() => null);
   if (!res.ok) {
     const msg = body?.message;
-    throw new ApiError(res.status, Array.isArray(msg) ? msg.join(' ') : msg || `Request failed (${res.status})`);
+    throw new ApiError(res.status, Array.isArray(msg) ? msg.join(' ') : msg || `Request failed (${res.status})`, body ?? undefined);
   }
   return body as T;
 }

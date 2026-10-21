@@ -51,3 +51,15 @@ STOP: export checkpoint 0 and wait for independent review. Checkpoint A is not a
   - Center operations: child registration and profiles, archive and restore. Guardians with family-portal invitations, primary contact and removal. Therapist–child assignments per service. Appointments with double-booking prevention, moves, cancellations and attendance, all in the center's time zone. Role dashboards: admin/coordinator, supervisor, therapist "My day".
   - Parent home: warm theme with children, care team and upcoming visits.
   - Verification: 301/301 API tests; testing agents iteration 11, then iteration 12, then fixes. Test data cleaned; seed kept. Export pending. Docs: workunits/TB-EM-005-006.md.
+
+- 2026-10-21 Owner ACCEPTED TB-EM-005/006 (CI 301/301; non-blockers are GitHub #25–#29). TB-EM-007 Parent Experience Round 2 + Scheduling IMPLEMENTED:
+  - Scheduling: recurring series (weekly or every 2 weeks) with DST-safe center time, clash list and skip, exceptions, "this and following" edit and cancel. Day/week calendar grid with therapist and child filters. Booking choices filtered by assignments; assigning requires the matching specialty.
+  - Reminders: 24-hour reminders and near-term change notices to the restricted outbox only (idempotent, guardian opt-out).
+  - Family view: upcoming visits with status, attendance history and counts, appointment-email switch.
+  - Messages: operational, non-clinical guardian↔care-team threads with per-role scope, close/reopen, unread tracking, append-only messages and immediate revocation.
+  - Verification: 329/329 API tests; testing agent iteration 13 plus fixes. Docs: workunits/TB-EM-007.md. Export pending.
+
+## Backlog (current)
+- P0: owner export of TB-EM-007 + CI; confirm household-thread and post-trial messaging policies.
+- P1: clinical milestone (needs approved clinical policy); approved email provider; nav unread badge / push.
+- P2: N20–N24 (series split, drag-to-move, configurable notice window).

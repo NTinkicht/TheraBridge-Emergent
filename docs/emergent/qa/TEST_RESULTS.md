@@ -213,3 +213,12 @@ Environment: Emergent workspace, PostgreSQL 15.19, `therabridge_test` database. 
 | Testing agent iteration 12 (after fixes) | 6 of 7 PASS. Remaining items were the short-reason error shown behind the dialog and a week window that did not follow the center's time zone |
 | Fixes after iteration 12 | Error now shown inside the dialog; week window built from center-time-zone calendar days; wider family canvas. Checked by the developer only |
 | CI on this SHA | **NOT RUN** until export |
+
+## TB-EM-007 Parent Experience Round 2 + Scheduling (2026-10-21)
+
+| Check | Result |
+|---|---|
+| `tsc --noEmit` (api, web) | TESTED: PASS |
+| `jest --runInBand` (adds `parent-scheduling.e2e-spec.ts`; route and permission-matrix guards updated) | **TESTED: PASS, 329/329** |
+| Testing agent iteration 13 (frontend, public URL, incl. a Tokyo-time-zone browser across a DST change) | About 93%. 1 HIGH fixed by the tester (`lib/auth.ts` dropped structured error details, so the clash list never showed). 1 MEDIUM fixed afterwards (series edit prefilled from the series rule). Minor fixes: wording, move-dialog flash, ↻ marker on short blocks, pluralisation, 30 s message refresh. Retest of these follow-ups: developer only |
+| CI on this SHA | **NOT RUN** until export |

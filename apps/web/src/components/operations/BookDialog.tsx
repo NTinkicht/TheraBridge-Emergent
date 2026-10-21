@@ -13,6 +13,10 @@ import { RepeatFields, type Repeat } from './RepeatFields';
 export const serviceLabel = (s: string) => SPECIALTY_OPTIONS.find((o) => o.value === s)?.label ?? s;
 const tomorrow = () => zonedParts(new Date(Date.now() + 86_400_000).toISOString()).date;
 const blank = (date: string, start: string) => ({ childId: '', membershipId: '', service: '', date, start, minutes: '45', room: '' });
+const fromAppt = (a: Appointment) => {
+  const p = zonedParts(a.startsAt);
+  return { childId: a.childId, membershipId: a.membershipId, service: a.service, date: p.date, start: p.time, minutes: String(Math.round((Date.parse(a.endsAt) - Date.parse(a.startsAt)) / 60000)), room: a.room ?? '' };
+};
 
 // Books a visit or a weekly series, or moves `editing`. Choices come from the child's active assignments; times are in the center's zone.
 export function BookDialog({ centerId, open, onClose, onDone, onError, childId, editing, initial }: {
@@ -20,7 +24,7 @@ export function BookDialog({ centerId, open, onClose, onDone, onError, childId, 
 }) {
   const [children, setChildren] = useState<ChildRow[]>([]);
   const [team, setTeam] = useState<Assignment[]>([]);
-  const [f, setF] = useState(blank(tomorrow(), '09:00'));
+  const [f, setF] = useState(() => (editing ? fromAppt(editing) : blank(tomorrow(), '09:00')));
   const [repeat, setRepeat] = useState<Repeat>({ mode: 'none', weekdays: [], end: 'count', count: '10', until: '' });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -31,8 +35,7 @@ export function BookDialog({ centerId, open, onClose, onDone, onError, childId, 
     setMsg(null);
     setClashes(null);
     if (editing) {
-      const p = zonedParts(editing.startsAt);
-      setF({ childId: editing.childId, membershipId: editing.membershipId, service: editing.service, date: p.date, start: p.time, minutes: String(Math.round((Date.parse(editing.endsAt) - Date.parse(editing.startsAt)) / 60000)), room: editing.room ?? '' });
+      setF(fromAppt(editing));
       return;
     }
     const date = initial?.date ?? tomorrow();
@@ -75,7 +78,7 @@ export function BookDialog({ centerId, open, onClose, onDone, onError, childId, 
           childId: f.childId, membershipId: f.membershipId, service: f.service, room: f.room || undefined, startDate: f.date, startTime: f.start, durationMinutes: Number(f.minutes),
           weekdays: repeat.weekdays, intervalWeeks: repeat.mode === 'biweekly' ? 2 : 1, ...(repeat.end === 'count' ? { count: Number(repeat.count) } : { untilDate: repeat.until }), skipConflicts,
         });
-        onDone(`${r.created} repeating visits booked${r.skipped.length ? `, ${r.skipped.length} skipped because of clashes` : ''}.`);
+        onDone(`${r.created} repeating ${r.created === 1 ? 'visit' : 'visits'} booked${r.skipped.length ? `, ${r.skipped.length} skipped because of clashes` : ''}.`);
       }
     } catch (e) {
       if (e instanceof ApiError && Array.isArray(e.details?.conflicts)) setClashes(e.details.conflicts as Clash[]);

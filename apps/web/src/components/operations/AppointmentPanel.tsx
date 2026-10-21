@@ -29,7 +29,8 @@ export function AppointmentPanel({ centerId, appt, manage, mine, onClose, onMove
     setReason('');
     setErr(null);
     setSeries(null);
-    if (appt?.seriesId) opsApi.series(centerId, appt.seriesId).then((s) => { setSeries(s); setEdit({ start: s.startTime, minutes: String(s.durationMinutes) }); }).catch(() => setSeries(null));
+    if (appt?.seriesId) opsApi.series(centerId, appt.seriesId).then(setSeries).catch(() => setSeries(null));
+    if (appt) setEdit({ start: zonedParts(appt.startsAt).time, minutes: String(Math.round((Date.parse(appt.endsAt) - Date.parse(appt.startsAt)) / 60000)) });
   }, [appt, centerId]);
 
   if (!appt) return <Dialog open={false} onClose={onClose} title="" testId="appt-panel">{null}</Dialog>;
@@ -80,7 +81,7 @@ export function AppointmentPanel({ centerId, appt, manage, mine, onClose, onMove
           <dt className="text-brand-inkMuted">Status</dt><dd className="flex flex-wrap items-center gap-2" data-testid="appt-status"><ApptPill a={appt} />{appt.statusReason && <span className="text-brand-inkMuted">“{appt.statusReason}”</span>}</dd>
           <dt className="text-brand-inkMuted">Reminder</dt><dd className="flex items-center gap-1.5" data-testid="appt-reminder"><BellRing size={14} aria-hidden="true" />{appt.reminderSentAt ? `Sent to the family ${new Date(appt.reminderSentAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}` : 'Sent to connected guardians 24 hours before'}</dd>
         </dl>
-        {series && <SeriesSummary series={series} exception={appt.isException} />}
+        {series && <SeriesSummary series={series} exception={appt.isException} cancelled={appt.status === 'CANCELLED'} />}
         {mode === 'view' && open && manage && series?.status === 'ACTIVE' && !started && (
           <div className="flex flex-wrap gap-2" data-testid="series-actions">
             {!appt.isException && <Button size="sm" variant="secondary" onClick={() => setMode('seriesEdit')} data-testid="series-edit">Change this and following</Button>}
@@ -100,15 +101,15 @@ export function AppointmentPanel({ centerId, appt, manage, mine, onClose, onMove
   );
 }
 
-function SeriesSummary({ series, exception }: { series: Series; exception: boolean }) {
+function SeriesSummary({ series, exception, cancelled }: { series: Series; exception: boolean; cancelled: boolean }) {
   const days = series.weekdays.map((d) => WEEKDAYS[d - 1]).join(', ');
   const left = series.occurrences.filter((o) => o.status === 'SCHEDULED' && Date.parse(o.startsAt) > Date.now()).length;
   return (
     <div className="flex items-start gap-2 rounded-control bg-surface-subtle p-3 text-[14px]" data-testid="series-summary">
       <RepeatIcon size={16} className="mt-0.5 shrink-0 text-brand-action" aria-hidden="true" />
       <p>
-        {series.intervalWeeks === 2 ? 'Every 2 weeks' : 'Every week'} on {days} at {series.startTime} · {left} upcoming
-        {series.status === 'ENDED' ? ' · series ended' : ''}{exception ? ' · this visit was changed on its own' : ''}
+        {series.intervalWeeks === 2 ? 'Every 2 weeks' : 'Every week'} on {days} · {left} upcoming
+        {series.status === 'ENDED' ? ' · series ended' : ''}{exception ? (cancelled ? ' · this visit was cancelled on its own' : ' · this visit was moved on its own') : ''}
       </p>
     </div>
   );

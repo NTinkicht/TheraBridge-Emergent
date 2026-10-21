@@ -49,6 +49,7 @@ Updated: 2026-10-20 (UTC)
 | TB-EM-002 | IMPLEMENTED (applications and review) |
 | TB-EM-003/004 (merged) | IMPLEMENTED: provisioning, first-admin and staff invitations, acceptance, setup checklist, team management. Migration `20261022090000_tb_em_003_004_provisioning_onboarding` |
 | TB-EM-005 trials + TB-EM-006 Center Operations | IMPLEMENTED 2026-10-21. Children, guardians and the family portal, assignments, scheduling, dashboards. Migration `20261023090000_tb_em_005_006_trials_center_operations`; 301 API tests |
+| TB-EM-007 Parent Experience Round 2 + Scheduling | IMPLEMENTED 2026-10-21. Recurring series with DST-safe center time and exceptions, calendar grid, assignment-filtered booking, outbox reminders, family attendance history, operational messages. Migrations `20261024090000_…`, `20261024091000_…`; 329 API tests; testing agent iteration 13 + fixes. Export and CI pending. See `workunits/TB-EM-007.md` |
 | Clinical milestone, messaging | PLANNED (not authorized) |
 | Design direction TB-EM-D01 (`/design-preview`, fixtures only) | **ACCEPTED as the V1 design baseline** (owner, 2026-10-20). r3 polish: **ACCEPTED** by independent review (2026-10-20). Screenshots in `docs/emergent/design/screenshots/` |
 
