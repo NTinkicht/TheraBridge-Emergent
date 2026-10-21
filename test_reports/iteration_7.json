@@ -1,0 +1,41 @@
+{
+  "summary": "TB-EM-001 auth/session/authorization testing on the public preview URL. Backend: 18/18 pytest API checks pass (Origin 403, missing CSRF 403, 415 for non-JSON, no-store, HttpOnly+Secure __Host- cookies, cross-tenant 404, platform summary 403 for center admin, extra field isPlatformAdmin 400, role escalation via context rejected, guardian denied summary, logout revokes the cookie, logout-all revokes other sessions, forgot gives the same response for real and unknown emails, weak change-password rejected, bogus reset token rejected). Frontend: every requested flow passes EXCEPT the reset-password page with a token, which always shows 'This reset link is incomplete' in the preview (React StrictMode double-effect bug). No passwords were changed, so no re-seed is needed. About 3 failed logins were used in total.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/auth/login", "issue": "An empty or invalid email returns the raw class-validator text 'email must be an email', and the login page shows it as is (lowercase, developer-style). Show a friendly message instead, e.g. 'Enter a valid email address.'"}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "reset-password/page.tsx", "issue": "Opening /reset-password#token=<anything> always shows reset-missing-token, so no real reset link can work in the preview (it runs `next dev` with reactStrictMode: true). RCA: StrictMode runs the mount effect twice. The first run reads the token and calls history.replaceState, which removes the hash. The second run reads the now-empty hash and calls setToken(''), which overwrites the token. Reproduce: open https://therabridge.preview.emergentagent.com/reset-password#token=xxxxxxxxxxxxxxxxxxxxxxxx in a fresh tab and the form never renders. Fix: only call setToken/replaceState when a token is present, e.g. `const t = new URLSearchParams(location.hash.slice(1)).get('token'); if (t) { setToken(t); history.replaceState(null,'',location.pathname); } else setToken(prev => prev ?? '');`, or guard with a useRef. Also add a test for it.", "selector": "[data-testid='reset-form'] / [data-testid='reset-missing-token']", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "ProductShell mobile-nav at 320px", "issues": ["The 'Switch' item (mobile-nav-switch) is clipped at the right edge (its right edge is at 330px in a 320px viewport). It sits inside overflow-x-auto, so the page does not overflow, but nothing shows that the nav can scroll. Use smaller gaps or padding, or icon-only items below 360px."]},
+      {"screen": "Home for suspended membership", "issues": ["suspended@harbor shows 'Your account is not yet assigned to a center role', which is the same text as for norole. This is acceptable, but the copy is not accurate for a suspended membership. Optional."]}
+    ]
+  },
+  "test_report_links": ["/app/tests/test_therabridge_auth_api.py", "/app/test_reports/pytest/pytest_tb_auth.xml"],
+  "action_items": [
+    "HIGH: Fix the StrictMode double-effect token loss in apps/web/src/app/reset-password/page.tsx (see the RCA).",
+    "LOW: Map the login 400 validation message to a friendly 'Enter a valid email address.' (or add client-side email validation).",
+    "LOW: Stop the 320px mobile nav from clipping the 'Switch' item.",
+    "NOTE: Test files saved in /app/backend/tests trigger a reload of the FastAPI shim (uvicorn watches /app/backend), which returned 503s for a few seconds. The regression tests are now in /app/tests instead."
+  ],
+  "critical_code_review_comments": [
+    "reset-password: the token starts as null, so the form flashes before the effect runs, and StrictMode then erases the token (the HIGH bug above).",
+    "SignOutEverywhere and ProductShell.signOut swallow API errors (.catch(() => undefined)) and redirect to /login?signedout=1 even if revocation failed. The user is told they signed out while the server sessions may still be live. Show an error if logout-all fails.",
+    "Login submits with noValidate and has no client-side check for an empty email or password. Every empty submit reaches the API (it returns 400 and is not counted as a lockout failure, which is fine).",
+    "Password hashing is argon2id with OWASP parameters, and timing is equalised with a dummy hash for unknown emails. Good. This is not bcrypt, so the $2b$ playbook check does not apply.",
+    "CORS uses an explicit origin with credentials=true, and cookies are __Host- prefixed, HttpOnly and Secure. Good."
+  ],
+  "updated_files": ["/app/tests/test_therabridge_auth_api.py (new; reads passwords from the gitignored local-credentials file and contains no secrets)"],
+  "success_rate": {"backend": "100% (18/18)", "frontend": "~93% (14/15 requested flows; reset-with-token broken)"},
+  "test_credentials": "Used the accounts in /app/memory/test_credentials.md, with passwords read at runtime from /app/.workspace/local-credentials/synthetic-accounts.json. No password was changed, so no re-seed is needed.",
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/tests && python -m pytest test_therabridge_auth_api.py -p no:cacheprovider. Do not put test files in /app/backend (it reloads the shim). Retest /reset-password#token=... in a fresh page load after the fix and expect reset-form, then reset-error for a bogus token. Everything else verified: redirects, generic login error, admin/platform/multi/guardian/supervisor/norole/suspended homes, desktop and mobile context switching, sign out and sign out everywhere, the change-password errors (wrong current, 'Use at least 12 characters.', mismatch), forgot uniform message, access-denied links, responsive layout at 320-1440 (brand panel at >=1024, compact strip below), keyboard tab order with a 3px focus outline, and the reveal toggle via Enter/Space.",
+  "rca of the issue": "Reset token lost: apps/web/next.config.mjs sets reactStrictMode: true and the preview runs `next dev`. The useEffect in reset-password/page.tsx is not idempotent, because it erases the hash it reads. The second StrictMode invocation therefore sets token=''. Production builds do not double-invoke effects, so it may only show in dev/preview, but the effect should still be made idempotent."
+}
