@@ -103,7 +103,7 @@ function Conversation({ centerId, id, tone, onBack, onChanged, onError }: { cent
   );
 }
 
-function NewThread({ centerId, open, tone, kids, onClose, onDone, onError }: { centerId: string; open: boolean; tone: Tone; kids: { id: string; name: string }[]; onClose: () => void; onDone: (id: string) => void; onError: (e: unknown) => void }) {
+function NewThread({ centerId, open, tone, kids, therapistMembershipId, onClose, onDone, onError }: { centerId: string; open: boolean; tone: Tone; kids: { id: string; name: string }[]; therapistMembershipId?: string; onClose: () => void; onDone: (id: string) => void; onError: (e: unknown) => void }) {
   const [f, setF] = useState({ childId: '', guardianLinkId: '', audience: 'GUARDIAN' as ThreadAudience, service: '', category: 'scheduling', subject: '', body: '' });
   const [guardians, setGuardians] = useState<{ id: string; displayName: string }[]>([]);
   const [services, setServices] = useState<string[]>([]);
@@ -115,15 +115,19 @@ function NewThread({ centerId, open, tone, kids, onClose, onDone, onError }: { c
       if (!active) return;
       const g = d.guardians.filter((x) => x.portalStatus === 'CONNECTED');
       setGuardians(g);
-      setServices(d.services);
+      const permitted = therapistMembershipId
+        ? d.assignments.filter((a) => a.membershipId === therapistMembershipId && a.endedAt === null).map((a) => a.service)
+        : d.services;
+      const available = d.services.filter((service) => permitted.includes(service));
+      setServices(available);
       setF((x) => ({
         ...x,
         guardianLinkId: g.length === 1 ? g[0].id : (g.some((item) => item.id === x.guardianLinkId) ? x.guardianLinkId : ''),
-        service: d.services.includes(x.service) ? x.service : '',
+        service: available.includes(x.service) ? x.service : '',
       }));
     }).catch(() => { if (active) { setGuardians([]); setServices([]); } });
     return () => { active = false; };
-  }, [open, staff, f.childId, centerId]);
+  }, [open, staff, f.childId, centerId, therapistMembershipId]);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => { if (open) { setErr(null); setF({ childId: kids.length === 1 ? kids[0].id : '', guardianLinkId: '', audience: 'GUARDIAN', service: '', category: 'scheduling', subject: '', body: '' }); } }, [open, kids]);
@@ -165,7 +169,7 @@ function NewThread({ centerId, open, tone, kids, onClose, onDone, onError }: { c
 }
 
 // Inbox + conversation. Guardians get the warm family theme; staff get the clinical workspace.
-export function Messages({ centerId, family, kids, onError }: { centerId: string; family: boolean; kids: { id: string; name: string }[]; onError: (e: unknown) => void }) {
+export function Messages({ centerId, family, kids, therapistMembershipId, onError }: { centerId: string; family: boolean; kids: { id: string; name: string }[]; therapistMembershipId?: string; onError: (e: unknown) => void }) {
   const tone: Tone = family ? 'family' : 'clinical';
   const [status, setStatus] = useState<'OPEN' | 'CLOSED'>('OPEN');
   const fetcher = useCallback(() => messagesApi.list(centerId, status), [centerId, status]);
@@ -204,7 +208,7 @@ export function Messages({ centerId, family, kids, onError }: { centerId: string
             : <div className="grid h-full place-items-center p-8 text-center text-[14px] text-brand-inkMuted" data-testid="conversation-placeholder">Choose a conversation to read it.</div>}
         </div>
       </Card>
-      <NewThread centerId={centerId} open={composing} tone={tone} kids={kids} onClose={() => setComposing(false)} onError={onError} onDone={(id) => { setComposing(false); setStatus('OPEN'); setActive(id); void reload(); }} />
+      <NewThread centerId={centerId} open={composing} tone={tone} kids={kids} therapistMembershipId={therapistMembershipId} onClose={() => setComposing(false)} onError={onError} onDone={(id) => { setComposing(false); setStatus('OPEN'); setActive(id); void reload(); }} />
     </div>
   );
 }
