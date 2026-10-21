@@ -15,7 +15,7 @@ import { ROLE_LABELS, authApi, contextLabel, type SessionInfo } from '@/lib/auth
 
 const PLATFORM_PLANNED: PlannedModule[] = [];
 const CENTER_PLANNED: PlannedModule[] = [
-  { label: 'Therapy plans and session notes', unit: 'the clinical milestone', icon: ClipboardList },
+  { label: 'Clinical signing, approval and release', unit: 'the clinical policy decision', icon: ClipboardList },
 ];
 
 function SetupBanner({ centerId }: { centerId: string }) {

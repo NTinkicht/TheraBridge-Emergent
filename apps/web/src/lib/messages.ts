@@ -21,7 +21,7 @@ const c = (centerId: string, path: string) => `/api/centers/${centerId}/${path}`
 
 export const messagesApi = {
   list: (centerId: string, status?: string) => rest.get<{ items: ThreadRow[]; unread: number }>(`${c(centerId, 'threads')}${status ? `?status=${status}` : ''}`),
-  open: (centerId: string, body: { childId: string; category: string; subject: string; body: string }) => rest.send<{ id: string }>('POST', c(centerId, 'threads'), body),
+  open: (centerId: string, body: { childId: string; category: string; subject: string; body: string; guardianLinkId?: string }) => rest.send<{ id: string }>('POST', c(centerId, 'threads'), body),
   thread: (centerId: string, id: string) => rest.get<ThreadDetail>(c(centerId, `threads/${id}`)),
   reply: (centerId: string, id: string, body: string) => rest.send<ThreadDetail>('POST', c(centerId, `threads/${id}/messages`), { body }),
   setStatus: (centerId: string, id: string, close: boolean) => rest.send<ThreadDetail>('POST', c(centerId, `threads/${id}/${close ? 'close' : 'reopen'}`)),

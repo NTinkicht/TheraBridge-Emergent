@@ -7,13 +7,14 @@ import { SelectField, errorText, useLoad } from '@/components/centers/kit';
 import { Button, Card, Pill, type Tone } from '@/components/design/ui';
 import { Dialog, EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
 import { CATEGORIES, NON_CLINICAL_NOTICE, categoryLabel, messagesApi, type ThreadDetail, type ThreadRow } from '@/lib/messages';
+import { opsApi } from '@/lib/operations';
 
 const when = (s: string) => new Date(s).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
 export function NonClinicalNotice({ tone }: { tone: Tone }) {
   return (
     <p className={`flex items-start gap-2 rounded-control p-3 text-[13px] ${tone === 'family' ? 'bg-fam-warm' : 'bg-status-infoSurface'}`} data-testid="messages-non-clinical-notice">
-      <ShieldAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" />{NON_CLINICAL_NOTICE}
+      <ShieldAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" /><span><strong>Synthetic demonstration only.</strong> Real family messaging stays off until the safeguarding, consent and recipient-visibility decisions are approved. Each conversation is visible only to the guardian it is addressed to. {NON_CLINICAL_NOTICE}</span>
     </p>
   );
 }
@@ -103,18 +104,29 @@ function Conversation({ centerId, id, tone, onBack, onChanged, onError }: { cent
 }
 
 function NewThread({ centerId, open, tone, kids, onClose, onDone, onError }: { centerId: string; open: boolean; tone: Tone; kids: { id: string; name: string }[]; onClose: () => void; onDone: (id: string) => void; onError: (e: unknown) => void }) {
-  const [f, setF] = useState({ childId: '', category: 'scheduling', subject: '', body: '' });
+  const [f, setF] = useState({ childId: '', guardianLinkId: '', category: 'scheduling', subject: '', body: '' });
+  const [guardians, setGuardians] = useState<{ id: string; displayName: string }[]>([]);
+  const staff = tone !== 'family';
+  useEffect(() => {
+    if (!open || !staff || !f.childId) return setGuardians([]);
+    opsApi.child(centerId, f.childId).then((d) => {
+      const g = d.guardians.filter((x) => x.portalStatus === 'CONNECTED');
+      setGuardians(g);
+      setF((x) => ({ ...x, guardianLinkId: g.length === 1 ? g[0].id : '' }));
+    }).catch(() => setGuardians([]));
+  }, [open, staff, f.childId, centerId]);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  useEffect(() => { if (open) { setErr(null); setF({ childId: kids.length === 1 ? kids[0].id : '', category: 'scheduling', subject: '', body: '' }); } }, [open, kids]);
+  useEffect(() => { if (open) { setErr(null); setF({ childId: kids.length === 1 ? kids[0].id : '', guardianLinkId: '', category: 'scheduling', subject: '', body: '' }); } }, [open, kids]);
   async function send() {
     if (!f.childId) return setErr('Choose which child this is about.');
+    if (staff && !f.guardianLinkId) return setErr('Choose the guardian who should receive this conversation.');
     if (f.subject.trim().length < 3) return setErr('Give the conversation a subject of at least 3 characters.');
     if (!f.body.trim()) return setErr('Write a message.');
     setBusy(true);
     setErr(null);
     try {
-      onDone((await messagesApi.open(centerId, { ...f, subject: f.subject.trim(), body: f.body.trim() })).id);
+      onDone((await messagesApi.open(centerId, { childId: f.childId, category: f.category, subject: f.subject.trim(), body: f.body.trim(), ...(staff ? { guardianLinkId: f.guardianLinkId } : {}) })).id);
     } catch (e) {
       setErr(errorText(e, onError));
     } finally {
@@ -131,6 +143,7 @@ function NewThread({ centerId, open, tone, kids, onClose, onDone, onError }: { c
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <SelectField label="About" value={f.childId} onChange={(v) => setF({ ...f, childId: v })} testId="new-thread-child" options={[{ value: '', label: 'Choose a child' }, ...kids.map((k) => ({ value: k.id, label: k.name }))]} />
           <SelectField label="Topic" value={f.category} onChange={(v) => setF({ ...f, category: v })} testId="new-thread-category" options={CATEGORIES} />
+          {staff && <SelectField label="Recipient" value={f.guardianLinkId} onChange={(v) => setF({ ...f, guardianLinkId: v })} testId="new-thread-recipient" options={[{ value: '', label: guardians.length ? 'Choose a guardian' : 'No connected guardian' }, ...guardians.map((g) => ({ value: g.id, label: g.displayName }))]} />}
         </div>
         <label className="block text-[14px] font-medium">Subject<input value={f.subject} maxLength={120} onChange={(e) => setF({ ...f, subject: e.target.value })} className={`mt-1 ${input}`} data-testid="new-thread-subject" /></label>
         <label className="block text-[14px] font-medium">Message<textarea value={f.body} maxLength={2000} rows={5} onChange={(e) => setF({ ...f, body: e.target.value })} className={`mt-1 ${input}`} data-testid="new-thread-body" /></label>

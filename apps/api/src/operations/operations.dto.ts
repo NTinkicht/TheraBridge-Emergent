@@ -116,6 +116,7 @@ export class SeriesCancelDto {
 
 export class ThreadDto {
   @IsUUID() childId!: string;
+  @IsOptional() @IsUUID() guardianLinkId?: string;
   @IsIn(THREAD_CATEGORIES) category!: string;
   @trim() @IsString() @MinLength(3, { message: 'Give the conversation a subject of at least 3 characters' }) @MaxLength(120) subject!: string;
   @trim() @IsString() @MinLength(1, { message: 'Write a message' }) @MaxLength(2000) body!: string;

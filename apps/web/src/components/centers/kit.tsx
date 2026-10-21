@@ -11,14 +11,14 @@ import { SkeletonRows } from '@/components/design/states';
 import { ROLE_LABELS, type Role, type SessionInfo } from '@/lib/auth';
 import type { HistoryEvent, InvitationStatus, MemberStatus } from '@/lib/centers';
 
-export type ShellKey = 'home' | 'security' | 'applications' | 'centers' | 'setup' | 'team' | 'center' | 'profile' | 'children' | 'schedule' | 'messages';
+export type ShellKey = 'home' | 'security' | 'applications' | 'centers' | 'setup' | 'team' | 'center' | 'profile' | 'children' | 'schedule' | 'messages' | 'clinical' | 'activities';
 
 // Session gate + permission check + shell, shared by every TB-EM-003/004 screen.
 export function Workspace({ active, permission, deniedText, children }: { active: ShellKey; permission: string; deniedText: string; children: (s: SessionInfo, onError: (e: unknown) => void) => ReactNode }) {
   const { state, handle } = useSession();
   if (state.status === 'loading') return <div className="p-8"><SkeletonRows rows={4} testId="session-loading" /></div>;
   if (state.status === 'error') return <div className="p-8"><FormAlert tone="danger" testId="session-error">{state.message}</FormAlert></div>;
-  const allowed = state.data.permissions.includes(permission);
+  const allowed = permission.split('|').some((p) => state.data.permissions.includes(p));
   return (
     <ProductShell session={state.data} active={active} planned={[]}>
       {allowed ? children(state.data, handle) : <FormAlert tone="danger" testId="page-forbidden">{deniedText}</FormAlert>}

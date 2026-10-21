@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { logCenterEvent, uniq } from '../centers/history';
@@ -10,13 +10,17 @@ import { TrialService } from './trial.service';
 const isManager = (v: Viewer) => v.role === 'CENTER_ADMIN' || v.role === 'COORDINATOR';
 
 // Who may see a thread, re-checked on every request so removing a guardian or ending an assignment revokes access at once.
-// Guardians: threads about children currently linked to their own account. Therapists: children they are assigned to. Managers: the center.
+// Guardians: only threads addressed to their own active guardian link (recipient-specific, issue #35). Therapists: assigned children. Managers: the center.
 export const threadScope = (centerId: string, v: Viewer): Prisma.MessageThreadWhereInput => ({
   centerId,
-  ...(v.role === 'GUARDIAN' ? { child: { status: 'ACTIVE', guardians: { some: { userId: v.userId, removedAt: null } } } }
+  ...(v.role === 'GUARDIAN' ? { child: { status: 'ACTIVE' }, guardianLink: { userId: v.userId, removedAt: null } }
     : v.role === 'THERAPIST' ? { child: { assignments: { some: { membershipId: v.membershipId, endedAt: null } } } }
       : isManager(v) ? {} : { id: { in: [] } }),
 });
+
+// Family free-text messaging is a synthetic-only demonstration until safeguarding decision D-NEW-5 (issue #35).
+export const familyMessagingEnabled = () => process.env.FAMILY_MESSAGING_DEMO === 'true' && !['production', 'staging'].includes(process.env.DEPLOYMENT_ENV ?? '');
+const DEMO_OFF = 'Family messaging is a synthetic demonstration and is switched off here until the safeguarding and consent decisions are approved.';
 
 @Injectable()
 export class MessagesService {
@@ -51,11 +55,14 @@ export class MessagesService {
   }
 
   async create(centerId: string, v: Viewer, dto: ThreadDto) {
+    if (!familyMessagingEnabled()) throw new ForbiddenException(DEMO_OFF);
     const now = this.trial.now();
     const t = await this.prisma.$transaction(async (tx) => {
       await this.trial.assertWritable(tx, centerId, now);
       await this.assertChild(tx, centerId, v, dto.childId);
-      const t = await tx.messageThread.create({ data: { centerId, childId: dto.childId, subject: dto.subject, category: dto.category, createdById: v.userId, createdAt: now, lastMessageAt: now } });
+      const link = await tx.guardianLink.findFirst({ where: { centerId, childId: dto.childId, removedAt: null, ...(v.role === 'GUARDIAN' ? { userId: v.userId } : { userId: { not: null }, id: dto.guardianLinkId ?? '00000000-0000-0000-0000-000000000000' }) } });
+      if (!link) throw new UnprocessableEntityException(v.role === 'GUARDIAN' ? 'Child not found' : 'Choose a connected guardian of this child as the recipient.');
+      const t = await tx.messageThread.create({ data: { centerId, childId: dto.childId, guardianLinkId: link.id, subject: dto.subject, category: dto.category, createdById: v.userId, createdAt: now, lastMessageAt: now } });
       await tx.message.create({ data: { threadId: t.id, centerId, authorUserId: v.userId, authorKind: v.role === 'GUARDIAN' ? 'FAMILY' : 'STAFF', body: dto.body, createdAt: now } });
       await this.markRead(tx, t.id, v.userId, now);
       await logCenterEvent(tx, centerId, 'message.thread_opened', now, { actorUserId: v.userId, meta: { childId: dto.childId, threadId: t.id, category: dto.category } });
@@ -67,18 +74,19 @@ export class MessagesService {
 
   async detail(centerId: string, v: Viewer, id: string) {
     const now = this.trial.now();
-    const t = await this.prisma.messageThread.findFirst({ where: { id, ...threadScope(centerId, v) }, include: { child: true, messages: { orderBy: { createdAt: 'asc' }, take: 500 } } });
+    const t = await this.prisma.messageThread.findFirst({ where: { id, ...threadScope(centerId, v) }, include: { child: true, guardianLink: true, messages: { orderBy: { createdAt: 'asc' }, take: 500 } } });
     if (!t) throw new NotFoundException('Conversation not found');
     const users = await this.prisma.user.findMany({ where: { id: { in: uniq(t.messages.map((m) => m.authorUserId)) } }, select: { id: true, displayName: true } });
     await this.markRead(this.prisma, t.id, v.userId, now);
     return {
       id: t.id, childId: t.childId, child: `${t.child.preferredName ?? t.child.firstName} ${t.child.lastName}`, subject: t.subject, category: t.category, status: t.status, createdAt: t.createdAt, closedAt: t.closedAt,
-      canManage: isManager(v),
+      canManage: isManager(v), recipient: t.guardianLink?.displayName ?? null, demo: true,
       messages: t.messages.map((m) => ({ id: m.id, body: m.body, authorKind: m.authorKind, author: users.find((u) => u.id === m.authorUserId)?.displayName ?? 'Former member', mine: m.authorUserId === v.userId, createdAt: m.createdAt })),
     };
   }
 
   async reply(centerId: string, v: Viewer, id: string, dto: MessageDto) {
+    if (!familyMessagingEnabled()) throw new ForbiddenException(DEMO_OFF);
     const now = this.trial.now();
     await this.prisma.$transaction(async (tx) => {
       await this.trial.assertWritable(tx, centerId, now);

@@ -33,6 +33,13 @@ export const PERMISSIONS: Record<string, readonly Role[]> = {
   'center.messages.use': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'GUARDIAN'],
   'center.messages.manage': ['CENTER_ADMIN', 'COORDINATOR'],
   'platform.reminders.run': ['PLATFORM_ADMIN'],
+  // TB-EM-008 synthetic clinical drafts. Row scope (assigned children, own drafts) is enforced in ClinicalService.
+  'center.clinical.read': ['THERAPIST', 'CLINICAL_SUPERVISOR'],
+  'center.clinical.draft': ['THERAPIST'],
+  'center.clinical.review': ['CLINICAL_SUPERVISOR'],
+  'center.activities.read': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'CLINICAL_SUPERVISOR'],
+  'center.activities.manage': ['THERAPIST', 'CLINICAL_SUPERVISOR'],
+  'family.activities.read': ['GUARDIAN'],
 };
 
 // No clinical capability can be granted to anyone until an owner-approved clinical policy exists.

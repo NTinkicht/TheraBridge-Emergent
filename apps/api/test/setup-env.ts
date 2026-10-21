@@ -9,4 +9,5 @@ Object.assign(process.env, {
   CORS_ORIGINS: 'http://localhost:3000',
   DEV_MAILBOX_ENABLED: 'false',
   DEV_OUTBOX_DIR: '',
+  FAMILY_MESSAGING_DEMO: 'true',
 });

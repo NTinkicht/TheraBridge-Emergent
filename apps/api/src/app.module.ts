@@ -8,9 +8,10 @@ import { TenancyModule } from './tenancy/tenancy.module';
 import { ApplicationsModule } from './applications/applications.module';
 import { CentersModule } from './centers/centers.module';
 import { OperationsModule } from './operations/operations.module';
+import { ClinicalModule } from './clinical/clinical.module';
 import { TrialModule } from './operations/trial.module';
 
 @Module({
-  imports: [ConfigModule, PrismaModule, AuditModule, AuthModule, HealthModule, TenancyModule, ApplicationsModule, TrialModule, CentersModule, OperationsModule],
+  imports: [ConfigModule, PrismaModule, AuditModule, AuthModule, HealthModule, TenancyModule, ApplicationsModule, TrialModule, CentersModule, OperationsModule, ClinicalModule],
 })
 export class AppModule {}
