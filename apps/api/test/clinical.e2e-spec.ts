@@ -37,11 +37,11 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     admin = await accept('lead@clin.test', 'Lead Admin');
   });
 
-  async function setup() {
+  async function setup(services: string[] = ['speech']) {
     const therapist = await staff('thera@clin.test', ['THERAPIST']);
     const other = await staff('other@clin.test', ['THERAPIST']);
     const sup = await staff('sup@clin.test', ['CLINICAL_SUPERVISOR'], []);
-    const kid = (await post(h, c('children'), admin, { firstName: 'Mila', lastName: 'Stone', dateOfBirth: '2019-04-02', services: ['speech'] }).expect(201)).body.id;
+    const kid = (await post(h, c('children'), admin, { firstName: 'Mila', lastName: 'Stone', dateOfBirth: '2019-04-02', services }).expect(201)).body.id;
     await post(h, c(`children/${kid}/assignments`), admin, { membershipId: therapist.body.activeContext.membershipId, service: 'speech', isLead: true }).expect(201);
     const link = (await post(h, c(`children/${kid}/guardians`), admin, { displayName: 'Rosa Stone', email: 'rosa@family.test', relationship: 'mother', invite: true }).expect(201)).body.id;
     const rosa = await accept('rosa@family.test', 'Rosa Stone');
@@ -109,6 +109,54 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     await h.prisma.careAssignment.updateMany({ where: { centerId, childId: kid, membershipId, service: 'occupational', endedAt: null }, data: { endedAt: h.clock.now() } });
     await patch(therapist, c(`clinical/assessments/${id}`), { service: 'speech', assessedOn: '2026-10-19', summary: 'Relabeled', areas: [], version: 1 }).expect(404);
     expect(await h.prisma.assessment.findUniqueOrThrow({ where: { id } })).toMatchObject({ service: 'occupational', summary: 'OT baseline', version: 1 });
+  });
+
+  it('scopes synthetic family, team and specialty threads after specialty revocation', async () => {
+    const { therapist, other, sup, kid, link, rosa } = await setup(['speech', 'occupational']);
+    const dual = await staff('dual@clin.test', ['THERAPIST'], ['speech', 'occupational']);
+    const membershipId = dual.body.activeContext.membershipId;
+    for (const service of ['speech', 'occupational']) {
+      await post(h, c(`children/${kid}/assignments`), admin, { membershipId, service }).expect(201);
+    }
+
+    const guardianId = (await post(h, c('threads'), therapist, {
+      childId: kid, guardianLinkId: link, category: 'scheduling', subject: 'Guardian coordination', body: 'Appointment reminder',
+    }).expect(201)).body.id;
+    const teamId = (await post(h, c('threads'), therapist, {
+      childId: kid, audience: 'CARE_TEAM', category: 'logistics', subject: 'Team coordination', body: 'Room updated',
+    }).expect(201)).body.id;
+    const specialtyId = (await post(h, c('threads'), dual, {
+      childId: kid, audience: 'SPECIALTY', service: 'occupational', category: 'logistics',
+      subject: 'Occupational coordination', body: 'Synthetic equipment note',
+    }).expect(201)).body.id;
+
+    const ids = async (viewer: Signed) => (await get(viewer, c('threads')).expect(200)).body.items.map((x: { id: string }) => x.id);
+    expect(await ids(rosa)).toEqual([guardianId]);
+    expect(await ids(other)).toEqual([]);
+    expect(await ids(therapist)).toEqual(expect.arrayContaining([guardianId, teamId]));
+    expect(await ids(therapist)).not.toContain(specialtyId);
+    expect(await ids(dual)).toEqual(expect.arrayContaining([guardianId, teamId, specialtyId]));
+    expect(await ids(sup)).toEqual(expect.arrayContaining([teamId, specialtyId]));
+    await get(therapist, c(`threads/${specialtyId}`)).expect(404);
+    await get(rosa, c(`threads/${teamId}`)).expect(404);
+    await get(other, c(`threads/${teamId}`)).expect(404);
+    await post(h, c('threads'), rosa, {
+      childId: kid, audience: 'CARE_TEAM', category: 'scheduling', subject: 'Not allowed', body: 'No access',
+    }).expect(403);
+    await post(h, c('threads'), therapist, {
+      childId: kid, audience: 'SPECIALTY', service: 'occupational', category: 'scheduling',
+      subject: 'Not assigned', body: 'No access',
+    }).expect(404);
+
+    const activeOt = await h.prisma.careAssignment.findFirstOrThrow({
+      where: { centerId, childId: kid, membershipId, service: 'occupational', endedAt: null },
+    });
+    await post(h, c(`children/${kid}/assignments/${activeOt.id}/end`), admin).expect(200);
+    expect(await ids(dual)).toEqual(expect.arrayContaining([guardianId, teamId]));
+    expect(await ids(dual)).not.toContain(specialtyId);
+    await get(dual, c(`threads/${specialtyId}`)).expect(404);
+    await post(h, c(`threads/${specialtyId}/messages`), dual, { body: 'Should not send' }).expect(404);
+    await get(dual, c(`threads/${teamId}`)).expect(200);
   });
 
   it('messages are recipient-specific, demo-gated, and blocked after trial expiry while consented reminders continue', async () => {
