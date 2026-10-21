@@ -32,3 +32,9 @@ Obtain new independent Mistral read-only review of the latest source and import 
 **Owner privacy decision still open:** supervisors currently have center-wide read/reply access to guardian-addressed operational messages. The owner must explicitly acknowledge or narrow this policy before an integration merge.
 
 Keep safeguarding issue #35 and specialty visibility issue #51 open; private canonical specifications remain private. Clinical signing, approval, consent grants, recipient release, safeguarding escalation, real-data use, pilot/production and deployment all remain NO-GO. Do not close issues or merge this draft without explicit owner authorization.
+
+## Owner messaging privacy decision — 2026-10-22 (post-Mistral re-review)
+
+The owner explicitly decided: **Clinical supervisors have no discussion access. Parents communicate only with their child's assigned therapists.** Center administrators and coordinators retain internal staff discussion capability but cannot read, create, reply to or manage guardian-addressed threads. Therapists with an active child assignment may manage the associated guardian threads; guardians are restricted to their exact active recipient link.
+
+Implementation changes were applied **after** Mistral's original reviewed/imported head `121e24e053145e4260a4531cc72877b8c116f587`. Original 449-test green CI, source-tree blob parity, and MIS-201/MIS-202 qualifications remain historical evidence for that exact SHA **only**. The updated head requires fresh CI and an independent exact-head re-review; no merge authorization is implied by the owner policy decision. Original source/import fidelity must be re-evaluated with the declared post-import policy overlay. All non-clinical/synthetic-only and clinical NO-GO safeguards continue unchanged.
