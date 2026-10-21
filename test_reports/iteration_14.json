@@ -1,0 +1,45 @@
+{
+  "summary": "TB-EM-008 frontend E2E (Playwright on the public URL, 1920px and 390px). Covered: therapist Clinical workspace nav, list and workspace (banner, 4 tabs); Plan editing (add/edit/remove goals, measure/baseline/target, add home activity, save and reload to check it persisted, family preview with ActivityCard steps and safety, send for review makes fields read-only, locked Approve and release with its reason, Start a new version gives 'Version 2 · Draft' with goals copied); Assessment draft creation; blank session draft (all 4 sections, saved 3 times in a row with no version conflict, persisted after reload, Sign note locked); Progress observations (history bars per goal, future-date error); supervisor read-only workspace plus review-panel, return with comment, then the therapist sees review-note-0 and can edit again; admin and coordinator have no Clinical nav, get page-forbidden on /app/clinical and /app/clinical/:id, and see the Activities library read-only; therapist template-form (validation error, then a template is added, cleared and offered in the plan select); guardian 'Activities at home' (warm theme, sample note, 2 speech cards, no TEST_ or plan content, and the therapist-created TEST_ template is not shown); clinical pages forbidden for the guardian; Messages banner, recipient auto-selected or required, Sara sees the thread addressed to her and has no recipient select; mobile 390px, no horizontal overflow on any tab, the preview or family activities. All requested flows work. Found 2 MEDIUM validation gaps and a few minor UX issues. session-start-<apptId> was NOT tested: no therapist appointment exists in the last 30 days or the next 24h, so the list says 'No recent visits without a draft.' Trial-expiry message blocking was not tested.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/centers/:id/children/:childId/assessments (clinical.dto summary)", "issue": "An empty summary is accepted. Saving the assessment form with every field blank creates an empty draft card. The DTO has @IsString/@MaxLength but no @MinLength/@IsNotEmpty."},
+      {"endpoint": "POST observations", "issue": "Empty value is recorded as 0. The frontend sends Number('') = 0 and the backend accepts it, so an extra 0 bar appeared on 2026-10-21 for 'Uses two-word phrases'."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "ProgressPanel observation-form", "issue": "Record with an empty Value saves 0 instead of showing a validation error", "selector": "[data-testid=observation-save]", "priority": "MEDIUM"},
+      {"component": "AssessmentsPanel", "issue": "Save with an empty summary creates a blank assessment, with no client or server validation", "selector": "[data-testid=assessment-save]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Review / versioning", "issue": "'Start a new version' on an IN_REVIEW version marks it SUPERSEDED. The therapist can silently pull a version out of supervisor review, and the supervisor never sees it. There is also no UI to view earlier versions (only versions[0] is rendered, plan-version-1 is gone after v2). Confirm this is intended.", "affected_selectors": ["[data-testid=plan-new-version]"]}
+    ],
+    "design_issues": [
+      {"screen": "Clinical workspace", "issues": ["Error and success notices (e.g. the future-date error, 'comment must be longer than or equal to 3 characters') appear in the page-level banner above the tabs, not inline next to the field. The success notice also stays visible after switching tabs.", "Raw class-validator messages reach users ('comment must be longer than or equal to 3 characters', 'title must be longer than or equal to 3 characters').", "Date inputs use the native browser date picker (assessment-date, observation-date).", "The 'Create plan' card has no heading or explanation.", "The home-activity-add select offers OT and PT templates for a speech-only child."]},
+      {"screen": "Activities library (therapist)", "issues": ["The 'Template added.' success alert stays visible together with a later template-error."]},
+      {"screen": "Messages", "issues": ["The recipient select shows 'No connected guardian' before the child effect resolves (a short misleading flash).", "The staff conversation header does not show which guardian the thread is addressed to.", "Child names are inconsistent: 'TEST_Alex Morgan' in the guardian About select, 'Alex Morgan' or 'Alex' elsewhere."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Add required validation for observation value (client: block empty; server: keep numeric but frontend must not coerce '' to 0)",
+    "Add @IsNotEmpty/@MinLength to the assessment summary and a client check",
+    "Decide whether plan-new-version should be allowed while a version is IN_REVIEW (it currently withdraws it from review), and consider a read-only version history",
+    "Map class-validator messages to friendly text; show field errors inline; clear stale notices when the tab changes"
+  ],
+  "critical_code_review_comments": [
+    "Panels.tsx ProgressPanel: Number(f.value) with an empty string gives 0. Guard with f.value.trim() === ''.",
+    "Panels.tsx ProgressPanel: history is filtered only by goalKey. That is fine across versions, but if two plans ever share a key the histories would mix. Consider filtering by plan too.",
+    "PlanEditor VersionEditor: useEffect([v]) resets local unsaved edits whenever any run() reloads the workspace (e.g. after a failed save the reload doesn't happen, but after any other success it does). Acceptable, but unsaved edits are lost if the user triggers family preview and then another action.",
+    "SessionsPanel open-visits filter only covers the last 30 days to +24h on the server, so with the current seed (Tue/Thu series in the future) the session-start-<apptId> path cannot be exercised."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend only)", "frontend": "~92% (all requested flows pass; 2 MEDIUM validation gaps)"},
+  "test_credentials": "From /app/.workspace/local-credentials/synthetic-accounts.json (no reseed).",
+  "seed_data_creation": "Created through the UI: TEST_Speech plan edited (summary, goal 'TEST_Names 10 pictures by Dec', Bubble breath activity), v1 submitted, returned with a TEST_ comment, resubmitted, then v2 Draft created; 2 assessment drafts (one blank, one TEST_); 1 blank-date session draft with TEST_ sections; 3 observations (0 and 35 on goal 1, 4 on goal 2); activity template 'TEST_Picture naming game'; message thread 'TEST_ Recipient check' admin to Sara.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Child id 4d404285-1d59-4ede-8e7c-a9caa394ca3e (shows as 'Alex Morgan'). The plan is now Version 2 Draft (v1 superseded). There are no therapist appointments in the last 30 days or the next 24h, so only session-start-blank is available. The future-date error shows in [data-testid=clinical-notice-danger]. The new-thread recipient auto-selects when only one guardian is connected. Today is 2026-10-21 in this env.",
+  "rca of the issue": "Observation 0: Panels.tsx line 119 sends Number(f.value) without checking for empty, and the backend allows 0. Blank assessment: clinical.dto.ts summary has only @IsString @MaxLength(4000)."
+}
