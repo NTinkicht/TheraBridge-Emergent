@@ -28,6 +28,11 @@ export const PERMISSIONS: Record<string, readonly Role[]> = {
   'center.schedule.manage': ['CENTER_ADMIN', 'COORDINATOR'],
   'center.appointments.status': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST'],
   'family.portal.read': ['GUARDIAN'],
+  'family.preferences.update': ['GUARDIAN'],
+  // Operational (non-clinical) messages; row scope is narrowed per role in MessagesService.
+  'center.messages.use': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'GUARDIAN'],
+  'center.messages.manage': ['CENTER_ADMIN', 'COORDINATOR'],
+  'platform.reminders.run': ['PLATFORM_ADMIN'],
 };
 
 // No clinical capability can be granted to anyone until an owner-approved clinical policy exists.

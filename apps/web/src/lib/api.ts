@@ -4,6 +4,7 @@ export class ApiError extends Error {
   constructor(
     public readonly status: number,
     message: string,
+    public readonly details?: Record<string, unknown>,
   ) {
     super(message);
   }
@@ -24,7 +25,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   const body = await res.json().catch(() => null);
   if (!res.ok) {
     const msg = body?.message;
-    throw new ApiError(res.status, Array.isArray(msg) ? msg.join('; ') : msg || `Request failed (${res.status})`);
+    throw new ApiError(res.status, Array.isArray(msg) ? msg.join('; ') : msg || `Request failed (${res.status})`, body ?? undefined);
   }
   return body as T;
 }

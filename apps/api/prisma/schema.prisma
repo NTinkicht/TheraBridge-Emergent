@@ -374,6 +374,7 @@ model Child {
   guardians     GuardianLink[]
   assignments   CareAssignment[]
   appointments  Appointment[]
+  threads       MessageThread[]
 
   @@index([centerId, status])
   @@map("child")
@@ -388,6 +389,7 @@ model GuardianLink {
   emailNorm    String    @map("email_norm") @db.VarChar(254)
   relationship String    @db.VarChar(32)
   isPrimary    Boolean   @default(false) @map("is_primary")
+  remindersEnabled Boolean @default(true) @map("reminders_enabled")
   userId       String?   @map("user_id") @db.Uuid
   removedAt    DateTime? @map("removed_at") @db.Timestamptz(3)
   createdAt    DateTime  @map("created_at") @db.Timestamptz(3)
@@ -427,11 +429,111 @@ model Appointment {
   createdById  String            @map("created_by_id") @db.Uuid
   createdAt    DateTime          @map("created_at") @db.Timestamptz(3)
   version      Int               @default(1)
+  seriesId     String?           @map("series_id") @db.Uuid
+  occurrenceDate DateTime?       @map("occurrence_date") @db.Date
+  isException  Boolean           @default(false) @map("is_exception")
   center       Center            @relation(fields: [centerId], references: [id], onDelete: Restrict)
   child        Child             @relation(fields: [childId], references: [id], onDelete: Restrict)
+  series       AppointmentSeries? @relation(fields: [seriesId], references: [id], onDelete: Restrict)
+  notices      AppointmentNotice[]
 
+  @@unique([seriesId, occurrenceDate])
   @@index([centerId, startsAt])
   @@index([membershipId, startsAt])
   @@index([childId, startsAt])
   @@map("appointment")
+}
+
+enum SeriesStatus {
+  ACTIVE
+  ENDED
+}
+
+enum ThreadStatus {
+  OPEN
+  CLOSED
+}
+
+// Weekly recurrence in the center's local time; occurrences are materialized as Appointment rows.
+model AppointmentSeries {
+  id            String        @id @default(uuid()) @db.Uuid
+  centerId      String        @map("center_id") @db.Uuid
+  childId       String        @map("child_id") @db.Uuid
+  membershipId  String        @map("membership_id") @db.Uuid
+  service       String        @db.VarChar(32)
+  room          String?       @db.VarChar(80)
+  startTime     String        @map("start_time") @db.VarChar(5)
+  durationMin   Int           @map("duration_min")
+  weekdays      Int[]
+  intervalWeeks Int           @map("interval_weeks")
+  startDate     DateTime      @map("start_date") @db.Date
+  untilDate     DateTime      @map("until_date") @db.Date
+  status        SeriesStatus  @default(ACTIVE)
+  createdById   String        @map("created_by_id") @db.Uuid
+  createdAt     DateTime      @map("created_at") @db.Timestamptz(3)
+  version       Int           @default(1)
+  appointments  Appointment[]
+
+  @@index([centerId, childId])
+  @@map("appointment_series")
+}
+
+// Restricted synthetic outbox log of reminders and change notices sent to guardians.
+model AppointmentNotice {
+  id             String      @id @default(uuid()) @db.Uuid
+  centerId       String      @map("center_id") @db.Uuid
+  appointmentId  String      @map("appointment_id") @db.Uuid
+  guardianLinkId String      @map("guardian_link_id") @db.Uuid
+  kind           String      @db.VarChar(24)
+  startsAt       DateTime    @map("starts_at") @db.Timestamptz(3)
+  sentAt         DateTime    @map("sent_at") @db.Timestamptz(3)
+  appointment    Appointment @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+
+  @@index([appointmentId])
+  @@map("appointment_notice")
+}
+
+// Non-clinical operational messages between a child's guardians and the care team.
+model MessageThread {
+  id            String       @id @default(uuid()) @db.Uuid
+  centerId      String       @map("center_id") @db.Uuid
+  childId       String       @map("child_id") @db.Uuid
+  subject       String       @db.VarChar(120)
+  category      String       @db.VarChar(24)
+  status        ThreadStatus @default(OPEN)
+  createdById   String       @map("created_by_id") @db.Uuid
+  createdAt     DateTime     @map("created_at") @db.Timestamptz(3)
+  lastMessageAt DateTime     @map("last_message_at") @db.Timestamptz(3)
+  closedAt      DateTime?    @map("closed_at") @db.Timestamptz(3)
+  child         Child        @relation(fields: [childId], references: [id], onDelete: Restrict)
+  messages      Message[]
+  reads         ThreadRead[]
+
+  @@index([centerId, childId])
+  @@index([centerId, lastMessageAt])
+  @@map("message_thread")
+}
+
+model Message {
+  id           String        @id @default(uuid()) @db.Uuid
+  threadId     String        @map("thread_id") @db.Uuid
+  centerId     String        @map("center_id") @db.Uuid
+  authorUserId String        @map("author_user_id") @db.Uuid
+  authorKind   String        @map("author_kind") @db.VarChar(8)
+  body         String        @db.VarChar(2000)
+  createdAt    DateTime      @map("created_at") @db.Timestamptz(3)
+  thread       MessageThread @relation(fields: [threadId], references: [id], onDelete: Restrict)
+
+  @@index([threadId, createdAt])
+  @@map("message")
+}
+
+model ThreadRead {
+  threadId   String        @map("thread_id") @db.Uuid
+  userId     String        @map("user_id") @db.Uuid
+  lastReadAt DateTime      @map("last_read_at") @db.Timestamptz(3)
+  thread     MessageThread @relation(fields: [threadId], references: [id], onDelete: Restrict)
+
+  @@id([threadId, userId])
+  @@map("thread_read")
 }

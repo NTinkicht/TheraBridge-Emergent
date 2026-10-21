@@ -4,7 +4,8 @@ import { AuditService } from '../audit/audit.service';
 import { Tx, logCenterEvent, uniq } from '../centers/history';
 import { PrismaService } from '../prisma/prisma.service';
 import { Viewer, childScope } from './children.service';
-import type { AppointmentDto, AppointmentStatusDto, RangeQuery, RescheduleDto } from './operations.dto';
+import { NoticesService } from './notices.service';
+import type { AppointmentDto, AppointmentStatusDto, FamilyPreferenceDto, RangeQuery, RescheduleDto } from './operations.dto';
 import { TrialService } from './trial.service';
 
 const DAY = 86_400_000;
@@ -22,14 +23,16 @@ export class ScheduleService {
     private readonly prisma: PrismaService,
     private readonly trial: TrialService,
     private readonly audit: AuditService,
+    private readonly notices: NoticesService,
   ) {}
 
-  private async view(rows: Prisma.AppointmentGetPayload<{ include: { child: true } }>[]) {
+  async view(rows: Prisma.AppointmentGetPayload<{ include: { child: true; notices: true } }>[]) {
     const team = await this.prisma.membership.findMany({ where: { id: { in: uniq(rows.map((r) => r.membershipId)) } }, select: { id: true, user: { select: { displayName: true } } } });
     return rows.map((a) => ({
       id: a.id, childId: a.childId, child: a.child.preferredName ?? a.child.firstName, childFull: `${a.child.firstName} ${a.child.lastName}`, membershipId: a.membershipId,
       therapist: team.find((t) => t.id === a.membershipId)?.user.displayName ?? '', service: a.service, startsAt: a.startsAt, endsAt: a.endsAt,
-      room: a.room, status: a.status, statusReason: a.statusReason, version: a.version,
+      room: a.room, status: a.status, statusReason: a.statusReason, version: a.version, seriesId: a.seriesId, isException: a.isException,
+      reminderSentAt: a.notices.find((n) => n.kind === 'reminder_24h' && n.startsAt.getTime() === a.startsAt.getTime())?.sentAt ?? null,
     }));
   }
 
@@ -43,20 +46,26 @@ export class ScheduleService {
         ...(v.role === 'THERAPIST' ? { membershipId: v.membershipId } : q.membershipId ? { membershipId: q.membershipId } : {}),
         ...(q.childId ? { childId: q.childId } : {}),
       },
-      include: { child: true }, orderBy: [{ startsAt: 'asc' }, { id: 'asc' }], take: 500,
+      include: { child: true, notices: true }, orderBy: [{ startsAt: 'asc' }, { id: 'asc' }], take: 500,
     });
     const center = await this.prisma.center.findUniqueOrThrow({ where: { id: centerId }, select: { timezone: true } });
     return { items: await this.view(rows), timezone: center.timezone };
   }
 
   // Double-booking is checked under the center row lock taken by assertWritable.
-  private async assertFree(tx: Tx, a: { childId: string; membershipId: string; startsAt: Date; endsAt: Date }, excludeId?: string) {
-    const overlap = { status: 'SCHEDULED' as const, startsAt: { lt: a.endsAt }, endsAt: { gt: a.startsAt }, ...(excludeId ? { id: { not: excludeId } } : {}) };
-    if (await tx.appointment.findFirst({ where: { ...overlap, membershipId: a.membershipId } })) throw new ConflictException('The therapist already has an appointment at this time.');
-    if (await tx.appointment.findFirst({ where: { ...overlap, childId: a.childId } })) throw new ConflictException('The child already has an appointment at this time.');
+  async clash(tx: Tx, a: { childId: string; membershipId: string; startsAt: Date; endsAt: Date }, excludeIds: string[] = []): Promise<string | null> {
+    const overlap = { status: 'SCHEDULED' as const, startsAt: { lt: a.endsAt }, endsAt: { gt: a.startsAt }, ...(excludeIds.length ? { id: { notIn: excludeIds } } : {}) };
+    if (await tx.appointment.findFirst({ where: { ...overlap, membershipId: a.membershipId } })) return 'The therapist already has an appointment at this time.';
+    if (await tx.appointment.findFirst({ where: { ...overlap, childId: a.childId } })) return 'The child already has an appointment at this time.';
+    return null;
   }
 
-  private async assertAssigned(tx: Tx, centerId: string, childId: string, membershipId: string, service: string) {
+  private async assertFree(tx: Tx, a: { childId: string; membershipId: string; startsAt: Date; endsAt: Date }, excludeId?: string) {
+    const reason = await this.clash(tx, a, excludeId ? [excludeId] : []);
+    if (reason) throw new ConflictException(reason);
+  }
+
+  async assertAssigned(tx: Tx, centerId: string, childId: string, membershipId: string, service: string) {
     const child = await tx.child.findFirst({ where: { id: childId, centerId, status: 'ACTIVE' } });
     if (!child) throw new NotFoundException('Child not found');
     const a = await tx.careAssignment.findFirst({ where: { childId, membershipId, service, endedAt: null, child: { centerId } } });
@@ -90,34 +99,39 @@ export class ScheduleService {
 
   async reschedule(centerId: string, actorUserId: string, id: string, dto: RescheduleDto) {
     const now = this.trial.now();
-    await this.prisma.$transaction(async (tx) => {
+    const before = await this.prisma.$transaction(async (tx) => {
       await this.trial.assertWritable(tx, centerId, now);
       const cur = await tx.appointment.findFirst({ where: { id, centerId } });
       if (!cur) throw new NotFoundException('Appointment not found');
       if (cur.status !== 'SCHEDULED') throw new ConflictException('Only scheduled appointments can be changed.');
+      if (cur.startsAt <= now) throw new UnprocessableEntityException('Appointments that have started cannot be moved.');
       if (cur.version !== dto.version) throw new ConflictException('This appointment changed since you opened it. Reload to see the latest version.');
       const next = { membershipId: dto.membershipId ?? cur.membershipId, startsAt: dto.startsAt ? new Date(dto.startsAt) : cur.startsAt, endsAt: dto.endsAt ? new Date(dto.endsAt) : cur.endsAt };
       this.checkTimes(next.startsAt, next.endsAt, now);
       await this.assertAssigned(tx, centerId, cur.childId, next.membershipId, cur.service);
       await this.assertFree(tx, { childId: cur.childId, ...next }, id);
-      await tx.appointment.update({ where: { id }, data: { ...next, ...(dto.room !== undefined ? { room: dto.room || null } : {}), version: { increment: 1 } } });
-      await logCenterEvent(tx, centerId, 'appointment.rescheduled', now, { actorUserId, membershipId: next.membershipId, meta: { childId: cur.childId, appointmentId: id, startsAt: next.startsAt.toISOString() } });
+      await tx.appointment.update({ where: { id }, data: { ...next, ...(dto.room !== undefined ? { room: dto.room || null } : {}), isException: !!cur.seriesId, version: { increment: 1 } } });
+      await logCenterEvent(tx, centerId, 'appointment.rescheduled', now, { actorUserId, membershipId: next.membershipId, meta: { childId: cur.childId, appointmentId: id, startsAt: next.startsAt.toISOString(), ...(cur.seriesId ? { seriesId: cur.seriesId } : {}) } });
+      return cur.startsAt;
     });
+    await this.notices.changed([{ id, before }], 'rescheduled');
   }
 
   async setStatus(centerId: string, v: Viewer, id: string, dto: AppointmentStatusDto) {
     const now = this.trial.now();
     if (dto.status !== 'COMPLETED' && !dto.reason) throw new UnprocessableEntityException('Give a reason of at least 3 characters.');
-    await this.prisma.$transaction(async (tx) => {
+    const cancelled = await this.prisma.$transaction(async (tx) => {
       await this.trial.assertWritable(tx, centerId, now);
       const cur = await tx.appointment.findFirst({ where: { id, centerId } });
       if (!cur) throw new NotFoundException('Appointment not found');
       if (!isManager(v) && (cur.membershipId !== v.membershipId || dto.status === 'CANCELLED')) throw new ForbiddenException('Therapists can record attendance only for their own appointments.');
       if (cur.status !== 'SCHEDULED') throw new ConflictException('This appointment is already closed.');
       if (dto.status !== 'CANCELLED' && cur.startsAt > now) throw new UnprocessableEntityException('Attendance can be recorded once the appointment has started.');
-      await tx.appointment.update({ where: { id }, data: { status: dto.status, statusReason: dto.reason ?? null, version: { increment: 1 } } });
+      await tx.appointment.update({ where: { id }, data: { status: dto.status, statusReason: dto.reason ?? null, ...(dto.status === 'CANCELLED' && cur.seriesId ? { isException: true } : {}), version: { increment: 1 } } });
       await logCenterEvent(tx, centerId, `appointment.${dto.status.toLowerCase()}`, now, { actorUserId: v.userId, membershipId: cur.membershipId, meta: { childId: cur.childId, appointmentId: id, ...(dto.reason ? { reason: dto.reason } : {}) } });
+      return dto.status === 'CANCELLED';
     });
+    if (cancelled) await this.notices.changed([{ id }], 'cancelled');
   }
 
   async dashboard(centerId: string, v: Viewer) {
@@ -128,7 +142,7 @@ export class ScheduleService {
     const mine = v.role === 'THERAPIST' ? { membershipId: v.membershipId } : {};
     const children: Prisma.ChildWhereInput = { centerId, status: 'ACTIVE', ...childScope(v) };
     const [today, week, activeChildren, unassigned, noGuardian, therapists, pendingInvites, trial] = await Promise.all([
-      this.prisma.appointment.findMany({ where: { centerId, ...mine, startsAt: { gte: start, lt: end } }, include: { child: true }, orderBy: { startsAt: 'asc' } }),
+      this.prisma.appointment.findMany({ where: { centerId, ...mine, startsAt: { gte: start, lt: end } }, include: { child: true, notices: true }, orderBy: { startsAt: 'asc' } }),
       this.prisma.appointment.count({ where: { centerId, ...mine, status: 'SCHEDULED', startsAt: { gte: now, lt: new Date(start.getTime() + 7 * DAY) } } }),
       this.prisma.child.count({ where: children }),
       this.prisma.child.count({ where: { ...children, assignments: { none: { endedAt: null } } } }),
@@ -149,7 +163,7 @@ export class ScheduleService {
         child: {
           include: {
             assignments: { where: { endedAt: null } },
-            appointments: { where: { status: 'SCHEDULED', startsAt: { gte: now, lt: new Date(now.getTime() + 60 * DAY) } }, orderBy: { startsAt: 'asc' }, take: 20 },
+            appointments: { where: { startsAt: { gte: new Date(now.getTime() - 120 * DAY), lt: new Date(now.getTime() + 60 * DAY) } }, orderBy: { startsAt: 'asc' }, take: 300 },
           },
         },
       },
@@ -160,11 +174,31 @@ export class ScheduleService {
     const center = await this.prisma.center.findUniqueOrThrow({ where: { id: centerId } });
     return {
       center: { name: center.name, timezone: center.timezone },
-      children: links.map((l) => ({
-        id: l.child.id, name: l.child.preferredName ?? l.child.firstName, fullName: `${l.child.firstName} ${l.child.lastName}`, relationship: l.relationship,
-        team: l.child.assignments.map((a) => ({ name: who(a.membershipId)?.user.displayName ?? '', title: who(a.membershipId)?.title ?? null, service: a.service, isLead: a.isLead })),
-        upcoming: l.child.appointments.map((a) => ({ id: a.id, startsAt: a.startsAt, endsAt: a.endsAt, service: a.service, room: a.room, therapist: who(a.membershipId)?.user.displayName ?? '' })),
-      })),
+      children: links.map((l) => {
+        const visit = (a: (typeof l.child.appointments)[number]) => ({
+          id: a.id, startsAt: a.startsAt, endsAt: a.endsAt, service: a.service, room: a.status === 'CANCELLED' ? null : a.room, therapist: who(a.membershipId)?.user.displayName ?? '',
+          status: a.status, changed: a.status === 'SCHEDULED' && a.version > 1, recurring: !!a.seriesId,
+        });
+        const past = l.child.appointments.filter((a) => a.startsAt < now);
+        return {
+          id: l.child.id, name: l.child.preferredName ?? l.child.firstName, fullName: `${l.child.firstName} ${l.child.lastName}`, relationship: l.relationship, remindersEnabled: l.remindersEnabled,
+          team: l.child.assignments.map((a) => ({ name: who(a.membershipId)?.user.displayName ?? '', title: who(a.membershipId)?.title ?? null, service: a.service, isLead: a.isLead })),
+          upcoming: l.child.appointments.filter((a) => a.startsAt >= now && a.status !== 'COMPLETED' && a.status !== 'NO_SHOW').slice(0, 40).map(visit),
+          history: past.reverse().slice(0, 40).map(visit),
+          attendance: { attended: past.filter((a) => a.status === 'COMPLETED').length, noShow: past.filter((a) => a.status === 'NO_SHOW').length, cancelled: past.filter((a) => a.status === 'CANCELLED').length, days: 120 },
+        };
+      }),
     };
+  }
+
+  // A guardian can switch appointment emails on or off for their own link only.
+  async setPreference(centerId: string, v: Viewer, dto: FamilyPreferenceDto) {
+    const now = this.trial.now();
+    await this.prisma.$transaction(async (tx) => {
+      const r = await tx.guardianLink.updateMany({ where: { centerId, childId: dto.childId, userId: v.userId, removedAt: null }, data: { remindersEnabled: dto.reminders } });
+      if (r.count !== 1) throw new NotFoundException('Child not found');
+      await logCenterEvent(tx, centerId, dto.reminders ? 'guardian.reminders_on' : 'guardian.reminders_off', now, { actorUserId: v.userId, meta: { childId: dto.childId } });
+    });
+    return { childId: dto.childId, remindersEnabled: dto.reminders };
   }
 }

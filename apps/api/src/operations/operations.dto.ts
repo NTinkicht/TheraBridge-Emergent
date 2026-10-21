@@ -80,3 +80,57 @@ export class ExtendTrialDto {
   @Type(() => Number) @IsInt() @Min(1) @Max(90) days!: number;
   @trim() @IsString() @MinLength(3) @MaxLength(500) reason!: string;
 }
+
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
+export const THREAD_CATEGORIES = ['scheduling', 'attendance', 'logistics', 'other'] as const;
+
+export class SeriesDto {
+  @IsUUID() childId!: string;
+  @IsUUID() membershipId!: string;
+  @IsIn(SPECIALTIES) service!: string;
+  @IsOptional() @trim() @IsString() @MaxLength(80) room?: string;
+  @Matches(DATE, { message: 'startDate must be YYYY-MM-DD' }) startDate!: string;
+  @Matches(TIME, { message: 'startTime must be HH:MM' }) startTime!: string;
+  @IsInt() @Min(15) @Max(480) durationMinutes!: number;
+  @IsArray() @ArrayMinSize(1) @ArrayMaxSize(7) @IsInt({ each: true }) @Min(1, { each: true }) @Max(7, { each: true }) weekdays!: number[];
+  @IsInt() @Min(1) @Max(4) intervalWeeks!: number;
+  @IsOptional() @Matches(DATE, { message: 'untilDate must be YYYY-MM-DD' }) untilDate?: string;
+  @IsOptional() @IsInt() @Min(1) @Max(60) count?: number;
+  @IsOptional() @IsBoolean() skipConflicts?: boolean;
+}
+
+export class SeriesUpdateDto {
+  @Matches(DATE, { message: 'fromDate must be YYYY-MM-DD' }) fromDate!: string;
+  @IsOptional() @Matches(TIME, { message: 'startTime must be HH:MM' }) startTime?: string;
+  @IsOptional() @IsInt() @Min(15) @Max(480) durationMinutes?: number;
+  @IsOptional() @IsUUID() membershipId?: string;
+  @IsOptional() @trim() @IsString() @MaxLength(80) room?: string;
+  @IsInt() @Min(1) version!: number;
+}
+
+export class SeriesCancelDto {
+  @Matches(DATE, { message: 'fromDate must be YYYY-MM-DD' }) fromDate!: string;
+  @trim() @IsString() @MinLength(3, { message: 'Give a reason of at least 3 characters' }) @MaxLength(500) reason!: string;
+}
+
+export class ThreadDto {
+  @IsUUID() childId!: string;
+  @IsIn(THREAD_CATEGORIES) category!: string;
+  @trim() @IsString() @MinLength(3, { message: 'Give the conversation a subject of at least 3 characters' }) @MaxLength(120) subject!: string;
+  @trim() @IsString() @MinLength(1, { message: 'Write a message' }) @MaxLength(2000) body!: string;
+}
+
+export class MessageDto {
+  @trim() @IsString() @MinLength(1, { message: 'Write a message' }) @MaxLength(2000) body!: string;
+}
+
+export class ThreadListQuery {
+  @IsOptional() @IsIn(['OPEN', 'CLOSED']) status?: 'OPEN' | 'CLOSED';
+  @IsOptional() @IsUUID() childId?: string;
+}
+
+export class FamilyPreferenceDto {
+  @IsUUID() childId!: string;
+  @IsBoolean() reminders!: boolean;
+}

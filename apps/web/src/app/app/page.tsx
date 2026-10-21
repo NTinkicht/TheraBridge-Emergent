@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Building2, ClipboardList, FileCheck2, Inbox, Lock, MessagesSquare, Users, type LucideIcon } from 'lucide-react';
-import { CenterDashboard, FamilyHome } from '@/components/operations/Dashboards';
+import { Building2, ClipboardList, FileCheck2, Inbox, Lock, Users, type LucideIcon } from 'lucide-react';
+import { CenterDashboard } from '@/components/operations/Dashboards';
+import { FamilyHome } from '@/components/operations/FamilyHome';
 import { ProductShell, type PlannedModule } from '@/components/auth/ProductShell';
 import { useSession } from '@/components/auth/useSession';
 import { FormAlert } from '@/components/auth/Field';
@@ -15,7 +16,6 @@ import { ROLE_LABELS, authApi, contextLabel, type SessionInfo } from '@/lib/auth
 const PLATFORM_PLANNED: PlannedModule[] = [];
 const CENTER_PLANNED: PlannedModule[] = [
   { label: 'Therapy plans and session notes', unit: 'the clinical milestone', icon: ClipboardList },
-  { label: 'Messages', unit: 'a later phase', icon: MessagesSquare },
 ];
 
 function SetupBanner({ centerId }: { centerId: string }) {

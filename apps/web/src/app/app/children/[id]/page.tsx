@@ -74,6 +74,7 @@ function CareTeam({ centerId, child, manage, run }: Ctx) {
   const [f, setF] = useState({ membershipId: '', service: child.services[0] ?? '', isLead: true });
   useEffect(() => { if (open) void opsApi.therapists(centerId).then((r) => setTherapists(r.items)).catch(() => setTherapists([])); }, [open, centerId]);
   const active = child.assignments.filter((a) => !a.endedAt);
+  const qualified = therapists.filter((t) => t.specialties.includes(f.service));
   return (
     <Card className="p-5 md:p-6" testId="care-team-card">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -92,8 +93,9 @@ function CareTeam({ centerId, child, manage, run }: Ctx) {
       <Dialog open={open} onClose={() => setOpen(false)} title="Assign a therapist" testId="assign-dialog"
         footer={<><Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button><Button data-testid="assign-save" onClick={() => void (async () => { if (f.membershipId && await run(() => opsApi.assign(centerId, child.id, f), 'Therapist assigned.')) setOpen(false); })()}>Assign</Button></>}>
         <div className="space-y-4">
-          <SelectField label="Therapist" value={f.membershipId} onChange={(membershipId) => setF({ ...f, membershipId })} testId="assign-therapist-select" options={[{ value: '', label: 'Choose a therapist' }, ...therapists.map((t) => ({ value: t.membershipId, label: t.displayName }))]} />
-          <SelectField label="Service" value={f.service} onChange={(service) => setF({ ...f, service })} testId="assign-service-select" options={child.services.map((s) => ({ value: s, label: serviceLabel(s) }))} />
+          <SelectField label="Service" value={f.service} onChange={(service) => setF({ ...f, service, membershipId: '' })} testId="assign-service-select" options={child.services.map((s) => ({ value: s, label: serviceLabel(s) }))} />
+          <SelectField label="Therapist" value={f.membershipId} onChange={(membershipId) => setF({ ...f, membershipId })} testId="assign-therapist-select" options={[{ value: '', label: qualified.length ? 'Choose a therapist' : 'No therapist lists this specialty' }, ...qualified.map((t) => ({ value: t.membershipId, label: t.displayName }))]} />
+          <p className="text-[13px] text-brand-inkMuted">Only active therapists whose profile lists {serviceLabel(f.service).toLowerCase()} are shown.</p>
           <label className="flex items-center gap-2 text-[14px]"><input type="checkbox" className="h-4 w-4 accent-[#0F5692]" checked={f.isLead} onChange={(e) => setF({ ...f, isLead: e.target.checked })} data-testid="assign-lead-checkbox" /> Lead therapist for this service</label>
         </div>
       </Dialog>

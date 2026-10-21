@@ -20,7 +20,7 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     return { res, s: { token: t!, cookie: `tb_session=${t}`, csrf: res.body.csrfToken, body: res.body } as Signed };
   }
   async function staff(email: string, roles: string[]) {
-    await post(h, c('invitations'), admin, { email, displayName: 'Staff Person', roles }).expect(201);
+    await post(h, c('invitations'), admin, { email, displayName: 'Staff Person', roles, ...(roles.includes('THERAPIST') ? { specialties: ['speech'] } : {}) }).expect(201);
     return (await accept(email)).s;
   }
   const child = (over: object = {}) => ({ firstName: 'Mila', lastName: 'Stone', dateOfBirth: '2019-04-02', services: ['speech'], ...over });
@@ -101,7 +101,7 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     expect(therapistView.body.guardians[0]).not.toHaveProperty('email');
     const parent = (await accept('rosa@family.test', 'Rosa Stone')).s;
     expect(parent.body.activeContext).toMatchObject({ role: 'GUARDIAN', centerId });
-    expect(parent.body.permissions).toEqual(['family.portal.read']);
+    expect(parent.body.permissions).toEqual(['family.portal.read', 'family.preferences.update', 'center.messages.use']);
     await get(parent, c('children')).expect(403);
     const detail = await get(coordinator, c(`children/${kid}`)).expect(200);
     expect(detail.body.guardians[0]).toMatchObject({ portalStatus: 'CONNECTED', isPrimary: true });

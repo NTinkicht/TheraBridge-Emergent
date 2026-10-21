@@ -207,6 +207,8 @@ export class ChildrenService {
       if (!child) throw new NotFoundException('Child not found');
       const m = await tx.membership.findFirst({ where: { id: dto.membershipId, centerId, status: 'ACTIVE', roles: { some: { role: 'THERAPIST' } } }, include: { user: true } });
       if (!m) throw new UnprocessableEntityException('Choose an active therapist from this center.');
+      if (!m.specialties.includes(dto.service)) throw new UnprocessableEntityException('This therapist’s profile does not list that specialty. Update their specialties in Team first.');
+      if (!child.services.includes(dto.service)) throw new UnprocessableEntityException('Add this service to the child’s profile before assigning a therapist for it.');
       if (dto.isLead) await tx.careAssignment.updateMany({ where: { childId, service: dto.service, endedAt: null, isLead: true }, data: { isLead: false } });
       const a = await tx.careAssignment.create({ data: { centerId, childId, membershipId: m.id, service: dto.service, isLead: !!dto.isLead, startedAt: now } });
       await logCenterEvent(tx, centerId, 'assignment.started', now, { actorUserId, subjectUserId: m.userId, membershipId: m.id, meta: { childId, service: dto.service } });

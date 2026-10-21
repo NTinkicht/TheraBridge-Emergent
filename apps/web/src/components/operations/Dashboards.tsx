@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 import Link from 'next/link';
-import { Baby, CalendarClock, CalendarDays, HeartHandshake, MapPin, UserX, Users } from 'lucide-react';
+import { Baby, CalendarClock, CalendarDays, UserX, Users } from 'lucide-react';
 import { useLoad } from '@/components/centers/kit';
 import { Card, Meter, Metric, Pill } from '@/components/design/ui';
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
@@ -75,44 +75,3 @@ export function CenterDashboard({ centerId, isTherapist, onError }: { centerId: 
   );
 }
 
-export function FamilyHome({ centerId, onError }: { centerId: string; onError: (e: unknown) => void }) {
-  const fetcher = useCallback(() => opsApi.family(centerId), [centerId]);
-  const { data, failed, reload } = useLoad(fetcher, onError);
-  if (failed) return <ErrorState onRetry={() => void reload()} testId="family-error" />;
-  if (!data) return <Card tone="family" className="p-5"><SkeletonRows rows={3} testId="family-loading" /></Card>;
-  if (!data.children.length) return <div className="theme-family-light rounded-card bg-fam-canvas"><EmptyState tone="family" icon={HeartHandshake} title="No children linked yet" body={`${data.center.name} will connect your child to your account.`} testId="family-empty" /></div>;
-  return (
-    <div className="theme-family-light space-y-6 rounded-card bg-fam-canvas p-4 text-fam-ink md:p-6" data-testid="family-home">
-      {data.children.map((c) => (
-        <Card key={c.id} tone="family" className="p-5 md:p-7" testId={`family-child-${c.id}`}>
-          <h2 className="font-display text-[22px] font-bold">{c.name}</h2>
-          <p className="text-[14px] text-brand-inkMuted">{c.fullName} · {data.center.name}</p>
-          <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <section>
-              <h3 className="text-[15px] font-semibold">Care team</h3>
-              {c.team.length ? (
-                <ul className="mt-2 space-y-2" data-testid={`family-team-${c.id}`}>
-                  {c.team.map((t, i) => <li key={i} className="rounded-control bg-surface-subtle p-3 text-[14px]"><span className="block font-semibold">{t.name}{t.isLead ? ' · lead' : ''}</span>{serviceLabel(t.service)}{t.title ? ` · ${t.title}` : ''}</li>)}
-                </ul>
-              ) : <p className="mt-2 text-[14px] text-brand-inkMuted">Your care team will appear here once assigned.</p>}
-            </section>
-            <section>
-              <h3 className="text-[15px] font-semibold">Coming up</h3>
-              {c.upcoming.length ? (
-                <ul className="mt-2 space-y-2" data-testid={`family-upcoming-${c.id}`}>
-                  {c.upcoming.map((a) => (
-                    <li key={a.id} className="rounded-control border border-border-light p-3 text-[14px]">
-                      <span className="block font-semibold">{dayLabel(a.startsAt)}</span>
-                      <span className="tnum block">{timeRange(a.startsAt, a.endsAt)} · {serviceLabel(a.service)} with {a.therapist}</span>
-                      {a.room && <span className="flex items-center gap-1 text-brand-inkMuted"><MapPin size={13} aria-hidden="true" />{a.room}</span>}
-                    </li>
-                  ))}
-                </ul>
-              ) : <p className="mt-2 text-[14px] text-brand-inkMuted">No visits booked in the next 60 days.</p>}
-            </section>
-          </div>
-        </Card>
-      ))}
-    </div>
-  );
-}

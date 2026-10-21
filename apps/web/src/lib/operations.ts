@@ -3,8 +3,17 @@ import { rest } from './auth';
 export interface Trial { onTrial: boolean; endsAt: string | null; expired: boolean; daysLeft: number | null; therapistSeats: { used: number; limit: number }; children: { used: number; limit: number } }
 export interface Appointment {
   id: string; childId: string; child: string; childFull: string; membershipId: string; therapist: string; service: string;
-  startsAt: string; endsAt: string; room: string | null; status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'; statusReason: string | null; version: number;
+  startsAt: string; endsAt: string; room: string | null; status: ApptStatus; statusReason: string | null; version: number;
+  seriesId: string | null; isException: boolean; reminderSentAt: string | null;
 }
+export type ApptStatus = 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+export interface Series {
+  id: string; childId: string; membershipId: string; service: string; room: string | null; startTime: string; durationMinutes: number; weekdays: number[];
+  intervalWeeks: number; startDate: string; untilDate: string; status: 'ACTIVE' | 'ENDED'; version: number; occurrences: Appointment[];
+}
+export interface SeriesInput { childId: string; membershipId: string; service: string; room?: string; startDate: string; startTime: string; durationMinutes: number; weekdays: number[]; intervalWeeks: number; untilDate?: string; count?: number; skipConflicts?: boolean }
+export interface Clash { date: string; reason: string }
+export interface FamilyVisit { id: string; startsAt: string; endsAt: string; service: string; room: string | null; therapist: string; status: ApptStatus; changed: boolean; recurring: boolean }
 export interface ChildRow { id: string; firstName: string; lastName: string; preferredName: string | null; dateOfBirth: string; services: string[]; status: 'ACTIVE' | 'ARCHIVED'; guardians: number; nextAppointment: string | null; team: { service: string; name: string }[] }
 export interface Guardian { id: string; displayName: string; relationship: string; isPrimary: boolean; portalStatus: 'CONNECTED' | 'NOT_INVITED' | 'PENDING' | 'EXPIRED' | 'REVOKED' | 'ACCEPTED' | 'REPLACED'; email?: string }
 export interface Assignment { id: string; membershipId: string; therapist: string; title: string | null; service: string; isLead: boolean; startedAt: string; endedAt: string | null }
@@ -18,7 +27,10 @@ export interface Therapist { membershipId: string; displayName: string; title: s
 export interface Dashboard { dayStart: string; timezone: string; today: Appointment[]; counts: { activeChildren: number; unassigned: number; noGuardian: number; therapists: number; pendingInvites: number; upcomingWeek: number }; trial: Trial }
 export interface FamilyOverview {
   center: { name: string; timezone: string };
-  children: { id: string; name: string; fullName: string; relationship: string; team: { name: string; title: string | null; service: string; isLead: boolean }[]; upcoming: { id: string; startsAt: string; endsAt: string; service: string; room: string | null; therapist: string }[] }[];
+  children: {
+    id: string; name: string; fullName: string; relationship: string; remindersEnabled: boolean; team: { name: string; title: string | null; service: string; isLead: boolean }[];
+    upcoming: FamilyVisit[]; history: FamilyVisit[]; attendance: { attended: number; noShow: number; cancelled: number; days: number };
+  }[];
 }
 
 export const RELATIONSHIPS = [
@@ -52,6 +64,11 @@ export const opsApi = {
   book: (centerId: string, body: { childId: string; membershipId: string; service: string; startsAt: string; endsAt: string; room?: string }) => rest.send<{ id: string }>('POST', c(centerId, 'appointments'), body),
   reschedule: (centerId: string, id: string, body: { startsAt: string; endsAt: string; version: number; room?: string }) => rest.send('PATCH', c(centerId, `appointments/${id}`), body),
   setStatus: (centerId: string, id: string, status: 'COMPLETED' | 'CANCELLED' | 'NO_SHOW', reason?: string) => rest.send('POST', c(centerId, `appointments/${id}/status`), { status, ...(reason ? { reason } : {}) }),
+  createSeries: (centerId: string, body: SeriesInput) => rest.send<{ id: string; created: number; skipped: Clash[] }>('POST', c(centerId, 'series'), body),
+  series: (centerId: string, id: string) => rest.get<Series>(c(centerId, `series/${id}`)),
+  updateSeries: (centerId: string, id: string, body: { fromDate: string; startTime?: string; durationMinutes?: number; room?: string; version: number }) => rest.send<{ updated: number }>('PATCH', c(centerId, `series/${id}`), body),
+  cancelSeries: (centerId: string, id: string, fromDate: string, reason: string) => rest.send<{ cancelled: number }>('POST', c(centerId, `series/${id}/cancel`), { fromDate, reason }),
+  setReminders: (centerId: string, childId: string, reminders: boolean) => rest.send<{ remindersEnabled: boolean }>('POST', c(centerId, 'family/preferences'), { childId, reminders }),
 };
 
 // All times are shown and entered in the center's time zone (set from API responses), not the browser's.
@@ -60,13 +77,34 @@ export const setCenterTz = (tz: string | undefined) => {
   if (tz) centerTz = tz;
 };
 export const getCenterTz = () => centerTz;
-const offset = (d: Date, tz: string) => new Date(d.toLocaleString('en-US', { timeZone: tz })).getTime() - new Date(d.toLocaleString('en-US', { timeZone: 'UTC' })).getTime();
+const wall = (ms: number, tz?: string) => {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).formatToParts(new Date(ms)).map((x) => [x.type, x.value]));
+  return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute);
+};
+const offset = (ms: number, tz?: string) => wall(Math.floor(ms / 60000) * 60000, tz) - Math.floor(ms / 60000) * 60000;
+// Same rules as the API: repeated times resolve to the later instant, skipped times move forward.
 export function zonedToUtc(date: string, time: string): Date {
   const [y, m, d] = date.split('-').map(Number);
   const [h, mi] = time.split(':').map(Number);
   const guess = Date.UTC(y, m - 1, d, h, mi);
-  return new Date(guess - (centerTz ? offset(new Date(guess), centerTz) : -new Date(guess).getTimezoneOffset() * 60000));
+  const o1 = offset(guess, centerTz);
+  const t1 = guess - o1;
+  const o2 = offset(t1, centerTz);
+  if (o1 === o2) return new Date(t1);
+  const t2 = guess - o2;
+  return new Date(offset(t2, centerTz) === o2 ? t2 : Math.max(t1, t2));
 }
+export const addDays = (day: string, n: number) => {
+  const [y, m, d] = day.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+};
+export const isoWeekday = (day: string) => ((new Date(`${day}T00:00:00Z`).getUTCDay() + 6) % 7) + 1;
+// Minutes since local midnight in the center's zone.
+export const minutesOfDay = (s: string) => {
+  const t = zonedParts(s).time.split(':').map(Number);
+  return t[0] * 60 + t[1];
+};
+export const STATUS_LABEL: Record<ApptStatus, string> = { SCHEDULED: 'Scheduled', COMPLETED: 'Attended', CANCELLED: 'Cancelled', NO_SHOW: 'No-show' };
 export const zonedParts = (s: string) => {
   const d = new Date(s);
   return { date: d.toLocaleDateString('en-CA', { timeZone: centerTz }), time: d.toLocaleTimeString('en-GB', { timeZone: centerTz, hour: '2-digit', minute: '2-digit' }) };

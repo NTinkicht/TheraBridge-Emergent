@@ -13,7 +13,7 @@ export type AuditType =
   | 'center.provisioned' | 'center.updated'
   | 'invitation.created' | 'invitation.resent' | 'invitation.revoked' | 'invitation.replaced' | 'invitation.accepted'
   | 'member.updated' | 'member.suspended' | 'member.reactivated' | 'member.revoked' | 'member.profile_updated'
-  | 'trial.extended' | 'child.registered' | 'appointment.scheduled';
+  | 'trial.extended' | 'child.registered' | 'appointment.scheduled' | 'series.scheduled' | 'message.thread_opened';
 
 interface AuditInput {
   actorUserId?: string | null;

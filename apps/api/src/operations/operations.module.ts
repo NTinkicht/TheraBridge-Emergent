@@ -1,12 +1,16 @@
 import { Module } from '@nestjs/common';
 import { CentersModule } from '../centers/centers.module';
+import { DevMailboxModule } from '../dev-mailbox/dev-mailbox.module';
 import { ChildrenService } from './children.service';
-import { OperationsController, PlatformTrialController } from './operations.controller';
+import { MessagesService } from './messages.service';
+import { NoticesService } from './notices.service';
+import { OperationsController, PlatformRemindersController, PlatformTrialController } from './operations.controller';
 import { ScheduleService } from './schedule.service';
+import { SeriesService } from './series.service';
 
 @Module({
-  imports: [CentersModule],
-  controllers: [OperationsController, PlatformTrialController],
-  providers: [ChildrenService, ScheduleService],
+  imports: [CentersModule, DevMailboxModule],
+  controllers: [OperationsController, PlatformTrialController, PlatformRemindersController],
+  providers: [ChildrenService, ScheduleService, SeriesService, NoticesService, MessagesService],
 })
 export class OperationsModule {}

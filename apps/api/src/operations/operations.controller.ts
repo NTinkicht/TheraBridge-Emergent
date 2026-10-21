@@ -1,8 +1,14 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
 import { RequirePermission, TbRequest } from '../auth/access';
-import { AppointmentDto, AppointmentStatusDto, AssignmentDto, ChildDto, ExtendTrialDto, GuardianDto, ListChildrenQuery, RangeQuery, ReasonDto, RescheduleDto, UpdateChildDto } from './operations.dto';
+import {
+  AppointmentDto, AppointmentStatusDto, AssignmentDto, ChildDto, ExtendTrialDto, FamilyPreferenceDto, GuardianDto, ListChildrenQuery, MessageDto, RangeQuery, ReasonDto, RescheduleDto,
+  SeriesCancelDto, SeriesDto, SeriesUpdateDto, ThreadDto, ThreadListQuery, UpdateChildDto,
+} from './operations.dto';
 import { ChildrenService, Viewer } from './children.service';
+import { MessagesService } from './messages.service';
+import { NoticesService } from './notices.service';
 import { ScheduleService } from './schedule.service';
+import { SeriesService } from './series.service';
 import { TrialService } from './trial.service';
 
 const uuid = () => new ParseUUIDPipe();
@@ -27,10 +33,25 @@ export class PlatformTrialController {
   }
 }
 
+@Controller('platform/reminders')
+export class PlatformRemindersController {
+  constructor(private readonly notices: NoticesService) {}
+
+  @Post('run')
+  @HttpCode(200)
+  @RequirePermission('platform.reminders.run')
+  run() {
+    return this.notices.runDue();
+  }
+}
+
 // Tenant-scoped by :centerId (checked against the active membership); therapist visibility is narrowed in the services.
 @Controller('centers/:centerId')
 export class OperationsController {
-  constructor(private readonly children: ChildrenService, private readonly schedule: ScheduleService, private readonly trial: TrialService) {}
+  constructor(
+    private readonly children: ChildrenService, private readonly schedule: ScheduleService, private readonly trial: TrialService,
+    private readonly series: SeriesService, private readonly messages: MessagesService,
+  ) {}
 
   @Get('trial')
   @RequirePermission('center.summary.read')
@@ -157,5 +178,75 @@ export class OperationsController {
   @RequirePermission('family.portal.read')
   family(@Param('centerId', uuid()) centerId: string, @Req() req: TbRequest) {
     return this.schedule.family(centerId, viewer(req));
+  }
+
+  @Post('family/preferences')
+  @HttpCode(200)
+  @RequirePermission('family.preferences.update')
+  preference(@Param('centerId', uuid()) centerId: string, @Body() dto: FamilyPreferenceDto, @Req() req: TbRequest) {
+    return this.schedule.setPreference(centerId, viewer(req), dto);
+  }
+
+  @Post('series')
+  @RequirePermission('center.schedule.manage')
+  createSeries(@Param('centerId', uuid()) centerId: string, @Body() dto: SeriesDto, @Req() req: TbRequest) {
+    return this.series.create(centerId, actor(req), dto);
+  }
+
+  @Get('series/:seriesId')
+  @RequirePermission('center.schedule.read')
+  seriesDetail(@Param('centerId', uuid()) centerId: string, @Param('seriesId', uuid()) id: string, @Req() req: TbRequest) {
+    return this.series.detail(centerId, viewer(req), id);
+  }
+
+  @Patch('series/:seriesId')
+  @RequirePermission('center.schedule.manage')
+  updateSeries(@Param('centerId', uuid()) centerId: string, @Param('seriesId', uuid()) id: string, @Body() dto: SeriesUpdateDto, @Req() req: TbRequest) {
+    return this.series.update(centerId, actor(req), id, dto);
+  }
+
+  @Post('series/:seriesId/cancel')
+  @HttpCode(200)
+  @RequirePermission('center.schedule.manage')
+  cancelSeries(@Param('centerId', uuid()) centerId: string, @Param('seriesId', uuid()) id: string, @Body() dto: SeriesCancelDto, @Req() req: TbRequest) {
+    return this.series.cancel(centerId, actor(req), id, dto);
+  }
+
+  @Get('threads')
+  @RequirePermission('center.messages.use')
+  threads(@Param('centerId', uuid()) centerId: string, @Query() q: ThreadListQuery, @Req() req: TbRequest) {
+    return this.messages.list(centerId, viewer(req), q);
+  }
+
+  @Post('threads')
+  @RequirePermission('center.messages.use')
+  openThread(@Param('centerId', uuid()) centerId: string, @Body() dto: ThreadDto, @Req() req: TbRequest) {
+    return this.messages.create(centerId, viewer(req), dto);
+  }
+
+  @Get('threads/:threadId')
+  @RequirePermission('center.messages.use')
+  thread(@Param('centerId', uuid()) centerId: string, @Param('threadId', uuid()) id: string, @Req() req: TbRequest) {
+    return this.messages.detail(centerId, viewer(req), id);
+  }
+
+  @Post('threads/:threadId/messages')
+  @RequirePermission('center.messages.use')
+  reply(@Param('centerId', uuid()) centerId: string, @Param('threadId', uuid()) id: string, @Body() dto: MessageDto, @Req() req: TbRequest) {
+    return this.messages.reply(centerId, viewer(req), id, dto);
+  }
+
+  @Post('threads/:threadId/close')
+  @HttpCode(200)
+  @RequirePermission('center.messages.manage')
+  closeThread(@Param('centerId', uuid()) centerId: string, @Param('threadId', uuid()) id: string, @Req() req: TbRequest) {
+    return this.messages.setStatus(centerId, viewer(req), id, 'CLOSED');
+  }
+
+  @Post('threads/:threadId/reopen')
+  @HttpCode(200)
+  @RequirePermission('center.messages.manage')
+  reopenThread(@Param('centerId', uuid()) centerId: string, @Param('threadId', uuid()) id: string, @Req() req: TbRequest) {
+    return this.messages.setStatus(centerId, viewer(req), id, 'OPEN');
   }
 }
