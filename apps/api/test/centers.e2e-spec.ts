@@ -43,7 +43,8 @@ describe('TB-EM-003/004 center provisioning and staff onboarding (real PostgreSQ
   }
   async function inviteAndJoin(centerId: string, admin: Signed, email: string, roles: string[], extra: object = {}) {
     const inv = await post(h, `/api/centers/${centerId}/invitations`, admin, { email, displayName: 'Staff Person', roles, ...extra }).expect(201);
-    const { s } = await acceptNew(lastToken(email)!, 'Staff Person');
+    const { s, res } = await acceptNew(lastToken(email)!, 'Staff Person');
+    if (!s) throw new Error(`accept failed ${res.status} ${JSON.stringify(res.body)}`);
     return { invitationId: inv.body.id as string, s: s!, membershipId: s!.body.activeContext.membershipId as string };
   }
 
