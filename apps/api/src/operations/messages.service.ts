@@ -154,6 +154,15 @@ export class MessagesService {
     const now = this.trial.now();
     await this.prisma.$transaction(async (tx) => {
       await this.trial.assertWritable(tx, centerId, now);
+      // Serialize specialty revocation against an in-flight reply, as clinical.write does.
+      // Re-check the exact live assignment after acquiring row locks; a revoked assignment
+      // must not grant a reply while another transaction is ending it.
+      if (v.role === 'THERAPIST') {
+        const target = await tx.messageThread.findFirst({ where: { id, centerId }, select: { childId: true } });
+        if (!target) throw new NotFoundException('Conversation not found');
+        await tx.$queryRaw`SELECT id FROM child WHERE id=${target.childId}::uuid AND center_id=${centerId}::uuid FOR SHARE`;
+        await tx.$queryRaw`SELECT id FROM care_assignment WHERE center_id=${centerId}::uuid AND child_id=${target.childId}::uuid AND membership_id=${v.membershipId}::uuid AND ended_at IS NULL FOR SHARE`;
+      }
       const scope = await this.scope(tx, centerId, v);
       const t = await tx.messageThread.findFirst({ where: { id, ...scope } });
       if (!t) throw new NotFoundException('Conversation not found');
