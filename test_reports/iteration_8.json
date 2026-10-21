@@ -1,0 +1,43 @@
+{
+  "summary": "TB-EM-002 Center Applications tested on the public preview URL. API: 10 of 11 pytest checks pass. They cover: 403 without the pre-auth token, 400 for an extra 'status' field, 201 for a valid body, 409 for a case-insensitive duplicate email, 401 for anonymous users, 403 for a center admin, start-review, a stale version returning 409, short rationale 400, approve leaving the centers count unchanged with AWAITING_PROVISIONING, CSRF 403 on decision, 404 for an unknown id and 400 for a bad uuid. One bug: a rationale padded with whitespace returns 500. Frontend: every requested flow passes. Checked: the login-apply-link, the empty-submit validation summary with all 10 field errors, client-side blocks (invalid email, therapists 0 and 501, no specialty, no acknowledgement) with no network call, success with an APP-XXXXXX reference, the duplicate-email apply-error, the platform home metrics and metric-pending-link to ?status=OPEN, tab counts, search by email, name and lowercase reference, the empty state, start review, the 'Choose approve or reject.' and short-rationale blocks, approve, decision-record (decidedBy, rationale, 3 history entries, persists after reload), provisioning-pending with a disabled provision-center-button, the Centers metric staying at 2, the two-tab concurrency conflict message, and center admin access (no nav-applications, applications-forbidden, the detail URL redirects to /access-denied). Responsive: no horizontal overflow at 320, 390, 768, 1024 and 1440 on /apply, the list, an approved detail and a submitted detail.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/platform/applications/:id/decision", "issue": "500 Internal Server Error when the rationale is at least 10 characters but under 10 after trimming, e.g. 'no          '. DecisionDto @MinLength(10) checks the untrimmed string. The service then trims it to 'no' and the DB CHECK center_application_decision_complete (length(trim(rationale)) >= 10) fails inside the transaction. The UI blocks this because it validates the trimmed value, but the API should return 400. Fix: add @Transform(({value}) => typeof value === 'string' ? value.trim() : value) before @MinLength in DecisionDto, or check the trimmed length in decide() and throw BadRequestException. Repro: test_whitespace_padded_rationale_not_500.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/center-applications", "issue": "limits.hit() runs before the insert, so a duplicate-email 409 or a DB failure still uses one of the 5 hourly submissions per network. Consider counting only successful submissions, or accept this as anti-enumeration behaviour and document it."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "/app/applications list loading", "issue": "load() has no stale-response guard (no AbortController or request id). On first mount it fetches with the default 'OPEN' status, and the URL ?status= effect then triggers a second fetch. Fast tab or search changes can therefore show an older response under the wrong tab. Not seen in testing, but it is a code-level race.", "affected_selectors": ["[data-testid=applications-list]", "[data-testid^=applications-tab-]"]}
+    ],
+    "design_issues": [
+      {"screen": "/app/applications/<id> below 640px", "issues": ["application-status pill stretches to full width because the header uses flex-col without items-start (visible at 320 and 390). Add self-start or items-start."]},
+      {"screen": "/apply", "issues": ["The duplicate-email conflict reads 'We couldn’t send your application yet — An application with this contact email is already being reviewed…'. The 'yet —' prefix implies a retry will work. Show the 409 message on its own.", "After a failed client-side validation, focus and scroll stay at the submit button. The apply-validation-summary is at the top of a long form and off-screen. Focus the summary or the first invalid field (accessibility)."]}
+    ]
+  },
+  "test_report_links": ["/app/tests/test_tb_em_002_applications_api.py", "/app/tests/tb_em_002_seed_apps.py", "/app/test_reports/pytest/tb_em_002_api.xml"],
+  "action_items": [
+    "HIGH: Trim the rationale before validation in DecisionDto, or reject trimmed length < 10 with 400, so that whitespace-padded rationales no longer cause 500",
+    "LOW: Add self-start to the detail-page StatusPill on mobile",
+    "LOW: Show the 409 conflict text on /apply without the 'We couldn’t send your application yet —' prefix",
+    "LOW: Focus the validation summary or first invalid field on /apply after a failed submit",
+    "LOW: Guard the applications list fetch against out-of-order responses"
+  ],
+  "critical_code_review_comments": [
+    "applications.dto.ts DecisionDto: the MinLength check runs before the service trims the value, which mismatches the DB CHECK and causes a 500 (confirmed)",
+    "applications.service.ts submit: the rate-limit hit is recorded before the conflict check (minor)",
+    "applications.service.ts transition: 'current' is read outside the transaction. This is safe because updateMany is guarded by version and status, but reading inside tx would be cleaner.",
+    "Verified: OK. The migration has a partial unique index (one open application per email), a decision CHECK and an append-only trigger. The detail response leaves out contactEmailNorm. Approve does not create a center."
+  ],
+  "updated_files": ["/app/tests/test_tb_em_002_applications_api.py", "/app/tests/tb_em_002_seed_apps.py"],
+  "success_rate": {"backend": "91% (10/11)", "frontend": "100% of requested flows"},
+  "seed_data_creation": "Created 8 TEST_ applications (emails at apitest/uitest.therabridge.test): APP-JQH3HK, APP-XMJ3AJ, APP-JWLDJF, APP-W9RNC7 (SUBMITTED); APP-9MWVTV, APP-JVH644 (APPROVED); APP-YEC2SM, APP-FBU7Z5 (REJECTED). They cannot be deleted through normal paths because application_event is append-only with FK RESTRICT. rate_limit_counter and auth_lockout were truncated after the tests. No passwords were changed.",
+  "test_credentials": "Read from /app/.workspace/local-credentials/synthetic-accounts.json (platform.ops@therabridge.test, admin@harbor.therabridge.test). Not copied anywhere.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/tests && python -m pytest test_tb_em_002_applications_api.py -p no:cacheprovider. Truncate rate_limit_counter first, because each run makes about 6 submissions. After the fix, test_whitespace_padded_rationale_not_500 should pass. Use tb_em_002_seed_apps.py N to create SUBMITTED applications for UI tests. The UI flows all passed, so only a quick regression run is needed.",
+  "rca of the issue": "Repro: as platform admin, POST /api/platform/applications/<submitted id>/decision {decision:'REJECTED', rationale:'no          ', version:1} with CSRF → 500. Cause: class-validator checks the raw 12-character string. ApplicationsService.decide trims it to 'no' and writes decision_rationale='no'. Postgres CHECK center_application_decision_complete fails, and Prisma throws an unhandled error that becomes 500. Fix: normalise (trim) in the DTO through class-transformer @Transform, or validate the trimmed value in the service."
+}
