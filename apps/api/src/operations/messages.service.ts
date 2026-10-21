@@ -143,7 +143,7 @@ export class MessagesService {
     const users = await this.prisma.user.findMany({ where: { id: { in: uniq(t.messages.map((m) => m.authorUserId)) } }, select: { id: true, displayName: true } });
     await this.markRead(this.prisma, t.id, v.userId, now);
     return {
-      id: t.id, childId: t.childId, child: `${t.child.preferredName ?? t.child.firstName} ${t.child.lastName}`, subject: t.subject, category: t.category, status: t.status, createdAt: t.createdAt, closedAt: t.closedAt,
+      id: t.id, childId: t.childId, audience: t.audience, service: t.service, child: `${t.child.preferredName ?? t.child.firstName} ${t.child.lastName}`, subject: t.subject, category: t.category, status: t.status, createdAt: t.createdAt, closedAt: t.closedAt,
       canManage: isManager(v), recipient: t.guardianLink?.displayName ?? null, demo: true,
       messages: t.messages.map((m) => ({ id: m.id, body: m.body, authorKind: m.authorKind, author: users.find((u) => u.id === m.authorUserId)?.displayName ?? 'Former member', mine: m.authorUserId === v.userId, createdAt: m.createdAt })),
     };
