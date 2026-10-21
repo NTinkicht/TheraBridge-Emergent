@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Inbox, Search } from 'lucide-react';
 import { ProductShell } from '@/components/auth/ProductShell';
@@ -28,24 +28,30 @@ function countFor(key: string, c: ApplicationList['counts']) {
 }
 
 function ApplicationsList({ onError }: { onError: (e: unknown) => void }) {
-  const [status, setStatus] = useState<string>('OPEN');
+  const [status, setStatus] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const [data, setData] = useState<ApplicationList | null>(null);
   const [failed, setFailed] = useState(false);
+  const latest = useRef(0);
 
   useEffect(() => {
     const s = new URLSearchParams(window.location.search).get('status');
-    if (s !== null && TABS.some((t) => t.key === s)) setStatus(s);
+    setStatus(s !== null && TABS.some((t) => t.key === s) ? s : 'OPEN');
   }, []);
 
+  // Only the most recent request may update the list, so fast tab or search changes never show stale rows.
   const load = useCallback(async () => {
+    if (status === null) return;
+    const id = ++latest.current;
     setData(null);
     setFailed(false);
     try {
-      setData(await authApi.listApplications({ status: status || undefined, q: q || undefined, page }));
+      const result = await authApi.listApplications({ status: status || undefined, q: q || undefined, page });
+      if (id === latest.current) setData(result);
     } catch (e) {
+      if (id !== latest.current) return;
       try {
         onError(e);
       } catch {

@@ -174,3 +174,17 @@ Environment: Emergent workspace, PostgreSQL 15.19, `therabridge_test` database. 
 - AC-21: TESTED: PASS through the testing agent at 320–1440px, plus developer checks after the fixes.
 - AC-22: pending CI after export.
 
+
+## TB-EM-002 center applications (2026-10-21)
+
+| Check | Result |
+|---|---|
+| `tsc --noEmit` (api, web), `next build` | TESTED: PASS |
+| `jest --runInBand` (adds `applications.e2e-spec.ts`, 22 cases) | **TESTED: PASS, 167/167** |
+| Migration `20261021150000_tb_em_002_center_applications` | One open application per email (partial unique index); a decision requires a decider and a 10+ character trimmed rationale (CHECK); estimate ranges (CHECK); `application_event` append-only (trigger). TESTED: PASS |
+| Independent testing agent (`test_reports/iteration_8.json`) | Frontend: every requested flow passes. API 10/11; the failure was a 500 for a whitespace-padded rationale |
+| Fixes after iteration 8 | The rationale is trimmed before validation (400, regression test added). The status pill no longer stretches on mobile. The 409 duplicate message is shown on its own. A failed submit focuses the validation summary. The applications list ignores out-of-order responses. Checked by the developer (typecheck, 167/167, preview screenshot); no independent re-test yet |
+| Preview end-to-end | Apply, pending metric, list, start review, approve, "Awaiting center provisioning"; no center created |
+| Test data cleanup | The testing agent's TEST_ applications and the smoke application were removed from the preview database |
+| CI on the TB-EM-002 SHA | **NOT RUN** until export |
+

@@ -6,7 +6,7 @@ Updated: 2026-10-20 (UTC)
 
 | Field | Value |
 |---|---|
-| Work unit | TB-EM-001 checkpoints 0 (ACCEPTED, CI run 39538891912 green), **A, B and C IMPLEMENTED** (local commits `fe61fe1`, `43a6921`, `1a2af51` plus fixes). Export and CI **PENDING** |
+| Work unit | **TB-EM-002 center applications IMPLEMENTED** (2026-10-21; export and CI pending). TB-EM-001 accepted (133 tests, secret scan). Approval is kept separate from provisioning (TB-EM-003). Previous: TB-EM-001 checkpoints 0 (ACCEPTED, CI run 39538891912 green), **A, B and C IMPLEMENTED** (local commits `fe61fe1`, `43a6921`, `1a2af51` plus fixes). Export and CI **PENDING** |
 | Last verified export | `66254a1` on `phase-1-center-foundation`. It matched local history (checked via the GitHub API). GitHub Actions run `39474586243`: `test` **TESTED: PASS**, `compose` **TESTED: PASS** |
 | Checkpoint 0 export SHA | `217c94ac87b2`. GitHub Actions run `39538224035`: `test` **TESTED: PASS**, `compose` **TESTED: PASS** (verified via the public GitHub API). The independent review found the secret-scan step missing |
 | Checkpoint 0 correction (secret scan) | IMPLEMENTED locally. Export SHA **PENDING: owner exports and reports it**. CI `secret-scan` job **NOT RUN** until export. Status **UNEXPORTED / AT RISK** until then |

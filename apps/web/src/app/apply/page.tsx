@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { CheckCircle2 } from 'lucide-react';
 import { AuthLayout } from '@/components/auth/AuthLayout';
@@ -49,6 +49,7 @@ export default function ApplyPage() {
   const [failure, setFailure] = useState<string | null>(null);
   const [done, setDone] = useState<{ reference: string } | null>(null);
   const set = (k: keyof Form) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
+  const summaryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -60,7 +61,10 @@ export default function ApplyPage() {
     const found = validate(f, specialties, ack);
     setErrors(found);
     setFailure(null);
-    if (Object.keys(found).length) return;
+    if (Object.keys(found).length) {
+      requestAnimationFrame(() => summaryRef.current?.focus());
+      return;
+    }
     setBusy(true);
     try {
       const r = await authApi.submitApplication({
@@ -71,7 +75,8 @@ export default function ApplyPage() {
       });
       setDone({ reference: r.reference });
     } catch (err) {
-      setFailure(err instanceof ApiError && err.status === 400 ? 'Some details were not accepted. Check the fields and try again.' : `We couldn’t send your application yet — ${(err as Error).message}`);
+      setFailure(err instanceof ApiError && (err.status === 409 || err.status === 429) ? err.message : err instanceof ApiError && err.status === 400 ? 'Some details were not accepted. Check the fields and try again.' : `We couldn’t send your application yet — ${(err as Error).message}`);
+      requestAnimationFrame(() => summaryRef.current?.focus());
     } finally {
       setBusy(false);
     }
@@ -98,8 +103,10 @@ export default function ApplyPage() {
   return (
     <AuthLayout title="Apply for your center" subtitle="Tell us about your therapy center. Applications are reviewed before any center is created." testId="apply-page" wide>
       <form onSubmit={submit} noValidate className="space-y-5" data-testid="apply-form">
-        {failure && <FormAlert tone="danger" testId="apply-error">{failure}</FormAlert>}
-        {Object.keys(errors).length > 0 && <FormAlert tone="danger" testId="apply-validation-summary">Please fix the highlighted fields.</FormAlert>}
+        <div ref={summaryRef} tabIndex={-1} className="space-y-3 outline-none empty:hidden">
+          {failure && <FormAlert tone="danger" testId="apply-error">{failure}</FormAlert>}
+          {Object.keys(errors).length > 0 && <FormAlert tone="danger" testId="apply-validation-summary">Please fix the highlighted fields.</FormAlert>}
+        </div>
         <Section title="Your center">
           <Field label="Center name" value={f.organizationName} onChange={set('organizationName')} error={errors.organizationName} maxLength={160} testId="apply-org-input" />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

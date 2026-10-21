@@ -11,3 +11,8 @@ Emergent cannot create GitHub issues. Please file each one, or let a reviewer do
 | N5 | Low | Fixed one-minute buckets make the 15-minute window approximate | `rate-limit.store.ts` | Acceptable. Switch to a sliding log, or a Redis store behind `RateLimitStore` |
 | N6 | Low | `audit_event` is append-only only in application code | No DB trigger | Phase 5: add a DB trigger or privilege separation (already planned) |
 | N7 | Info | The testing agent added `tests/test_therabridge_auth_api.py` (pytest against the preview) | Root `tests/` folder | Keep it as an external smoke test, or move it under `apps/api/test/` |
+| N8 | Low | Application submissions count against the per-network limit even when they fail (409 duplicate) | Submit 5 duplicates, then a valid application returns 429 | Kept deliberately (limits email probing). Document it, or count only successful submissions |
+| N9 | Low | The applications status tabs scroll sideways at 390px without an edge cue | `/app/applications` on mobile | Reuse the design-preview `ScrollStrip` (chevrons and fade) |
+| N10 | Low | Applicants do not get an email with the decision | No email provider is connected | Use the NotificationOutbox when email delivery is approved |
+| N11 | Info | Testing-agent pytest files were added under `/tests` (`test_tb_em_002_applications_api.py`, `tb_em_002_seed_apps.py`) | Root `tests/` folder | Keep them as external smoke tests, or move them under `apps/api/test/` |
+

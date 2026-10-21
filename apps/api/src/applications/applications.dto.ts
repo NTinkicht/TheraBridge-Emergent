@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize, ArrayMinSize, Equals, IsArray, IsBoolean, IsEmail, IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength,
 } from 'class-validator';
@@ -26,6 +26,7 @@ export class StartReviewDto {
 
 export class DecisionDto {
   @IsIn(['APPROVED', 'REJECTED']) decision!: 'APPROVED' | 'REJECTED';
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString() @MinLength(10, { message: 'Explain the decision in at least 10 characters' }) @MaxLength(2000) rationale!: string;
   @IsInt() @Min(1) version!: number;
 }

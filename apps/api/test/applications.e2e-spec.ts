@@ -151,6 +151,7 @@ describe('TB-EM-002: center applications and platform review (real PostgreSQL)',
       await submit(valid()).expect(201);
       const id = await firstId();
       await post(h, `/api/platform/applications/${id}/decision`, admin, { decision: 'APPROVED', rationale: 'ok', version: 1 }).expect(400);
+      await post(h, `/api/platform/applications/${id}/decision`, admin, { decision: 'APPROVED', rationale: 'no            ', version: 1 }).expect(400);
       await post(h, `/api/platform/applications/${id}/decision`, admin, { decision: 'PROVISIONED', rationale: 'Trying a sneaky status', version: 1 }).expect(400);
       await post(h, `/api/platform/applications/${id}/decision`, admin, { decision: 'APPROVED', rationale: 'Fine fine fine', version: 1, decidedById: 'x' }).expect(400);
     });

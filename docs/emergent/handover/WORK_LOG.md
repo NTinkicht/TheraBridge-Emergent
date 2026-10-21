@@ -21,6 +21,28 @@
 
 **Mocked/disabled:** nothing mocked. No auth, no tenants, no mailbox endpoint (TB-EM-001, PLANNED).
 
+## TB-EM-002 center applications (2026-10-21)
+
+**Owner:** TB-EM-001 accepted. Non-blockers filed as #5–#11. The Docker smoke fix is PR #12 (handled on GitHub).
+
+**API**
+- `POST /api/center-applications`: public, pre-auth CSRF, strict validation, 5 per network per hour, one open application per email.
+- Platform list, search and detail.
+- `start-review` and `decision`, with optimistic concurrency (`version`), a required rationale, an append-only `application_event` and audit events.
+- Permissions `platform.applications.read` and `platform.applications.decide` (PLATFORM_ADMIN only).
+- Approval creates no center; it is marked AWAITING_PROVISIONING for TB-EM-003.
+
+**Web**
+- `/apply`.
+- `/app/applications`: tabs with counts, search, pagination, loading, empty and error states.
+- `/app/applications/[id]`: details, decision panel, history, disabled "Provision center".
+- Pending-applications metric on the platform home.
+
+**Tests:** 167/167 API tests; testing agent iteration 8; fixes applied afterwards.
+
+**Open items:** N8–N11.
+
+
 ## TB-EM-001 checkpoints A, B, C (2026-10-21)
 
 **Owner decision:** checkpoint 0 ACCEPTED (run 39538891912). A, B and C authorized under the continuous-delivery policy.

@@ -1,23 +1,24 @@
 # NEXT_WORK
 
-## Immediate (owner): export TB-EM-001 (checkpoints A, B and C)
+## Immediate (owner): export TB-EM-002
 
-1. Save to GitHub → `NTinkicht/TheraBridge-Emergent` → the **existing** branch `phase-1-center-foundation`. This is a fast-forward from the accepted checkpoint 0 history.
-   - Never choose Force Push.
-   - If force is offered, save to `phase-1-center-foundation-tb-em-001` instead.
-2. CI must show `secret-scan`, `test` and `compose` all green.
-   - `test` runs 133 API tests against PostgreSQL 16.
-   - `compose` boots the stack with `.env.example` values and checks that the latest migration is `tb_em_001_tenancy_roles`.
-3. File the non-blocking issues from `docs/emergent/qa/OPEN_ISSUES.md` (N1–N7) on GitHub.
+1. Save to GitHub on the existing branch `phase-1-center-foundation`. Never choose Force Push. If force is offered, save to `phase-1-center-foundation-tb-em-002` instead.
+2. CI: `secret-scan`, `test` (167 API tests) and `compose` should be green. The Docker smoke-test mismatch is handled in PR #12 on GitHub.
+   - The compose step still checks for the `tb_em_001_tenancy_roles` migration name. PR #12 or a follow-up should accept the newer `tb_em_002_center_applications`.
+3. File N8–N11 from `docs/emergent/qa/OPEN_ISSUES.md` on GitHub.
 
-## Next work unit: TB-EM-002 center applications (scope per blueprint; confirm authorization before starting)
+## Next work unit: TB-EM-003 center provisioning (blueprint Phase 1)
 
-- Must build on the session, CSRF and `@RequirePermission` patterns. Every new route must declare its access, or boot fails.
-- Add new permissions to `apps/api/src/auth/policy.ts` and `docs/emergent/security/PERMISSIONS_MATRIX.md` together; a test enforces that they match.
-- Public application submission needs `@Public({ preAuth: true })` plus its own rate limit through `RateLimitStore`.
+- Approved applications (`provisioning.status = AWAITING_PROVISIONING`) become centers:
+  - unique slug, time zone and plan;
+  - created in one transaction with an application event `provisioned` and an audit event.
+- Direct provisioning by platform operators without an application.
+- Requires new permissions `platform.centers.create` and `platform.centers.read` in `policy.ts`, `PERMISSIONS_MATRIX.md` and the matrix test.
+- Replace the disabled "Provision center" button on `/app/applications/[id]`.
+- The first administrator invitation stays in TB-EM-004.
 
 ## Operational notes
 
 - After a workspace restore, run `scripts/workspace/ensure-postgres.sh`, then `cd apps/api && yarn -s prisma migrate deploy && yarn -s seed:synthetic`.
-- Preview `apps/api/.env` holds `DEPLOYMENT_ENV=preview`, `COOKIE_SECURE=true` and a workspace-only `AUTH_SECRET`. It is gitignored and never exported.
+- To clean up test applications, temporarily disable the `application_event_no_update` trigger inside a transaction. This is for synthetic preview data only.
 - The real owner account must never be created in Emergent.

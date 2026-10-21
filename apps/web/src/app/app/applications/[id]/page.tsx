@@ -137,7 +137,7 @@ function Detail({ id, canDecide, onError }: { id: string; canDecide: boolean; on
   return (
     <div className="space-y-6">
       <Link href="/app/applications" className="inline-flex items-center gap-1 text-[14px] font-medium text-brand-action hover:underline" data-testid="back-to-applications"><ArrowLeft size={16} aria-hidden="true" /> All applications</Link>
-      <div className="tb-rise flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="tb-rise flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
         <div className="min-w-0">
           <h1 className="break-words font-display text-[28px] font-bold leading-tight md:text-[32px]" data-testid="application-title">{app.organizationName}</h1>
           <p className="mt-1 text-[14px] text-brand-inkMuted"><span className="tnum font-mono" data-testid="application-reference">{app.reference}</span> · Submitted <span className="tnum">{formatDate(app.submittedAt)}</span></p>
