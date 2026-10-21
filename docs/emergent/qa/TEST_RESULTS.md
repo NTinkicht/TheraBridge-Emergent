@@ -222,3 +222,7 @@ Environment: Emergent workspace, PostgreSQL 15.19, `therabridge_test` database. 
 | `jest --runInBand` (adds `parent-scheduling.e2e-spec.ts`; route and permission-matrix guards updated) | **TESTED: PASS, 329/329** |
 | Testing agent iteration 13 (frontend, public URL, incl. a Tokyo-time-zone browser across a DST change) | About 93%. 1 HIGH fixed by the tester (`lib/auth.ts` dropped structured error details, so the clash list never showed). 1 MEDIUM fixed afterwards (series edit prefilled from the series rule). Minor fixes: wording, move-dialog flash, ↻ marker on short blocks, pluralisation, 30 s message refresh. Retest of these follow-ups: developer only |
 | CI on this SHA | **NOT RUN** until export |
+
+## TB-EM-011 — synthetic governance foundations (2026-10-21)
+
+Complete PostgreSQL 16.15 API suite: **441/441 PASS, 11/11 suites**, no skips. API/web typechecks and both production builds PASS. Playwright: **28 checks PASS**, 25 five-width screenshots, no document horizontal overflow, zero page errors. Export/history Gitleaks scans PASS. Docker socket access denied: container checks await GitHub CI. Canonical private specifications unavailable; all named clinical policy gates remain unresolved. Full evidence and limitations: `artifacts/tb-em-011/VALIDATION.md`; requirements/permission/transition traceability: `../workunits/TB-EM-011.md`. Independent review pending; no deployment or clinical activation.

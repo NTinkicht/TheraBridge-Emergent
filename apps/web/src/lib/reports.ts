@@ -17,14 +17,14 @@ export interface Dashboard {
   summary: { goals: number; recorded: number; insufficient: number; none: number };
 }
 export interface ReviewNote { byName: string; at: string; comment: string; kind: 'comment' | 'returned' }
-export interface ReportRow { id: string; title: string; service: string; periodStart: string; periodEnd: string; status: 'DRAFT' | 'IN_REVIEW'; versions: number; author: string; mine: boolean; updatedAt: string }
+export interface ReportRow { id: string; title: string; service: string; periodStart: string; periodEnd: string; status: 'DRAFT' | 'IN_REVIEW' | 'RETURNED_FOR_REVISION' | 'WITHDRAWN' | 'FROZEN_INTERNAL'; versions: number; author: string; mine: boolean; updatedAt: string }
 export interface ReportDetail {
   synthetic: true; locked: string; released: false; canEdit: boolean; canReview: boolean; evidence: Evidence;
-  report: { id: string; childId: string; childName: string; title: string; service: string; periodStart: string; periodEnd: string; status: 'DRAFT' | 'IN_REVIEW'; sections: Record<string, string>; reviewNotes: ReviewNote[]; version: number; author: string; mine: boolean; updatedAt: string };
+  report: { id: string; childId: string; childName: string; title: string; service: string; periodStart: string; periodEnd: string; status: 'DRAFT' | 'IN_REVIEW' | 'RETURNED_FOR_REVISION' | 'WITHDRAWN' | 'FROZEN_INTERNAL'; sections: Record<string, string>; reviewNotes: ReviewNote[]; version: number; author: string; mine: boolean; updatedAt: string };
   versions: { id: string; number: number; kind: 'CREATED' | 'SAVED' | 'SUBMITTED'; author: string; createdAt: string }[];
 }
 export interface ReportVersion { id: string; number: number; kind: string; sections: Record<string, string>; evidence: Evidence; author: string; createdAt: string }
-export interface FamilyProgress { childName: string; service: string; period: { from: string; to: string }; message: string; goals: { title: string; measure: string; baseline: number; target: number; status: GoalStatus; points: Point[] }[]; sample?: boolean; preview?: boolean; released: false }
+export interface FamilyProgress { snapshotId?: string; fingerprint?: string; notice?: string; childName: string; service: string; period: { from: string; to: string }; message: string; goals: { title: string; measure: string; baseline: number; target: number; status: GoalStatus; points: Point[] }[]; sample?: boolean; preview?: boolean; released: false }
 
 export const SECTIONS = [
   ['summary', 'Clinician summary', 'Your own interpretation. Required before review.'],
@@ -46,8 +46,8 @@ export const reportsApi = {
   autosave: (centerId: string, id: string, sections: Record<string, string>, version: number) => rest.send<{ version: number; savedAt: string }>('PATCH', c(centerId, `clinical/reports/${id}`), { sections, version }),
   saveVersion: (centerId: string, id: string, version: number) => rest.send<{ number: number; version: number }>('POST', c(centerId, `clinical/reports/${id}/versions`), { version }),
   submit: (centerId: string, id: string, version: number) => rest.send<{ number: number; version: number }>('POST', c(centerId, `clinical/reports/${id}/submit`), { version }),
-  comment: (centerId: string, id: string, comment: string) => rest.send('POST', c(centerId, `clinical/reports/${id}/comments`), { comment }),
-  giveBack: (centerId: string, id: string, comment: string) => rest.send('POST', c(centerId, `clinical/reports/${id}/return`), { comment }),
+  comment: (centerId: string, id: string, comment: string, version: number) => rest.send('POST', c(centerId, `clinical/reports/${id}/comments`), { comment, version }),
+  giveBack: (centerId: string, id: string, comment: string, version: number) => rest.send('POST', c(centerId, `clinical/reports/${id}/return`), { comment, version }),
   version: (centerId: string, id: string) => rest.get<ReportVersion>(c(centerId, `clinical/report-versions/${id}`)),
   familyPreview: (centerId: string, id: string) => rest.get<FamilyProgress>(c(centerId, `clinical/reports/${id}/family-preview`)),
   familyDemo: (centerId: string) => rest.get<FamilyProgress>(c(centerId, 'family/progress-demo')),

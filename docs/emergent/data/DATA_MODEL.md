@@ -24,3 +24,7 @@ Source of truth: `apps/api/prisma/schema.prisma` and `apps/api/prisma/migrations
 | `membership` (extended) | title, phone, specialties, responsibilities, status reason/changed-at, `updated_at` | status reason only with a status change |
 
 No clinical, child or guardian data exists yet. All data in Emergent is synthetic.
+
+## TB-EM-011 additive governance extension
+
+Migration `20261028090000_tb_em_011_governance`: immutable `governance_snapshot`/`governance_history`, separate immutable `consent_policy_draft`/`consent_record_draft`, locked `clinical_authorization_decision`/`recipient_release`/`recipient_release_history`, and `caseload_transfer_draft` simulations. Plan/report status checks retain deny-by-default semantics while adding explicit non-authorizing states. Original release refusal remains intact. New source/principal/provenance scope checks and immutable content/history triggers are documented in `../workunits/TB-EM-011.md`.

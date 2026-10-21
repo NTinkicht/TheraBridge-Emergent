@@ -46,7 +46,7 @@ export function ReportsPanel({ centerId, ws, run, onError }: { centerId: string;
             <p className="text-[13px] text-brand-inkMuted">{serviceLabel(r.service)} · {r.periodStart} to {r.periodEnd} · by {r.author} · {r.versions} saved {r.versions === 1 ? 'version' : 'versions'}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Pill tone={r.status === 'IN_REVIEW' ? 'caution' : 'neutral'}>{r.status === 'IN_REVIEW' ? 'In review' : 'Draft'}</Pill>
+            <Pill tone={r.status === 'IN_REVIEW' ? 'caution' : 'neutral'}>{r.status.replaceAll('_', ' ')}</Pill>
             <Link href={`/app/reports/${r.id}`} className="text-[14px] font-semibold text-brand-action hover:underline" data-testid={`report-open-${r.id}`}>Open</Link>
           </div>
         </Card>

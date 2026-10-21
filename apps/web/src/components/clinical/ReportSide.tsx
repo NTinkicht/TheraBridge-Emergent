@@ -34,7 +34,7 @@ export function Review({ centerId, d, onReload, onError }: { centerId: string; d
   const send = async (returned: boolean) => {
     setErr(null);
     if (comment.trim().length < 3) return setErr('Write a comment of at least 3 characters.');
-    try { await (returned ? reportsApi.giveBack : reportsApi.comment)(centerId, d.report.id, comment.trim()); setComment(''); await onReload(); }
+    try { await (returned ? reportsApi.giveBack : reportsApi.comment)(centerId, d.report.id, comment.trim(), d.report.version); setComment(''); await onReload(); }
     catch (e) { setErr(errorText(e, onError)); }
   };
   return (

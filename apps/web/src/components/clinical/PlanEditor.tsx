@@ -10,7 +10,7 @@ import { LOCKED_REASON, clinicalApi, type Goal, type HomeActivity, type PlanVers
 import { ActivityCard } from './ActivityCard';
 
 type Run = (fn: () => Promise<unknown>, ok: string) => Promise<boolean>;
-const STATUS = { DRAFT: ['Draft', 'neutral'], IN_REVIEW: ['In review', 'info'], SUPERSEDED: ['Superseded', 'neutral'] } as const;
+const STATUS = { DRAFT: ['Draft', 'neutral'], IN_REVIEW: ['In review', 'info'], SUPERSEDED: ['Superseded', 'neutral'], RETURNED_FOR_REVISION: ['Returned for revision', 'caution'], WITHDRAWN: ['Withdrawn', 'neutral'], FROZEN_INTERNAL: ['Frozen internal', 'info'] } as const;
 const input = 'w-full rounded-control border border-border-light bg-transparent px-3 py-2 text-[14px]';
 
 function GoalRow({ g, onChange, onRemove, disabled, i }: { g: Goal; onChange: (g: Goal) => void; onRemove: () => void; disabled: boolean; i: number }) {
@@ -32,9 +32,9 @@ function VersionEditor({ centerId, ws, planId, v, run }: { centerId: string; ws:
   const [goals, setGoals] = useState<Goal[]>(v.goals);
   const [acts, setActs] = useState<HomeActivity[]>(v.homeActivities);
   const [comment, setComment] = useState('');
-  const [preview, setPreview] = useState(false);
+  const [preview, setPreview] = useState<Awaited<ReturnType<typeof clinicalApi.familyPreview>> | null>(null);
   useEffect(() => { setSummary(v.summary); setGoals(v.goals); setActs(v.homeActivities); }, [v]);
-  const edit = ws.canEdit && v.status === 'DRAFT';
+  const edit = ws.canEdit && v.mine && ['DRAFT','RETURNED_FOR_REVISION'].includes(v.status);
   const save = () => run(() => clinicalApi.saveVersion(centerId, v.id, { summary, goals: goals.filter((g) => g.title.trim()), homeActivities: acts, version: v.version }), 'Draft saved.');
   return (
     <div className="space-y-4" data-testid={`plan-version-${v.number}`}>
@@ -63,22 +63,23 @@ function VersionEditor({ centerId, ws, planId, v, run }: { centerId: string; ws:
       </div>
       <div className="flex flex-wrap items-start gap-2">
         {edit && <Button onClick={() => void save()} data-testid="plan-save">Save draft</Button>}
-        {edit && <Button variant="secondary" onClick={() => void run(() => clinicalApi.submit(centerId, v.id), 'Draft sent to the clinical supervisor for review.')} data-testid="plan-submit">Send for review</Button>}
-        {ws.canEdit && v.status === 'IN_REVIEW' && <Button variant="secondary" onClick={() => void run(() => clinicalApi.newVersion(centerId, planId), 'New draft version started.')} data-testid="plan-new-version">Start a new version</Button>}
-        <Button variant="ghost" onClick={() => setPreview(!preview)} data-testid="plan-family-preview">{preview ? 'Hide family preview' : 'Preview as family'}</Button>
+        {edit && <Button variant="secondary" onClick={() => void run(() => clinicalApi.submit(centerId, v.id, v.version), 'Draft sent to the clinical supervisor for review.')} data-testid="plan-submit">Send for review</Button>}
+        {ws.canEdit && v.mine && ['WITHDRAWN','FROZEN_INTERNAL'].includes(v.status) && <Button variant="secondary" onClick={() => void run(() => clinicalApi.newVersion(centerId, planId), 'New draft version started.')} data-testid="plan-new-version">Start a new version</Button>}
+        <Button variant="ghost" onClick={() => { if (preview) setPreview(null); else void run(async () => setPreview(await clinicalApi.familyPreview(centerId, v.id)), 'Immutable internal preview generated.'); }} data-testid="plan-family-preview">{preview ? 'Hide family preview' : 'Preview as family'}</Button>
+        <a href="/app/governance" className="p-2 text-[14px] text-brand-action underline">Version history & explicit withdrawal</a>
         <LockedAction id={`approve-${v.id}`} label="Approve and release" reason={LOCKED_REASON} />
       </div>
       {ws.canReview && v.status === 'IN_REVIEW' && (
         <Card className="space-y-3 p-4" testId="review-panel">
           <ReasonField value={comment} onChange={setComment} testId="review-comment" label="Review comments for the therapist" />
-          <Button variant="secondary" onClick={() => void (async () => { if (await run(() => clinicalApi.giveBack(centerId, v.id, comment.trim()), 'Draft returned to the therapist with your comments.')) setComment(''); })()} data-testid="review-return">Return to draft with comments</Button>
+          <Button variant="secondary" onClick={() => void (async () => { if (await run(() => clinicalApi.giveBack(centerId, v.id, comment.trim(), v.version), 'Draft returned to the therapist with your comments.')) setComment(''); })()} data-testid="review-return">Return to draft with comments</Button>
         </Card>
       )}
       {preview && (
         <div className="theme-family-light space-y-3 rounded-card bg-fam-canvas p-4 text-fam-ink" data-testid="family-preview">
-          <p className="text-[13px] font-semibold">Staff-only preview · not shared with the family · release is disabled</p>
-          {acts.map((a, i) => { const t = ws.templates.find((x) => x.id === a.templateId); return t ? <ActivityCard key={i} t={t} tone="family" extra={a.frequency} /> : null; })}
-          {!acts.length && <p className="text-[14px]">No home activities in this draft.</p>}
+          <p className="text-[13px] font-semibold">{preview.notice}</p>
+          {preview.activities.map((a, i) => { const t = a.template; return t ? <ActivityCard key={i} t={t} tone="family" extra={a.frequency} /> : null; })}
+          {!preview.activities.length && <p className="text-[14px]">No home activities in this frozen preview.</p>}<p className="break-all text-[12px]">Snapshot: {preview.snapshotId} · SHA-256: {preview.fingerprint}</p>
         </div>
       )}
     </div>

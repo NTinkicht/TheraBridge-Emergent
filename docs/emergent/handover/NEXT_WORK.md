@@ -40,3 +40,9 @@
 - Harbor and Cedar are trial centers (30 days from their creation). Only one active child is allowed per center during the trial.
 - After a workspace restore: run `scripts/workspace/ensure-postgres.sh`, then `cd apps/api && yarn -s prisma migrate deploy && yarn -s seed:synthetic`.
 - `center_event`, `application_event` and `message` are append-only. To clean up synthetic test data, disable their triggers inside one transaction (preview only).
+
+## TB-EM-011 — current isolated governance checkpoint (2026-10-21)
+
+The owner authorized complete synthetic implementation on `freebuff-tb-em-011-governance`, based on `90e474f477a654d47cf934429d2ca03256fd74d2`. This supersedes the earlier candidate-only roadmap entry for **technical foundations**, not the prohibition on clinical activation. See `workunits/TB-EM-011.md` and `artifacts/tb-em-011/VALIDATION.md`.
+
+Next: independent review against `freebuff-qualification-issue47-20261021`; do not merge or deploy. TB-EM-012 requires canonical private-spec access and accountable decisions D1/D4/D7/D-NEW-3/D-NEW-5/OR-15/OR-16 before any clinical authorization, consent grant, recipient release or real transfer execution. Existing milestone history above is retained.

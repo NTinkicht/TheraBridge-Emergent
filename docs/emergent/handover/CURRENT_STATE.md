@@ -73,3 +73,7 @@ Updated: 2026-10-20 (UTC)
 9. The CI failure cause for run 39445386310 was **inferred, not confirmed** (most likely `actions/setup-node` with `cache: yarn` and no `yarn.lock`). Every later run is green.
 10. `memory/test_credentials.md` is Git-tracked. Per owner correction R2 it holds pointers only, never passwords.
 7. Logo derivatives are valid on light surfaces only; on dark backgrounds they wash out (rejected for dark use).
+
+## 2026-10-21 — TB-EM-011 isolated branch addendum
+
+Synthetic governance foundations implemented on `freebuff-tb-em-011-governance` from the exact accepted #45/#47 baseline `90e474f477a654d47cf934429d2ca03256fd74d2`. Includes explicit review withdrawal, author-owned lifecycles, immutable content/evidence previews, read-only consent/access governance and release structures locked by API and database. No clinical activation or deployment. See `../workunits/TB-EM-011.md` for scope, permission/transition tables, policy gaps, test evidence and TB-EM-012 dependencies. Independent review/export status is recorded in `artifacts/tb-em-011/VALIDATION.md`; earlier records above are historical, not overwritten.

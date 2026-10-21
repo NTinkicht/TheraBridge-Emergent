@@ -32,3 +32,7 @@ N17 and N18 were resolved in TB-EM-007.
 | N22 | Info | Message threads are shared with all current guardians of a child | `threadScope` in `messages.service.ts` | Owner custody policy; per-guardian visibility if required |
 | N23 | Low | Change notices are limited to visits within 14 days; series created or cancelled further out only show in the family view | `NoticesService.changed` | Make the window configurable |
 | N24 | Low | Calendar grid uses native date/time inputs and fixed 1-hour slot targets (no drag to move) | `/app/schedule` | Add drag-and-drop with the same conflict checks |
+
+## TB-EM-011 governance traceability (2026-10-21)
+
+N25 is replaced by explicit, reasoned, auditable withdrawal preserving the reviewed snapshot. N26 historical frozen content is viewable through governance history. Intersecting GitHub #39 (note provenance), #40 (author ownership), #43 (goal-version identity) and #44 (immutable evidence previews) have implementations and PostgreSQL regression tests; independent GitHub issue closure is not claimed. Canonical private-spec access and D1/D4/D7/D-NEW-3/D-NEW-5/OR-15/OR-16 remain blocked. See `../workunits/TB-EM-011.md`; unrelated backlog entries above remain unchanged.

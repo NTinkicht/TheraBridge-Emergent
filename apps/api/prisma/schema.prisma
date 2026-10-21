@@ -580,7 +580,7 @@ model PlanVersion {
   planId         String      @map("plan_id") @db.Uuid
   centerId       String      @map("center_id") @db.Uuid
   number         Int
-  status         String      @default("DRAFT") @db.VarChar(16)
+  status         String      @default("DRAFT") @db.VarChar(32)
   summary        String      @default("") @db.VarChar(4000)
   goals          Json        @default("[]")
   homeActivities Json        @default("[]") @map("home_activities")
@@ -683,7 +683,7 @@ model ProgressReport {
   title        String          @db.VarChar(120)
   periodStart  DateTime        @map("period_start") @db.Date
   periodEnd    DateTime        @map("period_end") @db.Date
-  status       String          @default("DRAFT") @db.VarChar(16)
+  status       String          @default("DRAFT") @db.VarChar(32)
   sections     Json            @default("{}")
   reviewNotes  Json            @default("[]") @map("review_notes")
   version      Int             @default(1)
@@ -726,4 +726,110 @@ model ReportRelease {
   reportVersion   ReportVersion  @relation(fields: [reportVersionId], references: [id], onDelete: Restrict)
 
   @@map("report_release")
+}
+
+// Internal snapshots are immutable and non-authorizing, independently of the mutable draft.
+model GovernanceSnapshot {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  childId String @map("child_id") @db.Uuid
+  kind String @db.VarChar(8)
+  documentId String @map("document_id") @db.Uuid
+  sourceVersion Int @map("source_version")
+  content Json
+  evidence Json
+  fingerprint String @db.Char(64)
+  authorId String @map("author_id") @db.Uuid
+  generatedById String @map("generated_by_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  @@index([centerId, kind, documentId])
+  @@map("governance_snapshot")
+}
+model GovernanceHistory {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  childId String @map("child_id") @db.Uuid
+  kind String @db.VarChar(8)
+  documentId String @map("document_id") @db.Uuid
+  sourceVersion Int @map("source_version")
+  fromStatus String @map("from_status") @db.VarChar(32)
+  toStatus String @map("to_status") @db.VarChar(32)
+  reason String @db.VarChar(1000)
+  actorId String @map("actor_id") @db.Uuid
+  snapshotId String @map("snapshot_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  @@index([centerId, kind, documentId])
+  @@map("governance_history")
+}
+model ConsentPolicyDraft {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  purpose String @db.VarChar(120)
+  number Int
+  restrictions Json
+  status String @default("DRAFT_NON_AUTHORIZING") @db.VarChar(32)
+  createdById String @map("created_by_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  @@unique([centerId, purpose, number])
+  @@map("consent_policy_draft")
+}
+// Each row is a new immutable proposal/revocation revision; never an authorization grant.
+model ConsentRecordDraft {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  childId String @map("child_id") @db.Uuid
+  guardianLinkId String @map("guardian_link_id") @db.Uuid
+  policyId String @map("policy_id") @db.Uuid
+  previousId String? @unique @map("previous_id") @db.Uuid
+  effectiveAt DateTime? @map("effective_at") @db.Timestamptz(3)
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz(3)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
+  restrictions Json
+  authorizationEvidence Json @default("{}") @map("authorization_evidence")
+  status String @default("DRAFT_NON_AUTHORIZING") @db.VarChar(32)
+  authorizes Boolean @default(false)
+  createdById String @map("created_by_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  @@index([centerId, childId, guardianLinkId])
+  @@map("consent_record_draft")
+}
+model ClinicalAuthorizationDecision {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  snapshotId String @map("snapshot_id") @db.Uuid
+  status String @default("BLOCKED_POLICY") @db.VarChar(32)
+  @@map("clinical_authorization_decision")
+}
+model RecipientRelease {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  childId String @map("child_id") @db.Uuid
+  snapshotId String @map("snapshot_id") @db.Uuid
+  decisionId String @map("decision_id") @db.Uuid
+  guardianLinkId String @map("guardian_link_id") @db.Uuid
+  status String @default("BLOCKED_POLICY") @db.VarChar(32)
+  @@map("recipient_release")
+}
+model RecipientReleaseHistory {
+  id String @id @default(uuid()) @db.Uuid
+  releaseId String @map("release_id") @db.Uuid
+  action String @db.VarChar(32)
+  reason String @db.VarChar(1000)
+  actorId String @map("actor_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  @@map("recipient_release_history")
+}
+model CaseloadTransferDraft {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  childId String @map("child_id") @db.Uuid
+  fromMembershipId String @map("from_membership_id") @db.Uuid
+  toMembershipId String @map("to_membership_id") @db.Uuid
+  service String @db.VarChar(32)
+  reason String @db.VarChar(1000)
+  status String @default("SIMULATION_ONLY") @db.VarChar(32)
+  createdById String @map("created_by_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  @@index([centerId])
+  @@map("caseload_transfer_draft")
 }

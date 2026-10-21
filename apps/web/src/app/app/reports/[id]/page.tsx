@@ -38,7 +38,7 @@ function Report({ session, onError }: { session: SessionInfo; onError: (e: unkno
       <div>
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-[28px] font-bold" data-testid="report-title-heading">{r.title}</h1>
-          <Pill tone={r.status === 'IN_REVIEW' ? 'caution' : 'neutral'} testId="report-status">{r.status === 'IN_REVIEW' ? 'In review' : 'Draft'}</Pill>
+          <Pill tone={r.status === 'IN_REVIEW' ? 'caution' : 'neutral'} testId="report-status">{r.status.replaceAll('_', ' ')}</Pill>
           <Pill tone="danger">Unreleased</Pill>
         </div>
         <p className="text-[14px] text-brand-inkMuted">{serviceLabel(r.service)} · {r.periodStart} to {r.periodEnd} · by {r.author}</p>
@@ -49,9 +49,10 @@ function Report({ session, onError }: { session: SessionInfo; onError: (e: unkno
           <div className="flex justify-end"><Button size="sm" variant="ghost" onClick={() => setPreview(null)} data-testid="report-preview-close">Close preview</Button></div>
           <FamilyProgress data={preview} testId="family-format" banner={
             <p className="flex items-start gap-2 rounded-control border-2 border-dashed border-status-danger bg-fam-surface p-3 text-[14px] text-status-danger" data-testid="family-format-unreleased">
-              <EyeOff size={18} className="mt-0.5 shrink-0" aria-hidden="true" /><span><strong>Internal preview: not released.</strong> No family can see this. It shows the future family-safe format: the family-friendly summary and recorded values only.</span>
+              <EyeOff size={18} className="mt-0.5 shrink-0" aria-hidden="true" /><span><strong>Internal preview — not approved, signed or released.</strong> No family can see this. It shows the future family-safe format: the family-friendly summary and recorded values only.</span>
             </p>
           } />
+          <p className="break-all text-[12px] text-brand-inkMuted">Snapshot {preview.snapshotId} · SHA-256 {preview.fingerprint}</p>
         </div>
       )}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">

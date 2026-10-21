@@ -80,3 +80,7 @@ The database also enforces:
 - invitation roles never include PLATFORM_ADMIN or GUARDIAN, and only FIRST_ADMIN invitations carry CENTER_ADMIN;
 - one pending invitation per email per center, and one pending first-administrator invitation per center;
 - append-only `center_event` and `application_event` history.
+
+| Permission | Roles |
+|---|---|
+| center.governance.read | CENTER_ADMIN, COORDINATOR |

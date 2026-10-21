@@ -37,6 +37,8 @@ const NAV: { key: string; href: string; icon: LucideIcon; label: string; short: 
   { key: 'schedule', href: '/app/schedule', icon: CalendarDays, label: 'Schedule', short: 'Schedule', permission: 'center.schedule.read' },
   { key: 'messages', href: '/app/messages', icon: MessagesSquare, label: 'Messages', short: 'Messages', permission: 'center.messages.use' },
   { key: 'clinical', href: '/app/clinical', icon: NotebookPen, label: 'Clinical workspace', short: 'Clinical', permission: 'center.clinical.read' },
+  { key: 'governance', href: '/app/governance', icon: ClipboardCheck, label: 'Documents & review', short: 'Review', permission: 'center.clinical.read' },
+  { key: 'access-review', href: '/app/access-review', icon: Users, label: 'Access & consent', short: 'Access', permission: 'center.governance.read' },
   { key: 'progress', href: '/app/progress', icon: LineChart, label: 'Progress', short: 'Progress', permission: 'center.clinical.read' },
   { key: 'practice-feedback', href: '/app/practice-feedback', icon: Inbox, label: 'Practice feedback', short: 'Feedback', permission: 'center.practice.read' },
   { key: 'activities', href: '/app/activities', icon: Sparkles, label: 'Activities', short: 'Activities', permission: 'center.activities.read' },

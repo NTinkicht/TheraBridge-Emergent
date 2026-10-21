@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import type { Viewer } from '../operations/children.service';
 import { TrialService } from '../operations/trial.service';
 import { ClinicalService, LOCKED, asDate, day } from './clinical.service';
+import { EDITABLE } from './governance-core';
 import type { ProgressQueryDto, ReportCreateDto, ReportSaveDto, ReviewDto } from './clinical.dto';
 
 const DAY = 86_400_000;
@@ -58,20 +59,24 @@ export class ReportsService {
   constructor(private readonly prisma: PrismaService, private readonly trial: TrialService, private readonly clinical: ClinicalService) {}
 
   async evidence(db: Tx | PrismaService, centerId: string, childId: string, service: string, from: Date, to: Date) {
-    const [assessments, plan, drafts, completedVisits] = await Promise.all([
+    const [assessments, plans, drafts, completedVisits] = await Promise.all([
       db.assessment.findMany({ where: { centerId, childId, service, assessedOn: { lte: to } }, orderBy: { assessedOn: 'asc' } }),
-      db.therapyPlan.findFirst({ where: { centerId, childId, service }, include: { versions: { orderBy: { number: 'desc' } } }, orderBy: { createdAt: 'asc' } }),
+      db.therapyPlan.findMany({ where: { centerId, childId, service }, include: { versions: { orderBy: { number: 'desc' } } }, orderBy: { createdAt: 'asc' } }),
       db.sessionNote.count({ where: { centerId, childId, service, sessionDate: { gte: from, lte: to } } }),
       db.appointment.count({ where: { centerId, childId, service, status: 'COMPLETED', startsAt: { gte: from, lt: new Date(to.getTime() + DAY) } } }),
     ]);
-    const current = plan?.versions.find((v) => v.status !== 'SUPERSEDED') ?? plan?.versions[0];
-    const goals = (current?.goals ?? []) as Goal[];
-    const obs = plan && goals.length ? await db.observation.findMany({ where: { centerId, childId, planVersionId: { in: plan.versions.map((v) => v.id) }, goalKey: { in: goals.map((g) => g.key) }, observedOn: { lte: to } }, orderBy: [{ observedOn: 'asc' }, { createdAt: 'asc' }] }) : [];
+    const selected = plans.flatMap(plan => {
+      const current = plan.versions.find(v => v.status !== 'SUPERSEDED') ?? plan.versions[0];
+      return current ? [{ plan, current }] : [];
+    });
+    const obs = selected.length ? await db.observation.findMany({ where: { centerId, childId, planVersionId: { in: selected.map(p => p.current.id) }, observedOn: { lte: to } }, orderBy: [{ observedOn: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }] }) : [];
+    const definitions = selected.map(({ plan, current }) => ({ id: plan.id, title: plan.title, versionId: current.id, versionNumber: current.number, status: current.status }));
     return {
       period: { from: day(from), to: day(to) },
       assessments: assessments.map((a) => ({ id: a.id, assessedOn: day(a.assessedOn), summary: a.summary })),
-      plan: plan && current ? { id: plan.id, title: plan.title, versionNumber: current.number, status: current.status } : null,
-      goals: goals.map((g) => goalEvidence(g, obs.filter((o) => o.goalKey === g.key), from)),
+      plan: definitions.length === 1 ? definitions[0] : null,
+      plans: definitions,
+      goals: selected.flatMap(({plan, current}) => (current.goals as Goal[]).map(g => ({ planId: plan.id, planTitle: plan.title, planVersionId: current.id, ...goalEvidence(g, obs.filter(o => o.planVersionId === current.id && o.goalKey === g.key), from) }))),
       sessions: { drafts, completedVisits },
     };
   }
@@ -97,9 +102,9 @@ export class ReportsService {
     const obs = await this.prisma.observation.findMany({ where: { centerId, planVersionId: { in: plans.flatMap((p) => p.versions.map((x) => x.id)) }, observedOn: { lte: to } }, orderBy: [{ observedOn: 'asc' }, { createdAt: 'asc' }] });
     const goals = plans.flatMap((p) => {
       const cur = p.versions.find((x) => x.status !== 'SUPERSEDED') ?? p.versions[0];
-      const ids = new Set(p.versions.map((x) => x.id));
+      const ids = new Set([cur?.id]);
       return ((cur?.goals ?? []) as Goal[]).filter((g) => !q.goalKey || g.key === q.goalKey)
-        .map((g) => ({ childId: p.childId, childName: name(p.childId), service: p.service, planTitle: p.title, ...goalEvidence(g, obs.filter((o) => o.goalKey === g.key && ids.has(o.planVersionId)), from) }));
+        .map((g) => ({ childId: p.childId, childName: name(p.childId), service: p.service, planId: p.id, planVersionId: cur.id, planTitle: p.title, ...goalEvidence(g, obs.filter((o) => o.goalKey === g.key && ids.has(o.planVersionId)), from) }));
     });
     return {
       synthetic: true, period: { from: day(from), to: day(to) },
@@ -155,7 +160,7 @@ export class ReportsService {
     return {
       synthetic: true, locked: LOCKED, released: false,
       report: { id: r.id, childId: r.childId, childName: `${child.preferredName ?? child.firstName} ${child.lastName}`, title: r.title, service: r.service, periodStart: day(r.periodStart), periodEnd: day(r.periodEnd), status: r.status, sections: r.sections as Sections, reviewNotes: r.reviewNotes as Note[], version: r.version, author: author?.user.displayName ?? '', mine, updatedAt: r.updatedAt },
-      canEdit: v.role === 'THERAPIST' && mine && r.status === 'DRAFT',
+      canEdit: v.role === 'THERAPIST' && mine && EDITABLE.includes(r.status),
       canReview: v.role === 'CLINICAL_SUPERVISOR' && r.status === 'IN_REVIEW',
       evidence: ev,
       versions: versions.map((x) => ({ id: x.id, number: x.number, kind: x.kind, author: who(x.authorId), createdAt: x.createdAt })),
@@ -170,7 +175,7 @@ export class ReportsService {
 
   // Lock the draft at the version the author is looking at; every write bumps the version.
   private async bump(tx: Tx, r: ProgressReport, v: Viewer, version: number, now: Date, data: Prisma.ProgressReportUpdateManyMutationInput = {}) {
-    const n = await tx.progressReport.updateMany({ where: { id: r.id, membershipId: v.membershipId, status: 'DRAFT', version }, data: { ...data, updatedAt: now, version: { increment: 1 } } });
+    const n = await tx.progressReport.updateMany({ where: { id: r.id, membershipId: v.membershipId, status: { in: EDITABLE }, version }, data: { ...data, updatedAt: now, version: { increment: 1 } } });
     if (n.count !== 1) throw this.why(r, v);
     return tx.progressReport.findUniqueOrThrow({ where: { id: r.id } });
   }
@@ -178,7 +183,8 @@ export class ReportsService {
   async autosave(centerId: string, v: Viewer, id: string, dto: ReportSaveDto) {
     const r = await this.report(centerId, v, id);
     return this.clinical.write(centerId, v, r.childId, r.service, async (tx, now) => {
-      const sections = { ...(r.sections as Sections), ...Object.fromEntries(Object.entries(dto.sections).filter(([, x]) => typeof x === 'string')) };
+      const locked = await tx.progressReport.findUniqueOrThrow({ where: { id } });
+      const sections = { ...(locked.sections as Sections), ...Object.fromEntries(Object.entries(dto.sections).filter(([, x]) => typeof x === 'string')) };
       const fresh = await this.bump(tx, r, v, dto.version, now, { sections });
       await logCenterEvent(tx, centerId, 'clinical.report_autosaved', now, { actorUserId: v.userId, meta: { childId: r.childId, reportId: id } });
       return { version: fresh.version, savedAt: now };
@@ -201,33 +207,6 @@ export class ReportsService {
     });
   }
 
-  async submit(centerId: string, v: Viewer, id: string, version: number) {
-    const r = await this.report(centerId, v, id);
-    if (!((r.sections as Sections).summary ?? '').trim()) throw new UnprocessableEntityException('Write the clinician summary before sending the report for review.');
-    return this.clinical.write(centerId, v, r.childId, r.service, async (tx, now) => {
-      const fresh = await this.bump(tx, r, v, version, now, { status: 'IN_REVIEW' });
-      const s = await this.snapshot(tx, fresh, v, 'SUBMITTED', now);
-      await logCenterEvent(tx, centerId, 'clinical.report_submitted', now, { actorUserId: v.userId, meta: { childId: r.childId, reportId: id, number: s.number } });
-      return { number: s.number, version: fresh.version };
-    });
-  }
-
-  // Supervisors comment on, or return, a report in review. Approval and release stay DENY.
-  async review(centerId: string, v: Viewer, id: string, dto: ReviewDto, returned: boolean) {
-    if (v.role !== 'CLINICAL_SUPERVISOR') throw new ForbiddenException('Only a clinical supervisor can review a report.');
-    const r = await this.report(centerId, v, id);
-    const now = this.trial.now();
-    const byName = (await this.names([v.userId]))(v.userId);
-    await this.prisma.$transaction(async (tx) => {
-      await this.trial.assertWritable(tx, centerId, now);
-      const notes = [...(r.reviewNotes as Note[]), { by: v.userId, byName, at: now.toISOString(), comment: dto.comment.trim(), kind: returned ? 'returned' : 'comment' }];
-      const n = await tx.progressReport.updateMany({ where: { id, status: 'IN_REVIEW', version: r.version }, data: { reviewNotes: notes as Prisma.InputJsonValue, ...(returned ? { status: 'DRAFT' } : {}), updatedAt: now, version: { increment: 1 } } });
-      if (n.count !== 1) throw new ConflictException(r.status !== 'IN_REVIEW' ? 'Only a report in review can be reviewed.' : 'This report changed since you opened it. Reload to see the latest version.');
-      await logCenterEvent(tx, centerId, returned ? 'clinical.report_returned' : 'clinical.report_commented', now, { actorUserId: v.userId, meta: { childId: r.childId, reportId: id } });
-    });
-    return { ok: true };
-  }
-
   async versionDetail(centerId: string, v: Viewer, versionId: string) {
     const x = await this.prisma.reportVersion.findFirst({ where: { id: versionId, centerId } });
     if (!x) throw new NotFoundException('Report version not found');
@@ -236,14 +215,4 @@ export class ReportsService {
     return { id: x.id, reportId: x.reportId, number: x.number, kind: x.kind, sections: x.sections as Sections, evidence: x.evidence as unknown as Evidence, author: who(x.authorId), createdAt: x.createdAt };
   }
 
-  // Internal, staff-only look at the future family-safe format. Only the family summary and recorded values appear.
-  async familyPreview(centerId: string, v: Viewer, id: string) {
-    const r = await this.report(centerId, v, id);
-    const [ev, child] = await Promise.all([this.evidence(this.prisma, centerId, r.childId, r.service, r.periodStart, r.periodEnd), this.prisma.child.findUniqueOrThrow({ where: { id: r.childId } })]);
-    return {
-      preview: true, released: false, locked: LOCKED, childName: child.preferredName ?? child.firstName, service: r.service, period: ev.period,
-      message: (r.sections as Sections).familySummary ?? '',
-      goals: ev.goals.map((g) => ({ title: g.title, measure: g.measure, baseline: g.baseline, target: g.target, status: g.status, points: g.points.map((p) => ({ date: p.date, value: p.value })) })),
-    };
-  }
 }

@@ -4,6 +4,7 @@ import { Tx, logCenterEvent, uniq } from '../centers/history';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Viewer } from '../operations/children.service';
 import { TrialService } from '../operations/trial.service';
+import { assertActor, EDITABLE, fingerprint } from './governance-core';
 import type { AssessmentDto, AssessmentUpdateDto, ObservationDto, PlanDto, PlanVersionUpdateDto, ReviewDto, SessionNoteDto, SessionNoteUpdateDto, TemplateDto } from './clinical.dto';
 
 export const asDate = (d: string) => new Date(`${d}T00:00:00Z`);
@@ -19,9 +20,10 @@ export class ClinicalService {
   constructor(private readonly prisma: PrismaService, private readonly trial: TrialService) {}
 
   async child(db: Tx | PrismaService, centerId: string, v: Viewer, childId: string, service?: string) {
+    if (!['THERAPIST', 'CLINICAL_SUPERVISOR'].includes(v.role)) throw new ForbiddenException('Clinical records are restricted.');
     const where: Prisma.ChildWhereInput = v.role === 'THERAPIST' ? { assignments: { some: { membershipId: v.membershipId, endedAt: null, ...(service ? { service } : {}) } } } : {};
     const c = await db.child.findFirst({ where: { id: childId, centerId, status: 'ACTIVE', ...where } });
-    if (!c) throw new NotFoundException('Child not found');
+    if (!c || (service && !c.services.includes(service))) throw new NotFoundException('Child not found');
     return c;
   }
 
@@ -30,6 +32,9 @@ export class ClinicalService {
     const now = this.trial.now();
     return this.prisma.$transaction(async (tx) => {
       await this.trial.assertWritable(tx, centerId, now);
+      await assertActor(tx, centerId, v, ['THERAPIST']);
+      await tx.$queryRaw`SELECT id FROM child WHERE id=${childId}::uuid FOR SHARE`;
+      await tx.$queryRaw`SELECT id FROM care_assignment WHERE center_id=${centerId}::uuid AND child_id=${childId}::uuid AND membership_id=${v.membershipId}::uuid FOR SHARE`;
       await this.child(tx, centerId, v, childId, service);
       return fn(tx, now);
     });
@@ -53,7 +58,7 @@ export class ClinicalService {
       timezone: center.timezone, synthetic: true, locked: LOCKED, canEdit: v.role === 'THERAPIST', canReview: v.role === 'CLINICAL_SUPERVISOR',
       child: { id: c.id, name: `${c.preferredName ?? c.firstName} ${c.lastName}`, services: c.services, dateOfBirth: day(c.dateOfBirth) },
       assessments: assessments.map((a) => ({ id: a.id, service: a.service, assessedOn: day(a.assessedOn), summary: a.summary, areas: a.areas, status: a.status, version: a.version, author: who(a.membershipId), mine: a.membershipId === v.membershipId, updatedAt: a.updatedAt })),
-      plans: plans.map((p) => ({ id: p.id, service: p.service, title: p.title, versions: p.versions.map((x) => ({ id: x.id, number: x.number, status: x.status, summary: x.summary, goals: x.goals, homeActivities: x.homeActivities, reviewNotes: x.reviewNotes, version: x.version, author: users.find((u) => u.id === x.authorId)?.displayName ?? '', updatedAt: x.updatedAt })) })),
+      plans: plans.map((p) => ({ id: p.id, service: p.service, title: p.title, versions: p.versions.map((x) => ({ id: x.id, number: x.number, status: x.status, summary: x.summary, goals: x.goals, homeActivities: x.homeActivities, reviewNotes: x.reviewNotes, version: x.version, mine: x.authorId === v.userId, author: users.find((u) => u.id === x.authorId)?.displayName ?? '', updatedAt: x.updatedAt })) })),
       notes: notes.map((n) => ({ id: n.id, service: n.service, sessionDate: day(n.sessionDate), appointmentId: n.appointmentId, sections: n.sections, status: n.status, version: n.version, author: who(n.membershipId), mine: n.membershipId === v.membershipId, updatedAt: n.updatedAt })),
       observations: observations.map((o) => ({ id: o.id, planVersionId: o.planVersionId, goalKey: o.goalKey, value: o.value, observedOn: day(o.observedOn), note: o.note, sessionNoteId: o.sessionNoteId, author: who(o.membershipId) })),
       appointments: appointments.map((a) => ({ id: a.id, service: a.service, startsAt: a.startsAt, status: a.status, hasNote: notes.some((n) => n.appointmentId === a.id) })),
@@ -101,46 +106,29 @@ export class ClinicalService {
     const ids = uniq(dto.homeActivities.map((h) => h.templateId));
     if ((await this.prisma.activityTemplate.count({ where: { id: { in: ids }, OR: [{ centerId }, { centerId: null }] } })) !== ids.length) throw new UnprocessableEntityException('Choose activities from this center’s library.');
     return this.write(centerId, v, x.plan.childId, x.plan.service, async (tx, now) => {
-      const r = await tx.planVersion.updateMany({ where: { id, status: 'DRAFT', version: dto.version }, data: { summary: dto.summary, goals: dto.goals as unknown as Prisma.InputJsonValue, homeActivities: dto.homeActivities as unknown as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
+      if ((await tx.activityTemplate.count({ where: { id: { in: ids }, OR: [{ centerId }, { centerId: null }] } })) !== ids.length) throw new UnprocessableEntityException('Choose activities from this center’s library.');
+      const fresh = await tx.planVersion.findUniqueOrThrow({ where: { id } });
+      if (fresh.authorId !== v.userId) throw new ForbiddenException('Only the author can edit this plan version.');
+      const observed = await tx.observation.findMany({ where: { planVersionId: id }, select: { goalKey: true } });
+      for (const o of observed) {
+        const oldGoal = (fresh.goals as Goal[]).find(g => g.key === o.goalKey);
+        if (fingerprint(oldGoal ?? null) !== fingerprint(dto.goals.find(g => g.key === o.goalKey) ?? null)) throw new ConflictException('A goal with observations cannot be redefined. Start a new plan version.');
+      }
+      const r = await tx.planVersion.updateMany({ where: { id, centerId, authorId: v.userId, status: { in: EDITABLE }, version: dto.version }, data: { summary: dto.summary, goals: dto.goals as unknown as Prisma.InputJsonValue, homeActivities: dto.homeActivities as unknown as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
       if (r.count !== 1) throw new ConflictException(x.status !== 'DRAFT' ? 'Only a draft can be edited. Start a new version to make changes.' : 'This draft changed since you opened it. Reload to see the latest version.');
       await logCenterEvent(tx, centerId, 'clinical.plan_draft_saved', now, { actorUserId: v.userId, meta: { childId: x.plan.childId, planId: x.planId, planVersionId: id, goals: dto.goals.length } });
       return { ok: true };
     });
   }
 
-  async submitVersion(centerId: string, v: Viewer, id: string) {
-    const x = await this.version(centerId, id);
-    if (!(x.goals as Goal[]).length) throw new UnprocessableEntityException('Add at least one goal before sending the draft for review.');
-    return this.write(centerId, v, x.plan.childId, x.plan.service, async (tx, now) => {
-      const r = await tx.planVersion.updateMany({ where: { id, status: 'DRAFT' }, data: { status: 'IN_REVIEW', updatedAt: now, version: { increment: 1 } } });
-      if (r.count !== 1) throw new ConflictException('Only a draft can be sent for review.');
-      await logCenterEvent(tx, centerId, 'clinical.plan_submitted', now, { actorUserId: v.userId, meta: { childId: x.plan.childId, planId: x.planId, planVersionId: id } });
-      return { ok: true };
-    });
-  }
-
-  // Supervisors return a draft with comments. Approval stays DENY (clinical.plan.approve).
-  async returnVersion(centerId: string, v: Viewer, id: string, dto: ReviewDto) {
-    if (v.role !== 'CLINICAL_SUPERVISOR') throw new ForbiddenException('Only a clinical supervisor can review a draft.');
-    const x = await this.version(centerId, id);
-    const now = this.trial.now();
-    await this.prisma.$transaction(async (tx) => {
-      await this.trial.assertWritable(tx, centerId, now);
-      const notes = [...(x.reviewNotes as object[]), { by: v.userId, at: now.toISOString(), comment: dto.comment }];
-      const r = await tx.planVersion.updateMany({ where: { id, status: 'IN_REVIEW' }, data: { status: 'DRAFT', reviewNotes: notes as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
-      if (r.count !== 1) throw new ConflictException('Only a draft in review can be returned.');
-      await logCenterEvent(tx, centerId, 'clinical.plan_returned', now, { actorUserId: v.userId, meta: { childId: x.plan.childId, planId: x.planId, planVersionId: id } });
-    });
-    return { ok: true };
-  }
-
+  // Legacy entry points also require the caller's concurrency token and use the same governance service through controllers.
   async newVersion(centerId: string, v: Viewer, planId: string) {
-    const p = await this.prisma.therapyPlan.findFirst({ where: { id: planId, centerId }, include: { versions: { orderBy: { number: 'desc' }, take: 1 } } });
+    const p = await this.prisma.therapyPlan.findFirst({ where: { id: planId, centerId } });
     if (!p) throw new NotFoundException('Plan not found');
-    const last = p.versions[0];
     return this.write(centerId, v, p.childId, p.service, async (tx, now) => {
-      if (last.status !== 'IN_REVIEW') throw new ConflictException('A draft already exists. Edit it instead of starting a new version.');
-      await tx.planVersion.update({ where: { id: last.id }, data: { status: 'SUPERSEDED', updatedAt: now } });
+      const last = await tx.planVersion.findFirstOrThrow({ where: { planId, centerId }, orderBy: { number: 'desc' } });
+      if (last.authorId !== v.userId) throw new ForbiddenException('Only the author can create the next version.');
+      if (!['WITHDRAWN', 'FROZEN_INTERNAL'].includes(last.status)) throw new ConflictException('Explicitly withdraw the reviewed version with a reason, or freeze an internal draft first.');
       const ver = await tx.planVersion.create({ data: { planId, centerId, number: last.number + 1, summary: last.summary, goals: last.goals as Prisma.InputJsonValue, homeActivities: last.homeActivities as Prisma.InputJsonValue, authorId: v.userId, createdAt: now, updatedAt: now } });
       await logCenterEvent(tx, centerId, 'clinical.plan_version_started', now, { actorUserId: v.userId, meta: { childId: p.childId, planId, planVersionId: ver.id, number: ver.number } });
       return { id: ver.id, number: ver.number };
@@ -150,6 +138,7 @@ export class ClinicalService {
   async createNote(centerId: string, v: Viewer, childId: string, dto: SessionNoteDto) {
     if (dto.appointmentId && !(await this.prisma.appointment.findFirst({ where: { id: dto.appointmentId, centerId, childId, membershipId: v.membershipId } }))) throw new UnprocessableEntityException('Choose one of your own appointments with this child.');
     return this.write(centerId, v, childId, dto.service, async (tx, now) => {
+      if (dto.appointmentId && !await tx.appointment.findFirst({ where: { id: dto.appointmentId, centerId, childId, service: dto.service, membershipId: v.membershipId } })) throw new UnprocessableEntityException('Choose your own appointment for this child and service.');
       if (dto.appointmentId && (await tx.sessionNote.findUnique({ where: { appointmentId: dto.appointmentId } }))) throw new ConflictException('This appointment already has a session draft.');
       const n = await tx.sessionNote.create({ data: { centerId, childId, membershipId: v.membershipId, appointmentId: dto.appointmentId ?? null, service: dto.service, sessionDate: asDate(dto.sessionDate), createdAt: now, updatedAt: now } });
       await logCenterEvent(tx, centerId, 'clinical.session_drafted', now, { actorUserId: v.userId, meta: { childId, sessionNoteId: n.id } });
@@ -173,6 +162,9 @@ export class ClinicalService {
     if (!x || !(x.goals as Goal[]).some((g) => g.key === dto.goalKey)) throw new UnprocessableEntityException('Choose a goal from this child’s plan.');
     if (asDate(dto.observedOn) > this.trial.now()) throw new UnprocessableEntityException('Observations cannot be dated in the future.');
     return this.write(centerId, v, childId, x.plan.service, async (tx, now) => {
+      const fresh = await tx.planVersion.findFirst({ where: { id: dto.planVersionId, centerId, plan: { centerId, childId, service: x.plan.service } } });
+      if (!fresh || !(fresh.goals as Goal[]).some(g => g.key === dto.goalKey)) throw new UnprocessableEntityException('Choose a goal from this child’s plan.');
+      if (dto.sessionNoteId && !await tx.sessionNote.findFirst({ where: { id: dto.sessionNoteId, centerId, childId, service: x.plan.service, membershipId: v.membershipId } })) throw new UnprocessableEntityException('Choose your own session note for this child and service.');
       const o = await tx.observation.create({ data: { centerId, childId, planVersionId: x.id, goalKey: dto.goalKey, membershipId: v.membershipId, sessionNoteId: dto.sessionNoteId ?? null, value: dto.value, observedOn: asDate(dto.observedOn), note: dto.note || null, createdAt: now } });
       await logCenterEvent(tx, centerId, 'clinical.observation_recorded', now, { actorUserId: v.userId, meta: { childId, observationId: o.id, goalKey: dto.goalKey } });
       return { id: o.id };
@@ -193,15 +185,6 @@ export class ClinicalService {
       await logCenterEvent(tx, centerId, 'clinical.template_created', now, { actorUserId: v.userId, meta: { templateId: t.id } });
       return { id: t.id };
     });
-  }
-
-  // Staff-only preview of how a draft's home activities would look to a family. Nothing is released.
-  async familyPreview(centerId: string, v: Viewer, id: string) {
-    const x = await this.version(centerId, id);
-    await this.child(this.prisma, centerId, v, x.plan.childId);
-    const acts = x.homeActivities as HomeActivity[];
-    const tpl = await this.prisma.activityTemplate.findMany({ where: { id: { in: acts.map((a) => a.templateId) } } });
-    return { preview: true, released: false, locked: LOCKED, activities: acts.map((a) => ({ ...a, template: tpl.find((t) => t.id === a.templateId) ?? null })) };
   }
 
   // Guardians see synthetic sample activities for their linked children's services; no plan content is shown until release is approved.

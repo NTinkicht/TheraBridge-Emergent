@@ -2,6 +2,8 @@ import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Req
 import { RequirePermission, TbRequest } from '../auth/access';
 import type { Viewer } from '../operations/children.service';
 import { AssessmentDto, AssessmentUpdateDto, ObservationDto, PlanDto, PlanVersionUpdateDto, ReviewDto, SessionNoteDto, SessionNoteUpdateDto, TemplateDto } from './clinical.dto';
+import { GovernanceService } from './governance.service';
+import { ReportVersionDto } from './clinical.dto';
 import { ClinicalService } from './clinical.service';
 
 const uuid = () => new ParseUUIDPipe();
@@ -9,7 +11,7 @@ const viewer = (req: TbRequest): Viewer => ({ userId: req.auth!.session.userId, 
 
 @Controller('centers/:centerId')
 export class ClinicalController {
-  constructor(private readonly clinical: ClinicalService) {}
+  constructor(private readonly clinical: ClinicalService, private readonly governance: GovernanceService) {}
 
   @Get('clinical/children/:childId')
   @RequirePermission('center.clinical.read')
@@ -50,15 +52,15 @@ export class ClinicalController {
   @Post('clinical/plan-versions/:id/submit')
   @HttpCode(200)
   @RequirePermission('center.clinical.draft')
-  submit(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Req() req: TbRequest) {
-    return this.clinical.submitVersion(c, viewer(req), id);
+  submit(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Body() dto: ReportVersionDto, @Req() req: TbRequest) {
+    return this.governance.transition(c, viewer(req), 'PLAN', id, { version: dto.version, action: 'SUBMIT', reason: 'Submitted for internal review' });
   }
 
   @Post('clinical/plan-versions/:id/return')
   @HttpCode(200)
   @RequirePermission('center.clinical.review')
   giveBack(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Body() dto: ReviewDto, @Req() req: TbRequest) {
-    return this.clinical.returnVersion(c, viewer(req), id, dto);
+    return this.governance.transition(c, viewer(req), 'PLAN', id, { version: dto.version, action: 'RETURN', reason: dto.comment });
   }
 
   // Deliberately unreachable: approval needs clinical.plan.approve, which is DENY for every role.
@@ -72,7 +74,7 @@ export class ClinicalController {
   @Get('clinical/plan-versions/:id/family-preview')
   @RequirePermission('center.clinical.read')
   preview(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Req() req: TbRequest) {
-    return this.clinical.familyPreview(c, viewer(req), id);
+    return this.governance.capturePreview(c, viewer(req), 'PLAN', id);
   }
 
   @Post('clinical/children/:childId/notes')

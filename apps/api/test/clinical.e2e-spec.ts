@@ -61,14 +61,16 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     await post(h, c('activities'), admin, { title: 'Nope', service: 'speech', ageBand: 'x', minutes: 5, materials: [], steps: ['abc'], safety: ['abc'] }).expect(403);
     const plan = (await post(h, `${W}/plans`, therapist, { service: 'speech', title: 'Speech plan' }).expect(201)).body;
     const goals = [{ key: 'two-word', title: 'Uses two-word phrases', measure: 'percent', baseline: 20, target: 80 }];
-    await post(h, c(`clinical/plan-versions/${plan.versionId}/submit`), therapist).expect(422);
+    await post(h, c(`clinical/plan-versions/${plan.versionId}/submit`), therapist, { version: 1 }).expect(422);
     await patch(therapist, c(`clinical/plan-versions/${plan.versionId}`), { summary: 'v1', goals, homeActivities: [{ templateId: tpl, frequency: '3 times a week' }], version: 1 }).expect(200);
-    await post(h, c(`clinical/plan-versions/${plan.versionId}/submit`), therapist).expect(200);
+    await post(h, c(`clinical/plan-versions/${plan.versionId}/submit`), therapist, { version: 2 }).expect(200);
     await patch(therapist, c(`clinical/plan-versions/${plan.versionId}`), { summary: 'late', goals, homeActivities: [], version: 3 }).expect(409);
     await post(h, c(`clinical/plan-versions/${plan.versionId}/approve`), sup).expect(403);
     await post(h, c(`clinical/plan-versions/${plan.versionId}/return`), therapist, { comment: 'self review' }).expect(403);
-    await post(h, c(`clinical/plan-versions/${plan.versionId}/return`), sup, { comment: 'Please add a measurable target for home practice.' }).expect(200);
-    await post(h, c(`clinical/plan-versions/${plan.versionId}/submit`), therapist).expect(200);
+    await post(h, c(`clinical/plan-versions/${plan.versionId}/return`), sup, { version: 3, comment: 'Please add a measurable target for home practice.' }).expect(200);
+    await post(h, c(`clinical/plan-versions/${plan.versionId}/submit`), therapist, { version: 4 }).expect(200);
+    await post(h, c(`clinical/plans/${plan.id}/versions`), therapist).expect(409);
+    await post(h, c(`governance/documents/PLAN/${plan.versionId}/transitions`), therapist, { version: 5, action: 'WITHDRAW', reason: 'Explicit synthetic revision request' }).expect(201);
     const v2 = (await post(h, c(`clinical/plans/${plan.id}/versions`), therapist).expect(201)).body;
     expect(v2.number).toBe(2);
     await post(h, c(`clinical/plans/${plan.id}/versions`), therapist).expect(409);
@@ -82,7 +84,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
 
     const ws = (await get(sup, W).expect(200)).body;
     expect(ws).toMatchObject({ canEdit: false, canReview: true, synthetic: true });
-    expect(ws.plans[0].versions.map((x: { number: number; status: string }) => [x.number, x.status])).toEqual([[2, 'DRAFT'], [1, 'SUPERSEDED']]);
+    expect(ws.plans[0].versions.map((x: { number: number; status: string }) => [x.number, x.status])).toEqual([[2, 'DRAFT'], [1, 'WITHDRAWN']]);
     expect(ws.plans[0].versions[1].reviewNotes).toHaveLength(1);
     expect(ws.observations).toEqual([expect.objectContaining({ goalKey: 'two-word', value: 40 })]);
     expect(ws.notes[0].sections).toEqual({ focus: 'Two-word phrases', response: 'Engaged' });

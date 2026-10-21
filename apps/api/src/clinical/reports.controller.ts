@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Que
 import { RequirePermission, TbRequest } from '../auth/access';
 import type { Viewer } from '../operations/children.service';
 import { ProgressQueryDto, ReportCreateDto, ReportSaveDto, ReportVersionDto, ReviewDto } from './clinical.dto';
+import { GovernanceService } from './governance.service';
 import { FAMILY_PROGRESS_SAMPLE, ReportsService } from './reports.service';
 
 const uuid = () => new ParseUUIDPipe();
@@ -9,7 +10,7 @@ const viewer = (req: TbRequest): Viewer => ({ userId: req.auth!.session.userId, 
 
 @Controller('centers/:centerId')
 export class ReportsController {
-  constructor(private readonly reports: ReportsService) {}
+  constructor(private readonly reports: ReportsService, private readonly governance: GovernanceService) {}
 
   @Get('clinical/progress')
   @RequirePermission('center.clinical.read')
@@ -51,21 +52,21 @@ export class ReportsController {
   @HttpCode(200)
   @RequirePermission('center.clinical.draft')
   submit(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Body() dto: ReportVersionDto, @Req() req: TbRequest) {
-    return this.reports.submit(c, viewer(req), id, dto.version);
+    return this.governance.transition(c, viewer(req), 'REPORT', id, { version: dto.version, action: 'SUBMIT', reason: 'Submitted for internal review' });
   }
 
   @Post('clinical/reports/:id/comments')
   @HttpCode(200)
   @RequirePermission('center.clinical.review')
   comment(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Body() dto: ReviewDto, @Req() req: TbRequest) {
-    return this.reports.review(c, viewer(req), id, dto, false);
+    return this.governance.transition(c, viewer(req), 'REPORT', id, { version: dto.version, action: 'COMMENT', reason: dto.comment });
   }
 
   @Post('clinical/reports/:id/return')
   @HttpCode(200)
   @RequirePermission('center.clinical.review')
   giveBack(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Body() dto: ReviewDto, @Req() req: TbRequest) {
-    return this.reports.review(c, viewer(req), id, dto, true);
+    return this.governance.transition(c, viewer(req), 'REPORT', id, { version: dto.version, action: 'RETURN', reason: dto.comment });
   }
 
   // Deliberately unreachable: release needs clinical.report.release, which is DENY for every role.
@@ -85,7 +86,7 @@ export class ReportsController {
   @Get('clinical/reports/:id/family-preview')
   @RequirePermission('center.clinical.read')
   preview(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Req() req: TbRequest) {
-    return this.reports.familyPreview(c, viewer(req), id);
+    return this.governance.capturePreview(c, viewer(req), 'REPORT', id);
   }
 
   @Get('family/progress-demo')

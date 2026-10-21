@@ -34,6 +34,7 @@ export const PERMISSIONS: Record<string, readonly Role[]> = {
   'center.messages.manage': ['CENTER_ADMIN', 'COORDINATOR'],
   'platform.reminders.run': ['PLATFORM_ADMIN'],
   // TB-EM-008 synthetic clinical drafts. Row scope (assigned children, own drafts) is enforced in ClinicalService.
+  'center.governance.read': ['CENTER_ADMIN', 'COORDINATOR'],
   'center.clinical.read': ['THERAPIST', 'CLINICAL_SUPERVISOR'],
   'center.clinical.draft': ['THERAPIST'],
   'center.clinical.review': ['CLINICAL_SUPERVISOR'],

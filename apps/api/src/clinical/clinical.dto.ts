@@ -41,6 +41,7 @@ export class PlanVersionUpdateDto {
   @IsInt() @Min(1) version!: number;
 }
 export class ReviewDto {
+  @IsInt() @Min(1) version!: number;
   @IsString() @MinLength(3) @MaxLength(1000) comment!: string;
 }
 export class SessionNoteDto {
