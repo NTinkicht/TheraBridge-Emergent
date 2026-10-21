@@ -5,7 +5,7 @@ import { logCenterEvent, uniq } from '../centers/history';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Viewer } from './children.service';
 import type { MessageDto, ThreadDto, ThreadListQuery } from './operations.dto';
-import { TrialService } from './trial.service';
+import { TRIAL_ENDED, TrialService, trialExpired } from './trial.service';
 
 const isManager = (v: Viewer) => v.role === 'CENTER_ADMIN' || v.role === 'COORDINATOR';
 
@@ -153,7 +153,17 @@ export class MessagesService {
     if (!familyMessagingEnabled()) throw new ForbiddenException(DEMO_OFF);
     const now = this.trial.now();
     await this.prisma.$transaction(async (tx) => {
-      await this.trial.assertWritable(tx, centerId, now);
+      if (v.role === 'GUARDIAN') {
+        // Match practice.record: removal takes the guardian_link UPDATE lock first,
+        // then a center_event FK KEY SHARE lock. FOR NO KEY UPDATE on center allows
+        // that FK lock while serializing with center writers and trial changes.
+        await tx.$queryRaw`SELECT id FROM center WHERE id=${centerId}::uuid FOR NO KEY UPDATE`;
+        const center = await tx.center.findUnique({ where: { id: centerId } });
+        if (!center) throw new NotFoundException('Center not found');
+        if (trialExpired(center, now)) throw new ForbiddenException(TRIAL_ENDED);
+      } else {
+        await this.trial.assertWritable(tx, centerId, now);
+      }
       // Serialize specialty revocation against an in-flight reply, as clinical.write does.
       // Re-check the exact live assignment after acquiring row locks; a revoked assignment
       // must not grant a reply while another transaction is ending it.
