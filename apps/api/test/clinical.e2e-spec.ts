@@ -33,7 +33,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     const u = await createUser(h.prisma, 'ops@ops.therabridge.test');
     await h.prisma.platformRoleAssignment.create({ data: { userId: u.id, source: 'synthetic_seed', reason: 'test' } });
     ops = await signIn(h, u.email);
-    centerId = (await post(h, '/api/platform/centers', ops, { name: 'Clin Center', timezone: 'Europe/Berlin', country: 'Germany', city: 'Berlin', specialties: ['speech'], firstAdmin: { email: 'lead@clin.test', displayName: 'Lead Admin' } }).expect(201)).body.id;
+    centerId = (await post(h, '/api/platform/centers', ops, { name: 'Clin Center', timezone: 'Europe/Berlin', country: 'Germany', city: 'Berlin', specialties: ['speech', 'ot'], firstAdmin: { email: 'lead@clin.test', displayName: 'Lead Admin' } }).expect(201)).body.id;
     admin = await accept('lead@clin.test', 'Lead Admin');
   });
 
