@@ -100,6 +100,17 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     expect(types).toEqual(expect.arrayContaining(['clinical.assessment_drafted', 'clinical.plan_submitted', 'clinical.plan_returned', 'clinical.plan_version_started', 'clinical.session_saved', 'clinical.observation_recorded']));
   });
 
+  it('denies assessment edits after specialty revocation', async () => {
+    const therapist = await staff('dual@clin.test', ['THERAPIST'], ['speech', 'ot']);
+    const kid = (await post(h, c('children'), admin, { firstName: 'Test', lastName: 'Child', dateOfBirth: '2019-04-02', services: ['speech', 'ot'] }).expect(201)).body.id;
+    const membershipId = therapist.body.activeContext.membershipId;
+    for (const service of ['speech', 'ot']) await post(h, c(`children/${kid}/assignments`), admin, { membershipId, service, isLead: service === 'speech' }).expect(201);
+    const id = (await post(h, c(`clinical/children/${kid}/assessments`), therapist, { service: 'ot', assessedOn: '2026-10-19', summary: 'OT baseline', areas: [] }).expect(201)).body.id;
+    await h.prisma.careAssignment.updateMany({ where: { centerId, childId: kid, membershipId, service: 'ot', endedAt: null }, data: { endedAt: h.clock.now() } });
+    await patch(therapist, c(`clinical/assessments/${id}`), { service: 'speech', assessedOn: '2026-10-19', summary: 'Relabeled', areas: [], version: 1 }).expect(404);
+    expect(await h.prisma.assessment.findUniqueOrThrow({ where: { id } })).toMatchObject({ service: 'ot', summary: 'OT baseline', version: 1 });
+  });
+
   it('messages are recipient-specific, demo-gated, and blocked after trial expiry while consented reminders continue', async () => {
     const { therapist, kid, link, rosa } = await setup();
     await post(h, c(`children/${kid}/guardians`), admin, { displayName: 'Dan Stone', email: 'dan@family.test', relationship: 'father', invite: true }).expect(201);
