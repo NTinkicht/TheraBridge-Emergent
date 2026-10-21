@@ -157,11 +157,30 @@ export class MessagesService {
       // Serialize specialty revocation against an in-flight reply, as clinical.write does.
       // Re-check the exact live assignment after acquiring row locks; a revoked assignment
       // must not grant a reply while another transaction is ending it.
-      if (v.role === 'THERAPIST') {
-        const target = await tx.messageThread.findFirst({ where: { id, centerId }, select: { childId: true } });
+      if (v.role === 'THERAPIST' || v.role === 'GUARDIAN') {
+        const target = await tx.messageThread.findFirst({
+          where: { id, centerId },
+          select: { childId: true, guardianLinkId: true, audience: true },
+        });
         if (!target) throw new NotFoundException('Conversation not found');
-        await tx.$queryRaw`SELECT id FROM child WHERE id=${target.childId}::uuid AND center_id=${centerId}::uuid FOR SHARE`;
-        await tx.$queryRaw`SELECT id FROM care_assignment WHERE center_id=${centerId}::uuid AND child_id=${target.childId}::uuid AND membership_id=${v.membershipId}::uuid AND ended_at IS NULL FOR SHARE`;
+        if (v.role === 'THERAPIST') {
+          await tx.$queryRaw`SELECT id FROM child WHERE id=${target.childId}::uuid AND center_id=${centerId}::uuid FOR SHARE`;
+          await tx.$queryRaw`SELECT id FROM care_assignment WHERE center_id=${centerId}::uuid AND child_id=${target.childId}::uuid AND membership_id=${v.membershipId}::uuid AND ended_at IS NULL FOR SHARE`;
+        } else {
+          // Lock the exact guardian recipient before the final scoped read.
+          // A concurrent guardian-removal UPDATE conflicts with this lock; a removed
+          // link cannot authorize a reply after its removal commits.
+          if (target.audience !== 'GUARDIAN' || !target.guardianLinkId) throw new NotFoundException('Conversation not found');
+          const links = await tx.$queryRaw<{ id: string }[]>`
+            SELECT id FROM guardian_link
+            WHERE id=${target.guardianLinkId}::uuid
+              AND center_id=${centerId}::uuid
+              AND child_id=${target.childId}::uuid
+              AND user_id=${v.userId}::uuid
+              AND removed_at IS NULL
+            FOR UPDATE`;
+          if (links.length !== 1) throw new NotFoundException('Conversation not found');
+        }
       }
       const scope = await this.scope(tx, centerId, v);
       const t = await tx.messageThread.findFirst({ where: { id, ...scope } });
