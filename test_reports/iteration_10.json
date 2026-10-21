@@ -1,0 +1,27 @@
+{
+  "summary": "Retest of iteration_9 fixes on the public preview URL (frontend only). All requested items pass. /invite fresh load (about:blank then /invite#token=, 4 runs, dev StrictMode) never shows 'Security check failed'; invite-summary and invite-new-account-form render with the prefilled name. A changed hash (A->D->A) reloads the preview for the new token. A reload restores the preview from sessionStorage. A rotated old token (after resend) and a garbage token show invite-load-error 'This invitation link is not valid. Ask for a new invitation.'; a revoked token shows invite-ended 'withdrawn'. No 403/CSRF responses were seen. /app/centers/new?applicationId=<provisioned> shows new-center-already-provisioned with open-existing-center-link, which navigates to the center. Team: resend and revoke clear team-notice, and switching tabs clears it. An empty staff invite submit shows one message: 'Please add their full name, a valid email address, at least one role.' The root page lists TB-EM-002 and TB-EM-003/004 as IMPLEMENTED. Regression passes: platform login, the wrong-password error, forgot password (outbox link), then reset, then login with the new password, and /apply (validation summary, then submit gives reference APP-3JPNMT).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Team page / Invitations tab", "issue": "Sending a new staff invite while on the Invitations tab after a resend/revoke shows two success banners: the new team-notice ('Invitation sent to X') and the stale invitations-success ('A new link was sent to Y'). The Invitations msg state is not cleared when version changes or when onSent fires.", "selector": "[data-testid='team-notice'], [data-testid='invitations-success']", "priority": "LOW"},
+      {"component": "InvitePage subtitle", "issue": "The subtitle stays 'Checking your invitation…' after the check has finished with invite-load-error or invite-ended. It should change, for example to 'We could not open this invitation'.", "selector": "[data-testid='invite-page']", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/tests/test_tb_em_003_004_centers_api.py"],
+  "action_items": [
+    "LOW: In the Team Invitations component, clear msg when the version prop changes (or when a new invite is sent), so only one success banner shows.",
+    "LOW: On /invite, update the AuthLayout subtitle when error or ended state is shown."
+  ],
+  "critical_code_review_comments": [
+    "preToken() shares a single in-flight promise and clears it in finally, which is correct. The `current` flag in the InvitePage effect correctly drops stale StrictMode or hashchange results.",
+    "In dev StrictMode each /invite load sends 2 inspect calls (and each hashchange 1). The ignored results are harmless, but each load uses 2 of the 30-per-15-min public invitation rate limit in preview. Production builds are not affected."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped as requested)", "frontend": "100% of requested items (2 LOW cosmetic issues found)"},
+  "seed_data_creation": "In TEST_ API Center 4cf1ef (admin test-admin-4cf1ef@example.test / STRONG): staff invites test-ui10-a (pending), test-ui10-b (resent once), test-ui10-c (revoked), test-ui10-d (pending). Password of test-pther-4cf1ef@example.test changed by the reset test to 'Calm-Precision-Warmth-2026!-R10'. Application 'TEST_ R10 Apply Center' (APP-3JPNMT) submitted.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Outbox tokens: parse with regex token=([\\w-]+) on the full body (do not truncate). Already-provisioned application id: 7368c273-369c-4293-89f7-b257e6364c2b, which leads to center bbabe72f-ae2d-4338-b7f7-b3a6ddde74e9. The staff invite dialog stays in the DOM after closing; wait for state='hidden', not 'detached'."
+}
