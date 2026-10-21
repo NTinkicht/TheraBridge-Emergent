@@ -11,7 +11,7 @@ export type ContextOption =
   | { type: 'platform'; role: 'PLATFORM_ADMIN' }
   | { type: 'center'; membershipId: string; centerId: string; centerName: string; centerSlug: string; role: Role };
 
-const ROLE_PRIORITY: Role[] = ['CENTER_ADMIN', 'COORDINATOR', 'CLINICAL_SUPERVISOR', 'THERAPIST'];
+const ROLE_PRIORITY: Role[] = ['CENTER_ADMIN', 'COORDINATOR', 'CLINICAL_SUPERVISOR', 'THERAPIST', 'GUARDIAN'];
 
 export interface ContextChoice {
   platform?: boolean;

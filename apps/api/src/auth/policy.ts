@@ -11,6 +11,7 @@ export const PERMISSIONS: Record<string, readonly Role[]> = {
   'platform.centers.read': ['PLATFORM_ADMIN'],
   'platform.centers.create': ['PLATFORM_ADMIN'],
   'platform.centers.invite_admin': ['PLATFORM_ADMIN'],
+  'platform.centers.trial': ['PLATFORM_ADMIN'],
   'center.summary.read': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'CLINICAL_SUPERVISOR'],
   'center.settings.read': ['CENTER_ADMIN'],
   'center.settings.update': ['CENTER_ADMIN'],
@@ -19,6 +20,14 @@ export const PERMISSIONS: Record<string, readonly Role[]> = {
   'center.staff.invite': ['CENTER_ADMIN'],
   'center.staff.manage': ['CENTER_ADMIN'],
   'center.profile.self': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'CLINICAL_SUPERVISOR'],
+  'center.children.read': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'CLINICAL_SUPERVISOR'],
+  'center.children.manage': ['CENTER_ADMIN', 'COORDINATOR'],
+  'center.families.manage': ['CENTER_ADMIN', 'COORDINATOR'],
+  'center.assignments.manage': ['CENTER_ADMIN', 'COORDINATOR'],
+  'center.schedule.read': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'CLINICAL_SUPERVISOR'],
+  'center.schedule.manage': ['CENTER_ADMIN', 'COORDINATOR'],
+  'center.appointments.status': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST'],
+  'family.portal.read': ['GUARDIAN'],
 };
 
 // No clinical capability can be granted to anyone until an owner-approved clinical policy exists.

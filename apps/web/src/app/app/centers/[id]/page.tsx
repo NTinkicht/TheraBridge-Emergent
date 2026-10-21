@@ -11,6 +11,7 @@ import { Button, Card } from '@/components/design/ui';
 import { Dialog, ErrorState, SkeletonRows } from '@/components/design/states';
 import { SPECIALTY_OPTIONS } from '@/lib/auth';
 import { SETUP_LABELS, centersApi, type CenterDetail, type Invitation } from '@/lib/centers';
+import { TrialCard } from '@/components/operations/TrialCard';
 
 type Mode = { kind: 'new' } | { kind: 'replace'; invitation: Invitation } | null;
 
@@ -115,6 +116,7 @@ function Detail({ id, onError }: { id: string; onError: (e: unknown) => void }) 
       {notice && <FormAlert tone="success" testId="center-notice">{notice}</FormAlert>}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] xl:items-start">
         <div className="min-w-0 space-y-6">
+          <TrialCard centerId={c.id} onError={onError} />
           <AdminCard center={c} onChanged={changed} onError={onError} />
           <Card className="p-5 md:p-6" testId="center-config">
             <h2 className="flex items-center gap-2 text-[18px] font-semibold"><Building2 size={18} aria-hidden="true" /> Configuration</h2>

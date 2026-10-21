@@ -12,7 +12,8 @@ export type AuditType =
   | 'application.submitted' | 'application.review_started' | 'application.approved' | 'application.rejected'
   | 'center.provisioned' | 'center.updated'
   | 'invitation.created' | 'invitation.resent' | 'invitation.revoked' | 'invitation.replaced' | 'invitation.accepted'
-  | 'member.updated' | 'member.suspended' | 'member.reactivated' | 'member.revoked' | 'member.profile_updated';
+  | 'member.updated' | 'member.suspended' | 'member.reactivated' | 'member.revoked' | 'member.profile_updated'
+  | 'trial.extended' | 'child.registered' | 'appointment.scheduled';
 
 interface AuditInput {
   actorUserId?: string | null;

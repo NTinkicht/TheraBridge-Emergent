@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Building2, CalendarDays, ClipboardList, FileCheck2, Gauge, Inbox, Lock, MessagesSquare, UserPlus, Users, type LucideIcon } from 'lucide-react';
+import { Building2, ClipboardList, FileCheck2, Inbox, Lock, MessagesSquare, Users, type LucideIcon } from 'lucide-react';
+import { CenterDashboard, FamilyHome } from '@/components/operations/Dashboards';
 import { ProductShell, type PlannedModule } from '@/components/auth/ProductShell';
 import { useSession } from '@/components/auth/useSession';
 import { FormAlert } from '@/components/auth/Field';
@@ -11,13 +12,9 @@ import { centersApi } from '@/lib/centers';
 import { SkeletonRows } from '@/components/design/states';
 import { ROLE_LABELS, authApi, contextLabel, type SessionInfo } from '@/lib/auth';
 
-const PLATFORM_PLANNED: PlannedModule[] = [
-  { label: 'Trials and limits', unit: 'TB-EM-005', icon: Gauge },
-];
+const PLATFORM_PLANNED: PlannedModule[] = [];
 const CENTER_PLANNED: PlannedModule[] = [
-  { label: 'Children and families', unit: 'the next milestone', icon: Users },
-  { label: 'Parent portal', unit: 'the next milestone', icon: UserPlus },
-  { label: 'Schedule', unit: 'a later phase', icon: CalendarDays },
+  { label: 'Therapy plans and session notes', unit: 'the clinical milestone', icon: ClipboardList },
   { label: 'Messages', unit: 'a later phase', icon: MessagesSquare },
 ];
 
@@ -89,7 +86,9 @@ function Home({ session, onError }: { session: SessionInfo; onError: (e: unknown
         <p className="mt-1 text-[15px] text-brand-inkMuted">{contextLabel(ctx)}</p>
       </div>
       {ctx.type === 'center' && can('center.setup.manage') && <SetupBanner centerId={ctx.centerId} />}
-      {hasSummary ? (
+      {ctx.type === 'center' && can('center.summary.read') ? <CenterDashboard centerId={ctx.centerId} isTherapist={ctx.role === 'THERAPIST'} onError={onError} />
+        : ctx.type === 'center' && can('family.portal.read') ? <FamilyHome centerId={ctx.centerId} onError={onError} />
+        : hasSummary ? (
         summary ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="home-summary">
             {summary.kind === 'platform' ? (

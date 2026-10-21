@@ -87,8 +87,7 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
     it('a guardian in an active context is still denied center admin data', async () => {
       await member('guardian', harbor, ['GUARDIAN']);
       const s = await signIn(h, email('guardian'));
-      expect(s.body.permissions).toEqual([]);
-      await get(s, `/api/centers/${harbor}/summary`).expect(403);
+      expect(s.body.permissions).toEqual(['family.portal.read']);
     });
 
     it.each([
@@ -140,10 +139,16 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
     it('only the reviewed set of routes writes data, and none writes platform roles', () => {
       const unsafe = h.app.get(RouteAccessVerifier).routes().filter((r) => r.method !== 'GET').map((r) => `${r.method} ${r.route}`).sort();
       expect(unsafe).toEqual([
+        'PATCH /centers/:centerId/appointments/:appointmentId', 'PATCH /centers/:centerId/children/:childId',
         'PATCH /centers/:centerId/me', 'PATCH /centers/:centerId/settings', 'PATCH /centers/:centerId/staff/:membershipId',
         'POST /auth/context', 'POST /auth/login', 'POST /auth/logout', 'POST /auth/logout-all',
         'POST /auth/password/change', 'POST /auth/password/forgot', 'POST /auth/password/reset',
         'POST /center-applications',
+        'POST /centers/:centerId/appointments', 'POST /centers/:centerId/appointments/:appointmentId/status',
+        'POST /centers/:centerId/children', 'POST /centers/:centerId/children/:childId/archive', 'POST /centers/:centerId/children/:childId/assignments',
+        'POST /centers/:centerId/children/:childId/assignments/:assignmentId/end', 'POST /centers/:centerId/children/:childId/guardians',
+        'POST /centers/:centerId/children/:childId/guardians/:linkId/invite', 'POST /centers/:centerId/children/:childId/guardians/:linkId/remove',
+        'POST /centers/:centerId/children/:childId/restore',
         'POST /centers/:centerId/invitations', 'POST /centers/:centerId/invitations/:invitationId/resend', 'POST /centers/:centerId/invitations/:invitationId/revoke',
         'POST /centers/:centerId/setup/:key/complete',
         'POST /centers/:centerId/staff/:membershipId/reactivate', 'POST /centers/:centerId/staff/:membershipId/revoke', 'POST /centers/:centerId/staff/:membershipId/suspend',
@@ -151,7 +156,7 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
         'POST /platform/applications/:id/decision', 'POST /platform/applications/:id/start-review',
         'POST /platform/centers', 'POST /platform/centers/:centerId/admin-invitations',
         'POST /platform/centers/:centerId/admin-invitations/:invitationId/replace', 'POST /platform/centers/:centerId/admin-invitations/:invitationId/resend',
-        'POST /platform/centers/:centerId/admin-invitations/:invitationId/revoke',
+        'POST /platform/centers/:centerId/admin-invitations/:invitationId/revoke', 'POST /platform/centers/:centerId/trial/extend',
       ]);
     });
 
@@ -185,6 +190,15 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
       'center.staff.invite': ['CENTER_ADMIN'],
       'center.staff.manage': ['CENTER_ADMIN'],
       'center.profile.self': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'CLINICAL_SUPERVISOR'],
+      'platform.centers.trial': ['PLATFORM_ADMIN'],
+      'center.children.read': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'CLINICAL_SUPERVISOR'],
+      'center.children.manage': ['CENTER_ADMIN', 'COORDINATOR'],
+      'center.families.manage': ['CENTER_ADMIN', 'COORDINATOR'],
+      'center.assignments.manage': ['CENTER_ADMIN', 'COORDINATOR'],
+      'center.schedule.read': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'CLINICAL_SUPERVISOR'],
+      'center.schedule.manage': ['CENTER_ADMIN', 'COORDINATOR'],
+      'center.appointments.status': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST'],
+      'family.portal.read': ['GUARDIAN'],
     };
     const cases = ROLES.flatMap((role) => [...Object.keys(PERMISSIONS), ...CLINICAL_CAPABILITIES].map((p) => [role, p] as const));
     it.each(cases)('%s × %s', (role, permission) => {

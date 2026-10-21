@@ -2,6 +2,7 @@ import { ConflictException, Inject, Injectable, NotFoundException } from '@nestj
 import type { Prisma } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { CLOCK, Clock } from '../common/clock';
+import { TRIAL } from '../operations/trial.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CreateCenterDto, ListCentersQuery } from './centers.dto';
 import { SETUP_STEPS, clean, describeEvents, invitationView, logCenterEvent, uniq, withUniqueGuard } from './history';
@@ -51,7 +52,7 @@ export class ProvisioningService {
     const source = dto.applicationId ? 'APPLICATION' : 'DIRECT';
     const { center, invitation, token } = await withUniqueGuard(() => this.prisma.$transaction(async (tx) => {
       const center = await tx.center.create({
-        data: { slug, name, timezone: dto.timezone, country: clean(dto.country), city: clean(dto.city), specialties: uniq(dto.specialties), source, applicationId: dto.applicationId ?? null, createdById: actorUserId },
+        data: { slug, name, timezone: dto.timezone, country: clean(dto.country), city: clean(dto.city), specialties: uniq(dto.specialties), source, applicationId: dto.applicationId ?? null, createdById: actorUserId, trialEndsAt: new Date(now.getTime() + TRIAL.days * 86_400_000) },
       });
       if (dto.applicationId) {
         await tx.applicationEvent.create({ data: { applicationId: dto.applicationId, type: 'provisioned', actorUserId, fromStatus: 'APPROVED', toStatus: 'APPROVED', note: `Center created: ${name} (${slug})`, createdAt: now } });

@@ -13,6 +13,7 @@ import { normalizeEmail, randomToken, sha256 } from '../common/security';
 import { AUTH_CONFIG, AuthConfig } from '../config/env';
 import { DevMailboxService } from '../dev-mailbox/dev-mailbox.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { TRIAL_ENDED, TrialService, trialExpired } from '../operations/trial.service';
 import { Tx, clean, completeSetupStep, invitationView, logCenterEvent, uniq, withUniqueGuard } from './history';
 
 export const INVITE_TTL_MS = 7 * 24 * 3_600_000;
@@ -34,6 +35,7 @@ export interface InviteInput {
   responsibilities?: string[];
   title?: string;
   invitedById: string;
+  guardianLinkId?: string;
 }
 
 @Injectable()
@@ -47,6 +49,7 @@ export class InvitationsService {
     private readonly contexts: ContextService,
     @Inject(AUTH_CONFIG) private readonly cfg: AuthConfig,
     @Inject(CLOCK) private readonly clock: Clock,
+    private readonly trial: TrialService,
   ) {}
 
   // Restricted delivery: local dev mailbox / server-side outbox only. The raw token is never logged or returned by the API.
@@ -62,14 +65,14 @@ export class InvitationsService {
   async createInTx(tx: Tx, input: InviteInput, now: Date): Promise<{ invitation: Invitation; token: string }> {
     const emailNorm = normalizeEmail(input.email);
     const existing = await tx.membership.findFirst({ where: { centerId: input.centerId, user: { emailNormalized: emailNorm } } });
-    if (existing?.status === 'ACTIVE') throw new ConflictException('This person is already a member of this center. Change their roles from their profile instead.');
+    if (existing?.status === 'ACTIVE' && input.kind !== 'GUARDIAN') throw new ConflictException('This person is already a member of this center. Change their roles from their profile instead.');
     if (existing?.status === 'SUSPENDED') throw new ConflictException('This person’s access is suspended. Reactivate them from their profile instead.');
     const token = randomToken();
     const invitation = await tx.invitation.create({
       data: {
         centerId: input.centerId, kind: input.kind, email: input.email.trim(), emailNorm, displayName: clean(input.displayName),
         roles: uniq(input.roles), specialties: uniq(input.specialties), responsibilities: uniq(input.responsibilities), title: input.title?.trim() || null,
-        tokenHash: sha256(token), expiresAt: new Date(now.getTime() + INVITE_TTL_MS), lastSentAt: now, invitedById: input.invitedById, createdAt: now,
+        tokenHash: sha256(token), expiresAt: new Date(now.getTime() + INVITE_TTL_MS), lastSentAt: now, invitedById: input.invitedById, createdAt: now, guardianLinkId: input.guardianLinkId ?? null,
       },
     });
     await logCenterEvent(tx, input.centerId, 'invitation.created', now, {
@@ -78,10 +81,11 @@ export class InvitationsService {
     return { invitation, token };
   }
 
-  private async createAndSend(input: InviteInput, onTx?: (tx: Tx, now: Date) => Promise<unknown>) {
+  private async createAndSend(input: InviteInput, onTx?: (tx: Tx, now: Date) => Promise<unknown>, before?: (tx: Tx, now: Date) => Promise<unknown>) {
     const now = this.clock.now();
     const { invitation, token, center } = await withUniqueGuard(
       () => this.prisma.$transaction(async (tx) => {
+        await before?.(tx, now);
         const center = await tx.center.findUnique({ where: { id: input.centerId } });
         if (!center) throw new NotFoundException('Center not found');
         const r = await this.createInTx(tx, input, now);
@@ -99,6 +103,7 @@ export class InvitationsService {
     return this.createAndSend(
       { centerId, kind: 'STAFF', invitedById: actorUserId, email: dto.email, displayName: dto.displayName, roles: dto.roles as Role[], title: dto.title, specialties: dto.specialties, responsibilities: dto.responsibilities },
       (tx, now) => completeSetupStep(tx, centerId, 'invite_team', actorUserId, now),
+      (tx, now) => (dto.roles.includes('THERAPIST') ? this.trial.assertTherapistSeat(tx, centerId, now) : this.trial.assertWritable(tx, centerId, now)),
     );
   }
 
@@ -186,6 +191,7 @@ export class InvitationsService {
     const inv = await this.find(token);
     if (!inv) throw new NotFoundException('This invitation link is not valid. Ask for a new invitation.');
     if (inv.status !== 'PENDING' || inv.expiresAt <= now || inv.center.status !== 'ACTIVE') throw new GoneException(UNUSABLE);
+    if (trialExpired(inv.center, now)) throw new GoneException(TRIAL_ENDED);
     return inv;
   }
 
@@ -217,6 +223,10 @@ export class InvitationsService {
       await tx.roleAssignment.createMany({ data: inv.roles.filter((r) => !have.includes(r)).map((role) => ({ membershipId: m.id, role })) });
       await tx.membership.update({ where: { id: m.id }, data: revoked ? { status: 'ACTIVE', statusReason: null, statusChangedAt: now, ...profile } : {} });
       membershipId = m.id;
+    }
+    if (inv.guardianLinkId) {
+      const linked = await tx.guardianLink.updateMany({ where: { id: inv.guardianLinkId, removedAt: null }, data: { userId } });
+      if (linked.count !== 1) throw new GoneException(UNUSABLE);
     }
     await logCenterEvent(tx, inv.centerId, 'invitation.accepted', now, { actorUserId: userId, subjectUserId: userId, membershipId, invitationId: inv.id, meta: { kind: inv.kind, roles: inv.roles } });
     return membershipId;

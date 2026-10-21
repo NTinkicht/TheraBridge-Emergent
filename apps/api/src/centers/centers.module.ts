@@ -10,5 +10,6 @@ import { WorkspaceService } from './workspace.service';
   imports: [AuthModule, DevMailboxModule],
   controllers: [PlatformCentersController, CenterWorkspaceController, InvitationsController],
   providers: [InvitationsService, ProvisioningService, WorkspaceService],
+  exports: [InvitationsService],
 })
 export class CentersModule {}

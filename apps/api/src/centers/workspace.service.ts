@@ -2,6 +2,7 @@ import { ConflictException, Inject, Injectable, NotFoundException, Unprocessable
 import type { MembershipStatus, Prisma, Role } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { CLOCK, Clock } from '../common/clock';
+import { TrialService } from '../operations/trial.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type { ListStaffQuery, UpdateCenterDto, UpdateProfileDto, UpdateStaffDto } from './centers.dto';
 import { DIRECTORY_ROLES, SETUP_STEPS, STAFF_ROLES, SetupKey, Tx, clean, completeSetupStep, describeEvents, logCenterEvent, uniq } from './history';
@@ -36,6 +37,7 @@ export class WorkspaceService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     @Inject(CLOCK) private readonly clock: Clock,
+    private readonly trial: TrialService,
   ) {}
 
   async settings(centerId: string) {
@@ -127,6 +129,7 @@ export class WorkspaceService {
       const next = dto.roles ? uniq([...current.filter((r) => !staffRole(r)), ...(dto.roles as Role[])]) : current;
       if (!next.some((r) => DIRECTORY_ROLES.includes(r))) throw new UnprocessableEntityException('Keep at least one role. To remove access, revoke it instead.');
       const added = next.filter((r) => !current.includes(r));
+      if (added.includes('THERAPIST') && m.status === 'ACTIVE') await this.trial.assertTherapistSeat(tx, centerId, now, id);
       const removed = current.filter((r) => !next.includes(r));
       if (removed.length) await tx.roleAssignment.deleteMany({ where: { membershipId: id, role: { in: removed } } });
       if (added.length) await tx.roleAssignment.createMany({ data: added.map((role) => ({ membershipId: id, role })) });
@@ -147,6 +150,7 @@ export class WorkspaceService {
       await tx.$queryRaw`SELECT id FROM "center" WHERE id = ${centerId}::uuid FOR UPDATE`;
       const m = await this.member(centerId, id, tx);
       if (!t.from.includes(m.status)) throw new ConflictException(`This member is ${m.status.toLowerCase()}, so that change is not available.`);
+      if (action === 'reactivate' && m.roles.some((r) => r.role === 'THERAPIST')) await this.trial.assertTherapistSeat(tx, centerId, now, id);
       if (action !== 'reactivate' && m.status === 'ACTIVE' && m.roles.some((r) => r.role === 'CENTER_ADMIN')) {
         const others = await tx.membership.count({ where: { centerId, status: 'ACTIVE', id: { not: id }, roles: { some: { role: 'CENTER_ADMIN' } } } });
         if (!others) throw new ConflictException('This is the only active administrator. Ask the TheraBridge platform team to invite another administrator first.');

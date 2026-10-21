@@ -53,6 +53,19 @@ enum CenterSource {
 enum InvitationKind {
   FIRST_ADMIN
   STAFF
+  GUARDIAN
+}
+
+enum ChildStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
 }
 
 enum InvitationStatus {
@@ -63,13 +76,13 @@ enum InvitationStatus {
 }
 
 model User {
-  id              String              @id @default(uuid()) @db.Uuid
-  email           String              @db.VarChar(254)
-  emailNormalized String              @unique @map("email_normalized") @db.VarChar(254)
-  displayName     String              @map("display_name") @db.VarChar(120)
-  status          UserStatus          @default(ACTIVE)
-  createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt       DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id              String                   @id @default(uuid()) @db.Uuid
+  email           String                   @db.VarChar(254)
+  emailNormalized String                   @unique @map("email_normalized") @db.VarChar(254)
+  displayName     String                   @map("display_name") @db.VarChar(120)
+  status          UserStatus               @default(ACTIVE)
+  createdAt       DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(3)
   identities      AuthIdentity[]
   sessions        Session[]
   tokens          VerificationToken[]
@@ -95,21 +108,21 @@ model AuthIdentity {
 }
 
 model Session {
-  id                String    @id @default(uuid()) @db.Uuid
-  userId            String    @map("user_id") @db.Uuid
-  tokenHash         String    @unique @map("token_hash") @db.Char(64)
-  createdAt         DateTime  @map("created_at") @db.Timestamptz(3)
-  lastSeenAt        DateTime  @map("last_seen_at") @db.Timestamptz(3)
-  absoluteExpiresAt DateTime  @map("absolute_expires_at") @db.Timestamptz(3)
-  revokedAt         DateTime? @map("revoked_at") @db.Timestamptz(3)
-  revokedReason     String?   @map("revoked_reason") @db.VarChar(32)
-  rotatedFromId     String?   @map("rotated_from_id") @db.Uuid
-  ipPrefix          String?   @map("ip_prefix") @db.VarChar(64)
-  userAgent         String?   @map("user_agent") @db.VarChar(256)
+  id                 String      @id @default(uuid()) @db.Uuid
+  userId             String      @map("user_id") @db.Uuid
+  tokenHash          String      @unique @map("token_hash") @db.Char(64)
+  createdAt          DateTime    @map("created_at") @db.Timestamptz(3)
+  lastSeenAt         DateTime    @map("last_seen_at") @db.Timestamptz(3)
+  absoluteExpiresAt  DateTime    @map("absolute_expires_at") @db.Timestamptz(3)
+  revokedAt          DateTime?   @map("revoked_at") @db.Timestamptz(3)
+  revokedReason      String?     @map("revoked_reason") @db.VarChar(32)
+  rotatedFromId      String?     @map("rotated_from_id") @db.Uuid
+  ipPrefix           String?     @map("ip_prefix") @db.VarChar(64)
+  userAgent          String?     @map("user_agent") @db.VarChar(256)
   activePlatform     Boolean     @default(false) @map("active_platform")
   activeMembershipId String?     @map("active_membership_id") @db.Uuid
   activeRole         Role?       @map("active_role")
-  user              User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user               User        @relation(fields: [userId], references: [id], onDelete: Restrict)
   activeMembership   Membership? @relation(fields: [activeMembershipId], references: [id], onDelete: Restrict)
 
   @@index([userId, revokedAt])
@@ -160,11 +173,11 @@ model AuditEvent {
 }
 
 model Center {
-  id          String       @id @default(uuid()) @db.Uuid
-  slug        String       @unique @db.VarChar(64)
-  name        String       @db.VarChar(160)
-  status      CenterStatus @default(ACTIVE)
-  timezone    String       @db.VarChar(64)
+  id            String             @id @default(uuid()) @db.Uuid
+  slug          String             @unique @db.VarChar(64)
+  name          String             @db.VarChar(160)
+  status        CenterStatus       @default(ACTIVE)
+  timezone      String             @db.VarChar(64)
   country       String?            @db.VarChar(80)
   city          String?            @db.VarChar(80)
   specialties   String[]           @db.VarChar(32)
@@ -172,9 +185,13 @@ model Center {
   applicationId String?            @unique @map("application_id") @db.Uuid
   createdById   String?            @map("created_by_id") @db.Uuid
   version       Int                @default(1)
-  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  trialEndsAt   DateTime?          @map("trial_ends_at") @db.Timestamptz(3)
+  children      Child[]
+  guardianLinks GuardianLink[]
+  appointments  Appointment[]
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
-  memberships Membership[]
+  memberships   Membership[]
   application   CenterApplication? @relation(fields: [applicationId], references: [id], onDelete: Restrict)
   invitations   Invitation[]
   events        CenterEvent[]
@@ -184,22 +201,22 @@ model Center {
 }
 
 model Membership {
-  id        String           @id @default(uuid()) @db.Uuid
-  userId    String           @map("user_id") @db.Uuid
-  centerId  String           @map("center_id") @db.Uuid
-  status    MembershipStatus @default(ACTIVE)
+  id               String           @id @default(uuid()) @db.Uuid
+  userId           String           @map("user_id") @db.Uuid
+  centerId         String           @map("center_id") @db.Uuid
+  status           MembershipStatus @default(ACTIVE)
   title            String?          @db.VarChar(80)
   phone            String?          @db.VarChar(40)
   specialties      String[]         @db.VarChar(32)
   responsibilities String[]         @db.VarChar(32)
   statusReason     String?          @map("status_reason") @db.VarChar(500)
   statusChangedAt  DateTime?        @map("status_changed_at") @db.Timestamptz(3)
-  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt        DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
-  user      User             @relation(fields: [userId], references: [id], onDelete: Restrict)
-  center    Center           @relation(fields: [centerId], references: [id], onDelete: Restrict)
-  roles     RoleAssignment[]
-  sessions  Session[]
+  user             User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  center           Center           @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  roles            RoleAssignment[]
+  sessions         Session[]
 
   @@unique([userId, centerId])
   @@map("membership")
@@ -234,30 +251,30 @@ model PlatformRoleAssignment {
 
 // TB-EM-002: public center application and platform review. Approval does not create a center (TB-EM-003 provisions).
 model CenterApplication {
-  id                  String             @id @default(uuid()) @db.Uuid
-  reference           String             @unique @db.VarChar(16)
-  organizationName    String             @map("organization_name") @db.VarChar(160)
-  country             String             @db.VarChar(80)
-  city                String             @db.VarChar(80)
-  timezone            String             @db.VarChar(64)
-  contactName         String             @map("contact_name") @db.VarChar(120)
-  contactEmail        String             @map("contact_email") @db.VarChar(254)
-  contactEmailNorm    String             @map("contact_email_norm") @db.VarChar(254)
-  contactPhone        String?            @map("contact_phone") @db.VarChar(40)
-  specialties         String[]           @db.VarChar(32)
-  therapistEstimate   Int                @map("therapist_estimate")
-  childEstimate       Int                @map("child_estimate")
-  message             String?            @db.VarChar(2000)
-  status              ApplicationStatus  @default(SUBMITTED)
-  version             Int                @default(1)
-  submittedAt         DateTime           @map("submitted_at") @db.Timestamptz(3)
-  reviewStartedAt     DateTime?          @map("review_started_at") @db.Timestamptz(3)
-  reviewStartedById   String?            @map("review_started_by_id") @db.Uuid
-  decidedAt           DateTime?          @map("decided_at") @db.Timestamptz(3)
-  decidedById         String?            @map("decided_by_id") @db.Uuid
-  decisionRationale   String?            @map("decision_rationale") @db.VarChar(2000)
-  events              ApplicationEvent[]
-  center              Center?
+  id                String             @id @default(uuid()) @db.Uuid
+  reference         String             @unique @db.VarChar(16)
+  organizationName  String             @map("organization_name") @db.VarChar(160)
+  country           String             @db.VarChar(80)
+  city              String             @db.VarChar(80)
+  timezone          String             @db.VarChar(64)
+  contactName       String             @map("contact_name") @db.VarChar(120)
+  contactEmail      String             @map("contact_email") @db.VarChar(254)
+  contactEmailNorm  String             @map("contact_email_norm") @db.VarChar(254)
+  contactPhone      String?            @map("contact_phone") @db.VarChar(40)
+  specialties       String[]           @db.VarChar(32)
+  therapistEstimate Int                @map("therapist_estimate")
+  childEstimate     Int                @map("child_estimate")
+  message           String?            @db.VarChar(2000)
+  status            ApplicationStatus  @default(SUBMITTED)
+  version           Int                @default(1)
+  submittedAt       DateTime           @map("submitted_at") @db.Timestamptz(3)
+  reviewStartedAt   DateTime?          @map("review_started_at") @db.Timestamptz(3)
+  reviewStartedById String?            @map("review_started_by_id") @db.Uuid
+  decidedAt         DateTime?          @map("decided_at") @db.Timestamptz(3)
+  decidedById       String?            @map("decided_by_id") @db.Uuid
+  decisionRationale String?            @map("decision_rationale") @db.VarChar(2000)
+  events            ApplicationEvent[]
+  center            Center?
 
   @@index([status, submittedAt])
   @@map("center_application")
@@ -303,6 +320,7 @@ model Invitation {
   revokedAt        DateTime?        @map("revoked_at") @db.Timestamptz(3)
   revokedById      String?          @map("revoked_by_id") @db.Uuid
   replacedById     String?          @map("replaced_by_id") @db.Uuid
+  guardianLinkId   String?          @map("guardian_link_id") @db.Uuid
   center           Center           @relation(fields: [centerId], references: [id], onDelete: Restrict)
 
   @@index([centerId, status])
@@ -336,4 +354,84 @@ model CenterSetupStep {
 
   @@id([centerId, key])
   @@map("center_setup_step")
+}
+
+// TB-EM-006 Center Operations. Operational (non-clinical) child data only; synthetic in Emergent.
+model Child {
+  id            String           @id @default(uuid()) @db.Uuid
+  centerId      String           @map("center_id") @db.Uuid
+  firstName     String           @map("first_name") @db.VarChar(80)
+  lastName      String           @map("last_name") @db.VarChar(80)
+  preferredName String?          @map("preferred_name") @db.VarChar(80)
+  dateOfBirth   DateTime         @map("date_of_birth") @db.Date
+  services      String[]         @db.VarChar(32)
+  status        ChildStatus      @default(ACTIVE)
+  createdById   String           @map("created_by_id") @db.Uuid
+  createdAt     DateTime         @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  version       Int              @default(1)
+  center        Center           @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  guardians     GuardianLink[]
+  assignments   CareAssignment[]
+  appointments  Appointment[]
+
+  @@index([centerId, status])
+  @@map("child")
+}
+
+model GuardianLink {
+  id           String    @id @default(uuid()) @db.Uuid
+  centerId     String    @map("center_id") @db.Uuid
+  childId      String    @map("child_id") @db.Uuid
+  displayName  String    @map("display_name") @db.VarChar(120)
+  email        String    @db.VarChar(254)
+  emailNorm    String    @map("email_norm") @db.VarChar(254)
+  relationship String    @db.VarChar(32)
+  isPrimary    Boolean   @default(false) @map("is_primary")
+  userId       String?   @map("user_id") @db.Uuid
+  removedAt    DateTime? @map("removed_at") @db.Timestamptz(3)
+  createdAt    DateTime  @map("created_at") @db.Timestamptz(3)
+  center       Center    @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  child        Child     @relation(fields: [childId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@map("guardian_link")
+}
+
+model CareAssignment {
+  id           String    @id @default(uuid()) @db.Uuid
+  centerId     String    @map("center_id") @db.Uuid
+  childId      String    @map("child_id") @db.Uuid
+  membershipId String    @map("membership_id") @db.Uuid
+  service      String    @db.VarChar(32)
+  isLead       Boolean   @default(false) @map("is_lead")
+  startedAt    DateTime  @map("started_at") @db.Timestamptz(3)
+  endedAt      DateTime? @map("ended_at") @db.Timestamptz(3)
+  child        Child     @relation(fields: [childId], references: [id], onDelete: Restrict)
+
+  @@index([membershipId])
+  @@map("care_assignment")
+}
+
+model Appointment {
+  id           String            @id @default(uuid()) @db.Uuid
+  centerId     String            @map("center_id") @db.Uuid
+  childId      String            @map("child_id") @db.Uuid
+  membershipId String            @map("membership_id") @db.Uuid
+  service      String            @db.VarChar(32)
+  startsAt     DateTime          @map("starts_at") @db.Timestamptz(3)
+  endsAt       DateTime          @map("ends_at") @db.Timestamptz(3)
+  room         String?           @db.VarChar(80)
+  status       AppointmentStatus @default(SCHEDULED)
+  statusReason String?           @map("status_reason") @db.VarChar(500)
+  createdById  String            @map("created_by_id") @db.Uuid
+  createdAt    DateTime          @map("created_at") @db.Timestamptz(3)
+  version      Int               @default(1)
+  center       Center            @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  child        Child             @relation(fields: [childId], references: [id], onDelete: Restrict)
+
+  @@index([centerId, startsAt])
+  @@index([membershipId, startsAt])
+  @@index([childId, startsAt])
+  @@map("appointment")
 }

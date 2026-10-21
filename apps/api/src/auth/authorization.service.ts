@@ -16,7 +16,7 @@ export class AuthorizationService {
       if (!active || !can('PLATFORM_ADMIN', permission)) throw new ForbiddenException('You do not have access to this area.');
       return;
     }
-    if (permission.startsWith('center.')) {
+    if (permission.startsWith('center.') || permission.startsWith('family.')) {
       const centerId = params.centerId;
       if (!s.activeMembershipId || !s.activeRole || !centerId) throw new NotFoundException();
       const m = await this.prisma.membership.findUnique({ where: { id: s.activeMembershipId }, include: { center: true, roles: true } });

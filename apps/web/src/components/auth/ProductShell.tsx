@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeftRight, Building2, ClipboardCheck, Home, Inbox, KeyRound, Lock, LogOut, Settings2, UserRound, Users, type LucideIcon } from 'lucide-react';
+import { ArrowLeftRight, Baby, Building2, CalendarDays, ClipboardCheck, Home, Inbox, KeyRound, Lock, LogOut, Settings2, UserRound, Users, type LucideIcon } from 'lucide-react';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { SignatureBand } from '@/components/brand/SignatureBand';
 import { Avatar } from '@/components/design/ui';
@@ -32,6 +32,8 @@ const NAV: { key: string; href: string; icon: LucideIcon; label: string; short: 
   { key: 'applications', href: '/app/applications', icon: Inbox, label: 'Center applications', short: 'Applications', permission: 'platform.applications.read' },
   { key: 'centers', href: '/app/centers', icon: Building2, label: 'Centers', short: 'Centers', permission: 'platform.centers.read' },
   { key: 'setup', href: '/app/setup', icon: ClipboardCheck, label: 'Center setup', short: 'Setup', permission: 'center.setup.manage' },
+  { key: 'children', href: '/app/children', icon: Baby, label: 'Children', short: 'Children', permission: 'center.children.read' },
+  { key: 'schedule', href: '/app/schedule', icon: CalendarDays, label: 'Schedule', short: 'Schedule', permission: 'center.schedule.read' },
   { key: 'team', href: '/app/team', icon: Users, label: 'Team', short: 'Team', permission: 'center.staff.read' },
   { key: 'center', href: '/app/center', icon: Settings2, label: 'Center details', short: 'Center', permission: 'center.settings.read' },
   { key: 'profile', href: '/app/profile', icon: UserRound, label: 'My profile', short: 'Profile', permission: 'center.profile.self' },

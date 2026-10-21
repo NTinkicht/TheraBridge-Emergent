@@ -16,6 +16,7 @@ Source of truth: `apps/api/src/auth/policy.ts`. The test `authz.e2e-spec.ts` fai
 | platform.centers.read | PLATFORM_ADMIN |
 | platform.centers.create | PLATFORM_ADMIN |
 | platform.centers.invite_admin | PLATFORM_ADMIN |
+| platform.centers.trial | PLATFORM_ADMIN |
 | center.summary.read | CENTER_ADMIN, COORDINATOR, THERAPIST, CLINICAL_SUPERVISOR |
 | center.settings.read | CENTER_ADMIN |
 | center.settings.update | CENTER_ADMIN |
@@ -24,6 +25,14 @@ Source of truth: `apps/api/src/auth/policy.ts`. The test `authz.e2e-spec.ts` fai
 | center.staff.invite | CENTER_ADMIN |
 | center.staff.manage | CENTER_ADMIN |
 | center.profile.self | CENTER_ADMIN, COORDINATOR, THERAPIST, CLINICAL_SUPERVISOR |
+| center.children.read | CENTER_ADMIN, COORDINATOR, THERAPIST, CLINICAL_SUPERVISOR |
+| center.children.manage | CENTER_ADMIN, COORDINATOR |
+| center.families.manage | CENTER_ADMIN, COORDINATOR |
+| center.assignments.manage | CENTER_ADMIN, COORDINATOR |
+| center.schedule.read | CENTER_ADMIN, COORDINATOR, THERAPIST, CLINICAL_SUPERVISOR |
+| center.schedule.manage | CENTER_ADMIN, COORDINATOR |
+| center.appointments.status | CENTER_ADMIN, COORDINATOR, THERAPIST |
+| family.portal.read | GUARDIAN |
 
 **Clinical capabilities: DENY for every role, PLATFORM_ADMIN included**
 
@@ -35,7 +44,9 @@ These capabilities stay denied until an owner-approved clinical policy exists.
 - CENTER_ADMIN: center settings, setup checklist, staff directory, staff invitations, role/profile edits, suspension, reactivation and revocation.
 - COORDINATOR: read-only staff directory and invitation list, own profile.
 - THERAPIST and CLINICAL_SUPERVISOR: center summary and own profile. Clinical permissions remain denied.
-- GUARDIAN: no permissions yet (parent portal is the next functional priority).
+- GUARDIAN: `family.portal.read` only. They see the children linked to their own account through an active guardian link, those children's care team names and upcoming appointments. They never see staff emails, other families or dates of birth.
+- Scoping inside a center (TB-EM-006): a THERAPIST sees only children with an active care assignment to them, and only their own appointments. They can record attendance (completed / no-show) on their own appointments after the start time. Cancelling and rescheduling need `center.schedule.manage`. Guardian emails are shown only to center administrators and coordinators.
+- Trial (TB-EM-005): writes are refused with 403 after `center.trial_ends_at`. Reads keep working. Only `platform.centers.trial` can extend a trial.
 
 **Who can assign roles (TB-EM-003/004)**
 - CENTER_ADMIN is granted only by a platform-issued administrator invitation (`platform.centers.invite_admin`).
