@@ -1,0 +1,3 @@
+# Reviewed false positives (fingerprint = commit:file:rule:line; no secret values here).
+# main README line 18: English prose after "secrets:", not a credential. Reviewed 2026-10-20.
+d8ca97c2b05109776a4f3e7cf87d8080624f793c:README.md:therabridge-credential-assignment:18

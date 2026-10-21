@@ -8,8 +8,8 @@ Updated: 2026-10-20 (UTC)
 |---|---|
 | Work unit | TB-EM-001 **checkpoint 0** (design polish ACCEPTED; probe retirement IMPLEMENTED, awaiting independent review) |
 | Last verified export | `66254a1` on `phase-1-center-foundation`. It matched local history (checked via the GitHub API). GitHub Actions run `39474586243`: `test` **TESTED: PASS**, `compose` **TESTED: PASS** |
-| Checkpoint 0 export SHA | **PENDING: owner exports and reports the SHA** |
-| Export status of checkpoint 0 | **UNEXPORTED / AT RISK** until exported |
+| Checkpoint 0 export SHA | `217c94ac87b2`. GitHub Actions run `39538224035`: `test` **TESTED: PASS**, `compose` **TESTED: PASS** (verified via the public GitHub API). The independent review found the secret-scan step missing |
+| Checkpoint 0 correction (secret scan) | IMPLEMENTED locally. Export SHA **PENDING: owner exports and reports it**. CI `secret-scan` job **NOT RUN** until export. Status **UNEXPORTED / AT RISK** until then |
 | Other remote branches | `review/fix-compose-probe-env` (a net-zero add/revert pair) and `review/record-tb-em-000-checkpoint` belong to independent reviewers. They are not merged and were not touched |
 | Repository | `NTinkicht/TheraBridge-Emergent` |
 | Actual exported branch | `phase-1-center-foundation` (Emergent created it without the planned `emergent/` prefix) |
@@ -38,7 +38,8 @@ Updated: 2026-10-20 (UTC)
 | Integration script against a simulated `main` with unrelated history | TESTED: PASS |
 | `next build` / `nest build` production builds | TESTED: PASS (in workspace) |
 | Dockerfiles + `docker-compose.yml` | IMPLEMENTED, TESTED: PASS in GitHub Actions (`compose` job, run 39474586243). Not runnable inside Emergent (no Docker) |
-| GitHub Actions CI `.github/workflows/ci.yml` | TESTED: PASS on `4c077b2` and `66254a1`. The checkpoint 0 changes to the smoke test are NOT RUN until export |
+| GitHub Actions CI `.github/workflows/ci.yml` | TESTED: PASS on `4c077b2`, `66254a1` and `217c94a` (checkpoint 0). The new `secret-scan` job is NOT RUN until export |
+| Secret scan (gitleaks 8.30.1, `.gitleaks.toml`) | Initial historical scan TESTED: PASS. It covered all 45 commits on all 4 public branches (`main`, `phase-1-center-foundation` and both `review/*` branches). 6 raw findings, all reviewed as false positives with no values displayed: a `${VAR}` reference, kebab-case test IDs, and prose in `main`'s README (fingerprinted in `.gitleaksignore`). Re-scan: 0 findings. A planted canary secret was detected and its value was not printed |
 | Cold-clone drill | **NOT RUN** |
 | Logo derivatives (light surfaces) | IMPLEMENTED, checked against original (see `docs/emergent/brand/LOGO_DERIVATIVES.md`) |
 | TB-EM-001 | APPROVED WITH CHANGES (R1–R5 recorded in `docs/emergent/workunits/TB-EM-001.md`). Checkpoint 0 IMPLEMENTED. Checkpoints A–C **not authorized** |

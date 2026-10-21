@@ -194,7 +194,13 @@ Linked workflows: Blueprint §4 (identity, tenants, authorization), §5A (login,
 - **CI:** generates `AUTH_SECRET` per run (`openssl rand`). Nothing is stored in the repository.
 
 **Enforcement**
-- A CI secret-scan step runs `gitleaks`, with a custom rule for `password|secret|token\s*[:=]` in `memory/` and `docs/`. It fails the build on any finding.
+- **Implemented in checkpoint 0 correction (2026-10-20):** a `secret-scan` CI job.
+  - It runs gitleaks **v8.30.1**, verified against the official release SHA-256 checksum.
+  - It scans the **full Git history of all fetched refs** (`fetch-depth: 0`, `--log-opts=--all`) and **all tracked files** in the checkout.
+  - It uses `--redact=100`, so values never appear in logs, and uploads no report artifact. Any finding fails CI with exit code 1.
+- **Configuration:** `.gitleaks.toml` uses the gitleaks default rules plus the TheraBridge rule `therabridge-credential-assignment` (password, secret, token or API-key assignments with a literal value of 8+ characters, in any tracked file).
+- **Allow-list:** the `CHANGE_ME*` placeholders, `ci_only_*` throwaway values, `${VAR}`/env references and kebab-case test IDs.
+- **Reviewed false positives:** kept as fingerprints only, in `.gitleaksignore`.
 - The real owner account (nassim.tinkicht@gmail.com) is **not** seeded anywhere and does not appear in seed code. It is created only by the owner, through `bootstrap:owner`, in an environment the owner controls.
 
 ## 7. Acceptance criteria (all must be TESTED: PASS; numbered for traceability)

@@ -32,7 +32,7 @@ Spec: `docs/emergent/workunits/TB-EM-001.md`, §3 (checkpoint A), §6 (secrets p
 - Session-bound CSRF synchronizer token, an HMAC pre-auth token, Origin/Referer/Sec-Fetch-Site checks, `__Host-` cookies, and rotation on login, context switch and password change.
 - PostgreSQL-backed atomic lockout and rate-limit counters, shared across instances, with `TRUSTED_PROXY_CIDRS` (required). Includes the two-instance and spoofed-XFF regression tests.
 - The `bootstrap:owner` CLI (TTY only, refuses in preview, ci and shared-synthetic) is separate from `seed:synthetic` (random disposable passwords in the gitignored `.workspace/local-credentials/`).
-- Secret scan in CI (gitleaks).
+- Secret scan in CI: done in the checkpoint 0 correction (`secret-scan` job). Checkpoint A must keep it green.
 - Drop `schema_info` once the identity models exist.
 
 ## Risks / dependencies

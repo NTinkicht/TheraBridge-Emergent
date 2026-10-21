@@ -1,0 +1,26 @@
+# Gitleaks configuration (TB-EM-001 checkpoint 0, owner correction R2).
+# Default gitleaks rules plus one TheraBridge rule for credential assignments in any tracked file.
+title = "TheraBridge secret scan"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "therabridge-credential-assignment"
+description = "Password, secret, token or API key assigned a literal value"
+regex = '''(?i)\b[a-z0-9_]*(?:password|passwd|secret|token|api[_-]?key)[a-z0-9_]*["']?\s*[:=]\s*["']?([^\s"'`,;)<>]{8,})'''
+secretGroup = 1
+entropy = 2.5
+keywords = ["password", "passwd", "secret", "token", "api_key", "apikey", "api-key"]
+
+[[rules.allowlists]]
+description = "Placeholders, env references, CI-only throwaways and kebab-case test IDs (checked on the captured value)"
+regexTarget = "secret"
+regexes = [
+  '''^CHANGE_ME[A-Z_]*$''',
+  '''^ci_only_[a-z_]+$''',
+  '''^\$\{?[A-Z_][A-Z0-9_]*''',
+  '''^process\.env\.''',
+  '''^env\(''',
+  '''^[a-z0-9]+(-[a-z0-9]+)+$''',
+]

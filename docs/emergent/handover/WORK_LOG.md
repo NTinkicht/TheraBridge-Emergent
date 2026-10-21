@@ -21,6 +21,20 @@
 
 **Mocked/disabled:** nothing mocked. No auth, no tenants, no mailbox endpoint (TB-EM-001, PLANNED).
 
+## TB-EM-001 checkpoint 0 correction: secret scan (2026-10-20)
+
+**Review finding:** the spec claimed a CI secret scan, but `ci.yml` had none (export `217c94ac87b2`, whose CI test and compose jobs were green).
+
+**Changed:**
+- Added a `secret-scan` job using gitleaks 8.30.1, version- and SHA-256-pinned. It covers the full history and the tracked files, redacts values and fails on any finding.
+- Added `.gitleaks.toml` (default rules plus a TheraBridge credential-assignment rule) and `.gitleaksignore` (1 reviewed fingerprint).
+- Documentation updated.
+
+**Initial historical scan:** all 4 public branches, 0 findings after review. Each of the 6 raw hits was a false positive.
+
+**Stop:** export, then wait for independent verification. Checkpoint A is not authorized.
+
+
 ## TB-EM-001 checkpoint 0: corrections recorded, probe retired (2026-10-20)
 
 **Owner decision:**

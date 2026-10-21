@@ -138,7 +138,18 @@ Environment: Emergent workspace, PostgreSQL 15.19 (restarted with `scripts/works
 | CI on the checkpoint 0 SHA | **NOT RUN** until export |
 | Clean clone of local commit `8d0a5b8`: frozen-lockfile install, prisma generate, migrate on the test DB, api typecheck, 8/8 tests, nest build, next build | TESTED: PASS (workspace) |
 
-## Not run (explicit)
+## TB-EM-001 checkpoint 0 correction: secret scan (2026-10-20)
+
+Gitleaks **v8.30.1**. Both release tarballs (linux_x64 for CI, linux_arm64 for this workspace) were checked against the official checksums file. All scans used `--redact=100`, and no values appear in this report.
+
+| Check | Result |
+|---|---|
+| CI on checkpoint 0 export `217c94ac87b2` (run 39538224035) | `test` PASS, `compose` PASS |
+| Initial historical scan: mirror clone of the public repo, all 4 branches, 45 commits, `--log-opts=--all` | First pass: 6 findings, all reviewed as false positives (1 `${POSTGRES_PASSWORD:?…}` reference in old `docker-compose.yml`, 4 kebab-case test IDs in an Emergent template file, 1 line of prose in `main` README). After allow-list tuning plus 1 fingerprint: **0 findings. TESTED: PASS** |
+| Local history (25 commits, all refs) | 0 findings: TESTED: PASS |
+| Tracked files (clean clone, `gitleaks dir`) | 0 findings: TESTED: PASS |
+| Canary: a fake `SEED_DEMO_PASSWORD` with a random value, outside the repo | Detected (exit 1); the value does not appear in the output: TESTED: PASS |
+| CI `secret-scan` job | **NOT RUN** until export |
 
 - Docker Compose, Dockerfiles, CI workflow, cold-clone drill: authored, **NOT RUN**.
 - Viewports 320/768/1024/1440: **NOT RUN** for TB-EM-000 (responsive pass is TB-EM-006).
