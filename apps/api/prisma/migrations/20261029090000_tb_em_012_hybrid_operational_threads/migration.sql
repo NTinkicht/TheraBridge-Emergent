@@ -6,7 +6,7 @@ ALTER TABLE "message_thread"
 ALTER TABLE "message_thread"
   ADD CONSTRAINT "message_thread_audience_scope_check"
   CHECK (
-    ("audience" = 'GUARDIAN' AND "service" IS NULL AND "guardian_link_id" IS NOT NULL)
+    ("audience" = 'GUARDIAN' AND "service" IS NULL)
     OR ("audience" = 'CARE_TEAM' AND "service" IS NULL AND "guardian_link_id" IS NULL)
     OR ("audience" = 'SPECIALTY' AND "service" IS NOT NULL AND "guardian_link_id" IS NULL)
   );
