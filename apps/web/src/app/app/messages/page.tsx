@@ -16,7 +16,9 @@ function Page({ session, onError }: { session: SessionInfo; onError: (e: unknown
       : opsApi.children(centerId, {}).then((r) => r.items.map((c) => ({ id: c.id, name: `${c.preferredName ?? c.firstName} ${c.lastName}` })));
     load.then(setKids).catch(() => setKids([]));
   }, [centerId, family]);
-  return <Messages centerId={centerId} family={family} kids={kids} onError={onError} />;
+  const therapistMembershipId = session.activeContext?.type === 'center' && session.activeContext.role === 'THERAPIST'
+    ? session.activeContext.membershipId : undefined;
+  return <Messages centerId={centerId} family={family} kids={kids} therapistMembershipId={therapistMembershipId} onError={onError} />;
 }
 
 export default function MessagesPage() {
