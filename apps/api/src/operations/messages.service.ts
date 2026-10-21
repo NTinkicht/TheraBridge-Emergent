@@ -22,8 +22,8 @@ export const threadScope = (
     OR: [
       { audience: { in: ['GUARDIAN', 'CARE_TEAM'] }, child: { status: 'ACTIVE', assignments: { some: { membershipId: v.membershipId, endedAt: null } } } },
       ...assignments.map(({ childId, service }) => ({
-        audience: 'SPECIALTY', childId, service,
-        child: { status: 'ACTIVE', assignments: { some: { membershipId: v.membershipId, service, endedAt: null } } },
+        audience: 'SPECIALTY' as const, childId, service,
+        child: { status: 'ACTIVE' as const, assignments: { some: { membershipId: v.membershipId, service, endedAt: null } } },
       })),
     ],
   };
