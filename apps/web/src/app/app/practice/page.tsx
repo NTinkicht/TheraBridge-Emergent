@@ -46,7 +46,10 @@ function Practice({ session, onError }: { session: SessionInfo; onError: (e: unk
   const day = data.week.days.includes(data.today) ? data.today : data.week.days[0];
   return (
     <div className="theme-family-light space-y-4 rounded-card bg-fam-canvas p-4 text-fam-ink md:p-6" data-testid="practice-page">
-      <h1 className="flex items-center gap-2 font-display text-[26px] font-bold">Home practice</h1>
+      <div>
+        <h1 className="flex items-center gap-2 font-display text-[26px] font-bold">Home practice</h1>
+        {child && <p className="text-[15px] text-fam-muted" data-testid="practice-child-name">For {child.name}</p>}
+      </div>
       <p className="flex items-start gap-2 rounded-control border-2 border-dashed border-fam-caution bg-fam-surface p-3 text-[14px]" data-testid="practice-sample-banner">
         <FlaskConical size={18} className="mt-0.5 shrink-0 text-fam-caution" aria-hidden="true" />
         <span><strong>Sample activities only.</strong> These are synthetic examples, not your child’s released therapy plan. Plans are not shared with families in this version. Your answers are stored as synthetic practice feedback and are never counted as therapy progress.{!canRecord && ' Recording answers is switched off right now.'}</span>
@@ -60,7 +63,7 @@ function Practice({ session, onError }: { session: SessionInfo; onError: (e: unk
           )}
           <div role="tablist" aria-label="View" className="flex flex-wrap gap-2">
             <button role="tab" aria-selected={view === 'today'} className={tab(view === 'today')} onClick={() => { setView('today'); setWeek(undefined); }} data-testid="practice-view-today"><Sun size={15} aria-hidden="true" />Today</button>
-            <button role="tab" aria-selected={view === 'week'} className={tab(view === 'week')} onClick={() => setView('week')} data-testid="practice-view-week"><CalendarDays size={15} aria-hidden="true" />This week</button>
+            <button role="tab" aria-selected={view === 'week'} className={tab(view === 'week')} onClick={() => { setView('week'); setWeek(undefined); }} data-testid="practice-view-week"><CalendarDays size={15} aria-hidden="true" />This week</button>
             <button role="tab" aria-selected={view === 'history'} className={tab(view === 'history')} onClick={() => setView('history')} data-testid="practice-view-history"><History size={15} aria-hidden="true" />History</button>
           </div>
           {view === 'week' && (

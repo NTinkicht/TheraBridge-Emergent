@@ -34,8 +34,9 @@ function InboxView({ session, onError }: { session: SessionInfo; onError: (e: un
   const [f, setF] = useState({ childId: '', templateId: '', choice: '', status: '', from: '', to: '' });
   const invalid = !!f.from && !!f.to && f.from > f.to;
   const fetcher = useCallback(() => practiceApi.inbox(centerId, f), [centerId, f]);
-  const { data, failed, reload } = useLoad(fetcher, onError);
-  const ack = async (id: string) => { try { await practiceApi.acknowledge(centerId, id); await reload(); } catch (e) { errorText(e, onError); } };
+  const { data, failed, reload } = useLoad(invalid ? null : fetcher, onError);
+  const [ackErr, setAckErr] = useState<string | null>(null);
+  const ack = async (id: string) => { setAckErr(null); try { await practiceApi.acknowledge(centerId, id); await reload(); } catch (e) { setAckErr(errorText(e, onError) || 'This couldn’t be acknowledged. Nothing was changed.'); } };
   return (
     <div className="space-y-5" data-testid="feedback-page">
       <PageTitle eyebrow="Clinical" title="Practice feedback" body="Fixed-choice answers families recorded for sample home activities. They are not clinical observations and never count towards goals or progress." testId="feedback-title" />
@@ -48,6 +49,7 @@ function InboxView({ session, onError }: { session: SessionInfo; onError: (e: un
         <Field label="From" type="date" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} testId="feedback-filter-from" />
         <Field label="To" type="date" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} testId="feedback-filter-to" />
       </Card>
+      {ackErr && <p className="rounded-control bg-status-dangerSurface p-3 text-[14px] text-status-danger" role="alert" data-testid="feedback-ack-error">{ackErr}</p>}
       {invalid && <p className="rounded-control bg-status-dangerSurface p-3 text-[14px] text-status-danger" role="alert" data-testid="feedback-period-error">Choose a start date on or before the end date.</p>}
       {!invalid && failed && <ErrorState onRetry={() => void reload()} testId="feedback-error" />}
       {!invalid && !failed && !data && <Card className="p-5"><SkeletonRows rows={3} testId="feedback-loading" /></Card>}

@@ -1,6 +1,11 @@
 # NEXT_WORK
 
-## Immediate (owner): export TB-EM-009 Progress Tracking and Report Drafting
+## Immediate (owner): export TB-EM-010 Family Home Practice and Outcomes
+
+1. Save to GitHub on `phase-1-center-foundation`. Never Force Push. CI should show 399 API tests. New migration: `20261027090000_tb_em_010_practice_outcomes`. New env flag: `FAMILY_PRACTICE_DEMO` (local/CI only).
+2. File N30–N31 from `workunits/TB-EM-010.md`.
+
+## Previous: export TB-EM-009 Progress Tracking and Report Drafting (accepted)
 
 1. Save to GitHub on `phase-1-center-foundation`. Never Force Push. CI should show 374 API tests. New migration: `20261026090000_tb_em_009_progress_reports`.
 2. File N28–N29 from `workunits/TB-EM-009.md`.
