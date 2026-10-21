@@ -34,7 +34,7 @@ Source of truth: `apps/api/src/auth/policy.ts`. The test `authz.e2e-spec.ts` fai
 | center.appointments.status | CENTER_ADMIN, COORDINATOR, THERAPIST |
 | family.portal.read | GUARDIAN |
 | family.preferences.update | GUARDIAN |
-| center.messages.use | CENTER_ADMIN, COORDINATOR, THERAPIST, GUARDIAN |
+| center.messages.use | CENTER_ADMIN, COORDINATOR, THERAPIST, CLINICAL_SUPERVISOR, GUARDIAN |
 | center.messages.manage | CENTER_ADMIN, COORDINATOR |
 | platform.reminders.run | PLATFORM_ADMIN |
 | center.clinical.read | THERAPIST, CLINICAL_SUPERVISOR |
