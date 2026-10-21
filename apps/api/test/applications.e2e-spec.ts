@@ -120,7 +120,7 @@ describe('TB-EM-002: center applications and platform review (real PostgreSQL)',
       const r1 = await post(h, `/api/platform/applications/${id}/start-review`, admin, { version: 1 }).expect(200);
       expect(r1.body).toMatchObject({ status: 'UNDER_REVIEW', reviewStartedBy: 'Test User', version: 2 });
       const r2 = await post(h, `/api/platform/applications/${id}/decision`, admin, { decision: 'APPROVED', rationale: 'Licensed center, synthetic pilot scope confirmed.', version: 2 }).expect(200);
-      expect(r2.body).toMatchObject({ status: 'APPROVED', decidedBy: 'Test User', provisioning: { status: 'AWAITING_PROVISIONING', workUnit: 'TB-EM-003' } });
+      expect(r2.body).toMatchObject({ status: 'APPROVED', decidedBy: 'Test User', provisioning: { status: 'AWAITING_PROVISIONING', center: null } });
       expect(r2.body.events.map((e: { type: string }) => e.type)).toEqual(['submitted', 'review_started', 'approved']);
       expect(await h.prisma.center.count()).toBe(0);
       expect(await h.prisma.auditEvent.count({ where: { type: { in: ['application.review_started', 'application.approved'] }, actorUserId: adminId } })).toBe(2);

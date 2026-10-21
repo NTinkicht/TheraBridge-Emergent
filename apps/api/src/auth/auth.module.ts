@@ -26,6 +26,6 @@ import { SessionService } from './session.service';
     RouteAccessVerifier,
     { provide: APP_GUARD, useClass: AccessGuard },
   ],
-  exports: [SessionService, AuthorizationService, ContextService, RouteAccessVerifier, RateLimitStore, CLOCK],
+  exports: [AuthService, SessionService, AuthorizationService, ContextService, RouteAccessVerifier, RateLimitStore, CLOCK],
 })
 export class AuthModule {}

@@ -9,7 +9,10 @@ export type AuditType =
   | 'auth.password.reset_requested' | 'auth.password.reset_completed' | 'auth.password.changed'
   | 'auth.context.switched' | 'security.csrf_rejected' | 'security.origin_rejected'
   | 'platform.owner_bootstrapped' | 'seed.synthetic'
-  | 'application.submitted' | 'application.review_started' | 'application.approved' | 'application.rejected';
+  | 'application.submitted' | 'application.review_started' | 'application.approved' | 'application.rejected'
+  | 'center.provisioned' | 'center.updated'
+  | 'invitation.created' | 'invitation.resent' | 'invitation.revoked' | 'invitation.replaced' | 'invitation.accepted'
+  | 'member.updated' | 'member.suspended' | 'member.reactivated' | 'member.revoked' | 'member.profile_updated';
 
 interface AuditInput {
   actorUserId?: string | null;

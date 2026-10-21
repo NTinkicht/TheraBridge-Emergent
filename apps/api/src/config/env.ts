@@ -18,6 +18,7 @@ export interface AuthConfig {
   trustedProxies: BlockList;
   corsOrigins: string[];
   devMailbox: boolean;
+  outboxDir: string | null;
 }
 
 export const AUTH_CONFIG = Symbol('AUTH_CONFIG');
@@ -73,6 +74,10 @@ export function loadAuthConfig(src: Source = process.env): AuthConfig {
     throw new Error('COOKIE_SECURE=false is only allowed when DEPLOYMENT_ENV is local or ci');
   }
   if (src.TRUSTED_PROXY_CIDRS === undefined) throw new Error('Missing required environment variable TRUSTED_PROXY_CIDRS (empty = trust none)');
+  const outboxDir = src.DEV_OUTBOX_DIR || null;
+  if (outboxDir && !['local', 'ci', 'preview', 'shared-synthetic'].includes(deploymentEnv)) {
+    throw new Error('DEV_OUTBOX_DIR is only allowed in synthetic environments (local, ci, preview, shared-synthetic)');
+  }
   const prefix = cookieSecure ? '__Host-' : '';
   return {
     deploymentEnv,
@@ -83,5 +88,6 @@ export function loadAuthConfig(src: Source = process.env): AuthConfig {
     trustedProxies: parseTrustedProxies(src.TRUSTED_PROXY_CIDRS),
     corsOrigins: parseOrigins(required(src, 'CORS_ORIGINS')),
     devMailbox: bool(src, 'DEV_MAILBOX_ENABLED'),
+    outboxDir,
   };
 }

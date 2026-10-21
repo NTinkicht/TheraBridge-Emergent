@@ -268,7 +268,7 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
         expect(r.access).toBeDefined();
         if (r.access!.kind === 'public') continue;
         const path = `/api${r.route.replace(/:[A-Za-z]+/g, '00000000-0000-4000-8000-000000000000')}`;
-        const res = r.method === 'GET' ? await h.http().get(path) : await h.http().post(path).set('Origin', ORIGIN).send({});
+        const res = r.method === 'GET' ? await h.http().get(path) : await h.http()[r.method === 'PATCH' ? 'patch' : 'post'](path).set('Origin', ORIGIN).send({});
         expect([r.method, r.route, res.status]).toEqual([r.method, r.route, 401]);
       }
     });

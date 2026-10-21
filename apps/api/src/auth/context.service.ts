@@ -11,6 +11,8 @@ export type ContextOption =
   | { type: 'platform'; role: 'PLATFORM_ADMIN' }
   | { type: 'center'; membershipId: string; centerId: string; centerName: string; centerSlug: string; role: Role };
 
+const ROLE_PRIORITY: Role[] = ['CENTER_ADMIN', 'COORDINATOR', 'CLINICAL_SUPERVISOR', 'THERAPIST'];
+
 export interface ContextChoice {
   platform?: boolean;
   membershipId?: string;
@@ -59,6 +61,18 @@ export class ContextService {
     const session = await this.prisma.session.findUniqueOrThrow({ where: { tokenHash: sha256(token) } });
     const options = await this.options(session.userId);
     if (options.length === 1) await this.prisma.session.update({ where: { id: session.id }, data: this.fields(options[0]) });
+  }
+
+  // After accepting an invitation the session lands in that center, in the highest-priority role it now holds.
+  async membershipFields(userId: string, membershipId: string) {
+    const options = await this.options(userId);
+    const pick = ROLE_PRIORITY.map((role) => this.find(options, { membershipId, role })).find(Boolean);
+    return pick ? this.fields(pick) : {};
+  }
+
+  async enterMembership(token: string, membershipId: string): Promise<void> {
+    const session = await this.prisma.session.findUniqueOrThrow({ where: { tokenHash: sha256(token) } });
+    await this.prisma.session.update({ where: { id: session.id }, data: await this.membershipFields(session.userId, membershipId) });
   }
 
   async select(auth: AuthState, choice: ContextChoice): Promise<string> {

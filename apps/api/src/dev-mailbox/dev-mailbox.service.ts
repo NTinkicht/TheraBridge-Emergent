@@ -1,4 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { randomBytes } from 'node:crypto';
 import { AUTH_CONFIG, AuthConfig } from '../config/env';
 
 export interface DevMail {
@@ -8,7 +11,8 @@ export interface DevMail {
   at: string;
 }
 
-// Local development only: holds messages in memory instead of sending email. Disabled everywhere else.
+// Restricted delivery for synthetic environments: an in-memory mailbox (local only, loopback HTTP) and/or
+// a server-side outbox directory (owner-only file permissions, never served over HTTP). No real email is sent.
 @Injectable()
 export class DevMailboxService {
   private readonly messages: DevMail[] = [];
@@ -20,8 +24,13 @@ export class DevMailboxService {
   }
 
   send(mail: Omit<DevMail, 'at'>): void {
+    const entry = { ...mail, at: new Date().toISOString() };
+    if (this.cfg.outboxDir) {
+      mkdirSync(this.cfg.outboxDir, { recursive: true, mode: 0o700 });
+      writeFileSync(join(this.cfg.outboxDir, `${entry.at.replace(/[:.]/g, '-')}-${randomBytes(4).toString('hex')}.json`), JSON.stringify(entry, null, 2), { mode: 0o600 });
+    }
     if (!this.enabled) return;
-    this.messages.unshift({ ...mail, at: new Date().toISOString() });
+    this.messages.unshift(entry);
     this.messages.splice(50);
   }
 

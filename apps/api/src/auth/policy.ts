@@ -8,7 +8,17 @@ export const PERMISSIONS: Record<string, readonly Role[]> = {
   'platform.summary.read': ['PLATFORM_ADMIN'],
   'platform.applications.read': ['PLATFORM_ADMIN'],
   'platform.applications.decide': ['PLATFORM_ADMIN'],
-  'center.summary.read': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST'],
+  'platform.centers.read': ['PLATFORM_ADMIN'],
+  'platform.centers.create': ['PLATFORM_ADMIN'],
+  'platform.centers.invite_admin': ['PLATFORM_ADMIN'],
+  'center.summary.read': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'CLINICAL_SUPERVISOR'],
+  'center.settings.read': ['CENTER_ADMIN'],
+  'center.settings.update': ['CENTER_ADMIN'],
+  'center.setup.manage': ['CENTER_ADMIN'],
+  'center.staff.read': ['CENTER_ADMIN', 'COORDINATOR'],
+  'center.staff.invite': ['CENTER_ADMIN'],
+  'center.staff.manage': ['CENTER_ADMIN'],
+  'center.profile.self': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'CLINICAL_SUPERVISOR'],
 };
 
 // No clinical capability can be granted to anyone until an owner-approved clinical policy exists.

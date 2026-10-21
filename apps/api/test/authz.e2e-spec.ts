@@ -44,7 +44,8 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
       await member('hadmin', harbor, ['CENTER_ADMIN']);
       const s = await signIn(h, email('hadmin'));
       expect(s.body.activeContext).toMatchObject({ type: 'center', centerId: harbor, role: 'CENTER_ADMIN' });
-      expect(s.body.permissions).toEqual(['center.summary.read']);
+      expect(s.body.permissions).toContain('center.summary.read');
+      expect(s.body.permissions.every((p: string) => p.startsWith('center.'))).toBe(true);
       const own = await get(s, `/api/centers/${harbor}/summary`).expect(200);
       expect(own.body.center.name).toBe('Harbor Child Development Center');
       await get(s, `/api/centers/${cedar}/summary`).expect(404);
@@ -135,12 +136,22 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
       await post(h, '/api/auth/context', s, { membershipId: UUID0, role: 'CENTER_ADMIN', centerId: cedar }).expect(400);
     });
 
-    it('no HTTP route writes memberships, roles or platform roles', () => {
+    // TB-EM-003/004: memberships and center roles are written only by the audited invitation/staff routes below; platform roles never.
+    it('only the reviewed set of routes writes data, and none writes platform roles', () => {
       const unsafe = h.app.get(RouteAccessVerifier).routes().filter((r) => r.method !== 'GET').map((r) => `${r.method} ${r.route}`).sort();
       expect(unsafe).toEqual([
+        'PATCH /centers/:centerId/me', 'PATCH /centers/:centerId/settings', 'PATCH /centers/:centerId/staff/:membershipId',
         'POST /auth/context', 'POST /auth/login', 'POST /auth/logout', 'POST /auth/logout-all',
         'POST /auth/password/change', 'POST /auth/password/forgot', 'POST /auth/password/reset',
-        'POST /center-applications', 'POST /platform/applications/:id/decision', 'POST /platform/applications/:id/start-review',
+        'POST /center-applications',
+        'POST /centers/:centerId/invitations', 'POST /centers/:centerId/invitations/:invitationId/resend', 'POST /centers/:centerId/invitations/:invitationId/revoke',
+        'POST /centers/:centerId/setup/:key/complete',
+        'POST /centers/:centerId/staff/:membershipId/reactivate', 'POST /centers/:centerId/staff/:membershipId/revoke', 'POST /centers/:centerId/staff/:membershipId/suspend',
+        'POST /invitations/accept', 'POST /invitations/accept-new', 'POST /invitations/inspect',
+        'POST /platform/applications/:id/decision', 'POST /platform/applications/:id/start-review',
+        'POST /platform/centers', 'POST /platform/centers/:centerId/admin-invitations',
+        'POST /platform/centers/:centerId/admin-invitations/:invitationId/replace', 'POST /platform/centers/:centerId/admin-invitations/:invitationId/resend',
+        'POST /platform/centers/:centerId/admin-invitations/:invitationId/revoke',
       ]);
     });
 
@@ -163,7 +174,17 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
       'platform.summary.read': ['PLATFORM_ADMIN'],
       'platform.applications.read': ['PLATFORM_ADMIN'],
       'platform.applications.decide': ['PLATFORM_ADMIN'],
-      'center.summary.read': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST'],
+      'center.summary.read': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'CLINICAL_SUPERVISOR'],
+      'platform.centers.read': ['PLATFORM_ADMIN'],
+      'platform.centers.create': ['PLATFORM_ADMIN'],
+      'platform.centers.invite_admin': ['PLATFORM_ADMIN'],
+      'center.settings.read': ['CENTER_ADMIN'],
+      'center.settings.update': ['CENTER_ADMIN'],
+      'center.setup.manage': ['CENTER_ADMIN'],
+      'center.staff.read': ['CENTER_ADMIN', 'COORDINATOR'],
+      'center.staff.invite': ['CENTER_ADMIN'],
+      'center.staff.manage': ['CENTER_ADMIN'],
+      'center.profile.self': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'CLINICAL_SUPERVISOR'],
     };
     const cases = ROLES.flatMap((role) => [...Object.keys(PERMISSIONS), ...CLINICAL_CAPABILITIES].map((p) => [role, p] as const));
     it.each(cases)('%s × %s', (role, permission) => {

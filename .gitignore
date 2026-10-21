@@ -65,6 +65,8 @@ node_modules/@next/swc-linux-arm64-musl/next-swc.linux-arm64-musl.node
 credentials.json
 *.key
 .credentials
+# Synthetic invitation outbox (contains one-time invitation links). Never commit.
+apps/api/.outbox/
 # Env templates must be exported (placeholders only). Keep these negations LAST.
 !.env.example
 !**/.env.example

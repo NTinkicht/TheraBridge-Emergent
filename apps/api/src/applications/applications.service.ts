@@ -95,18 +95,18 @@ export class ApplicationsService {
   }
 
   async detail(id: string) {
-    const app = await this.prisma.centerApplication.findUnique({ where: { id }, include: { events: { orderBy: { id: 'asc' } } } });
+    const app = await this.prisma.centerApplication.findUnique({ where: { id }, include: { events: { orderBy: { id: 'asc' } }, center: { select: { id: true, name: true, slug: true } } } });
     if (!app) throw new NotFoundException('Application not found');
     const actorIds = [...new Set([app.decidedById, app.reviewStartedById, ...app.events.map((e) => e.actorUserId)].filter(Boolean) as string[])];
     const actors = await this.prisma.user.findMany({ where: { id: { in: actorIds } }, select: { id: true, displayName: true } });
     const name = (id: string | null) => actors.find((a) => a.id === id)?.displayName ?? null;
-    const { contactEmailNorm, events, ...rest } = app;
+    const { contactEmailNorm, events, center, ...rest } = app;
     void contactEmailNorm;
     return {
       ...rest,
       reviewStartedBy: name(app.reviewStartedById),
       decidedBy: name(app.decidedById),
-      provisioning: app.status === 'APPROVED' ? { status: 'AWAITING_PROVISIONING', workUnit: 'TB-EM-003' } : null,
+      provisioning: center ? { status: 'PROVISIONED', center } : app.status === 'APPROVED' ? { status: 'AWAITING_PROVISIONING', center: null } : null,
       events: events.map((e) => ({ id: Number(e.id), type: e.type, fromStatus: e.fromStatus, toStatus: e.toStatus, note: e.note, createdAt: e.createdAt, actor: name(e.actorUserId) })),
     };
   }
