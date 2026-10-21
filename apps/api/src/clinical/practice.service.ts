@@ -1,6 +1,6 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { logCenterEvent, uniq } from '../centers/history';
+import { Tx, logCenterEvent, uniq } from '../centers/history';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Viewer } from '../operations/children.service';
 import { TrialService } from '../operations/trial.service';
@@ -64,41 +64,58 @@ export class PracticeService {
 
   async record(centerId: string, v: Viewer, dto: OutcomeDto) {
     if (!practiceEnabled()) throw new ForbiddenException(DEMO_OFF);
-    const now = this.trial.now();
-    const today = await this.today(centerId);
     const view = (o: { id: string; choice: string; practiceDate: Date; recordedAt: Date }, replayed: boolean) => ({ id: o.id, choice: o.choice, practiceDate: day(o.practiceDate), recordedAt: o.recordedAt, replayed, synthetic: true });
-    const replay = async () => {
-      const o = await this.prisma.practiceOutcome.findUnique({ where: { idempotencyKey: dto.idempotencyKey } });
+    const replay = async (tx: Tx, linkId: string) => {
+      const o = await tx.practiceOutcome.findUnique({ where: { idempotencyKey: dto.idempotencyKey } });
       if (!o) return null;
+      // A replacement link must not restore access to a removed link's submissions.
+      if (o.recordedById === v.userId && (o.centerId !== centerId || o.guardianLinkId !== linkId)) throw new NotFoundException('Child not found');
       if (o.recordedById !== v.userId || o.childId !== dto.childId || o.templateId !== dto.templateId || day(o.practiceDate) !== dto.practiceDate || o.choice !== dto.choice) throw new ConflictException('This submission was already used for a different response. Start again from the activity.');
       return view(o, true);
     };
-    const prior = await replay();
-    if (prior) return prior;
-    const [link] = await this.links(centerId, v, dto.childId);
-    if (!link) throw new NotFoundException('Child not found');
-    const slot = this.plan(link.child.services, await this.samples()).find((p) => p.t.id === dto.templateId);
-    if (!slot) throw new NotFoundException('This activity is not in your sample plan.');
-    if (!slot.days.includes(weekday(dto.practiceDate))) throw new UnprocessableEntityException('This activity is not planned for that day.');
-    if (dto.practiceDate > today) throw new UnprocessableEntityException('You can’t record an activity for a future day.');
-    if (dto.practiceDate < addDays(today, -6)) throw new UnprocessableEntityException('Outcomes can only be recorded for the last 7 days.');
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        await this.trial.assertWritable(tx, centerId, now);
-        const o = await tx.practiceOutcome.create({ data: { centerId, childId: dto.childId, guardianLinkId: link.id, templateId: dto.templateId, service: slot.t.service, practiceDate: asDate(dto.practiceDate), choice: dto.choice, idempotencyKey: dto.idempotencyKey, recordedById: v.userId, recordedAt: now } });
-        await logCenterEvent(tx, centerId, 'family.practice_recorded', now, { actorUserId: v.userId, meta: { childId: dto.childId, outcomeId: o.id, synthetic: true } });
-        return view(o, false);
-      });
-    } catch (e) {
-      if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002')) throw e;
-      const again = await replay();
-      if (again) return again;
-      throw new ConflictException('An outcome is already recorded for this activity on this day.');
-    }
+    return this.prisma.$transaction(async (tx) => {
+      // Center first, matching existing child/trial writers. Removal intentionally
+      // bypasses trial expiry and UPDATEs the link: FOR UPDATE conflicts with that
+      // UPDATE even though removal does not lock the center. READ COMMITTED reads
+      // after the wait see its committed removedAt; retain the lock through commit.
+      // NO KEY UPDATE still serializes center writers but allows removal's
+      // center_event foreign-key KEY SHARE lock (avoids a center/link deadlock).
+      await tx.$queryRaw`SELECT id FROM center WHERE id = ${centerId}::uuid FOR NO KEY UPDATE`;
+      const links = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM guardian_link
+        WHERE center_id = ${centerId}::uuid AND child_id = ${dto.childId}::uuid
+          AND user_id = ${v.userId}::uuid AND removed_at IS NULL
+        FOR UPDATE`;
+      const link = links[0] && await tx.guardianLink.findFirst({ where: { id: links[0].id, centerId, childId: dto.childId, userId: v.userId, removedAt: null, child: { status: 'ACTIVE' } }, include: { child: true } });
+      if (!link) throw new NotFoundException('Child not found');
+      const prior = await replay(tx, link.id);
+      // Existing policy: a confirmed replay is a read, permitted after trial
+      // expiry or the recording window. Only genuinely new outcomes are writes.
+      if (prior) return prior;
+      const now = this.trial.now();
+      await this.trial.assertWritable(tx, centerId, now);
+      const today = await this.today(centerId);
+      const slot = this.plan(link.child.services, await tx.activityTemplate.findMany({ where: { centerId: null }, orderBy: { title: 'asc' } })).find((p) => p.t.id === dto.templateId);
+      if (!slot) throw new NotFoundException('This activity is not in your sample plan.');
+      if (!slot.days.includes(weekday(dto.practiceDate))) throw new UnprocessableEntityException('This activity is not planned for that day.');
+      if (dto.practiceDate > today) throw new UnprocessableEntityException('You can’t record an activity for a future day.');
+      if (dto.practiceDate < addDays(today, -6)) throw new UnprocessableEntityException('Outcomes can only be recorded for the last 7 days.');
+      // ON CONFLICT does not abort the transaction, so even a globally colliding
+      // key is resolved under the same authorization lock (no unlocked fallback).
+      const inserted = await tx.practiceOutcome.createMany({ data: [{ centerId, childId: dto.childId, guardianLinkId: link.id, templateId: dto.templateId, service: slot.t.service, practiceDate: asDate(dto.practiceDate), choice: dto.choice, idempotencyKey: dto.idempotencyKey, recordedById: v.userId, recordedAt: now }], skipDuplicates: true });
+      if (!inserted.count) {
+        const again = await replay(tx, link.id);
+        if (again) return again;
+        throw new ConflictException('An outcome is already recorded for this activity on this day.');
+      }
+      const o = await tx.practiceOutcome.findUniqueOrThrow({ where: { idempotencyKey: dto.idempotencyKey } });
+      await logCenterEvent(tx, centerId, 'family.practice_recorded', now, { actorUserId: v.userId, meta: { childId: dto.childId, outcomeId: o.id, synthetic: true } });
+      return view(o, false);
+    });
   }
 
   async byKey(centerId: string, v: Viewer, key: string) {
-    const o = await this.prisma.practiceOutcome.findFirst({ where: { centerId, idempotencyKey: key, recordedById: v.userId, guardianLink: { removedAt: null } } });
+    const o = await this.prisma.practiceOutcome.findFirst({ where: { centerId, idempotencyKey: key, recordedById: v.userId, guardianLink: { centerId, userId: v.userId, removedAt: null, child: { centerId, status: 'ACTIVE' } } } });
     if (!o) throw new NotFoundException('No outcome was recorded with this submission.');
     return { id: o.id, choice: o.choice, practiceDate: day(o.practiceDate), recordedAt: o.recordedAt, synthetic: true };
   }
