@@ -222,7 +222,7 @@ describe('TB-EM-007 parent experience round 2 + scheduling enhancements (real Po
         data: { removedAt: h.clock.now(), isPrimary: false },
       });
       // Give the competing HTTP request a chance to reach the blocked row.
-      await tx.$queryRaw`SELECT pg_sleep(0.15)`;
+      await tx.$queryRaw`SELECT 1::int AS finished FROM pg_sleep(0.15)`;
     });
     await pendingReply!;
     expect(await h.prisma.message.count({ where: { threadId: id } })).toBe(before);
