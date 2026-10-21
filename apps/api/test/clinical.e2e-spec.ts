@@ -158,11 +158,12 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     }
   });
 
-  it('allows supervisors/managers to open restricted operational threads without leaking across centers', async () => {
+  it('denies supervisor messaging entirely and permits managers only internal staff threads', async () => {
     const { sup, kid } = await setup(['speech', 'occupational']);
+    const coordinator = await staff('coordinator@clin.test', ['COORDINATOR'], []);
     const requested = [
-      { creator: sup, audience: 'CARE_TEAM', service: undefined },
-      { creator: sup, audience: 'SPECIALTY', service: 'speech' },
+      { creator: coordinator, audience: 'CARE_TEAM', service: undefined },
+      { creator: coordinator, audience: 'SPECIALTY', service: 'speech' },
       { creator: admin, audience: 'CARE_TEAM', service: undefined },
       { creator: admin, audience: 'SPECIALTY', service: 'occupational' },
     ];
@@ -175,7 +176,19 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
       }).expect(201);
       threadIds.push(created.body.id);
     }
-    for (const id of threadIds) await get(sup, c(`threads/${id}`)).expect(200);
+    expect((await get(admin, c('threads')).expect(200)).body.items).toHaveLength(4);
+    expect((await get(coordinator, c('threads')).expect(200)).body.items).toHaveLength(4);
+    await get(sup, c('threads')).expect(403);
+    for (const id of threadIds) {
+      await get(admin, c(`threads/${id}`)).expect(200);
+      await get(sup, c(`threads/${id}`)).expect(403);
+      await post(h, c(`threads/${id}/messages`), sup, { body: 'Denied' }).expect(403);
+      await post(h, c(`threads/${id}/close`), sup).expect(403);
+    }
+    await post(h, c('threads'), sup, {
+      childId: kid, audience: 'CARE_TEAM', category: 'logistics',
+      subject: 'Denied internal message', body: 'Denied',
+    }).expect(403);
 
     const otherCenterId = (await post(h, '/api/platform/centers', ops, {
       name: 'Separate Clin Center', timezone: 'UTC', country: 'France', city: 'Lyon',
@@ -217,7 +230,11 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     expect(await ids(therapist)).toEqual(expect.arrayContaining([guardianId, teamId]));
     expect(await ids(therapist)).not.toContain(specialtyId);
     expect(await ids(dual)).toEqual(expect.arrayContaining([guardianId, teamId, specialtyId]));
-    expect(await ids(sup)).toEqual(expect.arrayContaining([teamId, specialtyId]));
+    await get(sup, c('threads')).expect(403);
+    for (const id of [guardianId, teamId, specialtyId]) await get(sup, c(`threads/${id}`)).expect(403);
+    expect((await get(admin, c('threads')).expect(200)).body.items.map((x: { id: string }) => x.id)).toEqual(expect.arrayContaining([teamId, specialtyId]));
+    await get(admin, c(`threads/${guardianId}`)).expect(404);
+    await post(h, c(`threads/${guardianId}/messages`), admin, { body: 'Manager forbidden' }).expect(404);
     await get(therapist, c(`threads/${specialtyId}`)).expect(404);
     await get(rosa, c(`threads/${teamId}`)).expect(404);
     await get(other, c(`threads/${teamId}`)).expect(404);
