@@ -1,20 +1,26 @@
-# DATA_MODEL (TB-EM-001 checkpoint 0)
+# DATA_MODEL (through TB-EM-003/004)
+
+Source of truth: `apps/api/prisma/schema.prisma` and `apps/api/prisma/migrations/`.
 
 ## Migrations
 
 | Migration | Effect |
 |---|---|
-| `20261020143505_tb_em_000_feasibility_probe` | Created `feasibility_probe` (TB-EM-000 gate) |
-| `20261020190000_tb_em_001_retire_feasibility_probe` | Drops `feasibility_probe`; creates `schema_info` and inserts the row `('checkpoint', 'TB-EM-001-cp0')` |
+| `20261020143505_tb_em_000_feasibility_probe` | Feasibility probe (retired) |
+| `20261020190000_tb_em_001_retire_feasibility_probe` | Drops the probe |
+| `20261021090000_tb_em_001_identity_sessions` | Users, identities, sessions, rate limits, lockouts, verification tokens, audit events |
+| `20261021120000_tb_em_001_tenancy_roles` | Centers, memberships, role assignments, platform roles |
+| `20261021150000_tb_em_002_center_applications` | Center applications and append-only application events |
+| `20261022090000_tb_em_003_004_provisioning_onboarding` | Center configuration and provenance, invitations, center events, setup steps, membership profiles |
 
-## schema_info (Prisma model `SchemaInfo`)
+## TB-EM-003/004 entities
 
-| Column | Type | Constraint |
+| Table | Purpose | Key constraints |
 |---|---|---|
-| key | varchar(64) | PK |
-| value | varchar(128) | not null |
-| updated_at | timestamptz(3) | not null, default now() |
+| `center` (extended) | country, city, specialties, `source` (APPLICATION/DIRECT), `application_id`, `created_by_id`, `version`, `updated_at` | unique slug with format check; unique `application_id`; source ⇔ application consistency |
+| `invitation` | FIRST_ADMIN or STAFF invitations: email, display name, roles, specialties, responsibilities, title, `token_hash`, status (PENDING/ACCEPTED/REVOKED/REPLACED; EXPIRED is derived), expiry, send count, actor ids | unique token hash; one PENDING per (center, email); one PENDING FIRST_ADMIN per center; roles exclude PLATFORM_ADMIN/GUARDIAN; CENTER_ADMIN only on FIRST_ADMIN; status completeness check |
+| `center_event` | Tenant-scoped history (actor, subject, membership, invitation, meta) | UPDATE/DELETE blocked by trigger |
+| `center_setup_step` | First administrator checklist: `center_details`, `your_profile`, `invite_team`, `review_permissions` | PK (center, key) |
+| `membership` (extended) | title, phone, specialties, responsibilities, status reason/changed-at, `updated_at` | status reason only with a status change |
 
-This is a non-domain placeholder. It exists only because Prisma cannot generate a client for a schema with zero models. It holds no personal or clinical data. `GET /api/health` reports it as `schemaCheckpoint`.
-
-**PLANNED:** drop it when checkpoint A adds the identity models (see `docs/emergent/workunits/TB-EM-001.md` §4). Every Phase 1 entity is still **PLANNED**.
+No clinical, child or guardian data exists yet. All data in Emergent is synthetic.

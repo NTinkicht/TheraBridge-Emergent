@@ -6,7 +6,7 @@ Updated: 2026-10-20 (UTC)
 
 | Field | Value |
 |---|---|
-| Work unit | **TB-EM-002 center applications IMPLEMENTED** (2026-10-21; export and CI pending). TB-EM-001 accepted (133 tests, secret scan). Approval is kept separate from provisioning (TB-EM-003). Previous: TB-EM-001 checkpoints 0 (ACCEPTED, CI run 39538891912 green), **A, B and C IMPLEMENTED** (local commits `fe61fe1`, `43a6921`, `1a2af51` plus fixes). Export and CI **PENDING** |
+| Work unit | **TB-EM-003/004 Complete Center Provisioning & Staff Onboarding IMPLEMENTED** (2026-10-21, issue #18; export and CI pending). See `docs/emergent/workunits/TB-EM-003-004.md`. Previous: TB-EM-002 center applications IMPLEMENTED (export and CI pending). TB-EM-001 accepted (133 tests, secret scan). Previous: TB-EM-001 checkpoints 0 (ACCEPTED, CI run 39538891912 green), **A, B and C IMPLEMENTED** (local commits `fe61fe1`, `43a6921`, `1a2af51` plus fixes). Export and CI **PENDING** |
 | Last verified export | `66254a1` on `phase-1-center-foundation`. It matched local history (checked via the GitHub API). GitHub Actions run `39474586243`: `test` **TESTED: PASS**, `compose` **TESTED: PASS** |
 | Checkpoint 0 export SHA | `217c94ac87b2`. GitHub Actions run `39538224035`: `test` **TESTED: PASS**, `compose` **TESTED: PASS** (verified via the public GitHub API). The independent review found the secret-scan step missing |
 | Checkpoint 0 correction (secret scan) | IMPLEMENTED locally. Export SHA **PENDING: owner exports and reports it**. CI `secret-scan` job **NOT RUN** until export. Status **UNEXPORTED / AT RISK** until then |
@@ -46,7 +46,9 @@ Updated: 2026-10-20 (UTC)
 | Cold-clone drill | **NOT RUN** |
 | Logo derivatives (light surfaces) | IMPLEMENTED, checked against original (see `docs/emergent/brand/LOGO_DERIVATIVES.md`) |
 | TB-EM-001 | APPROVED WITH CHANGES (R1–R5). Checkpoint 0 ACCEPTED. Checkpoints A–C authorized 2026-10-21 and IMPLEMENTED; export and CI pending |
-| TB-EM-002 to TB-EM-006 | PLANNED (not authorized) |
+| TB-EM-002 | IMPLEMENTED (applications and review) |
+| TB-EM-003/004 (merged) | IMPLEMENTED: provisioning, first-admin and staff invitations, acceptance, setup checklist, team management. Migration `20261022090000_tb_em_003_004_provisioning_onboarding` |
+| TB-EM-005, center operations, parent experience | PLANNED (not authorized) |
 | Design direction TB-EM-D01 (`/design-preview`, fixtures only) | **ACCEPTED as the V1 design baseline** (owner, 2026-10-20). r3 polish: **ACCEPTED** by independent review (2026-10-20). Screenshots in `docs/emergent/design/screenshots/` |
 
 ## Working URLs (Emergent preview, ephemeral)

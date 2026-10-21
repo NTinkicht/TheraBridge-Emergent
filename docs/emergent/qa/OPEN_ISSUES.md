@@ -15,4 +15,9 @@ Emergent cannot create GitHub issues. Please file each one, or let a reviewer do
 | N9 | Low | The applications status tabs scroll sideways at 390px without an edge cue | `/app/applications` on mobile | Reuse the design-preview `ScrollStrip` (chevrons and fade) |
 | N10 | Low | Applicants do not get an email with the decision | No email provider is connected | Use the NotificationOutbox when email delivery is approved |
 | N11 | Info | Testing-agent pytest files were added under `/tests` (`test_tb_em_002_applications_api.py`, `tb_em_002_seed_apps.py`) | Root `tests/` folder | Keep them as external smoke tests, or move them under `apps/api/test/` |
+| N12 | Low | Invitation delivery is outbox-only; there is no real email provider | `apps/api/.outbox/` in preview | Connect an approved email provider behind `DevMailboxService.send` |
+| N13 | Low | The mobile primary nav scrolls sideways once a role has 5+ items, without an edge cue | `/app/*` at 390px as center administrator | Reuse `ScrollStrip` (same as N9) |
+| N14 | Low | Suspending or revoking a member signs out every session whose active workspace is that center, including the same user's other open tabs | `POST …/staff/:id/suspend` | Acceptable (fail-safe). Later: notify the user on next sign-in |
+| N15 | Low | Platform cannot suspend or reactivate a whole center yet (`center.status` exists, no route) | — | Add `platform.centers.suspend` with audit when needed |
+| N16 | Info | Center names are unique platform-wide (case-insensitive) as duplicate prevention | `POST /api/platform/centers` returns 409 | Relax to per-country uniqueness if real centers share names |
 

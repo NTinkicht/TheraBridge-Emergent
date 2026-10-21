@@ -1,24 +1,20 @@
 # NEXT_WORK
 
-## Immediate (owner): export TB-EM-002
+## Immediate (owner): export TB-EM-003/004
 
-1. Save to GitHub on the existing branch `phase-1-center-foundation`. Never choose Force Push. If force is offered, save to `phase-1-center-foundation-tb-em-002` instead.
-2. CI: `secret-scan`, `test` (167 API tests) and `compose` should be green. The Docker smoke-test mismatch is handled in PR #12 on GitHub.
-   - The compose step still checks for the `tb_em_001_tenancy_roles` migration name. PR #12 or a follow-up should accept the newer `tb_em_002_center_applications`.
-3. File N8–N11 from `docs/emergent/qa/OPEN_ISSUES.md` on GitHub.
+1. Save to GitHub on `phase-1-center-foundation`. Never choose Force Push. If force is offered, save to `phase-1-center-foundation-tb-em-003-004` instead.
+2. CI: `secret-scan` and `test` (API suite against PostgreSQL) should be green. The `compose` smoke check still expects an older migration name; PR #12 or a follow-up should accept `20261022090000_tb_em_003_004_provisioning_onboarding`.
+3. File N8–N16 from `docs/emergent/qa/OPEN_ISSUES.md` on GitHub (link them to #18 where relevant).
 
-## Next work unit: TB-EM-003 center provisioning (blueprint Phase 1)
+## Next milestone (not yet authorized): center operational workflows and the parent experience
 
-- Approved applications (`provisioning.status = AWAITING_PROVISIONING`) become centers:
-  - unique slug, time zone and plan;
-  - created in one transaction with an application event `provisioned` and an audit event.
-- Direct provisioning by platform operators without an application.
-- Requires new permissions `platform.centers.create` and `platform.centers.read` in `policy.ts`, `PERMISSIONS_MATRIX.md` and the matrix test.
-- Replace the disabled "Provision center" button on `/app/applications/[id]`.
-- The first administrator invitation stays in TB-EM-004.
+- Children and family records inside a center, guardian invitations reusing the `invitation` model (new kind, GUARDIAN role).
+- Guardian–child access links and the parent portal (warm family theme).
+- Treatment records and therapy-plan approvals once the owner approves a clinical policy (clinical capabilities stay DENY until then).
 
 ## Operational notes
 
+- Invitation links in the preview are written to `apps/api/.outbox/*.json` (gitignored, mode 0600). Read them with shell access only.
 - After a workspace restore, run `scripts/workspace/ensure-postgres.sh`, then `cd apps/api && yarn -s prisma migrate deploy && yarn -s seed:synthetic`.
-- To clean up test applications, temporarily disable the `application_event_no_update` trigger inside a transaction. This is for synthetic preview data only.
+- `center_event` and `application_event` are append-only. To clean up synthetic test data, temporarily disable their triggers inside a transaction (synthetic preview data only).
 - The real owner account must never be created in Emergent.
