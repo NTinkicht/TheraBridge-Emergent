@@ -1,0 +1,158 @@
+[
+  {
+    "width": 320,
+    "name": "practice",
+    "overflow": 0,
+    "nav": {
+      "left": 0,
+      "width": 320,
+      "scrollWidth": 642,
+      "active": {
+        "x": 323,
+        "y": 112,
+        "width": 100,
+        "height": 44,
+        "top": 112,
+        "right": 423,
+        "bottom": 156,
+        "left": 323
+      }
+    }
+  },
+  {
+    "width": 320,
+    "name": "progress",
+    "overflow": 0,
+    "nav": {
+      "left": 0,
+      "width": 320,
+      "scrollWidth": 642,
+      "active": {
+        "x": 427,
+        "y": 112,
+        "width": 104,
+        "height": 44,
+        "top": 112,
+        "right": 531,
+        "bottom": 156,
+        "left": 427
+      }
+    }
+  },
+  {
+    "width": 320,
+    "name": "design-light",
+    "overflow": 0,
+    "nav": null
+  },
+  {
+    "width": 320,
+    "name": "design-dark",
+    "overflow": 0,
+    "nav": null
+  },
+  {
+    "width": 390,
+    "name": "practice",
+    "overflow": 0,
+    "nav": {
+      "left": 0,
+      "width": 390,
+      "scrollWidth": 642,
+      "active": {
+        "x": 323,
+        "y": 75,
+        "width": 100,
+        "height": 44,
+        "top": 75,
+        "right": 423,
+        "bottom": 119,
+        "left": 323
+      }
+    }
+  },
+  {
+    "width": 390,
+    "name": "progress",
+    "overflow": 0,
+    "nav": {
+      "left": 0,
+      "width": 390,
+      "scrollWidth": 642,
+      "active": {
+        "x": 427,
+        "y": 75,
+        "width": 104,
+        "height": 44,
+        "top": 75,
+        "right": 531,
+        "bottom": 119,
+        "left": 427
+      }
+    }
+  },
+  {
+    "width": 390,
+    "name": "design-light",
+    "overflow": 0,
+    "nav": null
+  },
+  {
+    "width": 390,
+    "name": "design-dark",
+    "overflow": 0,
+    "nav": null
+  },
+  {
+    "width": 768,
+    "name": "practice",
+    "overflow": 0,
+    "nav": {
+      "left": 0,
+      "width": 0,
+      "scrollWidth": 0,
+      "active": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      }
+    }
+  },
+  {
+    "width": 768,
+    "name": "progress",
+    "overflow": 0,
+    "nav": {
+      "left": 0,
+      "width": 0,
+      "scrollWidth": 0,
+      "active": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      }
+    }
+  },
+  {
+    "width": 768,
+    "name": "design-light",
+    "overflow": 0,
+    "nav": null
+  },
+  {
+    "width": 768,
+    "name": "design-dark",
+    "overflow": 0,
+    "nav": null
+  }
+]

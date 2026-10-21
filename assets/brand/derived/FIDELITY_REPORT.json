@@ -1,0 +1,48 @@
+{
+  "source": "assets/brand/original/TheraBridge-Logo-original.jpg",
+  "noise_floor": 12,
+  "assets": {
+    "lockup": {
+      "crop_box_xyxy": [
+        257,
+        101,
+        1050,
+        747
+      ],
+      "size": [
+        793,
+        646
+      ],
+      "max_abs_diff": 11.0,
+      "mean_abs_diff": 0.3
+    },
+    "symbol": {
+      "crop_box_xyxy": [
+        292,
+        101,
+        1050,
+        503
+      ],
+      "size": [
+        758,
+        402
+      ],
+      "max_abs_diff": 11.0,
+      "mean_abs_diff": 0.2612
+    },
+    "wordmark": {
+      "crop_box_xyxy": [
+        257,
+        561,
+        1036,
+        701
+      ],
+      "size": [
+        779,
+        140
+      ],
+      "max_abs_diff": 11.0,
+      "mean_abs_diff": 0.4032
+    }
+  }
+}

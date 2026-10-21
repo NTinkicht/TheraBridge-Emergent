@@ -1,0 +1,146 @@
+{
+  "results": [
+    {
+      "name": "access-review",
+      "width": 320,
+      "overflow": 0
+    },
+    {
+      "name": "access-review",
+      "width": 390,
+      "overflow": 0
+    },
+    {
+      "name": "access-review",
+      "width": 768,
+      "overflow": 0
+    },
+    {
+      "name": "access-review",
+      "width": 1024,
+      "overflow": 0
+    },
+    {
+      "name": "access-review",
+      "width": 1440,
+      "overflow": 0
+    },
+    {
+      "name": "supervisor-review",
+      "width": 320,
+      "overflow": 0
+    },
+    {
+      "name": "supervisor-review",
+      "width": 390,
+      "overflow": 0
+    },
+    {
+      "name": "supervisor-review",
+      "width": 768,
+      "overflow": 0
+    },
+    {
+      "name": "supervisor-review",
+      "width": 1024,
+      "overflow": 0
+    },
+    {
+      "name": "supervisor-review",
+      "width": 1440,
+      "overflow": 0
+    },
+    {
+      "name": "immutable-preview",
+      "width": 320,
+      "overflow": 0
+    },
+    {
+      "name": "immutable-preview",
+      "width": 390,
+      "overflow": 0
+    },
+    {
+      "name": "immutable-preview",
+      "width": 768,
+      "overflow": 0
+    },
+    {
+      "name": "immutable-preview",
+      "width": 1024,
+      "overflow": 0
+    },
+    {
+      "name": "immutable-preview",
+      "width": 1440,
+      "overflow": 0
+    },
+    {
+      "name": "family-practice",
+      "width": 320,
+      "overflow": 0
+    },
+    {
+      "name": "family-practice",
+      "width": 390,
+      "overflow": 0
+    },
+    {
+      "name": "family-practice",
+      "width": 768,
+      "overflow": 0
+    },
+    {
+      "name": "family-practice",
+      "width": 1024,
+      "overflow": 0
+    },
+    {
+      "name": "family-practice",
+      "width": 1440,
+      "overflow": 0
+    },
+    {
+      "name": "family-family-progress",
+      "width": 320,
+      "overflow": 0
+    },
+    {
+      "name": "family-family-progress",
+      "width": 390,
+      "overflow": 0
+    },
+    {
+      "name": "family-family-progress",
+      "width": 768,
+      "overflow": 0
+    },
+    {
+      "name": "family-family-progress",
+      "width": 1024,
+      "overflow": 0
+    },
+    {
+      "name": "family-family-progress",
+      "width": 1440,
+      "overflow": 0
+    },
+    {
+      "name": "loading-state",
+      "passed": true
+    },
+    {
+      "name": "error-state",
+      "passed": true
+    },
+    {
+      "name": "empty-state-and-retry",
+      "passed": true
+    }
+  ],
+  "pageErrors": [],
+  "workflow": "submit → comment → return → resubmit → explicit withdrawal → immutable preview; guardian route locks",
+  "transportFixtures": [
+    "loading, server error, retry and empty state only"
+  ]
+}

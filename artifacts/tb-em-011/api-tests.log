@@ -1,0 +1,26 @@
+yarn workspace v1.22.22
+yarn run v1.22.22
+$ jest --runInBand
+PASS test/authz.e2e-spec.ts (50.062 s)
+PASS test/governance.e2e-spec.ts (19.882 s)
+(node:38137) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 listening listeners added to [Server]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:38137) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 error listeners added to [Server]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:38137) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 close listeners added to [Server]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+PASS test/auth.e2e-spec.ts (14.588 s)
+PASS test/centers.e2e-spec.ts (6.93 s)
+PASS test/applications.e2e-spec.ts (5.18 s)
+PASS test/practice.e2e-spec.ts (5.813 s)
+PASS test/parent-scheduling.e2e-spec.ts
+PASS test/operations.e2e-spec.ts
+PASS test/clinical.e2e-spec.ts
+PASS test/progress-reports.e2e-spec.ts
+PASS test/health.e2e-spec.ts
+
+Test Suites: 11 passed, 11 total
+Tests:       441 passed, 441 total
+Snapshots:   0 total
+Time:        112.516 s, estimated 113 s
+Ran all test suites.
+Done in 113.16s.
+Done in 113.44s.
