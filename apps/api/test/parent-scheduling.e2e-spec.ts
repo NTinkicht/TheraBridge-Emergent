@@ -167,7 +167,7 @@ describe('TB-EM-007 parent experience round 2 + scheduling enhancements (real Po
     expect((await get(other, c('threads')).expect(200)).body.items).toHaveLength(0);
     await get(other, c(`threads/${t}`)).expect(404);
     await post(h, c(`threads/${t}/messages`), other, { body: 'sneaky' }).expect(404);
-    await get(supervisor, c('threads')).expect(403);
+    expect((await get(supervisor, c('threads')).expect(200)).body.items).toHaveLength(1);
     await post(h, c('threads'), other, { childId: kid, category: 'other', subject: 'Not mine', body: 'x' }).expect(404);
 
     h.clock.advance(60_000);
