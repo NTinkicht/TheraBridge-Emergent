@@ -104,30 +104,54 @@ try {
     await responseText(remote).fill('Remote before revocation'); await saveDraft(remote); await saved(remote);
     await responseText(note).fill('Local protected on revocation'); await saveDraft(note); await comparison.getByText(/Remote before revocation/).waitFor();
     await note.getByRole('button', { name: 'Save reviewed reconciliation as draft', exact: true }).waitFor();
+    const pendingTranscript = '  Revoked uninserted العربية 😀\nexact trailing spaces  ';
+    // Transcript was never inserted into clinical notes.
+    await tab.getByLabel('Editable transcript (not saved)', { exact: true }).fill(pendingTranscript);
     await db.careAssignment.update({ where: { id: assignment.id }, data: { endedAt: new Date() } });
     const beforeRevoked = writes.length;
     page.once('dialog', d => d.accept()); await note.getByRole('button', { name: 'Save reviewed reconciliation as draft', exact: true }).click();
     await note.getByText(/Recovery failed/).waitFor(); assert.equal(writes.length, beforeRevoked); assert.equal(await responseText(note).inputValue(), 'Local protected on revocation');
     await note.getByRole('button', { name: 'Retry server recovery', exact: true }).click(); await note.getByText(/Recovery failed/).waitFor();
     assert.equal(await note.getByRole('button', { name: 'Save reviewed reconciliation as draft', exact: true }).count(), 0);
+    await saveDraft(remote); await remote.getByText(/Your text remains here/).waitFor();
+    assert.equal(await remote.getByLabel('Editable transcript (not saved)', { exact: true }).inputValue(), pendingTranscript);
+    tab.once('dialog', d => d.accept()); await remote.getByRole('button', { name: 'Discard transcript', exact: true }).click();
   } finally { await db.careAssignment.update({ where: { id: assignment.id }, data: { endedAt: null } }); await db.$disconnect(); }
   await note.getByRole('button', { name: 'Retry server recovery', exact: true }).click();
   await comparison.getByText(/Remote before revocation/).waitFor();
   page.once('dialog', d => d.accept()); await note.getByRole('button', { name: 'Retain server version', exact: true }).click();
   await note.getByText('Server version retained. Previous local evidence is available below.', { exact: true }).waitFor();
+  // Tab B holds an uninserted transcript BEFORE tab A completes.
+  const uninserted = '  Uninserted العربية café 😀\nsecond line  ';
+  await remote.getByLabel('Editable transcript (not saved)', { exact: true }).fill(uninserted);
   await note.getByLabel('Actual end', { exact: true }).fill(new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,19));
   page.once('dialog', d => d.accept());
   await note.getByRole('button', { name: 'Review and complete session', exact: true }).click();
   await note.getByText('Completed · unsigned', { exact: true }).waitFor().catch(async e => { console.error(await note.innerText()); throw e; });
-  // Stale tab attempts a draft after remote completion: comparison is read-only, local text survives.
-  await responseText(remote).fill('Local after remote completion'); await saveDraft(remote);
+  // Stale tab has exact uninserted Unicode/whitespace text when the other tab completes.
+  await responseText(remote).fill('Local after remote completion');
+  // Fail only the recovery GET; writes and completion use real PostgreSQL.
+  await tab.route('**/clinical/children/*', route => route.abort('failed'));
+  await saveDraft(remote); await remote.getByText(/Recovery failed/).waitFor();
+  const retained = remote.getByLabel('Retained transcript (not saved; copy only)', { exact: true });
+  assert.equal(await retained.inputValue(), uninserted);
+  assert(await retained.isEnabled()); assert.equal(await retained.getAttribute('readonly'), '');
+  await tab.unroute('**/clinical/children/*');
+  await remote.getByRole('button', { name: 'Retry server recovery', exact: true }).click();
   await remote.getByText(/Server confirms this session is already completed/).waitFor();
   assert.equal(await responseText(remote).inputValue(), 'Local after remote completion');
   assert(await responseText(remote).isDisabled());
+  assert.equal(await retained.inputValue(), uninserted);
+  await retained.selectText();
+  assert.equal(await retained.evaluate(e => e.value.slice(e.selectionStart, e.selectionEnd)), uninserted);
+  assert(await remote.getByRole('button', { name: 'Insert reviewed text', exact: true }).isDisabled());
+  assert.equal(await remote.getByRole('button', { name: 'Review and complete session', exact: true }).count(), 0);
+  const { PrismaClient: VerifyClient } = await import('@prisma/client'); const verify = new VerifyClient();
+  try { const stored = await verify.sessionNote.findUniqueOrThrow({ where: { id } }); assert.equal(stored.executionStatus, 'COMPLETED'); assert(!JSON.stringify(stored.sections).includes(uninserted)); } finally { await verify.$disconnect(); }
   assert((await remote.getByRole('region', { name: 'Session conflict comparison' }).innerText()).includes('Remote before revocation'));
   await tab.close();
   await page.reload(); await page.getByRole('tab', { name: 'Sessions', exact: true }).click();
   assert(await note.getByLabel('Overall session note', { exact: true }).isDisabled());
   assert.deepEqual(errors, []);
-  console.log('PASS: real login → assigned child → ad-hoc start → library selection → separate result/assistance → synthetic transcript correction/insertion → autosave → reload/resume → complete → reload read-only; two-tab conflicts, blocked autosave, note/activity preservation, deliberate reconciliation, repeated updates, server retention, revoked recovery and remote completion; real Nest/Fastify and PostgreSQL, no mocked API responses.');
+  console.log('PASS: real login → assigned child → ad-hoc start → library selection → separate result/assistance → synthetic transcript correction/insertion → autosave → reload/resume → complete → reload read-only; two-tab conflicts, blocked autosave, note/activity preservation, deliberate reconciliation, repeated updates, server retention, revoked/failed recovery and copyable exact uninserted transcript after remote completion; real Nest/Fastify and PostgreSQL, no mocked API responses.');
 } finally { await browser.close(); }

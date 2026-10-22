@@ -131,7 +131,8 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
         {server && !completed && <><Button variant="secondary" disabled={saving || unresolved} onClick={() => void resolveConflict(true)}>Retain server version</Button><Button variant="secondary" disabled={saving || unresolved} onClick={() => { setReconciling(true); setError(true); setStatus('Reconcile in the existing fields. Autosave remains off; explicitly save reviewed reconciliation when ready.'); }}>Reconcile local changes</Button><Button disabled={saving || unresolved} onClick={() => void resolveConflict()}>Save reviewed reconciliation as draft</Button></>}
       </div>}
     </section>}
-    {edit && <Dictation disabled={!edit || saving || unresolved || conflicted} onInsert={insert} onPending={pending} />}
+    {/* Keep transcript state mounted when remote completion removes editing rights. */}
+    {n.mine && <Dictation disabled={!edit || saving || unresolved || conflicted} onInsert={insert} onPending={pending} />}
     {edit && unresolved && (!conflicted || !!server) && <Button variant="secondary" disabled={saving} onClick={() => void save(retry.current?.executionStatus === 'COMPLETED', conflicted ? retry.current?.version : undefined)}>Resolve previous {retry.current?.executionStatus === 'COMPLETED' ? 'completion' : 'draft save'}</Button>}
     <p role="status" aria-live="polite" className={error ? 'text-status-danger text-[14px]' : 'text-brand-inkMuted text-[13px]'}>{status}</p>
     <div className="flex flex-wrap items-start gap-2">{edit && <><Button disabled={saving || conflicted} onClick={() => void save()}>{error && !unresolved ? 'Retry save' : 'Save draft'}</Button><Button variant="secondary" disabled={transcriptPending || saving || conflicted} onClick={() => void save(true)}>Review and complete session</Button></>}<LockedAction id={`sign-${n.id}`} label="Sign note" reason={LOCKED_REASON} /></div>

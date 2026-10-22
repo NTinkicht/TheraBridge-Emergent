@@ -11,7 +11,7 @@ const center = '00000000-0000-4000-8000-000000000002';
 const child = '00000000-0000-4000-8000-000000000003';
 const template = { id: '00000000-0000-4000-8000-000000000004', title: 'Synthetic game', service: 'speech', minutes: 10, materials: ['Cards'], steps: ['Take turns'], safety: ['Synthetic only'], ageBand: '3-6' };
 const session = { user: { id, email: 'synthetic@test.test', displayName: 'Synthetic Therapist' }, csrfToken: 'synthetic-ui-token', session: { idleExpiresAt: new Date(Date.now()+3600000).toISOString(), absoluteExpiresAt: new Date(Date.now()+3600000).toISOString() }, contexts: [], activeContext: { type: 'center', centerId: center, membershipId: id, role: 'THERAPIST', centerName: 'Synthetic center' }, permissions: ['center.clinical.read','center.clinical.draft','center.schedule.read','center.children.read','center.activities.read'] };
-let saved = null, version = 1, fail = false, delayed = false, transport = '', reject422 = false, alreadyCompleted = false;
+let saved = null, version = 1, fail = false, delayed = false, transport = '', reject422 = false, alreadyCompleted = false, recoveryFails = false;
 const requests = [];
 const ws = { timezone: 'UTC', synthetic: true, locked: 'Signing and release disabled', canEdit: true, canReview: false, child: { id: child, name: 'Synthetic Child', services: ['speech','occupational'], dateOfBirth: '2020-01-01' }, assessments: [], plans: [], observations: [], appointments: [], templates: [template], notes: [{ id, service: 'speech', sessionDate: '2026-10-19', appointmentId: null, sections: {}, version, mine: true, author: 'Synthetic Therapist', executionStatus: 'IN_PROGRESS', actualStart: new Date(Date.now()-60000).toISOString(), actualEnd: null, attendance: 'PRESENT', activities: [] }] };
 await context.addCookies([{ name: 'tb_session', value: 'synthetic-browser-fixture', url: base }]);
@@ -33,7 +33,7 @@ await page.route('**/api/**', async route => {
     saved = body; version++; Object.assign(ws.notes[0], body, { version });
     return route.fulfill({ json: { version, updatedAt: new Date().toISOString() } });
   }
-  if (path.includes('/clinical/children/')) return route.fulfill({ json: ws });
+  if (path.includes('/clinical/children/')) return recoveryFails ? route.fulfill({ status: 403, json: { message: 'Assignment revoked; recovery unavailable' } }) : route.fulfill({ json: ws });
   return route.fulfill({ json: { items: [] } });
 });
 const errors = []; page.on('pageerror', e => errors.push(e.message));
@@ -140,12 +140,17 @@ try {
   await page.waitForTimeout(900);
   assert(await page.getByRole('button', { name: 'Save draft', exact: true }).isEnabled());
   assert(saved.sections.response.includes('Corrected reviewed synthetic transcript'));
+  const uninserted = '  Uninserted العربية café 😀\nsecond line  ';
+  await transcript.fill(uninserted);
   fail = true;
   await page.getByLabel('Overall session note', { exact: true }).fill('Preserved after revoked assignment');
   await page.getByRole('button', { name: 'Save draft', exact: true }).click();
   await page.getByRole('button', { name: 'Retry save', exact: true }).waitFor();
   assert.equal(await page.getByLabel('Overall session note', { exact: true }).inputValue(), 'Preserved after revoked assignment');
+  assert.equal(await transcript.inputValue(), uninserted, 'Revocation cannot discard the transcript');
   fail = false;
+  await page.getByRole('button', { name: 'Discard transcript', exact: true }).click({ trial: true });
+  page.once('dialog', d => d.accept()); await page.getByRole('button', { name: 'Discard transcript', exact: true }).click();
   await page.getByRole('button', { name: 'Retry save', exact: true }).click();
   await page.waitForTimeout(1000);
   await page.getByLabel('Actual end', { exact: true }).fill(new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16));
@@ -155,8 +160,26 @@ try {
   assert(await page.getByLabel('Overall session note', { exact: true }).isDisabled());
   // A stale client learns that another confirmed request already completed the session.
   Object.assign(ws.notes[0], { executionStatus: 'IN_PROGRESS' }); await reload(); alreadyCompleted = true;
-  await saveDraft(); await page.getByText(/Server confirms this session is already completed/).waitFor();
+  await transcript.fill(uninserted); recoveryFails = true;
+  await saveDraft(); await page.getByText(/Recovery failed/).waitFor();
+  const retained = page.getByLabel('Retained transcript (not saved; copy only)', { exact: true });
+  assert.equal(await retained.inputValue(), uninserted);
+  assert.equal(await retained.getAttribute('readonly'), ''); assert(await retained.isEnabled());
+  await retained.focus(); await retained.selectText();
+  assert.equal(await retained.evaluate(e => e.value.slice(e.selectionStart, e.selectionEnd)), uninserted);
+  recoveryFails = false;
+  await page.getByRole('button', { name: 'Retry server recovery', exact: true }).click();
+  await page.getByText(/Server confirms this session is already completed/).waitFor();
+  assert.equal(await retained.inputValue(), uninserted);
   assert(await response.isDisabled()); assert.equal(ws.notes[0].executionStatus, 'COMPLETED'); alreadyCompleted = false;
+  assert(await page.getByRole('button', { name: 'Insert reviewed text', exact: true }).isDisabled());
+  assert.equal(await page.getByRole('button', { name: 'Review and complete session', exact: true }).count(), 0);
+  assert(!JSON.stringify(saved).includes(uninserted));
+  assert(await page.evaluate(() => { const e = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(e); return e.defaultPrevented; }));
+  page.once('dialog', d => d.dismiss()); await page.getByRole('button', { name: 'Discard transcript', exact: true }).click();
+  assert.equal(await retained.inputValue(), uninserted);
+  page.once('dialog', d => d.accept()); await page.getByRole('button', { name: 'Discard transcript', exact: true }).click();
+  assert.equal(await retained.inputValue(), '');
   // Legacy migrated draft: no invented start; content survives validation, save and reload.
   Object.assign(ws.notes[0], { actualStart: null, actualEnd: null, executionStatus: 'IN_PROGRESS', sections: { activities: 'Original legacy content' }, activities: [] });
   await page.reload(); await page.getByRole('tab', { name: 'Sessions', exact: true }).click();
