@@ -9,7 +9,7 @@ import '@fontsource/plus-jakarta-sans/700.css';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'TheraBridge · Feasibility gate TB-EM-000',
+  title: 'TheraBridge · Coordinated care, meaningful progress',
   description: 'Synthetic-data proof of concept. Not for clinical use.',
   icons: {
     icon: [

@@ -47,14 +47,18 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:?set in .env}
+        API_UPSTREAM_ORIGIN: ${API_UPSTREAM_ORIGIN:?set in .env}
+    environment:
+      API_UPSTREAM_ORIGIN: ${API_UPSTREAM_ORIGIN:?set in .env}
+      DEPLOYMENT_ENV: ${DEPLOYMENT_ENV:?set in .env}
+      ENABLE_FEASIBILITY_DIAGNOSTICS: "false"
     ports:
       - "${WEB_PORT:?set in .env}:3000"
     depends_on:
       api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 5s
       timeout: 5s
       retries: 30

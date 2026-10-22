@@ -1,5 +1,3 @@
-const base = process.env.NEXT_PUBLIC_API_BASE_URL;
-
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -11,10 +9,9 @@ export class ApiError extends Error {
 }
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  if (!base) throw new ApiError(0, 'NEXT_PUBLIC_API_BASE_URL is not configured');
   let res: Response;
   try {
-    res = await fetch(`${base}${path}`, {
+    res = await fetch(path, {
       ...init,
       headers: { 'Content-Type': 'application/json', ...init?.headers },
       cache: 'no-store',
