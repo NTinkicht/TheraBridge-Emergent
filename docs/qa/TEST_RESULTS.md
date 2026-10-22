@@ -1,5 +1,10 @@
 # Test results — TB-EM-015 / issue #58
 
+## Multi-tab concurrency correction — 2026-10-22
+
+Explicit conflict comparison/revalidated deliberate recovery implemented; stale autosave blocked. Full PostgreSQL 468/468 (12 suites), types/builds, real two-tab browser/API/database races and revocation/completion, responsive DOM and legacy migration PASS. Docker socket blocked; hosted exact-head status follows export. ChatGPT review pending. See artifacts/tb-em-015/FINAL-REVIEW-CORRECTIONS.md for execution details and limitations. No issue #61 changes, merge or deployment.
+
+
 ## Final review corrections — 2026-10-22
 
 PASS: PostgreSQL 468/468 tests, 12/12 suites (122.421 s); API/web typechecks and production builds; expanded browser fixtures at 320/390/768/1024/1440; real browser → Nest/Fastify → PostgreSQL start/autosave/reload/complete; 15→16 migration legacy content preservation; diff whitespace and tracked-export Gitleaks. BLOCKED: Docker daemon socket permissions. UNVERIFIED: exact-head hosted Actions (gh unauthenticated). No standalone old-source red/green mutation run. Full cases, commands and limits: artifacts/tb-em-015/FINAL-REVIEW-CORRECTIONS.md.

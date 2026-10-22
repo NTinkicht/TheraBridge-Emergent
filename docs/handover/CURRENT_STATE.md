@@ -1,5 +1,10 @@
 # Current state — TheraBridge-Emergent
 
+## Multi-tab concurrency correction — 2026-10-22
+
+Explicit conflict comparison/revalidated deliberate recovery implemented; stale autosave blocked. Full PostgreSQL 468/468 (12 suites), types/builds, real two-tab browser/API/database races and revocation/completion, responsive DOM and legacy migration PASS. Docker socket blocked; hosted exact-head status follows export. ChatGPT review pending. See artifacts/tb-em-015/FINAL-REVIEW-CORRECTIONS.md for execution details and limitations. No issue #61 changes, merge or deployment.
+
+
 ## Final review corrections — 2026-10-22
 
 Final three PR #59 review corrections implemented atop 9e0e739. Operation-bound retries/reconciliation, consistent server-side activity evidence and lossless Unicode-bounded transcript insertion are locally verified. PostgreSQL 468/468 (12 suites), API/web typechecks/builds, five-width DOM, live browser/API/PostgreSQL and legacy migration upgrade PASS. Prior R1–R5 and completed immutability retained. Docker socket blocked; exact-head hosted Actions unverified. ChatGPT primary review pending. No merge/deploy/clinical activation.
