@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { BellRing, Repeat as RepeatIcon } from 'lucide-react';
 import { Field, FormAlert } from '@/components/auth/Field';
@@ -73,6 +74,7 @@ export function AppointmentPanel({ centerId, appt, manage, mine, onClose, onMove
   return (
     <Dialog open onClose={onClose} title={appt.childFull} testId="appt-panel" footer={footer}>
       <div className="space-y-4">
+        {mine && (open || appt.status === 'COMPLETED') && <Link className="inline-flex min-h-[44px] items-center text-brand-action underline" href={`/app/clinical/${appt.childId}`}>Open child session workspace</Link>}
         {err && <FormAlert tone="danger" testId="appt-error">{err}</FormAlert>}
         <dl className="grid grid-cols-[110px_1fr] gap-x-3 gap-y-2 text-[14px]">
           <dt className="text-brand-inkMuted">When</dt><dd className="tnum" data-testid="appt-when">{dayLabel(appt.startsAt)} · {timeRange(appt.startsAt, appt.endsAt)}</dd>

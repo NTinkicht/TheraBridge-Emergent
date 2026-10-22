@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { SessionEditor } from './SessionEditor';
 import { Field } from '@/components/auth/Field';
 import { SelectField } from '@/components/centers/kit';
 import { GoalChart } from '@/components/clinical/GoalChart';
@@ -46,43 +47,32 @@ export function AssessmentsPanel({ centerId, ws, run }: { centerId: string; ws: 
   );
 }
 
-function NoteEditor({ centerId, n, canEdit, run }: { centerId: string; n: Workspace['notes'][number]; canEdit: boolean; run: Run }) {
-  const [s, setS] = useState<Record<string, string>>(n.sections);
-  const edit = canEdit && n.mine;
-  return (
-    <Card className="space-y-3 p-5" testId={`note-${n.id}`}>
-      <div className="flex flex-wrap items-center gap-2"><h3 className="text-[16px] font-semibold">{serviceLabel(n.service)} session · {n.sessionDate}</h3><Pill tone="neutral">Draft</Pill><span className="text-[13px] text-brand-inkMuted">by {n.author}</span></div>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        {SECTIONS.map(([k, l]) => <label key={k} className="block text-[14px] font-medium">{l}<textarea className={input} rows={3} value={s[k] ?? ''} disabled={!edit} onChange={(e) => setS({ ...s, [k]: e.target.value })} data-testid={`note-${k}-${n.id}`} /></label>)}
-      </div>
-      <div className="flex flex-wrap items-start gap-2">
-        {edit && <Button onClick={() => void run(() => clinicalApi.saveNote(centerId, n.id, s, n.version), 'Session draft saved.')} data-testid={`note-save-${n.id}`}>Save draft</Button>}
-        <LockedAction id={`sign-${n.id}`} label="Sign note" reason={LOCKED_REASON} />
-      </div>
-    </Card>
-  );
-}
-
-export function SessionsPanel({ centerId, ws, run }: { centerId: string; ws: Workspace; run: Run }) {
-  const open = ws.appointments.filter((a) => !a.hasNote && Date.parse(a.startsAt) <= Date.now() + 86_400_000);
-  return (
-    <div className="space-y-4" data-testid="sessions-panel">
-      {ws.canEdit && (
-        <Card className="p-5" testId="session-start">
-          <h3 className="text-[16px] font-semibold">Start a session draft</h3>
-          {open.length ? <ul className="mt-2 space-y-2">{open.map((a) => (
-            <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-border-light p-3 text-[14px]">
-              <span>{dayLabel(a.startsAt)} · {serviceLabel(a.service)}</span>
-              <Button size="sm" variant="secondary" onClick={() => void run(() => clinicalApi.note(centerId, ws.child.id, { service: a.service, sessionDate: zonedParts(a.startsAt).date, appointmentId: a.id }), 'Session draft started.')} data-testid={`session-start-${a.id}`}>Start draft</Button>
-            </li>
-          ))}</ul> : <p className="mt-1 text-[14px] text-brand-inkMuted">No recent visits without a draft.</p>}
-          <Button size="sm" variant="ghost" className="mt-2" onClick={() => void run(() => clinicalApi.note(centerId, ws.child.id, { service: ws.child.services[0], sessionDate: today() }), 'Session draft started.')} data-testid="session-start-blank">Draft without an appointment</Button>
-        </Card>
-      )}
-      {ws.notes.map((n) => <NoteEditor key={`${n.id}-${n.version}`} centerId={centerId} n={n} canEdit={ws.canEdit} run={run} />)}
-      {!ws.notes.length && <p className="text-[14px] text-brand-inkMuted" data-testid="notes-empty">No session drafts yet.</p>}
-    </div>
-  );
+export function SessionsPanel({ centerId, ws, run, onPending }: { centerId: string; ws: Workspace; run: Run; onPending: (id: string, pending: boolean) => void }) {
+  const [service, setService] = useState(ws.child.services[0] ?? '');
+  const startRequest = useRef<Parameters<typeof clinicalApi.startSession>[2] | null>(null);
+  const [busy, setBusy] = useState(false);
+  async function start(service: string, appointmentId?: string) {
+    if (busy) return; setBusy(true);
+    if (!startRequest.current || startRequest.current.service !== service || startRequest.current.appointmentId !== appointmentId) {
+      const now = new Date();
+      const parts = new Intl.DateTimeFormat('en-US', { timeZone: ws.timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now);
+      const part = (type: string) => parts.find(p => p.type === type)?.value;
+      startRequest.current = { service, sessionDate: `${part('year')}-${part('month')}-${part('day')}`, appointmentId, actualStart: now.toISOString(), startKey: crypto.randomUUID() };
+    }
+    const request = startRequest.current;
+    const ok = await run(() => clinicalApi.startSession(centerId, ws.child.id, request), 'Session started.');
+    if (ok) startRequest.current = null;
+    setBusy(false);
+  }
+  return <div className="space-y-4" data-testid="sessions-panel">
+    {ws.canEdit && <Card className="space-y-3 p-5" testId="session-start"><h3 className="font-semibold">Start a session</h3>
+      {ws.appointments.filter(a => !a.hasNote && a.status === 'SCHEDULED').map(a => <div key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-border-light p-3"><span>{dayLabel(a.startsAt)} · {serviceLabel(a.service)} {a.room ? `· ${a.room}` : ''}</span><Button disabled={busy || Date.parse(a.startsAt) > Date.now()} onClick={() => void start(a.service, a.id)}>Start scheduled session</Button></div>)}
+      <SelectField label="Ad-hoc session specialty" value={service} onChange={setService} options={ws.child.services.map(value => ({ value, label: serviceLabel(value) }))} testId="session-specialty" />
+      <Button disabled={busy || !service} onClick={() => void start(service)}>Start ad-hoc session</Button>
+    </Card>}
+    {ws.notes.map(n => <SessionEditor key={n.id} centerId={centerId} n={n} ws={ws} onPending={onPending} />)}
+    {!ws.notes.length && <p>No sessions yet.</p>}
+  </div>;
 }
 
 export function ProgressPanel({ centerId, ws, run }: { centerId: string; ws: Workspace; run: Run }) {

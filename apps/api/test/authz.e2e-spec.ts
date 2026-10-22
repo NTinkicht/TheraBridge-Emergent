@@ -140,7 +140,7 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
       const unsafe = h.app.get(RouteAccessVerifier).routes().filter((r) => r.method !== 'GET').map((r) => `${r.method} ${r.route}`).sort();
       expect(unsafe).toEqual([
         'PATCH /centers/:centerId/appointments/:appointmentId', 'PATCH /centers/:centerId/children/:childId',
-        'PATCH /centers/:centerId/clinical/assessments/:id', 'PATCH /centers/:centerId/clinical/notes/:id', 'PATCH /centers/:centerId/clinical/plan-versions/:id', 'PATCH /centers/:centerId/clinical/reports/:id',
+        'PATCH /centers/:centerId/clinical/assessments/:id', 'PATCH /centers/:centerId/clinical/notes/:id', 'PATCH /centers/:centerId/clinical/plan-versions/:id', 'PATCH /centers/:centerId/clinical/reports/:id', 'PATCH /centers/:centerId/clinical/sessions/:id',
         'PATCH /centers/:centerId/me', 'PATCH /centers/:centerId/series/:seriesId', 'PATCH /centers/:centerId/settings', 'PATCH /centers/:centerId/staff/:membershipId',
         'POST /auth/context', 'POST /auth/login', 'POST /auth/logout', 'POST /auth/logout-all',
         'POST /auth/password/change', 'POST /auth/password/forgot', 'POST /auth/password/reset',
@@ -150,7 +150,7 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
         'POST /centers/:centerId/children/:childId/assignments/:assignmentId/end', 'POST /centers/:centerId/children/:childId/guardians',
         'POST /centers/:centerId/children/:childId/guardians/:linkId/invite', 'POST /centers/:centerId/children/:childId/guardians/:linkId/remove',
         'POST /centers/:centerId/children/:childId/restore', 'POST /centers/:centerId/clinical/children/:childId/assessments',
-        'POST /centers/:centerId/clinical/children/:childId/notes', 'POST /centers/:centerId/clinical/children/:childId/observations', 'POST /centers/:centerId/clinical/children/:childId/plans', 'POST /centers/:centerId/clinical/children/:childId/reports',
+        'POST /centers/:centerId/clinical/children/:childId/notes', 'POST /centers/:centerId/clinical/children/:childId/observations', 'POST /centers/:centerId/clinical/children/:childId/plans', 'POST /centers/:centerId/clinical/children/:childId/reports', 'POST /centers/:centerId/clinical/children/:childId/sessions',
         'POST /centers/:centerId/clinical/notes/:id/sign', 'POST /centers/:centerId/clinical/plan-versions/:id/approve', 'POST /centers/:centerId/clinical/plan-versions/:id/return',
         'POST /centers/:centerId/clinical/plan-versions/:id/submit', 'POST /centers/:centerId/clinical/plans/:planId/versions', 'POST /centers/:centerId/clinical/practice-feedback/:id/acknowledge',
         'POST /centers/:centerId/clinical/reports/:id/comments', 'POST /centers/:centerId/clinical/reports/:id/release', 'POST /centers/:centerId/clinical/reports/:id/return',

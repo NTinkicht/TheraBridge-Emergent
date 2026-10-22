@@ -599,6 +599,14 @@ model PlanVersion {
 }
 
 model SessionNote {
+  executionStatus String @default("IN_PROGRESS") @map("execution_status") @db.VarChar(16)
+  actualStart DateTime? @map("actual_start") @db.Timestamptz(3)
+  actualEnd DateTime? @map("actual_end") @db.Timestamptz(3)
+  attendance String @default("PRESENT") @db.VarChar(16)
+  activities Json @default("[]")
+  startKey String? @unique @map("start_key") @db.Uuid
+  lastMutationKey String? @map("last_mutation_key") @db.Uuid
+  lastMutationHash String? @map("last_mutation_hash") @db.VarChar(64)
   id            String   @id @default(uuid()) @db.Uuid
   centerId      String   @map("center_id") @db.Uuid
   childId       String   @map("child_id") @db.Uuid

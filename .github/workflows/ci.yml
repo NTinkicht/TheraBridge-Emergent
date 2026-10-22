@@ -5,6 +5,9 @@ on:
     branches: ["**"]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   secret-scan:
     runs-on: ubuntu-24.04
@@ -66,6 +69,7 @@ jobs:
           cp apps/api/prisma/schema.prisma /tmp/therabridge-prior/schema.prisma
           cp -a apps/api/prisma/migrations /tmp/therabridge-prior/migrations
           rm -rf /tmp/therabridge-prior/migrations/20261030090000_tb_em_013_guardian_audience_requires_recipient
+          rm -rf /tmp/therabridge-prior/migrations/20261101090000_tb_em_015_session_execution
           yarn workspace @therabridge/api prisma migrate deploy --schema /tmp/therabridge-prior/schema.prisma
           yarn workspace @therabridge/api prisma migrate deploy
           # The strengthened guardian constraint must now be present.
@@ -77,6 +81,57 @@ jobs:
       - run: yarn workspace @therabridge/web build
         env:
           NEXT_PUBLIC_API_BASE_URL: http://localhost:8001
+
+      - name: Session editor responsive DOM and synthetic dictation regression
+        run: |
+          yarn playwright install --with-deps chromium
+          (cd apps/web && yarn start) > /tmp/therabridge-web.log 2>&1 &
+          WEB_PID=$!
+          trap 'kill "$WEB_PID" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/login > /dev/null; then break; fi
+            sleep 1
+          done
+          node scripts/design/check-session-workflow.mjs
+
+  live-session:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-bookworm
+        env:
+          POSTGRES_USER: therabridge
+          POSTGRES_PASSWORD: ci_only_password
+          POSTGRES_DB: therabridge_live_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U therabridge -d therabridge_live_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://therabridge:ci_only_password@127.0.0.1:5432/therabridge_live_test?schema=public
+      DEPLOYMENT_ENV: ci
+      NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:3000
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: yarn workspace @therabridge/api prisma generate
+      - run: yarn workspace @therabridge/api prisma migrate deploy
+      - run: yarn workspace @therabridge/api build
+      - run: yarn workspace @therabridge/web build
+      - run: yarn playwright install --with-deps chromium
+      - name: Real two-tab browser → API → PostgreSQL synthetic regression
+        run: node scripts/design/run-session-live.mjs
+      # Never upload seed credentials, browser storage, or traces.
+      - if: always()
+        run: rm -f .workspace/local-credentials/synthetic-accounts.json
 
   compose:
     runs-on: ubuntu-24.04

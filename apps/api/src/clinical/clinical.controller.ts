@@ -1,3 +1,5 @@
+import { SessionExecutionService } from './session.service';
+import { SessionStartDto, SessionSaveDto } from './session.dto';
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Req } from '@nestjs/common';
 import { RequirePermission, TbRequest } from '../auth/access';
 import type { Viewer } from '../operations/children.service';
@@ -11,7 +13,7 @@ const viewer = (req: TbRequest): Viewer => ({ userId: req.auth!.session.userId, 
 
 @Controller('centers/:centerId')
 export class ClinicalController {
-  constructor(private readonly clinical: ClinicalService, private readonly governance: GovernanceService) {}
+  constructor(private readonly clinical: ClinicalService, private readonly governance: GovernanceService, private readonly execution: SessionExecutionService) {}
 
   @Get('clinical/children/:childId')
   @RequirePermission('center.clinical.read')
@@ -75,6 +77,18 @@ export class ClinicalController {
   @RequirePermission('center.clinical.read')
   preview(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Req() req: TbRequest) {
     return this.governance.capturePreview(c, viewer(req), 'PLAN', id);
+  }
+
+  @Post('clinical/children/:childId/sessions')
+  @RequirePermission('center.clinical.draft')
+  startSession(@Param('centerId', uuid()) c: string, @Param('childId', uuid()) id: string, @Body() dto: SessionStartDto, @Req() req: TbRequest) {
+    return this.execution.start(c, viewer(req), id, dto);
+  }
+
+  @Patch('clinical/sessions/:id')
+  @RequirePermission('center.clinical.draft')
+  saveSession(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Body() dto: SessionSaveDto, @Req() req: TbRequest) {
+    return this.execution.save(c, viewer(req), id, dto);
   }
 
   @Post('clinical/children/:childId/notes')

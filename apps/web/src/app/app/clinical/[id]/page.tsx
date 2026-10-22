@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, FlaskConical } from 'lucide-react';
@@ -21,6 +21,15 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
   const centerId = session.activeContext?.type === 'center' ? session.activeContext.centerId : '';
   const fetcher = useCallback(() => clinicalApi.workspace(centerId, id), [centerId, id]);
   const { data, failed, reload } = useLoad(fetcher, onError);
+  const pending = useRef(new Set<string>());
+  const onPending = useCallback((id: string, value: boolean) => { if (value) pending.current.add(id); else pending.current.delete(id); }, []);
+  useEffect(() => {
+    const unload = (e: BeforeUnloadEvent) => { if (pending.current.size) { e.preventDefault(); e.returnValue = ''; } };
+    const click = (e: MouseEvent) => { if ((e.target as Element).closest('a[href]') && pending.current.size && !window.confirm('Unsaved session or transcript text remains. Leave and discard it?')) { e.preventDefault(); e.stopPropagation(); } };
+    const pop = () => { if (pending.current.size && !window.confirm('Unsaved session or transcript remains. Leave and discard it?')) history.go(1); };
+    window.addEventListener('beforeunload', unload); document.addEventListener('click', click, true); window.addEventListener('popstate', pop);
+    return () => { window.removeEventListener('beforeunload', unload); document.removeEventListener('click', click, true); window.removeEventListener('popstate', pop); };
+  }, []);
   const [tab, setTab] = useState<(typeof TABS)[number][0]>('plan');
   const [notice, setNotice] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
   const run = async (fn: () => Promise<unknown>, ok: string) => {
@@ -38,7 +47,7 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
       <p className="flex items-start gap-2 rounded-control bg-status-cautionSurface p-3 text-[13px]" data-testid="clinical-synthetic-banner"><FlaskConical size={16} className="mt-0.5 shrink-0" aria-hidden="true" />Synthetic data only, not for clinical use. {data.locked} Media capture and AI processing are not available.</p>
       <div role="tablist" aria-label="Clinical sections" className="flex gap-1 overflow-x-auto border-b border-border-light">
         {TABS.map(([k, l]) => (
-          <button key={k} role="tab" type="button" aria-selected={tab === k} onClick={() => { setTab(k); setNotice(null); }} data-testid={`clinical-tab-${k}`}
+          <button key={k} role="tab" type="button" aria-selected={tab === k} onClick={() => { if (pending.current.size && !window.confirm('Unsaved session or transcript remains. Switch sections and discard it?')) return; setTab(k); setNotice(null); }} data-testid={`clinical-tab-${k}`}
             className={`min-h-[44px] shrink-0 border-b-2 px-4 text-[14px] font-semibold transition-colors ${tab === k ? 'border-brand-action text-brand-action' : 'border-transparent text-brand-inkMuted hover:text-brand-ink'}`}>{l}</button>
         ))}
       </div>
@@ -46,7 +55,7 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
       <div role="tabpanel">
         {tab === 'plan' && <PlansPanel centerId={centerId} ws={data} run={run} />}
         {tab === 'assessments' && <AssessmentsPanel centerId={centerId} ws={data} run={run} />}
-        {tab === 'sessions' && <SessionsPanel centerId={centerId} ws={data} run={run} />}
+        {tab === 'sessions' && <SessionsPanel centerId={centerId} ws={data} run={run} onPending={onPending} />}
         {tab === 'progress' && <ProgressPanel centerId={centerId} ws={data} run={run} />}
         {tab === 'reports' && <ReportsPanel centerId={centerId} ws={data} run={run} onError={onError} />}
       </div>
