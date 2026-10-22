@@ -5,7 +5,7 @@ import { Button } from '@/components/design/ui';
 import { SelectField } from '@/components/centers/kit';
 import { syntheticProvider, SYNTHETIC_SPEECH, type DictationScenario } from '@/lib/dictation';
 
-export function Dictation({ disabled, onInsert, onPending }: { disabled: boolean; onInsert: (s: string) => void; onPending: (pending: boolean) => void }) {
+export function Dictation({ disabled, onInsert, onPending }: { disabled: boolean; onInsert: (s: string) => { accepted: boolean; message?: string }; onPending: (pending: boolean) => void }) {
   const [text, setText] = useState(''), [scenario, setScenario] = useState<DictationScenario>('success'), [busy, setBusy] = useState(false), [message, setMessage] = useState('');
   const abort = useRef<AbortController | null>(null);
   useEffect(() => { onPending(!!text || busy); }, [text, busy, onPending]);
@@ -25,7 +25,7 @@ export function Dictation({ disabled, onInsert, onPending }: { disabled: boolean
     <SelectField label="Synthetic test scenario" value={scenario} onChange={s => setScenario(s as DictationScenario)} testId="dictation-scenario" options={['success', 'permission', 'unavailable', 'unsupported', 'interrupted', 'empty', 'provider', 'network'].map(value => ({ value, label: value }))} />
     <div className="flex flex-wrap gap-2"><Button variant="secondary" disabled={busy || disabled} onClick={() => void transcribe()}><Mic size={16} aria-hidden="true" />Run synthetic transcription</Button>{busy && <Button variant="ghost" onClick={() => { abort.current?.abort(); setBusy(false); setMessage('Transcription cancelled.'); }}>Cancel transcription</Button>}</div>
     <p role="status" className="text-[13px]">{message}</p>
-    <label className="block text-[14px]">Editable transcript (not saved)<textarea aria-label="Editable transcript (not saved)" className="mt-1 w-full rounded-control border border-border-light p-2" maxLength={4000} rows={3} value={text} onChange={e => setText(e.target.value)} /></label>
-    <div className="flex flex-wrap gap-2"><Button disabled={disabled || busy || !text.trim()} onClick={() => { onInsert(text); setText(''); setMessage('Reviewed text inserted into the note. Save confirmation is still required.'); }}>Insert reviewed text</Button><Button variant="ghost" disabled={busy} onClick={() => { if (!text || window.confirm('Discard the unsaved transcript?')) setText(''); }}>Discard transcript</Button></div>
+    <label className="block text-[14px]">Editable transcript (not saved)<textarea aria-label="Editable transcript (not saved)" className="mt-1 w-full rounded-control border border-border-light p-2" rows={3} value={text} onChange={e => setText(e.target.value)} /></label>
+    <div className="flex flex-wrap gap-2"><Button disabled={disabled || busy || !text.trim()} onClick={() => { const result = onInsert(text); if (result.accepted) { setText(''); setMessage('Reviewed text inserted into the note. Save confirmation is still required.'); } else setMessage(result.message ?? 'Insertion rejected. Your transcript is retained.'); }}>Insert reviewed text</Button><Button variant="ghost" disabled={busy} onClick={() => { if (!text || window.confirm('Discard the unsaved transcript?')) setText(''); }}>Discard transcript</Button></div>
   </fieldset>;
 }

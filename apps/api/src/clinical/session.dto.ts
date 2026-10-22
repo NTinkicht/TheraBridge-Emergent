@@ -13,6 +13,7 @@ export class SessionActivityDto {
   @IsString() @MaxLength(300) objective!: string;
   @IsOptional() @IsUUID() planVersionId?: string;
   @IsOptional() @IsString() @MaxLength(40) goalKey?: string;
+  // Performance fields are legal only for COMPLETED; the service enforces this cross-field invariant.
   @IsIn(['NOT_STARTED', 'COMPLETED', 'SKIPPED']) completion!: string;
   @IsOptional() @IsIn(['ACHIEVED', 'PARTIAL', 'NOT_ACHIEVED']) outcome?: string;
   @IsOptional() @IsIn(['INDEPENDENT', 'SOME_ASSISTANCE', 'SUBSTANTIAL_ASSISTANCE']) assistance?: string;

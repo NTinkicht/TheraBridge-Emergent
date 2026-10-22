@@ -42,6 +42,38 @@ describe('TB-EM-015 session execution (PostgreSQL)', () => {
     await start().expect(201);
     expect(await h.prisma.observation.count()).toBe(0);
   });
+  it.each([
+    ['COMPLETED', undefined, 'INDEPENDENT', 'PRESENT', 0],
+    ['COMPLETED', 'ACHIEVED', undefined, 'PRESENT', 0],
+    ['SKIPPED', 'ACHIEVED', undefined, 'PRESENT', 0],
+    ['SKIPPED', undefined, 'INDEPENDENT', 'PRESENT', 0],
+    ['NOT_STARTED', 'PARTIAL', undefined, 'PRESENT', 0],
+    ['NOT_STARTED', undefined, 'SOME_ASSISTANCE', 'PRESENT', 0],
+    ['COMPLETED', 'ACHIEVED', 'INDEPENDENT', 'NO_SHOW', 5],
+    ['SKIPPED', undefined, undefined, 'NO_SHOW', 5],
+  ])('rejects contradictory direct API evidence: %s / %s / %s / %s / %s', async (completion, outcome, assistance, attendance, minutes) => {
+    const id = (await start().expect(201)).body.id;
+    await patch(therapist, id, payload({ attendance, activities: [activity({ completion, outcome, assistance, minutes })] })).expect(422);
+    expect(await h.prisma.sessionNote.findUnique({ where: { id } })).toMatchObject({ version: 1, activities: [] });
+    expect(await h.prisma.observation.count()).toBe(0);
+  });
+  it('preserves notes, authorship and historical snapshots when explicitly clearing performance', async () => {
+    const id = (await start().expect(201)).body.id;
+    const a = activity();
+    await patch(therapist, id, payload({ activities: [a] })).expect(200);
+    const first = (await h.prisma.sessionNote.findUniqueOrThrow({ where: { id } })).activities as any[];
+    await patch(therapist, id, payload({ version: 2, activities: [{ ...a, completion: 'SKIPPED', outcome: undefined, assistance: undefined }] })).expect(200);
+    const after = (await h.prisma.sessionNote.findUniqueOrThrow({ where: { id } })).activities as any[];
+    expect(after[0]).toMatchObject({ observation: a.observation, objective: a.objective, snapshot: first[0].snapshot, authorId: first[0].authorId, createdAt: first[0].createdAt });
+    expect(after[0].outcome).toBeUndefined(); expect(after[0].assistance).toBeUndefined();
+  });
+  it.each(['العربية café', '😀'])('uses Unicode code points for the response limit: %s', async text => {
+    const id = (await start().expect(201)).body.id;
+    const response = text + 'a'.repeat(4000 - Array.from(text).length);
+    await patch(therapist, id, payload({ sections: { response } })).expect(200);
+    await patch(therapist, id, payload({ version: 2, sections: { response: response + 'a' } })).expect(400);
+    expect((await h.prisma.sessionNote.findUniqueOrThrow({ where: { id } })).sections).toEqual({ response });
+  });
   it('supports both specialties while denying other-child, wrong-specialty, revoked assignments and ownership', async () => {
     await start(other).expect(404); await start(therapist, { service: 'occupational' }).expect(404);
     await start(dual, { service: 'occupational' }).expect(201); await start(dual).expect(201);

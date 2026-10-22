@@ -1,5 +1,10 @@
 # Next work unit
 
+## Final review corrections — 2026-10-22
+
+Verify the pushed exact HEAD and hosted test/secret-scan/compose on PR #59, then ChatGPT performs primary independent review of the incremental diff. Mistral routine re-review is not required by this owner request. Do not merge/deploy or activate STT (#60). Exact SHA supplied in export handoff. Local correction evidence: artifacts/tb-em-015/FINAL-REVIEW-CORRECTIONS.md.
+
+
 ## PR #59 follow-up — 2026-10-22
 
 Owner authorized the R1–R5 correction checkpoint and managed-Git export on the same feature branch. After export, ChatGPT will verify new exact-head hosted test/secret-scan/compose and coordinate fresh independent Mistral re-review using artifacts/tb-em-015/PR59-DISPOSITION.md. Export handoff supplies the exact SHA and remote/PR verification. GitHub CLI remains unauthenticated; no comment/request posted. Authorized start correction/amendment policy remains OPEN; all start rewrites fail closed. Retain DRAFT; do not merge/deploy.

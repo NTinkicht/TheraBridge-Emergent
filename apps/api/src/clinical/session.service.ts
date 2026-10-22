@@ -104,11 +104,12 @@ export class SessionExecutionService {
             if (!goalSnapshot) throw new UnprocessableEntityException('Choose a goal from this child’s exact specialty plan version.');
           }
         }
+        if (a.completion !== 'COMPLETED' && (a.outcome != null || a.assistance != null)) throw new UnprocessableEntityException('Skipped and not-started activities must not contain performed outcomes or assistance.');
         if (a.completion === 'COMPLETED' && (!a.outcome || !a.assistance || !a.objective.trim())) throw new UnprocessableEntityException('Performed activities require objective, outcome and assistance separately.');
         if (dto.executionStatus === 'COMPLETED' && a.completion === 'NOT_STARTED') throw new UnprocessableEntityException('Review every activity before completing.');
         activities.push({ ...a, snapshot, goalSnapshot, authorId: previous?.authorId ?? v.userId, createdAt: previous?.createdAt ?? now.toISOString(), updatedAt: now.toISOString(), position: activities.length, evidenceKind: 'UNVALIDATED_SESSION_ACTIVITY' });
       }
-      if (dto.attendance === 'NO_SHOW' && activities.some(a => a.completion === 'COMPLETED')) throw new UnprocessableEntityException('A no-show cannot contain performed activities.');
+      if (dto.attendance === 'NO_SHOW' && activities.some(a => a.completion === 'COMPLETED' || Number(a.minutes) > 0)) throw new UnprocessableEntityException('A no-show cannot contain performed activities.');
       const r = await tx.sessionNote.updateMany({ where: { id, version: dto.version, executionStatus: 'IN_PROGRESS' }, data: { sections: json(dto.sections), activities: json(activities), actualStart: start, actualEnd: end, attendance: dto.attendance, executionStatus: dto.executionStatus, version: { increment: 1 }, updatedAt: now, lastMutationKey: dto.mutationKey, lastMutationHash: hash } });
       if (r.count !== 1) throw new ConflictException('Session changed. Reload before retrying.');
       await logCenterEvent(tx, centerId, dto.executionStatus === 'COMPLETED' ? 'clinical.session_completed' : 'clinical.session_saved', now, { actorUserId: v.userId, membershipId: v.membershipId, meta: { childId: fresh.childId, sessionNoteId: id, version: dto.version + 1, activities: activities.length, firstActualStart: fresh.actualStart ? undefined : start.toISOString() } });

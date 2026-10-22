@@ -1,5 +1,10 @@
 # Current state — TheraBridge-Emergent
 
+## Final review corrections — 2026-10-22
+
+Final three PR #59 review corrections implemented atop 9e0e739. Operation-bound retries/reconciliation, consistent server-side activity evidence and lossless Unicode-bounded transcript insertion are locally verified. PostgreSQL 468/468 (12 suites), API/web typechecks/builds, five-width DOM, live browser/API/PostgreSQL and legacy migration upgrade PASS. Prior R1–R5 and completed immutability retained. Docker socket blocked; exact-head hosted Actions unverified. ChatGPT primary review pending. No merge/deploy/clinical activation.
+
+
 ## PR #59 repairs — 2026-10-22
 
 R1–R5 repaired for the owner-authorized correction checkpoint; see [point-by-point disposition](../../artifacts/tb-em-015/PR59-DISPOSITION.md). Final API/web typechecks and builds PASS; PostgreSQL 457/457 tests across 12 suites PASS; responsive DOM/legacy draft/delayed saving/pending cleanup PASS; baseline legacy migration upgrade PASS. Correction policy remains OPEN and start corrections fail closed. Completed-session trigger unchanged. Docker access denied; hosted CI, authenticated PR response and fresh independent Mistral re-review pending. Owner authorized commit and managed-Git export on the existing feature branch. The containing correction commit follows original PR head 7e366fb53a471b28f58255987eb018c7804b478e; its exact SHA and remote/PR verification are returned in the export handoff. Local checks are not hosted CI. No merge or deployment authorized.

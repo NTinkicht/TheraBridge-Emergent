@@ -11,7 +11,8 @@ const center = '00000000-0000-4000-8000-000000000002';
 const child = '00000000-0000-4000-8000-000000000003';
 const template = { id: '00000000-0000-4000-8000-000000000004', title: 'Synthetic game', service: 'speech', minutes: 10, materials: ['Cards'], steps: ['Take turns'], safety: ['Synthetic only'], ageBand: '3-6' };
 const session = { user: { id, email: 'synthetic@test.test', displayName: 'Synthetic Therapist' }, csrfToken: 'synthetic-ui-token', session: { idleExpiresAt: new Date(Date.now()+3600000).toISOString(), absoluteExpiresAt: new Date(Date.now()+3600000).toISOString() }, contexts: [], activeContext: { type: 'center', centerId: center, membershipId: id, role: 'THERAPIST', centerName: 'Synthetic center' }, permissions: ['center.clinical.read','center.clinical.draft','center.schedule.read','center.children.read','center.activities.read'] };
-let saved = null, version = 1, fail = false, delayed = false;
+let saved = null, version = 1, fail = false, delayed = false, transport = '', reject422 = false, alreadyCompleted = false;
+const requests = [];
 const ws = { timezone: 'UTC', synthetic: true, locked: 'Signing and release disabled', canEdit: true, canReview: false, child: { id: child, name: 'Synthetic Child', services: ['speech','occupational'], dateOfBirth: '2020-01-01' }, assessments: [], plans: [], observations: [], appointments: [], templates: [template], notes: [{ id, service: 'speech', sessionDate: '2026-10-19', appointmentId: null, sections: {}, version, mine: true, author: 'Synthetic Therapist', executionStatus: 'IN_PROGRESS', actualStart: new Date(Date.now()-60000).toISOString(), actualEnd: null, attendance: 'PRESENT', activities: [] }] };
 await context.addCookies([{ name: 'tb_session', value: 'synthetic-browser-fixture', url: base }]);
 await page.route('**/api/**', async route => {
@@ -21,7 +22,12 @@ await page.route('**/api/**', async route => {
   const path = new URL(route.request().url()).pathname;
   if (path === '/api/auth/session') return route.fulfill({ json: session });
   if (route.request().method() === 'PATCH') {
-    const body = route.request().postDataJSON();
+    const body = route.request().postDataJSON(); requests.push(body);
+    if (alreadyCompleted) { Object.assign(ws.notes[0], { executionStatus: 'COMPLETED' }); return route.fulfill({ status: 409, json: { message: 'Session completed' } }); }
+    if (reject422) return route.fulfill({ status: 422, json: { message: 'Completion requires an end time.' } });
+    if (transport === 'before') return route.abort('timedout');
+    if (transport === 'accepted') { saved = body; version++; Object.assign(ws.notes[0], body, { version }); transport = 'replay'; return route.abort('timedout'); }
+    if (transport === 'replay') { assert.deepEqual(body, saved); transport = ''; return route.fulfill({ json: { version, updatedAt: new Date().toISOString() } }); }
     if (fail) return route.fulfill({ status: 403, json: { message: 'Assignment revoked. Keep your text.' } });
     if (delayed) await new Promise(r => setTimeout(r, 700));
     saved = body; version++; Object.assign(ws.notes[0], body, { version });
@@ -42,6 +48,45 @@ try {
     const nav = page.getByTestId(width < 768 ? 'mobile-nav' : 'product-sidebar');
     assert(await nav.isVisible(), `Role navigation visible at ${width}`);
   }
+  // Unknown outcomes never cross operation boundaries, and exact replays retain keys/payloads.
+  const response = page.getByLabel('Child response / reviewed dictation', { exact: true });
+  const transcript = page.getByLabel('Editable transcript (not saved)', { exact: true });
+  const saveDraft = () => page.getByRole('button', { name: /^(Save draft|Retry save)$/ }).click();
+  const reload = async () => { await page.reload(); await page.getByRole('tab', { name: 'Sessions', exact: true }).click(); };
+  for (const [note, text, accepted] of [['', 'العربية café 😀', true], ['a'.repeat(3998), 'é', true], ['a'.repeat(3999), 'é', false], ['', 'x'.repeat(4001), false], ['note', 'review', true]]) {
+    await response.fill(note); await transcript.fill(text);
+    await page.getByRole('button', { name: 'Insert reviewed text', exact: true }).click();
+    assert.equal(await transcript.inputValue(), accepted ? '' : text);
+    assert.equal(await response.inputValue(), accepted ? [note,text].filter(Boolean).join('\n') : note);
+    if (accepted) { assert(await page.getByRole('button', { name: 'Insert reviewed text', exact: true }).isDisabled()); await saveDraft(); await page.getByText(/Saved on server ·/).waitFor(); await reload(); assert.equal(await response.inputValue(), [note,text].filter(Boolean).join('\n')); }
+    else { await transcript.fill(''); }
+  }
+  for (const operation of ['IN_PROGRESS','COMPLETED']) {
+    await response.fill(`preserve ${operation}`);
+    await page.getByLabel('Actual end', { exact: true }).fill(new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16));
+    transport = 'before';
+    if (operation === 'COMPLETED') { page.once('dialog', d => d.accept()); await page.getByRole('button', { name: 'Review and complete session', exact: true }).click(); } else await saveDraft();
+    const resolve = page.getByRole('button', { name: `Resolve previous ${operation === 'COMPLETED' ? 'completion' : 'draft save'}`, exact: true });
+    await resolve.waitFor(); const sent = requests.at(-1); const count = requests.length;
+    assert(await response.isDisabled());
+    // Attempt the conflicting button: no request can be issued.
+    if (operation === 'COMPLETED') await saveDraft(); else await page.getByRole('button', { name: 'Review and complete session', exact: true }).click();
+    assert.equal(requests.length, count); assert.equal(ws.notes[0].executionStatus, 'IN_PROGRESS');
+    transport = operation === 'COMPLETED' ? 'accepted' : '';
+    if (operation === 'COMPLETED') page.once('dialog', d => d.accept());
+    await resolve.click();
+    if (operation === 'COMPLETED') {
+      await page.getByText(/Outcome unknown/).waitFor(); assert.deepEqual(requests.at(-1), sent);
+      page.once('dialog', d => d.accept()); await resolve.click();
+      await page.getByText('Completed · unsigned', { exact: true }).waitFor();
+      assert.equal(ws.notes[0].executionStatus, 'COMPLETED');
+      Object.assign(ws.notes[0], { executionStatus: 'IN_PROGRESS' }); await reload();
+    } else { await page.getByText(/Saved on server ·/).waitFor(); assert.equal(ws.notes[0].executionStatus, 'IN_PROGRESS'); }
+    assert.deepEqual(requests.at(-1), sent);
+  }
+  reject422 = true; page.once('dialog', d => d.accept()); await page.getByRole('button', { name: 'Review and complete session', exact: true }).click();
+  await page.getByText(/Completion requires an end time/).waitFor(); assert(await response.isEnabled());
+  reject422 = false; await saveDraft(); await page.getByText(/Saved on server ·/).waitFor(); assert.equal(saved.executionStatus, 'IN_PROGRESS');
   await page.getByRole('button', { name: 'Add Synthetic game', exact: true }).focus();
   await page.keyboard.press('Enter');
   await page.getByLabel('Objective addressed', { exact: true }).fill('Synthetic objective');
@@ -49,6 +94,16 @@ try {
   await page.getByLabel('Outcome', { exact: true }).selectOption('ACHIEVED');
   await page.getByLabel('Assistance (separate from outcome)', { exact: true }).selectOption('SUBSTANTIAL_ASSISTANCE');
   await page.getByLabel('Actual minutes', { exact: true }).fill('5');
+  await page.getByLabel('Factual observation', { exact: true }).fill('Retained factual note');
+  page.once('dialog', d => d.dismiss()); await page.getByLabel('Completion', { exact: true }).selectOption('SKIPPED');
+  assert.equal(await page.getByLabel('Completion', { exact: true }).inputValue(), 'COMPLETED');
+  page.once('dialog', d => d.accept()); await page.getByLabel('Completion', { exact: true }).selectOption('SKIPPED');
+  assert.equal(await page.getByLabel('Outcome', { exact: true }).inputValue(), '');
+  assert.equal(await page.getByLabel('Assistance (separate from outcome)', { exact: true }).inputValue(), '');
+  assert.equal(await page.getByLabel('Factual observation', { exact: true }).inputValue(), 'Retained factual note');
+  await page.getByLabel('Completion', { exact: true }).selectOption('COMPLETED');
+  await page.getByLabel('Outcome', { exact: true }).selectOption('ACHIEVED');
+  await page.getByLabel('Assistance (separate from outcome)', { exact: true }).selectOption('SUBSTANTIAL_ASSISTANCE');
   await page.getByRole('button', { name: 'Save draft', exact: true }).click();
   await page.waitForFunction(() => [...document.querySelectorAll('[role="status"]')].some(e => e.textContent.includes('Saved on server ·')));
   assert.equal(saved.activities[0].outcome, 'ACHIEVED'); assert.equal(saved.activities[0].assistance, 'SUBSTANTIAL_ASSISTANCE');
@@ -77,6 +132,9 @@ try {
   delayed = true;
   await page.getByRole('button', { name: 'Save draft', exact: true }).click();
   await page.getByText('Saving…', { exact: true }).waitFor();
+  const duringSave = requests.length;
+  await page.getByRole('button', { name: 'Review and complete session', exact: true }).evaluate(button => button.click());
+  assert.equal(requests.length, duringSave, 'Duplicate/conflicting clicks while saving issue no request');
   assert(await page.getByRole('button', { name: 'Save draft', exact: true }).isDisabled());
   assert(await page.getByLabel('Overall session note', { exact: true }).isDisabled());
   await page.waitForTimeout(900);
@@ -95,6 +153,10 @@ try {
   await page.getByRole('button', { name: 'Review and complete session', exact: true }).click();
   await page.getByText('Completed · unsigned', { exact: true }).waitFor();
   assert(await page.getByLabel('Overall session note', { exact: true }).isDisabled());
+  // A stale client learns that another confirmed request already completed the session.
+  Object.assign(ws.notes[0], { executionStatus: 'IN_PROGRESS' }); await reload(); alreadyCompleted = true;
+  await saveDraft(); await page.getByText(/Server confirms this session is already completed/).waitFor();
+  assert(await response.isDisabled()); assert.equal(ws.notes[0].executionStatus, 'COMPLETED'); alreadyCompleted = false;
   // Legacy migrated draft: no invented start; content survives validation, save and reload.
   Object.assign(ws.notes[0], { actualStart: null, actualEnd: null, executionStatus: 'IN_PROGRESS', sections: { activities: 'Original legacy content' }, activities: [] });
   await page.reload(); await page.getByRole('tab', { name: 'Sessions', exact: true }).click();

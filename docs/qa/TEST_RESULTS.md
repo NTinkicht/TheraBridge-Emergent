@@ -1,5 +1,10 @@
 # Test results — TB-EM-015 / issue #58
 
+## Final review corrections — 2026-10-22
+
+PASS: PostgreSQL 468/468 tests, 12/12 suites (122.421 s); API/web typechecks and production builds; expanded browser fixtures at 320/390/768/1024/1440; real browser → Nest/Fastify → PostgreSQL start/autosave/reload/complete; 15→16 migration legacy content preservation; diff whitespace and tracked-export Gitleaks. BLOCKED: Docker daemon socket permissions. UNVERIFIED: exact-head hosted Actions (gh unauthenticated). No standalone old-source red/green mutation run. Full cases, commands and limits: artifacts/tb-em-015/FINAL-REVIEW-CORRECTIONS.md.
+
+
 ## PR #59 repair verification — 2026-10-22
 
 Correction checkpoint atop 7e366fb53a471b28f58255987eb018c7804b478e. The containing commit is the corrected candidate; the owner-authorized managed-Git export handoff reports its exact SHA and remote/PR-head verification. Local results below do not establish hosted CI.
