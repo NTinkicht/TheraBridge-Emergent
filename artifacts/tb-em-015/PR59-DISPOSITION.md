@@ -1,0 +1,29 @@
+# PR #59 review disposition — 2026-10-22
+
+Reviewed public PR conversation, including owner's R1–R5 transcription of independent Mistral findings against `7e366fb53a471b28f58255987eb018c7804b478e`. This document accompanies the R1–R5 correction checkpoint on `freebuff/tb-em-015-session-workflow`, exported under explicit owner authorization. The containing commit identifies the corrected candidate; remote branch and PR #59 head verification are reported in the export handoff. This is not independent acceptance.
+
+## Dispositions
+
+- **R1 addressed:** SessionEditor requires explicit first actual-start entry for legacy drafts, preserves sections, shows actionable inline validation before conversion, and never infers updatedAt as start. The compatibility create-note endpoint remains supported for pre-execution drafts, with specialty authorization. Compatibility section updates are restricted to actualStart=null; established executions must use the session API. PostgreSQL legacy-row edit/completion and browser fixture empty-start/edit/save/reload/resume/completion regressions added. A separate real baseline migration upgrade preserves original content and null start.
+- **R2 addressed:** Only applicable Prisma P2002 start-key/appointment conflicts trigger a fresh fully authorized transaction. Replays compare actor, tenant, child, service, appointment, key, actual instant and session date. Conflicts return 409 (inaccessible scope 404), never generic successful deduplication. Concurrent identical ad-hoc/appointment tests assert same ID, one note/event per start, conflicting payload/actor rejection and revoked-assignment retry rejection. Client retains the complete start request across retries, not merely its key.
+- **R3 addressed with fail-closed correction:** Existing actualStart is pinned, including its original seconds/milliseconds in the UI payload. Routine saves can resume days later without a rolling 24-hour check. New starts retain the past-24-hour rule and must match the center-local session date. Legacy first entry must match its recorded center-local date and be nonfuture; it is recorded in the save event. End must be nonfuture and not before start. Inputs are browser-local wall times, API ISO instants; center-local date validation uses the configured IANA timezone. Tests cover cross-day resume, tampering, invalid end, and both offset instants during New York DST fallback.
+  - **OPEN owner policy:** authorized start corrections are disabled, not invented. Alternatives: bounded author correction of an in-progress draft with reason and immutable audit, or a separately authorized append-only amendment. Completed sessions must use a future versioned/append-only workflow; the database UPDATE/DELETE prohibition is unchanged. No authorized correction capability is claimed tested.
+- **R4 addressed:** Dictation cleanup aborts active work and clears pending; cancelled/unmounted work cannot publish a transcript or update status. Browser regression accepts transcript discard on tab switch and checks beforeunload is not prevented after switch/completion.
+- **R5 addressed:** Rendered disabled controls use reactive saving state; a ref remains the single-flight lock. Finally re-enables controls after either result; revision checks preserve newer-edit messaging. Delayed-response browser checks assert disabled then re-enabled controls; denied-save/retry assertions remain.
+
+Concurrent authorized ad-hoc sessions remain provisionally allowed. Duplicate-detection policy is OPEN and separate from the unique appointment restriction. Last-write mutation/hash replay remains authorization-first. Direction B components and supervisor/guardian discussion boundaries are preserved. No runtime dependencies or migrations added by these repairs.
+
+## Verification
+
+- PASS: Node 20.19.0 / Yarn 1.22.22 frozen-lockfile dependency restoration and Prisma generation.
+- PASS: PostgreSQL full suite **457/457, 12/12 suites**, 122.044 seconds; includes new concurrency, legacy, timing/DST tests.
+- PASS: API/web typechecks and API/web production build.
+- PASS: responsive browser DOM fixture suite at 320/390/768/1024/1440, including new legacy, delayed response and pending cleanup assertions. Expected simulated 403 is not a test failure.
+- PASS: baseline 15-migration schema with original synthetic legacy row, followed by unchanged session migration: original sections, unsigned DRAFT, IN_PROGRESS and null actualStart preserved.
+- Initial verification failures repaired: missing test fixture timestamps; restored database needed three pending migrations; audit assertion used AuditEvent instead of actual CenterEvent. Chromium initially crashed due to missing fontconfig environment; workspace FONTCONFIG_FILE fixes it. Local web required NEXT_PUBLIC_API_BASE_URL.
+- Final post-edit verification and redacted secret-scan results are recorded in the handover/QA addendum.
+- BLOCKED: Docker daemon access denied; no bypass. Compose not rerun.
+- NOT RUN: new real browser-to-live-API journey, Safari/Firefox, physical-device/audio tests. Browser regressions use API fixtures; database behavior is exercised separately by real PostgreSQL integration tests.
+- BLOCKED delivery: gh is unauthenticated (exit 4). No PR comment, review-thread resolution or fresh Mistral request posted. Owner authorized committing and managed-Git export of these repairs on the existing branch, without a second PR. New exact-head hosted test/secret-scan/compose and independent re-review remain pending; the export handoff reports the resulting SHA and remote verification. Owner's PR comment reports original-head Actions run 39720585014 green; that does not verify these edits.
+
+Retain DRAFT. No merge, self-approval, deployment, genuine audio/STT, external AI, signing, release, consent grants or patient records enabled.

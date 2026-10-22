@@ -49,12 +49,19 @@ export function AssessmentsPanel({ centerId, ws, run }: { centerId: string; ws: 
 
 export function SessionsPanel({ centerId, ws, run, onPending }: { centerId: string; ws: Workspace; run: Run; onPending: (id: string, pending: boolean) => void }) {
   const [service, setService] = useState(ws.child.services[0] ?? '');
-  const startKey = useRef(crypto.randomUUID());
+  const startRequest = useRef<Parameters<typeof clinicalApi.startSession>[2] | null>(null);
   const [busy, setBusy] = useState(false);
   async function start(service: string, appointmentId?: string) {
     if (busy) return; setBusy(true);
-    const ok = await run(() => clinicalApi.startSession(centerId, ws.child.id, { service, sessionDate: today(), appointmentId, actualStart: new Date().toISOString(), startKey: startKey.current }), 'Session started.');
-    if (ok) startKey.current = crypto.randomUUID();
+    if (!startRequest.current || startRequest.current.service !== service || startRequest.current.appointmentId !== appointmentId) {
+      const now = new Date();
+      const parts = new Intl.DateTimeFormat('en-US', { timeZone: ws.timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now);
+      const part = (type: string) => parts.find(p => p.type === type)?.value;
+      startRequest.current = { service, sessionDate: `${part('year')}-${part('month')}-${part('day')}`, appointmentId, actualStart: now.toISOString(), startKey: crypto.randomUUID() };
+    }
+    const request = startRequest.current;
+    const ok = await run(() => clinicalApi.startSession(centerId, ws.child.id, request), 'Session started.');
+    if (ok) startRequest.current = null;
     setBusy(false);
   }
   return <div className="space-y-4" data-testid="sessions-panel">

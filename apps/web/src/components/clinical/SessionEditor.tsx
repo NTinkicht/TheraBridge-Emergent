@@ -11,7 +11,7 @@ const options = (items: string[]) => items.map(value => ({ value, label: value.r
 const localTime = (iso: string | null) => iso ? new Date(Date.parse(iso) - new Date(iso).getTimezoneOffset() * 60000).toISOString().slice(0,16) : '';
 export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string; n: Workspace['notes'][number]; ws: Workspace; onPending: (id: string, pending: boolean) => void }) {
   const [sections, setSections] = useState(n.sections), [activities, setActivities] = useState(n.activities), [start, setStart] = useState(localTime(n.actualStart)), [end, setEnd] = useState(localTime(n.actualEnd)), [attendance, setAttendance] = useState(n.attendance);
-  const [completed, setCompleted] = useState(n.executionStatus === 'COMPLETED'), [dirty, setDirty] = useState(false), [transcriptPending, setTranscriptPending] = useState(false), [status, setStatus] = useState('Saved on server'), [error, setError] = useState(false), [query, setQuery] = useState('');
+  const [saving, setSaving] = useState(false), [startError, setStartError] = useState<string>(), [pinnedStart, setPinnedStart] = useState(n.actualStart), [completed, setCompleted] = useState(n.executionStatus === 'COMPLETED'), [dirty, setDirty] = useState(false), [transcriptPending, setTranscriptPending] = useState(false), [status, setStatus] = useState('Saved on server'), [error, setError] = useState(false), [query, setQuery] = useState('');
   const version = useRef(n.version), busy = useRef(false), revision = useRef(0), retry = useRef<Parameters<typeof clinicalApi.saveSession>[2] | null>(null);
   const edit = ws.canEdit && n.mine && !completed;
   const changed = () => { revision.current++; retry.current = null; setDirty(true); setError(false); setStatus('Unsaved changes'); };
@@ -20,14 +20,17 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
   async function save(finish = false) {
     if (busy.current || !edit) return;
     if (finish && (transcriptPending || !window.confirm('Complete this session as read-only? This does not sign or release a clinical document.'))) return;
-    busy.current = true; setStatus('Saving…'); setError(false); const rev = revision.current;
+    const parsedStart = pinnedStart ?? (start && Number.isFinite(Date.parse(start)) ? new Date(start).toISOString() : null);
+    if (!parsedStart || !Number.isFinite(Date.parse(parsedStart))) { setStartError('Enter the actual start on the recorded session date before saving.'); setError(true); setStatus('Actual start is required. Your original note is preserved.'); return; }
+    setStartError(undefined);
+    busy.current = true; setSaving(true); setStatus('Saving…'); setError(false); const rev = revision.current;
     try {
-      const body = retry.current ?? { version: version.current, mutationKey: crypto.randomUUID(), sections, activities: activities.map(({ id, templateId, minutes, objective, planVersionId, goalKey, completion, outcome, assistance, observation }) => ({ id, templateId, minutes, objective, planVersionId, goalKey, completion, outcome, assistance, observation })), actualStart: new Date(start).toISOString(), actualEnd: end ? new Date(end).toISOString() : undefined, attendance, executionStatus: finish ? 'COMPLETED' : 'IN_PROGRESS' };
+      const body = retry.current ?? { version: version.current, mutationKey: crypto.randomUUID(), sections, activities: activities.map(({ id, templateId, minutes, objective, planVersionId, goalKey, completion, outcome, assistance, observation }) => ({ id, templateId, minutes, objective, planVersionId, goalKey, completion, outcome, assistance, observation })), actualStart: parsedStart, actualEnd: end ? new Date(end).toISOString() : undefined, attendance, executionStatus: finish ? 'COMPLETED' : 'IN_PROGRESS' };
       retry.current = body;
-      const result = await clinicalApi.saveSession(centerId, n.id, body); version.current = result.version; retry.current = null;
+      const result = await clinicalApi.saveSession(centerId, n.id, body); version.current = result.version; retry.current = null; setPinnedStart(body.actualStart);
       if (rev === revision.current) { setDirty(false); setStatus(`Saved on server · ${new Date(result.updatedAt).toLocaleTimeString()}`); } else setStatus('Newer edits are not saved yet');
       if (body.executionStatus === 'COMPLETED') setCompleted(true);
-    } catch (e) { setError(true); setStatus((e as Error).message + ' Your text remains here. Retry, or copy it before reloading.'); } finally { busy.current = false; }
+    } catch (e) { setError(true); setStatus((e as Error).message + ' Your text remains here. Retry, or copy it before reloading.'); } finally { busy.current = false; setSaving(false); }
   }
   useEffect(() => { if (!dirty || error || !edit) return; const timer = setTimeout(() => void save(), 1500); return () => clearTimeout(timer); });
   const insert = (text: string) => { changed(); setSections(s => ({ ...s, response: [s.response, text].filter(Boolean).join('\n') })); };
@@ -35,8 +38,8 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
   const goals = ws.plans.filter(p => p.service === n.service).flatMap(p => p.versions.flatMap(v => v.goals.map(g => ({ value: `${v.id}|${g.key}`, label: `${p.title} v${v.number}: ${g.title} (${g.measure})` }))));
   return <Card className="space-y-4 p-4 md:p-5" testId={`note-${n.id}`}>
     <div className="flex flex-wrap gap-2"><h3 className="font-semibold">{serviceLabel(n.service)} session · {n.sessionDate}</h3><Pill>{completed ? 'Completed · unsigned' : 'In progress · unsigned'}</Pill><span className="text-[13px]">by {n.author}</span></div>
-    <fieldset disabled={!edit || busy.current} className="space-y-4">
-      <div className="grid gap-3 md:grid-cols-3"><Field label="Actual start" type="datetime-local" value={start} onChange={e => { changed(); setStart(e.target.value); }} testId={`session-start-time-${n.id}`} /><Field label="Actual end" type="datetime-local" value={end} onChange={e => { changed(); setEnd(e.target.value); }} testId={`session-end-time-${n.id}`} /><SelectField label="Attendance review" value={attendance} onChange={s => { changed(); setAttendance(s as typeof attendance); }} options={options(['PRESENT', 'NO_SHOW'])} testId={`session-attendance-${n.id}`} /></div>
+    <fieldset disabled={!edit || saving} className="space-y-4">
+      <div className="grid gap-3 md:grid-cols-3"><Field label="Actual start" type="datetime-local" disabled={!!pinnedStart} error={startError} hint={pinnedStart ? 'Pinned actual start; corrections require an authorized amendment (not enabled).' : `Legacy draft: enter actual start in your browser’s local time. It must fall on ${n.sessionDate} in center time zone ${ws.timezone}. No time has been inferred.`} value={start} onChange={e => { changed(); setStart(e.target.value); }} testId={`session-start-time-${n.id}`} /><Field label="Actual end" type="datetime-local" value={end} onChange={e => { changed(); setEnd(e.target.value); }} testId={`session-end-time-${n.id}`} /><SelectField label="Attendance review" value={attendance} onChange={s => { changed(); setAttendance(s as typeof attendance); }} options={options(['PRESENT', 'NO_SHOW'])} testId={`session-attendance-${n.id}`} /></div>
       <p className="text-[13px] text-brand-inkMuted">Activity results are factual, unvalidated session evidence—not approved progress measurements. Goals retain their exact version and measurement semantics.</p>
       {activities.map((a, index) => <section key={a.id} className="space-y-3 rounded-control border border-border-light p-3" aria-label={`Activity ${index + 1}`}>
         <h4 className="font-semibold">{index + 1}. {a.snapshot?.title ?? ws.templates.find(t => t.id === a.templateId)?.title}</h4>
@@ -53,8 +56,8 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
       {edit && <div className="space-y-2"><Field label={`Search ${serviceLabel(n.service)} activity library`} value={query} onChange={e => setQuery(e.target.value)} testId={`session-search-${n.id}`} /><div className="flex max-h-48 flex-col gap-2 overflow-y-auto">{ws.templates.filter(t => t.service === n.service && t.title.toLowerCase().includes(query.toLowerCase())).map(t => <Button key={t.id} variant="secondary" onClick={() => { changed(); setActivities(items => [...items, { id: crypto.randomUUID(), templateId: t.id, snapshot: t, minutes: 0, objective: '', completion: 'NOT_STARTED', observation: '' }]); }}>Add {t.title}</Button>)}</div></div>}
       <div className="grid gap-3 md:grid-cols-2">{[['focus','Session focus'],['activities','Overall session note'],['response','Child response / reviewed dictation'],['nextSteps','Next steps']].map(([key,label]) => <label key={key} className="block text-[14px]">{label}<textarea aria-label={label} className={input} rows={3} maxLength={4000} value={sections[key] ?? ''} onChange={e => { changed(); setSections(s => ({ ...s, [key]: e.target.value })); }} /></label>)}</div>
     </fieldset>
-    {edit && <Dictation disabled={!edit || busy.current} onInsert={insert} onPending={pending} />}
+    {edit && <Dictation disabled={!edit || saving} onInsert={insert} onPending={pending} />}
     <p role="status" aria-live="polite" className={error ? 'text-status-danger text-[14px]' : 'text-brand-inkMuted text-[13px]'}>{status}</p>
-    <div className="flex flex-wrap items-start gap-2">{edit && <><Button disabled={busy.current} onClick={() => void save()}>{error ? 'Retry save' : 'Save draft'}</Button><Button variant="secondary" disabled={transcriptPending || busy.current} onClick={() => void save(true)}>Review and complete session</Button></>}<LockedAction id={`sign-${n.id}`} label="Sign note" reason={LOCKED_REASON} /></div>
+    <div className="flex flex-wrap items-start gap-2">{edit && <><Button disabled={saving} onClick={() => void save()}>{error ? 'Retry save' : 'Save draft'}</Button><Button variant="secondary" disabled={transcriptPending || saving} onClick={() => void save(true)}>Review and complete session</Button></>}<LockedAction id={`sign-${n.id}`} label="Sign note" reason={LOCKED_REASON} /></div>
   </Card>;
 }

@@ -77,7 +77,10 @@ try {
   delayed = true;
   await page.getByRole('button', { name: 'Save draft', exact: true }).click();
   await page.getByText('Saving…', { exact: true }).waitFor();
+  assert(await page.getByRole('button', { name: 'Save draft', exact: true }).isDisabled());
+  assert(await page.getByLabel('Overall session note', { exact: true }).isDisabled());
   await page.waitForTimeout(900);
+  assert(await page.getByRole('button', { name: 'Save draft', exact: true }).isEnabled());
   assert(saved.sections.response.includes('Corrected reviewed synthetic transcript'));
   fail = true;
   await page.getByLabel('Overall session note', { exact: true }).fill('Preserved after revoked assignment');
@@ -92,6 +95,30 @@ try {
   await page.getByRole('button', { name: 'Review and complete session', exact: true }).click();
   await page.getByText('Completed · unsigned', { exact: true }).waitFor();
   assert(await page.getByLabel('Overall session note', { exact: true }).isDisabled());
+  // Legacy migrated draft: no invented start; content survives validation, save and reload.
+  Object.assign(ws.notes[0], { actualStart: null, actualEnd: null, executionStatus: 'IN_PROGRESS', sections: { activities: 'Original legacy content' }, activities: [] });
+  await page.reload(); await page.getByRole('tab', { name: 'Sessions', exact: true }).click();
+  await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+  await page.getByText('Enter the actual start on the recorded session date before saving.', { exact: true }).waitFor();
+  assert.equal(await page.getByLabel('Overall session note', { exact: true }).inputValue(), 'Original legacy content');
+  await page.getByLabel('Actual start', { exact: true }).fill('2026-10-19T09:00');
+  await page.getByLabel('Overall session note', { exact: true }).fill('Original legacy content edited');
+  await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+  await page.getByText(/Saved on server ·/).waitFor();
+  await page.reload(); await page.getByRole('tab', { name: 'Sessions', exact: true }).click();
+  assert.equal(await page.getByLabel('Overall session note', { exact: true }).inputValue(), 'Original legacy content edited');
+  assert(await page.getByLabel('Actual start', { exact: true }).isDisabled());
+  // An accepted tab switch discards the transcript and must clear the pending guard.
+  await page.getByLabel('Editable transcript (not saved)', { exact: true }).fill('Discard on switch');
+  page.once('dialog', d => d.accept());
+  await page.getByRole('tab', { name: 'Therapy plan', exact: true }).click();
+  assert.equal(await page.evaluate(() => { const e = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(e); return e.defaultPrevented; }), false);
+  await page.getByRole('tab', { name: 'Sessions', exact: true }).click();
+  await page.getByLabel('Actual end', { exact: true }).fill('2026-10-19T10:00');
+  page.once('dialog', d => d.accept());
+  await page.getByRole('button', { name: 'Review and complete session', exact: true }).click();
+  await page.getByText('Completed · unsigned', { exact: true }).waitFor();
+  assert.equal(await page.evaluate(() => { const e = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(e); return e.defaultPrevented; }), false);
   assert.deepEqual(errors, []);
   console.log('PASS: responsive DOM at 320/390/768/1024/1440, role navigation, structured result, all synthetic scenarios, cancellation/retry, review-only insertion, unsaved warning, authoritative save, revocation recovery, read-only completion. API responses are browser fixtures; real persistence/security tested separately in PostgreSQL.');
 } finally { await browser.close(); }

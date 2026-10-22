@@ -57,6 +57,59 @@ describe('TB-EM-015 session execution (PostgreSQL)', () => {
     await post(h, `/api/centers/${randomUUID()}/clinical/children/${childId}/sessions`, therapist, {}).expect(404);
     await h.prisma.center.update({ where: { id: centerId }, data: { trialEndsAt: h.clock.now() } }); await patch(therapist, id, payload()).expect(403); await start().expect(403);
   });
+  it('resolves concurrent identical starts and rejects conflicting payloads without duplicate audit', async () => {
+    for (const extra of [{}, { appointmentId }]) {
+      const body = { ...extra, startKey: randomUUID() };
+      const results = await Promise.all([start(therapist, body), start(therapist, body)]);
+      expect(results.map(r => r.status)).toEqual([201, 201]);
+      expect(results[0].body.id).toBe(results[1].body.id);
+      await start(therapist, { ...body, actualStart: new Date(h.clock.t - 1000).toISOString() }).expect(409);
+      await start(dual, body).expect(extra.appointmentId ? 404 : 409);
+      if (extra.appointmentId) await start(therapist, { appointmentId }).expect(409);
+    }
+    expect(await h.prisma.sessionNote.count()).toBe(2);
+    expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.session_started' } })).toBe(2);
+  });
+  it('reauthorizes a start retry after revocation', async () => {
+    const startKey = randomUUID(); await start(therapist, { startKey }).expect(201);
+    await h.prisma.careAssignment.updateMany({ where: { centerId }, data: { endedAt: h.clock.now() } });
+    await start(therapist, { startKey }).expect(404);
+    expect(await h.prisma.sessionNote.count()).toBe(1);
+  });
+  it('pins actual start across days and fails closed on correction while allowing legacy first entry', async () => {
+    const actualStart = h.clock.now().toISOString(); const id = (await start().expect(201)).body.id;
+    await h.prisma.center.update({ where: { id: centerId }, data: { trialEndsAt: new Date(h.clock.t + 10 * 86400000) } });
+    h.clock.t += 2 * 86400000;
+    // Sign in again after the deliberate two-day session expiry.
+    const user = await h.prisma.user.findUniqueOrThrow({ where: { emailNormalized: 'one@session.test' } });
+    const member = await h.prisma.membership.findFirstOrThrow({ where: { userId: user.id, centerId } });
+    const signed = await signIn(h, user.email);
+    const selected = await post(h, '/api/auth/context', signed, { membershipId: member.id, role: 'THERAPIST' }).expect(200);
+    const token = cookieFrom(selected, 'tb_session')!; therapist = { token, cookie: `tb_session=${token}`, csrf: selected.body.csrfToken, body: selected.body };
+    await patch(therapist, id, payload({ actualStart })).expect(200);
+    await patch(therapist, id, payload({ version: 2 })).expect(422);
+    await patch(therapist, id, payload({ version: 2, actualStart, actualEnd: new Date(Date.parse(actualStart) - 1).toISOString() })).expect(422);
+    const legacy = await h.prisma.sessionNote.create({ data: { centerId, childId, membershipId: member.id, service: 'speech', createdAt: h.clock.now(), updatedAt: h.clock.now(), sessionDate: new Date('2026-10-19'), sections: { focus: 'Original legacy content' } } });
+    await patch(therapist, legacy.id, payload()).expect(422);
+    await patch(therapist, legacy.id, payload({ actualStart, sections: legacy.sections })).expect(200);
+    expect((await h.prisma.sessionNote.findUniqueOrThrow({ where: { id: legacy.id } })).sections).toEqual(legacy.sections);
+    await patch(therapist, legacy.id, payload({ version: 2, actualStart, sections: legacy.sections, actualEnd: actualStart, executionStatus: 'COMPLETED' })).expect(200);
+  });
+  it('uses center-local dates at DST boundaries without inferring legacy start', async () => {
+    await h.prisma.center.update({ where: { id: centerId }, data: { timezone: 'America/New_York' } });
+    const member = await h.prisma.membership.findFirstOrThrow({ where: { centerId, user: { emailNormalized: 'one@session.test' } } });
+    for (const actualStart of ['2026-11-01T01:30:00-04:00', '2026-11-01T01:30:00-05:00']) {
+      const legacy = await h.prisma.sessionNote.create({ data: { centerId, childId, membershipId: member.id, service: 'speech', createdAt: h.clock.now(), updatedAt: h.clock.now(), sessionDate: new Date('2026-11-01') } });
+      // Move clock just for date validation; retain an active signed session by moving back after save.
+      h.clock.t = Date.parse('2026-11-01T07:00:00Z');
+      await h.prisma.center.update({ where: { id: centerId }, data: { trialEndsAt: new Date(h.clock.t + 86400000) } });
+      const signed = await signIn(h, 'one@session.test');
+      const selected = await post(h, '/api/auth/context', signed, { membershipId: member.id, role: 'THERAPIST' }).expect(200);
+      const token = cookieFrom(selected, 'tb_session')!; therapist = { token, cookie: `tb_session=${token}`, csrf: selected.body.csrfToken, body: selected.body };
+      await patch(therapist, legacy.id, payload({ actualStart: '2026-11-01T00:30:00Z' })).expect(422);
+      await patch(therapist, legacy.id, payload({ actualStart })).expect(200);
+    }
+  });
   it('serializes concurrent updates and validates independent results without false success', async () => {
     const id = (await start().expect(201)).body.id;
     const results = await Promise.all([patch(therapist, id, payload()), patch(therapist, id, payload())]);

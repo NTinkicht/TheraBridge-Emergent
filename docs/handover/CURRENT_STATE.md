@@ -1,6 +1,10 @@
 # Current state — TheraBridge-Emergent
 
-## Current addendum — TB-EM-015, 2026-10-21
+## PR #59 repairs — 2026-10-22
+
+R1–R5 repaired for the owner-authorized correction checkpoint; see [point-by-point disposition](../../artifacts/tb-em-015/PR59-DISPOSITION.md). Final API/web typechecks and builds PASS; PostgreSQL 457/457 tests across 12 suites PASS; responsive DOM/legacy draft/delayed saving/pending cleanup PASS; baseline legacy migration upgrade PASS. Correction policy remains OPEN and start corrections fail closed. Completed-session trigger unchanged. Docker access denied; hosted CI, authenticated PR response and fresh independent Mistral re-review pending. Owner authorized commit and managed-Git export on the existing feature branch. The containing correction commit follows original PR head 7e366fb53a471b28f58255987eb018c7804b478e; its exact SHA and remote/PR verification are returned in the export handoff. Local checks are not hosted CI. No merge or deployment authorized.
+
+## Historical addendum — TB-EM-015, 2026-10-21
 
 The original bootstrap record below is historical. The application exists on main through PR #57 (`f49ade4125cdb26e11fd7eb2cc80c292a48f00a9`). Session execution and synthetic dictation are implemented on isolated `freebuff/tb-em-015-session-workflow`; no merge or deployment authorized/performed. API: 453/453 real PostgreSQL tests, typecheck/build PASS. Web typecheck/build, responsive DOM and real browser/API/PostgreSQL synthetic journey PASS. Docker smoke BLOCKED (socket permissions). Real recording/STT, AI, signing/release, consent and pilot use remain disabled. GitHub draft PR/CI and Mistral review require authenticated delivery; see `artifacts/tb-em-015/VALIDATION.md` and `docs/emergent/workunits/TB-EM-015.md` for actual evidence and unresolved boundaries.
 

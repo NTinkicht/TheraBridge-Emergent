@@ -152,6 +152,8 @@ export class ClinicalService {
   async createNote(centerId: string, v: Viewer, childId: string, dto: SessionNoteDto) {
     if (dto.appointmentId && !(await this.prisma.appointment.findFirst({ where: { id: dto.appointmentId, centerId, childId, membershipId: v.membershipId } }))) throw new UnprocessableEntityException('Choose one of your own appointments with this child.');
     return this.write(centerId, v, childId, dto.service, async (tx, now) => {
+      const member = await tx.membership.findUniqueOrThrow({ where: { id: v.membershipId } });
+      if (!member.specialties.includes(dto.service)) throw new NotFoundException('Specialty not assigned');
       if (dto.appointmentId && !await tx.appointment.findFirst({ where: { id: dto.appointmentId, centerId, childId, service: dto.service, membershipId: v.membershipId, status: 'SCHEDULED' } })) throw new UnprocessableEntityException('Choose your own scheduled appointment for this child and service.');
       if (dto.appointmentId && (await tx.sessionNote.findUnique({ where: { appointmentId: dto.appointmentId } }))) throw new ConflictException('This appointment already has a session draft.');
       const n = await tx.sessionNote.create({ data: { centerId, childId, membershipId: v.membershipId, appointmentId: dto.appointmentId ?? null, service: dto.service, sessionDate: asDate(dto.sessionDate), createdAt: now, updatedAt: now } });
@@ -164,7 +166,10 @@ export class ClinicalService {
     const n = await this.prisma.sessionNote.findFirst({ where: { id, centerId } });
     if (!n) throw new NotFoundException('Session draft not found');
     return this.write(centerId, v, n.childId, n.service, async (tx, now) => {
-      const r = await tx.sessionNote.updateMany({ where: { id, membershipId: v.membershipId, version: dto.version, executionStatus: 'IN_PROGRESS' }, data: { sections: { ...dto.sections } as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
+      const member = await tx.membership.findUniqueOrThrow({ where: { id: v.membershipId } });
+      if (!member.specialties.includes(n.service)) throw new NotFoundException('Specialty not assigned');
+      // Compatibility endpoint only edits pre-execution drafts. Established sessions use saveSession.
+      const r = await tx.sessionNote.updateMany({ where: { id, membershipId: v.membershipId, version: dto.version, executionStatus: 'IN_PROGRESS', actualStart: null }, data: { sections: { ...dto.sections } as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
       if (r.count !== 1) throw new ConflictException(n.membershipId !== v.membershipId ? 'Only the author can edit this draft.' : 'This draft changed since you opened it. Reload to see the latest version.');
       await logCenterEvent(tx, centerId, 'clinical.session_saved', now, { actorUserId: v.userId, meta: { childId: n.childId, sessionNoteId: id } });
       return { ok: true };

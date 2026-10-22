@@ -1,5 +1,22 @@
 # Test results — TB-EM-015 / issue #58
 
+## PR #59 repair verification — 2026-10-22
+
+Correction checkpoint atop 7e366fb53a471b28f58255987eb018c7804b478e. The containing commit is the corrected candidate; the owner-authorized managed-Git export handoff reports its exact SHA and remote/PR-head verification. Local results below do not establish hosted CI.
+
+- PASS: frozen Yarn install; API/web typechecks and production builds after final source edits.
+- PASS: PostgreSQL full suite **457/457, 12/12 suites** (122.044 s), including concurrent starts, payload/actor conflicts, revoked replay, legacy first entry/completion, cross-day saves and DST offsets.
+- PASS: responsive DOM at 320/390/768/1024/1440; legacy empty-start inline error/edit/save/reload/completion; delayed disabled controls/re-enable; tab-discard/completion unload guard cleanup. Browser API fixtures, not a new live backend journey.
+- PASS: real 15-migration baseline + original synthetic legacy note → session migration, content/null start/unsigned status preserved.
+- PASS: redacted gitleaks scan of tracked working-tree export including the new disposition document; git diff --check.
+- BLOCKED: Docker daemon socket access; hosted exact-head CI and authenticated PR response/re-review request.
+- NOT RUN: new live browser/API journey, Safari/Firefox, physical audio. Dev preview backend setup unavailable after restore; no usable full-stack review preview claimed.
+- OPEN: authorized start correction policy; fail-closed until decision, completed immutable trigger preserved.
+
+Details: [PR dispositions](../../artifacts/tb-em-015/PR59-DISPOSITION.md).
+
+## Original implementation verification
+
 Base main: f49ade4125cdb26e11fd7eb2cc80c292a48f00a9. Branch: freebuff/tb-em-015-session-workflow.
 
 - PASS: frozen-lockfile install (Node 20.19.0 / Yarn 1.22.22), Prisma generate.

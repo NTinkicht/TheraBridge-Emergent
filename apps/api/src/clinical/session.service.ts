@@ -1,5 +1,5 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { logCenterEvent } from '../centers/history';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Viewer } from '../operations/children.service';
@@ -13,11 +13,21 @@ export class SessionExecutionService {
   constructor(private readonly prisma: PrismaService, private readonly clinical: ClinicalService) {}
 
   async start(centerId: string, v: Viewer, childId: string, dto: SessionStartDto) {
+    try {
+      return await this.startAuthorized(centerId, v, childId, dto);
+    } catch (e) {
+      if (!(e instanceof Prisma.PrismaClientKnownRequestError) || e.code !== 'P2002' ||
+          !Array.isArray(e.meta?.target) || !e.meta.target.every(k => ['start_key', 'appointment_id'].includes(String(k)))) throw e;
+      // The failed transaction is rolled back. Reauthorize and resolve only the winning start.
+      return this.startAuthorized(centerId, v, childId, dto, true);
+    }
+  }
+
+  private async startAuthorized(centerId: string, v: Viewer, childId: string, dto: SessionStartDto, replayOnly = false) {
     return this.clinical.write(centerId, v, childId, dto.service, async (tx, now) => {
       const m = await tx.membership.findUniqueOrThrow({ where: { id: v.membershipId } });
       if (!m.specialties.includes(dto.service)) throw new NotFoundException('Specialty not assigned');
       const start = new Date(dto.actualStart);
-      if (start > now || start < new Date(now.getTime() - 86_400_000)) throw new UnprocessableEntityException('Actual start must be within the past 24 hours.');
       let appointment = null;
       if (dto.appointmentId) {
         appointment = await tx.appointment.findFirst({ where: { id: dto.appointmentId, centerId, childId, membershipId: v.membershipId, service: dto.service } });
@@ -27,13 +37,24 @@ export class SessionExecutionService {
       }
       const prior = await tx.sessionNote.findFirst({ where: { OR: [{ startKey: dto.startKey }, ...(dto.appointmentId ? [{ appointmentId: dto.appointmentId }] : [])] } });
       if (prior) {
-        if (prior.centerId !== centerId || prior.childId !== childId || prior.membershipId !== v.membershipId || prior.service !== dto.service || prior.appointmentId !== (dto.appointmentId ?? null)) throw new ConflictException('Start key already used.');
+        if (prior.centerId !== centerId || prior.childId !== childId || prior.membershipId !== v.membershipId || prior.service !== dto.service || prior.appointmentId !== (dto.appointmentId ?? null) || prior.startKey !== dto.startKey || prior.actualStart?.getTime() !== start.getTime() || prior.sessionDate.getTime() !== asDate(dto.sessionDate).getTime()) throw new ConflictException('Start key already used.');
         return { id: prior.id };
       }
+      if (replayOnly) throw new ConflictException('Session start conflicted. Reload before retrying.');
+      if (!Number.isFinite(start.getTime()) || start > now || start < new Date(now.getTime() - 86_400_000)) throw new UnprocessableEntityException('Actual start must be within the past 24 hours.');
+      const center = await tx.center.findUniqueOrThrow({ where: { id: centerId } });
+      if (this.centerDay(start, center.timezone) !== dto.sessionDate) throw new UnprocessableEntityException('Actual start must fall on the session date in the center time zone.');
       const note = await tx.sessionNote.create({ data: { centerId, childId, membershipId: v.membershipId, service: dto.service, sessionDate: asDate(dto.sessionDate), appointmentId: appointment?.id, actualStart: start, startKey: dto.startKey, createdAt: now, updatedAt: now } });
       await logCenterEvent(tx, centerId, 'clinical.session_started', now, { actorUserId: v.userId, membershipId: v.membershipId, meta: { childId, sessionNoteId: note.id } });
       return { id: note.id };
     });
+  }
+
+  private centerDay(date: Date, timezone: string): string {
+    if (!Number.isFinite(date.getTime())) throw new UnprocessableEntityException('Enter a valid actual start.');
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(date);
+    const part = (type: string) => parts.find(p => p.type === type)?.value;
+    return `${part('year')}-${part('month')}-${part('day')}`;
   }
 
   async save(centerId: string, v: Viewer, id: string, dto: SessionSaveDto) {
@@ -55,7 +76,12 @@ export class SessionExecutionService {
         if (!a || !['SCHEDULED', 'COMPLETED'].includes(a.status)) throw new ConflictException('This appointment was cancelled or marked no-show.');
       }
       const start = new Date(dto.actualStart), end = dto.actualEnd ? new Date(dto.actualEnd) : null;
-      if (start > now || (end && (end < start || end > now)) || (dto.executionStatus === 'COMPLETED' && !end)) throw new UnprocessableEntityException('Check actual session times; completion requires an end time, not in the future.');
+      if (fresh.actualStart && start.getTime() !== fresh.actualStart.getTime()) throw new UnprocessableEntityException('Actual start is pinned. Corrections require a future authorized amendment workflow.');
+      if (!fresh.actualStart) {
+        const center = await tx.center.findUniqueOrThrow({ where: { id: centerId } });
+        if (this.centerDay(start, center.timezone) !== fresh.sessionDate.toISOString().slice(0, 10)) throw new UnprocessableEntityException('First actual start must fall on the recorded session date in the center time zone.');
+      }
+      if (!Number.isFinite(start.getTime()) || (end && !Number.isFinite(end.getTime())) || start > now || (end && (end < start || end > now)) || (dto.executionStatus === 'COMPLETED' && !end)) throw new UnprocessableEntityException('Check actual session times; completion requires an end time, not in the future.');
       if (new Set(dto.activities.map(a => a.id)).size !== dto.activities.length) throw new UnprocessableEntityException('Activity identities must be unique.');
       const old = fresh.activities as unknown as Evidence[];
       const activities: Evidence[] = [];
@@ -85,7 +111,7 @@ export class SessionExecutionService {
       if (dto.attendance === 'NO_SHOW' && activities.some(a => a.completion === 'COMPLETED')) throw new UnprocessableEntityException('A no-show cannot contain performed activities.');
       const r = await tx.sessionNote.updateMany({ where: { id, version: dto.version, executionStatus: 'IN_PROGRESS' }, data: { sections: json(dto.sections), activities: json(activities), actualStart: start, actualEnd: end, attendance: dto.attendance, executionStatus: dto.executionStatus, version: { increment: 1 }, updatedAt: now, lastMutationKey: dto.mutationKey, lastMutationHash: hash } });
       if (r.count !== 1) throw new ConflictException('Session changed. Reload before retrying.');
-      await logCenterEvent(tx, centerId, dto.executionStatus === 'COMPLETED' ? 'clinical.session_completed' : 'clinical.session_saved', now, { actorUserId: v.userId, membershipId: v.membershipId, meta: { childId: fresh.childId, sessionNoteId: id, version: dto.version + 1, activities: activities.length } });
+      await logCenterEvent(tx, centerId, dto.executionStatus === 'COMPLETED' ? 'clinical.session_completed' : 'clinical.session_saved', now, { actorUserId: v.userId, membershipId: v.membershipId, meta: { childId: fresh.childId, sessionNoteId: id, version: dto.version + 1, activities: activities.length, firstActualStart: fresh.actualStart ? undefined : start.toISOString() } });
       return { version: dto.version + 1, updatedAt: now };
     });
   }
