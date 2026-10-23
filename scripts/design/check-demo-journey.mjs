@@ -6,7 +6,9 @@ import { chromium } from 'playwright';
 
 const base = process.env.DEMO_WEB_ORIGIN ?? 'http://127.0.0.1:3000';
 if (process.env.DEPLOYMENT_ENV !== 'ci' || new URL(base).hostname !== '127.0.0.1') throw new Error('Demo browser journey is CI-only on loopback');
-const creds = JSON.parse(readFileSync('.workspace/local-credentials/childrens-home-demo.json', 'utf8')).accounts;
+const creds = process.env.DEMO_PASSWORDS_JSON
+  ? Object.entries(JSON.parse(process.env.DEMO_PASSWORDS_JSON)).map(([email, password]) => ({ email, password }))
+  : JSON.parse(readFileSync('.workspace/local-credentials/childrens-home-demo.json', 'utf8')).accounts;
 const db = new PrismaClient();
 const center = await db.center.findUniqueOrThrow({ where: { slug: 'childrens-home-demo' } });
 const child = await db.child.findFirstOrThrow({ where: { centerId: center.id, firstName: 'Yusuf', lastName: 'Ahmed' } });

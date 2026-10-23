@@ -1,0 +1,21 @@
+# Synthetic preview only. Next.js + NestJS in ONE container and ONE public port.
+# No real patient data, approval, signing, release or real audio/STT/AI.
+FROM node:20-bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates tini && rm -rf /var/lib/apt/lists/*
+WORKDIR /repo
+COPY package.json yarn.lock ./
+COPY apps/api/package.json apps/api/package.json
+COPY apps/web/package.json apps/web/package.json
+RUN yarn install --frozen-lockfile --network-timeout 600000
+COPY apps/api apps/api
+COPY apps/web apps/web
+COPY scripts/preview/start.sh scripts/preview/start.sh
+RUN chmod 0555 scripts/preview/start.sh
+RUN yarn workspace @therabridge/api prisma generate && yarn workspace @therabridge/api build
+ENV API_UPSTREAM_ORIGIN=http://127.0.0.1:8001
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN yarn workspace @therabridge/web build
+ENV NODE_ENV=production
+EXPOSE 10000
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["bash", "scripts/preview/start.sh"]

@@ -8,8 +8,19 @@ const dbUrl = new URL(process.env.DATABASE_URL ?? '');
 if (process.env.DEPLOYMENT_ENV !== 'ci' || !['127.0.0.1', 'localhost'].includes(dbUrl.hostname) || !dbUrl.pathname.endsWith('_demo_test')) {
   throw new Error('Demo browser CI requires isolated loopback *_demo_test database');
 }
+const emails = [
+  'platform.demo@childrens-home.therabridge.test',
+  'admin@childrens-home.therabridge.test',
+  'coordinator@childrens-home.therabridge.test',
+  'speech@childrens-home.therabridge.test',
+  'ot@childrens-home.therabridge.test',
+  'supervisor@childrens-home.therabridge.test',
+  'mariam.ahmed@childrens-home.therabridge.test',
+];
+const demoPasswords = Object.fromEntries(emails.map(e => [e, 'demo-' + randomBytes(24).toString('base64url')]));
 const env = {
   ...process.env, DEMO_SEED_CONFIRM: 'CHILDRENS_HOME_SYNTHETIC_ONLY',
+  DEMO_PASSWORDS_JSON: JSON.stringify(demoPasswords),
   AUTH_SECRET: randomBytes(32).toString('base64url'),
   HOST: '127.0.0.1', PORT: '8001', CORS_ORIGINS: 'http://127.0.0.1:3000',
   COOKIE_SECURE: 'false', TRUSTED_PROXY_CIDRS: '',

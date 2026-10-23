@@ -1,30 +1,19 @@
-# TheraBridge — Emergent development workspace
+# TheraBridge — synthetic application repository
 
-**Status:** Documentation-only bootstrap. **No application code, no tests, no clinical approval, and no production readiness claimed.**
+This repository contains the functional Next.js + NestJS/Fastify + PostgreSQL/Prisma TheraBridge application, not merely the older TB-EM-000 feasibility bootstrap. The former home feasibility page has been replaced with a real login entrypoint. Application main includes the integrated therapist session work, clinical governance safeguards and the Children's Home Centre/Ahmed family synthetic demo seed.
 
-This **private** repository is the portable application-development workspace for TheraBridge V1. Its contents will be developed with Emergent and independently audited outside Emergent. The separate private `NTinkicht/TheraBridge` repository remains the authoritative source of controlled product specifications and pending clinical/permission decisions.
+**Safety boundary:** fictional/synthetic data only. Real patient data, clinical signing/co-signing, consent grants and report release, real microphone/STT, external AI processing and pilot/production are all **NO-GO** until formal policies and authorizations. The separate private NTinkicht/TheraBridge repository remains the source of controlled product and clinical specifications.
 
-## Start an Emergent job
+## Local development
 
-1. Open https://app.emergent.sh and select **Full Stack App** → **Plan**.
-2. Provide the owner's **TheraBridge_Emergent_Master_Blueprint_v2.md** and **TheraBridge_Emergent_Continuity_Protocol.md** as attachments (do not assume Emergent can read a private repo without OAuth authorization).
-3. Tell Emergent to plan the **platform-admin / center onboarding** vertical slice before coding, use official Direction B color tokens, and explicitly assess stack feasibility.
-4. Do **not** accept an unapproved stack substitution, invent approved clinical permissions, use real patient data, or publish the app.
-5. First prove **Save → Save to GitHub** to a dedicated branch such as `emergent/phase-1`. If Emergent requires different GitHub steps, have it explain exactly how it handles existing repository history. Do not force-push or overwrite `main`.
-6. Read `AGENTS.md` and `docs/handover/CURRENT_STATE.md`. Keep the history updated at every exported work unit.
+Use .env.example and docker-compose.yml for the full local web/API/PostgreSQL stack. The demo seed requires an explicit synthetic environment, a database with a demo-identifying name and secure local credential storage.
 
-## Non-negotiable portability
+## Hosted demo activation (P0)
 
-Code + tests + migration/seed + design tokens + API + documentation + setup instructions must remain runnable outside Emergent from a verified GitHub commit. GitHub export does **not** include managed database contents or secrets: document and test portable replacements and restore steps. Avoid untracked, Emergent-only implementation knowledge.
+See docs/demo/P0_HOSTED_ACTIVATION.md for the dedicated Neon database, reviewable Render Free single-service configuration, server-stored fictional account secrets and real external seven-role test. The actual external hostname and login have NOT been confirmed merely because GitHub CI passes. Issue #61 tracks activation and verification.
 
-## Controlled boundaries
+See docs/demo/DEMO_GUIDE.md for the fictional Ahmed family story and role walkthrough.
 
-- Development and tests: **fictional/synthetic data only**.
-- Protected clinical actions: **disabled by default** until owner-signoff on policy decisions.
-- Clinical pilot/production: **NO-GO**.
-- Do not assume Figma prototypes demonstrate functional backend behavior.
-- The official design uses **TheraBridge** naming, Direction B colors, IBM Plex Sans, and a replaceable official logo asset.
+## Historical references
 
-## Reference documents
-
-The documents are now versioned in this repository: [`docs/product/MASTER_BLUEPRINT.md`](docs/product/MASTER_BLUEPRINT.md), [`docs/handover/CONTINUITY_PROTOCOL.md`](docs/handover/CONTINUITY_PROTOCOL.md), [`docs/handover/TAKEOVER_CHECKLIST.md`](docs/handover/TAKEOVER_CHECKLIST.md), and [`docs/handover/EMERGENT_KICKOFF_PROMPT.txt`](docs/handover/EMERGENT_KICKOFF_PROMPT.txt). Use the **same committed versions** when starting Emergent. No application code exists yet.
+AGENTS.md, docs/product/MASTER_BLUEPRINT.md, docs/handover/CONTINUITY_PROTOCOL.md and docs/handover/TAKEOVER_CHECKLIST.md contain historical controlled references. Any old bootstrap documents claiming the repository contains no application code are out of date and are not the source of current operational status.
