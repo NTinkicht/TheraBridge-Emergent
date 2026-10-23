@@ -57,6 +57,13 @@ const report={report:{id:'report1'},evidence:{
  goals:[{key:'shared',title:'Shared goal',baseline:1,target:7,measure:'count',planVersionId:'v2',points:[{date:'2026-10-05',value:2,observationId:'obs-a'},{date:'2026-10-12',value:4,observationId:'obs-b',sessionNoteId:'session-b'}]}],
  sessions:{drafts:2,completedVisits:3},
 }};
+const marker=assist.evidenceReferenceHeader('goals');
+assert.equal(marker, 'Evidence references (internal draft; goals):');
+assert.equal(assist.hasEvidenceReferenceBlock('Reviewed note.\n\n'+marker+'\n- Observation original', 'goals'),true);
+assert.equal(assist.hasEvidenceReferenceBlock('Reviewed note edited.\n\n'+marker+'\n- Observation changed', 'goals'),true);
+assert.equal(assist.hasEvidenceReferenceBlock('Evidence references (internal draft):\n- Legacy reference', 'goals'),true);
+assert.equal(assist.hasEvidenceReferenceBlock('Referenced passage without evidence header', 'goals'),false);
+assert.equal(assist.hasEvidenceReferenceBlock(assist.evidenceReferenceHeader('assessment'), 'goals'),false);
 const suggestions=assist.factualReportSuggestions(report);
 assert(suggestions.every(s=>s.sources.length>0));
 const sources=suggestions.find(s=>s.section==='goals')?.sources??[];

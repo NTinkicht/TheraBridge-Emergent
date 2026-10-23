@@ -17,21 +17,25 @@ export function Child360({ ws, centerId, onNavigate }: {ws: Workspace;centerId: 
   // Practice feedback remains NON-CLINICAL and is fetched exclusively using
   // the already-permissioned practice-feedback endpoint for therapists.
   // Supervisors cannot access this panel or family message threads.
-  const [practice, setPractice] = useState<PracticeFeedbackReadModel['items'] | null>(null);
+  const [practice, setPractice] = useState<{ status: 'loading' | 'ready' | 'error'; items: PracticeFeedbackReadModel['items'] }>({ status: 'loading', items: [] });
+  const [practiceAttempt, setPracticeAttempt] = useState(0);
   useEffect(() => {
     if (!ws.canEdit || !centerId) return;
     let alive = true;
-    setPractice(null);
+    setPractice({ status: 'loading', items: [] });
     clinicalApi.practiceFeedback(centerId, ws.child.id)
       .then(result => {
         if (!alive) return;
-        if (result.synthetic !== true || result.notClinical !== true) return;
-        setPractice(result.items.filter(item =>
-          item.childId === ws.child.id && ws.child.services.includes(item.service)));
+        if (result.synthetic !== true || result.notClinical !== true) {
+          setPractice({ status: 'error', items: [] });
+          return;
+        }
+        setPractice({ status: 'ready', items: result.items.filter(item =>
+          item.childId === ws.child.id && ws.child.services.includes(item.service)) });
       })
-      .catch(() => { if (alive) setPractice([]); });
+      .catch(() => { if (alive) setPractice({ status: 'error', items: [] }); });
     return () => { alive = false; };
-  }, [centerId, ws.child.id, ws.canEdit, ws.child.services.join('|')]);
+  }, [centerId, ws.child.id, ws.canEdit, ws.child.services.join('|'), practiceAttempt]);
   const goals = currentGoals(ws);
   const upcoming = [...ws.appointments].filter(x=>x.status === 'SCHEDULED' && Date.parse(x.endsAt) >= Date.now()).sort((a,b)=>a.startsAt.localeCompare(b.startsAt));
   const lastNotes = [...ws.notes].sort((a,b)=>b.sessionDate.localeCompare(a.sessionDate)).slice(0,5);
@@ -127,12 +131,17 @@ export function Child360({ ws, centerId, onNavigate }: {ws: Workspace;centerId: 
               <p className="mt-1 text-[12px] text-brand-inkMuted">Synthetic sample activity outcomes only. This is not a clinical measurement, report release or family conversation.</p>
             </div>
           </div>
-          {practice === null ? <p className="text-[13px] text-brand-inkMuted">Loading permitted practice feedback…</p> :
-            practice.length === 0 ? <p className="text-[13px] text-brand-inkMuted">No permitted family practice outcomes are recorded.</p> :
+          {practice.status === 'loading' ? <p className="text-[13px] text-brand-inkMuted">Loading permitted practice feedback…</p> :
+            practice.status === 'error' ? (
+              <div role="alert" className="space-y-2" data-testid="child360-family-practice-error">
+                <p className="text-[13px] text-status-danger">Family practice feedback could not be loaded. No conclusion about recorded outcomes can be drawn.</p>
+                <button type="button" className="text-[13px] font-semibold text-brand-action underline focus-visible:outline" data-testid="child360-family-practice-retry" onClick={() => setPracticeAttempt(n => n + 1)}>Retry loading</button>
+              </div>
+            ) : practice.items.length === 0 ? <p className="text-[13px] text-brand-inkMuted" data-testid="child360-family-practice-empty">No permitted family practice outcomes are recorded.</p> :
             <>
-              <p className="text-[13px] font-medium">Recent outcomes: {practice.length} (limited to your assigned specialties)</p>
+              <p className="text-[13px] font-medium">Recent outcomes: {practice.items.length} (limited to your assigned specialties)</p>
               <ul className="space-y-2" data-testid="child360-family-practice-outcomes">
-                {practice.slice(0,5).map(item=><li key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-control bg-surface-subtle px-3 py-2 text-[13px]">
+                {practice.items.slice(0,5).map(item=><li key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-control bg-surface-subtle px-3 py-2 text-[13px]">
                   <span>{item.practiceDate} · {serviceLabel(item.service)}</span>
                   <span className="font-semibold">{({ COMPLETED:'Completed', NEEDED_HELP:'Needed help', NOT_COMPLETED:'Not completed', SKIPPED:'Skipped' } as const)[item.choice]}</span>
                 </li>)}

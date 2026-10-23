@@ -83,6 +83,20 @@ try {
     await page.goto(base + '/app/clinical/' + child.id);
     await page.getByTestId('child-360').waitFor();
     await page.getByTestId('child360-family-practice').waitFor();
+    // A transient request failure must never appear as a genuine empty result.
+    const practiceRoute = '**/clinical/practice-feedback?childId=*';
+    await page.route(practiceRoute, route => route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"Synthetic transient error"}' }));
+    await page.reload();
+    await page.getByTestId('child360-family-practice-error').waitFor();
+    assert(!(await page.getByTestId('child360-family-practice').innerText()).includes('No permitted family practice outcomes are recorded.'));
+    await page.unroute(practiceRoute);
+    await page.getByTestId('child360-family-practice-retry').click();
+    await page.getByTestId('child360-family-practice-error').waitFor({ state: 'hidden' });
+    await page.waitForFunction(() => {
+      const panel = document.querySelector('[data-testid="child360-family-practice"]');
+      return !!panel && (panel.querySelector('[data-testid="child360-family-practice-empty"]') !== null ||
+        panel.querySelector('[data-testid="child360-family-practice-outcomes"]') !== null);
+    });
     // Actual Playwright viewport changes (Work Cloud Browser cannot resize).
     // Check the same production design shell at five widths without modifying
     // patient data or depending on screenshots as proof of correctness.
@@ -128,11 +142,23 @@ try {
     await page.getByTestId('report-assist-apply-goals').click();
     const reportDraftText = await page.getByTestId('report-section-goals').inputValue();
     assert(reportDraftText.includes('Clinician-reviewed factual goals note'));
-    assert(reportDraftText.includes('Evidence references (internal draft):'));
+    assert(reportDraftText.includes('Evidence references (internal draft; goals):'));
     assert(reportDraftText.includes('Observation '));
     await page.locator('[data-testid="report-save-state"][data-state="saved"]').waitFor({ timeout: 25000 });
     const persisted = await db.progressReport.findUniqueOrThrow({ where: { id: speechReport.id } });
-    assert(persisted.sections.goals.includes('Evidence references (internal draft):'), 'Explicit clinician approval must persist via existing report autosave');
+    assert(persisted.sections.goals.includes('Evidence references (internal draft; goals):'), 'Explicit clinician insertion must persist via existing report autosave');
+    // Edits to the body or source labels cannot re-enable insertion, including
+    // after reload discards the ephemeral accept/omit state.
+    const editedReport = reportDraftText.replace('Observation ', 'Recorded observation ');
+    await page.getByTestId('report-section-goals').fill(editedReport);
+    await page.locator('[data-testid="report-save-state"][data-state="saved"]').waitFor({ timeout: 25000 });
+    assert.equal(await page.getByTestId('report-assist-apply-goals').count(), 0, 'Edited reference block must not permit duplicate insertion');
+    await page.reload();
+    await page.getByTestId('report-assist-toggle').click();
+    assert((await page.getByTestId('report-assist-decision-goals').innerText()).includes('Added to draft'));
+    assert.equal(await page.getByTestId('report-assist-apply-goals').count(), 0, 'Persisted evidence block must survive reload without duplicate action');
+    const afterReload = await page.getByTestId('report-section-goals').inputValue();
+    assert.equal(afterReload.split('Evidence references (internal draft; goals):').length - 1, 1);
     assert.notEqual(persisted.status, 'IN_REVIEW', 'Evidence assistance must not submit a draft');
   });
   await role('ot@childrens-home.therabridge.test', 'THERAPIST', async page => {

@@ -7,7 +7,7 @@ import { errorText } from '@/components/centers/kit';
 import { Button, Card, LockedAction } from '@/components/design/ui';
 import { LOCKED_REASON } from '@/lib/clinical';
 import { SECTIONS, reportsApi, type ReportDetail } from '@/lib/reports';
-import { factualReportSuggestions } from '@/lib/evidence-assist';
+import { evidenceReferenceHeader, factualReportSuggestions, hasEvidenceReferenceBlock } from '@/lib/evidence-assist';
 
 type Save = 'idle' | 'pending' | 'saving' | 'saved' | 'conflict' | 'error';
 type AssistReview = { decision: 'pending' | 'omitted' | 'applied'; text: string };
@@ -110,8 +110,8 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
         <Button variant="secondary" onClick={()=>setAssistOpen(!assistOpen)} data-testid="report-assist-toggle">{assistOpen?'Hide suggestions':'Review suggestions'}</Button>
         {assistOpen && factualReportSuggestions(d).map(s=>{
           const review=reviews[s.section] ?? { decision: 'pending', text: s.text };
-          const references='Evidence references (internal draft):\n'+s.sources.map(source=>'- '+source).join('\n');
-          const referenceAlreadyPresent=(local.current[s.section]??'').includes(references);
+          const references=evidenceReferenceHeader(s.section)+'\n'+s.sources.map(source=>'- '+source).join('\n');
+          const referenceAlreadyPresent=hasEvidenceReferenceBlock(local.current[s.section]??'', s.section);
           return <div key={s.section} className="rounded-control border border-border-light bg-white p-3" data-testid={'report-suggestion-'+s.section}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h4 className="text-[14px] font-semibold">{s.heading}</h4>
@@ -147,7 +147,7 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
                     onClick={()=>{
                       if(state==='conflict')return;
                       const current=local.current[s.section]??'';
-                      if(current.includes(references)){setNotice({tone:'danger',text:'The same evidence references are already included in this report section.'});return;}
+                      if(hasEvidenceReferenceBlock(current,s.section)){setNotice({tone:'danger',text:'This report section already contains an evidence reference block. Edit that block instead of inserting a duplicate.'});return;}
                       const append=review.text.trim()+'\n\n'+references;
                       const next=current.trim()?current.trimEnd()+'\n\n'+append:append;
                       if(next.length>8000){setNotice({tone:'danger',text:'Reviewed passage plus references exceeds the field limit. Shorten the draft before applying.'});return;}

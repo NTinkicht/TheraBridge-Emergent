@@ -1,5 +1,10 @@
 # Current state — TheraBridge-Emergent
 
+## TB-EM-019 — independent-review advisory corrections (2026-10-23)
+
+Mistral and Grok source reviews at `b542159a70b0799d920593e4f0c439893e2235f3` found **NO_BLOCKING_FINDINGS**. This follow-up implements MIS-001 stable section-specific evidence headings (with legacy compatibility) and MIS-002 explicit therapist-only practice-feedback failure/retry states. Corrective tests are added but **new exact-head CI is NOT RUN as this commit is authored**. Earlier head: [6/6 PASS](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/40006533539). MIS-003 version-label semantics and MIS-004 remove/re-add snapshot semantics remain unchanged pending product decision. PR #65 remains draft, not merged or deployed. Independent re-review must target the NEW HEAD; clinical controls and external AI remain OFF.
+
+
 ## TB-EM-019 — implemented synthetic-only review candidate (2026-10-23)
 
 **PR:** #65 (OPEN / DRAFT); **base:** `main@b11b41daf9b69883d9ade1a325e32b65cf6090b8`.

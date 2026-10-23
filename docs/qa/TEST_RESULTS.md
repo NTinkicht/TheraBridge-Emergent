@@ -1,5 +1,10 @@
 # Test results — TheraBridge
 
+## TB-EM-019 — MIS-001 / MIS-002 remediation tests (2026-10-23)
+
+**Current patch tests: NOT RUN at commit authoring.** Added real-source logic assertions that dedupe recognizes stable/legacy evidence reference headings despite editing the body; expanded seven-role Playwright synthetic journey to simulate HTTP 503 practice-feedback, assert an error rather than false empty state, Retry on successful restore, and confirm no repeat insertion after clinician edits/autosave/reload. All safety restrictions remain unchanged. Verify the six exact-head GitHub Actions jobs after the correction commit; do not transfer the earlier green verdict to the newer commit. Prior independent source-review head `b542159a`: [hosted 6/6 SUCCESS](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/40006533539). These tests do not establish external Render HTTPS UAT or medical effectiveness.
+
+
 ## TB-EM-019 — 2026-10-23 exact-head synthetic qualification
 
 Repository: `NTinkicht/TheraBridge-Emergent`

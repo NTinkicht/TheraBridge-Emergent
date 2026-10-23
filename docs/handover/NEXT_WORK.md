@@ -1,5 +1,14 @@
 # Next work unit
 
+## TB-EM-019 — exact-head requalification after advisory fixes
+
+1. Verify draft PR #65 HEAD advanced from `b542159a` through a single reviewable advisory-hardening commit; inspect exact diff.
+2. Wait for ALL six hosted Actions job conclusions at that **new exact SHA**; the author has not yet executed the new regressions at commit creation. Fix any actual failure on the SAME branch and repeat.
+3. Obtain independent read-only Mistral re-review on the new HEAD. The previous NO_BLOCKING_FINDINGS verdict applies only to `b542159a`.
+4. Keep MIS-003 and MIS-004 as product-policy discussion, not silent behavior changes; keep external HTTPS/UAT issue #61 separate.
+5. Only owner can authorize merge or later synthetic hosted deployment. Real patient data, AI/STT, approval/release, consent, family threads and production/pilot remain NO-GO.
+
+
 ## TB-EM-019 — independent review and owner decision (2026-10-23)
 
 1. Verify PR #65 exact HEAD against `main`, inspect the full 26-file implementation and the complete successful [hosted CI run 39999150532](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/39999150532) at implementation SHA `b6a15de2854a45691753d477ed0040b9cc17cac6`. After this documentation checkpoint, validate its newer exact HEAD too; never rely only on an ancestor's CI.

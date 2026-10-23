@@ -1,6 +1,19 @@
 import type { ReportDetail } from './reports';
 import type { Workspace, HomeActivity } from './clinical';
 
+// Exactly one evidence reference block per report section. The stable heading
+// survives edits to the passage or its source labels and recognizes old drafts.
+export type EvidenceSection = 'assessment' | 'goals' | 'sessions';
+export const evidenceReferenceHeader = (section: EvidenceSection) =>
+  'Evidence references (internal draft; ' + section + '):';
+export function hasEvidenceReferenceBlock(text: string, section: EvidenceSection): boolean {
+  const header = evidenceReferenceHeader(section);
+  return text.split(/\r?\n/).some(line => {
+    const value = line.trim();
+    return value === header || value === 'Evidence references (internal draft):';
+  });
+}
+
 // Deterministic, source-based text. No AI provider, diagnosis, release, or patient-data export.
 export function factualReportSuggestions(d: ReportDetail) {
  const e=d.evidence;
