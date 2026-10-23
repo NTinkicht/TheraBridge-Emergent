@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { PrismaClient, Role } from '@prisma/client';
-import { hashPassword } from '../auth/password';
+import { hashPassword, passwordPolicyError, verifyPassword } from '../auth/password';
 import { randomToken } from '../common/security';
 
 // Entirely fictional, isolated demonstration. No claims about real therapy outcomes.
@@ -20,6 +20,35 @@ export const DEMO_EMAILS = {
   parent: 'mariam.ahmed@childrens-home.therabridge.test',
 } as const;
 export const DEMO_CREDS = resolve(__dirname, '../../../../.workspace/local-credentials/childrens-home-demo.json');
+
+// Hosted previews use operator-managed secrets instead of ephemeral credential files.
+// Exactly seven distinct, high-entropy fictional account passwords are required.
+export function parseHostedDemoPasswords(src: Record<string, string | undefined> = process.env): Record<string, string> | null {
+  const raw = src.DEMO_PASSWORDS_JSON;
+  if (!raw) {
+    if (src.DEPLOYMENT_ENV === 'preview') throw new Error('Hosted preview requires DEMO_PASSWORDS_JSON; no ephemeral credentials allowed.');
+    return null;
+  }
+  if (Buffer.byteLength(raw, 'utf8') > 8192) throw new Error('DEMO_PASSWORDS_JSON is unexpectedly large.');
+  let parsed: unknown;
+  try { parsed = JSON.parse(raw); } catch { throw new Error('DEMO_PASSWORDS_JSON must be valid JSON.'); }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('DEMO_PASSWORDS_JSON must be an email-to-password object.');
+  const map = parsed as Record<string, unknown>;
+  const required = Object.values(DEMO_EMAILS);
+  if (Object.keys(map).length !== required.length || Object.keys(map).some(k => !required.includes(k as typeof required[number]))) {
+    throw new Error('DEMO_PASSWORDS_JSON must contain exactly the seven designated .test email addresses.');
+  }
+  const passwords: Record<string, string> = {};
+  for (const email of required) {
+    const pass = map[email];
+    if (typeof pass !== 'string' || pass.length < 24 || pass.length > 128 || passwordPolicyError(pass, email)) {
+      throw new Error('Each hosted demo password must be 24–128 characters and pass the existing password policy.');
+    }
+    passwords[email] = pass;
+  }
+  if (new Set(Object.values(passwords)).size !== required.length) throw new Error('Use a different password for every demo identity.');
+  return passwords;
+}
 
 function id(name: string): string {
   const s = createHash('sha256').update(SCOPE + ':' + name).digest('hex');
@@ -58,8 +87,16 @@ function at(date: string, hourUTC: number): Date {
 
 export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_CREDS) {
   assertDemoAllowed(process.env);
+  const passwords = parseHostedDemoPasswords(process.env);
   const now = new Date();
   const cid = id('center');
+  // Fail closed: a dedicated preview database may contain only this demo tenant and its users.
+  const demoIds = roster.map(a => id('user:' + a.key));
+  const [unrelatedCenters, unrelatedUsers] = await Promise.all([
+    db.center.count({ where: { id: { not: cid } } }),
+    db.user.count({ where: { id: { notIn: demoIds } } }),
+  ]);
+  if (unrelatedCenters || unrelatedUsers) throw new Error('Preview database contains unrelated users/centres. Refusing to mix synthetic data.');
   const existingSlug = await db.center.findUnique({ where: { slug: DEMO_SLUG } });
   if (existingSlug && existingSlug.id !== cid) throw new Error('Demo slug already belongs to another centre; refusing to overwrite it.');
   const preexistingUsers: string[] = [];
@@ -73,13 +110,16 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     }
   }
   // A seed rerun never rotates a password, and won't strand existing accounts.
-  if (preexistingUsers.length && !existsSync(credentialFile)) {
+  if (preexistingUsers.length && preexistingUsers.length !== roster.length) {
+    throw new Error('Partial demo identities found; refusing to invent missing account credentials.');
+  }
+  if (!passwords && preexistingUsers.length && !existsSync(credentialFile)) {
     throw new Error('Demo accounts exist but secure credential file is missing. Restore it or use an explicitly disposable fresh demo database.');
   }
-  if (!preexistingUsers.length && existsSync(credentialFile)) {
+  if (!passwords && !preexistingUsers.length && existsSync(credentialFile)) {
     throw new Error('Credential file belongs to a different database. Refusing to overwrite; use a clean protected credential location.');
   }
-  if (existsSync(credentialFile)) {
+  if (!passwords && existsSync(credentialFile)) {
     const stored = JSON.parse(readFileSync(credentialFile, 'utf8')) as { accounts?: { email: string }[] };
     if (roster.some(a => !stored.accounts?.some(x => x.email === DEMO_EMAILS[a.key]))) throw new Error('Stored demo credentials are incomplete; refusing silent rotation.');
   }
@@ -106,10 +146,13 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     const user = existing ?? await db.user.create({ data: { id: uid, email, emailNormalized: email, displayName: a.name } });
     users[a.key] = user.id;
     const identity = await db.authIdentity.findUnique({ where: { userId_provider: { userId: user.id, provider: 'local' } } });
+    if (identity && passwords && !(await verifyPassword(identity.passwordHash ?? '', passwords[email]))) {
+      throw new Error('Hosted demo password no longer matches existing account; refusing silent rotation for ' + email);
+    }
     if (!identity) {
-      const password = 'tb-' + randomToken(20);
+      const password = passwords?.[email] ?? ('tb-' + randomToken(20));
       await db.authIdentity.create({ data: { userId: user.id, provider: 'local', subject: email, passwordHash: await hashPassword(password) } });
-      credentials.push({ email, password, role: a.role ?? 'PLATFORM_ADMIN' });
+      if (!passwords) credentials.push({ email, password, role: a.role ?? 'PLATFORM_ADMIN' });
     }
     if (a.key === 'platform') {
       if (!await db.platformRoleAssignment.count({ where: { userId: user.id, role: 'PLATFORM_ADMIN', revokedAt: null } })) {
@@ -341,13 +384,13 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     });
   }
 
-  if (!preexistingUsers.length) {
+  if (!passwords && !preexistingUsers.length) {
     if (credentials.length !== roster.length) throw new Error('Partial demo identities detected; secure credential export not safe.');
     mkdirSync(dirname(credentialFile), { recursive: true, mode: 0o700 });
     writeFileSync(credentialFile, JSON.stringify({ synthetic: true, center: DEMO_SLUG, createdAt: now.toISOString(), accounts: credentials }, null, 2), { flag: 'wx', mode: 0o600 });
     chmodSync(credentialFile, 0o600);
   }
-  return { center: center.slug, family: 'Ahmed', child: 'Yusuf Ahmed', accounts: roster.length, appointments: 10, historicalSessions: 8, observations: 16, assessments: 2, plans: 2, reportDrafts: 2, credentials: credentialFile };
+  return { center: center.slug, family: 'Ahmed', child: 'Yusuf Ahmed', accounts: roster.length, appointments: 10, historicalSessions: 8, observations: 16, assessments: 2, plans: 2, reportDrafts: 2, credentials: passwords ? 'EXTERNAL HOST SECRETS' : credentialFile };
 }
 
 if (require.main === module) {

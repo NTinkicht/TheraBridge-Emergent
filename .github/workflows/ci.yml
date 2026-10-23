@@ -195,3 +195,68 @@ jobs:
         run: docker compose logs
       - if: always()
         run: docker compose down -v
+
+
+  preview-container:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-bookworm
+        env:
+          POSTGRES_USER: therabridge
+          POSTGRES_PASSWORD: ci_only_password
+          POSTGRES_DB: therabridge_demo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U therabridge -d therabridge_demo_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Verify preview entrypoint and public smoke syntax
+        run: |
+          bash -n scripts/preview/start.sh
+          node --check scripts/preview/check-external.mjs
+          node --check scripts/preview/generate-secrets.mjs
+      - name: Build unified preview image
+        run: docker build -f Dockerfile.preview -t tb-synthetic-preview:ci .
+      - name: Start isolated preview with disposable test passwords
+        run: |
+          umask 077
+          node scripts/preview/generate-secrets.mjs
+          cat > /tmp/therabridge-preview-ci.env <<'EOF'
+          DATABASE_URL=postgresql://therabridge:ci_only_password@127.0.0.1:5432/therabridge_demo_test?schema=public
+          DEPLOYMENT_ENV=preview
+          DEMO_SEED_CONFIRM=CHILDRENS_HOME_SYNTHETIC_ONLY
+          COOKIE_SECURE=true
+          FAMILY_MESSAGING_DEMO=false
+          PORT=10000
+          API_UPSTREAM_ORIGIN=http://127.0.0.1:8001
+          RENDER_EXTERNAL_HOSTNAME=therabridge-ahmed-synthetic-demo.onrender.com
+          EOF
+          printf 'DEMO_PASSWORDS_JSON=%s\n' "$(tr -d '\n' < .workspace/local-credentials/render-demo-passwords.json)" >> /tmp/therabridge-preview-ci.env
+          printf 'AUTH_SECRET=%s\n' "$(openssl rand -hex 32)" >> /tmp/therabridge-preview-ci.env
+          docker run -d --name tb-preview-ci --network host --env-file /tmp/therabridge-preview-ci.env tb-synthetic-preview:ci
+          for attempt in $(seq 1 120); do
+            if curl -fsS http://127.0.0.1:10000/login >/dev/null 2>&1; then break; fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:10000/login | grep -q 'Sign in to TheraBridge'
+          curl -fsS http://127.0.0.1:10000/api/health | python3 -c 'import json,sys; h=json.load(sys.stdin); assert h["database"]["status"]=="up" and h["migrations"]["applied"]>=16'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:10000/dev/feasibility)" = 404
+          docker exec tb-preview-ci node -e "const {PrismaClient}=require('@prisma/client');const p=new PrismaClient();p.center.count({where:{slug:'childrens-home-demo'}}).then(n=>{if(n!==1)process.exitCode=1;else console.log('PASS: one Children Home demo centre seeded')}).finally(()=>p.\$disconnect())"
+      - name: Diagnose failed preview boot without exporting secrets
+        if: failure()
+        run: docker logs --tail 150 tb-preview-ci 2>/dev/null || true
+      - name: Tear down and erase generated preview secrets
+        if: always()
+        run: |
+          docker rm -f tb-preview-ci 2>/dev/null || true
+          rm -f /tmp/therabridge-preview-ci.env
+          rm -f .workspace/local-credentials/render-demo-passwords.json

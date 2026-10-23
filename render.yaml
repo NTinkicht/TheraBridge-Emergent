@@ -1,0 +1,40 @@
+# Synthetic-only owner-controlled free preview, not production.
+# Confirm the intended Render workspace before deploying this Blueprint.
+# Neon DATABASE_URL must point to the dedicated therabridge_demo_preview database.
+previews:
+  generation: off
+
+services:
+  - type: web
+    name: therabridge-ahmed-synthetic-demo
+    runtime: docker
+    dockerfilePath: ./Dockerfile.preview
+    dockerContext: .
+    branch: main
+    region: frankfurt
+    plan: free
+    autoDeployTrigger: "off"
+    healthCheckPath: /login
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: DEMO_PASSWORDS_JSON
+        sync: false
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: DEPLOYMENT_ENV
+        value: preview
+      - key: DEMO_SEED_CONFIRM
+        value: CHILDRENS_HOME_SYNTHETIC_ONLY
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: PORT
+        value: "10000"
+      - key: API_UPSTREAM_ORIGIN
+        value: http://127.0.0.1:8001
+      - key: FAMILY_MESSAGING_DEMO
+        value: "false"
+      - key: FAMILY_PRACTICE_DEMO
+        value: "true"
+      - key: ENABLE_FEASIBILITY_DIAGNOSTICS
+        value: "false"
