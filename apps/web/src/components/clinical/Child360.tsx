@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarDays, ClipboardList, FileText, Target, Activity, ArrowRight } from 'lucide-react';
+import { CalendarDays, ClipboardList, FileText, Target, Activity, ArrowRight, Users } from 'lucide-react';
 import type { Workspace } from '@/lib/clinical';
 import { currentGoals } from '@/lib/progress-analysis';
 import { serviceLabel } from '@/components/operations/BookDialog';
@@ -40,6 +40,38 @@ export function Child360({ ws, onNavigate }: {ws: Workspace;onNavigate:(tab:Tab)
           </button>
         ))}
       </div>
+      <section data-testid="child360-care-team" aria-labelledby="child360-care-team-heading">
+        <Card className="p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-start gap-2">
+              <Users className="mt-1 shrink-0 text-brand-action" size={18} aria-hidden="true" />
+              <div>
+                <h3 id="child360-care-team-heading" className="text-[17px] font-semibold">Assigned care team</h3>
+                <p className="mt-1 text-[12px] text-brand-inkMuted">Active named therapists only, limited to your authorized specialty scope.</p>
+              </div>
+            </div>
+            <p className="rounded-control bg-surface-subtle px-3 py-2 text-[12px]" data-testid="child360-referent">
+              <span className="font-semibold">Child-wide referent:</span> {ws.childWideReferent?.displayName ?? 'Not designated'}
+            </p>
+          </div>
+          {ws.careTeam.length === 0 ? (
+            <p className="mt-4 text-[13px] text-brand-inkMuted" data-testid="child360-care-team-empty">No active assigned therapists in your authorized services.</p>
+          ) : (
+            <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="child360-care-team-list">
+              {ws.careTeam.map(member => (
+                <li key={member.assignmentId} className="min-w-0 rounded-control border border-border-light bg-surface-white p-3">
+                  <p className="break-words text-[14px] font-semibold">{member.displayName}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <Pill tone="neutral">{serviceLabel(member.service)}</Pill>
+                    {member.isSpecialtyLead && <span className="rounded-control bg-surface-subtle px-2 py-1 text-[11px] font-semibold">Specialty lead</span>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-3 text-[12px] text-brand-inkMuted">Specialty leads are assigned per therapy service; they are not automatically child-wide referents.</p>
+        </Card>
+      </section>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card className="p-5">
           <h3 className="text-[17px] font-semibold">Care goals and evidence</h3>

@@ -15,6 +15,13 @@ Owner-directed synthetic-only development. Issue #64; draft PR #65.
 - The deterministic report draft assistant includes source observation IDs in its review panel, plus tests for API provenance and source lists.
 - This does not create a signed source-to-sentence acceptance ledger, disclose draft data to guardians, or activate any external AI.
 
+## Slice A3 — scoped named care team (new commit)
+- Clinical workspace includes a read-only `careTeam` for currently active, assigned therapist memberships, with verified names, exact therapy specialty, and the persisted `CareAssignment.isLead` flag. No data model or migration changes.
+- Assigned therapists only see names assigned within their own service scope; clinical supervisors see all authorized services for that centre and child. Centre admins, coordinators, parents, and unassigned therapists cannot enter the clinical workspace.
+- Suspended or revoked memberships, inactive users, missing therapist role, ended assignments and removed member specialties are filtered. All queries remain centre/child scoped.
+- Child-wide referent explicitly displays **Not designated** because the current schema does not record that appointment. A specialty lead is never silently elevated to that separate role.
+- API negative regression tests cover speech vs OT, unassigned roles, guardian/admin denials, supervisor messaging denial, membership suspension and assignment/specialty revocation. Child 360 renders care-team cards responsively within existing design tokens.
+
 ## Slice B — FreeBuff continuation, SAME branch and PR
 Continue feature/tb-em-019-child360-evidence-assist from the latest exact HEAD. Do not create another PR or redeploy the Render preview while external QA is paused.
 1. Extend Child 360 to include permitted named care team/referent, authorized family-practice feedback and accessible cross-tab clinician timeline. Continue denying out-of-scope specialties and supervisor messaging.

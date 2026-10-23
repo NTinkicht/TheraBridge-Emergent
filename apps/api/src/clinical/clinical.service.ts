@@ -50,12 +50,18 @@ export class ClinicalService {
         })).map(a => a.service)
       : null;
     const serviceScope = assignedServices ? { service: { in: assignedServices } } : {};
-    const [assessments, plans, notes, appointments, templates] = await Promise.all([
+    const [assessments, plans, notes, appointments, templates, assignments] = await Promise.all([
       this.prisma.assessment.findMany({ where: { centerId, childId, ...serviceScope }, orderBy: { assessedOn: 'desc' } }),
       this.prisma.therapyPlan.findMany({ where: { centerId, childId, ...serviceScope }, include: { versions: { orderBy: { number: 'desc' } } }, orderBy: { createdAt: 'asc' } }),
       this.prisma.sessionNote.findMany({ where: { centerId, childId, ...serviceScope }, orderBy: { sessionDate: 'desc' }, take: 50 }),
       this.prisma.appointment.findMany({ where: { centerId, childId, ...serviceScope, status: { in: ['SCHEDULED', 'COMPLETED'] }, startsAt: { gte: new Date(this.trial.now().getTime() - 30 * 86_400_000), lte: new Date(this.trial.now().getTime() + 86_400_000) }, ...(v.role === 'THERAPIST' ? { membershipId: v.membershipId } : {}) }, orderBy: { startsAt: 'desc' } }),
       this.templates(centerId).then(rows => assignedServices ? rows.filter(t => assignedServices.includes(t.service)) : rows),
+      // Never disclose names for another specialty to a therapist. A supervisor
+      // may view centre-scoped assignment names, but not family discussions.
+      this.prisma.careAssignment.findMany({
+        where: { centerId, childId, endedAt: null, ...(assignedServices ? { service: { in: assignedServices } } : {}) },
+        select: { id: true, membershipId: true, service: true, isLead: true },
+      }),
     ]);
     // Observations must be bound to the exact plan versions that survived the service filter.
     const observations = await this.prisma.observation.findMany({
@@ -64,11 +70,30 @@ export class ClinicalService {
     });
     const team = await this.prisma.membership.findMany({ where: { id: { in: uniq([...assessments, ...notes, ...observations].map((x) => x.membershipId)) } }, select: { id: true, user: { select: { displayName: true } } } });
     const users = await this.prisma.user.findMany({ where: { id: { in: uniq(plans.flatMap((p) => p.versions.map((x) => x.authorId))) } }, select: { id: true, displayName: true } });
+    // A current team member must belong to THIS centre, have an active user
+    // and membership, retain their therapist role, and still hold this specialty.
+    // Historical assignment/notes are not evidence of current team membership.
+    const activeStaff = await this.prisma.membership.findMany({
+      where: {
+        centerId, id: { in: uniq(assignments.map(a => a.membershipId)) },
+        status: 'ACTIVE', user: { status: 'ACTIVE' },
+        roles: { some: { role: 'THERAPIST' } },
+      },
+      select: { id: true, specialties: true, user: { select: { displayName: true } } },
+    });
+    const careTeam = assignments.flatMap(a => {
+      const member = activeStaff.find(m => m.id === a.membershipId && m.specialties.includes(a.service));
+      return member ? [{ assignmentId: a.id, service: a.service, displayName: member.user.displayName, isSpecialtyLead: a.isLead }] : [];
+    }).sort((a, b) => a.service.localeCompare(b.service) || Number(b.isSpecialtyLead) - Number(a.isSpecialtyLead) || a.displayName.localeCompare(b.displayName) || a.assignmentId.localeCompare(b.assignmentId));
     const who = (id: string) => team.find((t) => t.id === id)?.user.displayName ?? '';
     const center = await this.prisma.center.findUniqueOrThrow({ where: { id: centerId }, select: { timezone: true } });
     return {
       timezone: center.timezone, synthetic: true, locked: LOCKED, canEdit: v.role === 'THERAPIST', canReview: v.role === 'CLINICAL_SUPERVISOR',
       child: { id: c.id, name: `${c.preferredName ?? c.firstName} ${c.lastName}`, services: assignedServices ?? c.services, dateOfBirth: day(c.dateOfBirth) },
+      careTeam,
+      // No dedicated child-wide referent record exists in the current schema.
+      // Do not elevate a per-specialty lead into a global referent.
+      childWideReferent: null,
       assessments: assessments.map((a) => ({ id: a.id, service: a.service, assessedOn: day(a.assessedOn), summary: a.summary, areas: a.areas, status: a.status, version: a.version, author: who(a.membershipId), mine: a.membershipId === v.membershipId, updatedAt: a.updatedAt })),
       plans: plans.map((p) => ({ id: p.id, service: p.service, title: p.title, versions: p.versions.map((x) => ({ id: x.id, number: x.number, status: x.status, summary: x.summary, goals: x.goals, homeActivities: x.homeActivities, reviewNotes: x.reviewNotes, version: x.version, mine: x.authorId === v.userId, author: users.find((u) => u.id === x.authorId)?.displayName ?? '', updatedAt: x.updatedAt })) })),
       notes: notes.map((n) => ({ id: n.id, service: n.service, sessionDate: day(n.sessionDate), appointmentId: n.appointmentId, sections: n.sections, status: n.status, executionStatus: n.executionStatus, actualStart: n.actualStart, actualEnd: n.actualEnd, attendance: n.attendance, activities: n.activities, version: n.version, author: who(n.membershipId), mine: n.membershipId === v.membershipId, updatedAt: n.updatedAt })),

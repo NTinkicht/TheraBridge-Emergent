@@ -5,8 +5,11 @@ export interface HomeActivity { templateId: string; frequency: string; note?: st
 export interface Template { id: string; title: string; service: string; ageBand: string; minutes: number; materials: string[]; steps: string[]; safety: string[]; library?: 'center' | 'synthetic' }
 export interface PlanVersion { id: string; number: number; status: 'DRAFT' | 'IN_REVIEW' | 'SUPERSEDED' | 'RETURNED_FOR_REVISION' | 'WITHDRAWN' | 'FROZEN_INTERNAL'; summary: string; goals: Goal[]; homeActivities: HomeActivity[]; reviewNotes: { at: string; comment: string }[]; version: number; mine: boolean; author: string; updatedAt: string }
 export interface SessionActivity { id: string; templateId: string; minutes: number; objective: string; planVersionId?: string; goalKey?: string; completion: 'NOT_STARTED' | 'COMPLETED' | 'SKIPPED'; outcome?: 'ACHIEVED' | 'PARTIAL' | 'NOT_ACHIEVED'; assistance?: 'INDEPENDENT' | 'SOME_ASSISTANCE' | 'SUBSTANTIAL_ASSISTANCE'; observation: string; snapshot?: Template; authorId?: string; createdAt?: string }
+export interface CareTeamMember { assignmentId: string; displayName: string; service: string; isSpecialtyLead: boolean }
 export interface Workspace {
   timezone: string; synthetic: true; locked: string; canEdit: boolean; canReview: boolean;
+  careTeam: CareTeamMember[];
+  childWideReferent: { displayName: string } | null;
   child: { id: string; name: string; services: string[]; dateOfBirth: string };
   assessments: { id: string; service: string; assessedOn: string; summary: string; areas: { area: string; finding: string }[]; version: number; author: string; mine: boolean; updatedAt: string }[];
   plans: { id: string; service: string; title: string; versions: PlanVersion[] }[];

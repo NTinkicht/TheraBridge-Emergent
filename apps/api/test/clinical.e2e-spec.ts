@@ -48,6 +48,75 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     return { therapist, other, sup, kid, link, rosa };
   }
 
+
+  it('shows named active specialty-scoped care team, excludes inactive or revoked staff, and never infers a child-wide referent', async () => {
+    const { therapist, other, sup, kid, rosa } = await setup(['speech', 'occupational']);
+    const speechPeer = await staff('peer@clin.test', ['THERAPIST'], ['speech']);
+    const occupational = await staff('ot@clin.test', ['THERAPIST'], ['occupational']);
+    const sibling = await staff('sibling@clin.test', ['THERAPIST'], ['speech']);
+    const W = c(`clinical/children/${kid}`);
+    await post(h, c(`children/${kid}/assignments`), admin, {
+      membershipId: speechPeer.body.activeContext.membershipId, service: 'speech',
+    }).expect(201);
+    await post(h, c(`children/${kid}/assignments`), admin, {
+      membershipId: occupational.body.activeContext.membershipId, service: 'occupational', isLead: true,
+    }).expect(201);
+    await post(h, c(`children/${kid}/assignments`), admin, {
+      membershipId: sibling.body.activeContext.membershipId, service: 'speech',
+    }).expect(201);
+    const names = (rows: { displayName: string }[]) => rows.map(x => x.displayName);
+    const speech = (await get(therapist, W).expect(200)).body;
+    expect(speech.child.services).toEqual(['speech']);
+    expect(speech.childWideReferent).toBeNull();
+    expect(speech.careTeam).toHaveLength(3);
+    expect(names(speech.careTeam)).toEqual(expect.arrayContaining([
+      'Staff thera', 'Staff peer', 'Staff sibling',
+    ]));
+    expect(names(speech.careTeam)).not.toContain('Staff ot');
+    expect(speech.careTeam.find((x: { displayName: string }) => x.displayName === 'Staff thera'))
+      .toMatchObject({ service: 'speech', isSpecialtyLead: true });
+    expect(speech.careTeam.some((x: { displayName: string }) => x.displayName === 'Staff ot')).toBe(false);
+    const ot = (await get(occupational, W).expect(200)).body;
+    expect(ot.child.services).toEqual(['occupational']);
+    expect(ot.careTeam).toEqual([expect.objectContaining({
+      displayName: 'Staff ot', service: 'occupational', isSpecialtyLead: true,
+    })]);
+    const supervisor = (await get(sup, W).expect(200)).body;
+    expect(supervisor.careTeam).toHaveLength(4);
+    expect(names(supervisor.careTeam)).toEqual(expect.arrayContaining(['Staff ot', 'Staff thera', 'Staff peer', 'Staff sibling']));
+    expect(supervisor.childWideReferent).toBeNull();
+    await get(other, W).expect(404);
+    for (const viewer of [admin, rosa]) await get(viewer, W).expect(403);
+    await get(sup, c('threads')).expect(403);
+
+    // A suspended centre membership must not appear even if its assignment
+    // has not yet been formally ended.
+    await h.prisma.membership.update({
+      where: { id: sibling.body.activeContext.membershipId }, data: { status: 'SUSPENDED' },
+    });
+    const afterSuspend = (await get(therapist, W).expect(200)).body;
+    expect(names(afterSuspend.careTeam)).not.toContain('Staff sibling');
+    expect(afterSuspend.careTeam).toHaveLength(2);
+
+    // Ending an OT assignment removes that name from everyone's scoped view.
+    const activeOt = await h.prisma.careAssignment.findFirstOrThrow({
+      where: { centerId, childId: kid, membershipId: occupational.body.activeContext.membershipId, endedAt: null },
+    });
+    await post(h, c(`children/${kid}/assignments/${activeOt.id}/end`), admin).expect(200);
+    await get(occupational, W).expect(404);
+    const afterRevoke = (await get(sup, W).expect(200)).body;
+    expect(names(afterRevoke.careTeam)).not.toContain('Staff ot');
+    expect(names(afterRevoke.careTeam)).not.toContain('Staff sibling');
+
+    // Membership specialty revocation must hide a stale assignment row.
+    await h.prisma.membership.update({
+      where: { id: speechPeer.body.activeContext.membershipId }, data: { specialties: [] },
+    });
+    const afterSpecialtyChange = (await get(therapist, W).expect(200)).body;
+    expect(names(afterSpecialtyChange.careTeam)).toEqual(['Staff thera']);
+    expect(afterSpecialtyChange.childWideReferent).toBeNull();
+  });
+
   it('therapist drafts assessments, versioned goals, session notes and observations; supervisor reviews; approval and signing stay locked', async () => {
     const { therapist, other, sup, kid, rosa } = await setup();
     const W = c(`clinical/children/${kid}`);
