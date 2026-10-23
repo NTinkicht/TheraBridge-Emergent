@@ -74,9 +74,18 @@ try {
     assert.equal(evidence.body.notes.length, 4);
     assert(evidence.body.notes.every(n => n.service === 'speech'));
     assert.equal(evidence.body.observations.length, 8);
+    assert.equal(evidence.body.childWideReferent, null);
+    assert.equal(evidence.body.careTeam.length, 1);
+    assert.equal(evidence.body.careTeam[0].service, 'speech');
+    assert.equal(evidence.body.careTeam[0].displayName, 'Layla Faris');
+    assert.equal(evidence.body.careTeam[0].isSpecialtyLead, true);
     // End-to-end child360, version-exact progress and non-authorizing draft assistance.
     await page.goto(base + '/app/clinical/' + child.id);
     await page.getByTestId('child-360').waitFor();
+    const careTeamText = await page.getByTestId('child360-care-team').innerText();
+    assert(careTeamText.includes('Layla Faris') && careTeamText.includes('Specialty lead'));
+    assert(careTeamText.includes('Not designated'), 'No child-wide referent is stored');
+    assert(!careTeamText.includes('Omar Nasser'), 'Speech scope must not reveal OT colleague');
     await page.getByTestId('clinical-tab-progress').click();
     await page.getByTestId('progress-granularity').selectOption('month');
     await page.getByTestId('progress-periods-turn-taking').waitFor();
@@ -95,10 +104,24 @@ try {
     assert.equal(evidence.body.notes.length, 4);
     assert(evidence.body.notes.every(n => n.service === 'occupational'));
     assert.equal(evidence.body.observations.length, 8);
+    assert.equal(evidence.body.childWideReferent, null);
+    assert.equal(evidence.body.careTeam.length, 1);
+    assert.equal(evidence.body.careTeam[0].service, 'occupational');
+    assert.equal(evidence.body.careTeam[0].displayName, 'Omar Nasser');
+    assert.equal(evidence.body.careTeam[0].isSpecialtyLead, false);
+    await page.goto(base + '/app/clinical/' + child.id);
+    await page.getByTestId('child360-care-team').waitFor();
+    const otTeamText = await page.getByTestId('child360-care-team').innerText();
+    assert(otTeamText.includes('Omar Nasser') && otTeamText.includes('Not designated'));
+    assert(!otTeamText.includes('Layla Faris'), 'OT scope must not reveal Speech colleague');
   });
   await role('supervisor@childrens-home.therabridge.test', 'CLINICAL_SUPERVISOR', async page => {
     const messages = await read(page, centerBase + '/threads');
     assert.notEqual(messages.status, 200, 'Supervisors must not access family discussions');
+    const clinician = await read(page, clinicalPath);
+    assert.equal(clinician.status, 200);
+    assert.equal(clinician.body.careTeam.length, 2);
+    assert.equal(clinician.body.childWideReferent, null);
   });
   await role('mariam.ahmed@childrens-home.therabridge.test', 'GUARDIAN', async (page, session) => {
     const family = await read(page, centerBase + '/family');
