@@ -1,7 +1,8 @@
 'use client';
 
-import { CalendarDays, ClipboardList, FileText, Target, Activity, ArrowRight, Users } from 'lucide-react';
-import type { Workspace } from '@/lib/clinical';
+import { CalendarDays, ClipboardList, FileText, Target, Activity, ArrowRight, Users, House } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { clinicalApi, type Workspace, type PracticeFeedbackReadModel } from '@/lib/clinical';
 import { currentGoals } from '@/lib/progress-analysis';
 import { serviceLabel } from '@/components/operations/BookDialog';
 import { Card, Pill } from '@/components/design/ui';
@@ -9,10 +10,28 @@ import { Card, Pill } from '@/components/design/ui';
 type Tab = 'plan' | 'assessments' | 'sessions' | 'progress' | 'reports';
 const dateOnly = (x: string) => x.slice(0,10);
 
-export function Child360({ ws, onNavigate }: {ws: Workspace;onNavigate:(tab:Tab)=>void}) {
+export function Child360({ ws, centerId, onNavigate }: {ws: Workspace;centerId: string;onNavigate:(tab:Tab)=>void}) {
   // Legacy/session-test fixtures can omit this newly additive read-model field.
   // Fail closed to an empty team rather than crash the clinical workspace.
   const careTeam = ws.careTeam ?? [];
+  // Practice feedback remains NON-CLINICAL and is fetched exclusively using
+  // the already-permissioned practice-feedback endpoint for therapists.
+  // Supervisors cannot access this panel or family message threads.
+  const [practice, setPractice] = useState<PracticeFeedbackReadModel['items'] | null>(null);
+  useEffect(() => {
+    if (!ws.canEdit || !centerId) return;
+    let alive = true;
+    setPractice(null);
+    clinicalApi.practiceFeedback(centerId, ws.child.id)
+      .then(result => {
+        if (!alive) return;
+        if (result.synthetic !== true || result.notClinical !== true) return;
+        setPractice(result.items.filter(item =>
+          item.childId === ws.child.id && ws.child.services.includes(item.service)));
+      })
+      .catch(() => { if (alive) setPractice([]); });
+    return () => { alive = false; };
+  }, [centerId, ws.child.id, ws.canEdit, ws.child.services.join('|')]);
   const goals = currentGoals(ws);
   const upcoming = [...ws.appointments].filter(x=>x.status === 'SCHEDULED' && Date.parse(x.endsAt) >= Date.now()).sort((a,b)=>a.startsAt.localeCompare(b.startsAt));
   const lastNotes = [...ws.notes].sort((a,b)=>b.sessionDate.localeCompare(a.sessionDate)).slice(0,5);
@@ -99,6 +118,30 @@ export function Child360({ ws, onNavigate }: {ws: Workspace;onNavigate:(tab:Tab)
           <button className="mt-3 inline-flex items-center gap-2 text-[14px] font-semibold text-brand-action" type="button" onClick={()=>onNavigate('sessions')}>Open sessions <ArrowRight size={14}/></button>
         </Card>
       </div>
+      {ws.canEdit && (
+        <Card className="space-y-3 p-5" testId="child360-family-practice">
+          <div className="flex items-start gap-2">
+            <House className="mt-0.5 shrink-0 text-brand-action" size={18} aria-hidden="true" />
+            <div>
+              <h3 className="text-[17px] font-semibold">Family practice feedback</h3>
+              <p className="mt-1 text-[12px] text-brand-inkMuted">Synthetic sample activity outcomes only. This is not a clinical measurement, report release or family conversation.</p>
+            </div>
+          </div>
+          {practice === null ? <p className="text-[13px] text-brand-inkMuted">Loading permitted practice feedback…</p> :
+            practice.length === 0 ? <p className="text-[13px] text-brand-inkMuted">No permitted family practice outcomes are recorded.</p> :
+            <>
+              <p className="text-[13px] font-medium">Recent outcomes: {practice.length} (limited to your assigned specialties)</p>
+              <ul className="space-y-2" data-testid="child360-family-practice-outcomes">
+                {practice.slice(0,5).map(item=><li key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-control bg-surface-subtle px-3 py-2 text-[13px]">
+                  <span>{item.practiceDate} · {serviceLabel(item.service)}</span>
+                  <span className="font-semibold">{({ COMPLETED:'Completed', NEEDED_HELP:'Needed help', NOT_COMPLETED:'Not completed', SKIPPED:'Skipped' } as const)[item.choice]}</span>
+                </li>)}
+              </ul>
+              <p className="text-[12px] text-brand-inkMuted">Only the five most recent outcomes are shown. Responses do not establish progress toward clinical goals.</p>
+            </>
+          }
+        </Card>
+      )}
       <Card className="p-5">
         <h3 className="text-[17px] font-semibold">Clinical activity timeline</h3>
         <p className="mt-1 text-[13px] text-brand-inkMuted">The latest recorded events shown here are drafts and operational observations, not clinical interpretations.</p>

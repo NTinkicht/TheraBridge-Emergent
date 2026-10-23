@@ -54,7 +54,7 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
       </div>
       {notice && <FormAlert tone={notice.tone} testId={`clinical-notice-${notice.tone}`}>{notice.text}</FormAlert>}
       <div role="tabpanel">
-        {tab === 'overview' && <Child360 ws={data} onNavigate={setTab} />}
+        {tab === 'overview' && <Child360 ws={data} centerId={centerId} onNavigate={setTab} />}
         {tab === 'plan' && <PlansPanel centerId={centerId} ws={data} run={run} />}
         {tab === 'assessments' && <AssessmentsPanel centerId={centerId} ws={data} run={run} />}
         {tab === 'sessions' && <SessionsPanel centerId={centerId} ws={data} run={run} onPending={onPending} />}

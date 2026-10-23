@@ -82,6 +82,7 @@ try {
     // End-to-end child360, version-exact progress and non-authorizing draft assistance.
     await page.goto(base + '/app/clinical/' + child.id);
     await page.getByTestId('child-360').waitFor();
+    await page.getByTestId('child360-family-practice').waitFor();
     // Actual Playwright viewport changes (Work Cloud Browser cannot resize).
     // Check the same production design shell at five widths without modifying
     // patient data or depending on screenshots as proof of correctness.

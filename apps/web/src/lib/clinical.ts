@@ -18,6 +18,12 @@ export interface Workspace {
   appointments: { id: string; service: string; startsAt: string; endsAt: string; room: string | null; status: string; hasNote: boolean }[];
   templates: Template[];
 }
+export interface PracticeFeedbackReadModel {
+  synthetic: true; notClinical: true;
+  items: { id: string; childId: string; service: string; practiceDate: string;
+    choice: 'COMPLETED' | 'NEEDED_HELP' | 'NOT_COMPLETED' | 'SKIPPED';
+    acknowledgedAt: string | null }[];
+}
 export interface FamilyActivities { sample: true; released: false; children: { id: string; name: string; activities: Template[] }[] }
 
 const c = (centerId: string, p: string) => `/api/centers/${centerId}/${p}`;
@@ -36,6 +42,10 @@ export const clinicalApi = {
   observe: (centerId: string, childId: string, body: { planVersionId: string; goalKey: string; value: number; observedOn: string; note?: string }) => rest.send('POST', c(centerId, `clinical/children/${childId}/observations`), body),
   templates: (centerId: string) => rest.get<{ items: Template[] }>(c(centerId, 'activities')),
   createTemplate: (centerId: string, body: Omit<Template, 'id' | 'library'>) => rest.send('POST', c(centerId, 'activities'), body),
+  // Reuses the existing server-authorized practice-feedback endpoint; does
+  // not create a new pathway from guardian notes to clinical records.
+  practiceFeedback: (centerId: string, childId: string) =>
+    rest.get<PracticeFeedbackReadModel>(c(centerId, 'clinical/practice-feedback?childId=' + encodeURIComponent(childId))),
   familyPreview: (centerId: string, id: string) => rest.get<{ notice: string; snapshotId: string; fingerprint: string; activities: (HomeActivity & { template: Template | null })[] }>(c(centerId, `clinical/plan-versions/${id}/family-preview`)),
   family: (centerId: string) => rest.get<FamilyActivities>(c(centerId, 'family/activities')),
 };

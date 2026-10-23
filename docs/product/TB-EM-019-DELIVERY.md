@@ -54,6 +54,11 @@ Owner-directed synthetic-only development. Issue #64; draft PR #65.
 - The CI seven-role Playwright journey explicitly resizes its own Chromium viewport to **320, 390, 768, 1024 and 1440 px**, checking the authenticated Child 360° overview and care-team cards for page overflow and clipping.
 - This is a deterministic geometry test, not a replacement for visual inspection of every screen, contrast, touch targets, Safari or Firefox.
 
+## Slice A9 — therapist-only non-clinical family practice summary
+- Child 360° displays recent synthetic home-practice outcome statuses using the **existing** permission-checked `clinical/practice-feedback` endpoint; no new server access grants or guardian discussion routes.
+- Only therapists can see the panel. Both request scope and UI filter restrict results to that child and currently authorized specialties. No guardian name, relationship or free-text family messages are rendered. Practice outcomes remain separate from clinical progress measurements.
+- The CI browser journey checks that the panel renders. External Work QA and wider permissions testing are still pending.
+
 ## Slice B — FreeBuff continuation, SAME branch and PR
 Continue feature/tb-em-019-child360-evidence-assist from the latest exact HEAD. Do not create another PR or redeploy the Render preview while external QA is paused.
 1. Extend Child 360 to include permitted named care team/referent, authorized family-practice feedback and accessible cross-tab clinician timeline. Continue denying out-of-scope specialties and supervisor messaging.
