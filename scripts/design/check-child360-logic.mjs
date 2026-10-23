@@ -43,6 +43,12 @@ const ws={
 const goals=progress.currentGoals(ws);
 assert.equal(goals.length,1);
 assert.equal(goals[0].planVersionId,'v2');
+const historical=progress.historicalGoals(ws);
+assert.equal(historical.length,1);
+assert.equal(historical[0].planVersionId,'v1');
+assert.equal(historical[0].status,'SUPERSEDED');
+assert.equal(progress.summarizeObservations(pts,historical[0].planVersionId,historical[0].key,'month')[0].sourceIds.length,3);
+assert(!progress.summarizeObservations(pts,'v2','shared','month')[0].sourceIds.includes('p1'));
 assert.equal(assist.draftHomeActivitySuggestions(ws,'speech',[]).length,1);
 assert.equal(assist.draftHomeActivitySuggestions(ws,'speech',[{templateId:'speech1'}]).length,0);
 const report={report:{id:'report1'},evidence:{

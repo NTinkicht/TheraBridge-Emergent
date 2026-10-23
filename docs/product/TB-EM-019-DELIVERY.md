@@ -40,6 +40,11 @@ Owner-directed synthetic-only development. Issue #64; draft PR #65.
 - Clinician choices in this slice are UI-local; only inserted report text persists. The application does NOT claim to have a separate immutable accept/omit audit log or clinical approval.
 - End-to-end browser regression tests omit/restore/edit/append, source references and ordinary report autosave on a disposable synthetic test database.
 
+## Slice A6 — separate historical plan-version progress
+- Auth-scoped Child 360 progress now offers an explicit **read-only previous plan versions** view with individual goal charts, weekly/monthly recorded measurements, sample counts and observation-source IDs.
+- It never joins measurements for identical goal keys between different versions, never interpolates values, and does not expose an historical goal in the new observation writer.
+- Added source-level regression for archived/versioned goals; no new server data exposure or real clinical interpretation.
+
 ## Slice B — FreeBuff continuation, SAME branch and PR
 Continue feature/tb-em-019-child360-evidence-assist from the latest exact HEAD. Do not create another PR or redeploy the Render preview while external QA is paused.
 1. Extend Child 360 to include permitted named care team/referent, authorized family-practice feedback and accessible cross-tab clinician timeline. Continue denying out-of-scope specialties and supervisor messaging.

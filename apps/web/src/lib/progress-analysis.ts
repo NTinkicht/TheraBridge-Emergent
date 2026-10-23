@@ -63,3 +63,16 @@ export function currentGoals(ws: Workspace) {
     return current.goals.map(g => ({...g, planId: p.id, planTitle: p.title, service: p.service, planVersionId: current.id, planVersionNumber: current.number, status: current.status}));
   });
 }
+
+/** Historical goals are always read-only and retain their own exact plan-version identity. */
+export function historicalGoals(ws: Workspace) {
+  return ws.plans.flatMap(p => {
+    const active = p.versions.find(v => !['SUPERSEDED', 'WITHDRAWN'].includes(v.status));
+    return p.versions.filter(v => v.id !== active?.id).flatMap(v =>
+      v.goals.map(g => ({
+        ...g, planId: p.id, planTitle: p.title, service: p.service,
+        planVersionId: v.id, planVersionNumber: v.number, status: v.status,
+      })),
+    );
+  });
+}
