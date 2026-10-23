@@ -5,6 +5,7 @@ import { SessionEditor } from './SessionEditor';
 import { Field } from '@/components/auth/Field';
 import { SelectField } from '@/components/centers/kit';
 import { GoalChart } from '@/components/clinical/GoalChart';
+import { currentGoals, historicalGoals, summarizeObservations, type Granularity } from '@/lib/progress-analysis';
 import { Button, Card, LockedAction, Pill } from '@/components/design/ui';
 import { serviceLabel } from '@/components/operations/BookDialog';
 import { LOCKED_REASON, clinicalApi, type Workspace } from '@/lib/clinical';
@@ -76,26 +77,85 @@ export function SessionsPanel({ centerId, ws, run, onPending }: { centerId: stri
 }
 
 export function ProgressPanel({ centerId, ws, run }: { centerId: string; ws: Workspace; run: Run }) {
-  const goals = ws.plans.flatMap((p) => p.versions.filter((v) => v.status !== 'SUPERSEDED').flatMap((v) => v.goals.map((g) => ({ ...g, versionId: v.id, plan: p.title }))));
+  const goals = currentGoals(ws).map(g => ({ ...g, versionId: g.planVersionId, plan: g.planTitle }));
+  const [granularity, setGranularity] = useState<Granularity>('week');
+  const [showHistory, setShowHistory] = useState(false);
+  const history = historicalGoals(ws);
   const [f, setF] = useState({ goal: goals[0] ? `${goals[0].versionId}|${goals[0].key}` : '', value: '', observedOn: today(), note: '' });
   return (
     <div className="space-y-4" data-testid="progress-panel">
+      <div className="max-w-xs"><SelectField label="Recorded evidence by" value={granularity} onChange={(value)=>setGranularity(value as Granularity)} options={[{value:'week',label:'Week (Monday–Sunday)'},{value:'month',label:'Month'}]} testId="progress-granularity" /></div>
+      <p className="text-[12px] text-brand-inkMuted">Recorded values only. Grouped summaries are descriptive, not medical trends or predictions. Each goal is tied to its exact plan version.</p>
       {!goals.length && <p className="text-[14px] text-brand-inkMuted" data-testid="progress-empty">Add goals to a plan to record observations.</p>}
       {goals.map((g) => {
-        const hist = ws.observations.filter((o) => o.goalKey === g.key && ws.plans.some((p) => p.versions.some((v) => v.id === o.planVersionId) && p.versions.some((v) => v.id === g.versionId)));
+        const hist = ws.observations.filter((o) => o.goalKey === g.key && o.planVersionId === g.versionId).sort((a,b)=>a.observedOn.localeCompare(b.observedOn) || a.id.localeCompare(b.id));
+        const periods = summarizeObservations(ws.observations, g.versionId, g.key, granularity);
         return (
           <Card key={`${g.versionId}-${g.key}`} className="p-5" testId={`progress-goal-${g.key}`}>
             <h3 className="text-[16px] font-semibold">{g.title}</h3>
-            <p className="text-[13px] text-brand-inkMuted">{g.plan} · baseline {g.baseline} → target {g.target} ({g.measure})</p>
+            <p className="text-[13px] text-brand-inkMuted">{g.plan} · version {g.planVersionNumber} · {serviceLabel(g.service)} · baseline {g.baseline} → target {g.target} ({g.measure})</p>
             {hist.length ? (
               <div className="mt-3">
                 <GoalChart points={hist.map((o) => ({ date: o.observedOn, value: o.value }))} baseline={g.baseline} target={g.target} measure={g.measure} from={hist[0].observedOn} to={hist[hist.length - 1].observedOn} testId={`progress-chart-${g.key}`} />
                 {hist.length === 1 && <p className="mt-1 text-[13px] text-brand-inkMuted">Only one observation recorded, not enough to show change.</p>}
+                <div className="mt-4 overflow-x-auto" data-testid={`progress-periods-${g.key}`}>
+                  <table className="w-full min-w-[520px] border-collapse text-left text-[13px]">
+                    <caption className="mb-2 text-left font-semibold">{granularity === 'week' ? 'Weekly' : 'Monthly'} measurements · exactly plan version {g.planVersionNumber}</caption>
+                    <thead><tr className="border-b border-border-light"><th scope="col" className="py-2">Period</th><th scope="col" className="py-2">Samples</th><th scope="col" className="py-2">Range</th><th scope="col" className="py-2">Average*</th><th scope="col" className="py-2">Most recent</th><th scope="col" className="py-2">Evidence</th></tr></thead>
+                    <tbody>{periods.map(period => <tr key={period.periodStart} className="border-b border-border-light"><td className="py-2">{period.periodStart} – {period.periodEnd}</td><td className="py-2 tabular-nums">{period.count}</td><td className="py-2 tabular-nums">{period.min}–{period.max}</td><td className="py-2 tabular-nums">{period.average}</td><td className="py-2 tabular-nums">{period.latest} ({period.latestOn})</td><td className="py-2"><details data-testid={`progress-source-${g.key}-${period.periodStart}`}><summary className="cursor-pointer text-brand-action">{period.sourceIds.length} sources</summary><ul className="mt-1 space-y-1">{period.sourceIds.map(id=><li key={id} className="break-all font-mono text-[11px]">{id}</li>)}</ul></details></td></tr>)}</tbody>
+                  </table>
+                  <p className="mt-2 text-[12px] text-brand-inkMuted">*Arithmetic mean of recorded samples only; unequal observation frequency, clinical context and measurement reliability are not accounted for. No interpolation.</p>
+                </div>
               </div>
             ) : <p className="mt-2 text-[14px] text-brand-inkMuted">No observations yet.</p>}
           </Card>
         );
       })}
+      {history.length > 0 && (
+        <section className="space-y-3" aria-label="Previous plan version evidence" data-testid="progress-history">
+          <Button variant="secondary" onClick={()=>setShowHistory(!showHistory)}
+            aria-expanded={showHistory} data-testid="progress-history-toggle">
+            {showHistory ? 'Hide earlier plan-version measurements' : 'Review earlier plan-version measurements'} ({history.length} goals)
+          </Button>
+          {showHistory && <>
+            <p className="text-[13px] text-brand-inkMuted">Historical evidence is read-only, presented by the exact originating plan version. Measurements are not combined with newer goals even if a goal key or title was reused.</p>
+            {history.map(g=>{
+              const points=ws.observations.filter(o=>o.planVersionId===g.planVersionId&&o.goalKey===g.key)
+                .sort((a,b)=>a.observedOn.localeCompare(b.observedOn)||a.id.localeCompare(b.id));
+              const periods=summarizeObservations(ws.observations,g.planVersionId,g.key,granularity);
+              return <Card className="space-y-2 p-5" key={g.planVersionId+'|'+g.key} testId={'progress-historical-'+g.planVersionId+'-'+g.key}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-[15px] font-semibold">{g.title}</h3>
+                  <span className="text-[12px] text-brand-inkMuted">{g.status.replaceAll('_',' ')} · read-only</span>
+                </div>
+                <p className="text-[12px] text-brand-inkMuted">{g.planTitle} · {serviceLabel(g.service)} · plan v{g.planVersionNumber} · baseline {g.baseline} → target {g.target} ({g.measure})</p>
+                {points.length===0 ? <p className="text-[13px]">No recorded observations for this historical goal.</p> :
+                  <>
+                    <GoalChart points={points.map(o=>({date:o.observedOn,value:o.value}))}
+                      baseline={g.baseline} target={g.target} measure={g.measure}
+                      from={points[0].observedOn} to={points[points.length-1].observedOn}
+                      testId={'historical-chart-'+g.planVersionId+'-'+g.key} />
+                    {points.length===1 && <p className="text-[12px] text-brand-inkMuted">A single measurement cannot establish change.</p>}
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[450px] text-left text-[12px]">
+                        <caption className="mb-1 text-left">Historical {granularity === 'week' ? 'weekly' : 'monthly'} recorded observations (v{g.planVersionNumber})</caption>
+                        <thead><tr className="border-b border-border-light"><th scope="col" className="py-2">Period</th><th scope="col">Samples</th><th scope="col">Last measured</th><th scope="col">Provenance</th></tr></thead>
+                        <tbody>{periods.map(period=><tr key={period.periodStart} className="border-b border-border-light">
+                          <td className="py-2">{period.periodStart} – {period.periodEnd}</td><td>{period.count}</td>
+                          <td>{period.latest} ({period.latestOn})</td>
+                          <td><details><summary className="cursor-pointer text-brand-action">{period.sourceIds.length} observations</summary>
+                            <ul className="mt-1 space-y-1">{period.sourceIds.map(id=><li key={id} className="break-all font-mono text-[11px]">{id}</li>)}</ul>
+                          </details></td>
+                        </tr>)}</tbody>
+                      </table>
+                    </div>
+                  </>
+                }
+              </Card>;
+            })}
+          </>}
+        </section>
+      )}
       {ws.canEdit && goals.length > 0 && (
         <Card className="grid grid-cols-1 items-end gap-3 p-5 md:grid-cols-[1fr_110px_160px_auto]" testId="observation-form">
           <SelectField label="Goal" value={f.goal} onChange={(goal) => setF({ ...f, goal })} testId="observation-goal" options={goals.map((g) => ({ value: `${g.versionId}|${g.key}`, label: g.title }))} />

@@ -31,6 +31,9 @@ export class GoalDto {
 }
 export class HomeActivityDto {
   @IsUUID() templateId!: string;
+  // Optional for historical drafts. New therapist-linked activities must
+  // reference a goal key defined in their containing plan version.
+  @IsOptional() @Matches(/^[a-z0-9-]{1,40}$/) goalKey?: string;
   @IsString() @MaxLength(80) frequency!: string;
   @IsOptional() @IsString() @MaxLength(500) note?: string;
 }

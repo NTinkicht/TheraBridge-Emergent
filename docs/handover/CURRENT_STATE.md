@@ -1,5 +1,28 @@
 # Current state — TheraBridge-Emergent
 
+## TB-EM-019 — independent-review advisory corrections (2026-10-23)
+
+Mistral and Grok source reviews at `b542159a70b0799d920593e4f0c439893e2235f3` found **NO_BLOCKING_FINDINGS**. This follow-up implements MIS-001 stable section-specific evidence headings (with legacy compatibility) and MIS-002 explicit therapist-only practice-feedback failure/retry states. Corrective tests are added but **new exact-head CI is NOT RUN as this commit is authored**. Earlier head: [6/6 PASS](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/40006533539). MIS-003 version-label semantics and MIS-004 remove/re-add snapshot semantics remain unchanged pending product decision. PR #65 remains draft, not merged or deployed. Independent re-review must target the NEW HEAD; clinical controls and external AI remain OFF.
+
+
+## TB-EM-019 — implemented synthetic-only review candidate (2026-10-23)
+
+**PR:** #65 (OPEN / DRAFT); **base:** `main@b11b41daf9b69883d9ade1a325e32b65cf6090b8`.
+**Latest implementation HEAD verified:** `b6a15de2854a45691753d477ed0040b9cc17cac6`.
+**Exact-head hosted CI:** [run 39999150532](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/39999150532) **6/6 SUCCESS**, including 474 API PostgreSQL tests / 14 suites, demo-journey, preview-container, live-session, Compose and secret scan. A duplicate run at the same SHA also passed.
+**Development state:** Current workstream's safe foundation is implemented and integrated; not independently reviewed by Mistral. External Render browser QA for **this PR** is NOT RUN, and the live Render/Neon demo is unchanged. No merge or clinical/production activation authorized.
+
+Delivered: scoped Child 360° team/specialty roles and referent "Not designated"; authenticated summary, authorized synthetic practice feedback, longitudinal exact plan-version weekly/monthly current and historical evidence; source IDs; reviewed deterministic report draft passages (edit/omit/restore/explicit append); clinician-selected goal-linked home activities with immutable server-captured template snapshots; deny-by-default future AI provider seam; five-width Chromium geometry and seven-role synthetic browser regressions. Existing clinical safeguards remain in place.
+
+**Next gate:** independent, read-only Mistral exact-head review → address genuine findings and re-run exact-head CI → explicit owner decision on merge and any demo deployment. Canonical policy decisions D7 / D-NEW-5 and external AI provider selection remain OPEN. Do not confuse deterministic evidence assistance with active generative AI. See `docs/product/TB-EM-019-REVIEW-PACKET.md`.
+
+## Historical records below (do not use as current instructions)
+
+
+## TB-EM-019 active, synthetic-only (2026-10-23)
+Draft PR #65, issue #64, branch feature/tb-em-019-child360-evidence-assist: Child 360, version-exact progress grouping and clinician-reviewed deterministic assistance. Real AI remains OFF. Work QA is running only against last merged hosted demo, not this PR. FreeBuff continues the SAME feature branch after exact-head CI. Mistral review and owner merge remain pending. Entries below are historical.
+
+
 ## Uninserted transcript recovery correction — 2026-10-22
 
 Exact uninserted transcript retained in copy-only recovery after remote completion; no automatic insertion. Fixture/live transcript, revocation/failure regressions PASS; 468/468 PostgreSQL tests (12 suites), types/builds, responsive DOM, fresh migrations and Gitleaks PASS. Isolated real two-tab Actions job added with disposable synthetic seed, read-only permissions and cleanup. Hosted exact-head results follow push; independent review pending. See artifacts/tb-em-015/FINAL-REVIEW-CORRECTIONS.md. No issue #61 changes, merge or deployment.

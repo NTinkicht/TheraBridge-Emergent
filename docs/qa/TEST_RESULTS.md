@@ -1,4 +1,33 @@
-# Test results — TB-EM-015 / issue #58
+# Test results — TheraBridge
+
+## TB-EM-019 — MIS-001 / MIS-002 remediation tests (2026-10-23)
+
+**Current patch tests: NOT RUN at commit authoring.** Added real-source logic assertions that dedupe recognizes stable/legacy evidence reference headings despite editing the body; expanded seven-role Playwright synthetic journey to simulate HTTP 503 practice-feedback, assert an error rather than false empty state, Retry on successful restore, and confirm no repeat insertion after clinician edits/autosave/reload. All safety restrictions remain unchanged. Verify the six exact-head GitHub Actions jobs after the correction commit; do not transfer the earlier green verdict to the newer commit. Prior independent source-review head `b542159a`: [hosted 6/6 SUCCESS](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/40006533539). These tests do not establish external Render HTTPS UAT or medical effectiveness.
+
+
+## TB-EM-019 — 2026-10-23 exact-head synthetic qualification
+
+Repository: `NTinkicht/TheraBridge-Emergent`
+PR: #65 (DRAFT); code HEAD: `b6a15de2854a45691753d477ed0040b9cc17cac6`
+Hosted CI: [GitHub Actions run 39999150532](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/39999150532) — **SUCCESS, 6/6 jobs**:
+
+| Job | Result | What it proves |
+| --- | --- | --- |
+| test | PASS | Real PostgreSQL Nest/Jest **474/474 tests, 14/14 suites**; API TS/build, web build, pure progress/assistance logic, existing responsive session workflow |
+| demo-journey | PASS | Disposable synthetic DB + Next/browser same-origin seven-role journey, care team specialty, Child 360, active progress, report edit/omit/restore/append, family practice boundary, five viewport widths |
+| live-session | PASS | Existing session completion/autosave/concurrency/auth regressions |
+| preview-container | PASS | Full unified synthetic Docker image and preview API/proxy checks |
+| secret-scan | PASS | Tracked files/history via gitleaks |
+| compose | PASS | Docker Compose full-stack smoke |
+
+Duplicate exact-head run [39999142438](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/39999142438) also SUCCESS (6/6).
+
+**Evidence limitations:** These are GitHub CI results; the author did not personally execute the full stack in the local sandbox. Browser coverage is Chromium in CI, not Safari/Firefox, physical mobile devices, accessibility audit or complete visual inspection of all screens. The actual public Render HTTPS hostname has NOT been browser-tested for this unmerged PR. No real patients, recordings, AI model generation, medical validity, clinical release, pilot or production activity were tested or enabled. Source inspection is not a substitute for independent Mistral review.
+
+The source-level test intentionally exercises rejection paths (403, 409, constraint violation); errors in test logs are not failing jobs if asserted by passing tests. This qualification does NOT constitute clinical approval or deployment clearance.
+
+## Historical test records below
+
 
 ## Uninserted transcript recovery correction — 2026-10-22
 

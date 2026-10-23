@@ -1,12 +1,15 @@
 import { rest } from './auth';
 
 export interface Goal { key: string; title: string; measure: 'percent' | 'count' | 'level'; baseline: number; target: number }
-export interface HomeActivity { templateId: string; frequency: string; note?: string }
+export interface HomeActivity { templateId: string; frequency: string; note?: string; goalKey?: string; snapshot?: Template & { version: number; capturedAt: string } }
 export interface Template { id: string; title: string; service: string; ageBand: string; minutes: number; materials: string[]; steps: string[]; safety: string[]; library?: 'center' | 'synthetic' }
 export interface PlanVersion { id: string; number: number; status: 'DRAFT' | 'IN_REVIEW' | 'SUPERSEDED' | 'RETURNED_FOR_REVISION' | 'WITHDRAWN' | 'FROZEN_INTERNAL'; summary: string; goals: Goal[]; homeActivities: HomeActivity[]; reviewNotes: { at: string; comment: string }[]; version: number; mine: boolean; author: string; updatedAt: string }
 export interface SessionActivity { id: string; templateId: string; minutes: number; objective: string; planVersionId?: string; goalKey?: string; completion: 'NOT_STARTED' | 'COMPLETED' | 'SKIPPED'; outcome?: 'ACHIEVED' | 'PARTIAL' | 'NOT_ACHIEVED'; assistance?: 'INDEPENDENT' | 'SOME_ASSISTANCE' | 'SUBSTANTIAL_ASSISTANCE'; observation: string; snapshot?: Template; authorId?: string; createdAt?: string }
+export interface CareTeamMember { assignmentId: string; displayName: string; service: string; isSpecialtyLead: boolean }
 export interface Workspace {
   timezone: string; synthetic: true; locked: string; canEdit: boolean; canReview: boolean;
+  careTeam: CareTeamMember[];
+  childWideReferent: { displayName: string } | null;
   child: { id: string; name: string; services: string[]; dateOfBirth: string };
   assessments: { id: string; service: string; assessedOn: string; summary: string; areas: { area: string; finding: string }[]; version: number; author: string; mine: boolean; updatedAt: string }[];
   plans: { id: string; service: string; title: string; versions: PlanVersion[] }[];
@@ -14,6 +17,12 @@ export interface Workspace {
   observations: { id: string; planVersionId: string; goalKey: string; value: number; observedOn: string; note: string | null; author: string }[];
   appointments: { id: string; service: string; startsAt: string; endsAt: string; room: string | null; status: string; hasNote: boolean }[];
   templates: Template[];
+}
+export interface PracticeFeedbackReadModel {
+  synthetic: true; notClinical: true;
+  items: { id: string; childId: string; service: string; practiceDate: string;
+    choice: 'COMPLETED' | 'NEEDED_HELP' | 'NOT_COMPLETED' | 'SKIPPED';
+    acknowledgedAt: string | null }[];
 }
 export interface FamilyActivities { sample: true; released: false; children: { id: string; name: string; activities: Template[] }[] }
 
@@ -33,6 +42,10 @@ export const clinicalApi = {
   observe: (centerId: string, childId: string, body: { planVersionId: string; goalKey: string; value: number; observedOn: string; note?: string }) => rest.send('POST', c(centerId, `clinical/children/${childId}/observations`), body),
   templates: (centerId: string) => rest.get<{ items: Template[] }>(c(centerId, 'activities')),
   createTemplate: (centerId: string, body: Omit<Template, 'id' | 'library'>) => rest.send('POST', c(centerId, 'activities'), body),
+  // Reuses the existing server-authorized practice-feedback endpoint; does
+  // not create a new pathway from guardian notes to clinical records.
+  practiceFeedback: (centerId: string, childId: string) =>
+    rest.get<PracticeFeedbackReadModel>(c(centerId, 'clinical/practice-feedback?childId=' + encodeURIComponent(childId))),
   familyPreview: (centerId: string, id: string) => rest.get<{ notice: string; snapshotId: string; fingerprint: string; activities: (HomeActivity & { template: Template | null })[] }>(c(centerId, `clinical/plan-versions/${id}/family-preview`)),
   family: (centerId: string) => rest.get<FamilyActivities>(c(centerId, 'family/activities')),
 };
