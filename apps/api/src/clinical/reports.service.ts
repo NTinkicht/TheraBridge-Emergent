@@ -10,8 +10,8 @@ import type { ProgressQueryDto, ReportCreateDto, ReportSaveDto, ReviewDto } from
 
 const DAY = 86_400_000;
 type Goal = { key: string; title: string; measure: string; baseline: number; target: number };
-type Point = { date: string; value: number; note: string | null };
-type Obs = { observedOn: Date; value: number; note: string | null };
+type Point = { date: string; value: number; note: string | null; observationId?: string; sessionNoteId?: string };
+type Obs = { observedOn: Date; value: number; note: string | null; id?: string; sessionNoteId?: string | null };
 type Sections = Record<string, string>;
 type Note = { by: string; byName: string; at: string; comment: string; kind: 'comment' | 'returned' };
 export type GoalEvidence = Goal & { points: Point[]; prior: Point | null; status: 'none' | 'insufficient' | 'recorded' };
@@ -19,7 +19,7 @@ export type Evidence = Awaited<ReturnType<ReportsService['evidence']>>;
 
 // Progress is only ever what was recorded: points inside the period, plus the last value before it for comparison.
 export function goalEvidence(g: Goal, rows: Obs[], from: Date): GoalEvidence {
-  const all = rows.map((o) => ({ date: day(o.observedOn), value: o.value, note: o.note }));
+  const all = rows.map((o) => ({ date: day(o.observedOn), value: o.value, note: o.note, ...(o.id ? { observationId: o.id } : {}), ...(o.sessionNoteId ? { sessionNoteId: o.sessionNoteId } : {}) }));
   const start = day(from);
   const points = all.filter((p) => p.date >= start);
   const before = all.filter((p) => p.date < start);

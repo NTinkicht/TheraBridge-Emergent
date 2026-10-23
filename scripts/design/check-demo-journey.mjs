@@ -74,6 +74,92 @@ try {
     assert.equal(evidence.body.notes.length, 4);
     assert(evidence.body.notes.every(n => n.service === 'speech'));
     assert.equal(evidence.body.observations.length, 8);
+    assert.equal(evidence.body.childWideReferent, null);
+    assert.equal(evidence.body.careTeam.length, 1);
+    assert.equal(evidence.body.careTeam[0].service, 'speech');
+    assert.equal(evidence.body.careTeam[0].displayName, 'Layla Faris');
+    assert.equal(evidence.body.careTeam[0].isSpecialtyLead, true);
+    // End-to-end child360, version-exact progress and non-authorizing draft assistance.
+    await page.goto(base + '/app/clinical/' + child.id);
+    await page.getByTestId('child-360').waitFor();
+    await page.getByTestId('child360-family-practice').waitFor();
+    // A transient request failure must never appear as a genuine empty result.
+    const practiceRoute = '**/clinical/practice-feedback?childId=*';
+    await page.route(practiceRoute, route => route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"Synthetic transient error"}' }));
+    await page.reload();
+    await page.getByTestId('child360-family-practice-error').waitFor();
+    assert(!(await page.getByTestId('child360-family-practice').innerText()).includes('No permitted family practice outcomes are recorded.'));
+    await page.unroute(practiceRoute);
+    await page.getByTestId('child360-family-practice-retry').click();
+    await page.getByTestId('child360-family-practice-error').waitFor({ state: 'hidden' });
+    await page.waitForFunction(() => {
+      const panel = document.querySelector('[data-testid="child360-family-practice"]');
+      return !!panel && (panel.querySelector('[data-testid="child360-family-practice-empty"]') !== null ||
+        panel.querySelector('[data-testid="child360-family-practice-outcomes"]') !== null);
+    });
+    // Actual Playwright viewport changes (Work Cloud Browser cannot resize).
+    // Check the same production design shell at five widths without modifying
+    // patient data or depending on screenshots as proof of correctness.
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      const geometry = await page.evaluate(() => {
+        const child = document.querySelector('[data-testid="child-360"]');
+        const team = document.querySelector('[data-testid="child360-care-team"]');
+        const a = child?.getBoundingClientRect();
+        const b = team?.getBoundingClientRect();
+        return {
+          viewport: innerWidth, scroll: document.documentElement.scrollWidth,
+          childLeft: a?.left, childRight: a?.right,
+          teamLeft: b?.left, teamRight: b?.right,
+          visible: !!child && !!team,
+        };
+      });
+      assert(geometry.visible, 'Missing child overview or care team at ' + width + 'px');
+      assert(geometry.scroll <= width + 8, 'Page overflow at ' + width + 'px: ' + JSON.stringify(geometry));
+      assert(geometry.childLeft >= -4 && geometry.childRight <= width + 4, 'Child overview clipped at ' + width + 'px');
+      assert(geometry.teamLeft >= -4 && geometry.teamRight <= width + 4, 'Care team clipped at ' + width + 'px');
+    }
+    await page.setViewportSize({ width: 1280, height: 900 });
+    const careTeamText = await page.getByTestId('child360-care-team').innerText();
+    assert(careTeamText.includes('Layla Faris') && careTeamText.includes('Specialty lead'));
+    assert(careTeamText.includes('Not designated'), 'No child-wide referent is stored');
+    assert(!careTeamText.includes('Omar Nasser'), 'Speech scope must not reveal OT colleague');
+    await page.getByTestId('clinical-tab-progress').click();
+    await page.getByTestId('progress-granularity').selectOption('month');
+    await page.getByTestId('progress-periods-turn-taking').waitFor();
+    await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('home-assist-toggle').click();
+    await page.getByTestId('home-plan-evidence-assist').waitFor();
+    const speechReport = await db.progressReport.findFirstOrThrow({ where: { centerId: center.id, childId: child.id, service: 'speech' } });
+    await page.goto(base + '/app/reports/' + speechReport.id);
+    await page.getByTestId('report-evidence-assist').waitFor();
+    await page.getByTestId('report-assist-toggle').click();
+    await page.getByTestId('report-suggestion-goals').waitFor();
+    await page.getByTestId('report-assist-omit-goals').click();
+    assert((await page.getByTestId('report-assist-decision-goals').innerText()).includes('Omitted'));
+    await page.getByTestId('report-assist-restore-goals').click();
+    await page.getByTestId('report-assist-edit-goals').fill('Clinician-reviewed factual goals note; no conclusion inferred.');
+    await page.getByTestId('report-assist-apply-goals').click();
+    const reportDraftText = await page.getByTestId('report-section-goals').inputValue();
+    assert(reportDraftText.includes('Clinician-reviewed factual goals note'));
+    assert(reportDraftText.includes('Evidence references (internal draft; goals):'));
+    assert(reportDraftText.includes('Observation '));
+    await page.locator('[data-testid="report-save-state"][data-state="saved"]').waitFor({ timeout: 25000 });
+    const persisted = await db.progressReport.findUniqueOrThrow({ where: { id: speechReport.id } });
+    assert(persisted.sections.goals.includes('Evidence references (internal draft; goals):'), 'Explicit clinician insertion must persist via existing report autosave');
+    // Edits to the body or source labels cannot re-enable insertion, including
+    // after reload discards the ephemeral accept/omit state.
+    const editedReport = reportDraftText.replace('Observation ', 'Recorded observation ');
+    await page.getByTestId('report-section-goals').fill(editedReport);
+    await page.locator('[data-testid="report-save-state"][data-state="saved"]').waitFor({ timeout: 25000 });
+    assert.equal(await page.getByTestId('report-assist-apply-goals').count(), 0, 'Edited reference block must not permit duplicate insertion');
+    await page.reload();
+    await page.getByTestId('report-assist-toggle').click();
+    assert((await page.getByTestId('report-assist-decision-goals').innerText()).includes('Added to draft'));
+    assert.equal(await page.getByTestId('report-assist-apply-goals').count(), 0, 'Persisted evidence block must survive reload without duplicate action');
+    const afterReload = await page.getByTestId('report-section-goals').inputValue();
+    assert.equal(afterReload.split('Evidence references (internal draft; goals):').length - 1, 1);
+    assert.notEqual(persisted.status, 'IN_REVIEW', 'Evidence assistance must not submit a draft');
   });
   await role('ot@childrens-home.therabridge.test', 'THERAPIST', async page => {
     const evidence = await read(page, clinicalPath);
@@ -81,10 +167,24 @@ try {
     assert.equal(evidence.body.notes.length, 4);
     assert(evidence.body.notes.every(n => n.service === 'occupational'));
     assert.equal(evidence.body.observations.length, 8);
+    assert.equal(evidence.body.childWideReferent, null);
+    assert.equal(evidence.body.careTeam.length, 1);
+    assert.equal(evidence.body.careTeam[0].service, 'occupational');
+    assert.equal(evidence.body.careTeam[0].displayName, 'Omar Nasser');
+    assert.equal(evidence.body.careTeam[0].isSpecialtyLead, false);
+    await page.goto(base + '/app/clinical/' + child.id);
+    await page.getByTestId('child360-care-team').waitFor();
+    const otTeamText = await page.getByTestId('child360-care-team').innerText();
+    assert(otTeamText.includes('Omar Nasser') && otTeamText.includes('Not designated'));
+    assert(!otTeamText.includes('Layla Faris'), 'OT scope must not reveal Speech colleague');
   });
   await role('supervisor@childrens-home.therabridge.test', 'CLINICAL_SUPERVISOR', async page => {
     const messages = await read(page, centerBase + '/threads');
     assert.notEqual(messages.status, 200, 'Supervisors must not access family discussions');
+    const clinician = await read(page, clinicalPath);
+    assert.equal(clinician.status, 200);
+    assert.equal(clinician.body.careTeam.length, 2);
+    assert.equal(clinician.body.childWideReferent, null);
   });
   await role('mariam.ahmed@childrens-home.therabridge.test', 'GUARDIAN', async (page, session) => {
     const family = await read(page, centerBase + '/family');
