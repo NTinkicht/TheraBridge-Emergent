@@ -124,7 +124,7 @@ try {
   // Tab B holds an uninserted transcript BEFORE tab A completes.
   const uninserted = '  Uninserted العربية café 😀\nsecond line  ';
   await remote.getByLabel('Editable transcript (not saved)', { exact: true }).fill(uninserted);
-  await note.getByLabel('Actual end', { exact: true }).fill(new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,19));
+  await note.getByLabel('Actual end', { exact: true }).fill(new Date(Date.now()-1000-new Date().getTimezoneOffset()*60000).toISOString().slice(0,19));
   page.once('dialog', d => d.accept());
   await note.getByRole('button', { name: 'Review and complete session', exact: true }).click();
   await note.getByText('Completed · unsigned', { exact: true }).waitFor().catch(async e => { console.error(await note.innerText()); throw e; });

@@ -80,7 +80,7 @@ jobs:
       - run: yarn workspace @therabridge/api build
       - run: yarn workspace @therabridge/web build
         env:
-          NEXT_PUBLIC_API_BASE_URL: http://localhost:8001
+          API_UPSTREAM_ORIGIN: http://127.0.0.1:8001
 
       - name: Session editor responsive DOM and synthetic dictation regression
         run: |
@@ -92,6 +92,7 @@ jobs:
             if curl -fsS http://127.0.0.1:3000/login > /dev/null; then break; fi
             sleep 1
           done
+          node scripts/design/check-preview-entry.mjs
           node scripts/design/check-session-workflow.mjs
 
   live-session:
@@ -133,6 +134,45 @@ jobs:
       - if: always()
         run: rm -f .workspace/local-credentials/synthetic-accounts.json
 
+  demo-journey:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-bookworm
+        env:
+          POSTGRES_USER: therabridge
+          POSTGRES_PASSWORD: ci_only_password
+          POSTGRES_DB: therabridge_demo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U therabridge -d therabridge_demo_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://therabridge:ci_only_password@127.0.0.1:5432/therabridge_demo_test?schema=public
+      DEPLOYMENT_ENV: ci
+      API_UPSTREAM_ORIGIN: http://127.0.0.1:8001
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: yarn workspace @therabridge/api prisma generate
+      - run: yarn workspace @therabridge/api prisma migrate deploy
+      - run: yarn workspace @therabridge/api typecheck
+      - run: yarn workspace @therabridge/api build
+      - run: yarn workspace @therabridge/web build
+      - run: yarn playwright install --with-deps chromium
+      - name: Idempotent synthetic Ahmed seed and real seven-role browser journey
+        run: node scripts/design/run-demo-live.mjs
+      - if: always()
+        run: rm -f .workspace/local-credentials/childrens-home-demo.json
+
   compose:
     runs-on: ubuntu-24.04
     needs: test
@@ -145,7 +185,12 @@ jobs:
         run: |
           curl -fsS http://localhost:8001/api/health | python3 -c 'import json,sys; h=json.load(sys.stdin); assert h["status"] == "ok" and h["service"] == "therabridge-api" and h["database"]["status"] == "up" and h["migrations"]["applied"] >= 1'
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8001/api/health/probe -H 'Origin: http://localhost:3000' -H 'Content-Type: application/json' -d '{"source":"cli"}')" = 404
-          curl -fsS http://localhost:3000/ | grep -q TheraBridge
+          # Root is now the actual app, not TB-EM-000.
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/)" = 307
+          curl -fsS http://localhost:3000/login | grep -q 'Sign in to TheraBridge'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/dev/feasibility)" = 404
+          curl -fsS http://localhost:3000/api/health | python3 -c 'import json,sys; h=json.load(sys.stdin); assert h["status"]=="ok" and h["database"]["status"]=="up"'
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:3000/api/health/probe -H 'Origin: https://untrusted.example' -H 'Content-Type: application/json' -d '{}')" = 403
       - if: failure()
         run: docker compose logs
       - if: always()

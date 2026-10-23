@@ -1,7 +1,5 @@
 import { ApiError } from './api';
 
-const base = process.env.NEXT_PUBLIC_API_BASE_URL;
-
 export type Role = 'PLATFORM_ADMIN' | 'CENTER_ADMIN' | 'COORDINATOR' | 'THERAPIST' | 'CLINICAL_SUPERVISOR' | 'GUARDIAN';
 
 export type ContextOption =
@@ -97,10 +95,9 @@ export interface ApplicationDetail extends ApplicationSummary, Omit<ApplicationI
 let csrf: string | null = null;
 
 async function call<T>(path: string, opts: { method?: string; body?: unknown; csrf?: string | null } = {}): Promise<T> {
-  if (!base) throw new ApiError(0, 'NEXT_PUBLIC_API_BASE_URL is not configured');
   let res: Response;
   try {
-    res = await fetch(`${base}${path}`, {
+    res = await fetch(path, {
       method: opts.method ?? 'GET',
       credentials: 'include',
       cache: 'no-store',

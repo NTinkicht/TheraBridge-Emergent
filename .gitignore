@@ -24,3 +24,6 @@ __pycache__/
 *.dump
 *.bak
 *.sqlite
+
+# Generated demo credentials and local runtime state
+.workspace/
