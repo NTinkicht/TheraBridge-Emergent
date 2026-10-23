@@ -7,6 +7,7 @@ import { errorText } from '@/components/centers/kit';
 import { Button, Card, LockedAction } from '@/components/design/ui';
 import { LOCKED_REASON } from '@/lib/clinical';
 import { SECTIONS, reportsApi, type ReportDetail } from '@/lib/reports';
+import { factualReportSuggestions } from '@/lib/evidence-assist';
 
 type Save = 'idle' | 'pending' | 'saving' | 'saved' | 'conflict' | 'error';
 const area = 'mt-1 w-full rounded-control border border-border-light bg-transparent px-3 py-2 text-[14px] leading-relaxed disabled:bg-surface-subtle disabled:text-brand-inkMuted';
@@ -28,6 +29,7 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
   const [state, setState] = useState<Save>('idle');
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
+  const [assistOpen, setAssistOpen] = useState(false);
   const local = useRef(sections);
   const ver = useRef(d.report.version);
   const dirty = useRef(false);
@@ -98,6 +100,22 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
         </div>
       )}
       {notice && state !== 'conflict' && <FormAlert tone={notice.tone} testId={`report-notice-${notice.tone}`}>{notice.text}</FormAlert>}
+      {edit && <div className="space-y-3 rounded-card border border-border-light bg-surface-subtle p-4" data-testid="report-evidence-assist">
+        <h3 className="text-[16px] font-semibold">Evidence-assisted draft passages</h3>
+        <p className="text-[13px] text-brand-inkMuted">Deterministic suggestions, NOT AI or clinical interpretation. No external processing, publication or automatic insertion. Verify source records first.</p>
+        <Button variant="secondary" onClick={()=>setAssistOpen(!assistOpen)} data-testid="report-assist-toggle">{assistOpen?'Hide suggestions':'Review suggestions'}</Button>
+        {assistOpen && factualReportSuggestions(d).map(s=><div key={s.section} className="rounded-control border border-border-light bg-white p-3" data-testid={'report-suggestion-'+s.section}>
+          <h4 className="text-[14px] font-semibold">{s.heading}</h4>
+          <p className="mt-2 whitespace-pre-wrap text-[13px]">{s.text}</p>
+          <details className="mt-2 text-[12px]"><summary>Sources ({s.sources.length})</summary><ul className="list-disc pl-4">{s.sources.map((item,i)=><li key={i} className="break-all">{item}</li>)}</ul></details>
+          <Button variant="secondary" size="sm" className="mt-2" data-testid={'report-assist-apply-'+s.section} onClick={()=>{
+            const current=local.current[s.section]??'';
+            const next=current.trim()?current.trimEnd()+'\n\n'+s.text:s.text;
+            if(next.length>8000){setNotice({tone:'danger',text:'This passage exceeds the allowed length; edit manually.'});return;}
+            change(s.section,next);setNotice({tone:'success',text:'Passage added to the editable draft. Wait for backend save confirmation.'});
+          }}>Append reviewed passage</Button>
+        </div>)}
+      </div>}
       {SECTIONS.map(([k, label, hint]) => (
         <label key={k} className="block text-[14px] font-semibold">
           {label}

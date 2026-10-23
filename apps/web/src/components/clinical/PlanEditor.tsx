@@ -8,6 +8,7 @@ import { Button, Card, LockedAction, Pill } from '@/components/design/ui';
 import { serviceLabel } from '@/components/operations/BookDialog';
 import { LOCKED_REASON, clinicalApi, type Goal, type HomeActivity, type PlanVersion, type Workspace } from '@/lib/clinical';
 import { ActivityCard } from './ActivityCard';
+import { draftHomeActivitySuggestions } from '@/lib/evidence-assist';
 
 type Run = (fn: () => Promise<unknown>, ok: string) => Promise<boolean>;
 const STATUS = { DRAFT: ['Draft', 'neutral'], IN_REVIEW: ['In review', 'info'], SUPERSEDED: ['Superseded', 'neutral'], RETURNED_FOR_REVISION: ['Returned for revision', 'caution'], WITHDRAWN: ['Withdrawn', 'neutral'], FROZEN_INTERNAL: ['Frozen internal', 'info'] } as const;
@@ -27,11 +28,12 @@ function GoalRow({ g, onChange, onRemove, disabled, i }: { g: Goal; onChange: (g
   );
 }
 
-function VersionEditor({ centerId, ws, planId, v, run }: { centerId: string; ws: Workspace; planId: string; v: PlanVersion; run: Run }) {
+function VersionEditor({ centerId, ws, planId, service, v, run }: { centerId: string; ws: Workspace; planId: string; service: string; v: PlanVersion; run: Run }) {
   const [summary, setSummary] = useState(v.summary);
   const [goals, setGoals] = useState<Goal[]>(v.goals);
   const [acts, setActs] = useState<HomeActivity[]>(v.homeActivities);
   const [comment, setComment] = useState('');
+  const [suggestOpen, setSuggestOpen] = useState(false);
   const [preview, setPreview] = useState<Awaited<ReturnType<typeof clinicalApi.familyPreview>> | null>(null);
   useEffect(() => { setSummary(v.summary); setGoals(v.goals); setActs(v.homeActivities); }, [v]);
   const edit = ws.canEdit && v.mine && ['DRAFT','RETURNED_FOR_REVISION'].includes(v.status);
@@ -61,6 +63,17 @@ function VersionEditor({ centerId, ws, planId, v, run }: { centerId: string; ws:
         {edit && <div className="mt-2 max-w-sm"><SelectField label="Add from the activity library" value="" testId="home-activity-add" onChange={(id) => id && setActs([...acts, { templateId: id, frequency: '3 times a week' }])}
           options={[{ value: '', label: 'Choose an activity' }, ...ws.templates.filter((t) => !acts.some((a) => a.templateId === t.id)).map((t) => ({ value: t.id, label: `${t.title} · ${serviceLabel(t.service)}` }))]} /></div>}
       </div>
+      {edit && <div className="space-y-2 rounded-card border border-border-light bg-surface-subtle p-4" data-testid="home-plan-evidence-assist">
+        <h3 className="text-[16px] font-semibold">Draft activity shortlist</h3>
+        <p className="text-[13px] text-brand-inkMuted">Specialty-filtered local library, NOT AI advice or approved home practice. The therapist must check each goal, age and safety. No automatic family sharing.</p>
+        <Button variant="secondary" onClick={()=>setSuggestOpen(!suggestOpen)} data-testid="home-assist-toggle">{suggestOpen?'Hide suggestions':'Review activity suggestions'}</Button>
+        {suggestOpen && draftHomeActivitySuggestions(ws,service,acts).map(item=><div key={item.templateId} className="flex flex-wrap items-center gap-3 rounded-control border border-border-light bg-white p-3">
+          <div className="min-w-0 flex-1"><p className="text-[14px] font-semibold">{item.title}</p><p className="text-[12px] text-brand-inkMuted">{item.reason}</p></div>
+          <Button variant="secondary" size="sm" data-testid={'home-assist-add-'+item.templateId} onClick={()=>setActs(prev=>prev.some(a=>a.templateId===item.templateId)?prev:[...prev,item.proposed])}>Add to draft</Button>
+        </div>)}
+        {suggestOpen && draftHomeActivitySuggestions(ws,service,acts).length===0 && <p className="text-[13px]">No further centre activity templates for this specialty.</p>}
+        <p className="text-[12px] text-brand-inkMuted">Suggestions require Save draft to persist; signing and release remain disabled.</p>
+      </div>}
       <div className="flex flex-wrap items-start gap-2">
         {edit && <Button onClick={() => void save()} data-testid="plan-save">Save draft</Button>}
         {edit && <Button variant="secondary" onClick={() => void run(() => clinicalApi.submit(centerId, v.id, v.version), 'Draft sent to the clinical supervisor for review.')} data-testid="plan-submit">Send for review</Button>}
@@ -96,7 +109,7 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
           <Card key={p.id} className="p-5 md:p-6" testId={`plan-${p.id}`}>
             <h2 className="text-[18px] font-semibold">{p.title}</h2>
             <p className="mb-4 text-[13px] text-brand-inkMuted">{serviceLabel(p.service)} · {p.versions.length} version{p.versions.length > 1 ? 's' : ''}</p>
-            <VersionEditor centerId={centerId} ws={ws} planId={p.id} v={current} run={run} />
+            <VersionEditor centerId={centerId} ws={ws} planId={p.id} service={p.service} v={current} run={run} />
           </Card>
         );
       })}

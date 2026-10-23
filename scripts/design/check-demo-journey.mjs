@@ -74,6 +74,20 @@ try {
     assert.equal(evidence.body.notes.length, 4);
     assert(evidence.body.notes.every(n => n.service === 'speech'));
     assert.equal(evidence.body.observations.length, 8);
+    // End-to-end child360, version-exact progress and non-authorizing draft assistance.
+    await page.goto(base + '/app/clinical/' + child.id);
+    await page.getByTestId('child-360').waitFor();
+    await page.getByTestId('clinical-tab-progress').click();
+    await page.getByTestId('progress-granularity').selectOption('month');
+    await page.getByTestId('progress-periods-turn-taking').waitFor();
+    await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('home-assist-toggle').click();
+    await page.getByTestId('home-plan-evidence-assist').waitFor();
+    const speechReport = await db.progressReport.findFirstOrThrow({ where: { centerId: center.id, childId: child.id, service: 'speech' } });
+    await page.goto(base + '/app/reports/' + speechReport.id);
+    await page.getByTestId('report-evidence-assist').waitFor();
+    await page.getByTestId('report-assist-toggle').click();
+    await page.getByTestId('report-suggestion-goals').waitFor();
   });
   await role('ot@childrens-home.therabridge.test', 'THERAPIST', async page => {
     const evidence = await read(page, clinicalPath);

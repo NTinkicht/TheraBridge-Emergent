@@ -7,6 +7,7 @@ import { ArrowLeft, FlaskConical } from 'lucide-react';
 import { FormAlert } from '@/components/auth/Field';
 import { Workspace, errorText, useLoad } from '@/components/centers/kit';
 import { AssessmentsPanel, ProgressPanel, SessionsPanel } from '@/components/clinical/Panels';
+import { Child360 } from '@/components/clinical/Child360';
 import { PlansPanel } from '@/components/clinical/PlanEditor';
 import { ReportsPanel } from '@/components/clinical/ReportsPanel';
 import { Card } from '@/components/design/ui';
@@ -14,7 +15,7 @@ import { ErrorState, SkeletonRows } from '@/components/design/states';
 import type { SessionInfo } from '@/lib/auth';
 import { clinicalApi } from '@/lib/clinical';
 
-const TABS = [['plan', 'Therapy plan'], ['assessments', 'Assessments'], ['sessions', 'Sessions'], ['progress', 'Progress'], ['reports', 'Reports']] as const;
+const TABS = [['overview', 'Child 360°'], ['plan', 'Therapy plan'], ['assessments', 'Assessments'], ['sessions', 'Sessions'], ['progress', 'Progress'], ['reports', 'Reports']] as const;
 
 function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e: unknown) => void }) {
   const { id } = useParams<{ id: string }>();
@@ -30,7 +31,7 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
     window.addEventListener('beforeunload', unload); document.addEventListener('click', click, true); window.addEventListener('popstate', pop);
     return () => { window.removeEventListener('beforeunload', unload); document.removeEventListener('click', click, true); window.removeEventListener('popstate', pop); };
   }, []);
-  const [tab, setTab] = useState<(typeof TABS)[number][0]>('plan');
+  const [tab, setTab] = useState<(typeof TABS)[number][0]>('overview');
   const [notice, setNotice] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
   const run = async (fn: () => Promise<unknown>, ok: string) => {
     try { await fn(); setNotice({ tone: 'success', text: ok }); await reload(); return true; } catch (e) { const t = errorText(e, onError); if (t) setNotice({ tone: 'danger', text: t }); return false; }
@@ -53,6 +54,7 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
       </div>
       {notice && <FormAlert tone={notice.tone} testId={`clinical-notice-${notice.tone}`}>{notice.text}</FormAlert>}
       <div role="tabpanel">
+        {tab === 'overview' && <Child360 ws={data} onNavigate={setTab} />}
         {tab === 'plan' && <PlansPanel centerId={centerId} ws={data} run={run} />}
         {tab === 'assessments' && <AssessmentsPanel centerId={centerId} ws={data} run={run} />}
         {tab === 'sessions' && <SessionsPanel centerId={centerId} ws={data} run={run} onPending={onPending} />}
