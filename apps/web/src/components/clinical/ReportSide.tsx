@@ -18,10 +18,18 @@ export function Evidence({ d }: { d: ReportDetail }) {
       <p className="text-[13px] text-brand-inkMuted">{e.period.from} to {e.period.to} · {e.assessments.length} assessments · {e.sessions.drafts} session drafts · {e.sessions.completedVisits} completed visits{e.plan ? ` · ${e.plan.title} v${e.plan.versionNumber}` : ''}</p>
       {!e.plan && <p className="text-[14px] text-brand-inkMuted" data-testid="evidence-no-plan">No therapy plan for this service yet, so there are no goals to report on.</p>}
       {e.goals.map((g) => (
-        <div key={g.key} className="border-t border-border-light pt-3" data-testid={`evidence-goal-${g.key}`}>
+        <div key={(g.planVersionId??'legacy')+'|'+g.key} className="border-t border-border-light pt-3" data-testid={`evidence-goal-${g.key}`}>
           <p className="text-[14px] font-semibold">{g.title}</p>
           <GoalChart points={g.points} baseline={g.baseline} target={g.target} measure={g.measure} from={e.period.from} to={e.period.to} testId={`evidence-chart-${g.key}`} />
           <p className="text-[12px] text-brand-inkMuted">{g.status === 'recorded' ? `${g.points.length} ${STATUS_TEXT.recorded}` : STATUS_TEXT[g.status]}{g.prior ? ` · before the period: ${g.prior.value} (${g.prior.date})` : ''}</p>
+          <details className="mt-2 rounded-control border border-border-light p-2 text-[12px]" data-testid={`evidence-sources-${g.key}`}>
+            <summary className="cursor-pointer font-semibold text-brand-action">Trace recorded evidence ({g.points.length} in period)</summary>
+            <p className="mt-2 break-all text-brand-inkMuted">Plan version: {g.planVersionId??'Historical evidence snapshot'}</p>
+            {g.points.length ? <ul className="mt-2 space-y-1">
+              {g.points.map((point,i)=><li key={point.observationId??i} className="break-all">{point.date} · {point.value} {g.measure} · Observation {point.observationId??'source ID unavailable'}{point.sessionNoteId?' · Session '+point.sessionNoteId:''}</li>)}
+            </ul> : <p className="mt-2">No recorded observation in this period.</p>}
+            {g.prior && <p className="mt-2 break-all text-brand-inkMuted">Prior: {g.prior.date} · {g.prior.value} · Observation {g.prior.observationId??'source ID unavailable'}</p>}
+          </details>
         </div>
       ))}
     </Card>

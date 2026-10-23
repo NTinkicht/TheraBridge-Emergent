@@ -1,8 +1,8 @@
 import { rest } from './auth';
 
 export type GoalStatus = 'none' | 'insufficient' | 'recorded';
-export interface Point { date: string; value: number; note?: string | null }
-export interface GoalEvidence { key: string; title: string; measure: string; baseline: number; target: number; points: Point[]; prior: Point | null; status: GoalStatus }
+export interface Point { date: string; value: number; note?: string | null; observationId?: string; sessionNoteId?: string }
+export interface GoalEvidence { key: string; title: string; measure: string; baseline: number; target: number; planVersionId?: string; points: Point[]; prior: Point | null; status: GoalStatus }
 export interface Evidence {
   period: { from: string; to: string };
   assessments: { id: string; assessedOn: string; summary: string }[];

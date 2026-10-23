@@ -9,6 +9,12 @@ Owner-directed synthetic-only development. Issue #64; draft PR #65.
 - Home-plan editor presents centre-library templates matching a selected service. A clinician explicitly adds a candidate and must save the draft. Suitability, frequency and safety require human judgement.
 - No external AI provider, real patient data, clinical interpretation or approval, signing, release, family messaging or production/pilot activation.
 
+## Slice A2 — evidence provenance added
+- Report evidence now includes the exact persisted observation IDs and linked session IDs for authorized clinical users (additive optional fields, no schema migration). Sources remain scoped by the existing clinical permissions and precise plan-version/goal selection.
+- Clinicians can expand recorded evidence to see source IDs in the report sidebar and weekly/monthly progress tables.
+- The deterministic report draft assistant includes source observation IDs in its review panel, plus tests for API provenance and source lists.
+- This does not create a signed source-to-sentence acceptance ledger, disclose draft data to guardians, or activate any external AI.
+
 ## Slice B — FreeBuff continuation, SAME branch and PR
 Continue feature/tb-em-019-child360-evidence-assist from the latest exact HEAD. Do not create another PR or redeploy the Render preview while external QA is paused.
 1. Extend Child 360 to include permitted named care team/referent, authorized family-practice feedback and accessible cross-tab clinician timeline. Continue denying out-of-scope specialties and supervisor messaging.

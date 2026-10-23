@@ -12,7 +12,7 @@ export function factualReportSuggestions(d: ReportDetail) {
   if(g.points.length===1)return h+' One value '+g.points[0].value+' on '+g.points[0].date+'; insufficient to compare.';
   const first=g.points[0],last=g.points[g.points.length-1];
   return h+' '+g.points.length+' recorded points: '+first.value+' on '+first.date+' to '+last.value+' on '+last.date+'. No clinical conclusion inferred.';
- }).join('\n\n'),sources:e.goals.map(g=>'Plan version '+(('planVersionId' in g && typeof g.planVersionId==='string')?g.planVersionId:(e.plan?.id??'unknown'))+' / goal '+g.key)});
+ }).join('\n\n'),sources:e.goals.flatMap(g=>['Plan version '+(g.planVersionId??e.plan?.id??'unavailable')+' / goal '+g.key, ...g.points.filter(p=>p.observationId).map(p=>'Observation '+p.observationId+' / '+p.date+' / '+p.value+' '+g.measure), ...g.points.filter(p=>p.sessionNoteId).map(p=>'Linked session '+p.sessionNoteId), ...(g.prior?.observationId?['Prior observation '+g.prior.observationId]:[])])});
  items.push({section:'sessions',heading:'Recorded activity',text:'Between '+e.period.from+' and '+e.period.to+', '+e.sessions.drafts+' note drafts and '+e.sessions.completedVisits+' completed visits were recorded. Counts do not represent outcomes.',sources:['Report '+d.report.id,'Period '+e.period.from+' to '+e.period.to]});
  return items;
 }

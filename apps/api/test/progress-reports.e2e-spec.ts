@@ -62,6 +62,10 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     expect(dash.summary).toEqual({ goals: 3, recorded: 1, insufficient: 1, none: 1 });
     const g = dash.goals.find((x: { key: string }) => x.key === 'two-word');
     expect(g).toMatchObject({ status: 'recorded', baseline: 20, target: 80, prior: { date: '2026-08-25', value: 25 }, points: [{ date: '2026-09-05', value: 30 }, { date: '2026-09-26', value: 45 }, { date: '2026-10-10', value: 40 }] });
+    expect(g.planVersionId).toBe(plan.versionId);
+    expect(g.points.every((p: { observationId?: string }) => /^[a-f0-9-]{36}$/.test(p.observationId ?? ''))).toBe(true);
+    expect(/^[a-f0-9-]{36}$/.test(g.prior?.observationId ?? '')).toBe(true);
+    expect(new Set(g.points.map((p: { observationId: string }) => p.observationId)).size).toBe(3);
     expect((await get(sup, `${D}&goalKey=turns&childId=${kid}`).expect(200)).body.goals.map((x: { key: string; status: string }) => [x.key, x.status])).toEqual([['turns', 'insufficient']]);
     await get(therapist, c('clinical/progress?from=2026-10-19&to=2026-09-01')).expect(422);
 
@@ -73,6 +77,9 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     const P = c(`clinical/reports/${id}`);
     let d = (await get(therapist, P).expect(200)).body;
     expect(d).toMatchObject({ canEdit: true, canReview: false, released: false, report: { status: 'DRAFT', version: 1 } });
+    const reportGoal = d.evidence.goals.find((x: { key: string }) => x.key === 'two-word');
+    expect(reportGoal.planVersionId).toBe(plan.versionId);
+    expect(reportGoal.points.every((p: { observationId?: string }) => /^[a-f0-9-]{36}$/.test(p.observationId ?? ''))).toBe(true);
     expect(d.report.sections.summary).toBe('');
     expect(d.report.sections.assessment).toContain('Synthetic baseline: single words.');
     expect(d.report.sections.goals).toContain('3 observations recorded between 2026-09-05 and 2026-10-10. First recorded value 30; most recent 40.');

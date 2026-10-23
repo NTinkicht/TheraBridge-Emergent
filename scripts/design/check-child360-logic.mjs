@@ -48,11 +48,17 @@ assert.equal(assist.draftHomeActivitySuggestions(ws,'speech',[{templateId:'speec
 const report={report:{id:'report1'},evidence:{
  period:{from:'2026-10-01',to:'2026-10-23'},
  assessments:[{id:'assessment1',assessedOn:'2026-10-01',summary:'Fictional assessment summary'}],
- goals:[{key:'shared',title:'Shared goal',baseline:1,target:7,measure:'count',planVersionId:'v2',points:[{date:'2026-10-05',value:2},{date:'2026-10-12',value:4}]}],
+ goals:[{key:'shared',title:'Shared goal',baseline:1,target:7,measure:'count',planVersionId:'v2',points:[{date:'2026-10-05',value:2,observationId:'obs-a'},{date:'2026-10-12',value:4,observationId:'obs-b',sessionNoteId:'session-b'}]}],
  sessions:{drafts:2,completedVisits:3},
 }};
 const suggestions=assist.factualReportSuggestions(report);
 assert(suggestions.every(s=>s.sources.length>0));
+const sources=suggestions.find(s=>s.section==='goals')?.sources??[];
+assert(sources.includes('Observation obs-a / 2026-10-05 / 2 count'));
+assert(sources.includes('Observation obs-b / 2026-10-12 / 4 count'));
+assert(sources.includes('Linked session session-b'));
+assert(!sources.includes('Observation p3'));
+
 assert(suggestions.some(s=>s.text.includes('2 recorded points') && s.text.includes('to 4')));
 assert(suggestions.every(s=>!s.text.includes('achieved')&&!s.text.includes('diagnosis')));
 assert(!suggestions.some(s=>s.section==='recommendations'||s.section==='summary'));
