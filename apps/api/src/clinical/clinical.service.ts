@@ -263,6 +263,12 @@ export class ClinicalService {
     }
   }
 
+  private templateTitle(raw: string) {
+    const title = raw.trim();
+    if (title.length < 3) throw new UnprocessableEntityException('Activity title needs at least three non-space characters.');
+    return title;
+  }
+
   templates(centerId: string) {
     return this.prisma.activityTemplate.findMany({ where: { OR: [{ centerId }, { centerId: null }] }, orderBy: [{ service: 'asc' }, { title: 'asc' }] })
       .then((rows) => rows.map((t) => ({ id: t.id, title: t.title, service: t.service, ageBand: t.ageBand, minutes: t.minutes, materials: t.materials, steps: t.steps, safety: t.safety, library: t.centerId ? 'center' : 'synthetic', version: t.version })));
@@ -270,11 +276,12 @@ export class ClinicalService {
 
   async createTemplate(centerId: string, v: Viewer, dto: TemplateDto) {
     if (!dto.steps.length || !dto.safety.length) throw new UnprocessableEntityException('Add at least one step and one safety note.');
+    const title = this.templateTitle(dto.title);
     const now = this.trial.now();
     return this.prisma.$transaction(async (tx) => {
       await this.trial.assertWritable(tx, centerId, now);
       await this.templateWriter(tx, centerId, v, dto.service);
-      const t = await tx.activityTemplate.create({ data: { centerId, ...dto, createdById: v.userId, createdAt: now } });
+      const t = await tx.activityTemplate.create({ data: { centerId, ...dto, title, createdById: v.userId, createdAt: now } });
       await logCenterEvent(tx, centerId, 'clinical.template_created', now, { actorUserId: v.userId, meta: { templateId: t.id } });
       return { id: t.id };
     });
@@ -294,7 +301,7 @@ export class ClinicalService {
       const copy = await tx.activityTemplate.create({
         data: {
           centerId, createdById: v.userId, createdAt: now,
-          title: dto.title.trim(), service: source.service,
+          title: this.templateTitle(dto.title), service: source.service,
           ageBand: source.ageBand, minutes: source.minutes,
           materials: [...source.materials], steps: [...source.steps], safety: [...source.safety],
         },
@@ -310,6 +317,7 @@ export class ClinicalService {
   // template changes. Author ownership + optimistic version prevent lost edits.
   async updateTemplate(centerId: string, v: Viewer, templateId: string, dto: TemplateUpdateDto) {
     if (!dto.steps.length || !dto.safety.length) throw new UnprocessableEntityException('Add at least one step and one safety note.');
+    const title = this.templateTitle(dto.title);
     const now = this.trial.now();
     return this.prisma.$transaction(async (tx) => {
       await this.trial.assertWritable(tx, centerId, now);
@@ -320,7 +328,7 @@ export class ClinicalService {
       const { version, ...fields } = dto;
       const changed = await tx.activityTemplate.updateMany({
         where: { id: templateId, centerId, createdById: v.userId, version },
-        data: { ...fields, version: { increment: 1 } },
+        data: { ...fields, title, version: { increment: 1 } },
       });
       if (changed.count !== 1) throw new ConflictException('This activity changed. Reload it before saving again.');
       await logCenterEvent(tx, centerId, 'clinical.template_updated', now, {

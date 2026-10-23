@@ -59,12 +59,14 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     };
     // A therapist may only author an activity in an active declared specialty.
     await post(h, c('activities'), ot, data).expect(403);
+    await post(h, c('activities'), therapist, { ...data, title: '    ' }).expect(422);
     await post(h, c('activities'), admin, data).expect(403);
     const originalId = (await post(h, c('activities'), therapist, data).expect(201)).body.id;
     const original = await h.prisma.activityTemplate.findUniqueOrThrow({ where: { id: originalId } });
     expect(original).toMatchObject({ title: data.title, service: 'speech', version: 1, centerId });
 
     // A different therapist can copy but cannot overwrite the original author.
+    await post(h, c(`activities/${originalId}/duplicate`), other, { title: '    ' }).expect(422);
     const copy = (await post(h, c(`activities/${originalId}/duplicate`), other, {
       title: 'Personalized speech copy',
     }).expect(201)).body;
@@ -80,6 +82,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     const { service, ...editable } = data;
     const update = { ...editable, title: 'Author edited speech activity', version: 1 };
     await patch(other, c(`activities/${originalId}`), update).expect(403);
+    await patch(therapist, c(`activities/${originalId}`), { ...update, title: '    ' }).expect(422);
     const saved = await patch(therapist, c(`activities/${originalId}`), update).expect(200);
     expect(saved.body).toMatchObject({ id: originalId, version: 2 });
     await patch(therapist, c(`activities/${originalId}`), update).expect(409);
