@@ -50,6 +50,10 @@ Owner-directed synthetic-only development. Issue #64; draft PR #65.
 - There is **no** model SDK, HTTP transport, external provider key, upload path or environment-variable activation mechanism. Even a hypothetical `CLINICAL_AI_ENABLED=true` cannot turn the provider on.
 - Unit regression verifies that both generation operations are forbidden and capability metadata reports no external processing. Future provider implementations require a new owner-approved change and independent review.
 
+## Slice A8 — responsive browser regression
+- The CI seven-role Playwright journey explicitly resizes its own Chromium viewport to **320, 390, 768, 1024 and 1440 px**, checking the authenticated Child 360° overview and care-team cards for page overflow and clipping.
+- This is a deterministic geometry test, not a replacement for visual inspection of every screen, contrast, touch targets, Safari or Firefox.
+
 ## Slice B — FreeBuff continuation, SAME branch and PR
 Continue feature/tb-em-019-child360-evidence-assist from the latest exact HEAD. Do not create another PR or redeploy the Render preview while external QA is paused.
 1. Extend Child 360 to include permitted named care team/referent, authorized family-practice feedback and accessible cross-tab clinician timeline. Continue denying out-of-scope specialties and supervisor messaging.

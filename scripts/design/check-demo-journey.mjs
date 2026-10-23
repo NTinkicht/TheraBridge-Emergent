@@ -82,6 +82,29 @@ try {
     // End-to-end child360, version-exact progress and non-authorizing draft assistance.
     await page.goto(base + '/app/clinical/' + child.id);
     await page.getByTestId('child-360').waitFor();
+    // Actual Playwright viewport changes (Work Cloud Browser cannot resize).
+    // Check the same production design shell at five widths without modifying
+    // patient data or depending on screenshots as proof of correctness.
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      const geometry = await page.evaluate(() => {
+        const child = document.querySelector('[data-testid="child-360"]');
+        const team = document.querySelector('[data-testid="child360-care-team"]');
+        const a = child?.getBoundingClientRect();
+        const b = team?.getBoundingClientRect();
+        return {
+          viewport: innerWidth, scroll: document.documentElement.scrollWidth,
+          childLeft: a?.left, childRight: a?.right,
+          teamLeft: b?.left, teamRight: b?.right,
+          visible: !!child && !!team,
+        };
+      });
+      assert(geometry.visible, 'Missing child overview or care team at ' + width + 'px');
+      assert(geometry.scroll <= width + 8, 'Page overflow at ' + width + 'px: ' + JSON.stringify(geometry));
+      assert(geometry.childLeft >= -4 && geometry.childRight <= width + 4, 'Child overview clipped at ' + width + 'px');
+      assert(geometry.teamLeft >= -4 && geometry.teamRight <= width + 4, 'Care team clipped at ' + width + 'px');
+    }
+    await page.setViewportSize({ width: 1280, height: 900 });
     const careTeamText = await page.getByTestId('child360-care-team').innerText();
     assert(careTeamText.includes('Layla Faris') && careTeamText.includes('Specialty lead'));
     assert(careTeamText.includes('Not designated'), 'No child-wide referent is stored');
