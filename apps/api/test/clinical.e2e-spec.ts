@@ -112,6 +112,33 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     await post(h, c(`activities/${originalId}/duplicate`), rosa, { title: 'Disallowed copy' }).expect(403);
     await patch(sup, c(`activities/${originalId}`), update).expect(403);
 
+    // Referencing a foreign tenant's activity ID must not expose or duplicate it.
+    const foreignCenterId = (await post(h, '/api/platform/centers', ops, {
+      name: 'Separate Library Center', timezone: 'UTC', country: 'France', city: 'Lyon',
+      specialties: ['speech'], firstAdmin: {
+        email: 'library-other-center@clin.test', displayName: 'Other Centre Admin',
+      },
+    }).expect(201)).body.id;
+    const foreign = await h.prisma.activityTemplate.create({
+      data: { centerId: foreignCenterId, ...data, createdAt: h.clock.now() },
+    });
+    await post(h, c(`activities/${foreign.id}/duplicate`), therapist, {
+      title: 'Attempted cross-centre copy',
+    }).expect(404);
+    await patch(therapist, c(`activities/${foreign.id}`), update).expect(404);
+
+    // A revoked specialty immediately disables local copy and edit actions.
+    await h.prisma.membership.update({
+      where: { id: other.body.activeContext.membershipId }, data: { specialties: [] },
+    });
+    await post(h, c(`activities/${originalId}/duplicate`), other, {
+      title: 'Revoked copy',
+    }).expect(403);
+    await patch(other, c(`activities/${copy.id}`), {
+      ...update, title: 'Revoked edit',
+    }).expect(403);
+    expect(await h.prisma.activityTemplate.findUniqueOrThrow({ where: { id: copy.id } }))
+      .toMatchObject({ title: 'Personalized speech copy', version: 1 });
     const audit = await h.prisma.centerEvent.findMany({ where: { centerId }, select: { type: true } });
     expect(audit.map(e => e.type)).toEqual(expect.arrayContaining([
       'clinical.template_created', 'clinical.template_duplicated', 'clinical.template_updated',
