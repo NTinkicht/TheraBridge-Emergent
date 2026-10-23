@@ -1,5 +1,9 @@
 # Current state — TheraBridge-Emergent
 
+## TB-EM-019 active, synthetic-only (2026-10-23)
+Draft PR #65, issue #64, branch feature/tb-em-019-child360-evidence-assist: Child 360, version-exact progress grouping and clinician-reviewed deterministic assistance. Real AI remains OFF. Work QA is running only against last merged hosted demo, not this PR. FreeBuff continues the SAME feature branch after exact-head CI. Mistral review and owner merge remain pending. Entries below are historical.
+
+
 ## Uninserted transcript recovery correction — 2026-10-22
 
 Exact uninserted transcript retained in copy-only recovery after remote completion; no automatic insertion. Fixture/live transcript, revocation/failure regressions PASS; 468/468 PostgreSQL tests (12 suites), types/builds, responsive DOM, fresh migrations and Gitleaks PASS. Isolated real two-tab Actions job added with disposable synthetic seed, read-only permissions and cleanup. Hosted exact-head results follow push; independent review pending. See artifacts/tb-em-015/FINAL-REVIEW-CORRECTIONS.md. No issue #61 changes, merge or deployment.

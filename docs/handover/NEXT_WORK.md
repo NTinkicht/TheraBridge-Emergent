@@ -1,5 +1,9 @@
 # Next work unit
 
+## TB-EM-019 continuation (2026-10-23)
+FreeBuff: pick up draft PR #65, branch feature/tb-em-019-child360-evidence-assist, after exact-head CI. Finish Child 360 provenance/team, advanced goal-version progress and explicit clinician-selected goal-to-home-activity linkage; strengthen evidence review, responsiveness and tests. NO real AI calls, clinical signing/release, family messaging, production or Render redeploy. Refer to docs/product/TB-EM-019-DELIVERY.md and issue #64. Independent Mistral review/owner merge decision follows. Entries below are historical.
+
+
 ## Uninserted transcript recovery correction — 2026-10-22
 
 Exact uninserted transcript retained in copy-only recovery after remote completion; no automatic insertion. Fixture/live transcript, revocation/failure regressions PASS; 468/468 PostgreSQL tests (12 suites), types/builds, responsive DOM, fresh migrations and Gitleaks PASS. Isolated real two-tab Actions job added with disposable synthetic seed, read-only permissions and cleanup. Hosted exact-head results follow push; independent review pending. See artifacts/tb-em-015/FINAL-REVIEW-CORRECTIONS.md. No issue #61 changes, merge or deployment.

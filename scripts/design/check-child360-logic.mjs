@@ -53,7 +53,7 @@ const report={report:{id:'report1'},evidence:{
 }};
 const suggestions=assist.factualReportSuggestions(report);
 assert(suggestions.every(s=>s.sources.length>0));
-assert(suggestions.some(s=>s.text.includes('first 2')));
+assert(suggestions.some(s=>s.text.includes('2 recorded points') && s.text.includes('to 4')));
 assert(suggestions.every(s=>!s.text.includes('achieved')&&!s.text.includes('diagnosis')));
 assert(!suggestions.some(s=>s.section==='recommendations'||s.section==='summary'));
 console.log('PASS: strict plan-version isolation, weekly/monthly bucket boundaries, source IDs, no fabricated trend, specialty-only activity shortlist, manual factual suggestions');
