@@ -45,6 +45,11 @@ Owner-directed synthetic-only development. Issue #64; draft PR #65.
 - It never joins measurements for identical goal keys between different versions, never interpolates values, and does not expose an historical goal in the new observation writer.
 - Added source-level regression for archived/versioned goals; no new server data exposure or real clinical interpretation.
 
+## Slice A7 — deny-by-default AI provider seam
+- Added a typed clinical provider interface for future report/home-plan suggestions and an always-denying default implementation registered with Nest DI. The public application routes do not expose AI generation.
+- There is **no** model SDK, HTTP transport, external provider key, upload path or environment-variable activation mechanism. Even a hypothetical `CLINICAL_AI_ENABLED=true` cannot turn the provider on.
+- Unit regression verifies that both generation operations are forbidden and capability metadata reports no external processing. Future provider implementations require a new owner-approved change and independent review.
+
 ## Slice B — FreeBuff continuation, SAME branch and PR
 Continue feature/tb-em-019-child360-evidence-assist from the latest exact HEAD. Do not create another PR or redeploy the Render preview while external QA is paused.
 1. Extend Child 360 to include permitted named care team/referent, authorized family-practice feedback and accessible cross-tab clinician timeline. Continue denying out-of-scope specialties and supervisor messaging.
