@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import type { Viewer } from '../operations/children.service';
 import { TrialService } from '../operations/trial.service';
 import { assertActor, EDITABLE, fingerprint } from './governance-core';
-import type { AssessmentDto, AssessmentUpdateDto, ObservationDto, PlanDto, PlanVersionUpdateDto, ReviewDto, SessionNoteDto, SessionNoteUpdateDto, TemplateDto } from './clinical.dto';
+import type { AssessmentDto, AssessmentUpdateDto, ObservationDto, PlanDto, PlanVersionUpdateDto, ReviewDto, SessionNoteDto, SessionNoteUpdateDto, TemplateDto, TemplateUpdateDto, TemplateCopyDto } from './clinical.dto';
 
 export const asDate = (d: string) => new Date(`${d}T00:00:00Z`);
 export const day = (d: Date) => d.toISOString().slice(0, 10);
@@ -247,6 +247,22 @@ export class ClinicalService {
     });
   }
 
+  // Authenticates the current actor inside the write transaction. Therapists
+  // can only create or customize activities in their own active specialties.
+  private async templateWriter(tx: Tx, centerId: string, v: Viewer, service: string) {
+    await assertActor(tx, centerId, v, ['THERAPIST', 'CLINICAL_SUPERVISOR']);
+    if (v.role === 'THERAPIST') {
+      const allowed = await tx.membership.findFirst({
+        where: {
+          id: v.membershipId, userId: v.userId, centerId, status: 'ACTIVE',
+          specialties: { has: service },
+        },
+        select: { id: true },
+      });
+      if (!allowed) throw new ForbiddenException('You cannot edit activities outside your assigned specialties.');
+    }
+  }
+
   templates(centerId: string) {
     return this.prisma.activityTemplate.findMany({ where: { OR: [{ centerId }, { centerId: null }] }, orderBy: [{ service: 'asc' }, { title: 'asc' }] })
       .then((rows) => rows.map((t) => ({ id: t.id, title: t.title, service: t.service, ageBand: t.ageBand, minutes: t.minutes, materials: t.materials, steps: t.steps, safety: t.safety, library: t.centerId ? 'center' : 'synthetic', version: t.version })));
@@ -257,9 +273,60 @@ export class ClinicalService {
     const now = this.trial.now();
     return this.prisma.$transaction(async (tx) => {
       await this.trial.assertWritable(tx, centerId, now);
+      await this.templateWriter(tx, centerId, v, dto.service);
       const t = await tx.activityTemplate.create({ data: { centerId, ...dto, createdById: v.userId, createdAt: now } });
       await logCenterEvent(tx, centerId, 'clinical.template_created', now, { actorUserId: v.userId, meta: { templateId: t.id } });
       return { id: t.id };
+    });
+  }
+
+  // A copy is always a new centre-owned draft template, never a mutation of
+  // the original (including the global synthetic sample library).
+  async duplicateTemplate(centerId: string, v: Viewer, templateId: string, dto: TemplateCopyDto) {
+    const now = this.trial.now();
+    return this.prisma.$transaction(async (tx) => {
+      await this.trial.assertWritable(tx, centerId, now);
+      const source = await tx.activityTemplate.findFirst({
+        where: { id: templateId, OR: [{ centerId }, { centerId: null }] },
+      });
+      if (!source) throw new NotFoundException('Activity not found.');
+      await this.templateWriter(tx, centerId, v, source.service);
+      const copy = await tx.activityTemplate.create({
+        data: {
+          centerId, createdById: v.userId, createdAt: now,
+          title: dto.title.trim(), service: source.service,
+          ageBand: source.ageBand, minutes: source.minutes,
+          materials: [...source.materials], steps: [...source.steps], safety: [...source.safety],
+        },
+      });
+      await logCenterEvent(tx, centerId, 'clinical.template_duplicated', now, {
+        actorUserId: v.userId, meta: { templateId: copy.id, sourceTemplateId: templateId },
+      });
+      return { id: copy.id, version: copy.version };
+    });
+  }
+
+  // Existing plan/session snapshots remain frozen; only the live reusable
+  // template changes. Author ownership + optimistic version prevent lost edits.
+  async updateTemplate(centerId: string, v: Viewer, templateId: string, dto: TemplateUpdateDto) {
+    if (!dto.steps.length || !dto.safety.length) throw new UnprocessableEntityException('Add at least one step and one safety note.');
+    const now = this.trial.now();
+    return this.prisma.$transaction(async (tx) => {
+      await this.trial.assertWritable(tx, centerId, now);
+      const source = await tx.activityTemplate.findFirst({ where: { id: templateId, centerId } });
+      if (!source) throw new NotFoundException('Activity not found.');
+      await this.templateWriter(tx, centerId, v, source.service);
+      if (source.createdById !== v.userId) throw new ForbiddenException('Only the activity author can edit this template. Duplicate it to customize.');
+      const { version, ...fields } = dto;
+      const changed = await tx.activityTemplate.updateMany({
+        where: { id: templateId, centerId, createdById: v.userId, version },
+        data: { ...fields, version: { increment: 1 } },
+      });
+      if (changed.count !== 1) throw new ConflictException('This activity changed. Reload it before saving again.');
+      await logCenterEvent(tx, centerId, 'clinical.template_updated', now, {
+        actorUserId: v.userId, meta: { templateId, fromVersion: version, toVersion: version + 1 },
+      });
+      return { id: templateId, version: version + 1 };
     });
   }
 

@@ -1,3 +1,7 @@
+## TB-EM-020 — isolated activity-library backend draft (2026-10-24)
+
+Next verify hosted exact-head CI and obtain independent read-only code/security review of activity-library duplication and optimistic author edits. Preserve live Render demo and ongoing Codex external UI QA. No change to release/consent, external AI, real STT, or patient scope. Do not merge or deploy without owner authorization. See docs/product/TB-EM-020-ACTIVITY-LIBRARY.md.
+
 # Next work unit
 
 ## TB-EM-019 — exact-head requalification after advisory fixes

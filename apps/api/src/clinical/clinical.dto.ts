@@ -126,3 +126,19 @@ export class TemplateDto {
   @IsArray() @ArrayMaxSize(12) @IsString({ each: true }) @MinLength(3, { each: true }) @MaxLength(400, { each: true }) steps!: string[];
   @IsArray() @ArrayMaxSize(8) @IsString({ each: true }) @MinLength(3, { each: true }) @MaxLength(400, { each: true }) safety!: string[];
 }
+
+/** Edit the author's centre-owned activity; specialty cannot be changed in place. */
+export class TemplateUpdateDto {
+  @IsInt() @Min(1) version!: number;
+  @IsString() @MinLength(3) @MaxLength(120) title!: string;
+  @IsString() @MinLength(1) @MaxLength(32) ageBand!: string;
+  @IsInt() @Min(1) @Max(120) minutes!: number;
+  @IsArray() @ArrayMaxSize(12) @IsString({ each: true }) @MaxLength(120, { each: true }) materials!: string[];
+  @IsArray() @ArrayMaxSize(12) @IsString({ each: true }) @MinLength(3, { each: true }) @MaxLength(400, { each: true }) steps!: string[];
+  @IsArray() @ArrayMaxSize(8) @IsString({ each: true }) @MinLength(3, { each: true }) @MaxLength(400, { each: true }) safety!: string[];
+}
+
+/** Duplicates content into a newly owned, centre-scoped activity. */
+export class TemplateCopyDto {
+  @IsString() @MinLength(3) @MaxLength(120) title!: string;
+}
