@@ -10,6 +10,9 @@ type Tab = 'plan' | 'assessments' | 'sessions' | 'progress' | 'reports';
 const dateOnly = (x: string) => x.slice(0,10);
 
 export function Child360({ ws, onNavigate }: {ws: Workspace;onNavigate:(tab:Tab)=>void}) {
+  // Legacy/session-test fixtures can omit this newly additive read-model field.
+  // Fail closed to an empty team rather than crash the clinical workspace.
+  const careTeam = ws.careTeam ?? [];
   const goals = currentGoals(ws);
   const upcoming = [...ws.appointments].filter(x=>x.status === 'SCHEDULED' && Date.parse(x.endsAt) >= Date.now()).sort((a,b)=>a.startsAt.localeCompare(b.startsAt));
   const lastNotes = [...ws.notes].sort((a,b)=>b.sessionDate.localeCompare(a.sessionDate)).slice(0,5);
@@ -54,11 +57,11 @@ export function Child360({ ws, onNavigate }: {ws: Workspace;onNavigate:(tab:Tab)
               <span className="font-semibold">Child-wide referent:</span> {ws.childWideReferent?.displayName ?? 'Not designated'}
             </p>
           </div>
-          {ws.careTeam.length === 0 ? (
+          {careTeam.length === 0 ? (
             <p className="mt-4 text-[13px] text-brand-inkMuted" data-testid="child360-care-team-empty">No active assigned therapists in your authorized services.</p>
           ) : (
             <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="child360-care-team-list">
-              {ws.careTeam.map(member => (
+              {careTeam.map(member => (
                 <li key={member.assignmentId} className="min-w-0 rounded-control border border-border-light bg-surface-white p-3">
                   <p className="break-words text-[14px] font-semibold">{member.displayName}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
