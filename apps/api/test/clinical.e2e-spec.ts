@@ -51,26 +51,23 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
 
   it('shows named active specialty-scoped care team, excludes inactive or revoked staff, and never infers a child-wide referent', async () => {
     const { therapist, other, sup, kid, rosa } = await setup(['speech', 'occupational']);
-    const speechPeer = await staff('peer@clin.test', ['THERAPIST'], ['speech']);
     const occupational = await staff('ot@clin.test', ['THERAPIST'], ['occupational']);
-    const sibling = await staff('sibling@clin.test', ['THERAPIST'], ['speech']);
     const W = c(`clinical/children/${kid}`);
+    // Existing 'other' therapist has no active assignment yet.
+    await get(other, W).expect(404);
     await post(h, c(`children/${kid}/assignments`), admin, {
-      membershipId: speechPeer.body.activeContext.membershipId, service: 'speech',
+      membershipId: other.body.activeContext.membershipId, service: 'speech',
     }).expect(201);
     await post(h, c(`children/${kid}/assignments`), admin, {
       membershipId: occupational.body.activeContext.membershipId, service: 'occupational', isLead: true,
-    }).expect(201);
-    await post(h, c(`children/${kid}/assignments`), admin, {
-      membershipId: sibling.body.activeContext.membershipId, service: 'speech',
     }).expect(201);
     const names = (rows: { displayName: string }[]) => rows.map(x => x.displayName);
     const speech = (await get(therapist, W).expect(200)).body;
     expect(speech.child.services).toEqual(['speech']);
     expect(speech.childWideReferent).toBeNull();
-    expect(speech.careTeam).toHaveLength(3);
+    expect(speech.careTeam).toHaveLength(2);
     expect(names(speech.careTeam)).toEqual(expect.arrayContaining([
-      'Staff thera', 'Staff peer', 'Staff sibling',
+      'Staff thera', 'Staff other',
     ]));
     expect(names(speech.careTeam)).not.toContain('Staff ot');
     expect(speech.careTeam.find((x: { displayName: string }) => x.displayName === 'Staff thera'))
@@ -82,21 +79,20 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
       displayName: 'Staff ot', service: 'occupational', isSpecialtyLead: true,
     })]);
     const supervisor = (await get(sup, W).expect(200)).body;
-    expect(supervisor.careTeam).toHaveLength(4);
-    expect(names(supervisor.careTeam)).toEqual(expect.arrayContaining(['Staff ot', 'Staff thera', 'Staff peer', 'Staff sibling']));
+    expect(supervisor.careTeam).toHaveLength(3);
+    expect(names(supervisor.careTeam)).toEqual(expect.arrayContaining(['Staff ot', 'Staff thera', 'Staff other']));
     expect(supervisor.childWideReferent).toBeNull();
-    await get(other, W).expect(404);
     for (const viewer of [admin, rosa]) await get(viewer, W).expect(403);
     await get(sup, c('threads')).expect(403);
 
     // A suspended centre membership must not appear even if its assignment
     // has not yet been formally ended.
     await h.prisma.membership.update({
-      where: { id: sibling.body.activeContext.membershipId }, data: { status: 'SUSPENDED' },
+      where: { id: other.body.activeContext.membershipId }, data: { status: 'SUSPENDED' },
     });
     const afterSuspend = (await get(therapist, W).expect(200)).body;
-    expect(names(afterSuspend.careTeam)).not.toContain('Staff sibling');
-    expect(afterSuspend.careTeam).toHaveLength(2);
+    expect(names(afterSuspend.careTeam)).not.toContain('Staff other');
+    expect(afterSuspend.careTeam).toHaveLength(1);
 
     // Ending an OT assignment removes that name from everyone's scoped view.
     const activeOt = await h.prisma.careAssignment.findFirstOrThrow({
@@ -106,11 +102,11 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     await get(occupational, W).expect(404);
     const afterRevoke = (await get(sup, W).expect(200)).body;
     expect(names(afterRevoke.careTeam)).not.toContain('Staff ot');
-    expect(names(afterRevoke.careTeam)).not.toContain('Staff sibling');
+    expect(names(afterRevoke.careTeam)).not.toContain('Staff other');
 
     // Membership specialty revocation must hide a stale assignment row.
     await h.prisma.membership.update({
-      where: { id: speechPeer.body.activeContext.membershipId }, data: { specialties: [] },
+      where: { id: other.body.activeContext.membershipId }, data: { status: 'ACTIVE', specialties: [] },
     });
     const afterSpecialtyChange = (await get(therapist, W).expect(200)).body;
     expect(names(afterSpecialtyChange.careTeam)).toEqual(['Staff thera']);
