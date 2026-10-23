@@ -22,6 +22,12 @@ Owner-directed synthetic-only development. Issue #64; draft PR #65.
 - Child-wide referent explicitly displays **Not designated** because the current schema does not record that appointment. A specialty lead is never silently elevated to that separate role.
 - API negative regression tests cover speech vs OT, unassigned roles, guardian/admin denials, supervisor messaging denial, membership suspension and assignment/specialty revocation. Child 360 renders care-team cards responsively within existing design tokens.
 
+## Slice A3 — explicit goal-linked activity draft foundation
+- HomeActivity JSON optionally stores `goalKey`, whose version is always its **containing** PlanVersion (no second, conflicting version ID). The API checks linked goal keys belong to the same submitted version.
+- The existing plan editor lets clinicians choose the exact goal for each activity. Newly added items cannot be saved without selecting a goal; older legacy activities remain unlinked and editable until clinicians choose to associate them. No assignment is inferred automatically.
+- Invalid goal keys are rejected with 422 before version mutation. Tests cover rejection/no-write and a successful persisted link. No database migration, clinical approval, parent release or external AI.
+- Full immutable template snapshots, per-activity provenance/audit, historical report connection and clinician accept/edit/omit remain later Slice B tasks.
+
 ## Slice B — FreeBuff continuation, SAME branch and PR
 Continue feature/tb-em-019-child360-evidence-assist from the latest exact HEAD. Do not create another PR or redeploy the Render preview while external QA is paused.
 1. Extend Child 360 to include permitted named care team/referent, authorized family-practice feedback and accessible cross-tab clinician timeline. Continue denying out-of-scope specialties and supervisor messaging.

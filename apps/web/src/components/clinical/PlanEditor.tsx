@@ -37,6 +37,10 @@ function VersionEditor({ centerId, ws, planId, service, v, run }: { centerId: st
   const [preview, setPreview] = useState<Awaited<ReturnType<typeof clinicalApi.familyPreview>> | null>(null);
   useEffect(() => { setSummary(v.summary); setGoals(v.goals); setActs(v.homeActivities); }, [v]);
   const edit = ws.canEdit && v.mine && ['DRAFT','RETURNED_FOR_REVISION'].includes(v.status);
+  // Preserve legacy unlinked drafts; every NEW activity added in this editor
+  // must be explicitly associated by the clinician before draft save.
+  const legacyTemplateIds = new Set(v.homeActivities.map(a => a.templateId));
+  const unlinkedNew = acts.some(a => !legacyTemplateIds.has(a.templateId) && !a.goalKey);
   const save = () => run(() => clinicalApi.saveVersion(centerId, v.id, { summary, goals: goals.filter((g) => g.title.trim()), homeActivities: acts, version: v.version }), 'Draft saved.');
   return (
     <div className="space-y-4" data-testid={`plan-version-${v.number}`}>
@@ -55,6 +59,12 @@ function VersionEditor({ centerId, ws, planId, service, v, run }: { centerId: st
           {acts.map((a, i) => (
             <li key={i} className="flex flex-wrap items-center gap-2 rounded-control border border-border-light p-2 text-[14px]" data-testid={`home-activity-${i}`}>
               <span className="min-w-0 flex-1 font-semibold">{ws.templates.find((t) => t.id === a.templateId)?.title ?? 'Activity'}</span>
+              <label className="min-w-[170px] flex-1 text-[12px] text-brand-inkMuted">Linked goal (plan v{v.number})
+                <select aria-label={`Linked goal for activity ${i + 1}`} data-testid={`home-activity-goal-${i}`} className={`mt-1 ${input}`} value={a.goalKey ?? ''} disabled={!edit} onChange={(e) => setActs(prev => prev.map((x, j) => j === i ? { ...x, goalKey: e.target.value || undefined } : x))}>
+                  <option value="">Not linked{legacyTemplateIds.has(a.templateId) ? ' (existing draft)' : ' — select before saving'}</option>
+                  {goals.filter(g => g.title.trim()).map(g => <option key={g.key} value={g.key}>{g.title}</option>)}
+                </select>
+              </label>
               <input aria-label="How often" className={`${input} max-w-[180px]`} value={a.frequency} disabled={!edit} onChange={(e) => setActs(acts.map((x, j) => (j === i ? { ...x, frequency: e.target.value } : x)))} />
               {edit && <button type="button" aria-label="Remove activity" onClick={() => setActs(acts.filter((_, j) => j !== i))} className="grid h-10 w-10 place-items-center rounded-control hover:bg-surface-subtle"><Trash2 size={16} aria-hidden="true" /></button>}
             </li>
@@ -75,7 +85,10 @@ function VersionEditor({ centerId, ws, planId, service, v, run }: { centerId: st
         <p className="text-[12px] text-brand-inkMuted">Suggestions require Save draft to persist; signing and release remain disabled.</p>
       </div>}
       <div className="flex flex-wrap items-start gap-2">
-        {edit && <Button onClick={() => void save()} data-testid="plan-save">Save draft</Button>}
+        {edit && <div>
+          {unlinkedNew && <p role="status" className="mb-2 text-[12px] text-brand-inkMuted" data-testid="home-activity-unlinked">Choose a specific plan goal for each newly added activity before saving.</p>}
+          <Button disabled={unlinkedNew} onClick={() => void save()} data-testid="plan-save">Save draft</Button>
+        </div>}
         {edit && <Button variant="secondary" onClick={() => void run(() => clinicalApi.submit(centerId, v.id, v.version), 'Draft sent to the clinical supervisor for review.')} data-testid="plan-submit">Send for review</Button>}
         {ws.canEdit && v.mine && ['WITHDRAWN','FROZEN_INTERNAL'].includes(v.status) && <Button variant="secondary" onClick={() => void run(() => clinicalApi.newVersion(centerId, planId), 'New draft version started.')} data-testid="plan-new-version">Start a new version</Button>}
         <Button variant="ghost" onClick={() => { if (preview) setPreview(null); else void run(async () => setPreview(await clinicalApi.familyPreview(centerId, v.id)), 'Immutable internal preview generated.'); }} data-testid="plan-family-preview">{preview ? 'Hide family preview' : 'Preview as family'}</Button>

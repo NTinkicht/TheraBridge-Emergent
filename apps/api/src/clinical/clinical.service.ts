@@ -142,6 +142,11 @@ export class ClinicalService {
   async updateVersion(centerId: string, v: Viewer, id: string, dto: PlanVersionUpdateDto) {
     const x = await this.version(centerId, id);
     if (new Set(dto.goals.map((g) => g.key)).size !== dto.goals.length) throw new UnprocessableEntityException('Each goal needs its own key.');
+    // homeActivities are contained by THIS PlanVersion. Verify that every
+    // explicit goal association targets a goal saved in that same version;
+    // older unlinked drafts remain readable/editable without inventing links.
+    const keys = new Set(dto.goals.map((g) => g.key));
+    if (dto.homeActivities.some((a) => a.goalKey && !keys.has(a.goalKey))) throw new UnprocessableEntityException('Link each home activity to a goal in this plan version.');
     const ids = uniq(dto.homeActivities.map((h) => h.templateId));
     if ((await this.prisma.activityTemplate.count({ where: { id: { in: ids }, OR: [{ centerId }, { centerId: null }] } })) !== ids.length) throw new UnprocessableEntityException('Choose activities from this center’s library.');
     return this.write(centerId, v, x.plan.childId, x.plan.service, async (tx, now) => {

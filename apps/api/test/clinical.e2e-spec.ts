@@ -127,7 +127,18 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     const plan = (await post(h, `${W}/plans`, therapist, { service: 'speech', title: 'Speech plan' }).expect(201)).body;
     const goals = [{ key: 'two-word', title: 'Uses two-word phrases', measure: 'percent', baseline: 20, target: 80 }];
     await post(h, c(`clinical/plan-versions/${plan.versionId}/submit`), therapist, { version: 1 }).expect(422);
-    await patch(therapist, c(`clinical/plan-versions/${plan.versionId}`), { summary: 'v1', goals, homeActivities: [{ templateId: tpl, frequency: '3 times a week' }], version: 1 }).expect(200);
+    // Explicit goal-to-home-activity association must target a key in THIS plan version.
+    // Invalid input must fail before mutating the draft or concurrency token.
+    await patch(therapist, c(`clinical/plan-versions/${plan.versionId}`), {
+      summary: 'v1', goals, homeActivities: [{ templateId: tpl, goalKey: 'not-a-real-goal', frequency: '3 times a week' }], version: 1,
+    }).expect(422);
+    expect(await h.prisma.planVersion.findUniqueOrThrow({ where: { id: plan.versionId } }))
+      .toMatchObject({ version: 1, homeActivities: [] });
+    await patch(therapist, c(`clinical/plan-versions/${plan.versionId}`), {
+      summary: 'v1', goals, homeActivities: [{ templateId: tpl, goalKey: 'two-word', frequency: '3 times a week' }], version: 1,
+    }).expect(200);
+    expect(await h.prisma.planVersion.findUniqueOrThrow({ where: { id: plan.versionId } }))
+      .toMatchObject({ homeActivities: [{ templateId: tpl, goalKey: 'two-word', frequency: '3 times a week' }] });
     await post(h, c(`clinical/plan-versions/${plan.versionId}/submit`), therapist, { version: 2 }).expect(200);
     await patch(therapist, c(`clinical/plan-versions/${plan.versionId}`), { summary: 'late', goals, homeActivities: [], version: 3 }).expect(409);
     await post(h, c(`clinical/plan-versions/${plan.versionId}/approve`), sup).expect(403);
