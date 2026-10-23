@@ -59,14 +59,16 @@ Owner-directed synthetic-only development. Issue #64; draft PR #65.
 - Only therapists can see the panel. Both request scope and UI filter restrict results to that child and currently authorized specialties. No guardian name, relationship or free-text family messages are rendered. Practice outcomes remain separate from clinical progress measurements.
 - The CI browser journey checks that the panel renders. External Work QA and wider permissions testing are still pending.
 
-## Slice B — FreeBuff continuation, SAME branch and PR
-Continue feature/tb-em-019-child360-evidence-assist from the latest exact HEAD. Do not create another PR or redeploy the Render preview while external QA is paused.
-1. Extend Child 360 to include permitted named care team/referent, authorized family-practice feedback and accessible cross-tab clinician timeline. Continue denying out-of-scope specialties and supervisor messaging.
-2. Expand goal/version history and measured progress, exact source provenance, inadequate-data states, dated evidence chart/table alternatives and role/specialty negative tests.
-3. Establish clinician-reviewed goal-to-activity associations: explicit chosen goal key tied to plan version, centre-local library template snapshot, frequency and safety notes, duplicate prevention, no automatic prescription.
-4. Improve report draft source-to-sentence traceability and clinician accept/edit/omit workflow without automatic saving or publication.
-5. Define a provider-neutral AI adapter behind disabled-by-default policy gates. No real model activation without approved D7/D-NEW-5 decisions, subprocessors, residency, retention, confidentiality and cost limits.
-6. Test at 320/390/768/1024/1440 and include browser/API negative tests, migrations if genuinely required, handoff docs, full exact-head CI and independent Mistral review before owner-authorized merge.
+## Slice B — Post-increment residual work and review gate
+
+The main synthetic-only acceptance slice is implemented and qualified through `b6a15de2854a45691753d477ed0040b9cc17cac6` (hosted six-job CI success). **Review and owner decision are next**; do not start another writer branch or duplicate PR. Read `docs/product/TB-EM-019-REVIEW-PACKET.md`.
+
+Explicit residual or policy-gated work, *not* claimed complete:
+1. Persistent clinician audit/attestation of suggestion accept/omit choices and formal source-to-sentence traceability/contradiction analysis.
+2. Explicit child-wide referent record; current named specialty leads are separate and child referent reads `Not designated`.
+3. Full Child 360 report-review state and broader longitudinal UX refinements, plus cross-browser/physical-mobile and human visual/accessibility inspection.
+4. True generative AI only under separately approved D7/D-NEW-5, provider security, data residency, retention and cost gates.
+5. Live Render/Neon external browser verification **after** independent review and owner-authorized merge/deployment; current PR is unmerged.
 
 ## Tests
 - scripts/design/check-child360-logic.mjs executes pure TypeScript browser helper source in Node, testing exact plan version, same-name goals in different versions, week/month boundary, source IDs and factual-only assistance.

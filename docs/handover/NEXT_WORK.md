@@ -1,5 +1,18 @@
 # Next work unit
 
+## TB-EM-019 — independent review and owner decision (2026-10-23)
+
+1. Verify PR #65 exact HEAD against `main`, inspect the full 26-file implementation and the complete successful [hosted CI run 39999150532](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/39999150532) at implementation SHA `b6a15de2854a45691753d477ed0040b9cc17cac6`. After this documentation checkpoint, validate its newer exact HEAD too; never rely only on an ancestor's CI.
+2. Have **Mistral independently review read-only** the review packet, new API validation/snapshots, role/specialty boundaries, traceable evidence, report draft concurrency and data separation. Record exact SHA, findings/severity, test evidence and limitations. This is *not* an approval to merge.
+3. Fix any blockers on the **same draft PR #65** and re-request exact-head review. One writer/PR, no separate feature branch or merge by agents.
+4. After review, obtain explicit owner merge/deploy permission. Keep live Render/Neon and Work's external QA of the pre-feature demo unchanged until authorized; do not close issue #61 as if external HTTPS QA were verified for this new PR.
+5. Open follow-up work only for unresolved broader features: audit-persistent accept/omit decision history, cross-source contradiction detection, comprehensive Child 360 report/review state, real cross-browser visual testing, true AI integration (policy gated), explicit child-wide referent record (not inferred), production/pilot readiness.
+
+NO-GO remains: real patient data, external AI, actual audio/STT, clinical signing/approval/release, consent authorization, safeguarding escalation, family messaging, pilot and production.
+
+## Historical records below (do not use as current instructions)
+
+
 ## TB-EM-019 continuation (2026-10-23)
 FreeBuff: pick up draft PR #65, branch feature/tb-em-019-child360-evidence-assist, after exact-head CI. Finish Child 360 provenance/team, advanced goal-version progress and explicit clinician-selected goal-to-home-activity linkage; strengthen evidence review, responsiveness and tests. NO real AI calls, clinical signing/release, family messaging, production or Render redeploy. Refer to docs/product/TB-EM-019-DELIVERY.md and issue #64. Independent Mistral review/owner merge decision follows. Entries below are historical.
 
