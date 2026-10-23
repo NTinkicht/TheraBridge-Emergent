@@ -97,6 +97,19 @@ try {
     await page.getByTestId('report-evidence-assist').waitFor();
     await page.getByTestId('report-assist-toggle').click();
     await page.getByTestId('report-suggestion-goals').waitFor();
+    await page.getByTestId('report-assist-omit-goals').click();
+    assert((await page.getByTestId('report-assist-decision-goals').innerText()).includes('Omitted'));
+    await page.getByTestId('report-assist-restore-goals').click();
+    await page.getByTestId('report-assist-edit-goals').fill('Clinician-reviewed factual goals note; no conclusion inferred.');
+    await page.getByTestId('report-assist-apply-goals').click();
+    const reportDraftText = await page.getByTestId('report-section-goals').inputValue();
+    assert(reportDraftText.includes('Clinician-reviewed factual goals note'));
+    assert(reportDraftText.includes('Evidence references (internal draft):'));
+    assert(reportDraftText.includes('Observation '));
+    await page.locator('[data-testid="report-save-state"][data-state="saved"]').waitFor({ timeout: 25000 });
+    const persisted = await db.progressReport.findUniqueOrThrow({ where: { id: speechReport.id } });
+    assert(persisted.sections.goals.includes('Evidence references (internal draft):'), 'Explicit clinician approval must persist via existing report autosave');
+    assert.notEqual(persisted.status, 'IN_REVIEW', 'Evidence assistance must not submit a draft');
   });
   await role('ot@childrens-home.therabridge.test', 'THERAPIST', async page => {
     const evidence = await read(page, clinicalPath);

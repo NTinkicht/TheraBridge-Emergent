@@ -10,6 +10,9 @@ import { SECTIONS, reportsApi, type ReportDetail } from '@/lib/reports';
 import { factualReportSuggestions } from '@/lib/evidence-assist';
 
 type Save = 'idle' | 'pending' | 'saving' | 'saved' | 'conflict' | 'error';
+type AssistReview = { decision: 'pending' | 'omitted' | 'applied'; text: string };
+// Decisions are local UI choices, NOT clinical approvals or a separate audit
+// ledger. Only the clinician-edited report sections are persisted via autosave.
 const area = 'mt-1 w-full rounded-control border border-border-light bg-transparent px-3 py-2 text-[14px] leading-relaxed disabled:bg-surface-subtle disabled:text-brand-inkMuted';
 
 function SaveState({ s, at, onRetry }: { s: Save; at: string | null; onRetry: () => void }) {
@@ -30,6 +33,7 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
   const [assistOpen, setAssistOpen] = useState(false);
+  const [reviews, setReviews] = useState<Record<string, AssistReview>>({});
   const local = useRef(sections);
   const ver = useRef(d.report.version);
   const dirty = useRef(false);
@@ -104,17 +108,58 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
         <h3 className="text-[16px] font-semibold">Evidence-assisted draft passages</h3>
         <p className="text-[13px] text-brand-inkMuted">Deterministic suggestions, NOT AI or clinical interpretation. No external processing, publication or automatic insertion. Verify source records first.</p>
         <Button variant="secondary" onClick={()=>setAssistOpen(!assistOpen)} data-testid="report-assist-toggle">{assistOpen?'Hide suggestions':'Review suggestions'}</Button>
-        {assistOpen && factualReportSuggestions(d).map(s=><div key={s.section} className="rounded-control border border-border-light bg-white p-3" data-testid={'report-suggestion-'+s.section}>
-          <h4 className="text-[14px] font-semibold">{s.heading}</h4>
-          <p className="mt-2 whitespace-pre-wrap text-[13px]">{s.text}</p>
-          <details className="mt-2 text-[12px]"><summary>Sources ({s.sources.length})</summary><ul className="list-disc pl-4">{s.sources.map((item,i)=><li key={i} className="break-all">{item}</li>)}</ul></details>
-          <Button variant="secondary" size="sm" className="mt-2" data-testid={'report-assist-apply-'+s.section} onClick={()=>{
-            const current=local.current[s.section]??'';
-            const next=current.trim()?current.trimEnd()+'\n\n'+s.text:s.text;
-            if(next.length>8000){setNotice({tone:'danger',text:'This passage exceeds the allowed length; edit manually.'});return;}
-            change(s.section,next);setNotice({tone:'success',text:'Passage added to the editable draft. Wait for backend save confirmation.'});
-          }}>Append reviewed passage</Button>
-        </div>)}
+        {assistOpen && factualReportSuggestions(d).map(s=>{
+          const review=reviews[s.section] ?? { decision: 'pending', text: s.text };
+          const references='Evidence references (internal draft):\n'+s.sources.map(source=>'- '+source).join('\n');
+          const referenceAlreadyPresent=(local.current[s.section]??'').includes(references);
+          return <div key={s.section} className="rounded-control border border-border-light bg-white p-3" data-testid={'report-suggestion-'+s.section}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h4 className="text-[14px] font-semibold">{s.heading}</h4>
+              <span className="text-[12px] text-brand-inkMuted" data-testid={'report-assist-decision-'+s.section}>
+                {review.decision === 'omitted' ? 'Omitted from this review' : review.decision === 'applied' || referenceAlreadyPresent ? 'Added to draft' : 'Pending clinician decision'}
+              </span>
+            </div>
+            {review.decision === 'omitted' ? (
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <p className="text-[13px] text-brand-inkMuted">Not inserted into this report.</p>
+                <Button variant="secondary" size="sm" data-testid={'report-assist-restore-'+s.section}
+                  onClick={()=>setReviews(old=>({...old,[s.section]:{...review,decision:'pending'}}))}>Restore suggestion</Button>
+              </div>
+            ) : (
+              <div className="mt-2 space-y-2">
+                <label className="block text-[12px] font-semibold">
+                  Review and edit proposed passage
+                  <textarea className={area} rows={4} value={review.text}
+                    disabled={review.decision==='applied'||referenceAlreadyPresent}
+                    aria-label={'Review factual '+s.section+' passage'}
+                    data-testid={'report-assist-edit-'+s.section}
+                    onChange={e=>setReviews(old=>({...old,[s.section]:{decision:'pending',text:e.target.value}}))} />
+                </label>
+                <details className="text-[12px]"><summary className="cursor-pointer text-brand-action">Recorded sources ({s.sources.length})</summary>
+                  <ul className="mt-1 list-disc pl-4">{s.sources.map((item,i)=><li key={i} className="break-all">{item}</li>)}</ul>
+                </details>
+                <p className="text-[12px] text-brand-inkMuted">Your decision is local to this review. The edited text and references become part of the report only if you explicitly append them and the normal draft save succeeds.</p>
+                {review.decision!=='applied'&&!referenceAlreadyPresent&&<div className="flex flex-wrap gap-2">
+                  <Button variant="secondary" size="sm" data-testid={'report-assist-omit-'+s.section}
+                    onClick={()=>setReviews(old=>({...old,[s.section]:{...review,decision:'omitted'}}))}>Omit</Button>
+                  <Button variant="secondary" size="sm" data-testid={'report-assist-apply-'+s.section}
+                    disabled={state==='conflict'||!review.text.trim()}
+                    onClick={()=>{
+                      if(state==='conflict')return;
+                      const current=local.current[s.section]??'';
+                      if(current.includes(references)){setNotice({tone:'danger',text:'The same evidence references are already included in this report section.'});return;}
+                      const append=review.text.trim()+'\n\n'+references;
+                      const next=current.trim()?current.trimEnd()+'\n\n'+append:append;
+                      if(next.length>8000){setNotice({tone:'danger',text:'Reviewed passage plus references exceeds the field limit. Shorten the draft before applying.'});return;}
+                      change(s.section,next);
+                      setReviews(old=>({...old,[s.section]:{...review,decision:'applied'}}));
+                      setNotice({tone:'success',text:'Reviewed passage and evidence references inserted. Draft autosave must still succeed; no clinical approval or release occurred.'});
+                    }}>Append reviewed passage</Button>
+                </div>}
+              </div>
+            )}
+          </div>;
+        })}
       </div>}
       {SECTIONS.map(([k, label, hint]) => (
         <label key={k} className="block text-[14px] font-semibold">

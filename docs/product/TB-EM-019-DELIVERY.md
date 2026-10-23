@@ -34,6 +34,12 @@ Owner-directed synthetic-only development. Issue #64; draft PR #65.
 - Draft validation rejects duplicates and cross-specialty templates within the centre. The read-only internal family preview displays the already-captured snapshot for new records, not current mutable library content. Old unsnapshotted drafts keep the prior fallback.
 - This is immutable *content capture per assignment*, not yet a signed medical order or a separate immutable audit ledger; report and practice release stay locked.
 
+## Slice A5 — explicit evidence-assistance review controls
+- An editable evidence suggestion now requires an explicit clinician action: **edit and append** or **omit** (with restore). The UI prevents duplicate insertion of the same evidence source block and respects version-save conflicts.
+- Appending a passage includes its factual source references in the existing report section, which is persisted ONLY via the existing versioned autosave and retains the normal conflict/retry behavior.
+- Clinician choices in this slice are UI-local; only inserted report text persists. The application does NOT claim to have a separate immutable accept/omit audit log or clinical approval.
+- End-to-end browser regression tests omit/restore/edit/append, source references and ordinary report autosave on a disposable synthetic test database.
+
 ## Slice B — FreeBuff continuation, SAME branch and PR
 Continue feature/tb-em-019-child360-evidence-assist from the latest exact HEAD. Do not create another PR or redeploy the Render preview while external QA is paused.
 1. Extend Child 360 to include permitted named care team/referent, authorized family-practice feedback and accessible cross-tab clinician timeline. Continue denying out-of-scope specialties and supervisor messaging.
