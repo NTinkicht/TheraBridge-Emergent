@@ -58,7 +58,10 @@ try {
     assert.notEqual((await read(page, clinicalPath)).status, 200, 'Centre admin must not receive clinician-only evidence');
   });
   await role('coordinator@childrens-home.therabridge.test', 'COORDINATOR', async page => {
-    const appointments = await read(page, centerBase + '/appointments');
+    // Scheduling requires explicit dates in a window of at most 42 days.
+    const from = new Date(Date.now() - 31 * 86400000).toISOString();
+    const to = new Date(Date.now() + 10 * 86400000).toISOString();
+    const appointments = await read(page, centerBase + '/appointments?from=' + encodeURIComponent(from) + '&to=' + encodeURIComponent(to));
     assert.equal(appointments.status, 200);
     assert(JSON.stringify(appointments.body).includes(child.id));
     assert.notEqual((await read(page, clinicalPath)).status, 200);
