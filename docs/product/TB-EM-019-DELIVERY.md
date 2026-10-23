@@ -28,6 +28,12 @@ Owner-directed synthetic-only development. Issue #64; draft PR #65.
 - Invalid goal keys are rejected with 422 before version mutation. Tests cover rejection/no-write and a successful persisted link. No database migration, clinical approval, parent release or external AI.
 - Full immutable template snapshots, per-activity provenance/audit, historical report connection and clinician accept/edit/omit remain later Slice B tasks.
 
+## Slice A4 — immutable home activity template contents
+- New activity assignments in editable plan drafts capture a server-generated template snapshot (title, specialty, age band, duration, steps, materials, safety, version, capture timestamp) stored in the containing PlanVersion JSON; client-supplied snapshots are never trusted.
+- Subsequent edits to the same draft preserve the original assignment's captured snapshot, even after library changes; new plan versions inherit frozen assignment snapshots. No new database migration or new clinical permissions.
+- Draft validation rejects duplicates and cross-specialty templates within the centre. The read-only internal family preview displays the already-captured snapshot for new records, not current mutable library content. Old unsnapshotted drafts keep the prior fallback.
+- This is immutable *content capture per assignment*, not yet a signed medical order or a separate immutable audit ledger; report and practice release stay locked.
+
 ## Slice B — FreeBuff continuation, SAME branch and PR
 Continue feature/tb-em-019-child360-evidence-assist from the latest exact HEAD. Do not create another PR or redeploy the Render preview while external QA is paused.
 1. Extend Child 360 to include permitted named care team/referent, authorized family-practice feedback and accessible cross-tab clinician timeline. Continue denying out-of-scope specialties and supervisor messaging.

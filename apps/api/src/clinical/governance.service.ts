@@ -144,7 +144,12 @@ export class GovernanceService {
       const content = s.content as Record<string, any>;
       const evidence = s.evidence as Record<string, any>;
       const base = { preview: true, released: false, locked: INTERNAL_NOTICE, notice: INTERNAL_NOTICE, snapshotId: s.id, fingerprint: s.fingerprint, generatedAt: s.createdAt, sourceVersion: s.sourceVersion };
-      if (kind === 'PLAN') return { ...base, activities: content.homeActivities.map((a: any) => ({ ...a, template: evidence.templates.find((t: any) => t.id === a.templateId) ?? null })) };
+      if (kind === 'PLAN') return { ...base, activities: content.homeActivities.map((a: any) => ({
+        ...a,
+        // Plan-version-bound snapshot takes precedence over a subsequently
+        // edited template. Older unsnapshotted versions retain legacy evidence.
+        template: a.snapshot ?? evidence.templates.find((t: any) => t.id === a.templateId) ?? null,
+      })) };
       return { ...base, childName: content.child.name.split(' ')[0], service: content.service, period: evidence.period, message: content.sections.familySummary ?? '', goals: evidence.goals.map((g: any) => ({ title: g.title, measure: g.measure, baseline: g.baseline, target: g.target, status: g.status, points: g.points.map((p: any) => ({ date: p.date, value: p.value })) })) };
     });
   }

@@ -41,7 +41,7 @@ function VersionEditor({ centerId, ws, planId, service, v, run }: { centerId: st
   // must be explicitly associated by the clinician before draft save.
   const legacyTemplateIds = new Set(v.homeActivities.map(a => a.templateId));
   const unlinkedNew = acts.some(a => !legacyTemplateIds.has(a.templateId) && !a.goalKey);
-  const save = () => run(() => clinicalApi.saveVersion(centerId, v.id, { summary, goals: goals.filter((g) => g.title.trim()), homeActivities: acts, version: v.version }), 'Draft saved.');
+  const save = () => run(() => clinicalApi.saveVersion(centerId, v.id, { summary, goals: goals.filter((g) => g.title.trim()), homeActivities: acts.map(({ templateId, goalKey, frequency, note }) => ({ templateId, goalKey, frequency, note })), version: v.version }), 'Draft saved.');
   return (
     <div className="space-y-4" data-testid={`plan-version-${v.number}`}>
       <div className="flex flex-wrap items-center gap-2"><Pill tone={STATUS[v.status][1]} testId="plan-version-status">{`Version ${v.number} · ${STATUS[v.status][0]}`}</Pill><span className="text-[13px] text-brand-inkMuted">by {v.author}</span></div>

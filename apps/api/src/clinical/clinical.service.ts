@@ -11,7 +11,9 @@ export const asDate = (d: string) => new Date(`${d}T00:00:00Z`);
 export const day = (d: Date) => d.toISOString().slice(0, 10);
 export const LOCKED = 'Signing, approval and release are disabled until an owner-approved clinical policy exists.';
 type Goal = { key: string; title: string; measure: string; baseline: number; target: number };
-type HomeActivity = { templateId: string; frequency: string; note?: string };
+// Snapshots are captured by the server, never accepted as client input.
+type ActivitySnapshot = { id: string; title: string; service: string; ageBand: string; minutes: number; materials: string[]; steps: string[]; safety: string[]; version: number; capturedAt: string };
+type HomeActivity = { templateId: string; frequency: string; note?: string; goalKey?: string; snapshot?: ActivitySnapshot };
 
 // Clinical drafts: therapists work on children actively assigned to them; clinical supervisors read and review the whole center.
 // Center administrators, coordinators and guardians never reach these records.
@@ -147,20 +149,45 @@ export class ClinicalService {
     // older unlinked drafts remain readable/editable without inventing links.
     const keys = new Set(dto.goals.map((g) => g.key));
     if (dto.homeActivities.some((a) => a.goalKey && !keys.has(a.goalKey))) throw new UnprocessableEntityException('Link each home activity to a goal in this plan version.');
-    const ids = uniq(dto.homeActivities.map((h) => h.templateId));
-    if ((await this.prisma.activityTemplate.count({ where: { id: { in: ids }, OR: [{ centerId }, { centerId: null }] } })) !== ids.length) throw new UnprocessableEntityException('Choose activities from this center’s library.');
+    const ids = uniq(dto.homeActivities.map(h => h.templateId));
+    if (ids.length !== dto.homeActivities.length) throw new UnprocessableEntityException('An activity can only appear once in this plan version.');
+    // Validate templates inside the write transaction so no change to
+    // permissions, centre, or specialty races the final persisted snapshot.
     return this.write(centerId, v, x.plan.childId, x.plan.service, async (tx, now) => {
-      if ((await tx.activityTemplate.count({ where: { id: { in: ids }, OR: [{ centerId }, { centerId: null }] } })) !== ids.length) throw new UnprocessableEntityException('Choose activities from this center’s library.');
       const fresh = await tx.planVersion.findUniqueOrThrow({ where: { id } });
+      // The same library template may be reused in another draft, but not
+      // duplicated inside this version. Capture its immutable contents once.
+      const templates = await tx.activityTemplate.findMany({
+        where: { id: { in: ids }, service: x.plan.service, OR: [{ centerId }, { centerId: null }] },
+      });
+      if (templates.length !== ids.length) throw new UnprocessableEntityException('Choose activities from the same specialty and this center’s library.');
+      const previous = fresh.homeActivities as HomeActivity[];
+      const homeActivities: HomeActivity[] = dto.homeActivities.map(activity => {
+        const template = templates.find(t => t.id === activity.templateId)!;
+        const old = previous.find(p => p.templateId === activity.templateId);
+        const snapshot: ActivitySnapshot = old?.snapshot ?? {
+          id: template.id, title: template.title, service: template.service,
+          ageBand: template.ageBand, minutes: template.minutes,
+          materials: [...template.materials], steps: [...template.steps],
+          safety: [...template.safety], version: template.version,
+          capturedAt: now.toISOString(),
+        };
+        // Drop any untrusted client keys: only the server-generated snapshot
+        // can enter this version's JSON content.
+        return { templateId: activity.templateId, frequency: activity.frequency,
+          ...(activity.goalKey ? { goalKey: activity.goalKey } : {}),
+          ...(activity.note !== undefined ? { note: activity.note } : {}),
+          snapshot };
+      });
       if (fresh.authorId !== v.userId) throw new ForbiddenException('Only the author can edit this plan version.');
       const observed = await tx.observation.findMany({ where: { planVersionId: id }, select: { goalKey: true } });
       for (const o of observed) {
         const oldGoal = (fresh.goals as Goal[]).find(g => g.key === o.goalKey);
         if (fingerprint(oldGoal ?? null) !== fingerprint(dto.goals.find(g => g.key === o.goalKey) ?? null)) throw new ConflictException('A goal with observations cannot be redefined. Start a new plan version.');
       }
-      const r = await tx.planVersion.updateMany({ where: { id, centerId, authorId: v.userId, status: { in: EDITABLE }, version: dto.version }, data: { summary: dto.summary, goals: dto.goals as unknown as Prisma.InputJsonValue, homeActivities: dto.homeActivities as unknown as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
+      const r = await tx.planVersion.updateMany({ where: { id, centerId, authorId: v.userId, status: { in: EDITABLE }, version: dto.version }, data: { summary: dto.summary, goals: dto.goals as unknown as Prisma.InputJsonValue, homeActivities: homeActivities as unknown as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
       if (r.count !== 1) throw new ConflictException(x.status !== 'DRAFT' ? 'Only a draft can be edited. Start a new version to make changes.' : 'This draft changed since you opened it. Reload to see the latest version.');
-      await logCenterEvent(tx, centerId, 'clinical.plan_draft_saved', now, { actorUserId: v.userId, meta: { childId: x.plan.childId, planId: x.planId, planVersionId: id, goals: dto.goals.length } });
+      await logCenterEvent(tx, centerId, 'clinical.plan_draft_saved', now, { actorUserId: v.userId, meta: { childId: x.plan.childId, planId: x.planId, planVersionId: id, goals: dto.goals.length, activityTemplates: ids.length } });
       return { ok: true };
     });
   }

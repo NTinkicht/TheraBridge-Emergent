@@ -113,6 +113,54 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     expect(afterSpecialtyChange.childWideReferent).toBeNull();
   });
 
+  it('captures immutable activity-template content on draft save and never uses changed library text in internal family previews', async () => {
+    const { therapist, sup, kid, rosa } = await setup();
+    const W = c('clinical/children/' + kid);
+    const own = (await post(h, c('activities'), therapist, {
+      title: 'Picture naming - original', service: 'speech', ageBand: '3-6',
+      minutes: 10, materials: ['Original picture cards'],
+      steps: ['Say one word together.'], safety: ['Clinician supervision is required.'],
+    }).expect(201)).body.id;
+    const wrongService = await h.prisma.activityTemplate.create({
+      data: { centerId, title: 'OT only', service: 'occupational', ageBand: '3-6',
+        minutes: 10, materials: [], steps: ['Fine motor task'], safety: ['Stay close'],
+        createdAt: h.clock.now() },
+    });
+    const plan = (await post(h, W + '/plans', therapist, { service: 'speech', title: 'Speech practice' }).expect(201)).body;
+    const goals = [{ key: 'words', title: 'Name a familiar object', measure: 'count', baseline: 1, target: 5 }];
+    const planPath = c('clinical/plan-versions/' + plan.versionId);
+    const activity = { templateId: own, goalKey: 'words', frequency: 'Twice weekly' };
+    await patch(therapist, planPath, {
+      summary: 'Draft', goals, homeActivities: [activity, activity], version: 1,
+    }).expect(422);
+    await patch(therapist, planPath, {
+      summary: 'Draft', goals, homeActivities: [{ ...activity, templateId: wrongService.id }], version: 1,
+    }).expect(422);
+    expect(await h.prisma.planVersion.findUniqueOrThrow({ where: { id: plan.versionId } }))
+      .toMatchObject({ version: 1, homeActivities: [] });
+    await patch(therapist, planPath, { summary: 'Draft', goals, homeActivities: [activity], version: 1 }).expect(200);
+    const saved = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: plan.versionId } });
+    const first = (saved.homeActivities as unknown as Array<{ snapshot: { title: string; steps: string[]; version: number; capturedAt: string } }>)[0].snapshot;
+    expect(first).toMatchObject({ title: 'Picture naming - original', steps: ['Say one word together.'], version: 1 });
+    expect(first.capturedAt).toBeTruthy();
+
+    await h.prisma.activityTemplate.update({
+      where: { id: own }, data: { title: 'Library wording changed', steps: ['Different revised activity'], version: { increment: 1 } },
+    });
+    await patch(therapist, planPath, { summary: 'Updated draft', goals, homeActivities: [activity], version: 2 }).expect(200);
+    const after = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: plan.versionId } });
+    const frozen = (after.homeActivities as unknown as Array<{ snapshot: typeof first }>)[0].snapshot;
+    expect(frozen).toEqual(first);
+    const preview = (await get(therapist, c('clinical/plan-versions/' + plan.versionId + '/family-preview')).expect(200)).body;
+    expect(preview).toMatchObject({
+      preview: true, released: false,
+      activities: [{ goalKey: 'words', template: { title: 'Picture naming - original', version: 1, steps: ['Say one word together.'] } }],
+    });
+    expect(JSON.stringify((await get(rosa, c('family/activities')).expect(200)).body)).not.toContain('Picture naming');
+    await get(sup, W).expect(200);
+    await get(admin, W).expect(403);
+  });
+
   it('therapist drafts assessments, versioned goals, session notes and observations; supervisor reviews; approval and signing stay locked', async () => {
     const { therapist, other, sup, kid, rosa } = await setup();
     const W = c(`clinical/children/${kid}`);
