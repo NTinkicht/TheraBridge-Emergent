@@ -1,14 +1,19 @@
-# TB-EM-023 — Guardian family theme on the complete application shell
+# TB-EM-023 — Guardian active-navigation color scope (synthetic only)
 
-The authenticated guardian shell previously applied `bg-fam-accentTint` / `text-fam-accent` navigation classes without defining the `--fam-*` variables on their common ancestor. The `theme-family-auto` scope was limited to page descendants and could not style sibling navigation, header or sidebar.
+The authenticated guardian shell previously applied `bg-fam-accentTint` / `text-fam-accent` navigation classes without defining `--fam-*` on a shared ancestor. The theme scope existed inside page content, not the sidebar or mobile navigation.
 
-Apply the existing `theme-family-auto` class on the outermost `ProductShell` wrapper **only when `activeContext.role === 'GUARDIAN'`**. Use the existing `bg-fam-canvas text-fam-ink` token classes for guardian shell background and text. Preserve clinical and administrative shell classes exactly.
+The guardian-only outer `ProductShell` now uses `theme-family-auto bg-fam-canvas text-fam-ink`; staff shells retain their original clinical classes. This fixes the family canvas, ink, active navigation accent and focus-ring token scope. **It does not convert every header/sidebar border or surface to family tokens**: those retain `bg-surface-white` and `border-border-light` intentionally in this narrow PR.
 
-## Manual browser regression required before merge
-- Guardian desktop: `Activities at home` active navigation has a **computed** nontransparent teal-tinted background and teal text/indicator, not just Tailwind class names. Check Home, Home practice and Progress updates after navigation.
-- Guardian mobile 320 / 390 / 768 px: active navigation colors are computed and visible; header and scrolling navigation remain readable. Desktop 1024 / 1440 px: sidebar and active indicator remain visible.
-- Guardian family light/dark token inheritance: existing theme selectors continue to work; inspect computed `--fam-accent` / `--fam-accentTint` at sidebar and top bar.
-- Center admin, coordinator, Speech, OT and supervisor: unchanged clinical colors, no `theme-family-auto` on their shell.
-- Sign-out and session context switching unchanged; no clinical routes, permissions, guardian content or demo data modified.
+## Review dispositions
+- Original teal missing-highlight root cause: corrected by guardian-only ancestor scope.
+- Computed-style CI gap: corrected in `scripts/design/check-demo-journey.mjs` with real Chromium assertions for active background/text/indicator and CSS variables at 320/390/768/1024/1440 px; staff negative check verifies the clinical canvas and absence of the family scope.
+- Guardian dark-mode inconsistency: **documented pre-existing P3, not activated**. Authenticated guardian pages use `theme-family-light`, and the authenticated application does not set `html[data-family-theme="dark"]`. The `theme-family-auto` shell therefore resolves to light in the current product. Future dark-mode enablement must first migrate content wrappers and chrome surfaces together; no partial dark-mode activation in this PR.
+- Documentation/evidence: handover and QA records updated. Do not claim screenshots or external hosted browser acceptance from local CI.
 
-No Render redeploy until CI, independent review, explicit owner merge/deploy authorization. Issue #61 external acceptance remains open. This PR fixes only the CSS variable scope, not remaining responsive/security acceptance.
+## Verification gates
+- Exact-head CI demo-journey must PASS; new computed-style assertions execute on the actual browser, not class strings.
+- Independent exact-head review must be repeated after test additions.
+- Hosted visual QA on the deployed reviewed commit remains **NOT RUN** until owner-authorized merge/deployment; check keyboard/focus, guardian pages and five widths with redacted evidence.
+- Issue #61 remains open until the full seven-role external acceptance, responsive and security checks complete.
+
+No clinical signing, approval, consent authorization, release, real AI/audio, messaging or production enablement. No merge/deploy without owner authorization.

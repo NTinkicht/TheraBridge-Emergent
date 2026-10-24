@@ -1,3 +1,7 @@
+## 2026-10-24 — TB-EM-023 PR #71 independent review follow-up
+
+Incorporated Codex/Mistral review findings: guardian active-navigation computed-style assertions now execute inside the existing CI `demo-journey` job for five widths, and therapist shell is checked for absence of family scope. Kept PR draft. Clarified documentation regarding unchanged clinical header/sidebar surface tokens and authenticated light-only family theme. Grok/Mistral found no code blockers at previous HEAD; Codex marked review incomplete because browser evidence was missing. Re-review required on new exact HEAD; hosted visual acceptance still NOT RUN.
+
 # Work log
 
 ## 2026-10-24 — TB-EM-023 Codex P2 report editing loss correction
