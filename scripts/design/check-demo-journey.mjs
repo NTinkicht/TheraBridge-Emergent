@@ -395,6 +395,27 @@ try {
     const reviewRow = page.getByTestId('review-queue-row-' + queuedDraft.id);
     await reviewRow.waitFor();
     assert((await reviewRow.innerText()).includes(queuedDraft.title));
+    // Real-browser keyboard and five-width responsive regression for #77.
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await reviewRow.waitFor();
+      const widths = await page.evaluate(() => ({
+        viewport: innerWidth, document: document.documentElement.scrollWidth,
+        queue: document.querySelector('[data-testid="supervisor-review-queue"]')?.getBoundingClientRect().toJSON(),
+      }));
+      assert.equal(widths.viewport, width);
+      assert(widths.document <= width + 3, 'Queue must not cause horizontal page overflow at ' + width);
+      assert(widths.queue && widths.queue.width > 0 && widths.queue.right <= width + 3,
+        'Supervisor queue must remain visible inside ' + width + 'px');
+    }
+    await page.getByTestId('review-queue-search').focus();
+    await page.keyboard.press('Tab');
+    const focused = await page.evaluate(() => ({
+      testId: document.activeElement?.getAttribute('data-testid'),
+      visible: document.activeElement?.matches(':focus-visible'),
+    }));
+    assert.equal(focused.testId, 'review-queue-open-' + queuedDraft.id);
+    assert.equal(focused.visible, true, 'Keyboard users must see focus on the review link');
     const openDraft = page.getByTestId('review-queue-open-' + queuedDraft.id);
     assert.equal(await openDraft.getAttribute('href'), '/app/reports/' + queuedDraft.id);
     assert((await openDraft.getAttribute('aria-label')).includes(queuedDraft.title));
