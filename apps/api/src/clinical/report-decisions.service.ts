@@ -10,10 +10,15 @@ import type { Viewer } from '../operations/children.service';
 import type { ReportSuggestionDecisionDto, SuggestionClaimDto } from './clinical.dto';
 
 type Section = 'assessment' | 'goals' | 'sessions';
-type Source = { ref: string; label: string; fingerprint: string };
+type Source = { ref: string; label: string; fingerprint: string; observed?: { value: number; measure: string }; goalNumbers?: number[] };
 const SECTIONS: Section[] = ['assessment', 'goals', 'sessions'];
 export const SUGGESTION_GENERATOR = 'DETERMINISTIC_V1';
 export const SUGGESTION_LABEL = 'NON_CLINICAL_DRAFT';
+// A stable, explicit contract for every API consumer: source identity and
+// freshness are checked; clinicians' narrative claims are NOT semantically
+// verified by the system. Neither APPLIED nor unchanged references are approval.
+export const CLAIM_VALIDATION = 'REFERENCED_NOT_VERIFIED' as const;
+export const SOURCE_STATUS_CURRENT = 'REFERENCES_UNCHANGED' as const;
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const referenceHeader = (section: Section) => `Evidence references (internal draft; ${section}):`;
 const hasReferences = (text: string, section: Section) => text.split(/\r?\n/).some(
@@ -40,6 +45,7 @@ export function suggestionSources(e: Evidence, reportId: string, section: Sectio
         ref: goalRef, label: `Plan version ${version}, goal ${g.key}`,
         fingerprint: hash({ planVersionId: version, key: g.key, title: g.title, measure: g.measure,
           baseline: g.baseline, target: g.target }),
+        goalNumbers: [g.baseline, g.target],
       });
       for (const p of [...(g.prior ? [g.prior] : []), ...g.points]) {
         if (!p.observationId) continue;
@@ -49,6 +55,7 @@ export function suggestionSources(e: Evidence, reportId: string, section: Sectio
           fingerprint: hash({ observationId: p.observationId, planVersionId: version,
             goalKey: g.key, measure: g.measure, date: p.date, value: p.value,
             note: p.note, sessionNoteId: p.sessionNoteId ?? null }),
+          observed: { value: p.value, measure: g.measure },
         });
       }
     }
@@ -108,12 +115,14 @@ export class ReportDecisionsService {
         actorUserId: x.actorUserId, reportRevision: x.reportRevision, reason: x.reason,
         createdAt: x.createdAt, claimMap: x.claimMap,
         sourceManifest: x.sourceManifest,
-        status: staleSources || changedText ? 'REQUIRES_REVIEW' : 'CURRENT',
+        status: staleSources || changedText ? 'REQUIRES_REVIEW' : SOURCE_STATUS_CURRENT,
+        claimValidation: CLAIM_VALIDATION,
         reasons: [...(staleSources ? ['EVIDENCE_CHANGED'] : []), ...(changedText ? ['REPORT_TEXT_CHANGED'] : [])],
       };
     });
     return {
       synthetic: true, released: false, clinicalAuthorization: false,
+      claimValidation: CLAIM_VALIDATION, // not a semantic/medical correctness assertion
       sources: views, decisions,
       latest: Object.fromEntries(SECTIONS.map(s => [s, decisions.find(d => d.section === s) ?? null])),
     };
@@ -134,6 +143,48 @@ export class ReportDecisionsService {
     for (const c of reviewed) {
       if (c.text.length < 3 || !c.sourceRefs.length || c.sourceRefs.some(ref => !available.has(ref))) {
         throw new UnprocessableEntityException('Each reviewed claim must cite an available source in this report and specialty.');
+      }
+    }
+    // A cheap, intentionally incomplete consistency check for quantitative
+    // goal claims: every cited observation must appear with its exact recorded
+    // value and the relevant unit. The narrative itself is NOT validated.
+    // Deliberately do not "verify" interpretations, causality or progress.
+    if (dto.section === 'goals') {
+      const byRef = new Map(sources.map(source => [source.ref, source]));
+      const unitPresent = (text: string, measure: string) => {
+        if (measure === 'percent') return /\bpercent(age)?\b|%/i.test(text);
+        if (measure === 'count') return /\b(count|times?|occurrences?|items?)\b/i.test(text);
+        if (measure === 'level') return /\blevels?\b/i.test(text);
+        return false;
+      };
+      for (const claim of reviewed) {
+        const supportedNumbers = new Set<number>();
+        for (const ref of claim.sourceRefs) {
+          const source = byRef.get(ref);
+          if (source?.observed) supportedNumbers.add(source.observed.value);
+          for (const value of source?.goalNumbers ?? []) supportedNumbers.add(value);
+        }
+        const numericTokens = claim.text.match(/(?:^|[^\w.])[-+]?(?:\d+(?:\.\d+)?|\.\d+)(?![\w.])/g) ?? [];
+        const extractedValues = numericTokens.map(token => {
+          const match = token.match(/[-+]?(?:\d+(?:\.\d+)?|\.\d+)/);
+          return match === null ? NaN : Number(match[0]);
+        });
+        // Block unsupported numbers; this is consistency checking, not semantic
+        // verification of narrative conclusions, progress or causation.
+        if (extractedValues.some(value => !supportedNumbers.has(value))) {
+          throw new UnprocessableEntityException(
+            'Numeric values in reviewed goal claims must come from cited observations or goal targets/baselines.',
+          );
+        }
+        for (const ref of claim.sourceRefs) {
+          const observed = byRef.get(ref)?.observed;
+          if (!observed) continue;
+          if (!extractedValues.includes(observed.value) || !unitPresent(claim.text, observed.measure)) {
+            throw new UnprocessableEntityException(
+              "A claim citing an observation must include that observation's recorded value and measure. Narrative accuracy is not automatically verified.",
+            );
+          }
+        }
       }
     }
     return reviewed;
@@ -161,7 +212,8 @@ export class ReportDecisionsService {
       if (previous) {
         if (previous.requestHash !== requestHash) throw new ConflictException('Idempotency key already used for a different review decision.');
         return { id: previous.id, version: previous.reportRevision, action: previous.action,
-          section: previous.section, replayed: true, persisted: true };
+          section: previous.section, replayed: true, persisted: true,
+          claimValidation: CLAIM_VALIDATION };
       }
       if (fresh.version !== dto.version) throw new ConflictException('The report changed in another tab. Reload it before recording the review decision.');
       const e = await this.reports.evidence(tx, centerId, r.childId, r.service, r.periodStart, r.periodEnd);
@@ -214,7 +266,8 @@ export class ReportDecisionsService {
           action: dto.action, section: dto.section, reportRevision: dto.version + 1 },
       });
       return { id: event.id, section: event.section, action: event.action,
-        version: dto.version + 1, persisted: true, replayed: false };
+        version: dto.version + 1, persisted: true, replayed: false,
+        claimValidation: CLAIM_VALIDATION };
     });
   }
 }

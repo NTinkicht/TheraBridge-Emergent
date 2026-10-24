@@ -84,7 +84,8 @@ describe('TB-EM-021 non-authorizing report suggestion decision ledger (real Post
     const P = c(`clinical/reports/${reportId}`);
     const D = P + '/suggestion-decisions';
     const first = (await get(therapist, D).expect(200)).body;
-    expect(first).toMatchObject({ synthetic: true, released: false, clinicalAuthorization: false });
+    expect(first).toMatchObject({ synthetic: true, released: false, clinicalAuthorization: false,
+      claimValidation: 'REFERENCED_NOT_VERIFIED' });
     expect(first.latest.goals).toBeNull();
     const goalRef = `planVersion:${plan.versionId}:goal:words`;
     expect(first.sources.goals.sources.map((s: { ref: string }) => s.ref)).toEqual(
@@ -95,6 +96,21 @@ describe('TB-EM-021 non-authorizing report suggestion decision ledger (real Post
       idempotencyKey: randomUUID(),
       claims: [{ text: 'One recorded value was 30 percent.', sourceRefs: [goalRef, `observation:${observationId}`] }],
     };
+    // Mechanical accuracy guard: a valid source cannot justify an invented 90
+    // when the actual observation is 30, nor the wrong measurement unit.
+    await post(h, D, therapist, { ...base, claims: [{
+      text: 'The measured value was 90 percent.',
+      sourceRefs: [goalRef, `observation:${observationId}`],
+    }] }).expect(422);
+    await post(h, D, therapist, { ...base, claims: [{
+      text: 'The measured value was 30 count.',
+      sourceRefs: [goalRef, `observation:${observationId}`],
+    }] }).expect(422);
+    await post(h, D, therapist, { ...base, claims: [{
+      text: 'The measured value was 30 percent, and also 90 percent.',
+      sourceRefs: [goalRef, `observation:${observationId}`],
+    }] }).expect(422);
+    expect(await h.prisma.reportSuggestionDecision.count({ where: { reportId } })).toBe(0);
     // Unknown cross-specialty and cross-report refs cannot be mapped as evidence.
     await post(h, D, therapist, { ...base, claims: [{
       text: 'Unsupported claim', sourceRefs: [`observation:${randomUUID()}`],
@@ -112,9 +128,10 @@ describe('TB-EM-021 non-authorizing report suggestion decision ledger (real Post
     await get(supervisor, D).expect(200);
 
     const applied = (await post(h, D, therapist, base).expect(201)).body;
-    expect(applied).toMatchObject({ persisted: true, replayed: false, action: 'APPLIED', version: 2 });
+    expect(applied).toMatchObject({ persisted: true, replayed: false, action: 'APPLIED',
+      version: 2, claimValidation: 'REFERENCED_NOT_VERIFIED' });
     expect((await post(h, D, therapist, base).expect(201)).body)
-      .toMatchObject({ id: applied.id, replayed: true, version: 2 });
+      .toMatchObject({ id: applied.id, replayed: true, version: 2, claimValidation: 'REFERENCED_NOT_VERIFIED' });
     await post(h, D, therapist, { ...base, action: 'OMITTED' }).expect(409);
     await post(h, D, therapist, { ...base, idempotencyKey: randomUUID() }).expect(409);
     const r = (await get(therapist, P).expect(200)).body;
@@ -123,7 +140,8 @@ describe('TB-EM-021 non-authorizing report suggestion decision ledger (real Post
     expect(r.report.sections.goals).toContain('Evidence references (internal draft; goals):');
     expect(r.report.status).toBe('DRAFT');
     const history = (await get(therapist, D).expect(200)).body;
-    expect(history.latest.goals).toMatchObject({ id: applied.id, status: 'CURRENT',
+    expect(history.latest.goals).toMatchObject({ id: applied.id, status: 'REFERENCES_UNCHANGED',
+      claimValidation: 'REFERENCED_NOT_VERIFIED',
       action: 'APPLIED', label: 'NON_CLINICAL_DRAFT' });
     expect(JSON.stringify(history.decisions)).not.toContain('One recorded value was');
     expect(history.latest.goals.claimMap).toEqual([expect.objectContaining({ index: 0,
