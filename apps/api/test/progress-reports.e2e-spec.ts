@@ -104,7 +104,8 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     for (const s of [sup, therapist]) await post(h, `${P}/release`, s).expect(403);
     await post(h, `${P}/comments`, therapist, { comment: 'self review' }).expect(403);
     const queue = c('clinical/reports/review-queue');
-    for (const s of [admin, ada, therapist, other, ops]) await get(s, queue).expect(403);
+    for (const s of [admin, ada, therapist, other]) await get(s, queue).expect(403);
+    await get(ops, queue).expect(404); // Platform actors have no centre context; do not disclose resources.
     const pending = (await get(sup, queue).expect(200)).body;
     expect(pending).toMatchObject({ synthetic: true, released: false, total: 1 });
     expect(pending.items).toHaveLength(1);
