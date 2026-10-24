@@ -144,13 +144,13 @@ export class ReportsService {
       ${q.service ? Prisma.sql`AND r.service = ${q.service}` : Prisma.empty}
       ${q.search ? Prisma.sql`AND (
         LOWER(TRANSLATE(r.title, 'áàâäãåéèêëíìîïóòôöõúùûüýÿñçÁÀÂÄÃÅÉÈÊËÍÌÎÏÓÒÔÖÕÚÙÛÜÝŸÑÇ',
-          'aaaaaaeeeeiiiiooooouuuuyyncAAAAAAEEEEIIIIOOOOOUUUUYYNC')) LIKE ${'%' + q.search.normalize('NFKD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase() + '%'}
+          'aaaaaaeeeeiiiiooooouuuuyyncAAAAAAEEEEIIIIOOOOOUUUUYYNC')) LIKE ${'%' + q.search.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase() + '%'}
         OR LOWER(TRANSLATE(CONCAT(COALESCE(ch.preferred_name, ch.first_name), ' ', ch.last_name),
           'áàâäãåéèêëíìîïóòôöõúùûüýÿñçÁÀÂÄÃÅÉÈÊËÍÌÎÏÓÒÔÖÕÚÙÛÜÝŸÑÇ',
-          'aaaaaaeeeeiiiiooooouuuuyyncAAAAAAEEEEIIIIOOOOOUUUUYYNC')) LIKE ${'%' + q.search.normalize('NFKD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase() + '%'}
+          'aaaaaaeeeeiiiiooooouuuuyyncAAAAAAEEEEIIIIOOOOOUUUUYYNC')) LIKE ${'%' + q.search.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase() + '%'}
         OR LOWER(TRANSLATE(u.display_name,
           'áàâäãåéèêëíìîïóòôöõúùûüýÿñçÁÀÂÄÃÅÉÈÊËÍÌÏÓÒÔÖÕÚÙÛÜÝŸÑÇ',
-          'aaaaaaeeeeiiiiooooouuuuyyncAAAAAAEEEEIIIIOOOOOUUUUYYNC')) LIKE ${'%' + q.search.normalize('NFKD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase() + '%'}
+          'aaaaaaeeeeiiiiooooouuuuyyncAAAAAAEEEEIIIIOOOOOUUUUYYNC')) LIKE ${'%' + q.search.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase() + '%'}
         OR r.service ILIKE ${'%' + q.search + '%'}
         OR (r.service = 'speech' AND 'speech & language' ILIKE ${'%' + q.search + '%'})
         OR (r.service = 'occupational' AND 'occupational therapy' ILIKE ${'%' + q.search + '%'})
