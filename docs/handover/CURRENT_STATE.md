@@ -1,6 +1,6 @@
 ## 2026-10-24 — TB-EM-024 draft PR #72
 
-Activity-library staff search/filter implementation and follow-up reviewer corrections on an isolated branch; no deployment, authorization or clinical workflow changes. New CI staff journey exercises displayed specialty labels, ownership buckets, reset, empty matches and five responsive widths. New exact-head CI PENDING; independent re-review required. Details: docs/product/TB-EM-024-ACTIVITY-DISCOVERY.md.
+Activity-library staff search/filter implementation and follow-up reviewer corrections on an isolated branch; no deployment, authorization or clinical workflow changes. New CI staff journey exercises displayed specialty labels, ownership buckets, reset, empty matches and five responsive widths. At `b234c519`, all six CI jobs PASS (run 40117705186); exact-head Codex review no findings, DeepSeek `NO_BLOCKING_FINDINGS`. Subsequent read-only role regression plus evidence amendment requires new CI; hosted visual review remains independent. Details: docs/product/TB-EM-024-ACTIVITY-DISCOVERY.md.
 
 ## 2026-10-24 — TB-EM-023 PR #71 follow-up (draft)
 

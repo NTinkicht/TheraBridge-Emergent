@@ -58,6 +58,12 @@ try {
     assert.equal(kids.status, 200);
     assert(JSON.stringify(kids.body).includes('Yusuf'));
     assert.notEqual((await read(page, clinicalPath)).status, 200, 'Centre admin must not receive clinician-only evidence');
+    // Read-only staff must not be offered the clinician-author filter.
+    await page.goto(base + '/app/activities');
+    await page.getByTestId('activities-discovery').waitFor();
+    assert.equal(await page.getByTestId('activities-ownership-filter').locator('option[value="mine"]').count(), 0,
+      'Read-only staff must not see Created by me');
+
   });
   await role('coordinator@childrens-home.therabridge.test', 'COORDINATOR', async page => {
     // Scheduling requires explicit dates in a window of at most 42 days.
@@ -67,6 +73,12 @@ try {
     assert.equal(appointments.status, 200);
     assert(JSON.stringify(appointments.body).includes(child.id));
     assert.notEqual((await read(page, clinicalPath)).status, 200);
+    // Read-only staff must not be offered the clinician-author filter.
+    await page.goto(base + '/app/activities');
+    await page.getByTestId('activities-discovery').waitFor();
+    assert.equal(await page.getByTestId('activities-ownership-filter').locator('option[value="mine"]').count(), 0,
+      'Read-only staff must not see Created by me');
+
   });
   await role('speech@childrens-home.therabridge.test', 'THERAPIST', async page => {
     // TB-EM-024: test the actual staff library, not the guardian sample page.
