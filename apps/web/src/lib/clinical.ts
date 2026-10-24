@@ -10,6 +10,7 @@ export interface Workspace {
   timezone: string; synthetic: true; locked: string; canEdit: boolean; canReview: boolean;
   careTeam: CareTeamMember[];
   childWideReferent: { displayName: string } | null;
+  childWideReferentStatus?: 'NOT_DESIGNATED' | 'VISIBLE' | 'UNAVAILABLE';
   child: { id: string; name: string; services: string[]; dateOfBirth: string };
   assessments: { id: string; service: string; assessedOn: string; summary: string; areas: { area: string; finding: string }[]; version: number; author: string; mine: boolean; updatedAt: string }[];
   plans: { id: string; service: string; title: string; versions: PlanVersion[] }[];

@@ -43,6 +43,13 @@ export class AssignmentDto {
   @IsOptional() @IsBoolean() isLead?: boolean;
 }
 
+// Centre-admin-only child-wide care coordination, not a clinical approval role.
+export class ReferentDto {
+  @IsOptional() @IsUUID() membershipId!: string | null;
+  @IsInt() @Min(1) version!: number;
+  @trim() @IsString() @MinLength(3) @MaxLength(500) reason!: string;
+}
+
 export class ReasonDto {
   @trim() @IsString() @MinLength(3, { message: 'Give a reason of at least 3 characters' }) @MaxLength(500) reason!: string;
 }

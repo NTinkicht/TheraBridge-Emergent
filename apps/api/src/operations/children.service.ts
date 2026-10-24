@@ -1,11 +1,12 @@
-import { ConflictException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import type { Prisma, Role } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
+import { assertActor } from '../clinical/governance-core';
 import { describeEvents, invitationView, logCenterEvent, uniq, withUniqueGuard } from '../centers/history';
 import { InvitationsService } from '../centers/invitations.service';
 import { normalizeEmail } from '../common/security';
 import { PrismaService } from '../prisma/prisma.service';
-import type { AssignmentDto, ChildDto, GuardianDto, ListChildrenQuery, UpdateChildDto } from './operations.dto';
+import type { AssignmentDto, ChildDto, GuardianDto, ListChildrenQuery, UpdateChildDto, ReferentDto } from './operations.dto';
 import { TrialService } from './trial.service';
 
 export interface Viewer { userId: string; membershipId: string; role: Role }
@@ -94,10 +95,21 @@ export class ChildrenService {
     const events = await this.prisma.centerEvent.findMany({ where: { centerId, meta: { path: ['childId'], equals: id } }, orderBy: { id: 'desc' }, take: 50 });
     const manager = v.role === 'CENTER_ADMIN' || v.role === 'COORDINATOR';
     const { timezone } = await this.prisma.center.findUniqueOrThrow({ where: { id: centerId }, select: { timezone: true } });
+    const designated = c.referentMembershipId && c.status === 'ACTIVE'
+      ? await this.prisma.membership.findFirst({ where: {
+        id: c.referentMembershipId, centerId, status: 'ACTIVE',
+        user: { status: 'ACTIVE' }, roles: { some: { role: 'THERAPIST' } },
+      }, select: { id: true, specialties: true, user: { select: { displayName: true } } } })
+      : null;
+    const currentReferent = designated && c.assignments.some(a =>
+      a.membershipId === designated.id && a.endedAt === null && designated.specialties.includes(a.service))
+      ? { membershipId: designated.id, displayName: designated.user.displayName } : null;
     return {
       timezone,
       id: c.id, firstName: c.firstName, lastName: c.lastName, preferredName: c.preferredName, dateOfBirth: c.dateOfBirth.toISOString().slice(0, 10),
       services: c.services, status: c.status, version: c.version, createdAt: c.createdAt,
+      referent: currentReferent, referentRevision: c.referentRevision,
+      referentStatus: !c.referentMembershipId ? 'NOT_DESIGNATED' : currentReferent ? 'ACTIVE' : 'UNAVAILABLE',
       guardians: c.guardians.map((g) => {
         const inv = invites.find((i) => i.guardianLinkId === g.id);
         return {
@@ -140,6 +152,15 @@ export class ChildrenService {
       else await this.trial.assertWritable(tx, centerId, now);
       await tx.child.update({ where: { id }, data: { status, version: { increment: 1 } } });
       if (status === 'ARCHIVED') {
+        if (c.referentMembershipId) {
+          await tx.child.update({ where: { id }, data: {
+            referentMembershipId: null, referentRevision: { increment: 1 }, version: { increment: 1 },
+          } });
+          await tx.childReferentHistory.create({ data: {
+            centerId, childId: id, actorUserId, previousMembershipId: c.referentMembershipId,
+            nextMembershipId: null, reason: 'Child archived', revision: c.referentRevision + 1, createdAt: now,
+          } });
+        }
         await tx.appointment.updateMany({ where: { childId: id, status: 'SCHEDULED', startsAt: { gte: now } }, data: { status: 'CANCELLED', statusReason: 'Child record archived', version: { increment: 1 } } });
         await tx.careAssignment.updateMany({ where: { childId: id, endedAt: null }, data: { endedAt: now } });
       }
@@ -199,6 +220,51 @@ export class ChildrenService {
     });
   }
 
+  // Non-authorizing child-wide coordination designation. Unlike per-service
+  // isLead, this may only be set explicitly by an active centre administrator.
+  async setReferent(centerId: string, v: Viewer, childId: string, dto: ReferentDto) {
+    if (dto.membershipId === undefined) throw new UnprocessableEntityException('Explicitly choose a therapist or clear the designation.');
+    const now = this.trial.now();
+    return this.prisma.$transaction(async (tx) => {
+      await this.trial.assertWritable(tx, centerId, now);
+      await assertActor(tx, centerId, v, ['CENTER_ADMIN']);
+      await tx.$queryRaw`SELECT id FROM child WHERE id=${childId}::uuid AND center_id=${centerId}::uuid FOR UPDATE`;
+      const child = await tx.child.findFirst({ where: { id: childId, centerId, status: 'ACTIVE' } });
+      if (!child) throw new NotFoundException('Active child not found.');
+      if (child.version !== dto.version) throw new ConflictException('This child changed. Reload before reassigning the referent.');
+      const next = dto.membershipId ?? null;
+      if (child.referentMembershipId === next) throw new ConflictException('This referent designation is already current.');
+      if (next) {
+        const member = await tx.membership.findFirst({
+          where: { id: next, centerId, status: 'ACTIVE', user: { status: 'ACTIVE' },
+            roles: { some: { role: 'THERAPIST' } } },
+          select: { id: true, specialties: true },
+        });
+        const assigned = member && await tx.careAssignment.findFirst({
+          where: { centerId, childId, membershipId: next, endedAt: null, service: { in: member.specialties } },
+          select: { id: true },
+        });
+        if (!assigned) throw new UnprocessableEntityException('Choose an active therapist assigned to this child.');
+      }
+      const updated = await tx.child.updateMany({
+        where: { id: childId, centerId, version: dto.version },
+        data: { referentMembershipId: next, referentRevision: { increment: 1 }, version: { increment: 1 } },
+      });
+      if (updated.count !== 1) throw new ConflictException('This child changed before the designation could be saved.');
+      const revision = child.referentRevision + 1;
+      await tx.childReferentHistory.create({ data: {
+        centerId, childId, actorUserId: v.userId,
+        previousMembershipId: child.referentMembershipId, nextMembershipId: next,
+        reason: dto.reason.trim(), revision, createdAt: now,
+      } });
+      await logCenterEvent(tx, centerId, 'child.referent_changed', now, {
+        actorUserId: v.userId, meta: { childId, previousMembershipId: child.referentMembershipId,
+          nextMembershipId: next, revision },
+      });
+      return { referentMembershipId: next, referentRevision: revision, version: dto.version + 1 };
+    });
+  }
+
   async assign(centerId: string, actorUserId: string, childId: string, dto: AssignmentDto) {
     const now = this.trial.now();
     return withUniqueGuard(() => this.prisma.$transaction(async (tx) => {
@@ -219,9 +285,27 @@ export class ChildrenService {
   async endAssignment(centerId: string, actorUserId: string, childId: string, assignmentId: string) {
     const now = this.trial.now();
     await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM child WHERE id=${childId}::uuid AND center_id=${centerId}::uuid FOR UPDATE`;
+      const child = await tx.child.findFirst({ where: { id: childId, centerId } });
+      if (!child) throw new NotFoundException('Child not found');
       const a = await tx.careAssignment.findFirst({ where: { id: assignmentId, childId, centerId, endedAt: null } });
       if (!a) throw new NotFoundException('Active assignment not found');
       await tx.careAssignment.update({ where: { id: a.id }, data: { endedAt: now } });
+      if (child.referentMembershipId === a.membershipId) {
+        const remaining = await tx.careAssignment.findFirst({
+          where: { centerId, childId, membershipId: a.membershipId, endedAt: null },
+        });
+        if (!remaining) {
+          await tx.child.update({ where: { id: childId }, data: {
+            referentMembershipId: null, referentRevision: { increment: 1 }, version: { increment: 1 },
+          } });
+          await tx.childReferentHistory.create({ data: {
+            centerId, childId, actorUserId, previousMembershipId: a.membershipId,
+            nextMembershipId: null, reason: 'Last active care assignment ended',
+            revision: child.referentRevision + 1, createdAt: now,
+          } });
+        }
+      }
       const cancelled = await tx.appointment.updateMany({ where: { childId, membershipId: a.membershipId, service: a.service, status: 'SCHEDULED', startsAt: { gte: now } }, data: { status: 'CANCELLED', statusReason: 'Therapist assignment ended', version: { increment: 1 } } });
       await logCenterEvent(tx, centerId, 'assignment.ended', now, { actorUserId, membershipId: a.membershipId, meta: { childId, service: a.service, cancelledAppointments: cancelled.count } });
     });

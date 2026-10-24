@@ -151,6 +151,55 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     expect(events.map((e) => e.type)).toEqual(expect.arrayContaining(['child.registered', 'guardian.added', 'assignment.started', 'appointment.scheduled', 'appointment.rescheduled', 'appointment.completed', 'guardian.removed', 'child.archived']));
   });
 
+  it('audits explicit child-wide referents without granting clinical access', async () => {
+    const therapist = await staff('ref-first@ops.test', ['THERAPIST']);
+    const colleague = await staff('ref-second@ops.test', ['THERAPIST']);
+    const coordinator = await staff('ref-coord@ops.test', ['COORDINATOR']);
+    const kid = (await post(h, c('children'), admin, child()).expect(201)).body.id;
+    const first = therapist.body.activeContext.membershipId;
+    const second = colleague.body.activeContext.membershipId;
+    const assignmentId = (await post(h, c('children/' + kid + '/assignments'), admin,
+      { membershipId: first, service: 'speech', isLead: false }).expect(201)).body.id;
+    await post(h, c('children/' + kid + '/assignments'), admin,
+      { membershipId: second, service: 'speech', isLead: true }).expect(201);
+    const before = (await get(admin, c('children/' + kid)).expect(200)).body;
+    expect(before).toMatchObject({ referent: null, referentRevision: 0, referentStatus: 'NOT_DESIGNATED' });
+    const url = c('children/' + kid + '/referent');
+    const proposal = { membershipId: first, version: before.version, reason: 'Choose care coordinator' };
+    await patch(coordinator, url, proposal).expect(403);
+    await patch(therapist, url, proposal).expect(403);
+    await patch(admin, url, { ...proposal, reason: 'x' }).expect(400);
+    const a = (await patch(admin, url, proposal).expect(200)).body;
+    expect(a).toMatchObject({ referentRevision: 1, version: before.version + 1 });
+    const detail = (await get(admin, c('children/' + kid)).expect(200)).body;
+    expect(detail.referent).toMatchObject({ membershipId: first });
+    const ws = (await get(therapist, c('clinical/children/' + kid)).expect(200)).body;
+    expect(ws.childWideReferent).toMatchObject({ displayName: 'Person Name' });
+    expect(ws.childWideReferentStatus).toBe('VISIBLE');
+    await patch(admin, url, { membershipId: second, version: before.version, reason: 'Stale version' }).expect(409);
+    const b = (await patch(admin, url, { membershipId: second, version: detail.version, reason: 'Transfer coordination' }).expect(200)).body;
+    expect(b.referentRevision).toBe(2);
+    const history = await h.prisma.childReferentHistory.findMany({
+      where: { centerId, childId: kid }, orderBy: { revision: 'asc' },
+    });
+    expect(history.map(x => x.revision)).toEqual([1, 2]);
+    expect(history[1]).toMatchObject({ previousMembershipId: first, nextMembershipId: second });
+    await expect(h.prisma.$executeRawUnsafe("UPDATE child_referent_history SET reason='bad' WHERE id='" + history[0].id + "'"))
+      .rejects.toThrow(/immutable/);
+    await expect(h.prisma.$executeRawUnsafe("DELETE FROM child_referent_history WHERE id='" + history[0].id + "'"))
+      .rejects.toThrow(/immutable/);
+    await post(h, c('children/' + kid + '/assignments/' + assignmentId + '/end'), admin).expect(200);
+    expect((await get(admin, c('children/' + kid)).expect(200)).body.referent.membershipId).toBe(second);
+    await h.prisma.membership.update({ where: { id: second }, data: { specialties: [] } });
+    const revoked = (await get(admin, c('children/' + kid)).expect(200)).body;
+    expect(revoked).toMatchObject({ referentStatus: 'UNAVAILABLE', referent: null });
+    await get(coordinator, c('clinical/children/' + kid)).expect(403);
+    const cleared = (await patch(admin, url, { membershipId: null, version: revoked.version, reason: 'Clear invalid referent' }).expect(200)).body;
+    expect(cleared.referentRevision).toBe(3);
+    expect((await get(admin, c('children/' + kid)).expect(200)).body.referent).toBeNull();
+    expect(await h.prisma.childReferentHistory.count({ where: { childId: kid } })).toBe(3);
+  });
+
   it('isolates centers and hides other families', async () => {
     const kid = (await post(h, c('children'), admin, child()).expect(201)).body.id;
     await post(h, '/api/platform/centers', ops, { name: 'Other Ops', timezone: 'UTC', country: 'France', city: 'Lyon', specialties: ['speech'], firstAdmin: { email: 'o@other.test', displayName: 'Other Admin' } }).expect(201);
