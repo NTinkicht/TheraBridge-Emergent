@@ -117,11 +117,13 @@ async function assess(browser,role,user,directory){
     let g=null;
     try{
      const response=await page.goto(BASE+route,{waitUntil:'domcontentloaded',timeout:25000});
+     // Record transport failures BEFORE waiting for a shell that cannot exist on a 500/404.
+     // Keep the confirmed failure even when DOM checks and screenshots are unavailable.
+     if(response?.status()!==200)issues.push('http_error');
      await page.getByTestId('product-shell').waitFor({timeout:15000});
      await page.waitForTimeout(600);
      g=await metrics(page);
      issues.push(...inspectGeometry(g,width));
-     if(response?.status()!==200)issues.push('http_error');
      if(new URL(page.url()).pathname!==route)issues.push('unexpected_redirect');
      await page.keyboard.press('Tab');
      const focused=await page.evaluate(()=>document.activeElement!==document.body&&

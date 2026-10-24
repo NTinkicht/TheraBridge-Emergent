@@ -202,3 +202,54 @@ test('response waiter fails before click settles without unhandled rejection or 
   assert.deepEqual(ledger.counts,{PASS:0,FAIL:0,BLOCKED:42});
  }finally{await rm(dir,{recursive:true,force:true});}
 });
+
+
+test('HTTP 500 without ProductShell remains FAIL rather than BLOCKED',async()=>{
+ const {mkdtemp,rm,readFile,writeFile,chmod}=await import('node:fs/promises');
+ const {tmpdir}=await import('node:os');
+ const {join}=await import('node:path');
+ const dir=await mkdtemp(join(tmpdir(),'tb-qa-http500-'));
+ try{
+  const file=join(dir,'users.json');
+  await writeFile(file,JSON.stringify({platform:{email:'fixture@example.invalid',password:'ci_only_mock'}}),{mode:0o600});
+  await chmod(file,0o600);
+  let url=BASE+'/login';
+  const page={
+   goto:async next=>{url=next;return {status:()=>next.endsWith('/app')?500:200};},
+   url:()=>url,
+   getByTestId:name=>({
+    fill:async()=>{},click:async()=>{},
+    waitFor:async()=>{if(name==='product-shell'&&url.endsWith('/app'))throw Error('MOCK_MISSING_SHELL');}
+   }),
+   waitForResponse:async()=>({status:()=>200,headerValues:async()=>[
+    '__Host-tb_session=ci_only_fixture; Path=/; HttpOnly; SameSite=Lax; Secure']}),
+   waitForURL:async()=>{},
+   evaluate:async (_fn,arg)=>Array.isArray(arg)?true:{
+    viewport:320,documentWidth:320,mainVisible:true,mainLeft:0,mainRight:320,
+    headerVisible:true,navigationVisible:true
+   },
+   setViewportSize:async()=>{},
+   waitForTimeout:async()=>{},keyboard:{press:async()=>{}},
+   screenshot:async()=>Buffer.from('synthetic screenshot')
+  };
+  const context={
+   newPage:async()=>page,close:async()=>{},
+   cookies:async()=>[{name:'__Host-tb_session',secure:true,httpOnly:true,sameSite:'Lax',
+    path:'/',domain:'therabridge-ahmed-synthetic-demo.onrender.com'}],
+   request:{
+    get:async()=>({ok:()=>true,json:async()=>({csrfToken:'ci_only_mock'})}),
+    post:async()=>({status:()=>204})
+   }
+  };
+  const code=await run({credentialsFile:file,output:join(dir,'out'),
+   launchBrowser:async()=>({newContext:async()=>context,close:async()=>{}})});
+  assert.equal(code,1);
+  const report=JSON.parse(await readFile(join(dir,'out','hosted-readonly-results.json'),'utf8'));
+  const row=report.rows.find(r=>r.id==='N-052');
+  assert.equal(row.status,'FAIL');
+  assert.equal(row.sessionCleanup,'CONFIRMED');
+  assert.equal(row.pages.find(p=>p.route==='/app')?.outcome,'FAIL');
+  assert.ok(row.pages.find(p=>p.route==='/app')?.issues.includes('http_error'));
+  assert.equal(report.rows.length,42);
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
