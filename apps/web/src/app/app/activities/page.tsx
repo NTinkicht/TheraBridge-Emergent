@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { HeartHandshake, Plus, Sparkles } from 'lucide-react';
+import { HeartHandshake, Plus, Search, Sparkles } from 'lucide-react';
 import { Field, FormAlert } from '@/components/auth/Field';
 import { PageTitle, SelectField, Workspace, errorText, useLoad } from '@/components/centers/kit';
 import { ActivityCard } from '@/components/clinical/ActivityCard';
@@ -48,6 +48,20 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
   const fetcher = useCallback(() => clinicalApi.templates(centerId), [centerId]);
   const { data, failed, reload } = useLoad(fetcher, onError);
   const [notice, setNotice] = useState('');
+  const [search, setSearch] = useState('');
+  const [specialty, setSpecialty] = useState('all');
+  const [ownership, setOwnership] = useState('all');
+  const templates = data?.items ?? [];
+  const services = [...new Set(templates.map(t => t.service))].sort();
+  const q = search.trim().toLocaleLowerCase();
+  const visible = templates.filter(t => {
+    if (specialty !== 'all' && t.service !== specialty) return false;
+    if (ownership === 'mine' && t.mine !== true) return false;
+    if (ownership === 'samples' && t.library !== 'synthetic') return false;
+    if (!q) return true;
+    return [t.title, t.ageBand, t.service, ...t.materials, ...t.steps]
+      .some(value => value.toLocaleLowerCase().includes(q));
+  });
   return (
     <div className="space-y-5">
       <PageTitle title="Activity library" body="Step-by-step home activities with safety guidance, ready to add to therapy plan drafts." testId="activities-title" />
@@ -55,8 +69,49 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
       {session.permissions.includes('center.activities.manage') && <NewTemplate centerId={centerId} onError={onError} onDone={() => { setNotice('Activity created.'); void reload(); }} />}
       {failed && <ErrorState onRetry={() => void reload()} testId="activities-error" />}
       {!failed && !data && <Card className="p-5"><SkeletonRows rows={4} testId="activities-loading" /></Card>}
-      {data && !data.items.length && <EmptyState icon={Sparkles} title="No activities yet" body="Add the first template above." testId="activities-empty" />}
-      {data && <div className="grid grid-cols-1 gap-4 lg:grid-cols-2" data-testid="activities-list">{data.items.map(t => (
+      {data && templates.length > 0 && <Card className="space-y-3 p-4" testId="activities-discovery">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,180px)_minmax(0,180px)]">
+          <label className="block text-[13px] font-medium">Search activities
+            <span className="relative mt-1 block">
+              <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-inkMuted" />
+              <input type="search" value={search} onChange={e => setSearch(e.target.value)}
+                className="w-full rounded-control border border-border-strong bg-surface-white py-2 pl-10 pr-3 text-[14px]"
+                placeholder="Name, age, materials or steps" data-testid="activities-search" />
+            </span>
+          </label>
+          <label className="block text-[13px] font-medium">Specialty
+            <select value={specialty} onChange={e => setSpecialty(e.target.value)}
+              className="mt-1 w-full rounded-control border border-border-strong bg-surface-white p-2 text-[14px]"
+              data-testid="activities-specialty-filter">
+              <option value="all">All specialties</option>
+              {services.map(service => <option key={service} value={service}>{SPECIALTY_OPTIONS.find(o => o.value === service)?.label ?? service}</option>)}
+            </select>
+          </label>
+          <label className="block text-[13px] font-medium">Library
+            <select value={ownership} onChange={e => setOwnership(e.target.value)}
+              className="mt-1 w-full rounded-control border border-border-strong bg-surface-white p-2 text-[14px]"
+              data-testid="activities-ownership-filter">
+              <option value="all">All activities</option>
+              <option value="mine">My activities</option>
+              <option value="samples">Synthetic samples</option>
+            </select>
+          </label>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[13px] text-brand-inkMuted" role="status" data-testid="activities-result-count">
+            Showing {visible.length} of {templates.length} activities
+          </p>
+          {(search || specialty !== 'all' || ownership !== 'all') && <Button size="sm" variant="ghost"
+            onClick={() => { setSearch(''); setSpecialty('all'); setOwnership('all'); }} data-testid="activities-clear-filters">
+            Clear filters
+          </Button>}
+        </div>
+      </Card>}
+      {data && !templates.length && <EmptyState icon={Sparkles} title="No activities yet" body="Add the first template above." testId="activities-empty" />}
+      {data && templates.length > 0 && visible.length === 0 &&
+        <div data-testid="activities-no-results"><EmptyState icon={Search} title="No matching activities"
+          body="Try another keyword or clear your filters. Your saved activities are unchanged." /></div>}
+      {data && visible.length > 0 && <div className="grid grid-cols-1 gap-4 lg:grid-cols-2" data-testid="activities-list">{visible.map(t => (
         <div key={t.id} className="min-w-0 space-y-2">
           <ActivityCard t={t} />
           {session.permissions.includes('center.activities.manage') &&
