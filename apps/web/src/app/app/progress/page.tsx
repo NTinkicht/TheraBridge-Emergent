@@ -57,14 +57,14 @@ function Board({ session, onError }: { session: SessionInfo; onError: (e: unknow
         <SelectField label="Goal" value={f.goal} onChange={(goal) => setF({ ...f, goal })} testId="filter-goal" options={[{ value: '', label: 'All goals' }, ...goalOptions.map(([value, label]) => ({ value, label }))]} />
         <SelectField label="Period" value={f.period} onChange={(period) => setF({ ...f, period })} testId="filter-period" options={PERIODS.map(([value, label]) => ({ value, label }))} />
         {f.period === 'custom' && <>
-          <Field label="From" type="date" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} testId="filter-from" />
-          <Field label="To" type="date" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} testId="filter-to" />
+          <Field label="From" type="date" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} testId="filter-from" error={invalid ? 'Start date must not follow end date.' : undefined} />
+          <Field label="To" type="date" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} testId="filter-to" error={invalid ? 'End date must not precede start date.' : undefined} />
         </>}
       </Card>
+      {invalid && <p className="rounded-control bg-status-dangerSurface p-3 text-[14px] text-status-danger" role="alert" data-testid="progress-period-error">Choose a start date on or before the end date.</p>}
       {session.activeContext?.role === 'CLINICAL_SUPERVISOR' && (
         <SupervisorReviewQueue centerId={centerId} childId={f.childId} service={f.service} onError={onError} />
       )}
-      {invalid && <p className="rounded-control bg-status-dangerSurface p-3 text-[14px] text-status-danger" role="alert" data-testid="progress-period-error">Choose a start date on or before the end date.</p>}
       {!invalid && failed && <ErrorState onRetry={() => void reload()} testId="progress-error" />}
       {!invalid && !failed && !data && <Card className="p-5"><SkeletonRows rows={4} testId="progress-loading" /></Card>}
       {data && !invalid && (
