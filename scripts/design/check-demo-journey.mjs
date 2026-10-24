@@ -140,6 +140,69 @@ try {
     assert(g && g.planVersionId, 'Seeded goal must have a plan-version-scoped identity');
     const goalRef = 'planVersion:' + g.planVersionId + ':goal:' + g.key;
     await page.getByTestId('report-suggestion-goals').waitFor();
+    // P2 regression: autosave A pending; autosave B queued; decision flush C
+    // must wait until B commits before it can issue the POST. The old partial
+    // in-flight guard returned success as soon as B cleared dirty on startup.
+    const raceSection = page.getByTestId('report-section-goals');
+    const raceOriginal = await raceSection.inputValue();
+    const markerA = 'Queued autosave race A — synthetic draft.';
+    const markerB = 'Queued autosave race B — preserve this later typing.';
+    let releaseSaveA;
+    let releaseSaveB;
+    let notifySaveA;
+    let notifySaveB;
+    const saveAHeld = new Promise(resolve => { releaseSaveA = resolve; });
+    const saveBHeld = new Promise(resolve => { releaseSaveB = resolve; });
+    const saveAStarted = new Promise(resolve => { notifySaveA = resolve; });
+    const saveBStarted = new Promise(resolve => { notifySaveB = resolve; });
+    let interceptedPatches = 0;
+    let prematureDecisionPosts = 0;
+    const saveRoute = '**/clinical/reports/' + speechReport.id;
+    const pendingDecisionRoute = '**/clinical/reports/' + speechReport.id + '/suggestion-decisions';
+    await page.route(saveRoute, async route => {
+      if (route.request().method() === 'PATCH') {
+        interceptedPatches += 1;
+        if (interceptedPatches === 1) {
+          notifySaveA();
+          await saveAHeld;
+        } else if (interceptedPatches === 2) {
+          notifySaveB();
+          await saveBHeld;
+        }
+      }
+      await route.continue();
+    });
+    await page.route(pendingDecisionRoute, async route => {
+      if (route.request().method() === 'POST') prematureDecisionPosts += 1;
+      await route.continue();
+    });
+    await raceSection.fill(raceOriginal + '\n' + markerA);
+    await saveAStarted;
+    await raceSection.fill(raceOriginal + '\n' + markerA + '\n' + markerB);
+    // B's debounce must fire while A is blocked; B cannot reach the server
+    // until A finishes, but it must remain ahead of the decision flush.
+    await page.waitForTimeout(1500);
+    await page.getByTestId('report-assist-omit-goals').click();
+    await page.getByTestId('report-decision-edit-lock').waitFor();
+    assert.equal(prematureDecisionPosts, 0);
+    releaseSaveA();
+    await saveBStarted;
+    assert.equal(prematureDecisionPosts, 0,
+      'Decision must not issue POST before queued autosave B commits');
+    releaseSaveB();
+    await page.getByTestId('report-assist-restore-goals').waitFor({ timeout: 25000 });
+    await page.unroute(saveRoute);
+    await page.unroute(pendingDecisionRoute);
+    const raceAfter = await page.getByTestId('report-section-goals').inputValue();
+    assert(raceAfter.includes(markerA) && raceAfter.includes(markerB),
+      'Both pre-decision edits must survive after queued autosaves and remount');
+    const raceDb = await db.progressReport.findUniqueOrThrow({ where: { id: speechReport.id } });
+    assert(raceDb.sections.goals.includes(markerB),
+      'Second queued autosave must commit before a decision can increment report revision');
+    // The next test needs to start on a new report decision, not a previously
+    // omitted one. Reconsider is itself a durable audited step.
+    await page.getByTestId('report-assist-restore-goals').click();
+    await page.getByTestId('report-assist-source-goals').waitFor();
     // P2 data-loss regression: pause the real POST after the first flush.
     // Before fix, the textareas were still editable and typing here was
     // silently dropped when the successful decision remounted ReportEditor.
@@ -198,8 +261,8 @@ try {
     const persisted = await db.progressReport.findUniqueOrThrow({ where: { id: speechReport.id } });
     assert(persisted.sections.goals.includes(claim), 'Explicit clinician decision must be atomically persisted');
     const decisions = await db.reportSuggestionDecision.findMany({ where: { reportId: speechReport.id }, orderBy: { reportRevision: 'asc' } });
-    assert.deepEqual(decisions.map(d => d.action), ['OMITTED', 'RECONSIDERED', 'APPLIED']);
-    assert.equal(decisions[2].label, 'NON_CLINICAL_DRAFT');
+    assert.deepEqual(decisions.map(d => d.action), ['OMITTED', 'RECONSIDERED', 'OMITTED', 'RECONSIDERED', 'APPLIED']);
+    assert.equal(decisions.at(-1).label, 'NON_CLINICAL_DRAFT');
     await page.getByTestId('report-section-goals').fill(reportDraftText.replace('Recorded baseline', 'Reviewed baseline'));
     await page.locator('[data-testid="report-save-state"][data-state="saved"]').waitFor({ timeout: 25000 });
     await page.reload();

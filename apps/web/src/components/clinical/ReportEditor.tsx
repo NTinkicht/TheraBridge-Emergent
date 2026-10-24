@@ -37,7 +37,7 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
   // parent synchronously so no unsaved text can be typed after the flush.
   const decisionBusy = useRef(false);
   const [decisionLocked, setDecisionLocked] = useState(false);
-  const inFlightSave = useRef<Promise<boolean> | null>(null);
+  const saveQueue = useRef<Promise<boolean> | null>(null);
   const beginDecision = () => {
     if (decisionBusy.current) return false;
     decisionBusy.current = true;
@@ -50,20 +50,21 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
   };
   const id = d.report.id;
 
-  const save = useCallback(async (): Promise<boolean> => {
+  const save = useCallback((): Promise<boolean> => {
     clearTimeout(timer.current);
-    // A pending autosave must finish before its version is reused by a
-    // decision or another save. Avoid concurrent old-version writes.
-    if (inFlightSave.current) {
-      const previous = await inFlightSave.current;
-      if (!previous) return false;
-    }
-    if (!dirty.current) return true;
-    dirty.current = false;
-    setState('saving');
-    const attempt = (async (): Promise<boolean> => {
+    // Queue the *whole* autosave, not only its HTTP request. If A is in
+    // flight and B is queued, decision-flush C must wait for B, even if B
+    // cleared the dirty flag when its own POST started. All saves use the
+    // version returned by the immediately preceding request.
+    const previous = saveQueue.current;
+    const queued = (async (): Promise<boolean> => {
+      if (previous && !(await previous)) return false;
+      if (!dirty.current) return true;
+      dirty.current = false;
+      setState('saving');
       try {
-        const r = await reportsApi.autosave(centerId, id, local.current, ver.current);
+        const snapshot = { ...local.current };
+        const r = await reportsApi.autosave(centerId, id, snapshot, ver.current);
         ver.current = r.version;
         setSavedAt(r.savedAt);
         setState(dirty.current ? 'pending' : 'saved');
@@ -76,13 +77,16 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
         return false;
       }
     })();
-    inFlightSave.current = attempt;
-    try { return await attempt; }
-    finally { if (inFlightSave.current === attempt) inFlightSave.current = null; }
+    saveQueue.current = queued;
+    void queued.then(
+      () => { if (saveQueue.current === queued) saveQueue.current = null; },
+      () => { if (saveQueue.current === queued) saveQueue.current = null; },
+    );
+    return queued;
   }, [centerId, id, onError]);
 
   useEffect(() => {
-    const warn = (e: BeforeUnloadEvent) => { if (dirty.current || decisionBusy.current || inFlightSave.current) e.preventDefault(); };
+    const warn = (e: BeforeUnloadEvent) => { if (dirty.current || decisionBusy.current || saveQueue.current) e.preventDefault(); };
     window.addEventListener('beforeunload', warn);
     onSections(local.current);
     return () => { window.removeEventListener('beforeunload', warn); clearTimeout(timer.current); };

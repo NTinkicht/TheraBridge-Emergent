@@ -1,5 +1,10 @@
 ## CURRENT — new exact-head review after Codex P2 data-loss correction
 
+## CURRENT — Second Codex P2: queued autosave ordering
+
+After the earlier editing lock, Codex at `a1f3fa8043` confirmed a remaining P2 race: two queued autosaves A/B plus decision flush C could let C finish ahead of B. A FIFO save queue and held-A/held-B Chromium regression are prepared on PR #70. Requalify the **new exact SHA** with all six CI jobs, inspect the new browser test and obtain fresh independent review. Do not merge while any P2 thread remains genuinely unresolved. Hosted acceptance issue #61 and clinical/pilot NO-GO remain separate.
+
+
 PR #70 latest feature branch includes a corrected parent-owned decision transaction lock for ReportEditor, in-flight autosave serialization and delayed-network browser regression. The previous `d965842e` passed 6/6 and 482/482, with a confirmed Codex P2 that **must not** be merged uncorrected. Verify all six GitHub Actions jobs at the new SHA; inspect delayed-POST assertions, lock/unlock on error and prevention of concurrent remount text loss; obtain fresh independent reviewer verdict, close Codex finding only when verified. Do not merge/alter the Render acceptance target before the gates pass. See `docs/product/TB-EM-023-DELIVERY.md`.
 
 ## CURRENT — TB-EM-023 PR #70 review qualification (2026-10-24)

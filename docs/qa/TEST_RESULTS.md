@@ -1,5 +1,10 @@
 # Test results — TheraBridge
 
+## TB-EM-023 — pending FIFO autosave requalification
+
+New correction targets Codex P2 autosave ordering (A/B queued while decision C flushes); browser regression holds A and B independently, asserts C's POST cannot occur ahead of B and checks both text markers survive in PostgreSQL after reload. **No result claimed before exact-head CI**. Ancestor `a1f3fa8043` passed its earlier delayed POST journey but was found vulnerable to the A/B/C ordering. Continue to require full six-job CI, independent re-review and separate hosted acceptance (#61).
+
+
 ## TB-EM-023 — Codex report edit-loss P2 correction (2026-10-24)
 
 **New incremental patch: NOT RUN at authoring.** `ReportEditor` and `ReportDecisionAssist` coordinate synchronous parent-owned input locking while a report decision awaits an in-flight autosave and POST; browser journey deliberately delays the POST to assert all draft textareas, Save Version, Send for Review and Preview are disabled, and confirms predecision typed text is not lost on post-decision remount. Previous exact-head `d965842e556563ed9b2c5317e154930c2e592e77`: [run 40080336806](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/40080336806), **6/6 green and 482/482 PostgreSQL tests**, but this HEAD had a confirmed Codex P2 data-loss defect. The old run does not qualify the new patch. No external Render hosted acceptance or clinical activation.

@@ -1,5 +1,14 @@
 # TB-EM-023 — Combined P1/P2/P3 synthetic V1 delivery and qualification
 
+## Second Codex P2 — FIFO autosave ordering (2026-10-24)
+
+Codex's exact-head review at `a1f3fa8043` found that autosave B and decision flush C could both wait for in-flight autosave A; B then cleared `dirty` before completing its PATCH, allowing C to return success and submit the decision ahead of B. A successful decision could remount and discard pre-submit clinician text after a version conflict. This is distinct from post-submit editing.
+
+The correction replaces the HTTP-only `inFlightSave` check with a **FIFO chain of complete save operations**. Every invocation captures the prior queued promise and awaits its successful completion *before checking dirty state and issuing a PATCH*. The decision's final flush is queued behind any pre-existing saves, so it cannot return or re-use the report version while a preceding autosave request is pending. Version numbers are obtained only from successful predecessor responses; errors stop the chain with unsaved text preserved. The existing parent-owned editing lock protects post-submit typing.
+
+The seven-role Chromium journey now holds autosave A, queues a second save B, triggers a decision C, releases A and ensures C has **not** posted while B is held. After B completes, it verifies both predecision text markers and database state survive the report-version remount. A separate delayed decision POST test still checks the post-submit lock. Latest exact-head CI and independent review REQUIRED. No Render deploy or clinical NO-GO relaxation.
+
+
 ## Incremental code-review P2: no lost drafts during decision/reload
 
 Codex exact-head review at `d965842e` confirmed a clinician could edit report sections **after** the pre-decision autosave but **before** the POST response, and then lose that draft text on parent key/version remount (the autosave debounce was cancelled by unmount). This is a true P2 data-loss bug, and old NO_BLOCKING_FINDINGS verdicts are superseded.
