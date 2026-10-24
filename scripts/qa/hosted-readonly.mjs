@@ -52,6 +52,10 @@ export function blocked(role,reason){
  return [...WIDTHS.map((width,i)=>({id:caseId(c.start+i),role,width,status:'BLOCKED',reason})),
   {id:caseId(c.cookie),role,status:'BLOCKED',reason}];
 }
+export function missingBlockedRows(role,completed,reason){
+ const seen=new Set(completed.map(r=>r.id));
+ return blocked(role,reason).filter(r=>!seen.has(r.id));
+}
 async function metrics(page){
  return page.evaluate(()=>{
   const visible=q=>{const e=document.querySelector(q);if(!e)return false;const s=getComputedStyle(e),r=e.getBoundingClientRect();
@@ -130,6 +134,9 @@ async function assess(browser,role,user,directory){
        'geometry_ok_dialog_and_visual_review_pending':
        status==='BLOCKED'?'browser_navigation_incomplete':'confirmed_ui_or_navigation_problem',pages});
   }
+ }catch{
+  // Never replace an earlier FAIL (e.g. bad cookie attributes) with BLOCKED.
+  rows.push(...missingBlockedRows(role,rows,'role_browser_execution_incomplete'));
  }finally{
   // Preserve an explicit cleanup receipt even when the final page crashed.
   let cleanup='NOT_AUTHENTICATED';
@@ -139,12 +146,12 @@ async function assess(browser,role,user,directory){
    if(cleanup==='UNCONFIRMED')console.error('WARNING: session cleanup unavailable for '+role);
   }
   for(const row of rows)row.sessionCleanup=cleanup;
-  await context.close();
+  try{await context.close();}catch{/* keep completed evidence */}
  }
  return rows;
 }
 export async function run({credentialsFile=process.env.QA_USERS_FILE,output=process.env.QA_PRIVATE_OUTPUT,
- deploymentSha=process.env.QA_DEPLOY_SHA}={}){
+ deploymentSha=process.env.QA_DEPLOY_SHA,launchBrowser}={}){
  if(!validateTarget(BASE))throw Error('unsafe_target');
  const out=resolve(output||join(homedir(),'.local','share','therabridge-private-qa'));
  await mkdir(out,{recursive:true,mode:0o700});
@@ -159,8 +166,10 @@ export async function run({credentialsFile=process.env.QA_USERS_FILE,output=proc
  const ready=Object.keys(ROLES).filter(r=>users?.[r]?.email&&users?.[r]?.password);
  if(ready.length){
   let browser;
-  try{const {chromium}=await import('playwright');browser=await chromium.launch();}
-  catch{ /* unavailable executable or module: record blocked, never fabricate PASS */ }
+  try{
+   if(launchBrowser)browser=await launchBrowser();
+   else{const {chromium}=await import('playwright');browser=await chromium.launch();}
+  }catch{ /* unavailable executable or module: record blocked, never fabricate PASS */ }
   if(!browser){
    for(const role of Object.keys(ROLES))rows.push(...blocked(role,
      ready.includes(role)?'chromium_unavailable':'private_credentials_missing'));

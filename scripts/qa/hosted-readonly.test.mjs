@@ -60,7 +60,8 @@ test('unavailable Playwright/Chromium emits blocked evidence, never exits withou
   await chmod(users,0o600);
   // The offline-contracts job intentionally does not install Playwright.
   // Any runtime without a working Chromium must report 42 BLOCKED.
-  const r=await run({credentialsFile:users,output:join(dir,'evidence')});
+  const r=await run({credentialsFile:users,output:join(dir,'evidence'),
+   launchBrowser:async()=>{throw new Error('OFFLINE_BROWSER_UNAVAILABLE_FIXTURE');}});
   assert.equal(r,1);
   const d=JSON.parse(await readFile(join(dir,'evidence','hosted-readonly-results.json'),'utf8'));
   assert.deepEqual(d.counts,{PASS:0,FAIL:0,BLOCKED:42});
@@ -80,4 +81,47 @@ test('session logout uses approved-origin context requests even without a usable
  assert.deepEqual(seen.map(s=>s.url),[BASE+'/api/auth/session',BASE+'/api/auth/logout']);
  assert.equal(seen[1].origin,BASE);
  assert.equal(seen[1].tokenPresent,true);
+});
+test('partial cookie FAIL survives later viewport crash and keeps confirmed cleanup',async()=>{
+ const {mkdtemp,rm,writeFile,readFile,chmod}=await import('node:fs/promises');
+ const {tmpdir}=await import('node:os');const {join}=await import('node:path');
+ const path=await mkdtemp(join(tmpdir(),'tb-qa-crash-'));
+ try{
+  const file=join(path,'users.json');
+  await writeFile(file,JSON.stringify({platform:{email:'fixture@example.invalid',password:'ci_only_fixture'}}),{mode:0o600});
+  await chmod(file,0o600);
+  const context={
+   request:{get:async()=>({ok:()=>true,json:async()=>({csrfToken:'ci_only_fixture'})}),
+     post:async()=>({status:()=>204})},
+   cookies:async()=>[{name:'__Host-tb_session',secure:false,httpOnly:true,sameSite:'Lax',path:'/',
+      domain:'therabridge-ahmed-synthetic-demo.onrender.com'}],
+   newPage:async()=>({
+     goto:async()=>({status:()=>200}),
+     getByTestId:()=>({fill:async()=>{},click:async()=>{},waitFor:async()=>{}}),
+     waitForResponse:async()=>({status:()=>200,headerValues:async()=>[
+       '__Host-tb_session=ci_only_fixture; Path=/; HttpOnly; SameSite=Lax; Secure']}),
+     waitForURL:async()=>{},
+     evaluate:async()=>true,
+     setViewportSize:async()=>{throw Error('SIMULATED_VIEWPORT_CRASH');}
+   }),
+   close:async()=>{}
+  };
+  const mockBrowser={newContext:async()=>context,close:async()=>{}};
+  const result=await run({credentialsFile:file,output:join(path,'out'),launchBrowser:async()=>mockBrowser});
+  assert.equal(result,1);
+  const ledger=JSON.parse(await readFile(join(path,'out','hosted-readonly-results.json'),'utf8'));
+  assert.equal(ledger.rows.length,42);
+  assert.equal(ledger.rows.find(x=>x.id==='N-087').status,'FAIL');
+  assert.equal(ledger.rows.find(x=>x.id==='N-087').sessionCleanup,'CONFIRMED');
+  assert.equal(ledger.rows.find(x=>x.id==='N-052').status,'BLOCKED');
+  assert.equal(ledger.counts.FAIL,1);
+ }finally{await rm(path,{recursive:true,force:true});}
+});
+test('unfinished N-cases are filled without erasing previous findings',async()=>{
+ const {missingBlockedRows}=await import('./hosted-readonly.mjs');
+ const previous=[{id:'N-087',role:'platform',status:'FAIL',sessionCleanup:'UNCONFIRMED'}];
+ const missing=missingBlockedRows('platform',previous,'synthetic_crash');
+ assert.equal(missing.length,5);
+ assert.ok(missing.every(r=>r.status==='BLOCKED'));
+ assert.equal(previous[0].status,'FAIL');
 });
