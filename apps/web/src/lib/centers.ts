@@ -6,7 +6,7 @@ export type StaffRole = 'COORDINATOR' | 'THERAPIST' | 'CLINICAL_SUPERVISOR';
 
 export const STAFF_ROLE_OPTIONS: { value: StaffRole; label: string; hint: string }[] = [
   { value: 'COORDINATOR', label: 'Coordinator', hint: 'Sees the team directory and helps run the center day to day.' },
-  { value: 'THERAPIST', label: 'Therapist', hint: 'Delivers therapy. Clinical tools arrive in the next milestone.' },
+  { value: 'THERAPIST', label: 'Therapist', hint: 'Works on assigned child and specialty-scoped clinical drafts, session notes and reports; signing and release stay locked.' },
   { value: 'CLINICAL_SUPERVISOR', label: 'Clinical supervisor', hint: 'Oversees clinical quality. Sign-off powers stay locked until a clinical policy is approved.' },
 ];
 export const RESPONSIBILITY_OPTIONS = [

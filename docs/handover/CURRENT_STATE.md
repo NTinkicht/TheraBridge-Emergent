@@ -1,5 +1,12 @@
 # Current state — TheraBridge-Emergent
 
+## TB-EM-023 — merged-ready candidate requires requalification (2026-10-24)
+
+PR [#70](https://github.com/NTinkicht/TheraBridge-Emergent/pull/70) combines P1 persistent source-traced report decisions, P2 six hosted-QA fixes, and P3 activity template and explicit child-wide referent workflows. Earlier implementation head `73c4afb5317bf5eca1723242fcc61cdce01fd6fe` was CI-green (481/481 PostgreSQL tests, six Actions jobs) and reviewed NO_BLOCKING_FINDINGS by Grok/Mistral. Codex found two P2 concurrent child/referent mutations at prior head; both fixed at `73c4afb` with centre→child locking and real PostgreSQL parallel regressions. CodeRabbit verified its two findings addressed. A supplemental DeepSeek review posted from the owner's account identified historical-reason UI, stale omitted/reconsidered navigation and additional QA/doc coverage; this next correction responds to those advisories on the same PR. **The new corrective HEAD has not yet been qualified at authoring**; new exact-head CI and independent review are mandatory before merge. No clinical/real-data permission gate lifted. Render synthetic demo remains unchanged; external hosted acceptance issue #61 is not complete.
+
+Canonical new work-unit technical evidence: `docs/product/TB-EM-023-DELIVERY.md`. Archived TB-EM-019 entries below are historical, not a current branch status.
+
+
 ## TB-EM-019 — independent-review advisory corrections (2026-10-23)
 
 Mistral and Grok source reviews at `b542159a70b0799d920593e4f0c439893e2235f3` found **NO_BLOCKING_FINDINGS**. This follow-up implements MIS-001 stable section-specific evidence headings (with legacy compatibility) and MIS-002 explicit therapist-only practice-feedback failure/retry states. Corrective tests are added but **new exact-head CI is NOT RUN as this commit is authored**. Earlier head: [6/6 PASS](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/40006533539). MIS-003 version-label semantics and MIS-004 remove/re-add snapshot semantics remain unchanged pending product decision. PR #65 remains draft, not merged or deployed. Independent re-review must target the NEW HEAD; clinical controls and external AI remain OFF.

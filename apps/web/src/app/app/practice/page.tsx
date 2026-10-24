@@ -57,14 +57,14 @@ function Practice({ session, onError }: { session: SessionInfo; onError: (e: unk
       {!data.children.length ? <EmptyState tone="family" icon={Sun} title="No children linked" body="When a center connects you to your child, sample activities appear here." testId="practice-empty" /> : (
         <>
           {data.children.length > 1 && (
-            <div role="tablist" aria-label="Choose a child" className="flex flex-wrap gap-2" data-testid="practice-children">
-              {data.children.map((k, i) => <button key={k.id} role="tab" aria-selected={k.id === child.id} className={tab(k.id === child.id)} onClick={() => setChildIdx(i)} data-testid={`practice-child-${k.id}`}>{k.name}</button>)}
+            <div role="group" aria-label="Choose a child" className="flex flex-wrap gap-2" data-testid="practice-children">
+              {data.children.map((k, i) => <button key={k.id} type="button" aria-pressed={k.id === child.id} className={tab(k.id === child.id)} onClick={() => setChildIdx(i)} data-testid={`practice-child-${k.id}`}>{k.name}</button>)}
             </div>
           )}
-          <div role="tablist" aria-label="View" className="flex flex-wrap gap-2">
-            <button role="tab" aria-selected={view === 'today'} className={tab(view === 'today')} onClick={() => { setView('today'); setWeek(undefined); }} data-testid="practice-view-today"><Sun size={15} aria-hidden="true" />Today</button>
-            <button role="tab" aria-selected={view === 'week'} className={tab(view === 'week')} onClick={() => { setView('week'); setWeek(undefined); }} data-testid="practice-view-week"><CalendarDays size={15} aria-hidden="true" />This week</button>
-            <button role="tab" aria-selected={view === 'history'} className={tab(view === 'history')} onClick={() => setView('history')} data-testid="practice-view-history"><History size={15} aria-hidden="true" />History</button>
+          <div role="group" aria-label="Practice views" className="flex flex-wrap gap-2">
+            <button type="button" aria-pressed={view === 'today'} className={tab(view === 'today')} onClick={() => { setView('today'); setWeek(undefined); }} data-testid="practice-view-today"><Sun size={15} aria-hidden="true" />Today</button>
+            <button type="button" aria-pressed={view === 'week'} className={tab(view === 'week')} onClick={() => { setView('week'); setWeek(undefined); }} data-testid="practice-view-week"><CalendarDays size={15} aria-hidden="true" />This week</button>
+            <button type="button" aria-pressed={view === 'history'} className={tab(view === 'history')} onClick={() => setView('history')} data-testid="practice-view-history"><History size={15} aria-hidden="true" />History</button>
           </div>
           {view === 'week' && (
             <div className="flex items-center justify-between gap-2 rounded-control bg-fam-surface p-2" data-testid="practice-week-nav">

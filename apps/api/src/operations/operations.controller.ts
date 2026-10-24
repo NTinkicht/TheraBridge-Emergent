@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Que
 import { RequirePermission, TbRequest } from '../auth/access';
 import {
   AppointmentDto, AppointmentStatusDto, AssignmentDto, ChildDto, ExtendTrialDto, FamilyPreferenceDto, GuardianDto, ListChildrenQuery, MessageDto, RangeQuery, ReasonDto, RescheduleDto,
-  SeriesCancelDto, SeriesDto, SeriesUpdateDto, ThreadDto, ThreadListQuery, UpdateChildDto,
+  SeriesCancelDto, SeriesDto, SeriesUpdateDto, ThreadDto, ThreadListQuery, UpdateChildDto, ReferentDto,
 } from './operations.dto';
 import { ChildrenService, Viewer } from './children.service';
 import { MessagesService } from './messages.service';
@@ -131,6 +131,13 @@ export class OperationsController {
   async removeGuardian(@Param('centerId', uuid()) centerId: string, @Param('childId', uuid()) id: string, @Param('linkId', uuid()) linkId: string, @Body() dto: ReasonDto, @Req() req: TbRequest) {
     await this.children.removeGuardian(centerId, actor(req), id, linkId, dto.reason);
     return { ok: true };
+  }
+
+  @Patch('children/:childId/referent')
+  @RequirePermission('center.children.manage')
+  setReferent(@Param('centerId', uuid()) centerId: string, @Param('childId', uuid()) id: string,
+    @Body() dto: ReferentDto, @Req() req: TbRequest) {
+    return this.children.setReferent(centerId, viewer(req), id, dto);
   }
 
   @Post('children/:childId/assignments')

@@ -119,8 +119,8 @@ export class ClinicalController {
 
   @Get('activities')
   @RequirePermission('center.activities.read')
-  templates(@Param('centerId', uuid()) c: string) {
-    return this.clinical.templates(c).then((items) => ({ items }));
+  templates(@Param('centerId', uuid()) c: string, @Req() req: TbRequest) {
+    return this.clinical.templates(c, viewer(req)).then((items) => ({ items }));
   }
 
   @Post('activities')

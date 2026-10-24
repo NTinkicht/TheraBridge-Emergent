@@ -5,6 +5,7 @@ import { HeartHandshake, Plus, Sparkles } from 'lucide-react';
 import { Field, FormAlert } from '@/components/auth/Field';
 import { PageTitle, SelectField, Workspace, errorText, useLoad } from '@/components/centers/kit';
 import { ActivityCard } from '@/components/clinical/ActivityCard';
+import { TemplateActions } from '@/components/clinical/TemplateActions';
 import { Button, Card } from '@/components/design/ui';
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
 import { SPECIALTY_OPTIONS, type SessionInfo } from '@/lib/auth';
@@ -46,16 +47,23 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
   const centerId = session.activeContext?.type === 'center' ? session.activeContext.centerId : '';
   const fetcher = useCallback(() => clinicalApi.templates(centerId), [centerId]);
   const { data, failed, reload } = useLoad(fetcher, onError);
-  const [notice, setNotice] = useState(false);
+  const [notice, setNotice] = useState('');
   return (
     <div className="space-y-5">
       <PageTitle title="Activity library" body="Step-by-step home activities with safety guidance, ready to add to therapy plan drafts." testId="activities-title" />
-      {notice && <FormAlert tone="success" testId="template-saved">Template added.</FormAlert>}
-      {session.permissions.includes('center.activities.manage') && <NewTemplate centerId={centerId} onError={onError} onDone={() => { setNotice(true); void reload(); }} />}
+      {notice && <FormAlert tone="success" testId="template-saved">{notice}</FormAlert>}
+      {session.permissions.includes('center.activities.manage') && <NewTemplate centerId={centerId} onError={onError} onDone={() => { setNotice('Activity created.'); void reload(); }} />}
       {failed && <ErrorState onRetry={() => void reload()} testId="activities-error" />}
       {!failed && !data && <Card className="p-5"><SkeletonRows rows={4} testId="activities-loading" /></Card>}
       {data && !data.items.length && <EmptyState icon={Sparkles} title="No activities yet" body="Add the first template above." testId="activities-empty" />}
-      {data && <div className="grid grid-cols-1 gap-4 lg:grid-cols-2" data-testid="activities-list">{data.items.map((t) => <ActivityCard key={t.id} t={t} />)}</div>}
+      {data && <div className="grid grid-cols-1 gap-4 lg:grid-cols-2" data-testid="activities-list">{data.items.map(t => (
+        <div key={t.id} className="min-w-0 space-y-2">
+          <ActivityCard t={t} />
+          {session.permissions.includes('center.activities.manage') &&
+            <TemplateActions centerId={centerId} template={t} onError={onError}
+              onChanged={message => { setNotice(message); void reload(); }}/>}
+        </div>
+      ))}</div>}
     </div>
   );
 }

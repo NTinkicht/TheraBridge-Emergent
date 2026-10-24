@@ -15,8 +15,8 @@ import { WEEKDAYS } from './RepeatFields';
 type Mode = 'view' | 'cancel' | 'noshow' | 'seriesEdit' | 'seriesCancel';
 
 // Details and every action for one visit, including "this and following" changes to its series.
-export function AppointmentPanel({ centerId, appt, manage, mine, onClose, onMove, onDone, onError }: {
-  centerId: string; appt: Appointment | null; manage: boolean; mine: boolean; onClose: () => void; onMove: (a: Appointment) => void; onDone: (msg: string) => void; onError: (e: unknown) => void;
+export function AppointmentPanel({ centerId, appt, manage, mine, canOpenClinical, onClose, onMove, onDone, onError }: {
+  centerId: string; appt: Appointment | null; manage: boolean; mine: boolean; canOpenClinical: boolean; onClose: () => void; onMove: (a: Appointment) => void; onDone: (msg: string) => void; onError: (e: unknown) => void;
 }) {
   const [mode, setMode] = useState<Mode>('view');
   const [reason, setReason] = useState('');
@@ -74,7 +74,7 @@ export function AppointmentPanel({ centerId, appt, manage, mine, onClose, onMove
   return (
     <Dialog open onClose={onClose} title={appt.childFull} testId="appt-panel" footer={footer}>
       <div className="space-y-4">
-        {mine && (open || appt.status === 'COMPLETED') && <Link className="inline-flex min-h-[44px] items-center text-brand-action underline" href={`/app/clinical/${appt.childId}`}>Open child session workspace</Link>}
+        {canOpenClinical && (open || appt.status === 'COMPLETED') && <Link className="inline-flex min-h-[44px] items-center text-brand-action underline" href={`/app/clinical/${appt.childId}`}>Open child session workspace</Link>}
         {err && <FormAlert tone="danger" testId="appt-error">{err}</FormAlert>}
         <dl className="grid grid-cols-[110px_1fr] gap-x-3 gap-y-2 text-[14px]">
           <dt className="text-brand-inkMuted">When</dt><dd className="tnum" data-testid="appt-when">{dayLabel(appt.startsAt)} · {timeRange(appt.startsAt, appt.endsAt)}</dd>

@@ -13,9 +13,9 @@ import { SETUP_LABELS, centersApi } from '@/lib/centers';
 
 const ROLE_SUMMARY = [
   { role: 'Center administrator', can: 'Center details, setup, inviting and managing the team.' },
-  { role: 'Coordinator', can: 'Sees the team directory and invitation status.' },
-  { role: 'Therapist', can: 'Own profile and center overview.' },
-  { role: 'Clinical supervisor', can: 'Own profile and center overview.' },
+  { role: 'Coordinator', can: 'Schedules appointments, manages calendars, and sees staff and child administrative information, not clinical drafts.' },
+  { role: 'Therapist', can: 'Assigned children, specialty-scoped clinical drafts, progress and reports. Signing and release remain locked.' },
+  { role: 'Clinical supervisor', can: 'Authorized clinical review and read-only oversight; signing, approval and release remain locked.' },
 ];
 
 function Setup({ centerId, onError }: { centerId: string; onError: (e: unknown) => void }) {

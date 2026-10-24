@@ -2,7 +2,7 @@ import { rest } from './auth';
 
 export interface Goal { key: string; title: string; measure: 'percent' | 'count' | 'level'; baseline: number; target: number }
 export interface HomeActivity { templateId: string; frequency: string; note?: string; goalKey?: string; snapshot?: Template & { version: number; capturedAt: string } }
-export interface Template { id: string; title: string; service: string; ageBand: string; minutes: number; materials: string[]; steps: string[]; safety: string[]; library?: 'center' | 'synthetic' }
+export interface Template { id: string; title: string; service: string; ageBand: string; minutes: number; materials: string[]; steps: string[]; safety: string[]; library?: 'center' | 'synthetic'; version?: number; mine?: boolean }
 export interface PlanVersion { id: string; number: number; status: 'DRAFT' | 'IN_REVIEW' | 'SUPERSEDED' | 'RETURNED_FOR_REVISION' | 'WITHDRAWN' | 'FROZEN_INTERNAL'; summary: string; goals: Goal[]; homeActivities: HomeActivity[]; reviewNotes: { at: string; comment: string }[]; version: number; mine: boolean; author: string; updatedAt: string }
 export interface SessionActivity { id: string; templateId: string; minutes: number; objective: string; planVersionId?: string; goalKey?: string; completion: 'NOT_STARTED' | 'COMPLETED' | 'SKIPPED'; outcome?: 'ACHIEVED' | 'PARTIAL' | 'NOT_ACHIEVED'; assistance?: 'INDEPENDENT' | 'SOME_ASSISTANCE' | 'SUBSTANTIAL_ASSISTANCE'; observation: string; snapshot?: Template; authorId?: string; createdAt?: string }
 export interface CareTeamMember { assignmentId: string; displayName: string; service: string; isSpecialtyLead: boolean }
@@ -10,6 +10,7 @@ export interface Workspace {
   timezone: string; synthetic: true; locked: string; canEdit: boolean; canReview: boolean;
   careTeam: CareTeamMember[];
   childWideReferent: { displayName: string } | null;
+  childWideReferentStatus?: 'NOT_DESIGNATED' | 'VISIBLE' | 'UNAVAILABLE';
   child: { id: string; name: string; services: string[]; dateOfBirth: string };
   assessments: { id: string; service: string; assessedOn: string; summary: string; areas: { area: string; finding: string }[]; version: number; author: string; mine: boolean; updatedAt: string }[];
   plans: { id: string; service: string; title: string; versions: PlanVersion[] }[];
@@ -42,6 +43,9 @@ export const clinicalApi = {
   observe: (centerId: string, childId: string, body: { planVersionId: string; goalKey: string; value: number; observedOn: string; note?: string }) => rest.send('POST', c(centerId, `clinical/children/${childId}/observations`), body),
   templates: (centerId: string) => rest.get<{ items: Template[] }>(c(centerId, 'activities')),
   createTemplate: (centerId: string, body: Omit<Template, 'id' | 'library'>) => rest.send('POST', c(centerId, 'activities'), body),
+  duplicateTemplate: (centerId: string, id: string, title: string) => rest.send<{ id: string; version: number }>('POST', c(centerId, `activities/${id}/duplicate`), { title }),
+  editTemplate: (centerId: string, id: string, body: { version: number; title: string; ageBand: string; minutes: number; materials: string[]; steps: string[]; safety: string[] }) =>
+    rest.send<{ id: string; version: number }>('PATCH', c(centerId, `activities/${id}`), body),
   // Reuses the existing server-authorized practice-feedback endpoint; does
   // not create a new pathway from guardian notes to clinical records.
   practiceFeedback: (centerId: string, childId: string) =>

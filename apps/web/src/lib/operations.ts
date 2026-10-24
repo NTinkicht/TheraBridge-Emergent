@@ -19,6 +19,7 @@ export interface Guardian { id: string; displayName: string; relationship: strin
 export interface Assignment { id: string; membershipId: string; therapist: string; title: string | null; service: string; isLead: boolean; startedAt: string; endedAt: string | null }
 export interface ChildDetail {
   id: string; firstName: string; lastName: string; preferredName: string | null; dateOfBirth: string; services: string[]; status: 'ACTIVE' | 'ARCHIVED'; version: number;
+  referent: { membershipId: string; displayName: string } | null; referentRevision: number; referentStatus: 'NOT_DESIGNATED' | 'ACTIVE' | 'UNAVAILABLE';
   guardians: Guardian[]; assignments: Assignment[]; appointments: (Omit<Appointment, 'child' | 'childFull' | 'childId' | 'statusReason'>)[];
   events: { id: number; type: string; actor: string | null; subject: string | null; meta: Record<string, unknown>; createdAt: string }[];
 }
@@ -60,6 +61,8 @@ export const opsApi = {
   removeGuardian: (centerId: string, id: string, linkId: string, reason: string) => rest.send('POST', c(centerId, `children/${id}/guardians/${linkId}/remove`), { reason }),
   assign: (centerId: string, id: string, body: { membershipId: string; service: string; isLead: boolean }) => rest.send('POST', c(centerId, `children/${id}/assignments`), body),
   endAssignment: (centerId: string, id: string, aid: string) => rest.send('POST', c(centerId, `children/${id}/assignments/${aid}/end`)),
+  designateReferent: (centerId: string, id: string, body: { membershipId: string | null; version: number; reason: string }) =>
+    rest.send<{ version: number; referentRevision: number }>('PATCH', c(centerId, `children/${id}/referent`), body),
   appointments: (centerId: string, q: { from: string; to: string; membershipId?: string; childId?: string }) => rest.get<{ items: Appointment[]; timezone: string }>(`${c(centerId, 'appointments')}?${qs(q)}`).then((r) => { setCenterTz(r.timezone); return r; }),
   book: (centerId: string, body: { childId: string; membershipId: string; service: string; startsAt: string; endsAt: string; room?: string }) => rest.send<{ id: string }>('POST', c(centerId, 'appointments'), body),
   reschedule: (centerId: string, id: string, body: { startsAt: string; endsAt: string; version: number; room?: string }) => rest.send('PATCH', c(centerId, `appointments/${id}`), body),

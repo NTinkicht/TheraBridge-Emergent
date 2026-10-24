@@ -150,7 +150,7 @@ const EVENT_LABELS: Record<string, string> = {
   'member.updated': 'Roles or profile changed', 'member.profile_updated': 'Profile updated', 'member.suspended': 'Access suspended',
   'member.reactivated': 'Access reactivated', 'member.revoked': 'Access revoked',
   'trial.extended': 'Trial extended', 'child.registered': 'Child registered', 'child.updated': 'Child details updated', 'child.archived': 'Record archived',
-  'child.restored': 'Record restored', 'guardian.added': 'Guardian added', 'guardian.removed': 'Guardian removed', 'assignment.started': 'Therapist assigned',
+  'child.restored': 'Record restored', 'child.referent_changed': 'Child-wide referent changed', 'guardian.added': 'Guardian added', 'guardian.removed': 'Guardian removed', 'assignment.started': 'Therapist assigned',
   'assignment.ended': 'Assignment ended', 'appointment.scheduled': 'Appointment booked', 'appointment.rescheduled': 'Appointment moved',
   'appointment.cancelled': 'Appointment cancelled', 'appointment.completed': 'Attendance recorded', 'appointment.no_show': 'No-show recorded',
 };

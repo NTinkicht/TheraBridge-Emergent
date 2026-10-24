@@ -215,6 +215,7 @@ model Membership {
   updatedAt        DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   user             User             @relation(fields: [userId], references: [id], onDelete: Restrict)
   center           Center           @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  referredChildren Child[]          @relation("ChildReferent")
   roles            RoleAssignment[]
   sessions         Session[]
 
@@ -370,7 +371,11 @@ model Child {
   createdAt     DateTime         @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   version       Int              @default(1)
+  referentMembershipId String?    @map("referent_membership_id") @db.Uuid
+  referentRevision     Int        @default(0) @map("referent_revision")
   center        Center           @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  referentMember Membership?      @relation("ChildReferent", fields: [referentMembershipId], references: [id], onDelete: Restrict)
+  referentHistory ChildReferentHistory[]
   guardians     GuardianLink[]
   assignments   CareAssignment[]
   appointments  Appointment[]
@@ -378,6 +383,25 @@ model Child {
 
   @@index([centerId, status])
   @@map("child")
+}
+
+// One explicit, non-authorizing child-wide care coordinator designation.
+// Previous decisions are append-only; no clinical authorization is conferred.
+model ChildReferentHistory {
+  id           String   @id @default(uuid()) @db.Uuid
+  centerId     String   @map("center_id") @db.Uuid
+  childId      String   @map("child_id") @db.Uuid
+  actorUserId  String   @map("actor_user_id") @db.Uuid
+  previousMembershipId String? @map("previous_membership_id") @db.Uuid
+  nextMembershipId     String? @map("next_membership_id") @db.Uuid
+  reason       String   @db.VarChar(500)
+  revision     Int
+  createdAt    DateTime @map("created_at") @db.Timestamptz(3)
+  child        Child    @relation(fields: [childId], references: [id], onDelete: Restrict)
+
+  @@unique([childId, revision])
+  @@index([centerId, childId, createdAt])
+  @@map("child_referent_history")
 }
 
 model GuardianLink {
