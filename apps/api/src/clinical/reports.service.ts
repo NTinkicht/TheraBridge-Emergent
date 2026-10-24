@@ -143,11 +143,17 @@ export class ReportsService {
       ${q.childId ? Prisma.sql`AND r.child_id = ${q.childId}::uuid` : Prisma.empty}
       ${q.service ? Prisma.sql`AND r.service = ${q.service}` : Prisma.empty}
       ${q.search ? Prisma.sql`AND (
-        r.title ILIKE ${'%' + q.search + '%'}
-        OR COALESCE(ch.preferred_name, ch.first_name) ILIKE ${'%' + q.search + '%'}
-        OR ch.last_name ILIKE ${'%' + q.search + '%'}
-        OR u.display_name ILIKE ${'%' + q.search + '%'}
+        LOWER(TRANSLATE(r.title, 'áàâäãåéèêëíìîïóòôöõúùûüýÿñçÁÀÂÄÃÅÉÈÊËÍÌÎÏÓÒÔÖÕÚÙÛÜÝŸÑÇ',
+          'aaaaaaeeeeiiiiooooouuuuyyncAAAAAAEEEEIIIIOOOOOUUUUYYNC')) LIKE ${'%' + q.search.normalize('NFKD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase() + '%'}
+        OR LOWER(TRANSLATE(CONCAT(COALESCE(ch.preferred_name, ch.first_name), ' ', ch.last_name),
+          'áàâäãåéèêëíìîïóòôöõúùûüýÿñçÁÀÂÄÃÅÉÈÊËÍÌÎÏÓÒÔÖÕÚÙÛÜÝŸÑÇ',
+          'aaaaaaeeeeiiiiooooouuuuyyncAAAAAAEEEEIIIIOOOOOUUUUYYNC')) LIKE ${'%' + q.search.normalize('NFKD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase() + '%'}
+        OR LOWER(TRANSLATE(u.display_name,
+          'áàâäãåéèêëíìîïóòôöõúùûüýÿñçÁÀÂÄÃÅÉÈÊËÍÌÏÓÒÔÖÕÚÙÛÜÝŸÑÇ',
+          'aaaaaaeeeeiiiiooooouuuuyyncAAAAAAEEEEIIIIOOOOOUUUUYYNC')) LIKE ${'%' + q.search.normalize('NFKD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase() + '%'}
         OR r.service ILIKE ${'%' + q.search + '%'}
+        OR (r.service = 'speech' AND 'speech & language' ILIKE ${'%' + q.search + '%'})
+        OR (r.service = 'occupational' AND 'occupational therapy' ILIKE ${'%' + q.search + '%'})
       )` : Prisma.empty}`;
     type Count = { total: number };
     type Row = { id: string; childId: string; childName: string; title: string;
