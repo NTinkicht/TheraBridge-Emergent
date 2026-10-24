@@ -49,6 +49,102 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
   }
 
 
+  it('supports scoped activity duplication and author-only versioned edits without exposing global samples', async () => {
+    const { therapist, other, sup, rosa } = await setup();
+    const ot = await staff('ot-library@clin.test', ['THERAPIST'], ['occupational']);
+    const data = {
+      title: 'Picture-card turn taking', service: 'speech', ageBand: '3-6', minutes: 10,
+      materials: ['Picture cards'], steps: ['Take turns with cards'],
+      safety: ['An adult must supervise'],
+    };
+    // A therapist may only author an activity in an active declared specialty.
+    await post(h, c('activities'), ot, data).expect(403);
+    await post(h, c('activities'), therapist, { ...data, title: '    ' }).expect(422);
+    await post(h, c('activities'), admin, data).expect(403);
+    const originalId = (await post(h, c('activities'), therapist, data).expect(201)).body.id;
+    const original = await h.prisma.activityTemplate.findUniqueOrThrow({ where: { id: originalId } });
+    expect(original).toMatchObject({ title: data.title, service: 'speech', version: 1, centerId });
+
+    // A different therapist can copy but cannot overwrite the original author.
+    await post(h, c(`activities/${originalId}/duplicate`), other, { title: '    ' }).expect(422);
+    const copy = (await post(h, c(`activities/${originalId}/duplicate`), other, {
+      title: 'Personalized speech copy',
+    }).expect(201)).body;
+    expect(copy).toMatchObject({ version: 1 });
+    const copied = await h.prisma.activityTemplate.findUniqueOrThrow({ where: { id: copy.id } });
+    expect(copied).toMatchObject({
+      title: 'Personalized speech copy', service: 'speech', centerId,
+      version: 1,
+    });
+    expect(copied.createdById).not.toBe(original.createdById);
+    expect(copied.steps).toEqual(original.steps);
+    expect(copied.safety).toEqual(original.safety);
+    const { service, ...editable } = data;
+    const update = { ...editable, title: 'Author edited speech activity', version: 1 };
+    await patch(other, c(`activities/${originalId}`), update).expect(403);
+    await patch(therapist, c(`activities/${originalId}`), { ...update, title: '    ' }).expect(422);
+    const saved = await patch(therapist, c(`activities/${originalId}`), update).expect(200);
+    expect(saved.body).toMatchObject({ id: originalId, version: 2 });
+    await patch(therapist, c(`activities/${originalId}`), update).expect(409);
+    expect(await h.prisma.activityTemplate.findUniqueOrThrow({ where: { id: originalId } }))
+      .toMatchObject({ title: update.title, service: 'speech', version: 2 });
+    expect(await h.prisma.activityTemplate.findUniqueOrThrow({ where: { id: copy.id } }))
+      .toMatchObject({ title: 'Personalized speech copy', version: 1 });
+
+    // Global fictional samples are read-only originals; a copied activity is
+    // centre-scoped and must never become a guardian-visible sample.
+    const sample = await h.prisma.activityTemplate.create({
+      data: { centerId: null, title: 'Public synthetic sample', service: 'speech',
+        ageBand: '3-6', minutes: 5, materials: [], steps: ['Play a game'],
+        safety: ['Adult present'], createdAt: h.clock.now() },
+    });
+    await patch(therapist, c(`activities/${sample.id}`), update).expect(404);
+    const clonedSample = (await post(h, c(`activities/${sample.id}/duplicate`), therapist, {
+      title: 'Local version of sample',
+    }).expect(201)).body;
+    expect(await h.prisma.activityTemplate.findUniqueOrThrow({ where: { id: clonedSample.id } }))
+      .toMatchObject({ centerId, service: 'speech', version: 1 });
+    expect(await h.prisma.activityTemplate.findUniqueOrThrow({ where: { id: sample.id } }))
+      .toMatchObject({ centerId: null, title: 'Public synthetic sample', version: 1 });
+    const guardian = (await get(rosa, c('family/activities')).expect(200)).body;
+    expect(JSON.stringify(guardian)).not.toContain('Local version of sample');
+    await get(rosa, c('activities')).expect(403);
+    await post(h, c(`activities/${originalId}/duplicate`), rosa, { title: 'Disallowed copy' }).expect(403);
+    await patch(sup, c(`activities/${originalId}`), update).expect(403);
+
+    // Referencing a foreign tenant's activity ID must not expose or duplicate it.
+    const foreignCenterId = (await post(h, '/api/platform/centers', ops, {
+      name: 'Separate Library Center', timezone: 'UTC', country: 'France', city: 'Lyon',
+      specialties: ['speech'], firstAdmin: {
+        email: 'library-other-center@clin.test', displayName: 'Other Centre Admin',
+      },
+    }).expect(201)).body.id;
+    const foreign = await h.prisma.activityTemplate.create({
+      data: { centerId: foreignCenterId, ...data, createdAt: h.clock.now() },
+    });
+    await post(h, c(`activities/${foreign.id}/duplicate`), therapist, {
+      title: 'Attempted cross-centre copy',
+    }).expect(404);
+    await patch(therapist, c(`activities/${foreign.id}`), update).expect(404);
+
+    // A revoked specialty immediately disables local copy and edit actions.
+    await h.prisma.membership.update({
+      where: { id: other.body.activeContext.membershipId }, data: { specialties: [] },
+    });
+    await post(h, c(`activities/${originalId}/duplicate`), other, {
+      title: 'Revoked copy',
+    }).expect(403);
+    await patch(other, c(`activities/${copy.id}`), {
+      ...update, title: 'Revoked edit',
+    }).expect(403);
+    expect(await h.prisma.activityTemplate.findUniqueOrThrow({ where: { id: copy.id } }))
+      .toMatchObject({ title: 'Personalized speech copy', version: 1 });
+    const audit = await h.prisma.centerEvent.findMany({ where: { centerId }, select: { type: true } });
+    expect(audit.map(e => e.type)).toEqual(expect.arrayContaining([
+      'clinical.template_created', 'clinical.template_duplicated', 'clinical.template_updated',
+    ]));
+  });
+
   it('shows named active specialty-scoped care team, excludes inactive or revoked staff, and never infers a child-wide referent', async () => {
     const { therapist, other, sup, kid, rosa } = await setup(['speech', 'occupational']);
     const occupational = await staff('ot@clin.test', ['THERAPIST'], ['occupational']);

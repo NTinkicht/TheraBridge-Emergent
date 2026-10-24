@@ -139,13 +139,13 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
     it('only the reviewed set of routes writes data, and none writes platform roles', () => {
       const unsafe = h.app.get(RouteAccessVerifier).routes().filter((r) => r.method !== 'GET').map((r) => `${r.method} ${r.route}`).sort();
       expect(unsafe).toEqual([
-        'PATCH /centers/:centerId/appointments/:appointmentId', 'PATCH /centers/:centerId/children/:childId',
+        'PATCH /centers/:centerId/activities/:templateId', 'PATCH /centers/:centerId/appointments/:appointmentId', 'PATCH /centers/:centerId/children/:childId',
         'PATCH /centers/:centerId/clinical/assessments/:id', 'PATCH /centers/:centerId/clinical/notes/:id', 'PATCH /centers/:centerId/clinical/plan-versions/:id', 'PATCH /centers/:centerId/clinical/reports/:id', 'PATCH /centers/:centerId/clinical/sessions/:id',
         'PATCH /centers/:centerId/me', 'PATCH /centers/:centerId/series/:seriesId', 'PATCH /centers/:centerId/settings', 'PATCH /centers/:centerId/staff/:membershipId',
         'POST /auth/context', 'POST /auth/login', 'POST /auth/logout', 'POST /auth/logout-all',
         'POST /auth/password/change', 'POST /auth/password/forgot', 'POST /auth/password/reset',
         'POST /center-applications',
-        'POST /centers/:centerId/activities', 'POST /centers/:centerId/appointments', 'POST /centers/:centerId/appointments/:appointmentId/status',
+        'POST /centers/:centerId/activities', 'POST /centers/:centerId/activities/:templateId/duplicate', 'POST /centers/:centerId/appointments', 'POST /centers/:centerId/appointments/:appointmentId/status',
         'POST /centers/:centerId/children', 'POST /centers/:centerId/children/:childId/archive', 'POST /centers/:centerId/children/:childId/assignments',
         'POST /centers/:centerId/children/:childId/assignments/:assignmentId/end', 'POST /centers/:centerId/children/:childId/guardians',
         'POST /centers/:centerId/children/:childId/guardians/:linkId/invite', 'POST /centers/:centerId/children/:childId/guardians/:linkId/remove',
