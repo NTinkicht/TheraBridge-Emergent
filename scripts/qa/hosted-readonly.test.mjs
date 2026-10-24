@@ -125,3 +125,48 @@ test('unfinished N-cases are filled without erasing previous findings',async()=>
  assert.ok(missing.every(r=>r.status==='BLOCKED'));
  assert.equal(previous[0].status,'FAIL');
 });
+
+test('screenshot failure preserves earlier confirmed overflow (no real network)',async()=>{
+ const {mkdtemp,rm,writeFile,chmod,readFile}=await import('node:fs/promises');
+ const {tmpdir}=await import('node:os');const {join}=await import('node:path');
+ const path=await mkdtemp(join(tmpdir(),'tb-qa-screenshot-'));
+ try{
+  const file=join(path,'users.json');
+  await writeFile(file,JSON.stringify({platform:{email:'fixture@example.invalid',password:'ci_only_mock'}}),{mode:0o600});
+  await chmod(file,0o600);
+  let width=1440;
+  const page={
+   goto:async()=>({status:()=>200}),
+   getByTestId:()=>({fill:async()=>{},click:async()=>{},waitFor:async()=>{}}),
+   waitForResponse:async()=>({status:()=>200,headerValues:async()=>[
+    '__Host-tb_session=ci_only_fixture; Path=/; HttpOnly; SameSite=Lax; Secure']}),
+   waitForURL:async()=>{},
+   evaluate:async (fn,arg)=>{
+    if(Array.isArray(arg))return true;
+    if(fn.toString().includes('document.documentElement.scrollWidth'))return {
+      viewport:width,documentWidth:width===320?500:width,mainVisible:true,mainLeft:0,
+      mainRight:width,headerVisible:true,navigationVisible:true};
+    return true;
+   },
+   setViewportSize:async v=>{width=v.width;},
+   waitForTimeout:async()=>{},
+   keyboard:{press:async()=>{}},
+   screenshot:async()=>{throw Error('MOCK_SCREENSHOT_FAILURE');}
+  };
+  const context={
+   request:{get:async()=>({ok:()=>true,json:async()=>({csrfToken:'ci_only_fixture'})}),
+     post:async()=>({status:()=>204})},
+   cookies:async()=>[{name:'__Host-tb_session',secure:true,httpOnly:true,sameSite:'Lax',
+     path:'/',domain:'therabridge-ahmed-synthetic-demo.onrender.com'}],
+   newPage:async()=>page,close:async()=>{}
+  };
+  const mock={newContext:async()=>context,close:async()=>{}};
+  await run({credentialsFile:file,output:join(path,'out'),launchBrowser:async()=>mock});
+  const report=JSON.parse(await readFile(join(path,'out','hosted-readonly-results.json'),'utf8'));
+  const row=report.rows.find(x=>x.id==='N-052');
+  assert.equal(row.status,'FAIL');
+  assert.ok(row.pages[0].issues.includes('document_overflow'));
+  assert.ok(row.pages[0].issues.includes('screenshot_capture_unavailable'));
+  assert.equal(row.sessionCleanup,'CONFIRMED');
+ }finally{await rm(path,{recursive:true,force:true});}
+});

@@ -111,11 +111,14 @@ async function assess(browser,role,user,directory){
    await page.setViewportSize({width,height:900});
    const pages=[];
    for(const route of c.routes){
+    const issues=[];
+    let g=null;
     try{
      const response=await page.goto(BASE+route,{waitUntil:'domcontentloaded',timeout:25000});
      await page.getByTestId('product-shell').waitFor({timeout:15000});
      await page.waitForTimeout(600);
-     const g=await metrics(page),issues=inspectGeometry(g,width);
+     g=await metrics(page);
+     issues.push(...inspectGeometry(g,width));
      if(response?.status()!==200)issues.push('http_error');
      if(new URL(page.url()).pathname!==route)issues.push('unexpected_redirect');
      await page.keyboard.press('Tab');
@@ -123,10 +126,20 @@ async function assess(browser,role,user,directory){
        !!document.activeElement?.matches(':focus-visible'));
      if(!focused)issues.push('keyboard_focus_probe_failed');
      const filename=caseId(c.start+i)+'-'+role+'-'+width+'-'+route.replaceAll('/','_')+'.png';
-     const pixels=await page.screenshot({path:join(directory,filename),fullPage:true,timeout:20000});
+     let pixels;
+     try{pixels=await page.screenshot({path:join(directory,filename),fullPage:true,timeout:20000});}
+     catch{
+      // Missing screenshot is BLOCKED only if no defect was independently detected.
+      pages.push({route,outcome:issues.length?'FAIL':'BLOCKED',
+       issues:[...issues,'screenshot_capture_unavailable'],geometry:g});
+      continue;
+     }
      pages.push({route,outcome:issues.length?'FAIL':'PASS',issues,geometry:g,
        screenshotPrivate:filename,screenshotHash:createHash('sha256').update(pixels).digest('hex')});
-    }catch{pages.push({route,outcome:'BLOCKED',issues:['browser_navigation_unavailable']});}
+    }catch{
+     pages.push({route,outcome:issues.length?'FAIL':'BLOCKED',
+       issues:issues.length?[...issues,'browser_operation_incomplete']:['browser_navigation_unavailable'],geometry:g});
+    }
    }
    const status=statusForPages(pages,false); // never claim full visual/dialog coverage automatically
    rows.push({id:caseId(c.start+i),role,width,status,
