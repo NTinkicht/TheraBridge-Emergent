@@ -68,10 +68,14 @@ export function SupervisorReviewQueue({ centerId, childId, service, onError }: {
           {data.filteredTotal} matching across centre · Page {data.page} · {items.length} shown
         </p>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" data-testid="review-queue-prev" disabled={page <= 1} onClick={() => setPage((x) => Math.max(1, x - 1))}>
+          <Button variant="secondary" data-testid="review-queue-prev" disabled={page <= 1 || page !== data.page} onClick={() => {
+              if (page === data.page) setPage(page - 1);
+            }}>
             <ChevronLeft size={15} aria-hidden="true" /> Previous
           </Button>
-          <Button variant="secondary" data-testid="review-queue-next" disabled={!data.hasMore} onClick={() => setPage((x) => x + 1)}>
+          <Button variant="secondary" data-testid="review-queue-next" disabled={!data.hasMore || page !== data.page} onClick={() => {
+              if (page === data.page && data.hasMore) setPage(page + 1);
+            }}>
             Next <ChevronRight size={15} aria-hidden="true" />
           </Button>
         </div>
