@@ -26,6 +26,40 @@ export interface ReportDetail {
 export interface ReportVersion { id: string; number: number; kind: string; sections: Record<string, string>; evidence: Evidence; author: string; createdAt: string }
 export interface FamilyProgress { snapshotId?: string; fingerprint?: string; notice?: string; childName: string; service: string; period: { from: string; to: string }; message: string; goals: { title: string; measure: string; baseline: number; target: number; status: GoalStatus; points: Point[] }[]; sample?: boolean; preview?: boolean; released: false }
 
+
+// TB-EM-021: persistent, non-authorizing clinician evidence decision API.
+// REFERENCES_UNCHANGED is a source-fingerprint status, NEVER clinical validation.
+export type EvidenceReviewSection = 'assessment' | 'goals' | 'sessions';
+export interface EvidenceReview {
+  synthetic: true; released: false; clinicalAuthorization: false;
+  claimValidation: 'REFERENCED_NOT_VERIFIED';
+  sources: Record<EvidenceReviewSection, {
+    proposalFingerprint: string;
+    sources: { ref: string; label: string }[];
+  }>;
+  decisions: EvidenceReviewDecision[];
+  latest: Record<EvidenceReviewSection, EvidenceReviewDecision | null>;
+}
+export interface EvidenceReviewDecision {
+  id: string; section: EvidenceReviewSection;
+  action: 'APPLIED' | 'OMITTED' | 'RECONSIDERED';
+  status: 'REFERENCES_UNCHANGED' | 'REQUIRES_REVIEW';
+  claimValidation: 'REFERENCED_NOT_VERIFIED';
+  reportRevision: number; reason?: string | null; createdAt: string;
+  reasons: string[]; claimMap: unknown[];
+}
+export interface DecisionRequest {
+  section: EvidenceReviewSection;
+  action: 'APPLIED' | 'OMITTED' | 'RECONSIDERED';
+  version: number; proposalFingerprint: string; idempotencyKey: string;
+  reason?: string; claims?: { text: string; sourceRefs: string[] }[];
+}
+export interface DecisionReceipt {
+  id: string; section: EvidenceReviewSection;
+  action: DecisionRequest['action']; version: number;
+  persisted: true; replayed: boolean; claimValidation: 'REFERENCED_NOT_VERIFIED';
+}
+
 export const SECTIONS = [
   ['summary', 'Clinician summary', 'Your own interpretation. Required before review.'],
   ['assessment', 'Assessment summary', 'Started from the recorded assessment summaries.'],
@@ -39,6 +73,8 @@ export const KIND_LABEL: Record<string, string> = { CREATED: 'Started', SAVED: '
 const c = (centerId: string, p: string) => `/api/centers/${centerId}/${p}`;
 const qs = (q: Record<string, string | undefined>) => new URLSearchParams(Object.entries(q).filter(([, v]) => v) as [string, string][]).toString();
 export const reportsApi = {
+  decisions: (centerId: string, id: string) => rest.get<EvidenceReview>(c(centerId, `clinical/reports/${id}/suggestion-decisions`)),
+  recordDecision: (centerId: string, id: string, body: DecisionRequest) => rest.send<DecisionReceipt>('POST', c(centerId, `clinical/reports/${id}/suggestion-decisions`), body),
   dashboard: (centerId: string, q: { childId?: string; service?: string; from?: string; to?: string }) => rest.get<Dashboard>(c(centerId, `clinical/progress?${qs(q)}`)),
   list: (centerId: string, childId: string) => rest.get<{ items: ReportRow[] }>(c(centerId, `clinical/children/${childId}/reports`)),
   create: (centerId: string, childId: string, body: { service: string; title: string; periodStart: string; periodEnd: string }) => rest.send<{ id: string }>('POST', c(centerId, `clinical/children/${childId}/reports`), body),
