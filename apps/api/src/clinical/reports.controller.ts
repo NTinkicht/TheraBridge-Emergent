@@ -19,6 +19,12 @@ export class ReportsController {
     return this.reports.dashboard(c, viewer(req), q);
   }
 
+  @Get('clinical/reports/review-queue')
+  @RequirePermission('center.clinical.review')
+  queue(@Param('centerId', uuid()) c: string, @Req() req: TbRequest) {
+    return this.reports.reviewQueue(c, viewer(req));
+  }
+
   @Get('clinical/children/:childId/reports')
   @RequirePermission('center.clinical.read')
   list(@Param('centerId', uuid()) c: string, @Param('childId', uuid()) id: string, @Req() req: TbRequest) {

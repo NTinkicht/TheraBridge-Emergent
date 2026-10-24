@@ -126,6 +126,43 @@ export class ReportsService {
     return r;
   }
 
+  // TB-EM-026: Supervisor-only operational inbox, never a clinical authorization
+  // or approval endpoint. Only IN_REVIEW metadata from ACTIVE children is returned.
+  async reviewQueue(centerId: string, v: Viewer) {
+    if (v.role !== 'CLINICAL_SUPERVISOR') throw new ForbiddenException('Clinical supervisor access required.');
+    const children = await this.prisma.child.findMany({
+      where: { centerId, status: 'ACTIVE' },
+      select: { id: true, preferredName: true, firstName: true, lastName: true },
+    });
+    if (!children.length) return { synthetic: true, released: false, total: 0, items: [] };
+    const scope = { centerId, childId: { in: children.map((c) => c.id) }, status: 'IN_REVIEW' };
+    const [reports, total] = await Promise.all([
+      this.prisma.progressReport.findMany({
+        where: scope, orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }], take: 100,
+        select: { id: true, childId: true, membershipId: true, title: true, service: true,
+          status: true, periodStart: true, periodEnd: true, updatedAt: true },
+      }),
+      this.prisma.progressReport.count({ where: scope }),
+    ]);
+    const authors = await this.prisma.membership.findMany({
+      where: { centerId, id: { in: uniq(reports.map((r) => r.membershipId)) } },
+      select: { id: true, user: { select: { displayName: true } } },
+    });
+    const childById = new Map(children.map((c) => [c.id, c]));
+    const authorById = new Map(authors.map((a) => [a.id, a.user.displayName]));
+    return {
+      synthetic: true, released: false, total,
+      items: reports.map((r) => {
+        const child = childById.get(r.childId)!;
+        return { id: r.id, childId: r.childId,
+          childName: `${child.preferredName ?? child.firstName} ${child.lastName}`,
+          title: r.title, service: r.service, status: 'IN_REVIEW' as const,
+          author: authorById.get(r.membershipId) ?? '',
+          periodStart: day(r.periodStart), periodEnd: day(r.periodEnd), updatedAt: r.updatedAt };
+      }),
+    };
+  }
+
   async list(centerId: string, v: Viewer, childId: string) {
     await this.clinical.child(this.prisma, centerId, v, childId);
     const services = v.role === 'THERAPIST' ? (await this.prisma.careAssignment.findMany({ where: { centerId, childId, membershipId: v.membershipId, endedAt: null } })).map((a) => a.service) : null;

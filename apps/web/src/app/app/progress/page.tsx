@@ -6,6 +6,7 @@ import { FlaskConical, LineChart } from 'lucide-react';
 import { Field } from '@/components/auth/Field';
 import { PageTitle, SelectField, Workspace, useLoad } from '@/components/centers/kit';
 import { GoalChart, STATUS_TEXT } from '@/components/clinical/GoalChart';
+import { SupervisorReviewQueue } from '@/components/clinical/SupervisorReviewQueue';
 import { Card, Metric, Pill } from '@/components/design/ui';
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
 import { serviceLabel } from '@/components/operations/BookDialog';
@@ -60,6 +61,9 @@ function Board({ session, onError }: { session: SessionInfo; onError: (e: unknow
           <Field label="To" type="date" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} testId="filter-to" />
         </>}
       </Card>
+      {session.activeContext?.role === 'CLINICAL_SUPERVISOR' && (
+        <SupervisorReviewQueue centerId={centerId} childId={f.childId} service={f.service} onError={onError} />
+      )}
       {invalid && <p className="rounded-control bg-status-dangerSurface p-3 text-[14px] text-status-danger" role="alert" data-testid="progress-period-error">Choose a start date on or before the end date.</p>}
       {!invalid && failed && <ErrorState onRetry={() => void reload()} testId="progress-error" />}
       {!invalid && !failed && !data && <Card className="p-5"><SkeletonRows rows={4} testId="progress-loading" /></Card>}
