@@ -1,3 +1,11 @@
+## 2026-10-24 — TB-EM-023 next actions
+
+1. Wait for exact-head six-job CI and specifically `demo-journey` Chromium computed-style checks.
+2. If CI fails, repair only the reported regression and rerun; do not interpret class presence as visual success.
+3. Obtain independent exact-head Codex/Grok/Mistral/DeepSeek reviews on the updated PR #71.
+4. After owner-authorized merge/deploy, conduct hosted guardian and staff visual QA at 320/390/768/1024/1440; keep issue #61 open until remaining seven-role acceptance and security checks.
+5. Separate P3 follow-up: authenticated guardian dark-mode support requires coordinated content wrapper, chrome surfaces and theme-switching behavior; do not activate piecemeal.
+
 ## CURRENT — new exact-head review after Codex P2 data-loss correction
 
 ## CURRENT — Second Codex P2: queued autosave ordering

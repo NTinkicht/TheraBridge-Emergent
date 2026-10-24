@@ -1,3 +1,10 @@
+## 2026-10-24 — TB-EM-023 guardian navigation follow-up
+
+- PASS (previous HEAD `51007e32`): six GitHub CI jobs including `demo-journey`; **not evidence of the rendered teal** because the old test asserted only a class name.
+- CODE ADDED (new HEAD pending CI): `scripts/design/check-demo-journey.mjs` now checks Chromium computed `backgroundColor`, `color`, indicator color, `--fam-accent`, `--fam-accentTint`, `aria-current` and shell theme at five widths; Speech therapist negative case checks no family scope and clinical canvas.
+- NOT RUN as of this record: new exact-head CI, external hosted screenshots/browser acceptance, dark mode (not enabled for authenticated guardian pages), complete issue #61 seven-role acceptance.
+- No clinical permission, data, signing, consent, release, production or deployment changes.
+
 # Test results — TheraBridge
 
 ## TB-EM-023 — pending FIFO autosave requalification
