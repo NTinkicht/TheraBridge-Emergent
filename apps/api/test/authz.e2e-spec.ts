@@ -154,7 +154,7 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
         'POST /centers/:centerId/clinical/notes/:id/sign', 'POST /centers/:centerId/clinical/plan-versions/:id/approve', 'POST /centers/:centerId/clinical/plan-versions/:id/return',
         'POST /centers/:centerId/clinical/plan-versions/:id/submit', 'POST /centers/:centerId/clinical/plans/:planId/versions', 'POST /centers/:centerId/clinical/practice-feedback/:id/acknowledge',
         'POST /centers/:centerId/clinical/reports/:id/comments', 'POST /centers/:centerId/clinical/reports/:id/release', 'POST /centers/:centerId/clinical/reports/:id/return',
-        'POST /centers/:centerId/clinical/reports/:id/submit', 'POST /centers/:centerId/clinical/reports/:id/versions', 'POST /centers/:centerId/family/practice/outcomes', 'POST /centers/:centerId/family/preferences',
+        'POST /centers/:centerId/clinical/reports/:id/submit', 'POST /centers/:centerId/clinical/reports/:id/suggestion-decisions', 'POST /centers/:centerId/clinical/reports/:id/versions', 'POST /centers/:centerId/family/practice/outcomes', 'POST /centers/:centerId/family/preferences',
         'POST /centers/:centerId/governance/consent-grants', 'POST /centers/:centerId/governance/documents/:kind/:id/transitions', 'POST /centers/:centerId/governance/release', 'POST /centers/:centerId/governance/transfer-simulations',
         'POST /centers/:centerId/invitations', 'POST /centers/:centerId/invitations/:invitationId/resend', 'POST /centers/:centerId/invitations/:invitationId/revoke',
         'POST /centers/:centerId/series', 'POST /centers/:centerId/series/:seriesId/cancel',

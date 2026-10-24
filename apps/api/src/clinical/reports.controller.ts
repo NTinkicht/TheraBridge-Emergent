@@ -1,16 +1,17 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
 import { RequirePermission, TbRequest } from '../auth/access';
 import type { Viewer } from '../operations/children.service';
-import { ProgressQueryDto, ReportCreateDto, ReportSaveDto, ReportVersionDto, ReviewDto } from './clinical.dto';
+import { ProgressQueryDto, ReportCreateDto, ReportSaveDto, ReportVersionDto, ReviewDto, ReportSuggestionDecisionDto } from './clinical.dto';
 import { GovernanceService } from './governance.service';
 import { FAMILY_PROGRESS_SAMPLE, ReportsService } from './reports.service';
+import { ReportDecisionsService } from './report-decisions.service';
 
 const uuid = () => new ParseUUIDPipe();
 const viewer = (req: TbRequest): Viewer => ({ userId: req.auth!.session.userId, membershipId: req.auth!.session.activeMembershipId!, role: req.auth!.session.activeRole! });
 
 @Controller('centers/:centerId')
 export class ReportsController {
-  constructor(private readonly reports: ReportsService, private readonly governance: GovernanceService) {}
+  constructor(private readonly reports: ReportsService, private readonly governance: GovernanceService, private readonly decisions: ReportDecisionsService) {}
 
   @Get('clinical/progress')
   @RequirePermission('center.clinical.read')
@@ -40,6 +41,18 @@ export class ReportsController {
   @RequirePermission('center.clinical.draft')
   autosave(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Body() dto: ReportSaveDto, @Req() req: TbRequest) {
     return this.reports.autosave(c, viewer(req), id, dto);
+  }
+
+  @Get('clinical/reports/:id/suggestion-decisions')
+  @RequirePermission('center.clinical.read')
+  decisionHistory(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Req() req: TbRequest) {
+    return this.decisions.list(c, viewer(req), id);
+  }
+
+  @Post('clinical/reports/:id/suggestion-decisions')
+  @RequirePermission('center.clinical.draft')
+  recordDecision(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Body() dto: ReportSuggestionDecisionDto, @Req() req: TbRequest) {
+    return this.decisions.decide(c, viewer(req), id, dto);
   }
 
   @Post('clinical/reports/:id/versions')
