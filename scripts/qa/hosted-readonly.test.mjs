@@ -253,3 +253,71 @@ test('HTTP 500 without ProductShell remains FAIL rather than BLOCKED',async()=>{
   assert.equal(report.rows.length,42);
  }finally{await rm(dir,{recursive:true,force:true});}
 });
+
+
+test('invalid login Set-Cookie remains FAIL when Chromium rejects authenticated navigation',async()=>{
+ const {mkdtemp,rm,writeFile,readFile,chmod}=await import('node:fs/promises');
+ const {tmpdir}=await import('node:os');const {join}=await import('node:path');
+ const dir=await mkdtemp(join(tmpdir(),'tb-qa-bad-cookie-'));
+ try{
+  const file=join(dir,'users.json');
+  await writeFile(file,JSON.stringify({platform:{email:'fixture@example.invalid',password:'ci_only_mock'}}),{mode:0o600});
+  await chmod(file,0o600);
+  let revoked=0;
+  const page={
+   goto:async()=>({status:()=>200}),
+   getByTestId:()=>({fill:async()=>{},click:async()=>{},waitFor:async()=>{}}),
+   waitForResponse:async()=>({status:()=>200,headerValues:async()=>[
+    '__Host-tb_session=ci_only_fixture; Path=/; HttpOnly; SameSite=Lax']}),
+   waitForURL:async()=>{throw Error('MOCK_COOKIE_REJECTED');}
+  };
+  const context={
+   newPage:async()=>page,close:async()=>{},
+   cookies:async()=>[],
+   request:{get:async()=>({ok:()=>false}),
+     post:async()=>{revoked++;return {status:()=>204};}}
+  };
+  await run({credentialsFile:file,output:join(dir,'out'),
+   launchBrowser:async()=>({newContext:async()=>context,close:async()=>{}})});
+  const report=JSON.parse(await readFile(join(dir,'out','hosted-readonly-results.json'),'utf8'));
+  assert.equal(report.rows.length,42);
+  assert.equal(report.rows.find(r=>r.id==='N-087').status,'FAIL');
+  assert.equal(report.rows.find(r=>r.id==='N-087').checks.header.secure,false);
+  assert.equal(report.rows.find(r=>r.id==='N-052').status,'BLOCKED');
+  assert.equal(report.rows.find(r=>r.id==='N-087').sessionCleanup,'UNCONFIRMED');
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('successful login response followed by rejected click still attempts context logout',async()=>{
+ const {mkdtemp,rm,writeFile,readFile,chmod}=await import('node:fs/promises');
+ const {tmpdir}=await import('node:os');const {join}=await import('node:path');
+ const dir=await mkdtemp(join(tmpdir(),'tb-qa-reject-click-'));
+ try{
+  const file=join(dir,'users.json');
+  await writeFile(file,JSON.stringify({platform:{email:'fixture@example.invalid',password:'ci_only_mock'}}),{mode:0o600});
+  await chmod(file,0o600);
+  let sessions=0,revocations=0;
+  const page={
+   goto:async()=>({status:()=>200}),
+   getByTestId:name=>({fill:async()=>{},waitFor:async()=>{},
+    click:async()=>{if(name==='login-submit-button')throw Error('MOCK_CLICK_CRASH');}}),
+   waitForResponse:async()=>({status:()=>200,headerValues:async()=>[
+    '__Host-tb_session=ci_only_fixture; Path=/; HttpOnly; SameSite=Lax; Secure']})
+  };
+  const context={
+   newPage:async()=>page,close:async()=>{},
+   request:{
+    get:async()=>{sessions++;return {ok:()=>true,json:async()=>({csrfToken:'ci_only_mock'})};},
+    post:async()=>{revocations++;return {status:()=>204};}
+   }
+  };
+  await run({credentialsFile:file,output:join(dir,'out'),
+   launchBrowser:async()=>({newContext:async()=>context,close:async()=>{}})});
+  const report=JSON.parse(await readFile(join(dir,'out','hosted-readonly-results.json'),'utf8'));
+  assert.equal(report.rows.length,42);
+  assert.equal(report.rows.find(r=>r.id==='N-087').sessionCleanup,'CONFIRMED');
+  assert.equal(report.rows.find(r=>r.id==='N-087').status,'BLOCKED');
+  assert.equal(sessions,1);
+  assert.equal(revocations,1);
+ }finally{await rm(dir,{recursive:true,force:true});}
+});

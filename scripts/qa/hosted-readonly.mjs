@@ -81,19 +81,35 @@ async function assess(browser,role,user,directory){
  const c=ROLES[role],rows=[];
  const context=await browser.newContext({viewport:{width:1440,height:900},acceptDownloads:false,deviceScaleFactor:1});
  const page=await context.newPage();
- let loggedIn=false;
+ let loggedIn=false,loginAttempted=false;
  try{
-  let loginResponse;
+  let loginResponse,headerInspection=null;
   try{
    await page.goto(BASE+'/login',{waitUntil:'domcontentloaded',timeout:25000});
    await page.getByTestId('login-email-input').fill(user.email);
    await page.getByTestId('login-password-input').fill(user.password);
-   // Await waiter and click together so either can reject without an unhandled promise.
-   [loginResponse]=await Promise.all([
+   // Attach handlers to both operations immediately; preserve a successful
+   // login response even if the button click later rejects.
+   loginAttempted=true;
+   const [reply,clicked]=await Promise.allSettled([
     page.waitForResponse(r=>new URL(r.url()).pathname==='/api/auth/login'&&r.request().method()==='POST',{timeout:20000}),
     page.getByTestId('login-submit-button').click()
-   ]);if(loginResponse.status()!==200)throw Error('login_denied');
-   loggedIn=true;
+   ]);
+   if(reply.status==='fulfilled'){
+    loginResponse=reply.value;
+    if(loginResponse.status()===200){
+     loggedIn=true;
+     // A bad __Host- cookie may be rejected by Chromium, so inspect its
+     // response attributes BEFORE requiring a functioning authenticated page.
+     try{headerInspection=inspectSetCookie(await loginResponse.headerValues('set-cookie'));}
+     catch{/* attributes unavailable: keep the cookie assertion BLOCKED */}
+     if(headerInspection&&!headerInspection.ok)rows.push({id:caseId(c.cookie),role,status:'FAIL',
+      reason:'session_cookie_header_attributes_mismatch',
+      checks:{header:headerInspection.checks}});
+    }
+   }
+   if(clicked.status==='rejected'||reply.status==='rejected'||!loggedIn)
+    throw Error('login_not_confirmed');
    await page.waitForURL(u=>u.pathname==='/app'||u.pathname.startsWith('/app/'),{timeout:20000});
    await page.getByTestId('product-shell').waitFor({timeout:15000});
    const valid=await page.evaluate(async ([email,expected])=>{
@@ -101,14 +117,20 @@ async function assess(browser,role,user,directory){
      const s=await r.json();return s.activeContext?.role===expected&&s.user?.email?.toLowerCase()===email.toLowerCase();
    },[user.email,c.role]);
    if(!valid)throw Error('identity_mismatch');
-  }catch{rows.push(...blocked(role,'authentication_or_identity_unverified'));return rows;}
-  try{
-   const h=inspectSetCookie(await loginResponse.headerValues('set-cookie'));
-   const j=inspectCookieJar(await context.cookies(BASE));
-   rows.push({id:caseId(c.cookie),role,status:h.ok&&j.ok?'PASS':'FAIL',
-     reason:h.ok&&j.ok?'validated_header_and_browser_attributes':'session_cookie_attributes_mismatch',
-     checks:{header:h.checks,browser:j.checks}});
-  }catch{rows.push({id:caseId(c.cookie),role,status:'BLOCKED',reason:'cookie_api_unavailable'});}
+  }catch{
+   // Cookie FAIL survives invalid browser session and navigation failure.
+   rows.push(...missingBlockedRows(role,rows,'authentication_or_identity_unverified'));
+   return rows;
+  }
+  if(!rows.some(r=>r.id===caseId(c.cookie))){
+   try{
+    const h=headerInspection??inspectSetCookie(await loginResponse.headerValues('set-cookie'));
+    const j=inspectCookieJar(await context.cookies(BASE));
+    rows.push({id:caseId(c.cookie),role,status:h.ok&&j.ok?'PASS':'FAIL',
+      reason:h.ok&&j.ok?'validated_header_and_browser_attributes':'session_cookie_attributes_mismatch',
+      checks:{header:h.checks,browser:j.checks}});
+   }catch{rows.push({id:caseId(c.cookie),role,status:'BLOCKED',reason:'cookie_api_unavailable'});}
+  }
   for(const [i,width] of WIDTHS.entries()){
    await page.setViewportSize({width,height:900});
    const pages=[];
@@ -157,7 +179,9 @@ async function assess(browser,role,user,directory){
  }finally{
   // Preserve an explicit cleanup receipt even when the final page crashed.
   let cleanup='NOT_AUTHENTICATED';
-  if(loggedIn){
+  // A click/response timing failure does not prove the server failed to
+  // create a session. Attempt revocation for every submitted login.
+  if(loggedIn||loginAttempted){
    try{cleanup=await logout(context)?'CONFIRMED':'UNCONFIRMED';}
    catch{cleanup='UNCONFIRMED';}
    if(cleanup==='UNCONFIRMED')console.error('WARNING: session cleanup unavailable for '+role);
