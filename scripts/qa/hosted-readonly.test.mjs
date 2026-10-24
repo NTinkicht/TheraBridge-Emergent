@@ -135,8 +135,10 @@ test('screenshot failure preserves earlier confirmed overflow (no real network)'
   await writeFile(file,JSON.stringify({platform:{email:'fixture@example.invalid',password:'ci_only_mock'}}),{mode:0o600});
   await chmod(file,0o600);
   let width=1440;
+  let activeUrl=BASE+'/login';
   const page={
-   goto:async()=>({status:()=>200}),
+   goto:async url=>{activeUrl=url;return {status:()=>200};},
+   url:()=>activeUrl,
    getByTestId:()=>({fill:async()=>{},click:async()=>{},waitFor:async()=>{}}),
    waitForResponse:async()=>({status:()=>200,headerValues:async()=>[
     '__Host-tb_session=ci_only_fixture; Path=/; HttpOnly; SameSite=Lax; Secure']}),
