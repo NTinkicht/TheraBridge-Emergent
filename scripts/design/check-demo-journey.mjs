@@ -69,6 +69,15 @@ try {
     assert.notEqual((await read(page, clinicalPath)).status, 200);
   });
   await role('speech@childrens-home.therabridge.test', 'THERAPIST', async page => {
+    // Guardian theme must never leak into the therapist shell.
+    await page.getByTestId('product-shell').waitFor();
+    const staffShell = await page.evaluate(() => {
+      const shell = document.querySelector('[data-testid="product-shell"]');
+      const cs = getComputedStyle(shell);
+      return { familyTheme: shell.classList.contains('theme-family-auto'), canvas: cs.backgroundColor };
+    });
+    assert.equal(staffShell.familyTheme, false, 'Therapist shell must not inherit guardian family theme');
+    assert.equal(staffShell.canvas, 'rgb(246, 247, 249)', 'Therapist shell retains clinical canvas');
     const evidence = await read(page, clinicalPath);
     assert.equal(evidence.status, 200);
     assert.equal(evidence.body.notes.length, 4);
@@ -327,14 +336,35 @@ try {
     }
     await page.goto(base + '/app/activities');
     await page.getByTestId('family-activities').waitFor();
-    const selectedNav = page.getByTestId('nav-activities');
-    assert((await selectedNav.getAttribute('class')).includes('bg-fam-accentTint'),
-      'Guardian active navigation must use family teal');
+    // The original defect had correct Tailwind class names but undefined
+    // --fam-* variables. Assert rendered Chromium colors, not class strings.
     for (const width of [320, 390, 768, 1024, 1440]) {
       await page.setViewportSize({ width, height: 900 });
-      const bodyWidth = await page.evaluate(() => document.documentElement.scrollWidth);
-      assert(bodyWidth <= width + 8,
-        'Family activities overflow at ' + width + 'px: ' + bodyWidth);
+      const colors = await page.evaluate(() => {
+        const shell = document.querySelector('[data-testid="product-shell"]');
+        const desktop = document.querySelector('[data-testid="nav-activities"]');
+        const mobile = document.querySelector('[data-testid="mobile-nav-activities"]');
+        const active = innerWidth < 768 ? mobile : desktop;
+        const indicator = active?.querySelector('[aria-hidden="true"]');
+        const computed = active && getComputedStyle(active);
+        return {
+          bodyWidth: document.documentElement.scrollWidth,
+          themed: !!shell?.classList.contains('theme-family-auto'),
+          current: active?.getAttribute('aria-current'),
+          accent: shell && getComputedStyle(shell).getPropertyValue('--fam-accent').trim(),
+          tint: shell && getComputedStyle(shell).getPropertyValue('--fam-accentTint').trim(),
+          background: computed?.backgroundColor,
+          foreground: computed?.color,
+          indicator: indicator && getComputedStyle(indicator).backgroundColor,
+        };
+      });
+      assert(colors.bodyWidth <= width + 8, 'Family activities overflow at ' + width + 'px: ' + JSON.stringify(colors));
+      assert(colors.themed && colors.current === 'page', 'Guardian shell and selected link must be themed at ' + width + 'px');
+      assert.equal(colors.accent.toUpperCase(), '#0A7385', 'Guardian light accent variable at ' + width + 'px');
+      assert.equal(colors.tint.toUpperCase(), '#E3F3F5', 'Guardian light tint variable at ' + width + 'px');
+      assert.equal(colors.background, 'rgb(227, 243, 245)', 'Rendered guardian active tint at ' + width + 'px');
+      assert.equal(colors.foreground, 'rgb(10, 115, 133)', 'Rendered guardian active text at ' + width + 'px');
+      assert.equal(colors.indicator, 'rgb(10, 115, 133)', 'Rendered guardian active indicator at ' + width + 'px');
     }
     await page.goto(base + '/app/messages');
     await page.getByTestId('messages-demo-disabled').waitFor();

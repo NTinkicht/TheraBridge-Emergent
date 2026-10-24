@@ -74,7 +74,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
   }
 
   return (
-    <div className="flex min-h-screen bg-canvas-clinical text-brand-ink" data-testid="product-shell">
+    <div className={`flex min-h-screen ${family ? 'theme-family-auto bg-fam-canvas text-fam-ink' : 'bg-canvas-clinical text-brand-ink'}`} data-testid="product-shell">
       <aside className="sticky top-0 hidden h-screen w-sidebar shrink-0 flex-col border-r border-border-light bg-surface-white md:flex" data-testid="product-sidebar">
         <SignatureBand />
         <div className="flex h-16 items-center gap-2 px-5"><BrandMark variant="symbol" height={26} /><BrandMark variant="wordmark" height={17} /></div>
