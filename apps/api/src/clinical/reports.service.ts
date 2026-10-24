@@ -1,5 +1,5 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
-import type { Prisma, ProgressReport } from '@prisma/client';
+import { Prisma, type ProgressReport } from '@prisma/client';
 import { Tx, logCenterEvent, uniq } from '../centers/history';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Viewer } from '../operations/children.service';
@@ -128,38 +128,54 @@ export class ReportsService {
 
   // TB-EM-026: Supervisor-only operational inbox, never a clinical authorization
   // or approval endpoint. Only IN_REVIEW metadata from ACTIVE children is returned.
-  async reviewQueue(centerId: string, v: Viewer) {
+  async reviewQueue(centerId: string, v: Viewer, q: { childId?: string; service?: string; search?: string; page?: number }) {
     if (v.role !== 'CLINICAL_SUPERVISOR') throw new ForbiddenException('Clinical supervisor access required.');
-    const children = await this.prisma.child.findMany({
-      where: { centerId, status: 'ACTIVE' },
-      select: { id: true, preferredName: true, firstName: true, lastName: true },
-    });
-    if (!children.length) return { synthetic: true, released: false, total: 0, items: [] };
-    const scope = { centerId, childId: { in: children.map((c) => c.id) }, status: 'IN_REVIEW' };
-    const [reports, total] = await Promise.all([
-      this.prisma.progressReport.findMany({
-        where: scope, orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }], take: 100,
-        select: { id: true, childId: true, membershipId: true, title: true, service: true,
-          status: true, periodStart: true, periodEnd: true, updatedAt: true },
-      }),
-      this.prisma.progressReport.count({ where: scope }),
+    const page = q.page ?? 1;
+    const pageSize = 25;
+    const where = Prisma.sql`r.center_id = ${centerId}::uuid
+      AND ch.center_id = ${centerId}::uuid AND ch.status = 'ACTIVE'
+      AND r.status = 'IN_REVIEW'`;
+    const from = Prisma.sql`FROM progress_report r
+      INNER JOIN child ch ON ch.id = r.child_id AND ch.center_id = r.center_id
+      INNER JOIN membership m ON m.id = r.membership_id AND m.center_id = r.center_id
+      INNER JOIN app_user u ON u.id = m.user_id`;
+    const filtered = Prisma.sql`${where}
+      ${q.childId ? Prisma.sql`AND r.child_id = ${q.childId}::uuid` : Prisma.empty}
+      ${q.service ? Prisma.sql`AND r.service = ${q.service}` : Prisma.empty}
+      ${q.search ? Prisma.sql`AND (
+        r.title ILIKE ${'%' + q.search + '%'}
+        OR COALESCE(ch.preferred_name, ch.first_name) ILIKE ${'%' + q.search + '%'}
+        OR ch.last_name ILIKE ${'%' + q.search + '%'}
+        OR u.display_name ILIKE ${'%' + q.search + '%'}
+        OR r.service ILIKE ${'%' + q.search + '%'}
+      )` : Prisma.empty}`;
+    type Count = { total: number };
+    type Row = { id: string; childId: string; childName: string; title: string;
+      service: string; author: string; periodStart: Date; periodEnd: Date; updatedAt: Date };
+    // SQL JOIN avoids materializing every ACTIVE child UUID; all bind values are
+    // parameterized through Prisma.sql. Do not expose report sections/evidence.
+    const [all, filteredCounts, reports] = await Promise.all([
+      this.prisma.$queryRaw<Count[]>(Prisma.sql`SELECT COUNT(*)::int AS total ${from} WHERE ${where}`),
+      this.prisma.$queryRaw<Count[]>(Prisma.sql`SELECT COUNT(*)::int AS total ${from} WHERE ${filtered}`),
+      this.prisma.$queryRaw<Row[]>(Prisma.sql`
+        SELECT r.id, r.child_id AS "childId",
+          CONCAT(COALESCE(ch.preferred_name, ch.first_name), ' ', ch.last_name) AS "childName",
+          r.title, r.service, u.display_name AS author,
+          r.period_start AS "periodStart", r.period_end AS "periodEnd",
+          r.updated_at AS "updatedAt"
+        ${from} WHERE ${filtered}
+        ORDER BY r.updated_at DESC, r.id ASC
+        LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`),
     ]);
-    const authors = await this.prisma.membership.findMany({
-      where: { centerId, id: { in: uniq(reports.map((r) => r.membershipId)) } },
-      select: { id: true, user: { select: { displayName: true } } },
-    });
-    const childById = new Map(children.map((c) => [c.id, c]));
-    const authorById = new Map(authors.map((a) => [a.id, a.user.displayName]));
+    const filteredTotal = filteredCounts[0]?.total ?? 0;
     return {
-      synthetic: true, released: false, total,
-      items: reports.map((r) => {
-        const child = childById.get(r.childId)!;
-        return { id: r.id, childId: r.childId,
-          childName: `${child.preferredName ?? child.firstName} ${child.lastName}`,
-          title: r.title, service: r.service, status: 'IN_REVIEW' as const,
-          author: authorById.get(r.membershipId) ?? '',
-          periodStart: day(r.periodStart), periodEnd: day(r.periodEnd), updatedAt: r.updatedAt };
-      }),
+      synthetic: true, released: false, total: all[0]?.total ?? 0, filteredTotal,
+      page, pageSize, hasMore: page * pageSize < filteredTotal,
+      items: reports.map((r) => ({
+        id: r.id, childId: r.childId, childName: r.childName,
+        title: r.title, service: r.service, status: 'IN_REVIEW' as const,
+        author: r.author, periodStart: day(r.periodStart), periodEnd: day(r.periodEnd), updatedAt: r.updatedAt,
+      })),
     };
   }
 
