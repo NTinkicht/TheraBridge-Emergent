@@ -1,3 +1,7 @@
+## 2026-10-24 — TB-EM-024 correction checkpoint (DRAFT)
+
+Previous HEAD `2482f82`: CI 6/6 PASS but did not assert staff discovery behavior. Corrective commit adds CI Chromium tests to `scripts/design/check-demo-journey.mjs` exercising authorized staff activity search, label matching, result counts, ownership buckets, no match and clearing, specialty combination, and rendered input width at 320/390/768/1024/1440. **PASS at `b234c519`:** all six jobs in [run 40117705186](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/40117705186), including staff discovery Chromium tests. Codex no findings at this head. **Subsequent read-only-role regression CI PENDING; hosted visual acceptance outside CI NOT RUN.** No deployment. See docs/product/TB-EM-024-ACTIVITY-DISCOVERY.md.
+
 ## 2026-10-24 — TB-EM-023 guardian navigation follow-up
 
 - PASS (previous HEAD `51007e32`): six GitHub CI jobs including `demo-journey`; **not evidence of the rendered teal** because the old test asserted only a class name.

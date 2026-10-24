@@ -1,3 +1,7 @@
+## TB-EM-024 — PR #72 acceptance
+
+CI on `b234c519` verified 6/6 PASS (run 40117705186). Recheck the newer read-only-role regression/documentation update on its own exact head, especially the staff library Chromium tests. If failing, correct the actual failure in a new commit. Request exact-head Codex/Grok/Mistral/DeepSeek independent review. Keep draft until reviewer findings and CI are resolved; owner controls merge/deployment. Separately, Work continues hosted QA issue #61. No clinical gate activation.
+
 ## 2026-10-24 — TB-EM-023 next actions
 
 1. Wait for exact-head six-job CI and specifically `demo-journey` Chromium computed-style checks.
