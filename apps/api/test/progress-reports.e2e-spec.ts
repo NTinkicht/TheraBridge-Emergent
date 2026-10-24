@@ -203,6 +203,15 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     const displayedSpecialty = (await get(sup, queue + '?search=Occupational%20therapy').expect(200)).body;
     expect(displayedSpecialty).toMatchObject({ filteredTotal: 1 });
     expect(displayedSpecialty.items[0].id).toBe(filtered.items[0].id);
+    const authorMember = await h.prisma.membership.findUniqueOrThrow({ where: { id: member } });
+    await h.prisma.user.update({
+      where: { id: authorMember.userId }, data: { displayName: 'Óscar Reviewer' },
+    });
+    for (const nameQuery of ['Oscar%20Reviewer', '%C3%93scar%20Reviewer']) {
+      const byAuthor = (await get(sup, queue + '?search=' + nameQuery).expect(200)).body;
+      expect(byAuthor).toMatchObject({ total: 102, filteredTotal: 102 });
+      expect(byAuthor.items[0].author).toBe('Óscar Reviewer');
+    }
     const specialist = (await get(sup, queue + '?service=occupational&childId=' + b).expect(200)).body;
     expect(specialist).toMatchObject({ total: 102, filteredTotal: 1 });
     expect(specialist.items[0].title).toBe('Unique Needle');
