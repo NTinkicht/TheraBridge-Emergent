@@ -88,9 +88,11 @@ async function assess(browser,role,user,directory){
    await page.goto(BASE+'/login',{waitUntil:'domcontentloaded',timeout:25000});
    await page.getByTestId('login-email-input').fill(user.email);
    await page.getByTestId('login-password-input').fill(user.password);
-   const p=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/auth/login'&&r.request().method()==='POST',{timeout:20000});
-   await page.getByTestId('login-submit-button').click();
-   loginResponse=await p;if(loginResponse.status()!==200)throw Error('login_denied');
+   // Await waiter and click together so either can reject without an unhandled promise.
+   [loginResponse]=await Promise.all([
+    page.waitForResponse(r=>new URL(r.url()).pathname==='/api/auth/login'&&r.request().method()==='POST',{timeout:20000}),
+    page.getByTestId('login-submit-button').click()
+   ]);if(loginResponse.status()!==200)throw Error('login_denied');
    loggedIn=true;
    await page.waitForURL(u=>u.pathname==='/app'||u.pathname.startsWith('/app/'),{timeout:20000});
    await page.getByTestId('product-shell').waitFor({timeout:15000});

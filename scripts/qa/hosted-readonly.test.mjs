@@ -172,3 +172,32 @@ test('screenshot failure preserves earlier confirmed overflow (no real network)'
   assert.equal(row.sessionCleanup,'CONFIRMED');
  }finally{await rm(path,{recursive:true,force:true});}
 });
+
+test('response waiter fails before click settles without unhandled rejection or external IO',async()=>{
+ const {mkdtemp,rm,readFile,writeFile,chmod}=await import('node:fs/promises');
+ const {tmpdir}=await import('node:os');const {join}=await import('node:path');
+ const dir=await mkdtemp(join(tmpdir(),'tb-qa-login-race-'));
+ try{
+  const users=join(dir,'users.json');
+  await writeFile(users,JSON.stringify({platform:{email:'offline@example.invalid',password:'ci_only_mock'}}),{mode:0o600});
+  await chmod(users,0o600);
+  let clickFinished=false;
+  const page={
+   goto:async()=>({status:()=>200}),
+   getByTestId:name=>({fill:async()=>{},waitFor:async()=>{},
+     click:async()=>{await new Promise(r=>setTimeout(r,30));clickFinished=true;}}),
+   waitForResponse:async()=>{await new Promise(r=>setTimeout(r,5));throw Error('MOCK_LOGIN_RESPONSE_TIMEOUT');},
+  };
+  const ctx={
+   newPage:async()=>page,cookies:async()=>[],close:async()=>{},
+   request:{get:async()=>({ok:()=>false})}
+  };
+  const browser={newContext:async()=>ctx,close:async()=>{}};
+  const outcome=await run({credentialsFile:users,output:join(dir,'out'),launchBrowser:async()=>browser});
+  assert.equal(outcome,1);
+  await new Promise(r=>setTimeout(r,40));
+  assert.equal(clickFinished,true);
+  const ledger=JSON.parse(await readFile(join(dir,'out','hosted-readonly-results.json'),'utf8'));
+  assert.deepEqual(ledger.counts,{PASS:0,FAIL:0,BLOCKED:42});
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
