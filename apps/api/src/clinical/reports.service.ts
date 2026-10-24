@@ -154,6 +154,10 @@ export class ReportsService {
         OR r.service ILIKE ${'%' + q.search + '%'}
         OR (r.service = 'speech' AND 'speech & language' ILIKE ${'%' + q.search + '%'})
         OR (r.service = 'occupational' AND 'occupational therapy' ILIKE ${'%' + q.search + '%'})
+        OR (r.service = 'physical' AND 'physical therapy' ILIKE ${'%' + q.search + '%'})
+        OR (r.service = 'behavioral' AND 'behavioral therapy' ILIKE ${'%' + q.search + '%'})
+        OR (r.service = 'feeding' AND 'feeding therapy' ILIKE ${'%' + q.search + '%'})
+        OR (r.service = 'developmental' AND 'developmental therapy' ILIKE ${'%' + q.search + '%'})
       )` : Prisma.empty}`;
     type Count = { total: number };
     type Row = { id: string; childId: string; childName: string; title: string;
