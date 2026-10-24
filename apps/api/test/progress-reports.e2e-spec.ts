@@ -39,6 +39,7 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     const therapist = await staff('thera@prog.test', ['THERAPIST']);
     const other = await staff('other@prog.test', ['THERAPIST']);
     const sup = await staff('sup@prog.test', ['CLINICAL_SUPERVISOR'], []);
+    const coord = await staff('coord@prog.test', ['COORDINATOR'], []);
     const kid = (await post(h, c('children'), admin, { firstName: 'Ivo', lastName: 'Lane', dateOfBirth: '2019-04-02', services: ['speech'] }).expect(201)).body.id;
     await post(h, c(`children/${kid}/assignments`), admin, { membershipId: therapist.body.activeContext.membershipId, service: 'speech', isLead: true }).expect(201);
     await post(h, c(`children/${kid}/guardians`), admin, { displayName: 'Ada Lane', email: 'ada@family.test', relationship: 'mother', invite: true }).expect(201);
@@ -75,6 +76,9 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     await post(h, R, sup, { service: 'speech', title: 'Nope', periodStart: '2026-09-01', periodEnd: '2026-10-19' }).expect(403);
     const id = (await post(h, R, therapist, { service: 'speech', title: 'Autumn report', periodStart: '2026-09-01', periodEnd: '2026-10-19' }).expect(201)).body.id;
     const P = c(`clinical/reports/${id}`);
+    const queue = c('clinical/reports/review-queue');
+    // DeepSeek F1/P2: authorized review queue must exclude unpublished DRAFT.
+    expect((await get(sup, queue).expect(200)).body).toMatchObject({ total: 0, items: [] });
     let d = (await get(therapist, P).expect(200)).body;
     expect(d).toMatchObject({ canEdit: true, canReview: false, released: false, report: { status: 'DRAFT', version: 1 } });
     const reportGoal = d.evidence.goals.find((x: { key: string }) => x.key === 'two-word');
@@ -103,15 +107,24 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     expect((await patch(therapist, P, { sections: { summary: 'late' }, version: 6 }).expect(409)).body.message).toMatch(/with the supervisor/);
     for (const s of [sup, therapist]) await post(h, `${P}/release`, s).expect(403);
     await post(h, `${P}/comments`, therapist, { comment: 'self review' }).expect(403);
-    const queue = c('clinical/reports/review-queue');
-    for (const s of [admin, ada, therapist, other]) await get(s, queue).expect(403);
+    for (const s of [admin, ada, coord, therapist, other]) await get(s, queue).expect(403);
     await get(ops, queue).expect(404); // Platform actors have no centre context; do not disclose resources.
+    const foreignCenter = (await post(h, '/api/platform/centers', ops, {
+      name: 'Other Synthetic Center', timezone: 'Europe/Berlin', country: 'Germany', city: 'Hamburg',
+      specialties: ['speech'], firstAdmin: { email: 'lead2@prog.test', displayName: 'Other Admin' },
+    }).expect(201)).body.id;
+    await get(sup, `/api/centers/${foreignCenter}/clinical/reports/review-queue`).expect(404);
     const pending = (await get(sup, queue).expect(200)).body;
     expect(pending).toMatchObject({ synthetic: true, released: false, total: 1 });
     expect(pending.items).toHaveLength(1);
     expect(pending.items[0]).toMatchObject({ id, childId: kid, childName: 'Ivo Lane',
       title: 'Autumn report', service: 'speech', status: 'IN_REVIEW' });
     expect(JSON.stringify(pending)).not.toMatch(/Draft summary|Synthetic baseline|Recorded values are listed|familySummary/);
+    await post(h, c(`children/${kid}/archive`), admin, { reason: 'Synthetic archival queue scope regression' }).expect(200);
+    expect((await get(sup, queue).expect(200)).body).toMatchObject({ total: 0, items: [] });
+    expect((await h.prisma.progressReport.findUniqueOrThrow({ where: { id } })).status).toBe('IN_REVIEW');
+    await post(h, c(`children/${kid}/restore`), admin, {}).expect(200);
+    expect((await get(sup, queue).expect(200)).body).toMatchObject({ total: 1 });
     expect((await get(sup, P).expect(200)).body).toMatchObject({ canEdit: false, canReview: true });
     await post(h, `${P}/comments`, sup, { version: 6, comment: 'Please list the session dates.' }).expect(200);
     await post(h, `${P}/return`, sup, { version: 7, comment: 'Returned for revision: add session dates.' }).expect(200);
