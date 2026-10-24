@@ -43,8 +43,8 @@ export function inspectGeometry(d,w){
  return failures;
 }
 export function statusForPages(pages,visualAndDialogReview){
- if(pages.some(p=>p.outcome==='BLOCKED'))return 'BLOCKED';
  if(pages.some(p=>p.outcome==='FAIL'))return 'FAIL';
+ if(pages.some(p=>p.outcome==='BLOCKED'))return 'BLOCKED';
  return visualAndDialogReview&&pages.length?'PASS':'BLOCKED';
 }
 export function blocked(role,reason){
@@ -62,14 +62,16 @@ async function metrics(page){
     navigationVisible:innerWidth<768?visible('[data-testid="mobile-nav"]'):visible('[data-testid="product-sidebar"]')};
  });
 }
-async function logout(page){
- // The CSRF token stays in the page; no storage-state export, HAR or raw response logs.
- return page.evaluate(async()=>{
-  const r=await fetch('/api/auth/session',{credentials:'include'});if(!r.ok)return false;
-  const d=await r.json();const x=await fetch('/api/auth/logout',
-    {method:'POST',credentials:'include',headers:{'X-CSRF-Token':d.csrfToken}});
-  return x.status===204;
- });
+export async function logout(context){
+ // BrowserContext.request has the same cookie jar, but is independent of a crashed
+ // tab or navigation to a browser error page. Token never enters logged evidence.
+ const request=context.request;
+ const r=await request.get(BASE+'/api/auth/session');
+ if(!r.ok())return false;
+ const d=await r.json();
+ const x=await request.post(BASE+'/api/auth/logout',
+  {headers:{Origin:BASE,'X-CSRF-Token':d.csrfToken}});
+ return x.status()===204;
 }
 async function assess(browser,role,user,directory){
  const c=ROLES[role],rows=[];
@@ -93,7 +95,7 @@ async function assess(browser,role,user,directory){
      const s=await r.json();return s.activeContext?.role===expected&&s.user?.email?.toLowerCase()===email.toLowerCase();
    },[user.email,c.role]);
    if(!valid)throw Error('identity_mismatch');
-  }catch{return blocked(role,'authentication_or_identity_unverified');}
+  }catch{rows.push(...blocked(role,'authentication_or_identity_unverified'));return rows;}
   try{
    const h=inspectSetCookie(await loginResponse.headerValues('set-cookie'));
    const j=inspectCookieJar(await context.cookies(BASE));
@@ -129,9 +131,14 @@ async function assess(browser,role,user,directory){
        status==='BLOCKED'?'browser_navigation_incomplete':'confirmed_ui_or_navigation_problem',pages});
   }
  }finally{
-  // Cleanup even when a valid login was followed by an identity mismatch.
-  try{const done=await logout(page);if(loggedIn&&!done)console.error('WARNING: session cleanup not confirmed for '+role);}
-  catch{if(loggedIn)console.error('WARNING: session cleanup unavailable for '+role);}
+  // Preserve an explicit cleanup receipt even when the final page crashed.
+  let cleanup='NOT_AUTHENTICATED';
+  if(loggedIn){
+   try{cleanup=await logout(context)?'CONFIRMED':'UNCONFIRMED';}
+   catch{cleanup='UNCONFIRMED';}
+   if(cleanup==='UNCONFIRMED')console.error('WARNING: session cleanup unavailable for '+role);
+  }
+  for(const row of rows)row.sessionCleanup=cleanup;
   await context.close();
  }
  return rows;

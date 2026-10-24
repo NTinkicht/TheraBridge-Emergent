@@ -33,6 +33,7 @@ test('viewport regression detector',()=>{
 test('geometry alone cannot establish complete dialog/visual acceptance',()=>{
  assert.equal(statusForPages([{outcome:'PASS'}],false),'BLOCKED');
  assert.equal(statusForPages([{outcome:'FAIL'}],false),'FAIL');
+ assert.equal(statusForPages([{outcome:'FAIL'},{outcome:'BLOCKED'}],false),'FAIL');
  assert.equal(statusForPages([{outcome:'BLOCKED'}],false),'BLOCKED');
 });
 test('no credentials -> strictly blocked case IDs',()=>{
@@ -65,4 +66,18 @@ test('unavailable Playwright/Chromium emits blocked evidence, never exits withou
   assert.deepEqual(d.counts,{PASS:0,FAIL:0,BLOCKED:42});
   assert.equal(d.rows.length,42);
  }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('session logout uses approved-origin context requests even without a usable page',async()=>{
+ const seen=[];
+ const context={request:{
+  get:async url=>{seen.push({method:'GET',url});return {ok:()=>true,json:async()=>({csrfToken:'PRIVATE_CSRF'})};},
+  post:async (url,opts)=>{seen.push({method:'POST',url,origin:opts.headers.Origin,
+    tokenPresent:opts.headers['X-CSRF-Token']==='PRIVATE_CSRF'});return {status:()=>204};}
+ }};
+ const {logout}=await import('./hosted-readonly.mjs');
+ assert.equal(await logout(context),true);
+ assert.deepEqual(seen.map(s=>s.url),[BASE+'/api/auth/session',BASE+'/api/auth/logout']);
+ assert.equal(seen[1].origin,BASE);
+ assert.equal(seen[1].tokenPresent,true);
 });
