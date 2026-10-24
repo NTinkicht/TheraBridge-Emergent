@@ -14,6 +14,7 @@ const TITLES: Record<EvidenceReviewSection, string> = {
 };
 type Draft = { text: string; sourceRef: string };
 const empty: Draft = { text: '', sourceRef: '' };
+const VALIDATION_MESSAGE = 'Enter your own reviewed statement and explicitly select its source first.';
 
 /**
  * Every click writes a server-owned, immutable decision and shares its report
@@ -43,7 +44,7 @@ export function ReportDecisionAssist({ centerId, reportId, getVersion, flush, on
     if (!view || busy) return;
     const choice = drafts[section];
     if (action === 'APPLIED' && (!choice.text.trim() || !choice.sourceRef)) {
-      setFailure('Enter your own reviewed statement and explicitly select its source first.');
+      setFailure(VALIDATION_MESSAGE);
       return;
     }
     setFailure(null);
@@ -114,7 +115,7 @@ export function ReportDecisionAssist({ centerId, reportId, getVersion, flush, on
               Supporting source (required)
               <select className="mt-1 min-h-[44px] w-full rounded-control border border-border-strong bg-white p-2 text-[13px]"
                 aria-label={`Source for ${section} claim`} data-testid={`report-assist-source-${section}`}
-                value={chosen.sourceRef} onChange={e => setDrafts(old => ({ ...old, [section]: { ...old[section], sourceRef: e.target.value } }))}>
+                value={chosen.sourceRef} onChange={e => { setFailure(f => f === VALIDATION_MESSAGE ? null : f); setDrafts(old => ({ ...old, [section]: { ...old[section], sourceRef: e.target.value } })); }}>
                 <option value="">Select a recorded source</option>
                 {sources.map(source => <option key={source.ref} value={source.ref}>{source.label}</option>)}
               </select>
@@ -124,7 +125,7 @@ export function ReportDecisionAssist({ centerId, reportId, getVersion, flush, on
               <textarea className="mt-1 w-full rounded-control border border-border-strong bg-white p-2 text-[14px]"
                 rows={3} maxLength={1200} aria-label={`Review factual ${section} passage`}
                 data-testid={`report-assist-edit-${section}`} value={chosen.text}
-                onChange={e => setDrafts(old => ({ ...old, [section]: { ...old[section], text: e.target.value } }))}/>
+                onChange={e => { setFailure(f => f === VALIDATION_MESSAGE ? null : f); setDrafts(old => ({ ...old, [section]: { ...old[section], text: e.target.value } })); }}/>
             </label>
             <p className="text-[12px] text-brand-inkMuted">Use the exact recorded value and unit for observation claims. Do not infer a diagnosis or trend. The server saves the decision and draft text atomically.</p>
             <div className="flex flex-wrap gap-2">

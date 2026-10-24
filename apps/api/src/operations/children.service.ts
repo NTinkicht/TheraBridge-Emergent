@@ -7,7 +7,7 @@ import { InvitationsService } from '../centers/invitations.service';
 import { normalizeEmail } from '../common/security';
 import { PrismaService } from '../prisma/prisma.service';
 import type { AssignmentDto, ChildDto, GuardianDto, ListChildrenQuery, UpdateChildDto, ReferentDto } from './operations.dto';
-import { TrialService } from './trial.service';
+import { lockCenter, TrialService } from './trial.service';
 
 export interface Viewer { userId: string; membershipId: string; role: Role }
 const clean = (s: string) => s.trim().replace(/\s+/g, ' ');
@@ -145,11 +145,15 @@ export class ChildrenService {
   async setStatus(centerId: string, actorUserId: string, id: string, status: 'ACTIVE' | 'ARCHIVED', reason?: string) {
     const now = this.trial.now();
     await this.prisma.$transaction(async (tx) => {
+      // Global lock order: centre (trial/capacity) -> child -> assignment -> history.
+      // Reading referent/revision before the child lock can orphan a new
+      // concurrent designation when this transaction archives the child.
+      if (status === 'ACTIVE') await this.trial.assertChildCapacity(tx, centerId, now);
+      else await this.trial.assertWritable(tx, centerId, now);
+      await tx.$queryRaw`SELECT id FROM child WHERE id=${id}::uuid AND center_id=${centerId}::uuid FOR UPDATE`;
       const c = await tx.child.findFirst({ where: { id, centerId } });
       if (!c) throw new NotFoundException('Child not found');
       if (c.status === status) throw new ConflictException(status === 'ACTIVE' ? 'This child is already active.' : 'This child is already archived.');
-      if (status === 'ACTIVE') await this.trial.assertChildCapacity(tx, centerId, now);
-      else await this.trial.assertWritable(tx, centerId, now);
       await tx.child.update({ where: { id }, data: { status, version: { increment: 1 } } });
       if (status === 'ARCHIVED') {
         if (c.referentMembershipId) {
@@ -285,6 +289,9 @@ export class ChildrenService {
   async endAssignment(centerId: string, actorUserId: string, childId: string, assignmentId: string) {
     const now = this.trial.now();
     await this.prisma.$transaction(async (tx) => {
+      // Match clinical.write/setReferent: the centre must be locked first.
+      // Do not add a new trial-expiry permission gate to assignment ending.
+      await lockCenter(tx, centerId);
       await tx.$queryRaw`SELECT id FROM child WHERE id=${childId}::uuid AND center_id=${centerId}::uuid FOR UPDATE`;
       const child = await tx.child.findFirst({ where: { id: childId, centerId } });
       if (!child) throw new NotFoundException('Child not found');

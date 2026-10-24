@@ -200,6 +200,80 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     expect(await h.prisma.childReferentHistory.count({ where: { childId: kid } })).toBe(3);
   });
 
+  it('archives against a simultaneous referent designation without orphaned state or stale history', async () => {
+    const therapist = await staff('race-archiving-therapist@ops.test', ['THERAPIST']);
+    const kid = (await post(h, c('children'), admin, child()).expect(201)).body.id;
+    const membershipId = therapist.body.activeContext.membershipId;
+    await post(h, c('children/' + kid + '/assignments'), admin,
+      { membershipId, service: 'speech', isLead: true }).expect(201);
+    const detail = (await get(admin, c('children/' + kid)).expect(200)).body;
+    const [archive, designate] = await Promise.all([
+      post(h, c('children/' + kid + '/archive'), admin, { reason: 'Synthetic archive race' }),
+      patch(admin, c('children/' + kid + '/referent'), {
+        membershipId, version: detail.version, reason: 'Simultaneous designation test',
+      }),
+    ]);
+    expect(archive.status).toBe(200);
+    expect([200, 404, 409]).toContain(designate.status);
+    const archived = (await get(admin, c('children/' + kid)).expect(200)).body;
+    expect(archived.status).toBe('ARCHIVED');
+    expect(archived.referent).toBeNull();
+    expect(archived.referentRevision).toBe(designate.status === 200 ? 2 : 0);
+    const history = await h.prisma.childReferentHistory.findMany({
+      where: { centerId, childId: kid }, orderBy: { revision: 'asc' },
+    });
+    expect(history).toHaveLength(archived.referentRevision);
+    if (history.length) {
+      expect(history.map(x => x.revision)).toEqual([1, 2]);
+      expect(history[1]).toMatchObject({
+        previousMembershipId: membershipId, nextMembershipId: null,
+        reason: 'Child archived',
+      });
+    }
+    // Restoring the child must not resurrect the former designation.
+    await post(h, c('children/' + kid + '/restore'), admin).expect(200);
+    const restored = (await get(admin, c('children/' + kid)).expect(200)).body;
+    expect(restored.referent).toBeNull();
+    expect(restored.referentStatus).toBe('NOT_DESIGNATED');
+    expect(await h.prisma.careAssignment.count({
+      where: { centerId, childId: kid, endedAt: null },
+    })).toBe(0);
+  });
+
+  it('serializes concurrent referent designation and last assignment ending without deadlock', async () => {
+    const therapist = await staff('race-ending-therapist@ops.test', ['THERAPIST']);
+    const kid = (await post(h, c('children'), admin, child()).expect(201)).body.id;
+    const membershipId = therapist.body.activeContext.membershipId;
+    const aid = (await post(h, c('children/' + kid + '/assignments'), admin,
+      { membershipId, service: 'speech', isLead: true }).expect(201)).body.id;
+    const current = (await get(admin, c('children/' + kid)).expect(200)).body;
+    const [ended, designated] = await Promise.all([
+      post(h, c('children/' + kid + '/assignments/' + aid + '/end'), admin),
+      patch(admin, c('children/' + kid + '/referent'), {
+        membershipId, version: current.version, reason: 'Simultaneous assignment termination test',
+      }),
+    ]);
+    expect(ended.status).toBe(200);
+    expect([200, 409, 422]).toContain(designated.status);
+    const childAfter = (await get(admin, c('children/' + kid)).expect(200)).body;
+    expect(childAfter.referent).toBeNull();
+    expect(childAfter.referentStatus).toBe('NOT_DESIGNATED');
+    expect(childAfter.referentRevision).toBe(designated.status === 200 ? 2 : 0);
+    const history = await h.prisma.childReferentHistory.findMany({
+      where: { centerId, childId: kid }, orderBy: { revision: 'asc' },
+    });
+    expect(history.map(x => x.revision)).toEqual(
+      designated.status === 200 ? [1, 2] : [],
+    );
+    if (history.length) expect(history[1]).toMatchObject({
+      previousMembershipId: membershipId, nextMembershipId: null,
+      reason: 'Last active care assignment ended',
+    });
+    expect(await h.prisma.careAssignment.count({
+      where: { centerId, childId: kid, endedAt: null },
+    })).toBe(0);
+  });
+
   it('isolates centers and hides other families', async () => {
     const kid = (await post(h, c('children'), admin, child()).expect(201)).body.id;
     await post(h, '/api/platform/centers', ops, { name: 'Other Ops', timezone: 'UTC', country: 'France', city: 'Lyon', specialties: ['speech'], firstAdmin: { email: 'o@other.test', displayName: 'Other Admin' } }).expect(201);
