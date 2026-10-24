@@ -1,5 +1,14 @@
 # Test results — TheraBridge
 
+## TB-EM-023 — targeted DeepSeek-review correction qualification (2026-10-24)
+
+**Current corrective change:** NOT RUN at commit preparation. Follow-up code adds native database row assertions after concurrent child archive/referent updates and assignment termination, rejection of invalid referent by direct SQL (wrong tenant, revoked specialty), history-scope trigger negative, Speech/OT referent-name privacy and stale OMITTED→RECONSIDERED browser recovery. See `docs/product/TB-EM-023-DELIVERY.md` for work-unit traceability, permissions matrix and remaining visual-acceptance gaps.
+
+**Previous exact HEAD:** `73c4afb5317bf5eca1723242fcc61cdce01fd6fe`: [Actions #40077499056](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/40077499056) **6/6 SUCCESS**: `test`, `secret-scan`, `live-session`, `preview-container`, `demo-journey`, `compose`. PostgreSQL `test`: **481/481** tests in 15 suites. Confirmed re-review Grok + Mistral no blocking findings. These findings/CI do not automatically transfer to the next HEAD.
+
+**Coverage limitations:** isolated disposable synthetic PostgreSQL + Chromium browser only; 320/390/768/1024/1440 geometry checks apply to specified flows, not a full physical-device and cross-browser visual/accessibility audit. Render HTTPS external UAT issue #61 remains not accepted. No real patient data, release, AI/STT, clinical approval, authorizing consent, messaging or pilot tested/activated.
+
+
 ## TB-EM-019 — MIS-001 / MIS-002 remediation tests (2026-10-23)
 
 **Current patch tests: NOT RUN at commit authoring.** Added real-source logic assertions that dedupe recognizes stable/legacy evidence reference headings despite editing the body; expanded seven-role Playwright synthetic journey to simulate HTTP 503 practice-feedback, assert an error rather than false empty state, Retry on successful restore, and confirm no repeat insertion after clinician edits/autosave/reload. All safety restrictions remain unchanged. Verify the six exact-head GitHub Actions jobs after the correction commit; do not transfer the earlier green verdict to the newer commit. Prior independent source-review head `b542159a`: [hosted 6/6 SUCCESS](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/40006533539). These tests do not establish external Render HTTPS UAT or medical effectiveness.

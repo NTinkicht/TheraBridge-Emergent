@@ -191,12 +191,35 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     await post(h, c('children/' + kid + '/assignments/' + assignmentId + '/end'), admin).expect(200);
     expect((await get(admin, c('children/' + kid)).expect(200)).body.referent.membershipId).toBe(second);
     await h.prisma.membership.update({ where: { id: second }, data: { specialties: [] } });
+    // The DB trigger is the final guard, even for a direct SQL mutation.
+    await expect(h.prisma.$executeRaw`UPDATE "child"
+      SET "referent_membership_id" = ${second}::uuid WHERE id = ${kid}::uuid`)
+      .rejects.toThrow(/referent must be/);
     const revoked = (await get(admin, c('children/' + kid)).expect(200)).body;
     expect(revoked).toMatchObject({ referentStatus: 'UNAVAILABLE', referent: null });
     await get(coordinator, c('clinical/children/' + kid)).expect(403);
     const cleared = (await patch(admin, url, { membershipId: null, version: revoked.version, reason: 'Clear invalid referent' }).expect(200)).body;
     expect(cleared.referentRevision).toBe(3);
     expect((await get(admin, c('children/' + kid)).expect(200)).body.referent).toBeNull();
+    expect(await h.prisma.childReferentHistory.count({ where: { childId: kid } })).toBe(3);
+    const otherCenter = (await post(h, '/api/platform/centers', ops, {
+      name: 'Referent Invalid Centre', timezone: 'UTC', country: 'France', city: 'Lyon',
+      specialties: ['speech'], firstAdmin: { email: 'other-ref@ops.test', displayName: 'External Admin' },
+    }).expect(201)).body.id;
+    const outsider = await accept('other-ref@ops.test');
+    const outsiderMembership = outsider.body.activeContext.membershipId;
+    await expect(h.prisma.$executeRaw`UPDATE "child"
+      SET "referent_membership_id" = ${outsiderMembership}::uuid WHERE id = ${kid}::uuid`)
+      .rejects.toThrow(/referent must be/);
+    const actorUserId = (await h.prisma.membership.findUniqueOrThrow({
+      where: { id: admin.body.activeContext.membershipId }, select: { userId: true },
+    })).userId;
+    // The history scope trigger independently rejects wrong-centre inserts.
+    await expect(h.prisma.childReferentHistory.create({ data: {
+      centerId: otherCenter, childId: kid, actorUserId,
+      nextMembershipId: outsiderMembership, reason: 'Forged cross-centre audit',
+      revision: 4, createdAt: h.clock.now(),
+    } })).rejects.toThrow(/scope mismatch/);
     expect(await h.prisma.childReferentHistory.count({ where: { childId: kid } })).toBe(3);
   });
 
@@ -218,7 +241,12 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     const archived = (await get(admin, c('children/' + kid)).expect(200)).body;
     expect(archived.status).toBe('ARCHIVED');
     expect(archived.referent).toBeNull();
-    expect(archived.referentRevision).toBe(designate.status === 200 ? 2 : 0);
+    const archivedRow = await h.prisma.child.findUniqueOrThrow({ where: { id: kid } });
+    // Do not assert only the operations projection: archived detail() always
+    // hides names, even if a broken race leaves a dangling DB designation.
+    expect(archivedRow.referentMembershipId).toBeNull();
+    expect(archivedRow.referentRevision).toBe(designate.status === 200 ? 2 : 0);
+    expect(archived.referentRevision).toBe(archivedRow.referentRevision);
     const history = await h.prisma.childReferentHistory.findMany({
       where: { centerId, childId: kid }, orderBy: { revision: 'asc' },
     });
@@ -258,7 +286,10 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     const childAfter = (await get(admin, c('children/' + kid)).expect(200)).body;
     expect(childAfter.referent).toBeNull();
     expect(childAfter.referentStatus).toBe('NOT_DESIGNATED');
-    expect(childAfter.referentRevision).toBe(designated.status === 200 ? 2 : 0);
+    const afterRow = await h.prisma.child.findUniqueOrThrow({ where: { id: kid } });
+    expect(afterRow.referentMembershipId).toBeNull();
+    expect(afterRow.referentRevision).toBe(designated.status === 200 ? 2 : 0);
+    expect(childAfter.referentRevision).toBe(afterRow.referentRevision);
     const history = await h.prisma.childReferentHistory.findMany({
       where: { centerId, childId: kid }, orderBy: { revision: 'asc' },
     });

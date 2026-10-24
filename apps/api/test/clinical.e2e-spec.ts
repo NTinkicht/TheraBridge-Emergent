@@ -77,6 +77,37 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
       expect.arrayContaining([upcomingWeek.id, upcomingSixWeeks.id]));
   });
 
+  it('does not expose an occupational referent to a speech-only clinician', async () => {
+    const { therapist, sup, kid } = await setup(['speech', 'occupational']);
+    const ot = await staff('ot-referent@clin.test', ['THERAPIST'], ['occupational']);
+    const otMembership = ot.body.activeContext.membershipId;
+    await post(h, c('children/' + kid + '/assignments'), admin, {
+      membershipId: otMembership, service: 'occupational', isLead: true,
+    }).expect(201);
+    const detail = (await get(admin, c('children/' + kid)).expect(200)).body;
+    await patch(admin, c('children/' + kid + '/referent'), {
+      membershipId: otMembership, version: detail.version,
+      reason: 'Explicit occupational coordination referent',
+    }).expect(200);
+    const speech = (await get(therapist, c('clinical/children/' + kid)).expect(200)).body;
+    expect(speech.childWideReferent).toBeNull();
+    expect(speech.childWideReferentStatus).toBe('UNAVAILABLE');
+    expect(JSON.stringify(speech)).not.toContain('Staff ot-referent');
+    const occupational = (await get(ot, c('clinical/children/' + kid)).expect(200)).body;
+    expect(occupational.childWideReferent).toMatchObject({
+      displayName: 'Staff ot-referent',
+    });
+    expect(occupational.childWideReferentStatus).toBe('VISIBLE');
+    const supervisor = (await get(sup, c('clinical/children/' + kid)).expect(200)).body;
+    expect(supervisor.childWideReferent).toMatchObject({
+      displayName: 'Staff ot-referent',
+    });
+    await h.prisma.membership.update({ where: { id: otMembership }, data: { specialties: [] } });
+    const invalid = (await get(sup, c('clinical/children/' + kid)).expect(200)).body;
+    expect(invalid.childWideReferent).toBeNull();
+    expect(invalid.childWideReferentStatus).toBe('UNAVAILABLE');
+  });
+
   it('supports scoped activity duplication and author-only versioned edits without exposing global samples', async () => {
     const { therapist, other, sup, rosa } = await setup();
     const ot = await staff('ot-library@clin.test', ['THERAPIST'], ['occupational']);

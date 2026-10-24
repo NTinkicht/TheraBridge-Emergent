@@ -91,7 +91,7 @@ export function ReportDecisionAssist({ centerId, reportId, getVersion, flush, on
         const history = view.latest[section];
         const chosen = drafts[section];
         const sources = view.sources[section].sources;
-        const omitted = history?.action === 'OMITTED' && history.status !== 'REQUIRES_REVIEW';
+        const omitted = history?.action === 'OMITTED';
         const applied = history?.action === 'APPLIED';
         const staleness = history?.status === 'REQUIRES_REVIEW';
         return <section key={section} className="space-y-2 rounded-control border border-border-light bg-white p-3" data-testid={`report-suggestion-${section}`}>
@@ -107,10 +107,10 @@ export function ReportDecisionAssist({ centerId, reportId, getVersion, flush, on
           {history && <p className="text-[12px] text-brand-inkMuted" data-testid={`report-decision-history-${section}`}>
             Last saved decision: {history.action.toLowerCase()} · revision {history.reportRevision} · {history.status.replaceAll('_', ' ').toLowerCase()}. Claim accuracy is not machine-verified.
           </p>}
-          {staleness && <p role="alert" className="text-[13px] text-status-caution">The recorded references or report text have changed. Reopen the latest report before a new decision.</p>}
-          {omitted ? <Button size="sm" variant="secondary" disabled={busy || staleness}
+          {staleness && <p role="alert" className="text-[13px] text-status-caution">The recorded references or report text have changed. Review the available current sources before making a new decision; earlier decisions remain in the audit history.</p>}
+          {omitted ? <Button size="sm" variant="secondary" disabled={busy}
             data-testid={`report-assist-restore-${section}`} onClick={() => void submit(section, 'RECONSIDERED')}>Reconsider omitted suggestion</Button>
-          : !applied && !staleness ? <>
+          : !applied ? <>
             <label className="block text-[13px] font-semibold">
               Supporting source (required)
               <select className="mt-1 min-h-[44px] w-full rounded-control border border-border-strong bg-white p-2 text-[13px]"
@@ -135,7 +135,7 @@ export function ReportDecisionAssist({ centerId, reportId, getVersion, flush, on
                 data-testid={`report-assist-apply-${section}`} onClick={() => void submit(section, 'APPLIED')}>Append and record decision</Button>
             </div>
           </> : <p className="text-[12px] text-brand-inkMuted">
-            {applied ? 'Edit the draft section below to correct a saved passage. The audit history remains immutable.' : 'Reload the current report before reviewing this change.'}
+            {applied ? 'Edit the draft section below to correct a saved passage. The audit history remains immutable.' : 'Review the available evidence before recording a new decision.'}
           </p>}
         </section>;
       })}

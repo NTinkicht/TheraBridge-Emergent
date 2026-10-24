@@ -143,6 +143,14 @@ try {
     await page.getByTestId('report-assist-omit-goals').click();
     await page.getByTestId('report-assist-restore-goals').waitFor({ timeout: 25000 });
     assert((await page.getByTestId('report-assist-decision-goals').innerText()).includes('Omitted'));
+    // A stale OMITTED event must remain recoverable, not trap the clinician
+    // behind an inert "reload" message that cannot clear the history hash.
+    const priorGoalText = await page.getByTestId('report-section-goals').inputValue();
+    await page.getByTestId('report-section-goals').fill(priorGoalText + '\nSynthetic note reviewed after omission.');
+    await page.locator('[data-testid="report-save-state"][data-state="saved"]').waitFor({ timeout: 25000 });
+    await page.reload();
+    await page.getByTestId('report-decisions-persistent').waitFor();
+    assert((await page.getByTestId('report-assist-decision-goals').innerText()).includes('review required'));
     await page.getByTestId('report-assist-restore-goals').click();
     await page.getByTestId('report-assist-source-goals').waitFor({ timeout: 25000 });
     await page.getByTestId('report-assist-source-goals').selectOption(goalRef);

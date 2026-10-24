@@ -77,7 +77,7 @@ export function Child360({ ws, centerId, onNavigate }: {ws: Workspace;centerId: 
               </div>
             </div>
             <p className="rounded-control bg-surface-subtle px-3 py-2 text-[12px]" data-testid="child360-referent">
-              <span className="font-semibold">Child-wide referent:</span> {ws.childWideReferent?.displayName ?? (ws.childWideReferentStatus === 'UNAVAILABLE' ? 'Not available in your permitted specialty scope' : 'Not designated')}
+              <span className="font-semibold">Child-wide referent:</span> {ws.childWideReferent?.displayName ?? (ws.childWideReferentStatus === 'UNAVAILABLE' ? 'Referent details unavailable in this view' : 'Not designated')}
             </p>
           </div>
           {careTeam.length === 0 ? (

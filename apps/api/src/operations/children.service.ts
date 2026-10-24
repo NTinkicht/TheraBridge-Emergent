@@ -263,7 +263,7 @@ export class ChildrenService {
       } });
       await logCenterEvent(tx, centerId, 'child.referent_changed', now, {
         actorUserId: v.userId, meta: { childId, previousMembershipId: child.referentMembershipId,
-          nextMembershipId: next, revision },
+          nextMembershipId: next, revision, reason: dto.reason.trim() },
       });
       return { referentMembershipId: next, referentRevision: revision, version: dto.version + 1 };
     });
