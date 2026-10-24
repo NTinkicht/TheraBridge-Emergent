@@ -22,5 +22,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
+      - name: Check Gitleaks TOML configuration parses cleanly
+        run: python3 -c 'import tomllib; tomllib.load(open(".gitleaks.toml","rb"))'
       - name: Run offline QA contract suite only (no secrets or external requests)
         run: node --test scripts/qa/hosted-readonly.test.mjs
