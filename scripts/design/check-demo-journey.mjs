@@ -395,7 +395,16 @@ try {
     const reviewRow = page.getByTestId('review-queue-row-' + queuedDraft.id);
     await reviewRow.waitFor();
     assert((await reviewRow.innerText()).includes(queuedDraft.title));
-    assert.equal(await page.getByTestId('review-queue-open-' + queuedDraft.id).getAttribute('href'), '/app/reports/' + queuedDraft.id);
+    const openDraft = page.getByTestId('review-queue-open-' + queuedDraft.id);
+    assert.equal(await openDraft.getAttribute('href'), '/app/reports/' + queuedDraft.id);
+    assert((await openDraft.getAttribute('aria-label')).includes(queuedDraft.title));
+    assert((await page.getByTestId('supervisor-review-queue').innerText()).includes('awaiting review across centre'));
+    await page.getByTestId('filter-period').selectOption('custom');
+    await page.getByTestId('filter-from').fill('2026-11-10');
+    await page.getByTestId('filter-to').fill('2026-10-01');
+    await page.getByTestId('progress-period-error').waitFor();
+    await reviewRow.waitFor(); // chart error must not remove report review queue
+    await page.getByTestId('filter-period').selectOption('90');
     await page.getByTestId('review-queue-search').fill('no-matching-synthetic-review');
     await page.getByTestId('review-queue-empty').waitFor();
     assert.equal(await reviewRow.count(), 0);
