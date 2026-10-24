@@ -1,0 +1,26 @@
+name: qa-readonly-contracts
+on:
+  push:
+    paths:
+      - scripts/qa/hosted-readonly.mjs
+      - scripts/qa/hosted-readonly.test.mjs
+      - .github/workflows/qa-readonly-contracts.yml
+  pull_request:
+    paths:
+      - scripts/qa/hosted-readonly.mjs
+      - scripts/qa/hosted-readonly.test.mjs
+      - .github/workflows/qa-readonly-contracts.yml
+permissions:
+  contents: read
+jobs:
+  offline-contracts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Run offline QA contract suite only (no secrets or external requests)
+        run: node --test scripts/qa/hosted-readonly.test.mjs
