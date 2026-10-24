@@ -143,21 +143,21 @@ export class ReportsService {
       ${q.childId ? Prisma.sql`AND r.child_id = ${q.childId}::uuid` : Prisma.empty}
       ${q.service ? Prisma.sql`AND r.service = ${q.service}` : Prisma.empty}
       ${q.search ? Prisma.sql`AND (
-        LOWER(TRANSLATE(r.title, 'áàâäãåéèêëíìîïóòôöõúùûüýÿñçÁÀÂÄÃÅÉÈÊËÍÌÎÏÓÒÔÖÕÚÙÛÜÝŸÑÇ',
-          'aaaaaaeeeeiiiiooooouuuuyyncAAAAAAEEEEIIIIOOOOOUUUUYYNC')) LIKE ${'%' + q.search.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase() + '%'}
-        OR LOWER(TRANSLATE(CONCAT(COALESCE(ch.preferred_name, ch.first_name), ' ', ch.last_name),
+        STRPOS(LOWER(TRANSLATE(r.title, 'áàâäãåéèêëíìîïóòôöõúùûüýÿñçÁÀÂÄÃÅÉÈÊËÍÌÎÏÓÒÔÖÕÚÙÛÜÝŸÑÇ',
+          'aaaaaaeeeeiiiiooooouuuuyyncAAAAAAEEEEIIIIOOOOOUUUUYYNC')), ${q.search.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()}) > 0
+        OR STRPOS(LOWER(TRANSLATE(CONCAT(COALESCE(ch.preferred_name, ch.first_name), ' ', ch.last_name),
           'áàâäãåéèêëíìîïóòôöõúùûüýÿñçÁÀÂÄÃÅÉÈÊËÍÌÎÏÓÒÔÖÕÚÙÛÜÝŸÑÇ',
-          'aaaaaaeeeeiiiiooooouuuuyyncAAAAAAEEEEIIIIOOOOOUUUUYYNC')) LIKE ${'%' + q.search.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase() + '%'}
-        OR LOWER(TRANSLATE(u.display_name,
+          'aaaaaaeeeeiiiiooooouuuuyyncAAAAAAEEEEIIIIOOOOOUUUUYYNC')), ${q.search.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()}) > 0
+        OR STRPOS(LOWER(TRANSLATE(u.display_name,
           'áàâäãåéèêëíìîïóòôöõúùûüýÿñçÁÀÂÄÃÅÉÈÊËÍÌÎÏÓÒÔÖÕÚÙÛÜÝŸÑÇ',
-          'aaaaaaeeeeiiiiooooouuuuyyncAAAAAAEEEEIIIIOOOOOUUUUYYNC')) LIKE ${'%' + q.search.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase() + '%'}
-        OR r.service ILIKE ${'%' + q.search + '%'}
-        OR (r.service = 'speech' AND 'speech & language' ILIKE ${'%' + q.search + '%'})
-        OR (r.service = 'occupational' AND 'occupational therapy' ILIKE ${'%' + q.search + '%'})
-        OR (r.service = 'physical' AND 'physical therapy' ILIKE ${'%' + q.search + '%'})
-        OR (r.service = 'behavioral' AND 'behavioral therapy' ILIKE ${'%' + q.search + '%'})
-        OR (r.service = 'feeding' AND 'feeding therapy' ILIKE ${'%' + q.search + '%'})
-        OR (r.service = 'developmental' AND 'developmental therapy' ILIKE ${'%' + q.search + '%'})
+          'aaaaaaeeeeiiiiooooouuuuyyncAAAAAAEEEEIIIIOOOOOUUUUYYNC')), ${q.search.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()}) > 0
+        OR STRPOS(LOWER(r.service), LOWER(${q.search})) > 0
+        OR (r.service = 'speech' AND STRPOS(LOWER('speech & language'), LOWER(${q.search})) > 0)
+        OR (r.service = 'occupational' AND STRPOS(LOWER('occupational therapy'), LOWER(${q.search})) > 0)
+        OR (r.service = 'physical' AND STRPOS(LOWER('physical therapy'), LOWER(${q.search})) > 0)
+        OR (r.service = 'behavioral' AND STRPOS(LOWER('behavioral therapy'), LOWER(${q.search})) > 0)
+        OR (r.service = 'feeding' AND STRPOS(LOWER('feeding therapy'), LOWER(${q.search})) > 0)
+        OR (r.service = 'developmental' AND STRPOS(LOWER('developmental therapy'), LOWER(${q.search})) > 0)
       )` : Prisma.empty}`;
     type Count = { total: number };
     type Row = { id: string; childId: string; childName: string; title: string;
