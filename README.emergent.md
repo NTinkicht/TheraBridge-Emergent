@@ -1,17 +1,3 @@
-# TheraBridge V1 — controlled synthetic engineering candidate
-
-**Status: independent technical qualification candidate; clinical use, pilot and production deployment are NO-GO.**
-
-This is an isolated integration candidate assembled from the six-commit Freebuff / TB-EM-011 / security-review chain. It does not activate signing, plan approval, consent grants, recipient releases, safeguarding, recording or real clinical workflows. All account, child, guardian, therapist and therapy data must remain invented/synthetic.
-
-## Current implementation
-
-- Next.js 14 App Router; NestJS/Fastify API; PostgreSQL/Prisma; session-based authentication, tenant-scoped roles and CSRF/Origin protection.
-- Center applications, center setup, clinician operations, scheduling, synthetic family portals and role-controlled clinical drafts.
-- Synthetic clinical governance, review/return/explicit withdrawal, immutable internal snapshots/evidence and non-authorizing access review.
-- Deny-by-default clinical approval, signing, consent grants and recipient release; family free-text messaging only with the non-production synthetic demo gate.
-- Multi-specialty therapist workspace isolation based on active child/service assignments.
-
 ## Technical evidence
 
 The exact **source branch** `review/tb-em-011-least-privilege-safeguards` at `cd5f721d9e4d68f756baa4109628c44f217c706a` passed 442/442 API tests, API/web builds, secret scanning, Docker build/start/smoke on both GitHub Actions runs [39652806343](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/39652806343) and [39652813269](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/39652813269).
