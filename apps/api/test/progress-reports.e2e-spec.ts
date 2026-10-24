@@ -154,9 +154,14 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     const a = (await post(h, c('children'), admin, {
       firstName: 'Alice', lastName: 'Queue', dateOfBirth: '2019-04-02', services: ['speech'],
     }).expect(201)).body.id;
-    const b = (await post(h, c('children'), admin, {
-      firstName: 'Béatrice', lastName: 'Queue', dateOfBirth: '2018-04-02', services: ['speech'],
-    }).expect(201)).body.id;
+    // Additional child is an isolated high-volume database fixture, not an API
+    // onboarding attempt: the synthetic centre intentionally has a child cap.
+    const existing = await h.prisma.child.findUniqueOrThrow({ where: { id: a } });
+    const b = (await h.prisma.child.create({ data: {
+      centerId, firstName: 'Béatrice', lastName: 'Queue',
+      dateOfBirth: new Date('2018-04-02T00:00:00Z'), services: ['speech'],
+      createdById: existing.createdById, createdAt: new Date(h.clock.t),
+    } })).id;
     const member = therapist.body.activeContext.membershipId;
     const baseTime = Date.parse('2026-10-15T09:00:00Z');
     // Seed only synthetic report metadata; no release, sign, or clinical action.
