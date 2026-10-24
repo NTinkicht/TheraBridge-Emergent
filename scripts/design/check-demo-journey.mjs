@@ -404,6 +404,15 @@ try {
     await page.getByTestId('filter-to').fill('2026-10-01');
     await page.getByTestId('progress-period-error').waitFor();
     await reviewRow.waitFor(); // chart error must not remove report review queue
+    const order = await page.evaluate(() => {
+      const filters = document.querySelector('[data-testid="progress-filters"]');
+      const error = document.querySelector('[data-testid="progress-period-error"]');
+      const queue = document.querySelector('[data-testid="supervisor-review-queue"]');
+      return !!filters && !!error && !!queue
+        && !!(filters.compareDocumentPosition(error) & Node.DOCUMENT_POSITION_FOLLOWING)
+        && !!(error.compareDocumentPosition(queue) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+    assert.equal(order, true, 'Date error must directly follow filters and precede the visible queue');
     await page.getByTestId('filter-period').selectOption('90');
     await page.getByTestId('review-queue-search').fill('no-matching-synthetic-review');
     await page.getByTestId('review-queue-empty').waitFor();
