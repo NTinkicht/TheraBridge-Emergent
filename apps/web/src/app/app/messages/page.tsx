@@ -1,26 +1,18 @@
 'use client';
-
-import { useEffect, useState } from 'react';
+// Global family messaging is disabled pending safeguarding and privacy policy.
+// This informational screen never invokes the disabled thread API.
+import { MessagesSquareOff } from 'lucide-react';
 import { Workspace } from '@/components/centers/kit';
-import { Messages } from '@/components/messages/Messages';
-import type { SessionInfo } from '@/lib/auth';
-import { opsApi } from '@/lib/operations';
-
-function Page({ session, onError }: { session: SessionInfo; onError: (e: unknown) => void }) {
-  const centerId = session.activeContext?.type === 'center' ? session.activeContext.centerId : '';
-  const family = session.activeContext?.role === 'GUARDIAN';
-  const [kids, setKids] = useState<{ id: string; name: string }[]>([]);
-  useEffect(() => {
-    const load = family
-      ? opsApi.family(centerId).then((r) => r.children.map((c) => ({ id: c.id, name: c.fullName })))
-      : opsApi.children(centerId, {}).then((r) => r.items.map((c) => ({ id: c.id, name: `${c.preferredName ?? c.firstName} ${c.lastName}` })));
-    load.then(setKids).catch(() => setKids([]));
-  }, [centerId, family]);
-  const therapistMembershipId = session.activeContext?.type === 'center' && session.activeContext.role === 'THERAPIST'
-    ? session.activeContext.membershipId : undefined;
-  return <Messages centerId={centerId} family={family} kids={kids} therapistMembershipId={therapistMembershipId} onError={onError} />;
-}
+import { Card } from '@/components/design/ui';
 
 export default function MessagesPage() {
-  return <Workspace active="messages" permission="center.messages.use" deniedText="Messages are available to center staff working with families and to connected guardians.">{(s, onError) => <Page session={s} onError={onError} />}</Workspace>;
+  return <Workspace active="messages" permission="center.messages.use"
+    deniedText="This workspace is not authorized to access messages.">
+    {() => <Card className="max-w-2xl space-y-3 p-6" testId="messages-demo-disabled">
+      <MessagesSquareOff size={25} className="text-brand-inkMuted" aria-hidden="true" />
+      <h1 className="text-[22px] font-bold">Family messaging is unavailable in this demo</h1>
+      <p className="text-[14px] text-brand-inkMuted">Conversations remain switched off while participant privacy and safeguarding policies await approval. No messages can be viewed or sent here.</p>
+      <p className="text-[13px] text-brand-inkMuted">Other authorized workspace features remain available; a centre administrator cannot enable messaging from this screen.</p>
+    </Card>}
+  </Workspace>;
 }

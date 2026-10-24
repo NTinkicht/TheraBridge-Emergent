@@ -130,7 +130,7 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
         <span>↻ repeating</span>
       </div>
       <BookDialog centerId={centerId} open={booking !== false || !!editing} editing={editing} initial={booking || null} onClose={() => { setBooking(false); setEditing(null); }} onError={onError} onDone={done} />
-      <AppointmentPanel centerId={centerId} appt={editing ? null : selected} manage={manage} mine={!!selected && mine(selected)} onClose={() => setSelected(null)} onError={onError}
+      <AppointmentPanel centerId={centerId} appt={editing ? null : selected} manage={manage} mine={!!selected && mine(selected)} canOpenClinical={!!selected && isTherapist && selected.membershipId === ctx?.membershipId && session.permissions.includes('center.clinical.read')} onClose={() => setSelected(null)} onError={onError}
         onMove={(a) => setEditing(a)} onDone={done} />
     </div>
   );

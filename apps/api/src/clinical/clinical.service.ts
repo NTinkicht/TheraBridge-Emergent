@@ -56,7 +56,7 @@ export class ClinicalService {
       this.prisma.assessment.findMany({ where: { centerId, childId, ...serviceScope }, orderBy: { assessedOn: 'desc' } }),
       this.prisma.therapyPlan.findMany({ where: { centerId, childId, ...serviceScope }, include: { versions: { orderBy: { number: 'desc' } } }, orderBy: { createdAt: 'asc' } }),
       this.prisma.sessionNote.findMany({ where: { centerId, childId, ...serviceScope }, orderBy: { sessionDate: 'desc' }, take: 50 }),
-      this.prisma.appointment.findMany({ where: { centerId, childId, ...serviceScope, status: { in: ['SCHEDULED', 'COMPLETED'] }, startsAt: { gte: new Date(this.trial.now().getTime() - 30 * 86_400_000), lte: new Date(this.trial.now().getTime() + 86_400_000) }, ...(v.role === 'THERAPIST' ? { membershipId: v.membershipId } : {}) }, orderBy: { startsAt: 'desc' } }),
+      this.prisma.appointment.findMany({ where: { centerId, childId, ...serviceScope, status: { in: ['SCHEDULED', 'COMPLETED'] }, startsAt: { gte: new Date(this.trial.now().getTime() - 30 * 86_400_000), lte: new Date(this.trial.now().getTime() + 42 * 86_400_000) }, ...(v.role === 'THERAPIST' ? { membershipId: v.membershipId } : {}) }, orderBy: { startsAt: 'desc' } }),
       this.templates(centerId).then(rows => assignedServices ? rows.filter(t => assignedServices.includes(t.service)) : rows),
       // Never disclose names for another specialty to a therapist. A supervisor
       // may view centre-scoped assignment names, but not family discussions.

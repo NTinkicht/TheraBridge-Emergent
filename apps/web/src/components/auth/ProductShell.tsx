@@ -17,11 +17,11 @@ export interface PlannedModule {
   icon: LucideIcon;
 }
 
-function NavLink({ href, icon: Icon, label, active, testId }: { href: string; icon: LucideIcon; label: string; active: boolean; testId: string }) {
+function NavLink({ href, icon: Icon, label, active, testId, family = false }: { href: string; icon: LucideIcon; label: string; active: boolean; testId: string; family?: boolean }) {
   return (
     <Link href={href} aria-current={active ? 'page' : undefined} data-testid={testId}
-      className={`relative flex min-h-[44px] shrink-0 items-center gap-2 rounded-control px-2.5 text-[14px] font-medium transition-colors md:gap-3 md:px-3 ${active ? 'bg-brand-actionTint text-brand-action' : 'text-brand-inkMuted hover:bg-surface-subtle hover:text-brand-ink'}`}>
-      {active && <span aria-hidden="true" className="absolute bottom-2 left-0 top-2 w-[3px] rounded-r-full bg-brand-action" />}
+      className={`relative flex min-h-[44px] shrink-0 items-center gap-2 rounded-control px-2.5 text-[14px] font-medium transition-colors md:gap-3 md:px-3 ${active ? (family ? 'bg-fam-accentTint text-fam-accent' : 'bg-brand-actionTint text-brand-action') : 'text-brand-inkMuted hover:bg-surface-subtle hover:text-brand-ink'}`}>
+      {active && <span aria-hidden="true" className={`absolute bottom-2 left-0 top-2 w-[3px] rounded-r-full ${family ? 'bg-fam-accent' : 'bg-brand-action'}`} />}
       <Icon size={19} strokeWidth={1.8} aria-hidden="true" />
       {label}
     </Link>
@@ -58,6 +58,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
   const ctx = session.activeContext;
   const where = ctx ? `${contextLabel(ctx)} · ${ROLE_LABELS[ctx.role]}` : 'No workspace selected';
   const nav = NAV.filter((n) => !n.permission || session.permissions.includes(n.permission));
+  const family = ctx?.role === 'GUARDIAN';
 
   async function signOut() {
     setSigningOut(true);
@@ -87,7 +88,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
           </Link>
         )}
         <nav aria-label="Primary" className="flex-1 space-y-1 overflow-y-auto px-3">
-          {nav.map((n) => <NavLink key={n.key} href={n.href} icon={n.icon} label={n.label} active={active === n.key} testId={`nav-${n.key}`} />)}
+          {nav.map((n) => <NavLink key={n.key} href={n.href} icon={n.icon} label={n.label} active={active === n.key} family={family} testId={`nav-${n.key}`} />)}
           {planned.length > 0 && <p className="px-3 pb-1 pt-5 text-[12px] font-semibold uppercase tracking-[0.06em] text-brand-inkMuted">Coming next</p>}
           {planned.map((m) => (
             <span key={m.label} aria-disabled="true" title={`Arrives in ${m.unit}`} data-testid={`nav-planned-${m.label.toLowerCase().replace(/\W+/g, '-')}`}
@@ -112,7 +113,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
         </header>
         {signOutError && <p role="alert" className="bg-status-dangerSurface px-4 py-2 text-[14px] font-medium text-status-danger md:px-8" data-testid="sign-out-error">{signOutError}</p>}
         <ScrollStrip role="navigation" ariaLabel="Primary" className="border-b border-border-light bg-surface-white md:hidden" innerClassName="gap-1 px-2 py-2" testId="mobile-nav" activeItemKey={`${active}:${nav.map((n) => n.key).join(',')}:${session.contexts.length}`}>
-          {nav.map((n) => <NavLink key={n.key} href={n.href} icon={n.icon} label={n.short} active={active === n.key} testId={`mobile-nav-${n.key}`} />)}
+          {nav.map((n) => <NavLink key={n.key} href={n.href} icon={n.icon} label={n.short} active={active === n.key} family={family} testId={`mobile-nav-${n.key}`} />)}
           {session.contexts.length > 1 && <NavLink href="/select-context" icon={ArrowLeftRight} label="Switch" active={false} testId="mobile-nav-switch" />}
         </ScrollStrip>
         <main id="main" className="mx-auto w-full max-w-[1160px] flex-1 px-4 pb-14 pt-6 md:px-8 md:pt-8">{children}</main>
