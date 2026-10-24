@@ -195,6 +195,14 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     expect(filtered).toMatchObject({ total: 102, filteredTotal: 1, page: 1, hasMore: false });
     expect(filtered.items).toHaveLength(1);
     expect(filtered.items[0]).toMatchObject({ title: 'Unique Needle', childId: b });
+    const accent = (await get(sup, queue + '?search=Beatrice%20Queue').expect(200)).body;
+    expect(accent).toMatchObject({ filteredTotal: 1 });
+    expect(accent.items[0].childId).toBe(b);
+    const fullName = (await get(sup, queue + '?search=Alice%20Queue').expect(200)).body;
+    expect(fullName).toMatchObject({ filteredTotal: 101 });
+    const displayedSpecialty = (await get(sup, queue + '?search=Occupational%20therapy').expect(200)).body;
+    expect(displayedSpecialty).toMatchObject({ filteredTotal: 1 });
+    expect(displayedSpecialty.items[0].id).toBe(filtered.items[0].id);
     const specialist = (await get(sup, queue + '?service=occupational&childId=' + b).expect(200)).body;
     expect(specialist).toMatchObject({ total: 102, filteredTotal: 1 });
     expect(specialist.items[0].title).toBe('Unique Needle');
