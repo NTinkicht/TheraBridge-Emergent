@@ -149,7 +149,7 @@ export class ReportsService {
           'áàâäãåéèêëíìîïóòôöõúùûüýÿñçÁÀÂÄÃÅÉÈÊËÍÌÎÏÓÒÔÖÕÚÙÛÜÝŸÑÇ',
           'aaaaaaeeeeiiiiooooouuuuyyncAAAAAAEEEEIIIIOOOOOUUUUYYNC')) LIKE ${'%' + q.search.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase() + '%'}
         OR LOWER(TRANSLATE(u.display_name,
-          'áàâäãåéèêëíìîïóòôöõúùûüýÿñçÁÀÂÄÃÅÉÈÊËÍÌÏÓÒÔÖÕÚÙÛÜÝŸÑÇ',
+          'áàâäãåéèêëíìîïóòôöõúùûüýÿñçÁÀÂÄÃÅÉÈÊËÍÌÎÏÓÒÔÖÕÚÙÛÜÝŸÑÇ',
           'aaaaaaeeeeiiiiooooouuuuyyncAAAAAAEEEEIIIIOOOOOUUUUYYNC')) LIKE ${'%' + q.search.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase() + '%'}
         OR r.service ILIKE ${'%' + q.search + '%'}
         OR (r.service = 'speech' AND 'speech & language' ILIKE ${'%' + q.search + '%'})
