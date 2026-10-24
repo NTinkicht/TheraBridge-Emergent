@@ -69,6 +69,64 @@ try {
     assert.notEqual((await read(page, clinicalPath)).status, 200);
   });
   await role('speech@childrens-home.therabridge.test', 'THERAPIST', async page => {
+    // TB-EM-024: test the actual staff library, not the guardian sample page.
+    const library = await read(page, centerBase + '/activities');
+    assert.equal(library.status, 200);
+    const items = library.body.items;
+    assert(items.length > 0, 'Synthetic staff library must not be empty');
+    await page.goto(base + '/app/activities');
+    await page.getByTestId('activities-discovery').waitFor();
+    const search = page.getByTestId('activities-search');
+    const ownership = page.getByTestId('activities-ownership-filter');
+    const specialty = page.getByTestId('activities-specialty-filter');
+    const list = page.getByTestId('activities-list');
+    const count = async expected => assert.equal(
+      await page.getByTestId('activities-result-count').innerText(),
+      'Showing ' + expected + ' of ' + items.length + ' activities'
+    );
+    const cardCount = () => list.locator(':scope > div').count();
+    await count(items.length);
+    const speechTemplates = items.filter(t => t.service === 'speech');
+    assert(speechTemplates.length > 0, 'Seed requires Speech activity examples');
+    await search.fill('  LANGUAGE  ');
+    await count(speechTemplates.length);
+    assert.equal(await cardCount(), speechTemplates.length, 'Displayed specialty label must be searchable');
+    await search.fill('unlikely-synthetic-library-result-4c7fbb');
+    await count(0);
+    await page.getByTestId('activities-no-results').waitFor();
+    assert.equal(await list.count(), 0, 'No matching cards must render');
+    await page.getByTestId('activities-clear-filters').click();
+    await count(items.length);
+    await search.fill('   ');
+    assert.equal(await page.getByTestId('activities-clear-filters').count(), 0, 'Whitespace alone does not activate filters');
+    await search.fill('');
+    await ownership.selectOption('samples');
+    await count(items.filter(t => t.library === 'synthetic').length);
+    await ownership.selectOption('center');
+    await count(items.filter(t => t.library === 'center').length);
+    const own = items.filter(t => t.mine === true);
+    await ownership.selectOption('mine');
+    await count(own.length);
+    await ownership.selectOption('all');
+    await specialty.selectOption('speech');
+    await count(speechTemplates.length);
+    await search.fill('language');
+    await count(speechTemplates.length);
+    await page.getByTestId('activities-clear-filters').click();
+    await count(items.length);
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      const geometry = await search.evaluate(el => ({
+        inputWidth: el.getBoundingClientRect().width,
+        right: el.getBoundingClientRect().right,
+        pageWidth: document.documentElement.scrollWidth,
+        viewport: innerWidth,
+      }));
+      assert(geometry.inputWidth >= 145, 'Activity search field too narrow at ' + width + 'px: ' + JSON.stringify(geometry));
+      assert(geometry.right <= width + 4 && geometry.pageWidth <= width + 8,
+        'Activity discovery clipped/overflow at ' + width + 'px: ' + JSON.stringify(geometry));
+    }
+    await page.setViewportSize({ width: 1280, height: 900 });
     // Guardian theme must never leak into the therapist shell.
     await page.getByTestId('product-shell').waitFor();
     const staffShell = await page.evaluate(() => {

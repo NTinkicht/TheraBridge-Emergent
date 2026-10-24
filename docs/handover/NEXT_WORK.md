@@ -1,3 +1,7 @@
+## TB-EM-024 — PR #72 acceptance
+
+Verify new exact-head six-job GitHub CI, especially staff library Chromium search/filter + responsive test. If failing, correct the actual failure in a new commit. Request exact-head Codex/Grok/Mistral/DeepSeek independent review. Keep draft until reviewer findings and CI are resolved; owner controls merge/deployment. Separately, Work continues hosted QA issue #61. No clinical gate activation.
+
 ## 2026-10-24 — TB-EM-023 next actions
 
 1. Wait for exact-head six-job CI and specifically `demo-journey` Chromium computed-style checks.

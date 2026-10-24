@@ -1,3 +1,7 @@
+## 2026-10-24 — TB-EM-024 draft PR #72
+
+Activity-library staff search/filter implementation and follow-up reviewer corrections on an isolated branch; no deployment, authorization or clinical workflow changes. New CI staff journey exercises displayed specialty labels, ownership buckets, reset, empty matches and five responsive widths. New exact-head CI PENDING; independent re-review required. Details: docs/product/TB-EM-024-ACTIVITY-DISCOVERY.md.
+
 ## 2026-10-24 — TB-EM-023 PR #71 follow-up (draft)
 
 Guardian-only ProductShell theme scope corrects missing family navigation variables. Reviewer feedback identified that the CI demo journey only asserted CSS class names. The draft PR now adds computed Chromium color assertions for 320/390/768/1024/1440 guardian navigation and a therapist clinical-theme negative case. Authenticated family dark mode is not enabled; fixed-light page wrappers remain a documented P3 future consistency item. CI on the new exact HEAD is PENDING; hosted browser QA NOT RUN; no merge/deployment. See docs/product/TB-EM-023-GUARDIAN-NAV-THEME.md.

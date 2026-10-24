@@ -53,14 +53,19 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
   const [ownership, setOwnership] = useState('all');
   const templates = data?.items ?? [];
   const services = [...new Set(templates.map(t => t.service))].sort();
-  const q = search.trim().toLocaleLowerCase();
+  // Match the names therapists actually see; do not depend on browser locale.
+  const fold = (value: string) => value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const q = fold(search.trim());
+  const filtering = !!q || specialty !== 'all' || ownership !== 'all';
   const visible = templates.filter(t => {
     if (specialty !== 'all' && t.service !== specialty) return false;
     if (ownership === 'mine' && t.mine !== true) return false;
     if (ownership === 'samples' && t.library !== 'synthetic') return false;
+    if (ownership === 'center' && t.library !== 'center') return false;
     if (!q) return true;
-    return [t.title, t.ageBand, t.service, ...t.materials, ...t.steps]
-      .some(value => value.toLocaleLowerCase().includes(q));
+    const displayedSpecialty = SPECIALTY_OPTIONS.find(option => option.value === t.service)?.label ?? t.service;
+    return [t.title, t.ageBand, t.service, displayedSpecialty, ...t.materials, ...t.steps, ...t.safety]
+      .some(value => fold(value).includes(q));
   });
   return (
     <div className="space-y-5">
@@ -70,13 +75,13 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
       {failed && <ErrorState onRetry={() => void reload()} testId="activities-error" />}
       {!failed && !data && <Card className="p-5"><SkeletonRows rows={4} testId="activities-loading" /></Card>}
       {data && templates.length > 0 && <Card className="space-y-3 p-4" testId="activities-discovery">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,180px)_minmax(0,180px)]">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,180px)_minmax(0,180px)]">
           <label className="block text-[13px] font-medium">Search activities
             <span className="relative mt-1 block">
               <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-inkMuted" />
               <input type="search" value={search} onChange={e => setSearch(e.target.value)}
                 className="w-full rounded-control border border-border-strong bg-surface-white py-2 pl-10 pr-3 text-[14px]"
-                placeholder="Name, age, materials or steps" data-testid="activities-search" />
+                placeholder="Name, specialty, materials or steps" data-testid="activities-search" />
             </span>
           </label>
           <label className="block text-[13px] font-medium">Specialty
@@ -92,7 +97,8 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
               className="mt-1 w-full rounded-control border border-border-strong bg-surface-white p-2 text-[14px]"
               data-testid="activities-ownership-filter">
               <option value="all">All activities</option>
-              <option value="mine">My activities</option>
+              {session.permissions.includes('center.activities.manage') && <option value="mine">Created by me</option>}
+              <option value="center">Centre activities</option>
               <option value="samples">Synthetic samples</option>
             </select>
           </label>
@@ -101,7 +107,7 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
           <p className="text-[13px] text-brand-inkMuted" role="status" data-testid="activities-result-count">
             Showing {visible.length} of {templates.length} activities
           </p>
-          {(search || specialty !== 'all' || ownership !== 'all') && <Button size="sm" variant="ghost"
+          {filtering && <Button size="sm" variant="ghost"
             onClick={() => { setSearch(''); setSpecialty('all'); setOwnership('all'); }} data-testid="activities-clear-filters">
             Clear filters
           </Button>}
