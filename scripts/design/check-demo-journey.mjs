@@ -204,6 +204,39 @@ try {
     assert.equal(practice.status, 200);
     assert(practice.body.children.length === 1 && practice.body.children[0].activities.length > 0);
     assert.equal(practice.body.released, false);
+    // Hosted-QA follow-up: the family view switches are ordinary buttons,
+    // not broken composite ARIA tabs. Validate five actual Chromium widths.
+    await page.goto(base + '/app/practice');
+    await page.getByTestId('practice-page').waitFor();
+    assert.equal(await page.locator('[data-testid="practice-page"] [role="tablist"]').count(), 0);
+    await page.getByTestId('practice-view-week').click();
+    assert.equal(await page.getByTestId('practice-view-week').getAttribute('aria-pressed'), 'true');
+    await page.getByTestId('practice-view-history').click();
+    assert.equal(await page.getByTestId('practice-view-history').getAttribute('aria-pressed'), 'true');
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      const geometry = await page.evaluate(() => ({
+        viewport: innerWidth, width: document.documentElement.scrollWidth,
+        visible: !!document.querySelector('[data-testid="practice-page"]'),
+      }));
+      assert(geometry.visible && geometry.width <= width + 8,
+        'Family practice overflow at ' + width + 'px: ' + JSON.stringify(geometry));
+    }
+    await page.goto(base + '/app/activities');
+    await page.getByTestId('family-activities').waitFor();
+    const selectedNav = page.getByTestId('nav-activities');
+    assert((await selectedNav.getAttribute('class')).includes('bg-fam-accentTint'),
+      'Guardian active navigation must use family teal');
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      const bodyWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+      assert(bodyWidth <= width + 8,
+        'Family activities overflow at ' + width + 'px: ' + bodyWidth);
+    }
+    await page.goto(base + '/app/messages');
+    await page.getByTestId('messages-demo-disabled').waitFor();
+    assert((await page.getByTestId('messages-demo-disabled').innerText()).includes('switched off'));
+    await page.setViewportSize({ width: 1280, height: 900 });
     if (practice.body.gates.practiceDemo) {
       const slot = practice.body.children[0].activities.flatMap(a => a.slots.map(s => ({ ...s, templateId: a.id }))).find(s => s.recordable);
       assert(slot, 'Parent should have an enabled synthetic practice slot');

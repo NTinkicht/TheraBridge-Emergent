@@ -75,7 +75,7 @@ function CareTeam({ centerId, child, manage, canDesignate, run }: Ctx) {
   const [referentReason, setReferentReason] = useState('');
   const [therapists, setTherapists] = useState<Therapist[]>([]);
   const [f, setF] = useState({ membershipId: '', service: child.services[0] ?? '', isLead: true });
-  useEffect(() => { if (open) void opsApi.therapists(centerId).then((r) => setTherapists(r.items)).catch(() => setTherapists([])); }, [open, centerId]);
+  useEffect(() => { if (open || referentOpen) void opsApi.therapists(centerId).then((r) => setTherapists(r.items)).catch(() => setTherapists([])); }, [open, referentOpen, centerId]);
   const active = child.assignments.filter((a) => !a.endedAt);
   const qualified = therapists.filter((t) => t.specialties.includes(f.service));
   return (
@@ -119,7 +119,7 @@ function CareTeam({ centerId, child, manage, canDesignate, run }: Ctx) {
           <SelectField label="Referent" value={referentMember} onChange={setReferentMember}
             testId="referent-therapist-select" options={[
               { value: '', label: 'No child-wide referent' },
-              ...active.filter((a, i, rows) => rows.findIndex(b => b.membershipId === a.membershipId) === i)
+              ...active.filter(a => therapists.some(m => m.membershipId === a.membershipId && m.specialties.includes(a.service))).filter((a, i, rows) => rows.findIndex(b => b.membershipId === a.membershipId) === i)
                 .map(a => ({ value: a.membershipId, label: a.therapist })),
             ]}/>
           <ReasonField label="Reason (audit history)" value={referentReason} onChange={setReferentReason} testId="referent-reason"/>

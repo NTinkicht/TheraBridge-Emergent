@@ -116,7 +116,8 @@ export function Child360({ ws, centerId, onNavigate }: {ws: Workspace;centerId: 
         </Card>
         <Card className="p-5">
           <div className="flex items-center gap-2"><CalendarDays className="text-brand-action" size={18} /><h3 className="text-[17px] font-semibold">Appointments and recent sessions</h3></div>
-          {upcoming.length ? <ul className="mt-3 space-y-2">{upcoming.slice(0,4).map(a=><li key={a.id} className="text-[14px]"><span className="font-semibold">{dateOnly(a.startsAt)}</span> · {serviceLabel(a.service)} · Scheduled</li>)}</ul> : <p className="mt-3 text-[14px] text-brand-inkMuted">No upcoming assigned appointments within your scope.</p>}
+          <p className="mt-1 text-[12px] text-brand-inkMuted">Upcoming visits shown for the next 42 days within your permitted specialties.</p>
+          {upcoming.length ? <ul className="mt-3 space-y-2">{upcoming.slice(0,4).map(a=><li key={a.id} className="text-[14px]"><span className="font-semibold">{dateOnly(a.startsAt)}</span> · {serviceLabel(a.service)} · Scheduled</li>)}</ul> : <p className="mt-3 text-[14px] text-brand-inkMuted">No assigned appointments in the next 42 days.</p>}
           <h4 className="mt-4 text-[13px] font-semibold">Recent session evidence</h4>
           {lastNotes.length ? <ul className="mt-2 space-y-2">{lastNotes.map(n=><li key={n.id} className="text-[13px]">{n.sessionDate} · {serviceLabel(n.service)} · {n.executionStatus==='COMPLETED'?'Completed unsigned session':'In-progress draft'}</li>)}</ul> : <p className="mt-2 text-[13px] text-brand-inkMuted">No session notes recorded.</p>}
           <button className="mt-3 inline-flex items-center gap-2 text-[14px] font-semibold text-brand-action" type="button" onClick={()=>onNavigate('sessions')}>Open sessions <ArrowRight size={14}/></button>
