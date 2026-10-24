@@ -151,11 +151,21 @@ export async function run({credentialsFile=process.env.QA_USERS_FILE,output=proc
  const rows=[];
  const ready=Object.keys(ROLES).filter(r=>users?.[r]?.email&&users?.[r]?.password);
  if(ready.length){
-  const {chromium}=await import('playwright');const browser=await chromium.launch();
-  try{
-   for(const role of Object.keys(ROLES))rows.push(...(ready.includes(role)?
-     await assess(browser,role,users[role],out):blocked(role,'private_credentials_missing')));
-  }finally{await browser.close();}
+  let browser;
+  try{const {chromium}=await import('playwright');browser=await chromium.launch();}
+  catch{ /* unavailable executable or module: record blocked, never fabricate PASS */ }
+  if(!browser){
+   for(const role of Object.keys(ROLES))rows.push(...blocked(role,
+     ready.includes(role)?'chromium_unavailable':'private_credentials_missing'));
+  }else{
+   try{
+    for(const role of Object.keys(ROLES)){
+     if(!ready.includes(role))rows.push(...blocked(role,'private_credentials_missing'));
+     else try{rows.push(...await assess(browser,role,users[role],out));}
+     catch{rows.push(...blocked(role,'role_browser_execution_incomplete'));}
+    }
+   }finally{await browser.close();}
+  }
  }else for(const role of Object.keys(ROLES))rows.push(...blocked(role,'private_credentials_missing'));
  rows.sort((a,b)=>Number(a.id.slice(2))-Number(b.id.slice(2)));
  const counts=Object.fromEntries(['PASS','FAIL','BLOCKED'].map(k=>[k,rows.filter(x=>x.status===k).length]));
