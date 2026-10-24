@@ -426,6 +426,43 @@ try {
     await page.getByTestId('progress-period-error').waitFor();
     await reviewRow.waitFor(); // chart error must not remove report review queue
     await page.getByTestId('filter-period').selectOption('90');
+    // Exercise actual child and specialty selectors with distinct pending rows.
+    // The additional child exists only in the disposable CI loopback database.
+    const secondChild = await db.child.create({ data: {
+      centerId: center.id, firstName: 'Zoe', lastName: 'Queuefixture',
+      dateOfBirth: new Date('2019-01-02T00:00:00Z'),
+      services: ['speech'], createdById: child.createdById,
+      createdAt: new Date('2026-10-01T09:00:00Z'),
+    } });
+    const secondReport = await db.progressReport.create({ data: {
+      centerId: center.id, childId: secondChild.id, membershipId: queuedDraft.membershipId,
+      service: 'speech', title: 'Separate Speech Review', status: 'IN_REVIEW',
+      periodStart: new Date('2026-09-01T00:00:00Z'),
+      periodEnd: new Date('2026-10-19T00:00:00Z'),
+      createdAt: new Date('2026-10-01T09:00:00Z'),
+      updatedAt: new Date('2026-10-01T09:00:00Z'),
+    } });
+    await page.reload();
+    const secondRow = page.getByTestId('review-queue-row-' + secondReport.id);
+    await secondRow.waitFor();
+    await reviewRow.waitFor();
+    assert((await page.getByTestId('review-queue-count').innerText()).includes('2 matching'));
+    await page.getByTestId('filter-child').selectOption(secondChild.id);
+    await secondRow.waitFor();
+    await page.getByTestId('review-queue-count').getByText('1 matching', { exact: false }).waitFor();
+    assert.equal(await reviewRow.count(), 0, 'Child filter must exclude other child reports');
+    await page.getByTestId('filter-child').selectOption('');
+    await reviewRow.waitFor();
+    await secondRow.waitFor();
+    await page.getByTestId('filter-service').selectOption('speech');
+    await secondRow.waitFor();
+    assert.equal(await reviewRow.count(), 0, 'Service filter must exclude occupational reviews');
+    await page.getByTestId('filter-service').selectOption('occupational');
+    await reviewRow.waitFor();
+    assert.equal(await secondRow.count(), 0, 'Occupational filter must exclude speech reviews');
+    await page.getByTestId('filter-service').selectOption('');
+    await secondRow.waitFor();
+    await reviewRow.waitFor();
     await page.getByTestId('review-queue-search').fill('no-matching-synthetic-review');
     await page.getByTestId('review-queue-empty').waitFor();
     assert.equal(await reviewRow.count(), 0);
