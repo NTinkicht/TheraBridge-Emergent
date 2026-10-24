@@ -738,6 +738,7 @@ model ReportSuggestionDecision {
   section        String   @db.VarChar(16)
   action         String   @db.VarChar(16)
   idempotencyKey String   @map("idempotency_key") @db.Uuid
+  reason         String?  @db.VarChar(500)
   requestHash    String   @map("request_hash") @db.Char(64)
   generator      String   @db.VarChar(32)
   sourceManifest Json     @map("source_manifest")

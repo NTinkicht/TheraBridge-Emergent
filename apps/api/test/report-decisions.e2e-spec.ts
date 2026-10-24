@@ -153,6 +153,8 @@ describe('TB-EM-021 non-authorizing report suggestion decision ledger (real Post
     const h2 = (await get(therapist, D).expect(200)).body;
     expect(h2.decisions.filter((d: { section: string }) => d.section === 'assessment').map((d: { action: string }) => d.action))
       .toEqual(['RECONSIDERED', 'OMITTED']);
+    expect(h2.decisions.find((d: { action: string }) => d.action === 'OMITTED').reason)
+      .toBe('Not relevant to this draft');
     expect(h2.sources.assessment.sources.some((x: { ref: string }) => x.ref === `assessment:${assessmentId}`)).toBe(true);
     await expect(h.prisma.$executeRawUnsafe(`UPDATE report_suggestion_decision SET action = 'OMITTED' WHERE id = '${applied.id}'`))
       .rejects.toThrow(/immutable/);

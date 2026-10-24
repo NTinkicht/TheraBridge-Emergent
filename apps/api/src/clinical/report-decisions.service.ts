@@ -94,7 +94,7 @@ export class ReportDecisionsService {
       this.reports.evidence(this.prisma, centerId, r.childId, r.service, r.periodStart, r.periodEnd),
       this.prisma.reportSuggestionDecision.findMany({
         where: { centerId, childId: r.childId, reportId },
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 100,
+        orderBy: { reportRevision: 'desc' }, take: 100,
       }),
     ]);
     const sections = r.sections as Record<string, string>;
@@ -105,7 +105,7 @@ export class ReportDecisionsService {
       const changedText = x.sectionHash !== hash(sections[section] ?? '');
       return {
         id: x.id, section, action: x.action, label: x.label, generator: x.generator,
-        actorUserId: x.actorUserId, reportRevision: x.reportRevision,
+        actorUserId: x.actorUserId, reportRevision: x.reportRevision, reason: x.reason,
         createdAt: x.createdAt, claimMap: x.claimMap,
         sourceManifest: x.sourceManifest,
         status: staleSources || changedText ? 'REQUIRES_REVIEW' : 'CURRENT',
@@ -173,7 +173,7 @@ export class ReportDecisionsService {
       const current = sections[dto.section] ?? '';
       const earlier = await tx.reportSuggestionDecision.findFirst({
         where: { reportId, centerId, section: dto.section },
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        orderBy: { reportRevision: 'desc' },
       });
       if (dto.action === 'RECONSIDERED' && earlier?.action !== 'OMITTED')
         throw new ConflictException('Only a previously omitted suggestion can be reconsidered.');
@@ -198,6 +198,7 @@ export class ReportDecisionsService {
           centerId, childId: fresh.childId, reportId, service: fresh.service,
           membershipId: v.membershipId, actorUserId: v.userId,
           section: dto.section, action: dto.action, idempotencyKey: dto.idempotencyKey,
+          reason: dto.reason?.trim() || null,
           requestHash, generator: SUGGESTION_GENERATOR,
           sourceManifest: manifest(sources) as Prisma.InputJsonValue,
           sourceHash: currentHash,

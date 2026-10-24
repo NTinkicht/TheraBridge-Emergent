@@ -11,6 +11,7 @@ CREATE TABLE "report_suggestion_decision" (
  "section" VARCHAR(16) NOT NULL,
  "action" VARCHAR(16) NOT NULL,
  "idempotency_key" UUID NOT NULL,
+ "reason" VARCHAR(500),
  "request_hash" CHAR(64) NOT NULL,
  "generator" VARCHAR(32) NOT NULL,
  "source_manifest" JSONB NOT NULL,
@@ -37,7 +38,9 @@ CREATE FUNCTION report_suggestion_scope_guard() RETURNS trigger LANGUAGE plpgsql
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM progress_report r WHERE r.id = NEW.report_id
       AND r.center_id = NEW.center_id AND r.child_id = NEW.child_id
-      AND r.service = NEW.service AND r.membership_id = NEW.membership_id) THEN
+      AND r.service = NEW.service AND r.membership_id = NEW.membership_id)
+    OR NOT EXISTS (SELECT 1 FROM membership m WHERE m.id = NEW.membership_id
+      AND m.center_id = NEW.center_id AND m.user_id = NEW.actor_user_id AND m.status = 'ACTIVE') THEN
     RAISE EXCEPTION 'invalid suggestion decision scope';
   END IF;
   RETURN NEW;
