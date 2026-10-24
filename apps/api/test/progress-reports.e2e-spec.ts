@@ -203,6 +203,11 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     const displayedSpecialty = (await get(sup, queue + '?search=Occupational%20therapy').expect(200)).body;
     expect(displayedSpecialty).toMatchObject({ filteredTotal: 1 });
     expect(displayedSpecialty.items[0].id).toBe(filtered.items[0].id);
+    // SQL search must treat %, _ and backslash as literal text, not wildcards.
+    for (const literal of ['%', '_', '\\\\']) {
+      const result = (await get(sup, queue + '?search=' + encodeURIComponent(literal)).expect(200)).body;
+      expect(result).toMatchObject({ filteredTotal: 0, items: [] });
+    }
     const authorMember = await h.prisma.membership.findUniqueOrThrow({ where: { id: member } });
     await h.prisma.user.update({
       where: { id: authorMember.userId }, data: { displayName: 'Óscar Reviewer' },
