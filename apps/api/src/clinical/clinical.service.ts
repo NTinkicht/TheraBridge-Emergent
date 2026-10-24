@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import type { Viewer } from '../operations/children.service';
 import { TrialService } from '../operations/trial.service';
 import { assertActor, EDITABLE, fingerprint } from './governance-core';
-import type { AssessmentDto, AssessmentUpdateDto, ObservationDto, PlanDto, PlanVersionUpdateDto, ReviewDto, SessionNoteDto, SessionNoteUpdateDto, TemplateDto } from './clinical.dto';
+import type { AssessmentDto, AssessmentUpdateDto, ObservationDto, PlanDto, PlanVersionUpdateDto, ReviewDto, SessionNoteDto, SessionNoteUpdateDto, TemplateDto, TemplateUpdateDto, TemplateCopyDto } from './clinical.dto';
 
 export const asDate = (d: string) => new Date(`${d}T00:00:00Z`);
 export const day = (d: Date) => d.toISOString().slice(0, 10);
@@ -56,7 +56,7 @@ export class ClinicalService {
       this.prisma.assessment.findMany({ where: { centerId, childId, ...serviceScope }, orderBy: { assessedOn: 'desc' } }),
       this.prisma.therapyPlan.findMany({ where: { centerId, childId, ...serviceScope }, include: { versions: { orderBy: { number: 'desc' } } }, orderBy: { createdAt: 'asc' } }),
       this.prisma.sessionNote.findMany({ where: { centerId, childId, ...serviceScope }, orderBy: { sessionDate: 'desc' }, take: 50 }),
-      this.prisma.appointment.findMany({ where: { centerId, childId, ...serviceScope, status: { in: ['SCHEDULED', 'COMPLETED'] }, startsAt: { gte: new Date(this.trial.now().getTime() - 30 * 86_400_000), lte: new Date(this.trial.now().getTime() + 86_400_000) }, ...(v.role === 'THERAPIST' ? { membershipId: v.membershipId } : {}) }, orderBy: { startsAt: 'desc' } }),
+      this.prisma.appointment.findMany({ where: { centerId, childId, ...serviceScope, status: { in: ['SCHEDULED', 'COMPLETED'] }, startsAt: { gte: new Date(this.trial.now().getTime() - 30 * 86_400_000), lte: new Date(this.trial.now().getTime() + 42 * 86_400_000) }, ...(v.role === 'THERAPIST' ? { membershipId: v.membershipId } : {}) }, orderBy: { startsAt: 'desc' } }),
       this.templates(centerId).then(rows => assignedServices ? rows.filter(t => assignedServices.includes(t.service)) : rows),
       // Never disclose names for another specialty to a therapist. A supervisor
       // may view centre-scoped assignment names, but not family discussions.
@@ -87,15 +87,23 @@ export class ClinicalService {
       const member = activeStaff.find(m => m.id === a.membershipId && m.specialties.includes(a.service));
       return member ? [{ assignmentId: a.id, service: a.service, displayName: member.user.displayName, isSpecialtyLead: a.isLead }] : [];
     }).sort((a, b) => a.service.localeCompare(b.service) || Number(b.isSpecialtyLead) - Number(a.isSpecialtyLead) || a.displayName.localeCompare(b.displayName) || a.assignmentId.localeCompare(b.assignmentId));
+    const referentAssignment = c.referentMembershipId
+      ? assignments.find(a => a.membershipId === c.referentMembershipId
+        && activeStaff.some(m => m.id === a.membershipId && m.specialties.includes(a.service)))
+      : null;
+    const visibleReferent = referentAssignment
+      ? activeStaff.find(m => m.id === referentAssignment.membershipId) : null;
     const who = (id: string) => team.find((t) => t.id === id)?.user.displayName ?? '';
     const center = await this.prisma.center.findUniqueOrThrow({ where: { id: centerId }, select: { timezone: true } });
     return {
       timezone: center.timezone, synthetic: true, locked: LOCKED, canEdit: v.role === 'THERAPIST', canReview: v.role === 'CLINICAL_SUPERVISOR',
       child: { id: c.id, name: `${c.preferredName ?? c.firstName} ${c.lastName}`, services: assignedServices ?? c.services, dateOfBirth: day(c.dateOfBirth) },
       careTeam,
-      // No dedicated child-wide referent record exists in the current schema.
-      // Do not elevate a per-specialty lead into a global referent.
-      childWideReferent: null,
+      // Explicit centre-admin designation only, not inferred from a per-service
+      // lead. Do not disclose a cross-specialty or inactive referent's name.
+      childWideReferent: visibleReferent ? { displayName: visibleReferent.user.displayName } : null,
+      childWideReferentStatus: !c.referentMembershipId ? 'NOT_DESIGNATED'
+        : visibleReferent ? 'VISIBLE' : 'UNAVAILABLE',
       assessments: assessments.map((a) => ({ id: a.id, service: a.service, assessedOn: day(a.assessedOn), summary: a.summary, areas: a.areas, status: a.status, version: a.version, author: who(a.membershipId), mine: a.membershipId === v.membershipId, updatedAt: a.updatedAt })),
       plans: plans.map((p) => ({ id: p.id, service: p.service, title: p.title, versions: p.versions.map((x) => ({ id: x.id, number: x.number, status: x.status, summary: x.summary, goals: x.goals, homeActivities: x.homeActivities, reviewNotes: x.reviewNotes, version: x.version, mine: x.authorId === v.userId, author: users.find((u) => u.id === x.authorId)?.displayName ?? '', updatedAt: x.updatedAt })) })),
       notes: notes.map((n) => ({ id: n.id, service: n.service, sessionDate: day(n.sessionDate), appointmentId: n.appointmentId, sections: n.sections, status: n.status, executionStatus: n.executionStatus, actualStart: n.actualStart, actualEnd: n.actualEnd, attendance: n.attendance, activities: n.activities, version: n.version, author: who(n.membershipId), mine: n.membershipId === v.membershipId, updatedAt: n.updatedAt })),
@@ -247,19 +255,94 @@ export class ClinicalService {
     });
   }
 
-  templates(centerId: string) {
+  // Authenticates the current actor inside the write transaction. Therapists
+  // can only create or customize activities in their own active specialties.
+  private async templateWriter(tx: Tx, centerId: string, v: Viewer, service: string) {
+    await assertActor(tx, centerId, v, ['THERAPIST', 'CLINICAL_SUPERVISOR']);
+    if (v.role === 'THERAPIST') {
+      const allowed = await tx.membership.findFirst({
+        where: {
+          id: v.membershipId, userId: v.userId, centerId, status: 'ACTIVE',
+          specialties: { has: service },
+        },
+        select: { id: true },
+      });
+      if (!allowed) throw new ForbiddenException('You cannot edit activities outside your assigned specialties.');
+    }
+  }
+
+  private templateTitle(raw: string) {
+    const title = raw.trim();
+    if (title.length < 3) throw new UnprocessableEntityException('Activity title needs at least three non-space characters.');
+    return title;
+  }
+
+  templates(centerId: string, v?: Viewer) {
     return this.prisma.activityTemplate.findMany({ where: { OR: [{ centerId }, { centerId: null }] }, orderBy: [{ service: 'asc' }, { title: 'asc' }] })
-      .then((rows) => rows.map((t) => ({ id: t.id, title: t.title, service: t.service, ageBand: t.ageBand, minutes: t.minutes, materials: t.materials, steps: t.steps, safety: t.safety, library: t.centerId ? 'center' : 'synthetic', version: t.version })));
+      .then((rows) => rows.map((t) => ({ id: t.id, title: t.title, service: t.service, ageBand: t.ageBand, minutes: t.minutes, materials: t.materials, steps: t.steps, safety: t.safety, library: t.centerId ? 'center' : 'synthetic', version: t.version, mine: !!v && t.centerId === centerId && t.createdById === v.userId })));
   }
 
   async createTemplate(centerId: string, v: Viewer, dto: TemplateDto) {
     if (!dto.steps.length || !dto.safety.length) throw new UnprocessableEntityException('Add at least one step and one safety note.');
+    const title = this.templateTitle(dto.title);
     const now = this.trial.now();
     return this.prisma.$transaction(async (tx) => {
       await this.trial.assertWritable(tx, centerId, now);
-      const t = await tx.activityTemplate.create({ data: { centerId, ...dto, createdById: v.userId, createdAt: now } });
+      await this.templateWriter(tx, centerId, v, dto.service);
+      const t = await tx.activityTemplate.create({ data: { centerId, ...dto, title, createdById: v.userId, createdAt: now } });
       await logCenterEvent(tx, centerId, 'clinical.template_created', now, { actorUserId: v.userId, meta: { templateId: t.id } });
       return { id: t.id };
+    });
+  }
+
+  // A copy is always a new centre-owned draft template, never a mutation of
+  // the original (including the global synthetic sample library).
+  async duplicateTemplate(centerId: string, v: Viewer, templateId: string, dto: TemplateCopyDto) {
+    const now = this.trial.now();
+    return this.prisma.$transaction(async (tx) => {
+      await this.trial.assertWritable(tx, centerId, now);
+      const source = await tx.activityTemplate.findFirst({
+        where: { id: templateId, OR: [{ centerId }, { centerId: null }] },
+      });
+      if (!source) throw new NotFoundException('Activity not found.');
+      await this.templateWriter(tx, centerId, v, source.service);
+      const copy = await tx.activityTemplate.create({
+        data: {
+          centerId, createdById: v.userId, createdAt: now,
+          title: this.templateTitle(dto.title), service: source.service,
+          ageBand: source.ageBand, minutes: source.minutes,
+          materials: [...source.materials], steps: [...source.steps], safety: [...source.safety],
+        },
+      });
+      await logCenterEvent(tx, centerId, 'clinical.template_duplicated', now, {
+        actorUserId: v.userId, meta: { templateId: copy.id, sourceTemplateId: templateId },
+      });
+      return { id: copy.id, version: copy.version };
+    });
+  }
+
+  // Existing plan/session snapshots remain frozen; only the live reusable
+  // template changes. Author ownership + optimistic version prevent lost edits.
+  async updateTemplate(centerId: string, v: Viewer, templateId: string, dto: TemplateUpdateDto) {
+    if (!dto.steps.length || !dto.safety.length) throw new UnprocessableEntityException('Add at least one step and one safety note.');
+    const title = this.templateTitle(dto.title);
+    const now = this.trial.now();
+    return this.prisma.$transaction(async (tx) => {
+      await this.trial.assertWritable(tx, centerId, now);
+      const source = await tx.activityTemplate.findFirst({ where: { id: templateId, centerId } });
+      if (!source) throw new NotFoundException('Activity not found.');
+      await this.templateWriter(tx, centerId, v, source.service);
+      if (source.createdById !== v.userId) throw new ForbiddenException('Only the activity author can edit this template. Duplicate it to customize.');
+      const { version, ...fields } = dto;
+      const changed = await tx.activityTemplate.updateMany({
+        where: { id: templateId, centerId, createdById: v.userId, version },
+        data: { ...fields, title, version: { increment: 1 } },
+      });
+      if (changed.count !== 1) throw new ConflictException('This activity changed. Reload it before saving again.');
+      await logCenterEvent(tx, centerId, 'clinical.template_updated', now, {
+        actorUserId: v.userId, meta: { templateId, fromVersion: version, toVersion: version + 1 },
+      });
+      return { id: templateId, version: version + 1 };
     });
   }
 

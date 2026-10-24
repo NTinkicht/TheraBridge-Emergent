@@ -1,3 +1,27 @@
+## CURRENT — new exact-head review after Codex P2 data-loss correction
+
+## CURRENT — Second Codex P2: queued autosave ordering
+
+After the earlier editing lock, Codex at `a1f3fa8043` confirmed a remaining P2 race: two queued autosaves A/B plus decision flush C could let C finish ahead of B. A FIFO save queue and held-A/held-B Chromium regression are prepared on PR #70. Requalify the **new exact SHA** with all six CI jobs, inspect the new browser test and obtain fresh independent review. Do not merge while any P2 thread remains genuinely unresolved. Hosted acceptance issue #61 and clinical/pilot NO-GO remain separate.
+
+
+PR #70 latest feature branch includes a corrected parent-owned decision transaction lock for ReportEditor, in-flight autosave serialization and delayed-network browser regression. The previous `d965842e` passed 6/6 and 482/482, with a confirmed Codex P2 that **must not** be merged uncorrected. Verify all six GitHub Actions jobs at the new SHA; inspect delayed-POST assertions, lock/unlock on error and prevention of concurrent remount text loss; obtain fresh independent reviewer verdict, close Codex finding only when verified. Do not merge/alter the Render acceptance target before the gates pass. See `docs/product/TB-EM-023-DELIVERY.md`.
+
+## CURRENT — TB-EM-023 PR #70 review qualification (2026-10-24)
+
+1. Qualify the latest corrective HEAD of [PR #70](https://github.com/NTinkicht/TheraBridge-Emergent/pull/70) after DeepSeek review amendments; check **six exact-HEAD CI** jobs, PostgreSQL and seven-role browser suite. The previous `73c4afb` passed 6/6 and 481/481 but cannot qualify a newer HEAD.
+2. Obtain independent exact-HEAD re-review (Grok/Mistral and Codex where available), reconcile any genuine new blockers, close only resolved GitHub threads. CodeRabbit follow-up was rate-limited, but its earlier two findings were confirmed fixed. Owner posted DeepSeek review is supplementary, not a bot/native approval.
+3. Under owner's standing automatic-merge permission, merge only if all required branch protection, CI, review, resolved-thread and up-to-date gates actually pass. Do not bypass ntk-reviewer authorization or pretend an external chat review is a GitHub-native approval.
+4. Preserve existing live Render/Neon synthetic browser acceptance environment; issue #61 remains PARTIAL with all required hosted viewport and role cases incomplete. Schedule a controlled fresh synthetic preview QA after integration when authorized. Pilot/production remains NO-GO.
+5. Follow-up advisories: stronger cross-browser visual checks of referent/report dialogs; local idempotency-key recovery after remount, real-world source semantics, separate out-of-scope vs invalid designation policy, invalid referent membership lifecycle audit history, exact archive version increments. See `docs/product/TB-EM-023-DELIVERY.md`.
+
+Historical work-unit notes below are retained for provenance.
+
+
+## TB-EM-021 — source-traced draft decision ledger (backend-only draft)
+
+Independent external Codex UI acceptance on the current Render synthetic demo remains isolated. Do not redeploy or adjust Render/Neon. Backend PR creates non-authorizing append-only decisions; the clinician-facing ReportEditor remains UI-local and requires a **separate sequential PR** once this foundation is CI-qualified and reviewed. See docs/product/TB-EM-021-DECISION-LEDGER.md. No new clinical permission grant is allowed.
+
 # Next work unit
 
 ## TB-EM-019 — exact-head requalification after advisory fixes

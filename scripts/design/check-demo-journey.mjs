@@ -133,30 +133,142 @@ try {
     const speechReport = await db.progressReport.findFirstOrThrow({ where: { centerId: center.id, childId: child.id, service: 'speech' } });
     await page.goto(base + '/app/reports/' + speechReport.id);
     await page.getByTestId('report-evidence-assist').waitFor();
-    await page.getByTestId('report-assist-toggle').click();
+    await page.getByTestId('report-decisions-persistent').waitFor();
+    const sourceDetail = await read(page, centerBase + '/clinical/reports/' + speechReport.id);
+    assert.equal(sourceDetail.status, 200);
+    const g = sourceDetail.body.evidence.goals[0];
+    assert(g && g.planVersionId, 'Seeded goal must have a plan-version-scoped identity');
+    const goalRef = 'planVersion:' + g.planVersionId + ':goal:' + g.key;
     await page.getByTestId('report-suggestion-goals').waitFor();
+    // P2 regression: autosave A pending; autosave B queued; decision flush C
+    // must wait until B commits before it can issue the POST. The old partial
+    // in-flight guard returned success as soon as B cleared dirty on startup.
+    const raceSection = page.getByTestId('report-section-goals');
+    const raceOriginal = await raceSection.inputValue();
+    const markerA = 'Queued autosave race A — synthetic draft.';
+    const markerB = 'Queued autosave race B — preserve this later typing.';
+    let releaseSaveA;
+    let releaseSaveB;
+    let notifySaveA;
+    let notifySaveB;
+    const saveAHeld = new Promise(resolve => { releaseSaveA = resolve; });
+    const saveBHeld = new Promise(resolve => { releaseSaveB = resolve; });
+    const saveAStarted = new Promise(resolve => { notifySaveA = resolve; });
+    const saveBStarted = new Promise(resolve => { notifySaveB = resolve; });
+    let interceptedPatches = 0;
+    let prematureDecisionPosts = 0;
+    const saveRoute = '**/clinical/reports/' + speechReport.id;
+    const pendingDecisionRoute = '**/clinical/reports/' + speechReport.id + '/suggestion-decisions';
+    await page.route(saveRoute, async route => {
+      if (route.request().method() === 'PATCH') {
+        interceptedPatches += 1;
+        if (interceptedPatches === 1) {
+          notifySaveA();
+          await saveAHeld;
+        } else if (interceptedPatches === 2) {
+          notifySaveB();
+          await saveBHeld;
+        }
+      }
+      await route.continue();
+    });
+    await page.route(pendingDecisionRoute, async route => {
+      if (route.request().method() === 'POST') prematureDecisionPosts += 1;
+      await route.continue();
+    });
+    await raceSection.fill(raceOriginal + '\n' + markerA);
+    await saveAStarted;
+    await raceSection.fill(raceOriginal + '\n' + markerA + '\n' + markerB);
+    // B's debounce must fire while A is blocked; B cannot reach the server
+    // until A finishes, but it must remain ahead of the decision flush.
+    await page.waitForTimeout(1500);
     await page.getByTestId('report-assist-omit-goals').click();
-    assert((await page.getByTestId('report-assist-decision-goals').innerText()).includes('Omitted'));
+    await page.getByTestId('report-decision-edit-lock').waitFor();
+    assert.equal(prematureDecisionPosts, 0);
+    releaseSaveA();
+    await saveBStarted;
+    assert.equal(prematureDecisionPosts, 0,
+      'Decision must not issue POST before queued autosave B commits');
+    releaseSaveB();
+    await page.getByTestId('report-assist-restore-goals').waitFor({ timeout: 25000 });
+    await page.unroute(saveRoute);
+    await page.unroute(pendingDecisionRoute);
+    const raceAfter = await page.getByTestId('report-section-goals').inputValue();
+    assert(raceAfter.includes(markerA) && raceAfter.includes(markerB),
+      'Both pre-decision edits must survive after queued autosaves and remount');
+    const raceDb = await db.progressReport.findUniqueOrThrow({ where: { id: speechReport.id } });
+    assert(raceDb.sections.goals.includes(markerB),
+      'Second queued autosave must commit before a decision can increment report revision');
+    // The next test needs to start on a new report decision, not a previously
+    // omitted one. Reconsider is itself a durable audited step.
     await page.getByTestId('report-assist-restore-goals').click();
-    await page.getByTestId('report-assist-edit-goals').fill('Clinician-reviewed factual goals note; no conclusion inferred.');
-    await page.getByTestId('report-assist-apply-goals').click();
-    const reportDraftText = await page.getByTestId('report-section-goals').inputValue();
-    assert(reportDraftText.includes('Clinician-reviewed factual goals note'));
-    assert(reportDraftText.includes('Evidence references (internal draft; goals):'));
-    assert(reportDraftText.includes('Observation '));
+    await page.getByTestId('report-assist-source-goals').waitFor();
+    // P2 data-loss regression: pause the real POST after the first flush.
+    // Before fix, the textareas were still editable and typing here was
+    // silently dropped when the successful decision remounted ReportEditor.
+    const reportSections = page.getByTestId('report-section-goals');
+    const typedBeforeDecision = 'Pre-submission clinical draft text remains saved.';
+    await reportSections.fill((await reportSections.inputValue()) + '\n' + typedBeforeDecision);
+    const decisionEndpoint = '**/clinical/reports/*/suggestion-decisions';
+    let unlockPost;
+    const heldPost = new Promise(resolve => { unlockPost = resolve; });
+    let announcePost;
+    const postStarted = new Promise(resolve => { announcePost = resolve; });
+    await page.route(decisionEndpoint, async route => {
+      if (route.request().method() === 'POST') {
+        announcePost();
+        await heldPost;
+      }
+      await route.continue();
+    });
+    await page.getByTestId('report-assist-omit-goals').click();
+    await postStarted;
+    assert(await reportSections.isDisabled(), 'Report sections must lock during in-flight decisions');
+    assert(await page.getByTestId('report-decision-edit-lock').isVisible(),
+      'An explicit status must explain why editor inputs are locked');
+    assert(await page.getByTestId('report-save-version').isDisabled());
+    assert(await page.getByTestId('report-submit').isDisabled());
+    assert(await page.getByTestId('report-preview-toggle').isDisabled());
+    // The report's pending-save content stays visible, not truncated.
+    assert((await reportSections.inputValue()).includes(typedBeforeDecision));
+    unlockPost();
+    await page.getByTestId('report-assist-restore-goals').waitFor({ timeout: 25000 });
+    await page.unroute(decisionEndpoint);
+    assert((await page.getByTestId('report-section-goals').inputValue()).includes(typedBeforeDecision),
+      'Remount must preserve the pre-decision autosaved section');
+
+    assert((await page.getByTestId('report-assist-decision-goals').innerText()).includes('Omitted'));
+    // A stale OMITTED event must remain recoverable, not trap the clinician
+    // behind an inert "reload" message that cannot clear the history hash.
+    const priorGoalText = await page.getByTestId('report-section-goals').inputValue();
+    await page.getByTestId('report-section-goals').fill(priorGoalText + '\nSynthetic note reviewed after omission.');
     await page.locator('[data-testid="report-save-state"][data-state="saved"]').waitFor({ timeout: 25000 });
-    const persisted = await db.progressReport.findUniqueOrThrow({ where: { id: speechReport.id } });
-    assert(persisted.sections.goals.includes('Evidence references (internal draft; goals):'), 'Explicit clinician insertion must persist via existing report autosave');
-    // Edits to the body or source labels cannot re-enable insertion, including
-    // after reload discards the ephemeral accept/omit state.
-    const editedReport = reportDraftText.replace('Observation ', 'Recorded observation ');
-    await page.getByTestId('report-section-goals').fill(editedReport);
-    await page.locator('[data-testid="report-save-state"][data-state="saved"]').waitFor({ timeout: 25000 });
-    assert.equal(await page.getByTestId('report-assist-apply-goals').count(), 0, 'Edited reference block must not permit duplicate insertion');
     await page.reload();
-    await page.getByTestId('report-assist-toggle').click();
-    assert((await page.getByTestId('report-assist-decision-goals').innerText()).includes('Added to draft'));
-    assert.equal(await page.getByTestId('report-assist-apply-goals').count(), 0, 'Persisted evidence block must survive reload without duplicate action');
+    await page.getByTestId('report-decisions-persistent').waitFor();
+    assert((await page.getByTestId('report-assist-decision-goals').innerText()).includes('review required'));
+    await page.getByTestId('report-assist-restore-goals').click();
+    await page.getByTestId('report-assist-source-goals').waitFor({ timeout: 25000 });
+    await page.getByTestId('report-assist-source-goals').selectOption(goalRef);
+    const claim = 'Recorded baseline ' + g.baseline + ' and target ' + g.target + ' ' + g.measure + '; no clinical conclusion inferred.';
+    await page.getByTestId('report-assist-edit-goals').fill(claim);
+    await page.getByTestId('report-assist-apply-goals').click();
+    await page.getByTestId('report-section-goals').waitFor();
+    await page.getByTestId('report-assist-decision-goals').getByText('Added to draft (source-referenced only)').waitFor({ timeout: 25000 });
+    const reportDraftText = await page.getByTestId('report-section-goals').inputValue();
+    assert(reportDraftText.includes(claim));
+    assert(reportDraftText.includes('Evidence references (internal draft; goals):'));
+    assert(reportDraftText.includes(goalRef));
+    const persisted = await db.progressReport.findUniqueOrThrow({ where: { id: speechReport.id } });
+    assert(persisted.sections.goals.includes(claim), 'Explicit clinician decision must be atomically persisted');
+    const decisions = await db.reportSuggestionDecision.findMany({ where: { reportId: speechReport.id }, orderBy: { reportRevision: 'asc' } });
+    assert.deepEqual(decisions.map(d => d.action), ['OMITTED', 'RECONSIDERED', 'OMITTED', 'RECONSIDERED', 'APPLIED']);
+    assert.equal(decisions.at(-1).label, 'NON_CLINICAL_DRAFT');
+    await page.getByTestId('report-section-goals').fill(reportDraftText.replace('Recorded baseline', 'Reviewed baseline'));
+    await page.locator('[data-testid="report-save-state"][data-state="saved"]').waitFor({ timeout: 25000 });
+    await page.reload();
+    await page.getByTestId('report-decisions-persistent').waitFor();
+    assert((await page.getByTestId('report-assist-decision-goals').innerText()).includes('review required'));
+    assert.equal(await page.getByTestId('report-assist-apply-goals').count(), 0, 'Previously applied decision must not be silently duplicated');
     const afterReload = await page.getByTestId('report-section-goals').inputValue();
     assert.equal(afterReload.split('Evidence references (internal draft; goals):').length - 1, 1);
     assert.notEqual(persisted.status, 'IN_REVIEW', 'Evidence assistance must not submit a draft');
@@ -195,6 +307,39 @@ try {
     assert.equal(practice.status, 200);
     assert(practice.body.children.length === 1 && practice.body.children[0].activities.length > 0);
     assert.equal(practice.body.released, false);
+    // Hosted-QA follow-up: the family view switches are ordinary buttons,
+    // not broken composite ARIA tabs. Validate five actual Chromium widths.
+    await page.goto(base + '/app/practice');
+    await page.getByTestId('practice-page').waitFor();
+    assert.equal(await page.locator('[data-testid="practice-page"] [role="tablist"]').count(), 0);
+    await page.getByTestId('practice-view-week').click();
+    assert.equal(await page.getByTestId('practice-view-week').getAttribute('aria-pressed'), 'true');
+    await page.getByTestId('practice-view-history').click();
+    assert.equal(await page.getByTestId('practice-view-history').getAttribute('aria-pressed'), 'true');
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      const geometry = await page.evaluate(() => ({
+        viewport: innerWidth, width: document.documentElement.scrollWidth,
+        visible: !!document.querySelector('[data-testid="practice-page"]'),
+      }));
+      assert(geometry.visible && geometry.width <= width + 8,
+        'Family practice overflow at ' + width + 'px: ' + JSON.stringify(geometry));
+    }
+    await page.goto(base + '/app/activities');
+    await page.getByTestId('family-activities').waitFor();
+    const selectedNav = page.getByTestId('nav-activities');
+    assert((await selectedNav.getAttribute('class')).includes('bg-fam-accentTint'),
+      'Guardian active navigation must use family teal');
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      const bodyWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+      assert(bodyWidth <= width + 8,
+        'Family activities overflow at ' + width + 'px: ' + bodyWidth);
+    }
+    await page.goto(base + '/app/messages');
+    await page.getByTestId('messages-demo-disabled').waitFor();
+    assert((await page.getByTestId('messages-demo-disabled').innerText()).includes('switched off'));
+    await page.setViewportSize({ width: 1280, height: 900 });
     if (practice.body.gates.practiceDemo) {
       const slot = practice.body.children[0].activities.flatMap(a => a.slots.map(s => ({ ...s, templateId: a.id }))).find(s => s.recordable);
       assert(slot, 'Parent should have an enabled synthetic practice slot');

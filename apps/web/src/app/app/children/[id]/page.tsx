@@ -17,7 +17,7 @@ const PORTAL: Record<string, { tone: 'success' | 'info' | 'caution' | 'neutral';
   CONNECTED: { tone: 'success', label: 'Portal connected' }, PENDING: { tone: 'info', label: 'Invited' }, EXPIRED: { tone: 'caution', label: 'Invitation expired' },
   NOT_INVITED: { tone: 'neutral', label: 'Not invited' }, REVOKED: { tone: 'neutral', label: 'Invitation revoked' }, ACCEPTED: { tone: 'success', label: 'Portal connected' }, REPLACED: { tone: 'neutral', label: 'Replaced' },
 };
-type Ctx = { centerId: string; child: ChildDetail; manage: boolean; run: (fn: () => Promise<unknown>, ok: string) => Promise<boolean> };
+type Ctx = { centerId: string; child: ChildDetail; manage: boolean; canDesignate?: boolean; run: (fn: () => Promise<unknown>, ok: string) => Promise<boolean> };
 
 function Guardians({ centerId, child, manage, run }: Ctx) {
   const [adding, setAdding] = useState(false);
@@ -68,11 +68,14 @@ function Guardians({ centerId, child, manage, run }: Ctx) {
   );
 }
 
-function CareTeam({ centerId, child, manage, run }: Ctx) {
+function CareTeam({ centerId, child, manage, canDesignate, run }: Ctx) {
   const [open, setOpen] = useState(false);
+  const [referentOpen, setReferentOpen] = useState(false);
+  const [referentMember, setReferentMember] = useState(child.referent?.membershipId ?? '');
+  const [referentReason, setReferentReason] = useState('');
   const [therapists, setTherapists] = useState<Therapist[]>([]);
   const [f, setF] = useState({ membershipId: '', service: child.services[0] ?? '', isLead: true });
-  useEffect(() => { if (open) void opsApi.therapists(centerId).then((r) => setTherapists(r.items)).catch(() => setTherapists([])); }, [open, centerId]);
+  useEffect(() => { if (open || referentOpen) void opsApi.therapists(centerId).then((r) => setTherapists(r.items)).catch(() => setTherapists([])); }, [open, referentOpen, centerId]);
   const active = child.assignments.filter((a) => !a.endedAt);
   const qualified = therapists.filter((t) => t.specialties.includes(f.service));
   return (
@@ -80,6 +83,19 @@ function CareTeam({ centerId, child, manage, run }: Ctx) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-[18px] font-semibold">Care team</h2>
         {manage && child.status === 'ACTIVE' && <Button size="sm" onClick={() => setOpen(true)} data-testid="assign-therapist-button"><UserPlus size={15} aria-hidden="true" /> Assign therapist</Button>}
+      </div>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-control bg-surface-subtle p-3" data-testid="child-referent">
+        <div><p className="text-[13px] font-semibold">Child-wide care referent</p>
+          <p className="text-[13px] text-brand-inkMuted" data-testid="referent-current">
+            {child.referent?.displayName ?? (child.referentStatus === 'UNAVAILABLE' ? 'Designation unavailable; choose another active assigned therapist' : 'Not designated')}
+          </p>
+          <p className="text-[12px] text-brand-inkMuted">Coordination only. This designation grants no clinical permissions.</p>
+        </div>
+        {canDesignate && child.status === 'ACTIVE' &&
+          <Button size="sm" variant="secondary" data-testid="referent-change" onClick={() => {
+            setReferentMember(child.referent?.membershipId ?? '');
+            setReferentReason(''); setReferentOpen(true);
+          }}>Change referent</Button>}
       </div>
       {!active.length && <p className="mt-3 text-[14px] text-brand-inkMuted" data-testid="care-team-empty">No therapist assigned yet.</p>}
       <ul className="mt-3 space-y-2">
@@ -90,6 +106,25 @@ function CareTeam({ centerId, child, manage, run }: Ctx) {
           </li>
         ))}
       </ul>
+      <Dialog open={referentOpen} onClose={() => setReferentOpen(false)} title="Child-wide care referent" testId="referent-dialog"
+        footer={<><Button variant="secondary" onClick={() => setReferentOpen(false)}>Cancel</Button>
+          <Button data-testid="referent-save" disabled={referentReason.trim().length < 3}
+            onClick={() => void (async () => {
+              if (await run(() => opsApi.designateReferent(centerId, child.id, {
+                membershipId: referentMember || null, version: child.version, reason: referentReason.trim(),
+              }), 'Child-wide referent designation saved. No clinical access changed.')) setReferentOpen(false);
+            })()}>Save designation</Button></>}>
+        <div className="space-y-3">
+          <p className="text-[13px] text-brand-inkMuted">Only an existing active assigned therapist may be selected. You can clear the designation, but must document the change.</p>
+          <SelectField label="Referent" value={referentMember} onChange={setReferentMember}
+            testId="referent-therapist-select" options={[
+              { value: '', label: 'No child-wide referent' },
+              ...active.filter(a => therapists.some(m => m.membershipId === a.membershipId && m.specialties.includes(a.service))).filter((a, i, rows) => rows.findIndex(b => b.membershipId === a.membershipId) === i)
+                .map(a => ({ value: a.membershipId, label: a.therapist })),
+            ]}/>
+          <ReasonField label="Reason (audit history)" value={referentReason} onChange={setReferentReason} testId="referent-reason"/>
+        </div>
+      </Dialog>
       <Dialog open={open} onClose={() => setOpen(false)} title="Assign a therapist" testId="assign-dialog"
         footer={<><Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button><Button data-testid="assign-save" onClick={() => void (async () => { if (f.membershipId && await run(() => opsApi.assign(centerId, child.id, f), 'Therapist assigned.')) setOpen(false); })()}>Assign</Button></>}>
         <div className="space-y-4">
@@ -128,7 +163,7 @@ function ChildPage({ id, session, onError }: { id: string; session: SessionInfo;
       return false;
     }
   };
-  const ctx = { centerId, child, manage, run };
+  const ctx = { centerId, child, manage, canDesignate: session.activeContext?.role === 'CENTER_ADMIN', run };
   return (
     <div className="space-y-6">
       <Link href="/app/children" className="inline-flex items-center gap-1 text-[14px] font-medium text-brand-action hover:underline" data-testid="back-to-children"><ArrowLeft size={16} aria-hidden="true" /> Children</Link>

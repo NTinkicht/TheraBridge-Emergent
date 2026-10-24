@@ -215,6 +215,7 @@ model Membership {
   updatedAt        DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   user             User             @relation(fields: [userId], references: [id], onDelete: Restrict)
   center           Center           @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  referredChildren Child[]          @relation("ChildReferent")
   roles            RoleAssignment[]
   sessions         Session[]
 
@@ -370,7 +371,11 @@ model Child {
   createdAt     DateTime         @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   version       Int              @default(1)
+  referentMembershipId String?    @map("referent_membership_id") @db.Uuid
+  referentRevision     Int        @default(0) @map("referent_revision")
   center        Center           @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  referentMember Membership?      @relation("ChildReferent", fields: [referentMembershipId], references: [id], onDelete: Restrict)
+  referentHistory ChildReferentHistory[]
   guardians     GuardianLink[]
   assignments   CareAssignment[]
   appointments  Appointment[]
@@ -378,6 +383,25 @@ model Child {
 
   @@index([centerId, status])
   @@map("child")
+}
+
+// One explicit, non-authorizing child-wide care coordinator designation.
+// Previous decisions are append-only; no clinical authorization is conferred.
+model ChildReferentHistory {
+  id           String   @id @default(uuid()) @db.Uuid
+  centerId     String   @map("center_id") @db.Uuid
+  childId      String   @map("child_id") @db.Uuid
+  actorUserId  String   @map("actor_user_id") @db.Uuid
+  previousMembershipId String? @map("previous_membership_id") @db.Uuid
+  nextMembershipId     String? @map("next_membership_id") @db.Uuid
+  reason       String   @db.VarChar(500)
+  revision     Int
+  createdAt    DateTime @map("created_at") @db.Timestamptz(3)
+  child        Child    @relation(fields: [childId], references: [id], onDelete: Restrict)
+
+  @@unique([childId, revision])
+  @@index([centerId, childId, createdAt])
+  @@map("child_referent_history")
 }
 
 model GuardianLink {
@@ -702,6 +726,7 @@ model ProgressReport {
   updatedAt    DateTime        @map("updated_at") @db.Timestamptz(3)
   versions     ReportVersion[]
   releases     ReportRelease[]
+  suggestionDecisions ReportSuggestionDecision[]
 
   @@index([centerId, childId])
   @@map("progress_report")
@@ -722,6 +747,37 @@ model ReportVersion {
 
   @@unique([reportId, number])
   @@map("report_version")
+}
+
+// Immutable, non-authorizing evidence-assist decisions. Clinical report text stays
+// in ProgressReport.sections; only fingerprints and source/claim maps live here.
+model ReportSuggestionDecision {
+  id             String   @id @default(uuid()) @db.Uuid
+  centerId       String   @map("center_id") @db.Uuid
+  childId        String   @map("child_id") @db.Uuid
+  reportId       String   @map("report_id") @db.Uuid
+  service        String   @db.VarChar(32)
+  membershipId   String   @map("membership_id") @db.Uuid
+  actorUserId    String   @map("actor_user_id") @db.Uuid
+  section        String   @db.VarChar(16)
+  action         String   @db.VarChar(16)
+  idempotencyKey String   @map("idempotency_key") @db.Uuid
+  reason         String?  @db.VarChar(500)
+  requestHash    String   @map("request_hash") @db.Char(64)
+  generator      String   @db.VarChar(32)
+  sourceManifest Json     @map("source_manifest")
+  sourceHash     String   @map("source_hash") @db.Char(64)
+  claimMap       Json     @map("claim_map")
+  passageHash    String?  @map("passage_hash") @db.Char(64)
+  sectionHash    String   @map("section_hash") @db.Char(64)
+  reportRevision Int      @map("report_revision")
+  label          String   @default("NON_CLINICAL_DRAFT") @db.VarChar(32)
+  createdAt      DateTime @map("created_at") @db.Timestamptz(3)
+  report         ProgressReport @relation(fields: [reportId], references: [id], onDelete: Restrict)
+
+  @@unique([reportId, idempotencyKey])
+  @@index([centerId, childId, reportId, createdAt])
+  @@map("report_suggestion_decision")
 }
 
 // Never written: inserts are refused by a database trigger until report release is authorized.

@@ -151,6 +151,160 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     expect(events.map((e) => e.type)).toEqual(expect.arrayContaining(['child.registered', 'guardian.added', 'assignment.started', 'appointment.scheduled', 'appointment.rescheduled', 'appointment.completed', 'guardian.removed', 'child.archived']));
   });
 
+  it('audits explicit child-wide referents without granting clinical access', async () => {
+    const therapist = await staff('ref-first@ops.test', ['THERAPIST']);
+    const colleague = await staff('ref-second@ops.test', ['THERAPIST']);
+    const coordinator = await staff('ref-coord@ops.test', ['COORDINATOR']);
+    const kid = (await post(h, c('children'), admin, child()).expect(201)).body.id;
+    const first = therapist.body.activeContext.membershipId;
+    const second = colleague.body.activeContext.membershipId;
+    const assignmentId = (await post(h, c('children/' + kid + '/assignments'), admin,
+      { membershipId: first, service: 'speech', isLead: false }).expect(201)).body.id;
+    await post(h, c('children/' + kid + '/assignments'), admin,
+      { membershipId: second, service: 'speech', isLead: true }).expect(201);
+    const before = (await get(admin, c('children/' + kid)).expect(200)).body;
+    expect(before).toMatchObject({ referent: null, referentRevision: 0, referentStatus: 'NOT_DESIGNATED' });
+    const url = c('children/' + kid + '/referent');
+    const proposal = { membershipId: first, version: before.version, reason: 'Choose care coordinator' };
+    await patch(coordinator, url, proposal).expect(403);
+    await patch(therapist, url, proposal).expect(403);
+    await patch(admin, url, { ...proposal, reason: 'x' }).expect(400);
+    const a = (await patch(admin, url, proposal).expect(200)).body;
+    expect(a).toMatchObject({ referentRevision: 1, version: before.version + 1 });
+    const detail = (await get(admin, c('children/' + kid)).expect(200)).body;
+    expect(detail.referent).toMatchObject({ membershipId: first });
+    const ws = (await get(therapist, c('clinical/children/' + kid)).expect(200)).body;
+    expect(ws.childWideReferent).toMatchObject({ displayName: 'Person Name' });
+    expect(ws.childWideReferentStatus).toBe('VISIBLE');
+    await patch(admin, url, { membershipId: second, version: before.version, reason: 'Stale version' }).expect(409);
+    const b = (await patch(admin, url, { membershipId: second, version: detail.version, reason: 'Transfer coordination' }).expect(200)).body;
+    expect(b.referentRevision).toBe(2);
+    const history = await h.prisma.childReferentHistory.findMany({
+      where: { centerId, childId: kid }, orderBy: { revision: 'asc' },
+    });
+    expect(history.map(x => x.revision)).toEqual([1, 2]);
+    expect(history[1]).toMatchObject({ previousMembershipId: first, nextMembershipId: second });
+    await expect(h.prisma.$executeRawUnsafe("UPDATE child_referent_history SET reason='bad' WHERE id='" + history[0].id + "'"))
+      .rejects.toThrow(/immutable/);
+    await expect(h.prisma.$executeRawUnsafe("DELETE FROM child_referent_history WHERE id='" + history[0].id + "'"))
+      .rejects.toThrow(/immutable/);
+    await post(h, c('children/' + kid + '/assignments/' + assignmentId + '/end'), admin).expect(200);
+    expect((await get(admin, c('children/' + kid)).expect(200)).body.referent.membershipId).toBe(second);
+    await h.prisma.membership.update({ where: { id: second }, data: { specialties: [] } });
+    // The DB trigger is the final guard, even for a direct SQL mutation.
+    await expect(h.prisma.$executeRaw`UPDATE "child"
+      SET "referent_membership_id" = ${second}::uuid WHERE id = ${kid}::uuid`)
+      .rejects.toThrow(/referent must be/);
+    const revoked = (await get(admin, c('children/' + kid)).expect(200)).body;
+    expect(revoked).toMatchObject({ referentStatus: 'UNAVAILABLE', referent: null });
+    await get(coordinator, c('clinical/children/' + kid)).expect(403);
+    const cleared = (await patch(admin, url, { membershipId: null, version: revoked.version, reason: 'Clear invalid referent' }).expect(200)).body;
+    expect(cleared.referentRevision).toBe(3);
+    expect((await get(admin, c('children/' + kid)).expect(200)).body.referent).toBeNull();
+    expect(await h.prisma.childReferentHistory.count({ where: { childId: kid } })).toBe(3);
+    const otherCenter = (await post(h, '/api/platform/centers', ops, {
+      name: 'Referent Invalid Centre', timezone: 'UTC', country: 'France', city: 'Lyon',
+      specialties: ['speech'], firstAdmin: { email: 'other-ref@ops.test', displayName: 'External Admin' },
+    }).expect(201)).body.id;
+    const outsider = await accept('other-ref@ops.test');
+    const outsiderMembership = outsider.s.body.activeContext.membershipId;
+    await expect(h.prisma.$executeRaw`UPDATE "child"
+      SET "referent_membership_id" = ${outsiderMembership}::uuid WHERE id = ${kid}::uuid`)
+      .rejects.toThrow(/referent must be/);
+    const actorUserId = (await h.prisma.membership.findUniqueOrThrow({
+      where: { id: admin.body.activeContext.membershipId }, select: { userId: true },
+    })).userId;
+    // The history scope trigger independently rejects wrong-centre inserts.
+    await expect(h.prisma.childReferentHistory.create({ data: {
+      centerId: otherCenter, childId: kid, actorUserId,
+      nextMembershipId: outsiderMembership, reason: 'Forged cross-centre audit',
+      revision: 4, createdAt: h.clock.now(),
+    } })).rejects.toThrow(/scope mismatch/);
+    expect(await h.prisma.childReferentHistory.count({ where: { childId: kid } })).toBe(3);
+  });
+
+  it('archives against a simultaneous referent designation without orphaned state or stale history', async () => {
+    const therapist = await staff('race-archiving-therapist@ops.test', ['THERAPIST']);
+    const kid = (await post(h, c('children'), admin, child()).expect(201)).body.id;
+    const membershipId = therapist.body.activeContext.membershipId;
+    await post(h, c('children/' + kid + '/assignments'), admin,
+      { membershipId, service: 'speech', isLead: true }).expect(201);
+    const detail = (await get(admin, c('children/' + kid)).expect(200)).body;
+    const [archive, designate] = await Promise.all([
+      post(h, c('children/' + kid + '/archive'), admin, { reason: 'Synthetic archive race' }),
+      patch(admin, c('children/' + kid + '/referent'), {
+        membershipId, version: detail.version, reason: 'Simultaneous designation test',
+      }),
+    ]);
+    expect(archive.status).toBe(200);
+    expect([200, 404, 409]).toContain(designate.status);
+    const archived = (await get(admin, c('children/' + kid)).expect(200)).body;
+    expect(archived.status).toBe('ARCHIVED');
+    expect(archived.referent).toBeNull();
+    const archivedRow = await h.prisma.child.findUniqueOrThrow({ where: { id: kid } });
+    // Do not assert only the operations projection: archived detail() always
+    // hides names, even if a broken race leaves a dangling DB designation.
+    expect(archivedRow.referentMembershipId).toBeNull();
+    expect(archivedRow.referentRevision).toBe(designate.status === 200 ? 2 : 0);
+    expect(archived.referentRevision).toBe(archivedRow.referentRevision);
+    const history = await h.prisma.childReferentHistory.findMany({
+      where: { centerId, childId: kid }, orderBy: { revision: 'asc' },
+    });
+    expect(history).toHaveLength(archived.referentRevision);
+    if (history.length) {
+      expect(history.map(x => x.revision)).toEqual([1, 2]);
+      expect(history[1]).toMatchObject({
+        previousMembershipId: membershipId, nextMembershipId: null,
+        reason: 'Child archived',
+      });
+    }
+    // Restoring the child must not resurrect the former designation.
+    await post(h, c('children/' + kid + '/restore'), admin).expect(200);
+    const restored = (await get(admin, c('children/' + kid)).expect(200)).body;
+    expect(restored.referent).toBeNull();
+    expect(restored.referentStatus).toBe('NOT_DESIGNATED');
+    expect(await h.prisma.careAssignment.count({
+      where: { centerId, childId: kid, endedAt: null },
+    })).toBe(0);
+  });
+
+  it('serializes concurrent referent designation and last assignment ending without deadlock', async () => {
+    const therapist = await staff('race-ending-therapist@ops.test', ['THERAPIST']);
+    const kid = (await post(h, c('children'), admin, child()).expect(201)).body.id;
+    const membershipId = therapist.body.activeContext.membershipId;
+    const aid = (await post(h, c('children/' + kid + '/assignments'), admin,
+      { membershipId, service: 'speech', isLead: true }).expect(201)).body.id;
+    const current = (await get(admin, c('children/' + kid)).expect(200)).body;
+    const [ended, designated] = await Promise.all([
+      post(h, c('children/' + kid + '/assignments/' + aid + '/end'), admin),
+      patch(admin, c('children/' + kid + '/referent'), {
+        membershipId, version: current.version, reason: 'Simultaneous assignment termination test',
+      }),
+    ]);
+    expect(ended.status).toBe(200);
+    expect([200, 409, 422]).toContain(designated.status);
+    const childAfter = (await get(admin, c('children/' + kid)).expect(200)).body;
+    expect(childAfter.referent).toBeNull();
+    expect(childAfter.referentStatus).toBe('NOT_DESIGNATED');
+    const afterRow = await h.prisma.child.findUniqueOrThrow({ where: { id: kid } });
+    expect(afterRow.referentMembershipId).toBeNull();
+    expect(afterRow.referentRevision).toBe(designated.status === 200 ? 2 : 0);
+    expect(childAfter.referentRevision).toBe(afterRow.referentRevision);
+    const history = await h.prisma.childReferentHistory.findMany({
+      where: { centerId, childId: kid }, orderBy: { revision: 'asc' },
+    });
+    expect(history.map(x => x.revision)).toEqual(
+      designated.status === 200 ? [1, 2] : [],
+    );
+    if (history.length) expect(history[1]).toMatchObject({
+      previousMembershipId: membershipId, nextMembershipId: null,
+      reason: 'Last active care assignment ended',
+    });
+    expect(await h.prisma.careAssignment.count({
+      where: { centerId, childId: kid, endedAt: null },
+    })).toBe(0);
+  });
+
   it('isolates centers and hides other families', async () => {
     const kid = (await post(h, c('children'), admin, child()).expect(201)).body.id;
     await post(h, '/api/platform/centers', ops, { name: 'Other Ops', timezone: 'UTC', country: 'France', city: 'Lyon', specialties: ['speech'], firstAdmin: { email: 'o@other.test', displayName: 'Other Admin' } }).expect(201);

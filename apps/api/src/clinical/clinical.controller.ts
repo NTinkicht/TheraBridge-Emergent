@@ -3,7 +3,7 @@ import { SessionStartDto, SessionSaveDto } from './session.dto';
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Req } from '@nestjs/common';
 import { RequirePermission, TbRequest } from '../auth/access';
 import type { Viewer } from '../operations/children.service';
-import { AssessmentDto, AssessmentUpdateDto, ObservationDto, PlanDto, PlanVersionUpdateDto, ReviewDto, SessionNoteDto, SessionNoteUpdateDto, TemplateDto } from './clinical.dto';
+import { AssessmentDto, AssessmentUpdateDto, ObservationDto, PlanDto, PlanVersionUpdateDto, ReviewDto, SessionNoteDto, SessionNoteUpdateDto, TemplateDto, TemplateUpdateDto, TemplateCopyDto } from './clinical.dto';
 import { GovernanceService } from './governance.service';
 import { ReportVersionDto } from './clinical.dto';
 import { ClinicalService } from './clinical.service';
@@ -119,14 +119,26 @@ export class ClinicalController {
 
   @Get('activities')
   @RequirePermission('center.activities.read')
-  templates(@Param('centerId', uuid()) c: string) {
-    return this.clinical.templates(c).then((items) => ({ items }));
+  templates(@Param('centerId', uuid()) c: string, @Req() req: TbRequest) {
+    return this.clinical.templates(c, viewer(req)).then((items) => ({ items }));
   }
 
   @Post('activities')
   @RequirePermission('center.activities.manage')
   createTemplate(@Param('centerId', uuid()) c: string, @Body() dto: TemplateDto, @Req() req: TbRequest) {
     return this.clinical.createTemplate(c, viewer(req), dto);
+  }
+
+  @Post('activities/:templateId/duplicate')
+  @RequirePermission('center.activities.manage')
+  duplicateTemplate(@Param('centerId', uuid()) c: string, @Param('templateId', uuid()) id: string, @Body() dto: TemplateCopyDto, @Req() req: TbRequest) {
+    return this.clinical.duplicateTemplate(c, viewer(req), id, dto);
+  }
+
+  @Patch('activities/:templateId')
+  @RequirePermission('center.activities.manage')
+  updateTemplate(@Param('centerId', uuid()) c: string, @Param('templateId', uuid()) id: string, @Body() dto: TemplateUpdateDto, @Req() req: TbRequest) {
+    return this.clinical.updateTemplate(c, viewer(req), id, dto);
   }
 
   @Get('family/activities')
