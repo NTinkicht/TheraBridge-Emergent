@@ -103,9 +103,18 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     expect((await patch(therapist, P, { sections: { summary: 'late' }, version: 6 }).expect(409)).body.message).toMatch(/with the supervisor/);
     for (const s of [sup, therapist]) await post(h, `${P}/release`, s).expect(403);
     await post(h, `${P}/comments`, therapist, { comment: 'self review' }).expect(403);
+    const queue = c('clinical/reports/review-queue');
+    for (const s of [admin, ada, therapist, other, ops]) await get(s, queue).expect(403);
+    const pending = (await get(sup, queue).expect(200)).body;
+    expect(pending).toMatchObject({ synthetic: true, released: false, total: 1 });
+    expect(pending.items).toHaveLength(1);
+    expect(pending.items[0]).toMatchObject({ id, childId: kid, childName: 'Ivo Lane',
+      title: 'Autumn report', service: 'speech', status: 'IN_REVIEW' });
+    expect(JSON.stringify(pending)).not.toMatch(/Draft summary|Synthetic baseline|Recorded values are listed|familySummary/);
     expect((await get(sup, P).expect(200)).body).toMatchObject({ canEdit: false, canReview: true });
     await post(h, `${P}/comments`, sup, { version: 6, comment: 'Please list the session dates.' }).expect(200);
     await post(h, `${P}/return`, sup, { version: 7, comment: 'Returned for revision: add session dates.' }).expect(200);
+    expect((await get(sup, queue).expect(200)).body).toMatchObject({ total: 0, items: [] });
     d = (await get(therapist, P).expect(200)).body;
     expect(d).toMatchObject({ canEdit: true, report: { status: 'RETURNED_FOR_REVISION', version: 8 } });
     expect(d.report.reviewNotes.map((n: { kind: string }) => n.kind)).toEqual(['comment', 'returned']);

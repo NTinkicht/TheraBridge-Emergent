@@ -6,6 +6,7 @@ import { FlaskConical, LineChart } from 'lucide-react';
 import { Field } from '@/components/auth/Field';
 import { PageTitle, SelectField, Workspace, useLoad } from '@/components/centers/kit';
 import { GoalChart, STATUS_TEXT } from '@/components/clinical/GoalChart';
+import { SupervisorReviewQueue } from '@/components/clinical/SupervisorReviewQueue';
 import { Card, Metric, Pill } from '@/components/design/ui';
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
 import { serviceLabel } from '@/components/operations/BookDialog';
@@ -71,6 +72,9 @@ function Board({ session, onError }: { session: SessionInfo; onError: (e: unknow
             <Metric label="Not enough data" value={goals.filter((g) => g.status === 'insufficient').length} sub="one observation" icon={LineChart} accent="caution" testId="metric-insufficient" />
             <Metric label="No data" value={goals.filter((g) => g.status === 'none').length} sub="nothing recorded" icon={LineChart} testId="metric-none" />
           </div>
+          {session.activeContext?.role === 'CLINICAL_SUPERVISOR' && (
+            <SupervisorReviewQueue centerId={centerId} childId={f.childId} service={f.service} onError={onError} />
+          )}
           {!goals.length && <EmptyState icon={LineChart} title={data.children.length ? 'No goals match these filters' : 'No children assigned to you'} body={data.children.length ? 'Goals appear here once a therapy plan has goals. Try another child, service or goal.' : 'Progress appears for children you are assigned to.'} testId="progress-empty" />}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-2" data-testid="progress-goals">{goals.map((g) => <GoalCard key={`${g.childId}-${g.service}-${g.key}`} g={g} period={data.period} />)}</div>
         </>

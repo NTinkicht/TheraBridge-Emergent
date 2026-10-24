@@ -376,6 +376,14 @@ try {
     assert.equal(clinician.status, 200);
     assert.equal(clinician.body.careTeam.length, 2);
     assert.equal(clinician.body.childWideReferent, null);
+    const inbox = await read(page, centerBase + '/clinical/reports/review-queue');
+    assert.equal(inbox.status, 200, 'Supervisor must have an authorized review inbox');
+    assert(inbox.body.synthetic && inbox.body.released === false && Array.isArray(inbox.body.items));
+    await page.goto(base + '/app/progress');
+    await page.getByTestId('supervisor-review-queue').waitFor();
+    await page.getByTestId('review-queue-search').fill('no-matching-synthetic-review');
+    await page.getByTestId('review-queue-empty').waitFor();
+    await page.getByTestId('review-queue-search').fill('');
   });
   await role('mariam.ahmed@childrens-home.therabridge.test', 'GUARDIAN', async (page, session) => {
     const family = await read(page, centerBase + '/family');

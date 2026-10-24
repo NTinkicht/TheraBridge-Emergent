@@ -18,6 +18,11 @@ export interface Dashboard {
 }
 export interface ReviewNote { byName: string; at: string; comment: string; kind: 'comment' | 'returned' }
 export interface ReportRow { id: string; title: string; service: string; periodStart: string; periodEnd: string; status: 'DRAFT' | 'IN_REVIEW' | 'RETURNED_FOR_REVISION' | 'WITHDRAWN' | 'FROZEN_INTERNAL'; versions: number; author: string; mine: boolean; updatedAt: string }
+export interface ReviewQueue {
+  synthetic: true; released: false; total: number;
+  items: { id: string; childId: string; childName: string; title: string; service: string;
+    status: 'IN_REVIEW'; author: string; periodStart: string; periodEnd: string; updatedAt: string }[];
+}
 export interface ReportDetail {
   synthetic: true; locked: string; released: false; canEdit: boolean; canReview: boolean; evidence: Evidence;
   report: { id: string; childId: string; childName: string; title: string; service: string; periodStart: string; periodEnd: string; status: 'DRAFT' | 'IN_REVIEW' | 'RETURNED_FOR_REVISION' | 'WITHDRAWN' | 'FROZEN_INTERNAL'; sections: Record<string, string>; reviewNotes: ReviewNote[]; version: number; author: string; mine: boolean; updatedAt: string };
@@ -76,6 +81,7 @@ export const reportsApi = {
   decisions: (centerId: string, id: string) => rest.get<EvidenceReview>(c(centerId, `clinical/reports/${id}/suggestion-decisions`)),
   recordDecision: (centerId: string, id: string, body: DecisionRequest) => rest.send<DecisionReceipt>('POST', c(centerId, `clinical/reports/${id}/suggestion-decisions`), body),
   dashboard: (centerId: string, q: { childId?: string; service?: string; from?: string; to?: string }) => rest.get<Dashboard>(c(centerId, `clinical/progress?${qs(q)}`)),
+  reviewQueue: (centerId: string) => rest.get<ReviewQueue>(c(centerId, 'clinical/reports/review-queue')),
   list: (centerId: string, childId: string) => rest.get<{ items: ReportRow[] }>(c(centerId, `clinical/children/${childId}/reports`)),
   create: (centerId: string, childId: string, body: { service: string; title: string; periodStart: string; periodEnd: string }) => rest.send<{ id: string }>('POST', c(centerId, `clinical/children/${childId}/reports`), body),
   detail: (centerId: string, id: string) => rest.get<ReportDetail>(c(centerId, `clinical/reports/${id}`)),
