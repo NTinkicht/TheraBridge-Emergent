@@ -1,3 +1,7 @@
+## 2026-10-24 — TB-EM-026 supervisor review queue (PR #74, DRAFT)
+
+Source HEAD under qualification: `bc51a8bc8f5430121ec21cff902570709af366d9` plus this correction. Adds server-authorized, metadata-only supervisor review queue to the Progress page with search, links, and PostgreSQL/Chromium regressions. Codex P1 required checkpoint records, and P2 required a populated fixture: both corrected in this branch. **CODE ADDED; new exact-head API/Chromium results NOT YET VERIFIED.** Full six-job Actions CI and fresh independent review required. No merge/Render deploy. External hosted QA issue #61 remains OPEN (53 PASS, 0 FAIL, 47 BLOCKED, 4 NOT TESTED, plus 4 supplemental PASS); real AI/STT, clinical authorization, consent and release remain NO-GO.
+
 ## 2026-10-24 — TB-EM-024 draft PR #72
 
 Activity-library staff search/filter implementation and follow-up reviewer corrections on an isolated branch; no deployment, authorization or clinical workflow changes. New CI staff journey exercises displayed specialty labels, ownership buckets, reset, empty matches and five responsive widths. At `b234c519`, all six CI jobs PASS (run 40117705186); exact-head Codex review no findings, DeepSeek `NO_BLOCKING_FINDINGS`. Subsequent read-only role regression plus evidence amendment requires new CI; hosted visual review remains independent. Details: docs/product/TB-EM-024-ACTIVITY-DISCOVERY.md.

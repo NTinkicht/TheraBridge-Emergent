@@ -1,3 +1,7 @@
+## 2026-10-24 — TB-EM-026 supervisor review queue (PR #74, DRAFT)
+
+Source HEAD under qualification: `bc51a8bc8f5430121ec21cff902570709af366d9` plus this correction. Adds server-authorized, metadata-only supervisor review queue to the Progress page with search, links, and PostgreSQL/Chromium regressions. Codex P1 required checkpoint records, and P2 required a populated fixture: both corrected in this branch. **CODE ADDED; new exact-head API/Chromium results NOT YET VERIFIED.** Full six-job Actions CI and fresh independent review required. No merge/Render deploy. External hosted QA issue #61 remains OPEN (53 PASS, 0 FAIL, 47 BLOCKED, 4 NOT TESTED, plus 4 supplemental PASS); real AI/STT, clinical authorization, consent and release remain NO-GO.
+
 ## 2026-10-24 — TB-EM-024 correction checkpoint (DRAFT)
 
 Previous HEAD `2482f82`: CI 6/6 PASS but did not assert staff discovery behavior. Corrective commit adds CI Chromium tests to `scripts/design/check-demo-journey.mjs` exercising authorized staff activity search, label matching, result counts, ownership buckets, no match and clearing, specialty combination, and rendered input width at 320/390/768/1024/1440. **PASS at `b234c519`:** all six jobs in [run 40117705186](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/40117705186), including staff discovery Chromium tests. Codex no findings at this head. **Subsequent read-only-role regression CI PENDING; hosted visual acceptance outside CI NOT RUN.** No deployment. See docs/product/TB-EM-024-ACTIVITY-DISCOVERY.md.

@@ -369,6 +369,14 @@ try {
     assert(otTeamText.includes('Omar Nasser') && otTeamText.includes('Not designated'));
     assert(!otTeamText.includes('Layla Faris'), 'OT scope must not reveal Speech colleague');
   });
+  // CI/loopback-only disposable synthetic fixture: use an OT report so Speech's
+  // earlier autosave/decision journey is unaffected. No protected hosted data.
+  const queuedDraft = await db.progressReport.findFirstOrThrow({
+    where: { centerId: center.id, childId: child.id, service: 'occupational', status: 'DRAFT' },
+  });
+  await db.progressReport.update({
+    where: { id: queuedDraft.id }, data: { status: 'IN_REVIEW' },
+  });
   await role('supervisor@childrens-home.therabridge.test', 'CLINICAL_SUPERVISOR', async page => {
     const messages = await read(page, centerBase + '/threads');
     assert.notEqual(messages.status, 200, 'Supervisors must not access family discussions');
@@ -379,11 +387,24 @@ try {
     const inbox = await read(page, centerBase + '/clinical/reports/review-queue');
     assert.equal(inbox.status, 200, 'Supervisor must have an authorized review inbox');
     assert(inbox.body.synthetic && inbox.body.released === false && Array.isArray(inbox.body.items));
+    assert.equal(inbox.body.total, 1, 'CI synthetic report must be pending review');
+    assert.equal(inbox.body.items[0].id, queuedDraft.id);
+    assert.equal(inbox.body.items[0].status, 'IN_REVIEW');
     await page.goto(base + '/app/progress');
     await page.getByTestId('supervisor-review-queue').waitFor();
+    const reviewRow = page.getByTestId('review-queue-row-' + queuedDraft.id);
+    await reviewRow.waitFor();
+    assert((await reviewRow.innerText()).includes(queuedDraft.title));
+    assert.equal(await page.getByTestId('review-queue-open-' + queuedDraft.id).getAttribute('href'), '/app/reports/' + queuedDraft.id);
     await page.getByTestId('review-queue-search').fill('no-matching-synthetic-review');
     await page.getByTestId('review-queue-empty').waitFor();
+    assert.equal(await reviewRow.count(), 0);
+    await page.getByTestId('review-queue-search').fill(queuedDraft.title);
+    await reviewRow.waitFor();
     await page.getByTestId('review-queue-search').fill('');
+    await reviewRow.waitFor();
+    assert.equal((await db.progressReport.findUniqueOrThrow({ where: { id: queuedDraft.id } })).status, 'IN_REVIEW',
+      'Visiting and filtering queue must never approve, return or release reports');
   });
   await role('mariam.ahmed@childrens-home.therabridge.test', 'GUARDIAN', async (page, session) => {
     const family = await read(page, centerBase + '/family');

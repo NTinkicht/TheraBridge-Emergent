@@ -9,3 +9,7 @@ UI: Supervisors see a labelled, searchable read-only queue on Progress with chil
 Tests: existing PostgreSQL report workflow verifies draft is absent until submitted, queue includes the submitted report only, non-supervisor roles receive 403, and returning report clears queue; the seven-role Chromium journey covers authorized API, read-only UI and search/empty state. No new migration.
 
 NO-GO unchanged: external AI, audio/STT, clinical signing, approval, release, consent grant, safeguarding and messaging; no real data, demo redeployment or production/pilot.
+
+## Independent review corrections (checkpoint)
+
+Codex P1: Updated `CURRENT_STATE`, `NEXT_WORK`, `WORK_LOG`, and `docs/qa/TEST_RESULTS` for this branch with `CODE ADDED / CI PENDING` status. Codex P2: CI-only disposable OT report is moved to `IN_REVIEW` after the therapist journeys, then the supervisor Chromium journey asserts the actual rendered row/link, nonmatching search, matching search and restoring the result, with no report mutation. The live protected synthetic demo is untouched. New exact-head tests/review must be verified; do not promote coding assertions to PASS from source alone.
