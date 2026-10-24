@@ -1,5 +1,12 @@
 # TB-EM-023 — Combined P1/P2/P3 synthetic V1 delivery and qualification
 
+## Incremental code-review P2: no lost drafts during decision/reload
+
+Codex exact-head review at `d965842e` confirmed a clinician could edit report sections **after** the pre-decision autosave but **before** the POST response, and then lose that draft text on parent key/version remount (the autosave debounce was cancelled by unmount). This is a true P2 data-loss bug, and old NO_BLOCKING_FINDINGS verdicts are superseded.
+
+Correction: ReportEditor owns an immediate decision transaction lock (ref plus visible state), disables *every* report section, Save Version / Send for Review / Preview, guards stray input handlers, and waits for any existing autosave before the decision's version is sent. ReportDecisionAssist obtains this lock **before** its first async call, disables its source/text inputs during submission, and releases in `finally` on any failure. On success the server receipt triggers reload only while the parent editing lock is active. The browser test pauses an actual source-decision POST and checks disabled controls and retained predecision draft after reload. **New exact-head CI/review required; synthetic-only; no Render deploy.**
+
+
 **Work unit:** TB-EM-023. **PR:** [#70](https://github.com/NTinkicht/TheraBridge-Emergent/pull/70). **Parent:** `main@b4eae4e8ce8609e72c96d63f3eb984e4fd84e42c`. **Qualification:** an independently reviewed, CI-green integration is REQUIRED; final correction's new exact SHA and CI should be read from the PR. No Render deployment, hosted acceptance or clinical/pilot activation is implied.
 
 ## Feature and workflow traceability

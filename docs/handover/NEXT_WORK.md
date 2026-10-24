@@ -1,3 +1,7 @@
+## CURRENT — new exact-head review after Codex P2 data-loss correction
+
+PR #70 latest feature branch includes a corrected parent-owned decision transaction lock for ReportEditor, in-flight autosave serialization and delayed-network browser regression. The previous `d965842e` passed 6/6 and 482/482, with a confirmed Codex P2 that **must not** be merged uncorrected. Verify all six GitHub Actions jobs at the new SHA; inspect delayed-POST assertions, lock/unlock on error and prevention of concurrent remount text loss; obtain fresh independent reviewer verdict, close Codex finding only when verified. Do not merge/alter the Render acceptance target before the gates pass. See `docs/product/TB-EM-023-DELIVERY.md`.
+
 ## CURRENT — TB-EM-023 PR #70 review qualification (2026-10-24)
 
 1. Qualify the latest corrective HEAD of [PR #70](https://github.com/NTinkicht/TheraBridge-Emergent/pull/70) after DeepSeek review amendments; check **six exact-HEAD CI** jobs, PostgreSQL and seven-role browser suite. The previous `73c4afb` passed 6/6 and 481/481 but cannot qualify a newer HEAD.

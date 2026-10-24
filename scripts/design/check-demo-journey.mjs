@@ -140,8 +140,40 @@ try {
     assert(g && g.planVersionId, 'Seeded goal must have a plan-version-scoped identity');
     const goalRef = 'planVersion:' + g.planVersionId + ':goal:' + g.key;
     await page.getByTestId('report-suggestion-goals').waitFor();
+    // P2 data-loss regression: pause the real POST after the first flush.
+    // Before fix, the textareas were still editable and typing here was
+    // silently dropped when the successful decision remounted ReportEditor.
+    const reportSections = page.getByTestId('report-section-goals');
+    const typedBeforeDecision = 'Pre-submission clinical draft text remains saved.';
+    await reportSections.fill((await reportSections.inputValue()) + '\n' + typedBeforeDecision);
+    const decisionEndpoint = '**/clinical/reports/*/suggestion-decisions';
+    let unlockPost;
+    const heldPost = new Promise(resolve => { unlockPost = resolve; });
+    let announcePost;
+    const postStarted = new Promise(resolve => { announcePost = resolve; });
+    await page.route(decisionEndpoint, async route => {
+      if (route.request().method() === 'POST') {
+        announcePost();
+        await heldPost;
+      }
+      await route.continue();
+    });
     await page.getByTestId('report-assist-omit-goals').click();
+    await postStarted;
+    assert(await reportSections.isDisabled(), 'Report sections must lock during in-flight decisions');
+    assert(await page.getByTestId('report-decision-edit-lock').isVisible(),
+      'An explicit status must explain why editor inputs are locked');
+    assert(await page.getByTestId('report-save-version').isDisabled());
+    assert(await page.getByTestId('report-submit').isDisabled());
+    assert(await page.getByTestId('report-preview-toggle').isDisabled());
+    // The report's pending-save content stays visible, not truncated.
+    assert((await reportSections.inputValue()).includes(typedBeforeDecision));
+    unlockPost();
     await page.getByTestId('report-assist-restore-goals').waitFor({ timeout: 25000 });
+    await page.unroute(decisionEndpoint);
+    assert((await page.getByTestId('report-section-goals').inputValue()).includes(typedBeforeDecision),
+      'Remount must preserve the pre-decision autosaved section');
+
     assert((await page.getByTestId('report-assist-decision-goals').innerText()).includes('Omitted'));
     // A stale OMITTED event must remain recoverable, not trap the clinician
     // behind an inert "reload" message that cannot clear the history hash.

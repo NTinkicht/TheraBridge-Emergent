@@ -33,36 +33,63 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
   const ver = useRef(d.report.version);
   const dirty = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout>>();
+  // A decision remounts the editor at its new report version. Lock the
+  // parent synchronously so no unsaved text can be typed after the flush.
+  const decisionBusy = useRef(false);
+  const [decisionLocked, setDecisionLocked] = useState(false);
+  const inFlightSave = useRef<Promise<boolean> | null>(null);
+  const beginDecision = () => {
+    if (decisionBusy.current) return false;
+    decisionBusy.current = true;
+    setDecisionLocked(true);
+    return true;
+  };
+  const endDecision = () => {
+    decisionBusy.current = false;
+    setDecisionLocked(false);
+  };
   const id = d.report.id;
 
-  const save = useCallback(async () => {
+  const save = useCallback(async (): Promise<boolean> => {
     clearTimeout(timer.current);
+    // A pending autosave must finish before its version is reused by a
+    // decision or another save. Avoid concurrent old-version writes.
+    if (inFlightSave.current) {
+      const previous = await inFlightSave.current;
+      if (!previous) return false;
+    }
     if (!dirty.current) return true;
     dirty.current = false;
     setState('saving');
-    try {
-      const r = await reportsApi.autosave(centerId, id, local.current, ver.current);
-      ver.current = r.version;
-      setSavedAt(r.savedAt);
-      setState(dirty.current ? 'pending' : 'saved');
-      return true;
-    } catch (e) {
-      dirty.current = true;
-      const t = errorText(e, onError);
-      setState((e as { status?: number }).status === 409 ? 'conflict' : 'error');
-      if (t) setNotice({ tone: 'danger', text: t });
-      return false;
-    }
+    const attempt = (async (): Promise<boolean> => {
+      try {
+        const r = await reportsApi.autosave(centerId, id, local.current, ver.current);
+        ver.current = r.version;
+        setSavedAt(r.savedAt);
+        setState(dirty.current ? 'pending' : 'saved');
+        return true;
+      } catch (e) {
+        dirty.current = true;
+        const t = errorText(e, onError);
+        setState((e as { status?: number }).status === 409 ? 'conflict' : 'error');
+        if (t) setNotice({ tone: 'danger', text: t });
+        return false;
+      }
+    })();
+    inFlightSave.current = attempt;
+    try { return await attempt; }
+    finally { if (inFlightSave.current === attempt) inFlightSave.current = null; }
   }, [centerId, id, onError]);
 
   useEffect(() => {
-    const warn = (e: BeforeUnloadEvent) => { if (dirty.current) e.preventDefault(); };
+    const warn = (e: BeforeUnloadEvent) => { if (dirty.current || decisionBusy.current || inFlightSave.current) e.preventDefault(); };
     window.addEventListener('beforeunload', warn);
     onSections(local.current);
     return () => { window.removeEventListener('beforeunload', warn); clearTimeout(timer.current); };
   }, []);
 
   const change = (k: string, v: string) => {
+    if (decisionBusy.current) return;
     const next = { ...local.current, [k]: v };
     local.current = next;
     setSections(next);
@@ -75,6 +102,7 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
   };
 
   const act = async (fn: (v: number) => Promise<{ number: number }>, ok: (n: number) => string) => {
+    if (decisionBusy.current) return;
     setNotice(null);
     if (!(await save())) return;
     try { const r = await fn(ver.current); onSuccess(ok(r.number)); await onReload(); }
@@ -103,23 +131,24 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
         <h3 className="text-[16px] font-semibold">Evidence-assisted draft passages</h3>
         <p className="text-[13px] text-brand-inkMuted">Deterministic, source-referenced clinician draft decisions. No AI, publication, clinical verification, approval or release.</p>
         <ReportDecisionAssist centerId={centerId} reportId={id}
-          getVersion={() => ver.current} flush={save} onError={onError}
+          getVersion={() => ver.current} flush={save} beginDecision={beginDecision} endDecision={endDecision} onError={onError}
           onCommitted={async () => {
             onSuccess('Your evidence decision and draft revision have been saved. This does not validate or release clinical content.');
             await onReload();
           }}/>
       </div>}
+      {decisionLocked && <p role="status" aria-live="polite" className="text-[13px] text-brand-inkMuted" data-testid="report-decision-edit-lock">Recording evidence decision — report editing is temporarily paused to protect unsaved text.</p>}
       {SECTIONS.map(([k, label, hint]) => (
         <label key={k} className="block text-[14px] font-semibold">
           {label}
           <span className="block text-[12px] font-normal text-brand-inkMuted">{hint}</span>
-          <textarea className={area} rows={k === 'goals' ? 8 : 4} value={sections[k] ?? ''} disabled={!edit} onChange={(e) => change(k, e.target.value)} data-testid={`report-section-${k}`} />
+          <textarea className={area} rows={k === 'goals' ? 8 : 4} value={sections[k] ?? ''} disabled={!edit || decisionLocked} onChange={(e) => change(k, e.target.value)} data-testid={`report-section-${k}`} />
         </label>
       ))}
       <div className="flex flex-wrap items-start gap-2 border-t border-border-light pt-4">
-        {edit && <Button variant="secondary" onClick={() => void act((v) => reportsApi.saveVersion(centerId, id, v), (n) => `Saved as version ${n}.`)} data-testid="report-save-version">Save version</Button>}
-        {edit && <Button onClick={() => void act((v) => reportsApi.submit(centerId, id, v), (n) => `Sent for review as version ${n}.`)} data-testid="report-submit">Send for review</Button>}
-        <Button variant="ghost" onClick={() => void save().then(onPreview)} data-testid="report-preview-toggle">Preview family format</Button>
+        {edit && <Button variant="secondary" disabled={decisionLocked} onClick={() => void act((v) => reportsApi.saveVersion(centerId, id, v), (n) => `Saved as version ${n}.`)} data-testid="report-save-version">Save version</Button>}
+        {edit && <Button disabled={decisionLocked} onClick={() => void act((v) => reportsApi.submit(centerId, id, v), (n) => `Sent for review as version ${n}.`)} data-testid="report-submit">Send for review</Button>}
+        <Button variant="ghost" disabled={decisionLocked} onClick={() => { if (!decisionBusy.current) void save().then(ok => { if (ok) onPreview(); }); }} data-testid="report-preview-toggle">Preview family format</Button>
         <LockedAction id="report-release" label="Release to family" reason={LOCKED_REASON} />
       </div>
     </Card>

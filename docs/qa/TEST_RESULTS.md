@@ -1,5 +1,10 @@
 # Test results — TheraBridge
 
+## TB-EM-023 — Codex report edit-loss P2 correction (2026-10-24)
+
+**New incremental patch: NOT RUN at authoring.** `ReportEditor` and `ReportDecisionAssist` coordinate synchronous parent-owned input locking while a report decision awaits an in-flight autosave and POST; browser journey deliberately delays the POST to assert all draft textareas, Save Version, Send for Review and Preview are disabled, and confirms predecision typed text is not lost on post-decision remount. Previous exact-head `d965842e556563ed9b2c5317e154930c2e592e77`: [run 40080336806](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/40080336806), **6/6 green and 482/482 PostgreSQL tests**, but this HEAD had a confirmed Codex P2 data-loss defect. The old run does not qualify the new patch. No external Render hosted acceptance or clinical activation.
+
+
 ## TB-EM-023 — targeted DeepSeek-review correction qualification (2026-10-24)
 
 **Current corrective change:** NOT RUN at commit preparation. Follow-up code adds native database row assertions after concurrent child archive/referent updates and assignment termination, rejection of invalid referent by direct SQL (wrong tenant, revoked specialty), history-scope trigger negative, Speech/OT referent-name privacy and stale OMITTED→RECONSIDERED browser recovery. See `docs/product/TB-EM-023-DELIVERY.md` for work-unit traceability, permissions matrix and remaining visual-acceptance gaps.
