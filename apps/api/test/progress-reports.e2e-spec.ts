@@ -120,11 +120,6 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     expect(pending.items[0]).toMatchObject({ id, childId: kid, childName: 'Ivo Lane',
       title: 'Autumn report', service: 'speech', status: 'IN_REVIEW' });
     expect(JSON.stringify(pending)).not.toMatch(/Draft summary|Synthetic baseline|Recorded values are listed|familySummary/);
-    await post(h, c(`children/${kid}/archive`), admin, { reason: 'Synthetic archival queue scope regression' }).expect(200);
-    expect((await get(sup, queue).expect(200)).body).toMatchObject({ total: 0, items: [] });
-    expect((await h.prisma.progressReport.findUniqueOrThrow({ where: { id } })).status).toBe('IN_REVIEW');
-    await post(h, c(`children/${kid}/restore`), admin, {}).expect(200);
-    expect((await get(sup, queue).expect(200)).body).toMatchObject({ total: 1 });
     expect((await get(sup, P).expect(200)).body).toMatchObject({ canEdit: false, canReview: true });
     await post(h, `${P}/comments`, sup, { version: 6, comment: 'Please list the session dates.' }).expect(200);
     await post(h, `${P}/return`, sup, { version: 7, comment: 'Returned for revision: add session dates.' }).expect(200);
@@ -153,4 +148,37 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     const types = (await h.prisma.centerEvent.findMany({ where: { centerId }, select: { type: true } })).map((e) => e.type);
     expect(types).toEqual(expect.arrayContaining(['clinical.report_drafted', 'clinical.report_autosaved', 'clinical.report_version_saved', 'clinical.report_submitted', 'clinical.report_commented', 'clinical.report_returned']));
   });
+  it('hides archived-child review metadata and restores queue visibility without restoring therapist assignments', async () => {
+    // Isolated, disposable synthetic fixture: preserving the original report
+    // lifecycle test is essential because archive permanently ends assignments.
+    const therapist = await staff('archive-therapist@prog.test', ['THERAPIST']);
+    const sup = await staff('archive-supervisor@prog.test', ['CLINICAL_SUPERVISOR'], []);
+    const kid = (await post(h, c('children'), admin, {
+      firstName: 'Archived', lastName: 'Fixture', dateOfBirth: '2019-04-02', services: ['speech'],
+    }).expect(201)).body.id;
+    await post(h, c(`children/${kid}/assignments`), admin, {
+      membershipId: therapist.body.activeContext.membershipId, service: 'speech', isLead: true,
+    }).expect(201);
+    const report = await h.prisma.progressReport.create({ data: {
+      centerId, childId: kid, membershipId: therapist.body.activeContext.membershipId,
+      service: 'speech', title: 'Disposable pending review', status: 'IN_REVIEW',
+      periodStart: new Date('2026-09-01T00:00:00Z'), periodEnd: new Date('2026-10-19T00:00:00Z'),
+      createdAt: new Date(h.clock.t), updatedAt: new Date(h.clock.t),
+    } });
+    const queue = c('clinical/reports/review-queue');
+    expect((await get(sup, queue).expect(200)).body).toMatchObject({ total: 1 });
+    await post(h, c(`children/${kid}/archive`), admin, {
+      reason: 'Disposable archive-scope regression',
+    }).expect(200);
+    expect((await get(sup, queue).expect(200)).body).toMatchObject({ total: 0, items: [] });
+    expect((await h.prisma.progressReport.findUniqueOrThrow({ where: { id: report.id } })).status).toBe('IN_REVIEW');
+    const ended = await h.prisma.careAssignment.count({
+      where: { childId: kid, membershipId: therapist.body.activeContext.membershipId, endedAt: null },
+    });
+    expect(ended).toBe(0);
+    await post(h, c(`children/${kid}/restore`), admin, {}).expect(200);
+    expect((await get(sup, queue).expect(200)).body).toMatchObject({ total: 1 });
+    await get(therapist, c(`clinical/reports/${report.id}`)).expect(404);
+  });
+
 });
