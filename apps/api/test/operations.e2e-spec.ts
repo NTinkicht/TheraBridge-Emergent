@@ -207,7 +207,7 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
       specialties: ['speech'], firstAdmin: { email: 'other-ref@ops.test', displayName: 'External Admin' },
     }).expect(201)).body.id;
     const outsider = await accept('other-ref@ops.test');
-    const outsiderMembership = outsider.body.activeContext.membershipId;
+    const outsiderMembership = outsider.s.body.activeContext.membershipId;
     await expect(h.prisma.$executeRaw`UPDATE "child"
       SET "referent_membership_id" = ${outsiderMembership}::uuid WHERE id = ${kid}::uuid`)
       .rejects.toThrow(/referent must be/);
