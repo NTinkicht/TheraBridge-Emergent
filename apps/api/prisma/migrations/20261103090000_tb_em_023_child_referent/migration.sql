@@ -33,7 +33,7 @@ BEGIN
   IF NEW.referent_membership_id IS NOT NULL AND NOT EXISTS (
     SELECT 1 FROM "care_assignment" a
     JOIN "membership" m ON m.id = a.membership_id
-    JOIN "user" u ON u.id = m.user_id
+    JOIN "app_user" u ON u.id = m.user_id
     WHERE a.child_id = NEW.id AND a.center_id = NEW.center_id
       AND a.membership_id = NEW.referent_membership_id AND a.ended_at IS NULL
       AND m.center_id = NEW.center_id AND m.status = 'ACTIVE'
