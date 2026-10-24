@@ -456,10 +456,10 @@ try {
     await secondRow.waitFor();
     await page.getByTestId('filter-service').selectOption('speech');
     await secondRow.waitFor();
-    assert.equal(await reviewRow.count(), 0, 'Service filter must exclude occupational reviews');
+    await reviewRow.waitFor({ state: 'detached' }); // after the server response
     await page.getByTestId('filter-service').selectOption('occupational');
     await reviewRow.waitFor();
-    assert.equal(await secondRow.count(), 0, 'Occupational filter must exclude speech reviews');
+    await secondRow.waitFor({ state: 'detached' }); // server-filtered result
     await page.getByTestId('filter-service').selectOption('');
     await secondRow.waitFor();
     await reviewRow.waitFor();
