@@ -106,7 +106,8 @@ test('partial cookie FAIL survives later viewport crash and keeps confirmed clea
    }),
    close:async()=>{}
   };
-  const mockBrowser={newContext:async()=>context,close:async()=>{}};
+  // Simulate transport teardown rejection after a real per-role failure.
+  const mockBrowser={newContext:async()=>context,close:async()=>{throw Error('SIMULATED_CLOSE_FAILURE');}};
   const result=await run({credentialsFile:file,output:join(path,'out'),launchBrowser:async()=>mockBrowser});
   assert.equal(result,1);
   const ledger=JSON.parse(await readFile(join(path,'out','hosted-readonly-results.json'),'utf8'));

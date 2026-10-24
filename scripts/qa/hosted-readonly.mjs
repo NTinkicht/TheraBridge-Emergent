@@ -195,7 +195,10 @@ export async function run({credentialsFile=process.env.QA_USERS_FILE,output=proc
      else try{rows.push(...await assess(browser,role,users[role],out));}
      catch{rows.push(...blocked(role,'role_browser_execution_incomplete'));}
     }
-   }finally{await browser.close();}
+   }finally{
+    // Browser teardown may reject after a crash. Do not discard completed rows.
+    try{await browser.close();}catch{/* persist already collected evidence */}
+   }
   }
  }else for(const role of Object.keys(ROLES))rows.push(...blocked(role,'private_credentials_missing'));
  rows.sort((a,b)=>Number(a.id.slice(2))-Number(b.id.slice(2)));
