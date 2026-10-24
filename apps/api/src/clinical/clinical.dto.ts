@@ -142,3 +142,19 @@ export class TemplateUpdateDto {
 export class TemplateCopyDto {
   @IsString() @MinLength(3) @MaxLength(120) title!: string;
 }
+
+
+/** Each claim is explicitly linked by its therapist to verifiable source keys. */
+export class SuggestionClaimDto {
+  @IsString() @MinLength(3) @MaxLength(1200) text!: string;
+  @IsArray() @ArrayMaxSize(20) @IsString({ each: true }) @MinLength(3, { each: true }) @MaxLength(150, { each: true }) sourceRefs!: string[];
+}
+export class ReportSuggestionDecisionDto {
+  @IsIn(['assessment', 'goals', 'sessions']) section!: 'assessment' | 'goals' | 'sessions';
+  @IsIn(['APPLIED', 'OMITTED', 'RECONSIDERED']) action!: 'APPLIED' | 'OMITTED' | 'RECONSIDERED';
+  @IsInt() @Min(1) version!: number;
+  @IsUUID() idempotencyKey!: string;
+  @IsString() @MinLength(64) @MaxLength(64) @Matches(/^[a-f0-9]{64}$/) proposalFingerprint!: string;
+  @IsOptional() @IsString() @MaxLength(500) reason?: string;
+  @IsOptional() @IsArray() @ArrayMaxSize(12) @ValidateNested({ each: true }) @Type(() => SuggestionClaimDto) claims?: SuggestionClaimDto[];
+}

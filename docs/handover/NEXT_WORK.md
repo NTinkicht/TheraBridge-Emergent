@@ -1,6 +1,6 @@
-## TB-EM-020 — isolated activity-library backend draft (2026-10-24)
+## TB-EM-021 — source-traced draft decision ledger (backend-only draft)
 
-Next verify hosted exact-head CI and obtain independent read-only code/security review of activity-library duplication and optimistic author edits. Preserve live Render demo and ongoing Codex external UI QA. No change to release/consent, external AI, real STT, or patient scope. Do not merge or deploy without owner authorization. See docs/product/TB-EM-020-ACTIVITY-LIBRARY.md.
+Independent external Codex UI acceptance on the current Render synthetic demo remains isolated. Do not redeploy or adjust Render/Neon. Backend PR creates non-authorizing append-only decisions; the clinician-facing ReportEditor remains UI-local and requires a **separate sequential PR** once this foundation is CI-qualified and reviewed. See docs/product/TB-EM-021-DECISION-LEDGER.md. No new clinical permission grant is allowed.
 
 # Next work unit
 
