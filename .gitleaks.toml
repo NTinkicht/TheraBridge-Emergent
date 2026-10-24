@@ -21,6 +21,9 @@ regexes = [
   '''^\$\{?[A-Z_][A-Z0-9_]*''',
   '''\$\{''',
   '''^[a-z0-9]+(-[a-z0-9]+)+$''',
+  # Exact synthetic-only test literals retained in earlier PR #73 commits.
+  '''^LOCAL_FIXTURE_ONLY$''',
+  '''^PRIVATE_CSRF$''',
 ]
 
 [[rules]]
