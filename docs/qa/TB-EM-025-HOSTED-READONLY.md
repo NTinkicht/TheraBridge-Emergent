@@ -20,3 +20,5 @@ N-052..N-086: checks role-specific major pages, real viewport, overflow/clipping
 N-087..N-093: evaluates browser session-cookie attributes AND login Set-Cookie header attributes in memory: __Host prefix, Secure, HttpOnly, SameSite=Lax, Path=/, no Domain, host scope. Cookie values are never written.
 
 The report's deployment SHA is metadata, not independently verified. Do not promote results into issue #61 until the deployed build and evidence are confirmed. Isolated tenant, restricted clinical runtime, error/retry and remaining N-094..N-104 checks are NOT implemented here. Real STT, AI, signing, consent, report release, safeguarding, messaging and pilot/production remain disabled.
+
+Scanner qualification: the two original non-secret test sentinels in PR history are allowlisted by exact value only in the custom credential-literal rule; current tests use existing ci_only_* conventions. Full-history Gitleaks remains enabled with no skip or repository-wide disablement.

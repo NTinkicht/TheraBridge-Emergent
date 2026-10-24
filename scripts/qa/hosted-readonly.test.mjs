@@ -56,7 +56,7 @@ test('unavailable Playwright/Chromium emits blocked evidence, never exits withou
  const dir=await mkdtemp(join(tmpdir(),'tb-em-025-launch-'));
  try{
   const users=join(dir,'users.json');
-  await writeFile(users,JSON.stringify({platform:{email:'fictional@example.invalid',password:'LOCAL_FIXTURE_ONLY'}}),{mode:0o600});
+  await writeFile(users,JSON.stringify({platform:{email:'fictional@example.invalid',password:'ci_only_password_fixture'}}),{mode:0o600});
   await chmod(users,0o600);
   // The offline-contracts job intentionally does not install Playwright.
   // Any runtime without a working Chromium must report 42 BLOCKED.
@@ -71,9 +71,9 @@ test('unavailable Playwright/Chromium emits blocked evidence, never exits withou
 test('session logout uses approved-origin context requests even without a usable page',async()=>{
  const seen=[];
  const context={request:{
-  get:async url=>{seen.push({method:'GET',url});return {ok:()=>true,json:async()=>({csrfToken:'PRIVATE_CSRF'})};},
+  get:async url=>{seen.push({method:'GET',url});return {ok:()=>true,json:async()=>({csrfToken:'ci_only_csrf_fixture'})};},
   post:async (url,opts)=>{seen.push({method:'POST',url,origin:opts.headers.Origin,
-    tokenPresent:opts.headers['X-CSRF-Token']==='PRIVATE_CSRF'});return {status:()=>204};}
+    tokenPresent:opts.headers['X-CSRF-Token']==='ci_only_csrf_fixture'});return {status:()=>204};}
  }};
  const {logout}=await import('./hosted-readonly.mjs');
  assert.equal(await logout(context),true);
