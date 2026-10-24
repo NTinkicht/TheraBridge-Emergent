@@ -61,6 +61,9 @@ function Board({ session, onError }: { session: SessionInfo; onError: (e: unknow
           <Field label="To" type="date" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} testId="filter-to" />
         </>}
       </Card>
+      {session.activeContext?.role === 'CLINICAL_SUPERVISOR' && (
+        <SupervisorReviewQueue centerId={centerId} childId={f.childId} service={f.service} onError={onError} />
+      )}
       {invalid && <p className="rounded-control bg-status-dangerSurface p-3 text-[14px] text-status-danger" role="alert" data-testid="progress-period-error">Choose a start date on or before the end date.</p>}
       {!invalid && failed && <ErrorState onRetry={() => void reload()} testId="progress-error" />}
       {!invalid && !failed && !data && <Card className="p-5"><SkeletonRows rows={4} testId="progress-loading" /></Card>}
@@ -72,9 +75,6 @@ function Board({ session, onError }: { session: SessionInfo; onError: (e: unknow
             <Metric label="Not enough data" value={goals.filter((g) => g.status === 'insufficient').length} sub="one observation" icon={LineChart} accent="caution" testId="metric-insufficient" />
             <Metric label="No data" value={goals.filter((g) => g.status === 'none').length} sub="nothing recorded" icon={LineChart} testId="metric-none" />
           </div>
-          {session.activeContext?.role === 'CLINICAL_SUPERVISOR' && (
-            <SupervisorReviewQueue centerId={centerId} childId={f.childId} service={f.service} onError={onError} />
-          )}
           {!goals.length && <EmptyState icon={LineChart} title={data.children.length ? 'No goals match these filters' : 'No children assigned to you'} body={data.children.length ? 'Goals appear here once a therapy plan has goals. Try another child, service or goal.' : 'Progress appears for children you are assigned to.'} testId="progress-empty" />}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-2" data-testid="progress-goals">{goals.map((g) => <GoalCard key={`${g.childId}-${g.service}-${g.key}`} g={g} period={data.period} />)}</div>
         </>
