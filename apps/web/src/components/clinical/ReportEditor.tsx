@@ -135,7 +135,7 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
   };
 
   const act = async (fn: (v: number) => Promise<{ number: number }>, ok: (n: number) => string) => {
-    if (decisionBusy.current) return;
+    if (decisionBusy.current || handoffBusy.current) return;
     setNotice(null);
     if (!(await save())) return;
     try { const r = await fn(ver.current); onSuccess(ok(r.number)); await onReload(); }
