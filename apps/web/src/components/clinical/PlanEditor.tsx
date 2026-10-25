@@ -211,7 +211,7 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
             <VersionEditor centerId={centerId} ws={ws} planId={p.id} service={p.service}
               v={current} source={p.source} run={run} onDirtyChange={onDirtyChange}
               otherPlanDirty={Object.entries(dirtyVersions).some(([id, dirty]) => id !== current.id && dirty)} />
-            <PlanVersionHistory key={p.id} plan={p} templates={ws.templates}
+            <PlanVersionHistory key={p.id} plan={p} templates={ws.templates} timezone={ws.timezone}
               target={historicGoal?.planId === p.id ? { versionId: historicGoal.versionId, goalKey: historicGoal.goalKey } : undefined} />
           </Card>
         );
