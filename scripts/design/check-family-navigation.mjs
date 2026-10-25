@@ -16,11 +16,12 @@ const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 const results = [];
 async function visibleSelection(width) {
-  const selector = width < 768 ? '[data-testid="mobile-nav"] [aria-current="page"]' : '[data-testid="product-sidebar"] [aria-current="page"]';
+  const selector = width < 768 ? '[data-testid="mobile-nav-select"]' : '[data-testid="product-sidebar"] [aria-current="page"]';
   await page.waitForSelector(selector, { state: 'visible' });
   await page.waitForTimeout(400);
   const box = await page.locator(selector).boundingBox();
   assert(box && box.x >= 0 && box.x + box.width <= width, `Selection clipped at ${width}: ${JSON.stringify(box)}`);
+  if(width < 768) assert(['/app/practice','/app/family-progress'].includes(await page.getByTestId('mobile-nav-select').inputValue()));
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), 0);
   return box;
 }
@@ -36,15 +37,11 @@ try {
     }
     if (width < 768) {
       await page.goto(base + '/app/practice', { waitUntil: 'networkidle' });
-      const nav = page.getByTestId('mobile-nav');
-      assert.equal(await nav.getAttribute('data-overflow-left'), 'true');
-      // Keyboard traversal must expose the focused link and the existing global focus ring.
-      await page.getByTestId('mobile-nav-home').focus();
-      await page.keyboard.press('Tab');
-      await page.waitForTimeout(400);
+      const nav = page.getByTestId('mobile-nav-select');
+      await nav.focus();
       const focus = await page.evaluate(() => { const e = document.activeElement; const r = e.getBoundingClientRect(); return { left: r.left, right: r.right, outline: getComputedStyle(e).outlineStyle }; });
       assert(focus.left >= 0 && focus.right <= width && focus.outline !== 'none', JSON.stringify(focus));
-      await page.getByTestId('mobile-nav-family-progress').click();
+      await nav.selectOption('/app/family-progress');
       await page.waitForURL('**/app/family-progress');
       await visibleSelection(width);
       // Resize from the desktop sidebar back to a narrow phone.
@@ -54,8 +51,8 @@ try {
     }
   }
   // Browser-only stress fixture: no database grants or authorization changes.
-  // Two guardian workspace choices add the existing Switch link; longer labels
-  // exercise the same strip without adding an unapproved localization system.
+  // Two guardian workspace choices add the Switch option; longer labels
+  // exercise the same native selector without adding localization infrastructure.
   await page.route('**/api/auth/session', async route => {
     const response = await route.fetch();
     const session = await response.json();
@@ -67,12 +64,9 @@ try {
     await page.goto(base + '/app/practice', { waitUntil: 'networkidle' });
     await visibleSelection(width);
     await page.evaluate(() => {
-      const nav = document.querySelector('[data-testid="mobile-nav"]');
-      const labels = { home: 'Familienübersicht', messages: 'Nachrichten', activities: 'Aktivitäten', practice: 'Übungen zu Hause', 'family-progress': 'Fortschrittsberichte', security: 'Kontosicherheit', switch: 'Familie wechseln' };
-      for (const [key, label] of Object.entries(labels)) {
-        const link = nav.querySelector(`[data-testid="mobile-nav-${key}"]`);
-        if (link) { for (const node of [...link.childNodes]) if (node.nodeType === Node.TEXT_NODE) node.textContent = label; }
-      }
+      const nav = document.querySelector('[data-testid="mobile-nav-select"]');
+      const labels = { '/app': 'Familienübersicht', '/app/messages': 'Nachrichten', '/app/activities': 'Aktivitäten', '/app/practice': 'Übungen zu Hause', '/app/family-progress': 'Fortschrittsberichte', '/account/security': 'Kontosicherheit', '/select-context': 'Familie wechseln' };
+      for (const option of nav.options) if (labels[option.value]) option.textContent = labels[option.value];
     });
     await visibleSelection(width);
     await page.screenshot({ path: `${out}/long-labels-multiple-contexts-${width}.png`, fullPage: true });

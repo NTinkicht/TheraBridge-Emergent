@@ -518,19 +518,20 @@ try {
       const colors = await page.evaluate(() => {
         const shell = document.querySelector('[data-testid="product-shell"]');
         const desktop = document.querySelector('[data-testid="nav-activities"]');
-        const mobile = document.querySelector('[data-testid="mobile-nav-activities"]');
-        const active = innerWidth < 768 ? mobile : desktop;
-        const indicator = active?.querySelector('[aria-hidden="true"]');
+        const mobile = document.querySelector('[data-testid="mobile-nav-select"]');
+        const isMobile = innerWidth < 768;
+        const active = isMobile ? mobile : desktop;
+        const indicator = isMobile ? mobile : active?.querySelector('[aria-hidden="true"]');
         const computed = active && getComputedStyle(active);
         return {
           bodyWidth: document.documentElement.scrollWidth,
           themed: !!shell?.classList.contains('theme-family-auto'),
-          current: active?.getAttribute('aria-current'),
+          current: isMobile ? (mobile?.value === '/app/activities' ? 'page' : null) : active?.getAttribute('aria-current'),
           accent: shell && getComputedStyle(shell).getPropertyValue('--fam-accent').trim(),
           tint: shell && getComputedStyle(shell).getPropertyValue('--fam-accentTint').trim(),
           background: computed?.backgroundColor,
           foreground: computed?.color,
-          indicator: indicator && getComputedStyle(indicator).backgroundColor,
+          indicator: isMobile ? computed?.color : (indicator && getComputedStyle(indicator).backgroundColor),
         };
       });
       assert(colors.bodyWidth <= width + 8, 'Family activities overflow at ' + width + 'px: ' + JSON.stringify(colors));

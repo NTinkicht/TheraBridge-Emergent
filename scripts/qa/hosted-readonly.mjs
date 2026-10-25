@@ -110,6 +110,28 @@ async function assess(browser,role,user,directory){
    }
    if(clicked.status==='rejected'||reply.status==='rejected'||!loggedIn)
     throw Error('login_not_confirmed');
+   // Wait for client-side Next.js redirect before deciding whether context selection is needed.
+   await page.waitForURL(u=>u.pathname==='/select-context'||u.pathname==='/app'||u.pathname.startsWith('/app/'),{timeout:20000});
+   // Accounts with multiple authorized contexts legitimately land on /select-context.
+   // Select only an unambiguous, already-authorized role; never bypass permissions.
+   if(page.url?.().includes('/select-context')){
+    const selected=await page.evaluate(async ([email,expected])=>{
+     const response=await fetch('/api/auth/session',{credentials:'include'});
+     if(!response.ok)return false;
+     const session=await response.json();
+     if(session.user?.email?.toLowerCase()!==email.toLowerCase())return false;
+     const matches=(session.contexts??[]).filter(ctx=>ctx.role===expected);
+     if(matches.length!==1)return false;
+     const context=matches[0];
+     const choice=context.type==='platform'?{platform:true}:{membershipId:context.membershipId,role:expected};
+     const change=await fetch('/api/auth/context',{method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json','X-CSRF-Token':session.csrfToken},
+      body:JSON.stringify(choice)});
+     return change.ok;
+    },[user.email,c.role]);
+    if(!selected)throw Error('authorized_context_not_unique_or_unavailable');
+    await page.goto(BASE+'/app',{waitUntil:'domcontentloaded',timeout:25000});
+   }
    await page.waitForURL(u=>u.pathname==='/app'||u.pathname.startsWith('/app/'),{timeout:20000});
    await page.getByTestId('product-shell').waitFor({timeout:15000});
    const valid=await page.evaluate(async ([email,expected])=>{
@@ -235,6 +257,11 @@ export async function run({credentialsFile=process.env.QA_USERS_FILE,output=proc
   caution:'No automatic updates to issue #61; sensitive screenshots remain private. Manual dialog/visual checks required.'};
  const path=join(out,'hosted-readonly-results.json');
  await writeFile(path,JSON.stringify(report,null,2)+'\n',{mode:0o600});
+ // Non-sensitive one-line summary. Detailed screenshots stay encrypted.
+ console.log('QA_PUBLIC_SUMMARY '+JSON.stringify({counts,blockedReasons:Object.fromEntries(
+  [...new Set(rows.filter(r=>r.status==='BLOCKED').map(r=>r.reason))].map(reason=>
+   [reason,rows.filter(r=>r.status==='BLOCKED'&&r.reason===reason).length]))}));
+
  console.log(JSON.stringify({report:path,counts,total:rows.length}));
  return counts.FAIL===0&&counts.BLOCKED===0?0:1;
 }

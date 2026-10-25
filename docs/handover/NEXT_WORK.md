@@ -1,3 +1,10 @@
+## 2026-10-25 — PR #86 remaining gates and follow-up
+
+1. Verify documentation-only checkpoint commit, exact-new-head CI and review; confirm Codex P1 is addressed and all review threads resolved. Apply protected-branch/independent-approval requirements; do not self-approve or bypass. Owner to merge after gates are satisfied; repository AGENTS.md prohibits automatic merging.
+2. Do not count hosted acceptance from offline tests. Following an explicitly authorized deployment, run focused synthetic seven-role smoke checks; only an approved complete evidence review can change #61's 53 PASS / 0 FAIL / 47 BLOCKED / 4 NOT TESTED (+4 supplemental PASS). Investigate hosted session cleanup warnings separately; no automatic new hosted run.
+3. Advisory follow-up P3 (not PR #86 merge blockers): independent UI assertion instead of duplicate indicator color, CI dropdown interaction/permission checks, activity creation aria-controls and toggle/save regressions, and exact pathname comparison for /select-context. Avoid re-running the entire 104-case suite for small fixes.
+4. Continue synthetic Child 360, care referent, evidence traceability and clinician-controlled home plans workstream; real STT, clinical signing, release, consent and production remain policy-gated.
+
 ## 2026-10-25 — TB-EM-028 hosted QA run #40175463830; container path fix (PR pending)
 
 The first authorized hosted workflow run 40175463830 reached Chromium, private synthetic seven-role credential preflight and public /api/health successfully. Collector reported **1 PASS / 0 FAIL / 41 BLOCKED** for 42 N-052..N-093 test outcomes, plus session logout warnings; these are *new run receipts, not accepted case updates*. Workflow then failed writing `collector-exit` to GitHub's host-expanded `runner.temp` path `/home/runner/work/_temp` from inside the Playwright container (mount actually exposed at `/__w/_temp`). As a result no encrypted artifact was uploaded and #61 remains **53 PASS / 0 FAIL / 47 BLOCKED / 4 NOT TESTED** (+4 historical supplemental PASS).
