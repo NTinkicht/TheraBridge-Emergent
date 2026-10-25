@@ -47,7 +47,13 @@ export function ReportToPlanHandoff({ centerId, detail, prepare }: { centerId: s
     return () => { active = false; };
   }, [centerId, sourceId, open]);
 
-  if (!detail.canEdit || detail.versions.length === 0) return null;
+  if (!detail.canEdit) return null;
+  if (detail.versions.length === 0) return (
+    <Card className="space-y-2 p-5" testId="report-to-plan-needs-version">
+      <h2 className="text-[17px] font-semibold">Prepare a home-plan draft</h2>
+      <p className="text-[13px] text-brand-inkMuted">First choose <strong>Save version</strong> in the report editor. That captures an exact evidence snapshot; then you can select its recorded goals to start an internal plan draft. No automatic release or recommendations.</p>
+    </Card>
+  );
   const goals: SourceGoal[] = (snapshot?.evidence.goals ?? []).filter(
     (g): g is SourceGoal => typeof g.planVersionId === 'string' && !!g.planVersionId,
   );
