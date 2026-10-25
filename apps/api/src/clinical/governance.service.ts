@@ -92,7 +92,18 @@ export class GovernanceService {
       if (d.kind === 'REPORT' && dto.action === 'SUBMIT') {
         const last = await tx.reportVersion.aggregate({ where: { reportId: id }, _max: { number: true } });
         number = (last._max.number ?? 0) + 1;
-        await tx.reportVersion.create({ data: { centerId, reportId: id, number: (last._max.number ?? 0) + 1, kind: 'SUBMITTED', sections: json(d.content.sections), evidence: s.evidence as object, authorId: v.userId, createdAt: now } });
+        const decisionIds = await tx.reportSuggestionDecision.findMany({
+          where: { centerId, reportId: id, action: 'APPLIED' },
+          select: { id: true }, orderBy: { createdAt: 'asc' },
+        });
+        // ReportVersion itself is immutable; bind the exact applied ledger
+        // decisions present at submission time, not later same-text decisions.
+        const storedEvidence = s.evidence as Record<string, unknown>;
+        await tx.reportVersion.create({ data: { centerId, reportId: id,
+          number: (last._max.number ?? 0) + 1, kind: 'SUBMITTED',
+          sections: json(d.content.sections),
+          evidence: json({ ...storedEvidence, statementDecisionIds: decisionIds.map(d => d.id) }),
+          authorId: v.userId, createdAt: now } });
       }
       return { ...(number ? { number } : {}), status: to, version: dto.version + 1, snapshotId: s.id, notice: INTERNAL_NOTICE };
     });

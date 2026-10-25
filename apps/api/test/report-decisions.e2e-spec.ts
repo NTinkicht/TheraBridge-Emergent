@@ -77,24 +77,47 @@ describe('TB-EM-021 non-authorizing report suggestion decision ledger (real Post
     const observationId = (await post(h, W + '/observations', therapist, {
       planVersionId: plan.versionId, goalKey: 'words', observedOn: '2026-10-10', value: 30,
     }).expect(201)).body.id;
+    // TB-EM-035: source-picker links a saved goal-review checkpoint to
+    // EXACT plan version, goal and recorded observation. No inference.
+    await post(h, c(`clinical/plan-versions/${plan.versionId}/goal-checkpoints`), therapist, {
+      goalKey: 'words', reviewedOn: '2026-10-18',
+      summary: 'Reviewed this synthetic recorded value; no clinical inference.',
+      observationIds: [observationId], version: 2,
+    }).expect(200);
     const reportId = (await post(h, W + '/reports', therapist, {
       service: 'speech', title: 'Synthetic progress report',
       periodStart: '2026-09-01', periodEnd: '2026-10-19',
     }).expect(201)).body.id;
     const P = c(`clinical/reports/${reportId}`);
     const D = P + '/suggestion-decisions';
+    const initialVersion = await h.prisma.reportVersion.findFirstOrThrow({
+      where: { reportId, kind: 'CREATED' },
+    });
+    expect((await get(therapist,
+      c(`clinical/report-versions/${initialVersion.id}`)).expect(200)).body.statementTrace).toEqual([]);
     const first = (await get(therapist, D).expect(200)).body;
     expect(first).toMatchObject({ synthetic: true, released: false, clinicalAuthorization: false,
       claimValidation: 'REFERENCED_NOT_VERIFIED' });
     expect(first.latest.goals).toBeNull();
     const goalRef = `planVersion:${plan.versionId}:goal:words`;
+    const checkpoint = first.sources.goals.sources.find(
+      (source: { ref: string }) => source.ref.startsWith(`goalCheckpoint:${plan.versionId}:`),
+    );
+    expect(checkpoint?.label).toContain('Goal-review checkpoint 2026-10-18');
+    await post(h, D, therapist, { section: 'goals', action: 'APPLIED', version: 1,
+      proposalFingerprint: first.sources.goals.proposalFingerprint,
+      idempotencyKey: randomUUID(), claims: [{
+        text: 'Clinician reviewed the recorded goal checkpoint.',
+        sourceRefs: [`goalCheckpoint:${randomUUID()}:0`],
+      }] }).expect(422);
+
     expect(first.sources.goals.sources.map((s: { ref: string }) => s.ref)).toEqual(
       expect.arrayContaining([goalRef, `observation:${observationId}`]));
     const base = {
       section: 'goals', action: 'APPLIED', version: 1,
       proposalFingerprint: first.sources.goals.proposalFingerprint,
       idempotencyKey: randomUUID(),
-      claims: [{ text: 'One recorded value was 30 percent.', sourceRefs: [goalRef, `observation:${observationId}`] }],
+      claims: [{ text: 'One recorded value was 30 percent.', sourceRefs: [goalRef, `observation:${observationId}`, checkpoint.ref] }],
     };
     // Mechanical accuracy guard: a valid source cannot justify an invented 90
     // when the actual observation is 30, nor the wrong measurement unit.
@@ -136,7 +159,7 @@ describe('TB-EM-021 non-authorizing report suggestion decision ledger (real Post
     await post(h, D, therapist, { ...base, idempotencyKey: randomUUID() }).expect(409);
     const r = (await get(therapist, P).expect(200)).body;
     expect(r.report.sections.goals).toContain('One recorded value was 30 percent.');
-    expect(r.report.sections.goals).toContain(`- Claim 1: ${goalRef}, observation:${observationId}`);
+    expect(r.report.sections.goals).toContain(`- Claim 1: ${goalRef}, observation:${observationId}, ${checkpoint.ref}`);
     expect(r.report.sections.goals).toContain('Evidence references (internal draft; goals):');
     expect(r.report.status).toBe('DRAFT');
     const history = (await get(therapist, D).expect(200)).body;
@@ -145,8 +168,32 @@ describe('TB-EM-021 non-authorizing report suggestion decision ledger (real Post
       action: 'APPLIED', label: 'NON_CLINICAL_DRAFT' });
     expect(JSON.stringify(history.decisions)).not.toContain('One recorded value was');
     expect(history.latest.goals.claimMap).toEqual([expect.objectContaining({ index: 0,
-      sourceRefs: [goalRef, `observation:${observationId}`] })]);
+      sourceRefs: [goalRef, `observation:${observationId}`, checkpoint.ref] })]);
     const snap = (await post(h, P + '/versions', therapist, { version: 2 }).expect(201)).body;
+    const savedVersion = (await get(therapist, c(`clinical/report-versions/${(await h.prisma.reportVersion.findFirstOrThrow({ where: { reportId, number: snap.number } })).id}`)).expect(200)).body;
+    expect(savedVersion.claimValidation).toBe('REFERENCED_NOT_VERIFIED');
+    expect(savedVersion.released).toBe(false);
+    expect(savedVersion.evidence.checkpoints).toEqual(expect.arrayContaining([
+      expect.objectContaining({ ref: checkpoint.ref, planVersionId: plan.versionId, goalKey: 'words' }),
+    ]));
+    // The snapshot created before APPLIED must remain unlinked even when
+    // the later saved section has identical clinician wording.
+    expect((await get(therapist,
+      c(`clinical/report-versions/${initialVersion.id}`)).expect(200)).body.statementTrace).toEqual([]);
+    expect((await h.prisma.reportVersion.findUniqueOrThrow({ where: { id: initialVersion.id } }))
+      .evidence).toMatchObject({ statementDecisionIds: [] });
+    expect(savedVersion.evidence.statementDecisionIds).toContain(applied.id);
+    expect(savedVersion.statementTrace).toEqual([expect.objectContaining({
+      section: 'goals', status: 'LINKED_TO_SAVED_TEXT',
+      claims: [expect.objectContaining({ index: 1, text: 'One recorded value was 30 percent.',
+        sources: expect.arrayContaining([
+          expect.objectContaining({ ref: `observation:${observationId}` }),
+          expect.objectContaining({ ref: checkpoint.ref }),
+        ]) })],
+    })]);
+    await get(guardian, c(`clinical/report-versions/${savedVersion.id}`)).expect(403);
+    await get(ot, c(`clinical/report-versions/${savedVersion.id}`)).expect(404);
+    await get(other, c(`clinical/report-versions/${savedVersion.id}`)).expect(404);
     const frozen = await h.prisma.reportVersion.findFirstOrThrow({
       where: { reportId, number: snap.number },
     });

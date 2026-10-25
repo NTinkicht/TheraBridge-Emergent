@@ -6,6 +6,7 @@ import type { Viewer } from '../operations/children.service';
 import { TrialService } from '../operations/trial.service';
 import { ClinicalService, LOCKED, asDate, day } from './clinical.service';
 import { EDITABLE, fingerprint } from './governance-core';
+import { traceSavedStatements } from './report-statement-trace';
 import type { ProgressQueryDto, ReportCreateDto, ReportSaveDto, ReviewDto, ReportToPlanDraftDto } from './clinical.dto';
 
 const DAY = 86_400_000;
@@ -71,12 +72,32 @@ export class ReportsService {
     });
     const obs = selected.length ? await db.observation.findMany({ where: { centerId, childId, planVersionId: { in: selected.map(p => p.current.id) }, observedOn: { lte: to } }, orderBy: [{ observedOn: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }] }) : [];
     const definitions = selected.map(({ plan, current }) => ({ id: plan.id, title: plan.title, versionId: current.id, versionNumber: current.number, status: current.status }));
+    // A checkpoint is an immutable, internal clinician review of one exact
+    // version and goal. Expose only source identity / fingerprint here, not
+    // its narrative, and never turn it into an outcome or approval.
+    const checkpoints = selected.flatMap(({ current }) => {
+      const keys = new Set((current.goals as Goal[]).map(g => g.key));
+      return (Array.isArray(current.reviewNotes) ? current.reviewNotes : []).flatMap((raw, index) => {
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return [];
+        const item = raw as Record<string, unknown>;
+        if (item.kind !== 'GOAL_CHECKPOINT' || typeof item.goalKey !== 'string' || !keys.has(item.goalKey) ||
+            typeof item.reviewedOn !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(item.reviewedOn) ||
+            item.reviewedOn < day(from) || item.reviewedOn > day(to) || typeof item.at !== 'string') return [];
+        return [{ ref: `goalCheckpoint:${current.id}:${index}`,
+          planVersionId: current.id, goalKey: item.goalKey, reviewedOn: item.reviewedOn,
+          fingerprint: fingerprint({ planVersionId: current.id, index, goalKey: item.goalKey,
+            reviewedOn: item.reviewedOn, at: item.at, authorId: item.authorId,
+            summary: item.summary, observationIds: item.observationIds }) }];
+      });
+    });
+
     return {
       period: { from: day(from), to: day(to) },
       assessments: assessments.map((a) => ({ id: a.id, assessedOn: day(a.assessedOn), summary: a.summary })),
       plan: definitions.length === 1 ? definitions[0] : null,
       plans: definitions,
       goals: selected.flatMap(({plan, current}) => (current.goals as Goal[]).map(g => ({ planId: plan.id, planTitle: plan.title, planVersionId: current.id, ...goalEvidence(g, obs.filter(o => o.planVersionId === current.id && o.goalKey === g.key), from) }))),
+      checkpoints,
       sessions: { drafts, completedVisits },
     };
   }
@@ -204,7 +225,8 @@ export class ReportsService {
       const ev = await this.evidence(tx, centerId, childId, dto.service, from, to);
       const sections = prefill(ev);
       const r = await tx.progressReport.create({ data: { centerId, childId, membershipId: v.membershipId, service: dto.service, title: dto.title.trim(), periodStart: from, periodEnd: to, sections, createdAt: now, updatedAt: now } });
-      await tx.reportVersion.create({ data: { reportId: r.id, centerId, number: 1, kind: 'CREATED', sections, evidence: ev as unknown as Prisma.InputJsonValue, authorId: v.userId, createdAt: now } });
+      await tx.reportVersion.create({ data: { reportId: r.id, centerId, number: 1, kind: 'CREATED', sections,
+        evidence: { ...ev, statementDecisionIds: [] } as unknown as Prisma.InputJsonValue, authorId: v.userId, createdAt: now } });
       await logCenterEvent(tx, centerId, 'clinical.report_drafted', now, { actorUserId: v.userId, meta: { childId, reportId: r.id } });
       return { id: r.id };
     });
@@ -361,8 +383,20 @@ export class ReportsService {
 
   private async snapshot(tx: Tx, r: ProgressReport, v: Viewer, kind: 'SAVED' | 'SUBMITTED', now: Date) {
     const last = await tx.reportVersion.aggregate({ where: { reportId: r.id }, _max: { number: true } });
-    const ev = await this.evidence(tx, r.centerId, r.childId, r.service, r.periodStart, r.periodEnd);
-    return tx.reportVersion.create({ data: { reportId: r.id, centerId: r.centerId, number: (last._max.number ?? 0) + 1, kind, sections: r.sections as Prisma.InputJsonValue, evidence: ev as unknown as Prisma.InputJsonValue, authorId: v.userId, createdAt: now } });
+    const [ev, existingDecisions] = await Promise.all([
+      this.evidence(tx, r.centerId, r.childId, r.service, r.periodStart, r.periodEnd),
+      tx.reportSuggestionDecision.findMany({
+        where: { centerId: r.centerId, reportId: r.id, action: 'APPLIED' },
+        select: { id: true }, orderBy: { createdAt: 'asc' },
+      }),
+    ]);
+    // Freeze eligible ledger identities at the same transactional boundary as
+    // the report snapshot. Source hashes alone cannot prove chronology: a
+    // later decision must never be retroactively attributed to this version.
+    const frozenEvidence = { ...ev, statementDecisionIds: existingDecisions.map(d => d.id) };
+    return tx.reportVersion.create({ data: { reportId: r.id, centerId: r.centerId,
+      number: (last._max.number ?? 0) + 1, kind, sections: r.sections as Prisma.InputJsonValue,
+      evidence: frozenEvidence as unknown as Prisma.InputJsonValue, authorId: v.userId, createdAt: now } });
   }
 
   async saveVersion(centerId: string, v: Viewer, id: string, version: number) {
@@ -379,8 +413,28 @@ export class ReportsService {
     const x = await this.prisma.reportVersion.findFirst({ where: { id: versionId, centerId } });
     if (!x) throw new NotFoundException('Report version not found');
     await this.report(centerId, v, x.reportId);
-    const who = await this.names([x.authorId]);
-    return { id: x.id, reportId: x.reportId, number: x.number, kind: x.kind, sections: x.sections as Sections, evidence: x.evidence as unknown as Evidence, author: who(x.authorId), createdAt: x.createdAt };
+    const frozen = x.evidence as { statementDecisionIds?: unknown };
+    const eligible = Array.isArray(frozen?.statementDecisionIds) &&
+      frozen.statementDecisionIds.length <= 1000 &&
+      frozen.statementDecisionIds.every((id: unknown) =>
+        typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(id))
+      ? frozen.statementDecisionIds as string[] : [];
+    const [who, decisions] = await Promise.all([
+      this.names([x.authorId]),
+      this.prisma.reportSuggestionDecision.findMany({
+        where: { centerId, reportId: x.reportId, action: 'APPLIED', id: { in: eligible } },
+        select: { id: true, section: true, action: true, sectionHash: true,
+          passageHash: true, claimMap: true, sourceManifest: true },
+        orderBy: { createdAt: 'desc' }, take: 100,
+      }),
+    ]);
+    const statementTrace = traceSavedStatements(
+      x.sections as Sections, x.evidence as unknown as Evidence, decisions, x.reportId,
+    );
+    return { id: x.id, reportId: x.reportId, number: x.number, kind: x.kind,
+      sections: x.sections as Sections, evidence: x.evidence as unknown as Evidence,
+      statementTrace, author: who(x.authorId), createdAt: x.createdAt,
+      claimValidation: 'REFERENCED_NOT_VERIFIED' as const, released: false as const };
   }
 
 }
