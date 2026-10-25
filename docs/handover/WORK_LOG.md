@@ -1,3 +1,10 @@
+## 2026-10-26 — TB-EM-038 planned home-practice calendar
+
+- Verified PR #95 merged (main `10f86222365e5ca83d838856e682b64cca8c71dd`), started next single-slice feature branch from main.
+- Built monthly grouped, entirely read-only date display from the validated existing one-year WEEKLY/MONTHLY recurrence. Present in current plan and individually selected historical snapshot; no cross-version source association.
+- No API/database write, send/release, visit/attendance completion, or home-task progress semantics; date display uses centre-local YYYY-MM-DD without timezone conversion.
+- Pure source regression includes overlap, full late month beyond 40-item preview truncation, invalid/undated exclusion, month31 skipped, and source version isolation. Browser test exercises unsaved local calendar, Feb 31 guard and out-of-window month. Tests NOT YET VERIFIED when authored.
+
 ## 2026-10-25 — TB-EM-037 goal-review reference comparison
 
 - Owner-authorized squash merge of PR #94 after success (six jobs), Codex clean and Mistral no blocking findings, head `53bf0f267a9408640c3411d4b6332a7547ad6063` to main `40118d49a1486237f54d71f55cc02e1a7dc9d743`. P3 advisories deferred.

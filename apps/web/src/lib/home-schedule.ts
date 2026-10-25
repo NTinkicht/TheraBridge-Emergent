@@ -1,4 +1,4 @@
-import type { ActivitySchedule } from './clinical';
+import type { ActivitySchedule, HomeActivity } from './clinical';
 
 // Local-calendar-only, internal draft recurrence. No patient notifications,
 // appointment booking, approved home-plan delivery, or date-time conversion.
@@ -52,4 +52,41 @@ export function scheduleDescription(schedule: ActivitySchedule): string {
     'Weekly on ' + (schedule.weekdays ?? []).map(i => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][i]).join(', ') :
     'Monthly on day ' + (schedule.monthDay ?? '—');
   return label + ' · ' + schedule.startsOn + ' to ' + schedule.endsOn;
+}
+
+/**
+ * Exactly one local-calendar month of internal *planned* home-practice entries.
+ * Uses existing validated schedules. No bookings, completion data, outcomes,
+ * appointments, notifications, cross-plan joins, or family release.
+ */
+export interface PracticeCalendarEntry {
+  date: string;
+  activityIndex: number;
+  templateId: string;
+  goalKey?: string;
+}
+export function practiceCalendarMonth(activities: readonly HomeActivity[], month: string): PracticeCalendarEntry[] {
+  if (!/^\d{4}-\d{2}$/.test(month) || !isCalendarDay(month + '-01')) return [];
+  const year = Number(month.slice(0, 4));
+  const monthIndex = Number(month.slice(5, 7)) - 1;
+  const daysInMonth = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+  const valid = activities.map((activity, activityIndex) => ({
+    activity, activityIndex, schedule: activity.schedule,
+  })).filter(x => x.schedule && !scheduleProblem(x.schedule));
+  const results: PracticeCalendarEntry[] = [];
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = month + '-' + String(day).padStart(2, '0');
+    const weekday = new Date(Date.UTC(year, monthIndex, day)).getUTCDay();
+    for (const item of valid) {
+      const s = item.schedule!;
+      if (date < s.startsOn || date > s.endsOn) continue;
+      if (s.cadence === 'WEEKLY' ? s.weekdays!.includes(weekday) : s.monthDay === day) {
+        results.push({
+          date, activityIndex: item.activityIndex, templateId: item.activity.templateId,
+          goalKey: item.activity.goalKey,
+        });
+      }
+    }
+  }
+  return results;
 }

@@ -1,3 +1,9 @@
+## 2026-10-26 — TB-EM-038 qualification and continuation
+
+1. Open DRAFT Slice 9 PR; require exact-head six-job CI, including PostgreSQL/API, Next web build, pure month recurrence, seven-role synthetic browser responsive 320/390/768/1024/1440, live-session, preview-container, secret scan and Compose. Independently review local-calendar date math, no 40-item truncation, cross-version isolation, saved historical snapshot title preference, missing schedules and forbidden family/clinical release. Fix P0–P2, resolve threads, request owner approval before merge. No auto deploy.
+2. After merge, reassess remaining clinician experience: source-linked internal home-plan editor handoff, better longitudinal goal context, and scheduling usability. Avoid repeating already merged Milestone 1 slices. PR #97 reviewer integration is a separate control-plane PR; do not change it from this branch.
+3. Keep clinical sign/co-sign, consent grants, family clinical release, safeguarding escalation, external AI/STT, real records and live pilot blocked. Hosted #61 53 PASS / 0 FAIL / 47 BLOCKED / 4 NOT TESTED (+4 historical supplemental PASS).
+
 ## 2026-10-25 — TB-EM-037 qualification and next slice
 
 1. Open draft PR from `feature/tb-em-037-checkpoint-comparison`. Qualify exact HEAD with six standard CI jobs (PostgreSQL/API, Next builds, seven-role responsive loopback Chromium with fictional-only checkpoint overlay, preview, live-session, scan and Compose). Independently review strict same-version/goal boundaries, timestamp ordering, sparse/historical checkpoint handling, accessible responsive controls, no clinical inference or guardian access; fix P0–P2 and resolve threads before separately authorized merge. No automatic deploy.

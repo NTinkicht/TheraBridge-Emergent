@@ -480,6 +480,24 @@ try {
     assert(calendar.includes('2026-10-31') && calendar.includes('2026-12-31') &&
       calendar.includes('2027-01-31') && calendar.includes('2027-03-31'), 'Only existing month days are shown');
     assert(!calendar.includes('2027-02-31'), 'Monthly recurrence cannot invent invalid dates');
+    // TB-EM-038: view the UNSAVED dated schedule only in the clinician's
+    // existing authorized version; never post, release, or mark practice complete.
+    const practiceCalendar = page.getByTestId('home-practice-calendar').first();
+    await practiceCalendar.getByTestId('home-calendar-month').fill('2026-10');
+    await practiceCalendar.getByTestId('home-calendar-day-2026-10-31').click();
+    assert((await practiceCalendar.getByTestId('home-calendar-day-details').innerText())
+      .includes('Planned for 2026-10-31'), 'Plan calendar must render chosen October date');
+    assert((await practiceCalendar.getByTestId('home-calendar-item').count()) >= 1,
+      'October 31 monthly practice must appear');
+    assert((await practiceCalendar.innerText()).includes('Unsaved plan edits'),
+      'Calendar must clearly mark unsaved edits as a local preview');
+    await practiceCalendar.getByTestId('home-calendar-month').fill('2027-02');
+    assert.equal(await practiceCalendar.locator('[data-testid="home-calendar-day-2027-02-31"]').count(), 0,
+      'No February 31st date can be fabricated');
+    await practiceCalendar.getByTestId('home-calendar-month').fill('2029-05');
+    assert.equal(await practiceCalendar.getByTestId('home-calendar-item').count(), 0,
+      'Dates outside all bounded schedules must not appear');
+    await practiceCalendar.getByTestId('home-calendar-month').fill('2026-10');
     for (const width of [320, 390, 768, 1024, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       const actualWidth = await page.evaluate(() => document.documentElement.scrollWidth);

@@ -187,6 +187,47 @@ assert(schedule.scheduleProblem({ ...monthlySchedule, weekdays: [1] }));
 assert(schedule.scheduleProblem({ cadence: 'MONTHLY', startsOn: '2027-02-01', endsOn: '2027-02-28', monthDay: 31 }));
 assert(schedule.scheduleProblem({ cadence: 'WEEKLY', startsOn: '2026-10-19', endsOn: '2026-10-19', weekdays: [2] }));
 assert.deepEqual(schedule.scheduledDays({ ...monthlySchedule, monthDay: 32 }), []);
+// TB-EM-038: month expansion is independent of the 8/40-item preview cap,
+// uses only passed-in version activities, and never shifts nonexistent dates.
+const octoberPractice = schedule.practiceCalendarMonth([
+  { templateId: 'weekly', goalKey: 'g-one', frequency: 'Weekly', schedule: weeklySchedule },
+  { templateId: 'monthly', goalKey: 'g-two', frequency: 'Monthly', schedule: {
+    cadence: 'MONTHLY', startsOn: '2026-10-01', endsOn: '2027-03-31', monthDay: 31,
+  } },
+  { templateId: 'legacy', frequency: 'Every day (free text)' },
+  { templateId: 'invalid', frequency: 'Invalid', schedule: { cadence: 'MONTHLY',
+    startsOn: '2027-02-01', endsOn: '2027-02-28', monthDay: 31 } },
+], '2026-10');
+assert.deepEqual(octoberPractice.map(x => [x.date,x.activityIndex]), [
+  ['2026-10-19',0], ['2026-10-21',0], ['2026-10-26',0],
+  ['2026-10-28',0], ['2026-10-31',1],
+]);
+assert(octoberPractice.every(x => x.templateId !== 'legacy' && x.templateId !== 'invalid'));
+assert.deepEqual(schedule.practiceCalendarMonth([
+  { templateId: 'month31', frequency:'Monthly', schedule:{
+    cadence: 'MONTHLY', startsOn:'2027-01-01', endsOn:'2027-03-31', monthDay:31,
+  }},
+], '2027-02'), []);
+assert.deepEqual(schedule.practiceCalendarMonth([], '2027-15'), []);
+assert.deepEqual(schedule.practiceCalendarMonth([], '1999-12'), []);
+const overlapPractice = schedule.practiceCalendarMonth([
+  { templateId:'same-a', goalKey:'one', frequency:'weekly',schedule:weeklySchedule },
+  { templateId:'same-b', goalKey:'two', frequency:'weekly',schedule:weeklySchedule },
+], '2026-10');
+assert.deepEqual(overlapPractice.slice(0,2).map(x=>[x.date,x.templateId]),
+  [['2026-10-19','same-a'],['2026-10-19','same-b']]);
+assert.equal(overlapPractice.every(x=>!('completion' in x) && !('outcome' in x) && !('visit' in x)),true);
+const nearYearEnd = { cadence: 'WEEKLY', startsOn:'2026-10-01',
+  endsOn:'2027-09-30',weekdays:[0,1,2,3,4,5,6] };
+assert.equal(schedule.scheduleProblem(nearYearEnd),null);
+assert.equal(schedule.scheduledDays(nearYearEnd,1000).length,40);
+assert.equal(schedule.practiceCalendarMonth([{templateId:'late',frequency:'daily',
+  schedule:nearYearEnd}], '2027-09').length,30, 'Late month must not truncate at preview limit');
+assert.deepEqual(schedule.practiceCalendarMonth([{templateId:'later-version',
+  frequency:'monthly',schedule:monthlySchedule}], '2026-10').map(x=>x.templateId),
+  ['later-version'], 'Caller-supplied one version only; never infer same-goal continuity');
+
+// Negative old/legacy schedule shapes must never leak invalid entries.
 // Pure version-history comparison must include planning metadata, but never
 // imports observations from another version under the same goal key.
 const plannedGoal = { key: 'goal', title: 'Synthetic naming', measure: 'count', baseline: 1, target: 5 };
