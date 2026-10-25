@@ -130,13 +130,19 @@ export class ClinicalService {
     }) : [];
     type SourceMeta = { planId?: string; planVersionId?: string; reportId?: string;
       reportVersionId?: string; selectedGoalRefs?: unknown; draftOnly?: boolean; released?: boolean };
+    const uuid = (value: unknown): value is string =>
+      typeof value === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
     const sourceMetadata = sourceEvents.map(e => ({ ...(e.meta as SourceMeta), at: e.createdAt }))
       .filter(m => m.draftOnly === true && m.released === false &&
+        // Audit metadata is schemaless. A bad historical value must not be
+        // interpolated into any @db.Uuid query and break Child 360 entirely.
+        uuid(m.reportId) && uuid(m.reportVersionId) &&
         plans.some(p => p.id === m.planId && p.versions.some(x => x.id === m.planVersionId)) &&
         Array.isArray(m.selectedGoalRefs) && m.selectedGoalRefs.length <= 12 &&
         m.selectedGoalRefs.every((ref: unknown) => typeof ref === 'string' &&
-          /^[0-9a-f-]{36}:[a-z0-9-]{1,40}$/.test(ref)) &&
-        typeof m.reportId === 'string' && typeof m.reportVersionId === 'string');
+          uuid(ref.slice(0, 36)) && ref[36] === ':' &&
+          /^[a-z0-9-]{1,40}$/.test(ref.slice(37))));
     const reportsForSources = sourceMetadata.length ? await this.prisma.progressReport.findMany({
       where: { centerId, childId, id: { in: uniq(sourceMetadata.map(m => m.reportId!)) },
         service: { in: uniq(plans.map(p => p.service)) } },
