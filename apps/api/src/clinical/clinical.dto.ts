@@ -66,6 +66,16 @@ export class PlanVersionUpdateDto {
   @IsArray() @ArrayMaxSize(10) @ValidateNested({ each: true }) @Type(() => HomeActivityDto) homeActivities!: HomeActivityDto[];
   @IsInt() @Min(1) version!: number;
 }
+// A checkpoint is an internal therapist-authored review *record*, not a goal
+// outcome or supervisor authorization. Observation sources are UUIDs only.
+export class GoalReviewCheckpointDto {
+  @Matches(/^[a-z0-9-]{1,40}$/) goalKey!: string;
+  @Matches(DATE) reviewedOn!: string;
+  @IsString() @MinLength(10) @MaxLength(1000) summary!: string;
+  @IsArray() @ArrayMaxSize(20) @IsUUID('4', { each: true }) observationIds!: string[];
+  @IsInt() @Min(1) version!: number;
+}
+
 export class ReviewDto {
   @IsInt() @Min(1) version!: number;
   @IsString() @MinLength(3) @MaxLength(1000) comment!: string;
