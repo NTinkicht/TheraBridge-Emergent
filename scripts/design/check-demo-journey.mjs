@@ -476,6 +476,58 @@ try {
     }
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.getByTestId('compare-close').click();
+    // TB-EM-036: presentation-only overlay of a fictional claim-to-source
+    // payload. Real API fingerprint/authorization tests remain separate.
+    const savedVersionRoute = '**/clinical/report-versions/*';
+    await page.route(savedVersionRoute, async route => {
+      const response = await route.fetch();
+      if (response.status() !== 200) return route.fulfill({ response });
+      const saved = await response.json();
+      const goal = saved.evidence?.goals?.find(g => g.planVersionId);
+      assert(goal, 'Synthetic saved version needs an existing scoped goal');
+      const source = { ref: 'planVersion:' + goal.planVersionId + ':goal:' + goal.key,
+        label: 'Fictional goal reference for browser presentation test' };
+      await route.fulfill({ response, json: {
+        ...saved,
+        statementTrace: [
+          { section: 'goals', status: 'LINKED_TO_SAVED_TEXT', decisionId: 'synthetic-overlay',
+            passage: 'Fictional first statement\\n\\nFictional second statement',
+            claims: [
+              { index: 1, text: 'Fictional first statement', sources: [source] },
+              { index: 2, text: 'Fictional second statement', sources: [source] },
+            ], claimValidation: 'REFERENCED_NOT_VERIFIED' },
+          { section: 'sessions', status: 'SOURCE_MISMATCH', decisionId: 'synthetic-warning',
+            passage: null, claims: [], claimValidation: 'REFERENCED_NOT_VERIFIED' },
+        ],
+      } });
+    });
+    await page.locator('[data-testid^="history-compare-"]').first().click();
+    await page.getByTestId('statement-trace-inspector').waitFor();
+    assert((await page.getByTestId('statement-trace-result-count').innerText()).includes('Showing 2 of 2'),
+      'The inspector must count both source-linked statements');
+    assert(await page.getByTestId('statement-trace-status-sessions').isVisible(),
+      'A mismatched source must remain visibly non-attributable');
+    await page.getByTestId('statement-trace-section-filter').selectOption('goals');
+    await page.getByTestId('statement-trace-search').fill('second');
+    assert.equal(await page.locator('[data-testid="statement-trace-claims-goals"] > li').count(), 1,
+      'Search must select exactly the clinician statement, not the whole section');
+    await page.getByTestId('statement-trace-search').fill('missing fictional reference');
+    await page.getByTestId('statement-trace-no-matches').waitFor();
+    await page.getByTestId('statement-trace-section-filter').selectOption('all');
+    assert(await page.getByTestId('statement-trace-status-sessions').isVisible(),
+      'Source mismatch warning must survive searches, not imply safe attribution');
+    await page.getByTestId('statement-trace-search').fill('');
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      const bounds = await page.getByTestId('statement-trace-inspector').evaluate(el => ({
+        right: el.getBoundingClientRect().right, scroll: document.documentElement.scrollWidth,
+      }));
+      assert(bounds.right <= width + 6 && bounds.scroll <= width + 8,
+        'Claim inspector must not overflow ' + width + 'px: ' + JSON.stringify(bounds));
+    }
+    await page.unroute(savedVersionRoute);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.getByTestId('compare-close').click();
     // Report-to-plan handoff is read-only until explicit goal selection.
     await page.getByTestId('report-to-plan-toggle').click();
     const handoff = page.getByTestId('report-to-plan-form');
