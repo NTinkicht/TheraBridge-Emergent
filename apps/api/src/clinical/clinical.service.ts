@@ -119,6 +119,53 @@ export class ClinicalService {
       where: { centerId, childId, planVersionId: { in: plans.flatMap(p => p.versions.map(ver => ver.id)) } },
       orderBy: [{ observedOn: 'asc' }, { createdAt: 'asc' }],
     });
+    // TB-EM-032: expose a source trace ONLY for plans already authorized by
+    // this child's specialty-scoped workspace. The event records the original
+    // report-to-plan handoff but never makes its report evidence public.
+    const sourceEvents = plans.length ? await this.prisma.centerEvent.findMany({
+      where: { centerId, type: 'clinical.report_plan_drafted',
+        OR: plans.map(p => ({ meta: { path: ['planId'], equals: p.id } })) },
+      select: { meta: true, createdAt: true },
+      orderBy: { createdAt: 'asc' },
+    }) : [];
+    type SourceMeta = { planId?: string; planVersionId?: string; reportId?: string;
+      reportVersionId?: string; selectedGoalRefs?: unknown; draftOnly?: boolean; released?: boolean };
+    const sourceMetadata = sourceEvents.map(e => ({ ...(e.meta as SourceMeta), at: e.createdAt }))
+      .filter(m => m.draftOnly === true && m.released === false &&
+        plans.some(p => p.id === m.planId && p.versions.some(x => x.id === m.planVersionId)) &&
+        Array.isArray(m.selectedGoalRefs) && m.selectedGoalRefs.length <= 12 &&
+        m.selectedGoalRefs.every((ref: unknown) => typeof ref === 'string' &&
+          /^[0-9a-f-]{36}:[a-z0-9-]{1,40}$/.test(ref)) &&
+        typeof m.reportId === 'string' && typeof m.reportVersionId === 'string');
+    const reportsForSources = sourceMetadata.length ? await this.prisma.progressReport.findMany({
+      where: { centerId, childId, id: { in: uniq(sourceMetadata.map(m => m.reportId!)) },
+        service: { in: uniq(plans.map(p => p.service)) } },
+      select: { id: true, title: true, service: true },
+    }) : [];
+    const versionsForSources = reportsForSources.length ? await this.prisma.reportVersion.findMany({
+      where: { centerId, id: { in: uniq(sourceMetadata.map(m => m.reportVersionId!)) },
+        reportId: { in: reportsForSources.map(r => r.id) } },
+      select: { id: true, reportId: true, number: true },
+    }) : [];
+    const planSource = (p: (typeof plans)[number]) => {
+      const m = sourceMetadata.find(m => m.planId === p.id);
+      const report = reportsForSources.find(r => r.id === m?.reportId && r.service === p.service);
+      const version = versionsForSources.find(v => v.id === m?.reportVersionId && v.reportId === report?.id);
+      if (!m || !report || !version || !m.planVersionId) return null;
+      // Goal mappings are only valid in the initially created version. Later
+      // versions may redefine keys; no cross-version evidence is inferred.
+      return {
+        reportId: report.id, reportTitle: report.title,
+        reportVersionId: version.id, reportVersionNumber: version.number,
+        originalPlanVersionId: m.planVersionId, draftedAt: m.at,
+        selectedGoals: (m.selectedGoalRefs as string[]).map((ref, i) => {
+          const colon = ref.indexOf(':');
+          return { planGoalKey: 'g' + (i + 1),
+            sourcePlanVersionId: ref.slice(0, colon), sourceGoalKey: ref.slice(colon + 1) };
+        }),
+        draftOnly: true as const, released: false as const,
+      };
+    };
     const team = await this.prisma.membership.findMany({ where: { id: { in: uniq([...assessments, ...notes, ...observations].map((x) => x.membershipId)) } }, select: { id: true, user: { select: { displayName: true } } } });
     const users = await this.prisma.user.findMany({ where: { id: { in: uniq(plans.flatMap((p) => p.versions.map((x) => x.authorId))) } }, select: { id: true, displayName: true } });
     // A current team member must belong to THIS centre, have an active user
@@ -154,7 +201,7 @@ export class ClinicalService {
       childWideReferentStatus: !c.referentMembershipId ? 'NOT_DESIGNATED'
         : visibleReferent ? 'VISIBLE' : 'UNAVAILABLE',
       assessments: assessments.map((a) => ({ id: a.id, service: a.service, assessedOn: day(a.assessedOn), summary: a.summary, areas: a.areas, status: a.status, version: a.version, author: who(a.membershipId), mine: a.membershipId === v.membershipId, updatedAt: a.updatedAt })),
-      plans: plans.map((p) => ({ id: p.id, service: p.service, title: p.title, versions: p.versions.map((x) => ({ id: x.id, number: x.number, status: x.status, summary: x.summary, goals: x.goals, homeActivities: x.homeActivities, reviewNotes: x.reviewNotes, version: x.version, mine: x.authorId === v.userId, author: users.find((u) => u.id === x.authorId)?.displayName ?? '', updatedAt: x.updatedAt })) })),
+      plans: plans.map((p) => ({ id: p.id, service: p.service, title: p.title, source: planSource(p), versions: p.versions.map((x) => ({ id: x.id, number: x.number, status: x.status, summary: x.summary, goals: x.goals, homeActivities: x.homeActivities, reviewNotes: x.reviewNotes, version: x.version, mine: x.authorId === v.userId, author: users.find((u) => u.id === x.authorId)?.displayName ?? '', updatedAt: x.updatedAt })) })),
       notes: notes.map((n) => ({ id: n.id, service: n.service, sessionDate: day(n.sessionDate), appointmentId: n.appointmentId, sections: n.sections, status: n.status, executionStatus: n.executionStatus, actualStart: n.actualStart, actualEnd: n.actualEnd, attendance: n.attendance, activities: n.activities, version: n.version, author: who(n.membershipId), mine: n.membershipId === v.membershipId, updatedAt: n.updatedAt })),
       observations: observations.map((o) => ({ id: o.id, planVersionId: o.planVersionId, goalKey: o.goalKey, value: o.value, observedOn: day(o.observedOn), note: o.note, sessionNoteId: o.sessionNoteId, author: who(o.membershipId) })),
       appointments: appointments.map((a) => ({ id: a.id, service: a.service, startsAt: a.startsAt, endsAt: a.endsAt, room: a.room, status: a.status, hasNote: notes.some((n) => n.appointmentId === a.id) })),
