@@ -223,6 +223,50 @@ try {
     await page.getByTestId('plan-summary').first().fill(sourceSummary);
     assert(await page.getByTestId('goal-checkpoint-save').first().isEnabled(),
       'Restoring saved plan content should permit the checkpoint');
+    // Codex follow-up P2: checkpoint in plan B must never reload away dirty
+    // edits in plan A. Add a SECOND synthetic workspace plan via read-only
+    // response interception so this test cannot mutate the seeded database.
+    const twoPlanRoute = '**/api/centers/*/clinical/children/*';
+    const shadowPlanId = '00000000-0000-4000-8000-000000000092';
+    await page.route(twoPlanRoute, async route => {
+      if (route.request().method() !== 'GET') return route.continue();
+      const response = await route.fetch();
+      const data = await response.json();
+      const original = data.plans.find(p => p.versions?.length && p.versions[0].goals?.length);
+      assert(original, 'An authorized seed plan is needed for the two-plan regression');
+      const shadow = { ...original, id: shadowPlanId, title: 'Synthetic second plan for reload guard',
+        versions: original.versions.map((v, i) => ({
+          ...v, id: '00000000-0000-4000-8000-' + String(9200 + i).padStart(12, '0'),
+          mine: true,
+        })) };
+      await route.fulfill({ response, json: { ...data, plans: [...data.plans, shadow] } });
+    });
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+    const shadowPanel = page.getByTestId('plan-' + shadowPlanId);
+    await shadowPanel.getByTestId('goal-checkpoint-goal').selectOption({ index: 1 });
+    await shadowPanel.getByTestId('goal-checkpoint-summary').fill('Reviewed the available synthetic sources in the second plan.');
+    await shadowPanel.getByTestId('goal-checkpoint-save').waitFor();
+    assert(await shadowPanel.getByTestId('goal-checkpoint-save').isEnabled(),
+      'Second plan permits a checkpoint while all plans are clean');
+    const firstPlan = page.locator('[data-testid^="plan-"]').filter({ has: page.getByTestId('plan-summary') }).first();
+    const firstSummary = page.getByTestId('plan-summary').first();
+    const originalText = await firstSummary.inputValue();
+    await firstSummary.fill(originalText + ' DIRTY PLAN A');
+    await page.waitForFunction(id => {
+      const button = document.querySelector('[data-testid="plan-' + id + '"] [data-testid="goal-checkpoint-save"]');
+      return button?.hasAttribute('disabled') === true;
+    }, shadowPlanId);
+    await shadowPanel.getByTestId('goal-checkpoint-unsaved-lock').waitFor();
+    await firstSummary.fill(originalText);
+    await page.waitForFunction(id => {
+      const button = document.querySelector('[data-testid="plan-' + id + '"] [data-testid="goal-checkpoint-save"]');
+      return button?.hasAttribute('disabled') === false;
+    }, shadowPlanId);
+    await page.unroute(twoPlanRoute);
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+
 
     const summaryBox = page.getByTestId('plan-summary').first();
     const beforeCheckpointEdit = await summaryBox.inputValue();
