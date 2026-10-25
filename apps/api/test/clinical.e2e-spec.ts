@@ -111,15 +111,18 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     // It is already Oct 20 at the Berlin centre, although still Oct 19 UTC:
     // a therapist may record the centre-local day, not UTC midnight's day.
     h.clock.t = Date.parse('2026-10-19T22:30:00Z');
-    await post(h, path, therapist, { ...body,
+    // The synthetic test jumps past the original login session expiry.
+    // Refresh authentication so date validation, not 401, is exercised.
+    const midnightTherapist = await signIn(h, 'thera@clin.test');
+    await post(h, path, midnightTherapist, { ...body,
       goalKey: 'review-only', reviewedOn: '2026-10-21',
       observationIds: [], version: 3 }).expect(422);
-    await post(h, path, therapist, { ...body,
+    await post(h, path, midnightTherapist, { ...body,
       goalKey: 'review-only', reviewedOn: '2026-10-20',
       summary: 'Reviewed the unsampled objective definition; no observations yet.',
       observationIds: [], version: 3 }).expect(200);
     // Narrative-only checkpoints must also freeze their exact goal definition.
-    await patch(therapist, c('clinical/plan-versions/' + verId), {
+    await patch(midnightTherapist, c('clinical/plan-versions/' + verId), {
       summary: 'Synthetic goal plan only', version: 4, homeActivities: [],
       goals: [
         { key: 'check', title: 'Names familiar pictures', measure: 'count', baseline: 1, target: 8 },
@@ -131,7 +134,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
       where: { id: therapist.body.activeContext.membershipId },
       data: { specialties: [] },
     });
-    await post(h, path, therapist, { ...body, version: 4 }).expect(403);
+    await post(h, path, midnightTherapist, { ...body, version: 4 }).expect(403);
 
   });
 
