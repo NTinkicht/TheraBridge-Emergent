@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsInt, IsNumber, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength, ValidateNested } from 'class-validator';
 import { SPECIALTIES } from '../applications/applications.dto';
 
@@ -119,6 +119,7 @@ export class ReportToPlanDraftDto {
   @IsUUID() sourceReportVersionId!: string;
   @IsUUID() requestId!: string;
   @IsInt() @Min(1) reportRevision!: number;
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsString() @MinLength(3) @MaxLength(120) title!: string;
   @IsArray() @ArrayMinSize(1) @ArrayMaxSize(12)
   @ValidateNested({ each: true }) @Type(() => ReportPlanGoalRefDto)
