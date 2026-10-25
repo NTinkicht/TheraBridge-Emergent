@@ -1,3 +1,9 @@
+## 2026-10-25 — Milestone 1 / TB-EM-030 next actions
+
+1. Qualify `feature/tb-em-030-report-to-plan-draft` with exact-HEAD GitHub CI (API/PostgreSQL, web build, seven-role synthetic browser, Docker Compose, secret scan); correct any P0-P2 issue in this same PR; independent source review. No merge/deploy until approved gates. Verify authorization, report-version identity and request replay under concurrent calls as a possible P3 follow-up.
+2. After this first handoff is merged, continue same Milestone 1: short-/long-term objective metadata, timeframe/review dates, richer home-plan weekly/monthly scheduling and goal-linked activity prescription, provenance shown in plan UI, and cross-document report/plan navigation. Avoid generating medical instructions from report prose; no family clinical release.
+3. Work QA remains separate; do not interpret CI Chromium as hosted acceptance. Clinical signing, co-sign, supervisor discussions, consent grants, media, STT, real AI and release remain denied until owner-signed policies.
+
 ## 2026-10-25 — PR #87 closeout and next vertical slice
 
 Complete exact final-head CI and verify review-thread status; merge PR #87 only once protected GitHub gates permit. No further P3 work required on this PR: seed-independent browser fixture and broader removed-item UI testing are later QA improvements, not blockers. Do not update hosted issue #61 without actual approved evidence. After merge return to clinician-controlled home-plan and report evidence traceability roadmap, preserving synthetic-only clinical restrictions. No real speech-to-text, AI medical inference, signing, approval or release authorized.
