@@ -1,3 +1,9 @@
+## 2026-10-25 — TB-EM-029 next gates
+
+1. Open draft PR from `feature/tb-em-029-plan-version-history`; run exact-head CI (including pure goal diff and seven-role disposable-browser regression), inspect failures, fix on same branch, and request independent review. Do not merge without required gates/owner authority.
+2. Validate that historical snapshots remain read-only, clinicians see only their current authorized child/specialties, draft status labels never imply approval/release, and same-goal keys across versions never aggregate measured observations.
+3. After merge, issue #37 can be closed if accepted. Parent-facing plans, speech-to-text, AI clinical inference, approval, signing and report release remain policy gated. No protected hosted QA rerun or #61 ledger change from this PR; P3 UI backlog can remain separate.
+
 ## 2026-10-25 — PR #86 remaining gates and follow-up
 
 1. Verify documentation-only checkpoint commit, exact-new-head CI and review; confirm Codex P1 is addressed and all review threads resolved. Apply protected-branch/independent-approval requirements; do not self-approve or bypass. Owner to merge after gates are satisfied; repository AGENTS.md prohibits automatic merging.
