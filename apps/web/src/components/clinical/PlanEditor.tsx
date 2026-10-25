@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Field, FormAlert } from '@/components/auth/Field';
 import { ReasonField, SelectField } from '@/components/centers/kit';
@@ -61,7 +61,11 @@ function GoalRow({ g, onChange, onRemove, disabled, i, planId }: { g: Goal; onCh
   );
 }
 
-function VersionEditor({ centerId, ws, planId, service, v, source, run }: { centerId: string; ws: Workspace; planId: string; service: string; v: PlanVersion; source?: Workspace['plans'][number]['source']; run: Run }) {
+function VersionEditor({ centerId, ws, planId, service, v, source, run, onDirtyChange, otherPlanDirty }: {
+  centerId: string; ws: Workspace; planId: string; service: string; v: PlanVersion;
+  source?: Workspace['plans'][number]['source']; run: Run;
+  onDirtyChange: (versionId: string, dirty: boolean) => void; otherPlanDirty: boolean;
+}) {
   const [summary, setSummary] = useState(v.summary);
   const [goals, setGoals] = useState<Goal[]>(v.goals);
   const [acts, setActs] = useState<HomeActivity[]>(v.homeActivities);
@@ -78,6 +82,11 @@ function VersionEditor({ centerId, ws, planId, service, v, source, run }: { cent
   const unsavedPlanEdits = summary !== v.summary ||
     JSON.stringify(goals) !== JSON.stringify(v.goals) ||
     JSON.stringify(acts) !== JSON.stringify(v.homeActivities);
+  // Any checkpoint's shared run() reloads ALL mounted plan editors.
+  // Aggregate dirty state by exact version in the parent so a clean plan
+  // cannot discard unsaved edits in another plan.
+  useEffect(() => { onDirtyChange(v.id, unsavedPlanEdits); }, [v.id, unsavedPlanEdits, onDirtyChange]);
+  useEffect(() => () => { onDirtyChange(v.id, false); }, [v.id, onDirtyChange]);
   const save = () => run(() => clinicalApi.saveVersion(centerId, v.id, { summary, goals: goals.filter((g) => g.title.trim()), homeActivities: acts.map(({ templateId, goalKey, frequency, note, schedule }) => ({ templateId, goalKey, frequency, note, schedule })), version: v.version }), 'Draft saved.');
   return (
     <div className="space-y-4" data-testid={`plan-version-${v.number}`}>
@@ -85,7 +94,7 @@ function VersionEditor({ centerId, ws, planId, service, v, source, run }: { cent
       {v.reviewNotes.map((n, i) => <FormAlert key={i} tone="info" testId={`review-note-${i}`}>Supervisor review: {n.comment}</FormAlert>)}
       <PlanEvidenceTrail version={v} origin={source} observations={ws.observations} />
       <GoalCheckpointPanel centerId={centerId} version={v} ws={ws} editable={edit}
-        unsavedPlanEdits={unsavedPlanEdits} run={run} />
+        unsavedPlanEdits={unsavedPlanEdits || otherPlanDirty} run={run} />
       <label className="block text-[14px] font-medium">Plan summary<textarea className={`mt-1 ${input}`} rows={3} value={summary} disabled={!edit} onChange={(e) => setSummary(e.target.value)} data-testid="plan-summary" /></label>
       <div>
         <h3 className="text-[15px] font-semibold">Goals</h3>
@@ -160,6 +169,10 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
   const [f, setF] = useState({ service: ws.child.services[0] ?? '', title: '' });
   const [linkedEvidenceNote, setLinkedEvidenceNote] = useState('');
   const [historicGoal, setHistoricGoal] = useState<{ planId: string; versionId: string; goalKey: string } | null>(null);
+  const [dirtyVersions, setDirtyVersions] = useState<Record<string, boolean>>({});
+  const onDirtyChange = useCallback((versionId: string, dirty: boolean) => {
+    setDirtyVersions(prev => prev[versionId] === dirty ? prev : { ...prev, [versionId]: dirty });
+  }, []);
   useEffect(() => {
     // Saved report evidence can refer to a historical plan version. Never
     // silently map it onto the latest goal or measurements of that plan.
@@ -192,7 +205,9 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
           <Card key={p.id} className="p-5 md:p-6" testId={`plan-${p.id}`}>
             <h2 className="text-[18px] font-semibold">{p.title}</h2>
             <p className="mb-4 text-[13px] text-brand-inkMuted">{serviceLabel(p.service)} · {p.versions.length} version{p.versions.length > 1 ? 's' : ''}</p>
-            <VersionEditor centerId={centerId} ws={ws} planId={p.id} service={p.service} v={current} source={p.source} run={run} />
+            <VersionEditor centerId={centerId} ws={ws} planId={p.id} service={p.service}
+              v={current} source={p.source} run={run} onDirtyChange={onDirtyChange}
+              otherPlanDirty={Object.entries(dirtyVersions).some(([id, dirty]) => id !== current.id && dirty)} />
             <PlanVersionHistory key={p.id} plan={p} templates={ws.templates}
               target={historicGoal?.planId === p.id ? { versionId: historicGoal.versionId, goalKey: historicGoal.goalKey } : undefined} />
           </Card>
