@@ -66,7 +66,7 @@ describe('TB-EM-035 immutable source-linked statement trace', () => {
   it('never invents sources for unavailable or malformed legacy evidence', () => {
     expect(traceSavedStatements({ goals: text }, {
       ...evidence, checkpoints: undefined,
-    } as Evidence, [linkedDecision()], reportId)[0].status).toBe('SOURCE_MISMATCH');
+    } as unknown as Evidence, [linkedDecision()], reportId)[0].status).toBe('SOURCE_MISMATCH');
     expect(traceSavedStatements({ goals: text }, evidence,
       [{ ...linkedDecision(), claimMap: [{ index: 0, textHash: hash('invented'), sourceRefs: refs }] }], reportId)[0].status)
       .toBe('PASSAGE_MISMATCH');
