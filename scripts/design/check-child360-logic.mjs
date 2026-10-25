@@ -10,6 +10,7 @@ async function pureModule(path) {
 }
 const progress = await pureModule('apps/web/src/lib/progress-analysis.ts');
 const assist = await pureModule('apps/web/src/lib/evidence-assist.ts');
+const comparison = await pureModule('apps/web/src/lib/plan-version-compare.ts');
 const pts = [
   { id:'p1', planVersionId:'v1', goalKey:'shared', observedOn:'2026-10-05', value:2 },
   { id:'p2', planVersionId:'v1', goalKey:'shared', observedOn:'2026-10-11', value:4 },
@@ -75,4 +76,37 @@ assert(!sources.includes('Observation p3'));
 assert(suggestions.some(s=>s.text.includes('2 recorded points') && s.text.includes('to 4')));
 assert(suggestions.every(s=>!s.text.includes('achieved')&&!s.text.includes('diagnosis')));
 assert(!suggestions.some(s=>s.section==='recommendations'||s.section==='summary'));
+
+// Read-only cross-version diff compares definitions, NOT clinical results.
+// Reused goal key with a different measure must NOT import old measurements.
+const older = {
+  id: 'older', number: 1, status: 'SUPERSEDED', summary: 'Older text',
+  goals: [{ key: 'shared', title: 'Naming objects', measure: 'count', baseline: 1, target: 5 },
+    { key: 'removed', title: 'Old target', measure: 'level', baseline: 1, target: 3 }],
+  homeActivities: [{ templateId: 'picture', frequency: 'Once weekly', goalKey: 'shared' },
+    { templateId: 'removed-activity', frequency: 'Daily' }],
+};
+const newer = {
+  id: 'newer', number: 2, status: 'DRAFT', summary: 'Updated text',
+  goals: [{ key: 'shared', title: 'Naming objects', measure: 'percent', baseline: 10, target: 75 },
+    { key: 'added', title: 'New target', measure: 'count', baseline: 0, target: 2 }],
+  homeActivities: [{ templateId: 'picture', frequency: 'Twice weekly', goalKey: 'added' },
+    { templateId: 'added-activity', frequency: 'Daily' }],
+};
+const delta = comparison.comparePlanVersions(older, newer);
+assert.equal(delta.from, 1);
+assert.equal(delta.to, 2);
+assert.equal(delta.summaryChanged, true);
+assert.deepEqual(delta.goals.map(g => [g.key, g.kind]), [['added','added'], ['removed','removed'], ['shared','changed']]);
+assert.equal(delta.goals.find(g => g.key === 'shared').definitionChanged, true);
+assert(!('measurements' in delta.goals.find(g => g.key === 'shared')));
+assert.deepEqual(delta.activities.map(a => [a.templateId, a.kind]), [
+  ['added-activity','added'], ['picture','changed'], ['removed-activity','removed']]);
+assert.equal(comparison.comparePlanVersions(older, older).goals.every(g => g.kind === 'unchanged'), true);
+assert.equal(comparison.comparePlanVersions(older, older).activities.every(a => a.kind === 'unchanged'), true);
+assert.equal(comparison.comparePlanVersions(newer, older).from, 2);
+// Caller supplies two versions of ONE already-authorized plan; this module has
+// no backend access and does not modify either persisted snapshot.
+assert.equal(older.goals[0].measure, 'count');
+
 console.log('PASS: strict plan-version isolation, weekly/monthly bucket boundaries, source IDs, no fabricated trend, specialty-only activity shortlist, manual factual suggestions');
