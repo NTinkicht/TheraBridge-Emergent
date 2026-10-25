@@ -1,3 +1,9 @@
+## 2026-10-25 — TB-EM-037 qualification and next slice
+
+1. Open draft PR from `feature/tb-em-037-checkpoint-comparison`. Qualify exact HEAD with six standard CI jobs (PostgreSQL/API, Next builds, seven-role responsive loopback Chromium with fictional-only checkpoint overlay, preview, live-session, scan and Compose). Independently review strict same-version/goal boundaries, timestamp ordering, sparse/historical checkpoint handling, accessible responsive controls, no clinical inference or guardian access; fix P0–P2 and resolve threads before separately authorized merge. No automatic deploy.
+2. Once merged, complete a dated internal home-activity calendar view using the already-validated weekly/monthly recurrence; use only authored draft schedules, keep date-timezone and 366-day bounds, do not confuse scheduled activities with attended sessions or approved family release. Defer P3 from #94: cosmetic absent-section filter option, checkpoint source search fixture, and mismatch visibility hint.
+3. No external AI/STT, real patient data, audio recording, clinical signature/consent/safeguarding release, guardian clinical access, hosted QA ledger change or pilot.
+
 ## 2026-10-25 — TB-EM-036 source inspector qualification
 
 1. Open a DRAFT PR from `feature/tb-em-036-claim-source-inspector`; verify its exact final HEAD through all six CI jobs (real PostgreSQL/API, responsive seven-role Chromium, web build, preview, live-session, secret scan, Compose). Review the fictional multi-claim route overlay strictly as UI coverage; it is not proof of source hash validity or hosted acceptance. Fix P0–P2 defects on the same branch and obtain independent exact-head review; resolve threads; do not merge or deploy without owner-authorized gates.

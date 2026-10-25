@@ -1,3 +1,9 @@
+## 2026-10-25 — TB-EM-037 (tests added, NOT RUN at writing)
+
+- Pure TS source regression in `scripts/design/check-child360-logic.mjs`: same plan-version/goal timeline only; explicit source intersection/only-earlier/only-later; backdated `reviewedOn` vs immutable event time; same-time stable order; duplicate source IDs; mismatched goals, inverted, identical or absent selections denied; no claimed progress/clinical effectiveness.
+- Synthetic seven-role CI Chromium journey extended with **fictional authorized-GET response overlay**, two reviews and three fictional observation refs. Checks render, exact reference difference counts, selection denial for reversed records, 320/390/768/1024/1440 width geometry, then removes the overlay before continuing real authorized flows. This is UI coverage only, not clinical validation or hosted QA.
+- At branch creation code and test changes are added, NOT YET EXECUTED/VERIFIED; no PASS may be claimed until exact-head CI results. Hosted issue #61 remains **53 PASS, 0 FAIL, 47 BLOCKED, 4 NOT TESTED**, +4 historical supplemental PASS.
+
 ## 2026-10-25 — TB-EM-036 inspector regression coverage (NOT RUN)
 
 - Added synthetic Chrome journey checks for two fictional statement associations, filters by report section and claim/source terms, mismatch warning persistence, zero-results state, responsive geometry at 320/390/768/1024/1440 px. Uses a loopback-only mocked report-version response after real authorized role login; **not** trusted clinical evidence or new source-hash validation. Existing 7-role synthetic suite and real Postgres PR #93 tests remain separate.

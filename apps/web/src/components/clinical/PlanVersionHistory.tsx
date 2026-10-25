@@ -6,6 +6,7 @@ import { Card, Pill } from '@/components/design/ui';
 import type { HomeActivity, PlanVersion, Template } from '@/lib/clinical';
 import { comparePlanVersions, type ChangeKind } from '@/lib/plan-version-compare';
 import { scheduleDescription } from '@/lib/home-schedule';
+import { GoalCheckpointComparison } from './GoalCheckpointComparison';
 
 type Plan = { id: string; title: string; service: string; versions: PlanVersion[] };
 const statusNames: Record<PlanVersion['status'], string> = {
@@ -133,6 +134,7 @@ export function PlanVersionHistory({ plan, templates, target }: { plan: Plan; te
               </li>)}
             </ul>
           </>}
+          <GoalCheckpointComparison key={inspect.id} version={inspect} />
           {inspect.reviewNotes.length > 0 && <>
             <h4 className="text-[14px] font-semibold">Recorded review notes</h4>
             <ul className="space-y-2 text-[13px]">{inspect.reviewNotes.map((note, i) =>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ClipboardCheck } from 'lucide-react';
 import { Button } from '@/components/design/ui';
+import { GoalCheckpointComparison } from './GoalCheckpointComparison';
 import { centerLocalDay } from '@/lib/goal-review';
 import { clinicalApi, type PlanVersion, type Workspace } from '@/lib/clinical';
 
@@ -54,6 +55,7 @@ export function GoalCheckpointPanel({ centerId, version, ws, editable, unsavedPl
         </p>
       </li>)}
     </ol> : <p className="text-[12px] text-brand-inkMuted" data-testid="goal-checkpoint-empty">No clinician review checkpoints recorded for this plan version.</p>}
+    <GoalCheckpointComparison key={version.id} version={version} />
     {editable && <>
       {unsavedPlanEdits && <p role="status" className="rounded-control border border-border-light bg-status-cautionSurface p-3 text-[12px]"
         data-testid="goal-checkpoint-unsaved-lock">Save the plan draft before recording a checkpoint. Recording one reloads the current plan version, so pending edits must not be discarded.</p>}
