@@ -295,6 +295,48 @@ try {
         'Report-to-plan handoff must not clip at ' + width + 'px: ' + JSON.stringify(bounds));
     }
     await page.setViewportSize({ width: 1280, height: 900 });
+    // Codex P2: the reverse ordering matters. A report submission already
+    // in flight must reserve its lock BEFORE awaiting its save/POST, so
+    // starting handoff cannot create a draft while the report transitions.
+    const submitRaceRoute = '**/clinical/reports/' + speechReport.id + '/submit';
+    const earlyHandoffRoute = '**/clinical/reports/*/plan-drafts';
+    let releaseHeldSubmission;
+    let announceHeldSubmission;
+    const heldSubmission = new Promise(resolve => { releaseHeldSubmission = resolve; });
+    const submissionStarted = new Promise(resolve => { announceHeldSubmission = resolve; });
+    let prematurePlanPosts = 0;
+    await page.route(earlyHandoffRoute, async route => {
+      prematurePlanPosts += 1;
+      await route.fulfill({ status: 503, contentType: 'application/json',
+        body: '{"message":"Handoff must not have reached this endpoint"}' });
+    });
+    await page.route(submitRaceRoute, async route => {
+      announceHeldSubmission();
+      await heldSubmission;
+      // This is a synthetic failure: no report submission is committed.
+      await route.fulfill({ status: 503, contentType: 'application/json',
+        body: '{"message":"Synthetic interrupted report transition"}' });
+    });
+    await page.getByTestId('report-submit').click();
+    await submissionStarted;
+    await page.getByTestId('report-transition-edit-lock').waitFor();
+    assert(await page.getByTestId('report-section-summary').isDisabled(),
+      'Report fields must lock throughout in-flight submission');
+    assert(await page.getByTestId('report-save-version').isDisabled(),
+      'Save version is blocked during report submission');
+    assert(await page.getByTestId('report-submit').isDisabled(),
+      'Repeated report submission is blocked');
+    await page.getByTestId('report-to-plan-create').click();
+    await page.getByTestId('report-to-plan-error').waitFor();
+    assert.equal(prematurePlanPosts, 0,
+      'A handoff attempted during an already-running report transition must not POST');
+    releaseHeldSubmission();
+    await page.getByTestId('report-transition-edit-lock').waitFor({ state: 'hidden' });
+    assert(!(await page.getByTestId('report-section-summary').isDisabled()),
+      'Failed report transition must restore editing and handoff eligibility');
+    await page.unroute(submitRaceRoute);
+    await page.unroute(earlyHandoffRoute);
+
     // New handoff POST is intercepted, while genuine report PATCH autosave
     // continues. Unknown result must retain exact payload and report lock.
     const handoffRequests = [];
