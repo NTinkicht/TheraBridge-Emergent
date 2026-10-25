@@ -207,6 +207,14 @@ try {
     await page.getByTestId('progress-granularity').selectOption('month');
     await page.getByTestId('progress-periods-turn-taking').waitFor();
     await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('goal-checkpoint-panel').first().waitFor();
+    await page.getByTestId('goal-checkpoint-empty').first().waitFor();
+    await page.getByTestId('goal-checkpoint-goal').first().selectOption({ index: 1 });
+    await page.getByTestId('goal-checkpoint-summary').first().fill('Reviewed available synthetic records; monitor further observations.');
+    assert(await page.getByTestId('goal-checkpoint-save').first().isEnabled(),
+      'Therapist can prepare a draft checkpoint without posting it');
+    // No POST in this read-only browser journey: the API suite verifies
+    // persisted writes, replay conflicts and source isolation.
     await page.getByTestId('plan-evidence-trail').first().waitFor();
     // TB-EM-033 worklist is scoped to current authorized plan versions.
     await page.getByTestId('goal-review-worklist').waitFor();
@@ -247,6 +255,8 @@ try {
         'Plan evidence trace must remain within ' + width + 'px');
       const reviewRight = await page.getByTestId('goal-review-worklist').evaluate(el => el.getBoundingClientRect().right);
       assert(reviewRight <= width + 6, 'Goal review worklist must fit at ' + width + 'px');
+      const checkpointRight = await page.getByTestId('goal-checkpoint-panel').first().evaluate(el => el.getBoundingClientRect().right);
+      assert(checkpointRight <= width + 6, 'Goal checkpoint form must fit at ' + width + 'px');
     }
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.getByTestId('home-assist-toggle').click();
