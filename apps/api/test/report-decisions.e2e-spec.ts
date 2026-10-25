@@ -90,6 +90,11 @@ describe('TB-EM-021 non-authorizing report suggestion decision ledger (real Post
     }).expect(201)).body.id;
     const P = c(`clinical/reports/${reportId}`);
     const D = P + '/suggestion-decisions';
+    const initialVersion = await h.prisma.reportVersion.findFirstOrThrow({
+      where: { reportId, kind: 'CREATED' },
+    });
+    expect((await get(therapist,
+      c(`clinical/report-versions/${initialVersion.id}`)).expect(200)).body.statementTrace).toEqual([]);
     const first = (await get(therapist, D).expect(200)).body;
     expect(first).toMatchObject({ synthetic: true, released: false, clinicalAuthorization: false,
       claimValidation: 'REFERENCED_NOT_VERIFIED' });
@@ -171,6 +176,13 @@ describe('TB-EM-021 non-authorizing report suggestion decision ledger (real Post
     expect(savedVersion.evidence.checkpoints).toEqual(expect.arrayContaining([
       expect.objectContaining({ ref: checkpoint.ref, planVersionId: plan.versionId, goalKey: 'words' }),
     ]));
+    // The snapshot created before APPLIED must remain unlinked even when
+    // the later saved section has identical clinician wording.
+    expect((await get(therapist,
+      c(`clinical/report-versions/${initialVersion.id}`)).expect(200)).body.statementTrace).toEqual([]);
+    expect((await h.prisma.reportVersion.findUniqueOrThrow({ where: { id: initialVersion.id } }))
+      .evidence).toMatchObject({ statementDecisionIds: [] });
+    expect(savedVersion.evidence.statementDecisionIds).toContain(applied.id);
     expect(savedVersion.statementTrace).toEqual([expect.objectContaining({
       section: 'goals', status: 'LINKED_TO_SAVED_TEXT',
       claims: [expect.objectContaining({ index: 1, text: 'One recorded value was 30 percent.',
