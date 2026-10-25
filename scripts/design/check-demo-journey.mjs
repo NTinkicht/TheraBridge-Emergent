@@ -216,6 +216,25 @@ try {
     await page.locator('[data-testid^="goal-review-open-"]').first().click();
     assert(await page.evaluate(() => document.activeElement?.id.startsWith('goal-review-')),
       'Review worklist must focus the actual authorized goal editor');
+    // An invalid historic centre timezone must show a recoverable warning
+    // while leaving every existing plan/editor accessible.
+    const invalidTimezoneOverlay = '**/api/centers/*/clinical/children/*';
+    await page.route(invalidTimezoneOverlay, async route => {
+      if (route.request().method() !== 'GET') return route.continue();
+      const response = await route.fetch();
+      const workspace = await response.json();
+      await route.fulfill({ response, json: { ...workspace, timezone: 'Asia/Not_A_Zone' } });
+    });
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('goal-review-timezone-invalid').waitFor();
+    assert(await page.getByTestId('plan-summary').first().isVisible(), 'Plan editor survives unsupported centre timezone');
+    await page.unroute(invalidTimezoneOverlay);
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('goal-review-worklist').waitFor();
+    assert(!(await page.getByTestId('goal-review-timezone-invalid').count()), 'Valid centre timezone recovers');
+
     await page.getByTestId('plan-evidence-goals').first().waitFor();
     await page.getByTestId('plan-source-none').first().waitFor();
     assert((await page.getByTestId('plan-evidence-trail').first().innerText()).includes('recorded observation'),
