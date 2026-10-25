@@ -251,6 +251,37 @@ try {
     assert(savedActivityComparison.includes('Original saved activity'), 'Historical name must use saved snapshot');
     assert(savedActivityComparison.includes('original safety guidance'), 'Historical safety must use saved snapshot');
     assert(savedActivityComparison.includes('new saved safety'), 'Comparison must show changed saved safety');
+    // TB-EM-031 uses the same disposable already-authorized workspace overlay.
+    // Exercise the clinician's dated objective and scheduled activity fields
+    // without saving or contaminating the seeded demonstration.
+    await page.getByTestId('goal-horizon-0').selectOption('SHORT_TERM');
+    await page.getByTestId('goal-target-date-0').fill('2027-03-15');
+    await page.getByTestId('goal-review-date-0').fill('2026-12-15');
+    assert.equal(await page.getByTestId('goal-horizon-0').inputValue(), 'SHORT_TERM');
+    await page.getByTestId('activity-schedule-cadence-0').selectOption('WEEKLY');
+    assert(await page.getByTestId('plan-save').isDisabled(), 'An incomplete dated schedule must not save');
+    await page.getByTestId('activity-schedule-start-0').fill('2026-10-19');
+    await page.getByTestId('activity-schedule-end-0').fill('2026-12-16');
+    await page.getByTestId('activity-schedule-weekdays-0').getByLabel('Mon').check();
+    await page.getByTestId('activity-schedule-weekdays-0').getByLabel('Wed').check();
+    assert((await page.getByTestId('activity-schedule-preview-0').innerText()).includes('2026-10-21'));
+    assert(!(await page.getByTestId('plan-save').isDisabled()), 'Valid dated schedule should permit internal draft save');
+    await page.getByTestId('activity-schedule-cadence-0').selectOption('MONTHLY');
+    await page.getByTestId('activity-schedule-start-0').fill('2026-10-01');
+    await page.getByTestId('activity-schedule-end-0').fill('2027-03-31');
+    await page.getByTestId('activity-schedule-monthday-0').fill('31');
+    const calendar = await page.getByTestId('activity-schedule-preview-0').innerText();
+    assert(calendar.includes('2026-10-31') && calendar.includes('2026-12-31') &&
+      calendar.includes('2027-01-31') && calendar.includes('2027-03-31'), 'Only existing month days are shown');
+    assert(!calendar.includes('2027-02-31'), 'Monthly recurrence cannot invent invalid dates');
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      const actualWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+      assert(actualWidth <= width + 8, 'Plan scheduling must not overflow at ' + width);
+      assert(await page.getByTestId('activity-schedule-preview-0').isVisible());
+    }
+    await page.setViewportSize({ width: 1280, height: 900 });
+
     for (const width of [320, 390, 768, 1024, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       assert(await versionHistory.isVisible(), 'Version history must remain visible at ' + width);
