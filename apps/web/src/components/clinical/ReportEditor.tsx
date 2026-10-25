@@ -181,7 +181,7 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
       ))}
       <div className="flex flex-wrap items-start gap-2 border-t border-border-light pt-4">
         {edit && <Button variant="secondary" disabled={decisionLocked || handoffLocked} onClick={() => void act((v) => reportsApi.saveVersion(centerId, id, v), (n) => `Saved as version ${n}.`)} data-testid="report-save-version">Save version</Button>}
-        {edit && <Button disabled={decisionLocked} onClick={() => void act((v) => reportsApi.submit(centerId, id, v), (n) => `Sent for review as version ${n}.`)} data-testid="report-submit">Send for review</Button>}
+        {edit && <Button disabled={decisionLocked || handoffLocked} onClick={() => void act((v) => reportsApi.submit(centerId, id, v), (n) => `Sent for review as version ${n}.`)} data-testid="report-submit">Send for review</Button>}
         <Button variant="ghost" disabled={decisionLocked} onClick={() => { if (!decisionBusy.current && !handoffBusy.current) void save().then(ok => { if (ok) onPreview(); }); }} data-testid="report-preview-toggle">Preview family format</Button>
         <LockedAction id="report-release" label="Release to family" reason={LOCKED_REASON} />
       </div>
