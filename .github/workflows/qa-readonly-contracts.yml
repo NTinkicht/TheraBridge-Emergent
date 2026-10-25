@@ -5,6 +5,7 @@ on:
       - scripts/qa/hosted-readonly.mjs
       - scripts/qa/hosted-readonly.test.mjs
       - scripts/qa/private-runner.test.mjs
+      - scripts/qa/hosted-workflow-paths.test.mjs
       - scripts/qa/pinned-browser-smoke.mjs
       - scripts/qa/evidence-crypto.mjs
       - scripts/qa/prepare-hosted-run.mjs
@@ -15,6 +16,7 @@ on:
       - scripts/qa/hosted-readonly.mjs
       - scripts/qa/hosted-readonly.test.mjs
       - scripts/qa/private-runner.test.mjs
+      - scripts/qa/hosted-workflow-paths.test.mjs
       - scripts/qa/pinned-browser-smoke.mjs
       - scripts/qa/evidence-crypto.mjs
       - scripts/qa/prepare-hosted-run.mjs
@@ -35,7 +37,7 @@ jobs:
       - name: Check Gitleaks TOML configuration parses cleanly
         run: python3 -c 'import tomllib; tomllib.load(open(".gitleaks.toml","rb"))'
       - name: Run offline QA contract suite only (no secrets or external requests)
-        run: node --test scripts/qa/hosted-readonly.test.mjs scripts/qa/private-runner.test.mjs
+        run: node --test scripts/qa/hosted-readonly.test.mjs scripts/qa/private-runner.test.mjs scripts/qa/hosted-workflow-paths.test.mjs
   preinstalled-chromium:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
