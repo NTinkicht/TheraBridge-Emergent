@@ -207,6 +207,19 @@ try {
     await page.getByTestId('progress-granularity').selectOption('month');
     await page.getByTestId('progress-periods-turn-taking').waitFor();
     await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('plan-evidence-trail').first().waitFor();
+    await page.getByTestId('plan-evidence-goals').first().waitFor();
+    await page.getByTestId('plan-source-none').first().waitFor();
+    assert((await page.getByTestId('plan-evidence-trail').first().innerText()).includes('recorded observation'),
+      'Authorized synthetic plan evidence must be visible without implying progress');
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      const right = await page.getByTestId('plan-evidence-trail').first().evaluate(el => el.getBoundingClientRect().right);
+      const scroll = await page.evaluate(() => document.documentElement.scrollWidth);
+      assert(right <= width + 6 && scroll <= width + 8,
+        'Plan evidence trace must remain within ' + width + 'px');
+    }
+    await page.setViewportSize({ width: 1280, height: 900 });
     await page.getByTestId('home-assist-toggle').click();
     await page.getByTestId('home-plan-evidence-assist').waitFor();
     // TB-EM-029: browser-only, same-authorized-plan history fixture. No
