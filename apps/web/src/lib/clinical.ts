@@ -4,7 +4,12 @@ export interface Goal { key: string; title: string; measure: 'percent' | 'count'
 export interface ActivitySchedule { cadence: 'WEEKLY' | 'MONTHLY'; startsOn: string; endsOn: string; weekdays?: number[]; monthDay?: number }
 export interface HomeActivity { templateId: string; frequency: string; note?: string; goalKey?: string; schedule?: ActivitySchedule; snapshot?: Template & { version: number; capturedAt: string } }
 export interface Template { id: string; title: string; service: string; ageBand: string; minutes: number; materials: string[]; steps: string[]; safety: string[]; library?: 'center' | 'synthetic'; version?: number; mine?: boolean }
-export interface PlanVersion { id: string; number: number; status: 'DRAFT' | 'IN_REVIEW' | 'SUPERSEDED' | 'RETURNED_FOR_REVISION' | 'WITHDRAWN' | 'FROZEN_INTERNAL'; summary: string; goals: Goal[]; homeActivities: HomeActivity[]; reviewNotes: { at: string; comment: string }[]; version: number; mine: boolean; author: string; updatedAt: string }
+export interface GoalCheckpoint {
+  kind: 'GOAL_CHECKPOINT'; goalKey: string; authorId: string; reviewedOn: string;
+  at: string; summary: string; observationIds: string[];
+  clinicalAuthorization: false; released: false;
+}
+export interface PlanVersion { goalCheckpoints?: GoalCheckpoint[]; id: string; number: number; status: 'DRAFT' | 'IN_REVIEW' | 'SUPERSEDED' | 'RETURNED_FOR_REVISION' | 'WITHDRAWN' | 'FROZEN_INTERNAL'; summary: string; goals: Goal[]; homeActivities: HomeActivity[]; reviewNotes: { at: string; comment: string }[]; version: number; mine: boolean; author: string; updatedAt: string }
 export interface SessionActivity { id: string; templateId: string; minutes: number; objective: string; planVersionId?: string; goalKey?: string; completion: 'NOT_STARTED' | 'COMPLETED' | 'SKIPPED'; outcome?: 'ACHIEVED' | 'PARTIAL' | 'NOT_ACHIEVED'; assistance?: 'INDEPENDENT' | 'SOME_ASSISTANCE' | 'SUBSTANTIAL_ASSISTANCE'; observation: string; snapshot?: Template; authorId?: string; createdAt?: string }
 export interface CareTeamMember { assignmentId: string; displayName: string; service: string; isSpecialtyLead: boolean }
 export interface PlanOrigin {
@@ -40,6 +45,10 @@ export const clinicalApi = {
   assess: (centerId: string, childId: string, body: { service: string; assessedOn: string; summary: string; areas: { area: string; finding: string }[] }) => rest.send('POST', c(centerId, `clinical/children/${childId}/assessments`), body),
   plan: (centerId: string, childId: string, body: { service: string; title: string }) => rest.send('POST', c(centerId, `clinical/children/${childId}/plans`), body),
   saveVersion: (centerId: string, id: string, body: { summary: string; goals: Goal[]; homeActivities: HomeActivity[]; version: number }) => rest.send('PATCH', c(centerId, `clinical/plan-versions/${id}`), body),
+  goalCheckpoint: (centerId: string, id: string, body: {
+    goalKey: string; reviewedOn: string; summary: string; observationIds: string[]; version: number;
+  }) => rest.send<{ persisted: true; version: number; released: false; clinicalAuthorization: false }>(
+    'POST', c(centerId, `clinical/plan-versions/${id}/goal-checkpoints`), body),
   submit: (centerId: string, id: string, version: number) => rest.send('POST', c(centerId, `clinical/plan-versions/${id}/submit`), { version }),
   giveBack: (centerId: string, id: string, comment: string, version: number) => rest.send('POST', c(centerId, `clinical/plan-versions/${id}/return`), { comment, version }),
   newVersion: (centerId: string, planId: string) => rest.send('POST', c(centerId, `clinical/plans/${planId}/versions`)),
