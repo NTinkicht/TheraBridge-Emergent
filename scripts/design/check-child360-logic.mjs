@@ -143,6 +143,8 @@ assert(schedule.scheduleProblem({ ...weeklySchedule, weekdays: [] }));
 assert(schedule.scheduleProblem({ ...weeklySchedule, endsOn: '2026-10-18' }));
 assert(schedule.scheduleProblem({ ...monthly, monthDay: 32 }));
 assert(schedule.scheduleProblem({ ...monthly, weekdays: [1] }));
+assert(schedule.scheduleProblem({ cadence: 'MONTHLY', startsOn: '2027-02-01', endsOn: '2027-02-28', monthDay: 31 }));
+assert(schedule.scheduleProblem({ cadence: 'WEEKLY', startsOn: '2026-10-19', endsOn: '2026-10-19', weekdays: [2] }));
 assert.deepEqual(schedule.scheduledDays({ ...monthly, monthDay: 32 }), []);
 // Pure version-history comparison must include planning metadata, but never
 // imports observations from another version under the same goal key.
