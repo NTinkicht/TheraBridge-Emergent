@@ -49,6 +49,17 @@ test('authenticated ciphertext round-trips; wrong keys or tampering never leave 
   assert.equal(ciphertext.includes(Buffer.from('synthetic screenshot')),false);
   await decryptFile(encrypted,output,key);
   assert.deepEqual(await readFile(output),raw);
+  // P2 regression: an EEXIST retry must never erase an established evidence file.
+  await assert.rejects(decryptFile(encrypted,output,key),{code:'EEXIST'});
+  assert.deepEqual(await readFile(output),raw);
+  await assert.rejects(encryptFile(source,encrypted,key),{code:'EEXIST'});
+  assert.deepEqual(await readFile(encrypted),ciphertext);
+  const previouslySaved=join(root,'previously-saved.tar.gz');
+  await writeFile(previouslySaved,'KEEP_ME_SAFE');
+  await assert.rejects(decryptFile(join(root,'missing.tbqa'),previouslySaved,key));
+  assert.equal(await readFile(previouslySaved,'utf8'),'KEEP_ME_SAFE');
+  await assert.rejects(encryptFile(join(root,'missing.tar.gz'),previouslySaved,key),{code:'EEXIST'});
+  assert.equal(await readFile(previouslySaved,'utf8'),'KEEP_ME_SAFE');
   await assert.rejects(decryptFile(encrypted,bad,'c'.repeat(64)));
   await assert.rejects(stat(bad),{code:'ENOENT'});
   ciphertext[22]^=1;
