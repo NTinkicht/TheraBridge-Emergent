@@ -142,7 +142,7 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     });
     // Corrupted source audit metadata is NOT trusted as a UUID. It must not
     // crash the child workspace or become invented provenance.
-    await h.prisma.centerEvent.create({
+    const malformedEvent = await h.prisma.centerEvent.create({
       data: { centerId, type: 'clinical.report_plan_drafted', createdAt: h.clock.now(),
         meta: { planId: plan.id, planVersionId: plan.versionId,
           reportId: 'not-a-uuid', reportVersionId: 'also-not-a-uuid',
@@ -151,6 +151,7 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     });
     const validAfterBadEvent = (await get(therapist, W).expect(200)).body;
     expect(validAfterBadEvent.plans.find((p: { id: string }) => p.id === plan.id).source).toBeNull();
+    await h.prisma.centerEvent.delete({ where: { id: malformedEvent.id } });
 
     // TB-EM-032: source provenance is visible only through the authorized
     // child/plan projection; observations remain bound to the ORIGINAL
