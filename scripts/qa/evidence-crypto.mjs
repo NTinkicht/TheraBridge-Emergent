@@ -17,18 +17,22 @@ export const keyBytes=hex=>{
 
 export async function encryptFile(source,destination,keyHex){
  const key=keyBytes(keyHex),iv=randomBytes(IV_LEN);
+ let created=false;
  try{
+  // Never delete an artifact this invocation did not create. EEXIST is safe.
   await writeFile(destination,Buffer.concat([MAGIC,iv]),{mode:0o600,flag:'wx'});
+  created=true;
   const cipher=createCipheriv('aes-256-gcm',key,iv);
   cipher.setAAD(MAGIC);
   await pipeline(createReadStream(source),cipher,createWriteStream(destination,{flags:'a',mode:0o600}));
   await appendFile(destination,cipher.getAuthTag());
- }catch(e){await rm(destination,{force:true});throw e;}
+ }catch(e){if(created)await rm(destination,{force:true});throw e;}
  finally{key.fill(0);}
 }
 
 export async function decryptFile(source,destination,keyHex){
  const key=keyBytes(keyHex);
+ let created=false;
  try{
   const length=(await stat(source)).size;
   if(length<MAGIC.length+IV_LEN+TAG_LEN)throw Error('truncated_evidence');
@@ -45,9 +49,12 @@ export async function decryptFile(source,destination,keyHex){
   const decipher=createDecipheriv('aes-256-gcm',key,nonce);
   decipher.setAAD(MAGIC);
   decipher.setAuthTag(tag);
+  const output=await open(destination,'wx',0o600);
+  created=true;
+  // Use the exclusively-created descriptor; never replace a pre-existing file.
   await pipeline(createReadStream(source,{start:MAGIC.length+IV_LEN,end:length-TAG_LEN-1}),
-   decipher,createWriteStream(destination,{flags:'wx',mode:0o600}));
- }catch(e){await rm(destination,{force:true});throw e;}
+   decipher,output.createWriteStream());
+ }catch(e){if(created)await rm(destination,{force:true});throw e;}
  finally{key.fill(0);}
 }
 
