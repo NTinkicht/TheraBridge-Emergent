@@ -11,6 +11,7 @@ async function pureModule(path) {
 const progress = await pureModule('apps/web/src/lib/progress-analysis.ts');
 const assist = await pureModule('apps/web/src/lib/evidence-assist.ts');
 const comparison = await pureModule('apps/web/src/lib/plan-version-compare.ts');
+const planEvidence = await pureModule('apps/web/src/lib/plan-evidence.ts');
 const schedule = await pureModule('apps/web/src/lib/home-schedule.ts');
 const pts = [
   { id:'p1', planVersionId:'v1', goalKey:'shared', observedOn:'2026-10-05', value:2 },
@@ -163,4 +164,31 @@ assert.equal(planningDelta.goals[0].definitionChanged, true);
 assert.equal(planningDelta.activities[0].kind, 'changed');
 assert(!('measurements' in planningDelta.goals[0]));
 
+// TB-EM-032: no cross-version inference even when goal keys are identical.
+// The report source maps only initial g1; a new plan version never inherits
+// prior observations or source definition identity implicitly.
+const sourceOrigin = {
+  originalPlanVersionId: 'v-initial', reportId: 'r-saved', reportVersionId: 'rv1',
+  reportTitle: 'Saved report', reportVersionNumber: 1, draftedAt: '2026-10-25',
+  selectedGoals: [{ planGoalKey: 'g1', sourcePlanVersionId: 'previous-plan-v2', sourceGoalKey: 'shared' }],
+  draftOnly: true, released: false,
+};
+const planObservations = [
+  { id: 'o1', planVersionId: 'previous-plan-v2', goalKey: 'shared', observedOn: '2026-10-01', value: 42 },
+  { id: 'o2', planVersionId: 'v-initial', goalKey: 'g1', observedOn: '2026-10-20', value: 3 },
+  { id: 'o3', planVersionId: 'v-initial', goalKey: 'g1', observedOn: '2026-10-19', value: 2 },
+  { id: 'o4', planVersionId: 'v-followup', goalKey: 'g1', observedOn: '2026-10-21', value: 7 },
+  { id: 'o5', planVersionId: 'v-initial', goalKey: 'g-other', observedOn: '2026-10-22', value: 9 },
+];
+const initial = planEvidence.goalEvidenceRows([{ key: 'g1', title: 'Test goal' }],
+  planObservations, 'v-initial', sourceOrigin)[0];
+assert.equal(initial.count, 2);
+assert.deepEqual(initial.records.map(x => x.id), ['o3','o2']);
+assert.deepEqual(initial.source, sourceOrigin.selectedGoals[0]);
+const followup = planEvidence.goalEvidenceRows([{ key: 'g1', title: 'Test goal' }],
+  planObservations, 'v-followup', sourceOrigin)[0];
+assert.equal(followup.count, 1);
+assert.equal(followup.source, null);
+assert.equal(planEvidence.evidenceForGoal(planObservations, 'no-such-version', 'g1').count, 0);
+assert.equal(planEvidence.sourceForGoal(null, 'v-initial', 'g1'), null);
 console.log('PASS: strict plan-version isolation, weekly/monthly bucket boundaries, source IDs, no fabricated trend, specialty-only activity shortlist, manual factual suggestions');
