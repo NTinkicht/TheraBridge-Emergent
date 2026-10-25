@@ -5,6 +5,7 @@ import { GitCompareArrows, History } from 'lucide-react';
 import { Card, Pill } from '@/components/design/ui';
 import type { HomeActivity, PlanVersion, Template } from '@/lib/clinical';
 import { comparePlanVersions, type ChangeKind } from '@/lib/plan-version-compare';
+import { scheduleDescription } from '@/lib/home-schedule';
 
 type Plan = { id: string; title: string; service: string; versions: PlanVersion[] };
 const statusNames: Record<PlanVersion['status'], string> = {
@@ -33,7 +34,7 @@ function ActivityText({ a, templates }: { a: HomeActivity; templates: Template[]
   const t = a.snapshot ?? currentLibraryTemplate;
   return <span className="break-words">
     <span className="font-medium">{t?.title ?? 'Historic activity (template unavailable)'}</span>
-    {' · '}{a.frequency} · linked goal: {a.goalKey || 'Not recorded'}
+    {' · '}{a.frequency} · linked goal: {a.goalKey || 'Not recorded'}{a.schedule && <span className="block text-brand-inkMuted">Planned cadence: {scheduleDescription(a.schedule)} (internal draft only)</span>}
     {a.note ? ' · '+a.note : ''}
     {!a.snapshot && <span className="text-brand-inkMuted"> · Legacy draft: title from current library, not a frozen snapshot</span>}
     {a.snapshot && <span className="block mt-1 text-brand-inkMuted" data-testid="plan-history-activity-snapshot">
@@ -92,7 +93,7 @@ export function PlanVersionHistory({ plan, templates }: { plan: Plan; templates:
           <p className="whitespace-pre-wrap break-words text-[13px]">{inspect.summary || 'No summary recorded.'}</p>
           <h4 className="text-[14px] font-semibold">Goal definitions ({inspect.goals.length})</h4>
           {inspect.goals.length ? <ul className="list-inside list-disc space-y-1 text-[13px]">
-            {inspect.goals.map(g => <li key={g.key}>{g.title} · {g.measure} · baseline {g.baseline} · target {g.target}</li>)}
+            {inspect.goals.map(g => <li key={g.key}>{g.title} · {g.measure} · baseline {g.baseline} · target {g.target} · {g.horizon === 'SHORT_TERM' ? 'Short-term' : g.horizon === 'LONG_TERM' ? 'Long-term' : 'Uncategorized'}{g.targetOn ? ' · Target ' + g.targetOn : ''}{g.reviewOn ? ' · Review ' + g.reviewOn : ''}</li>)}
           </ul> : <p className="text-[13px] text-brand-inkMuted">No goals recorded.</p>}
           <h4 className="text-[14px] font-semibold">Draft home activities ({inspect.homeActivities.length})</h4>
           {inspect.homeActivities.length ? <ul className="list-inside list-disc space-y-1 text-[13px]">
@@ -125,8 +126,8 @@ export function PlanVersionHistory({ plan, templates }: { plan: Plan; templates:
             {difference.goals.filter(g => g.kind !== 'unchanged').length ? <ul className="space-y-2">
               {difference.goals.filter(g => g.kind !== 'unchanged').map(g => <li key={g.key} className="rounded-control border border-border-light bg-surface-white p-3 text-[13px]">
                 <strong>{changeNames[g.kind]}:</strong> {g.current?.title ?? g.previous?.title ?? g.key}
-                {g.previous && <p className="mt-1 text-brand-inkMuted">Previous: {g.previous.measure}; baseline {g.previous.baseline}, target {g.previous.target}</p>}
-                {g.current && <p className="text-brand-inkMuted">Compared: {g.current.measure}; baseline {g.current.baseline}, target {g.current.target}</p>}
+                {g.previous && <p className="mt-1 text-brand-inkMuted">Previous: {g.previous.measure}; baseline {g.previous.baseline}, target {g.previous.target} · {g.previous.horizon ?? 'No horizon'} · target date {g.previous.targetOn ?? '—'} · review {g.previous.reviewOn ?? '—'}</p>}
+                {g.current && <p className="text-brand-inkMuted">Compared: {g.current.measure}; baseline {g.current.baseline}, target {g.current.target} · {g.current.horizon ?? 'No horizon'} · target date {g.current.targetOn ?? '—'} · review {g.current.reviewOn ?? '—'}</p>}
                 {g.definitionChanged && <p className="mt-1 font-medium text-status-caution" data-testid="goal-definition-warning">Goal definition changed. Do not combine measurements across versions without a separately reviewed continuity decision.</p>}
               </li>)}
             </ul> : <p className="text-[13px] text-brand-inkMuted">No goal definition changes.</p>}
