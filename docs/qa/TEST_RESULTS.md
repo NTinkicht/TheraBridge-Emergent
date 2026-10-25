@@ -1,3 +1,9 @@
+## 2026-10-26 — TB-EM-038 (tests added; NOT YET RUN)
+
+- `scripts/design/check-child360-logic.mjs`: checks exact-version grouped month entries, weekly + monthly ordering, invalid/undated omission, missing 31st, invalid month, overlap, no completion/outcome fields; verifies 30 scheduled dates in a late month despite 40-event `scheduledDays` preview cap.
+- `scripts/design/check-demo-journey.mjs`: in already-authorized synthetic clinician workspace, add valid October 31 plan schedule WITHOUT save, inspect calendar date and selected item, assert explicit unsaved preview, verify no February 31 and no out-of-window entries; retains 320, 390, 768, 1024, 1440 responsive checks and all seven role checks. Historical read-only source data remains unchanged.
+- No clinical or hosted acceptance claimed. Exact-head GitHub CI NOT YET VERIFIED at writing. Hosted issue #61 ledger unchanged.
+
 ## 2026-10-25 — TB-EM-037 (tests added, NOT RUN at writing)
 
 - Pure TS source regression in `scripts/design/check-child360-logic.mjs`: same plan-version/goal timeline only; explicit source intersection/only-earlier/only-later; backdated `reviewedOn` vs immutable event time; same-time stable order; duplicate source IDs; mismatched goals, inverted, identical or absent selections denied; no claimed progress/clinical effectiveness.
