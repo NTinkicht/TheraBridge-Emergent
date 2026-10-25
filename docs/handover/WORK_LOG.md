@@ -1,3 +1,9 @@
+## 2026-10-25 — TB-EM-036 saved-claim inspector start
+
+- Confirmed PR #93 exact HEAD `060abbd87f3973b4208860fd3a4a6dd613268924`: all six jobs successful, Codex original P2 fixed, one review thread resolved, latest exact-head Codex found no major issues; squash-merged as `83c428d201d35fe0bac35c03cd8e4a664699bf39`.
+- Started `feature/tb-em-036-claim-source-inspector` from that main SHA; added read-only section and text/source search within authorized report version Compare UI and bounded fictional Chromium positive/negative inspector checks at 320/390/768/1024/1440. Existing authorization/fingerprint enforcement unchanged. Tests NOT RUN at authorship; await exact final HEAD CI and independent code review.
+- Hosted issue #61 ledger unchanged; real patient/clinical operations, AI, STT, signature, guardian release and deployment remain blocked.
+
 ## 2026-10-25 — TB-EM-035 implementation
 
 Read report version immutability, evidence periods, report decision auth/fingerprint and clinician editor. Branch from merged PR #92 main commit `3cd5fa8`. Extended `ReportsService.evidence()` with timestamp/goal/version-bound goal checkpoint fingerprint metadata but not text, and `ReportDecisionsService` catalogue to allow explicit goal-review source links. Extracted shared `suggestionSources` catalogue for source writer and archived reader; legacy reports lacking checkpoints remain readable. Added pure snapshot trace parser that requires exact section/passage/claim hashes and every cited source to match frozen evidence before displaying clinician wording as linked. Added read projection to existing permission-checked `GET report-versions/:id`, responsive saved-version comparison panel, API/PostgreSQL source/role tests, synthetic immutable text/source mismatch unit cases, and browser legacy+responsive smoke. All features internal, synthetic-only, no auto-generated medical statement. Qualification and independent review pending.

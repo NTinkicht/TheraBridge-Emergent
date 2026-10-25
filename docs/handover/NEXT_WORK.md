@@ -1,3 +1,9 @@
+## 2026-10-25 — TB-EM-036 source inspector qualification
+
+1. Open a DRAFT PR from `feature/tb-em-036-claim-source-inspector`; verify its exact final HEAD through all six CI jobs (real PostgreSQL/API, responsive seven-role Chromium, web build, preview, live-session, secret scan, Compose). Review the fictional multi-claim route overlay strictly as UI coverage; it is not proof of source hash validity or hosted acceptance. Fix P0–P2 defects on the same branch and obtain independent exact-head review; resolve threads; do not merge or deploy without owner-authorized gates.
+2. After qualification, continue Milestone 1 with read-only *within exact plan-version* longitudinal clinician goal-review checkpoint comparisons and dated home-practice calendar visualization. Never merge observations across historical goal versions or infer clinical outcomes. Keep guardian-visible clinical report content isolated.
+3. No real audio/STT, external AI, sign/co-sign, consent grants, safeguarding escalation, family clinical release, live Render changes or clinical pilot; #61 QA baseline unchanged.
+
 ## 2026-10-25 — TB-EM-035 closeout gates
 
 1. Qualify new branch/PR exact HEAD with PostgreSQL report decision regression, frozen version source fidelity, pure multi-claim/stale/malformed cases, Next.js build, seven-role browser at five widths, secret scan, preview and Compose smoke. Fix P0–P2 findings on same branch and request exact-head independent review. Do not merge without owner approval.
