@@ -71,12 +71,32 @@ export class ReportsService {
     });
     const obs = selected.length ? await db.observation.findMany({ where: { centerId, childId, planVersionId: { in: selected.map(p => p.current.id) }, observedOn: { lte: to } }, orderBy: [{ observedOn: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }] }) : [];
     const definitions = selected.map(({ plan, current }) => ({ id: plan.id, title: plan.title, versionId: current.id, versionNumber: current.number, status: current.status }));
+    // A checkpoint is an immutable, internal clinician review of one exact
+    // version and goal. Expose only source identity / fingerprint here, not
+    // its narrative, and never turn it into an outcome or approval.
+    const checkpoints = selected.flatMap(({ current }) => {
+      const keys = new Set((current.goals as Goal[]).map(g => g.key));
+      return (Array.isArray(current.reviewNotes) ? current.reviewNotes : []).flatMap((raw, index) => {
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return [];
+        const item = raw as Record<string, unknown>;
+        if (item.kind !== 'GOAL_CHECKPOINT' || typeof item.goalKey !== 'string' || !keys.has(item.goalKey) ||
+            typeof item.reviewedOn !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(item.reviewedOn) ||
+            item.reviewedOn < day(from) || item.reviewedOn > day(to) || typeof item.at !== 'string') return [];
+        return [{ ref: `goalCheckpoint:${current.id}:${index}`,
+          planVersionId: current.id, goalKey: item.goalKey, reviewedOn: item.reviewedOn,
+          fingerprint: fingerprint({ planVersionId: current.id, index, goalKey: item.goalKey,
+            reviewedOn: item.reviewedOn, at: item.at, authorId: item.authorId,
+            summary: item.summary, observationIds: item.observationIds }) }];
+      });
+    });
+
     return {
       period: { from: day(from), to: day(to) },
       assessments: assessments.map((a) => ({ id: a.id, assessedOn: day(a.assessedOn), summary: a.summary })),
       plan: definitions.length === 1 ? definitions[0] : null,
       plans: definitions,
       goals: selected.flatMap(({plan, current}) => (current.goals as Goal[]).map(g => ({ planId: plan.id, planTitle: plan.title, planVersionId: current.id, ...goalEvidence(g, obs.filter(o => o.planVersionId === current.id && o.goalKey === g.key), from) }))),
+      checkpoints,
       sessions: { drafts, completedVisits },
     };
   }
