@@ -6,6 +6,7 @@ import type { Viewer } from '../operations/children.service';
 import { TrialService } from '../operations/trial.service';
 import { ClinicalService, LOCKED, asDate, day } from './clinical.service';
 import { EDITABLE, fingerprint } from './governance-core';
+import { traceSavedStatements } from './report-statement-trace';
 import type { ProgressQueryDto, ReportCreateDto, ReportSaveDto, ReviewDto, ReportToPlanDraftDto } from './clinical.dto';
 
 const DAY = 86_400_000;
@@ -399,8 +400,22 @@ export class ReportsService {
     const x = await this.prisma.reportVersion.findFirst({ where: { id: versionId, centerId } });
     if (!x) throw new NotFoundException('Report version not found');
     await this.report(centerId, v, x.reportId);
-    const who = await this.names([x.authorId]);
-    return { id: x.id, reportId: x.reportId, number: x.number, kind: x.kind, sections: x.sections as Sections, evidence: x.evidence as unknown as Evidence, author: who(x.authorId), createdAt: x.createdAt };
+    const [who, decisions] = await Promise.all([
+      this.names([x.authorId]),
+      this.prisma.reportSuggestionDecision.findMany({
+        where: { centerId, reportId: x.reportId, action: 'APPLIED' },
+        select: { id: true, section: true, action: true, sectionHash: true,
+          passageHash: true, claimMap: true, sourceManifest: true },
+        orderBy: { createdAt: 'desc' }, take: 100,
+      }),
+    ]);
+    const statementTrace = traceSavedStatements(
+      x.sections as Sections, x.evidence as unknown as Evidence, decisions, x.reportId,
+    );
+    return { id: x.id, reportId: x.reportId, number: x.number, kind: x.kind,
+      sections: x.sections as Sections, evidence: x.evidence as unknown as Evidence,
+      statementTrace, author: who(x.authorId), createdAt: x.createdAt,
+      claimValidation: 'REFERENCED_NOT_VERIFIED' as const, released: false as const };
   }
 
 }
