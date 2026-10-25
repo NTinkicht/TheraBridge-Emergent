@@ -22,7 +22,7 @@ export interface Workspace {
   assessments: { id: string; service: string; assessedOn: string; summary: string; areas: { area: string; finding: string }[]; version: number; author: string; mine: boolean; updatedAt: string }[];
   plans: { id: string; service: string; title: string; source?: PlanOrigin | null; versions: PlanVersion[] }[];
   notes: { executionStatus: 'IN_PROGRESS' | 'COMPLETED'; actualStart: string | null; actualEnd: string | null; attendance: 'PRESENT' | 'NO_SHOW'; activities: SessionActivity[]; id: string; service: string; sessionDate: string; appointmentId: string | null; sections: Record<string, string>; version: number; author: string; mine: boolean; updatedAt: string }[];
-  observations: { id: string; planVersionId: string; goalKey: string; value: number; observedOn: string; note: string | null; author: string }[];
+  observations: { id: string; planVersionId: string; goalKey: string; value: number; observedOn: string; note: string | null; sessionNoteId?: string | null; author: string }[];
   appointments: { id: string; service: string; startsAt: string; endsAt: string; room: string | null; status: string; hasNote: boolean }[];
   templates: Template[];
 }
