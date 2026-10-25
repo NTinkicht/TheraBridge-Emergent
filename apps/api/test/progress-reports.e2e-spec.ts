@@ -148,6 +148,87 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     const types = (await h.prisma.centerEvent.findMany({ where: { centerId }, select: { type: true } })).map((e) => e.type);
     expect(types).toEqual(expect.arrayContaining(['clinical.report_drafted', 'clinical.report_autosaved', 'clinical.report_version_saved', 'clinical.report_submitted', 'clinical.report_commented', 'clinical.report_returned']));
   });
+  it('pages beyond 100 pending reports with server-side scoped filters and stable ordering', async () => {
+    const sup = await staff('pagination-supervisor@prog.test', ['CLINICAL_SUPERVISOR'], []);
+    const therapist = await staff('pagination-therapist@prog.test', ['THERAPIST']);
+    const a = (await post(h, c('children'), admin, {
+      firstName: 'Alice', lastName: 'Queue', dateOfBirth: '2019-04-02', services: ['speech'],
+    }).expect(201)).body.id;
+    // Additional child is an isolated high-volume database fixture, not an API
+    // onboarding attempt: the synthetic centre intentionally has a child cap.
+    const existing = await h.prisma.child.findUniqueOrThrow({ where: { id: a } });
+    const b = (await h.prisma.child.create({ data: {
+      centerId, firstName: 'Béatrice', lastName: 'Queue',
+      dateOfBirth: new Date('2018-04-02T00:00:00Z'), services: ['speech'],
+      createdById: existing.createdById, createdAt: new Date(h.clock.t),
+    } })).id;
+    const member = therapist.body.activeContext.membershipId;
+    const baseTime = Date.parse('2026-10-15T09:00:00Z');
+    // Seed only synthetic report metadata; no release, sign, or clinical action.
+    await h.prisma.progressReport.createMany({ data: Array.from({ length: 102 }, (_, i) => ({
+      centerId, childId: i === 0 ? b : a, membershipId: member,
+      service: i === 0 ? 'occupational' : 'speech',
+      title: i === 0 ? 'Unique Needle' : `Bulk Review ${String(i).padStart(3, '0')}`,
+      status: 'IN_REVIEW', periodStart: new Date('2026-09-01T00:00:00Z'),
+      periodEnd: new Date('2026-10-19T00:00:00Z'),
+      createdAt: new Date(baseTime + i * 1000), updatedAt: new Date(baseTime + i * 1000),
+    })) });
+    const queue = c('clinical/reports/review-queue');
+    const first = (await get(sup, queue).expect(200)).body;
+    expect(first).toMatchObject({ total: 102, filteredTotal: 102, page: 1, pageSize: 25, hasMore: true });
+    expect(first.items).toHaveLength(25);
+    const last = (await get(sup, queue + '?page=5').expect(200)).body;
+    expect(last).toMatchObject({ total: 102, filteredTotal: 102, page: 5, hasMore: false });
+    expect(last.items).toHaveLength(2);
+    const ids = new Set<string>();
+    for (let page = 1; page <= 5; page++) {
+      const batch = (await get(sup, queue + '?page=' + page).expect(200)).body.items;
+      for (const row of batch) {
+        expect(ids.has(row.id)).toBe(false);
+        ids.add(row.id);
+        expect(row).not.toHaveProperty('sections');
+        expect(row).not.toHaveProperty('evidence');
+      }
+    }
+    expect(ids.size).toBe(102);
+    const filtered = (await get(sup, queue + '?search=Unique%20Needle').expect(200)).body;
+    expect(filtered).toMatchObject({ total: 102, filteredTotal: 1, page: 1, hasMore: false });
+    expect(filtered.items).toHaveLength(1);
+    expect(filtered.items[0]).toMatchObject({ title: 'Unique Needle', childId: b });
+    const accent = (await get(sup, queue + '?search=Beatrice%20Queue').expect(200)).body;
+    expect(accent).toMatchObject({ filteredTotal: 1 });
+    expect(accent.items[0].childId).toBe(b);
+    const fullName = (await get(sup, queue + '?search=Alice%20Queue').expect(200)).body;
+    expect(fullName).toMatchObject({ filteredTotal: 101 });
+    const displayedSpecialty = (await get(sup, queue + '?search=Occupational%20therapy').expect(200)).body;
+    expect(displayedSpecialty).toMatchObject({ filteredTotal: 1 });
+    expect(displayedSpecialty.items[0].id).toBe(filtered.items[0].id);
+    // SQL search must treat %, _ and backslash as literal text, not wildcards.
+    for (const literal of ['%', '_', '\\\\']) {
+      const result = (await get(sup, queue + '?search=' + encodeURIComponent(literal)).expect(200)).body;
+      expect(result).toMatchObject({ filteredTotal: 0, items: [] });
+    }
+    const authorMember = await h.prisma.membership.findUniqueOrThrow({ where: { id: member } });
+    await h.prisma.user.update({
+      where: { id: authorMember.userId }, data: { displayName: 'Óscar Reviewer' },
+    });
+    for (const nameQuery of ['Oscar%20Reviewer', '%C3%93scar%20Reviewer']) {
+      const byAuthor = (await get(sup, queue + '?search=' + nameQuery).expect(200)).body;
+      expect(byAuthor).toMatchObject({ total: 102, filteredTotal: 102 });
+      expect(byAuthor.items[0].author).toBe('Óscar Reviewer');
+    }
+    const specialist = (await get(sup, queue + '?service=occupational&childId=' + b).expect(200)).body;
+    expect(specialist).toMatchObject({ total: 102, filteredTotal: 1 });
+    expect(specialist.items[0].title).toBe('Unique Needle');
+    const wrong = (await get(sup, queue + '?childId=' + a + '&service=occupational').expect(200)).body;
+    expect(wrong).toMatchObject({ total: 102, filteredTotal: 0, items: [] });
+    await get(sup, queue + '?page=0').expect(400);
+    await get(sup, queue + '?page=10001').expect(400);
+    await get(sup, queue + '?childId=not-uuid').expect(400);
+    await get(sup, queue + '?service=invalid-specialty').expect(400);
+    await get(therapist, queue + '?search=Needle').expect(403);
+  });
+
   it('hides archived-child review metadata and restores queue visibility without restoring therapist assignments', async () => {
     // Isolated, disposable synthetic fixture: preserving the original report
     // lifecycle test is essential because archive permanently ends assignments.

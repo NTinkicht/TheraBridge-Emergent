@@ -5,6 +5,13 @@ import { SPECIALTIES } from '../applications/applications.dto';
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 export const MEASURES = ['percent', 'count', 'level'] as const;
 
+export class ReviewQueueQueryDto {
+  @IsOptional() @IsUUID() childId?: string;
+  @IsOptional() @IsIn(SPECIALTIES) service?: string;
+  @IsOptional() @IsString() @MaxLength(120) search?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(10000) page?: number;
+}
+
 export class AreaDto {
   @IsString() @MinLength(2) @MaxLength(80) area!: string;
   @IsString() @MaxLength(1000) finding!: string;

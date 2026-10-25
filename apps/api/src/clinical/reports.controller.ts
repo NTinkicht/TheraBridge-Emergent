@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
 import { RequirePermission, TbRequest } from '../auth/access';
 import type { Viewer } from '../operations/children.service';
-import { ProgressQueryDto, ReportCreateDto, ReportSaveDto, ReportVersionDto, ReviewDto, ReportSuggestionDecisionDto } from './clinical.dto';
+import { ProgressQueryDto, ReportCreateDto, ReportSaveDto, ReportVersionDto, ReviewDto, ReviewQueueQueryDto, ReportSuggestionDecisionDto } from './clinical.dto';
 import { GovernanceService } from './governance.service';
 import { FAMILY_PROGRESS_SAMPLE, ReportsService } from './reports.service';
 import { ReportDecisionsService } from './report-decisions.service';
@@ -21,8 +21,8 @@ export class ReportsController {
 
   @Get('clinical/reports/review-queue')
   @RequirePermission('center.clinical.review')
-  queue(@Param('centerId', uuid()) c: string, @Req() req: TbRequest) {
-    return this.reports.reviewQueue(c, viewer(req));
+  queue(@Param('centerId', uuid()) c: string, @Query() q: ReviewQueueQueryDto, @Req() req: TbRequest) {
+    return this.reports.reviewQueue(c, viewer(req), q);
   }
 
   @Get('clinical/children/:childId/reports')

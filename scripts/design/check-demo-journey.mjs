@@ -395,6 +395,27 @@ try {
     const reviewRow = page.getByTestId('review-queue-row-' + queuedDraft.id);
     await reviewRow.waitFor();
     assert((await reviewRow.innerText()).includes(queuedDraft.title));
+    // Real-browser keyboard and five-width responsive regression for #77.
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await reviewRow.waitFor();
+      const widths = await page.evaluate(() => ({
+        viewport: innerWidth, document: document.documentElement.scrollWidth,
+        queue: document.querySelector('[data-testid="supervisor-review-queue"]')?.getBoundingClientRect().toJSON(),
+      }));
+      assert.equal(widths.viewport, width);
+      assert(widths.document <= width + 3, 'Queue must not cause horizontal page overflow at ' + width);
+      assert(widths.queue && widths.queue.width > 0 && widths.queue.right <= width + 3,
+        'Supervisor queue must remain visible inside ' + width + 'px');
+    }
+    await page.getByTestId('review-queue-search').focus();
+    await page.keyboard.press('Tab');
+    const focused = await page.evaluate(() => ({
+      testId: document.activeElement?.getAttribute('data-testid'),
+      visible: document.activeElement?.matches(':focus-visible'),
+    }));
+    assert.equal(focused.testId, 'review-queue-open-' + queuedDraft.id);
+    assert.equal(focused.visible, true, 'Keyboard users must see focus on the review link');
     const openDraft = page.getByTestId('review-queue-open-' + queuedDraft.id);
     assert.equal(await openDraft.getAttribute('href'), '/app/reports/' + queuedDraft.id);
     assert((await openDraft.getAttribute('aria-label')).includes(queuedDraft.title));
@@ -414,6 +435,43 @@ try {
     });
     assert.equal(order, true, 'Date error must directly follow filters and precede the visible queue');
     await page.getByTestId('filter-period').selectOption('90');
+    // Exercise actual child and specialty selectors with distinct pending rows.
+    // The additional child exists only in the disposable CI loopback database.
+    const secondChild = await db.child.create({ data: {
+      centerId: center.id, firstName: 'Zoe', lastName: 'Queuefixture',
+      dateOfBirth: new Date('2019-01-02T00:00:00Z'),
+      services: ['speech'], createdById: child.createdById,
+      createdAt: new Date('2026-10-01T09:00:00Z'),
+    } });
+    const secondReport = await db.progressReport.create({ data: {
+      centerId: center.id, childId: secondChild.id, membershipId: queuedDraft.membershipId,
+      service: 'speech', title: 'Separate Speech Review', status: 'IN_REVIEW',
+      periodStart: new Date('2026-09-01T00:00:00Z'),
+      periodEnd: new Date('2026-10-19T00:00:00Z'),
+      createdAt: new Date('2026-10-01T09:00:00Z'),
+      updatedAt: new Date('2026-10-01T09:00:00Z'),
+    } });
+    await page.reload();
+    const secondRow = page.getByTestId('review-queue-row-' + secondReport.id);
+    await secondRow.waitFor();
+    await reviewRow.waitFor();
+    assert((await page.getByTestId('review-queue-count').innerText()).includes('2 matching'));
+    await page.getByTestId('filter-child').selectOption(secondChild.id);
+    await secondRow.waitFor();
+    await page.getByTestId('review-queue-count').getByText('1 matching', { exact: false }).waitFor();
+    assert.equal(await reviewRow.count(), 0, 'Child filter must exclude other child reports');
+    await page.getByTestId('filter-child').selectOption('');
+    await reviewRow.waitFor();
+    await secondRow.waitFor();
+    await page.getByTestId('filter-service').selectOption('speech');
+    await secondRow.waitFor();
+    await reviewRow.waitFor({ state: 'detached' }); // after the server response
+    await page.getByTestId('filter-service').selectOption('occupational');
+    await reviewRow.waitFor();
+    await secondRow.waitFor({ state: 'detached' }); // server-filtered result
+    await page.getByTestId('filter-service').selectOption('');
+    await secondRow.waitFor();
+    await reviewRow.waitFor();
     await page.getByTestId('review-queue-search').fill('no-matching-synthetic-review');
     await page.getByTestId('review-queue-empty').waitFor();
     assert.equal(await reviewRow.count(), 0);
