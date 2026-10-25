@@ -110,6 +110,8 @@ async function assess(browser,role,user,directory){
    }
    if(clicked.status==='rejected'||reply.status==='rejected'||!loggedIn)
     throw Error('login_not_confirmed');
+   // Wait for client-side Next.js redirect before deciding whether context selection is needed.
+   await page.waitForURL(u=>u.pathname==='/select-context'||u.pathname==='/app'||u.pathname.startsWith('/app/'),{timeout:20000});
    // Accounts with multiple authorized contexts legitimately land on /select-context.
    // Select only an unambiguous, already-authorized role; never bypass permissions.
    if(page.url?.().includes('/select-context')){
