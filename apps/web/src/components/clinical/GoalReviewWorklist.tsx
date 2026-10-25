@@ -1,20 +1,39 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CalendarClock, ClipboardCheck } from 'lucide-react';
 import { Card, Button, Pill } from '@/components/design/ui';
 import { serviceLabel } from '@/components/operations/BookDialog';
 import type { Workspace } from '@/lib/clinical';
-import { centerLocalDay, goalReviewRows, goalReviewAnchor, REVIEW_TEXT, type ReviewTiming } from '@/lib/goal-review';
+import { centerLocalDay, nextReviewDayDelay, goalReviewRows, goalReviewAnchor, REVIEW_TEXT, type ReviewTiming } from '@/lib/goal-review';
 
 const tone: Record<ReviewTiming, 'caution' | 'info' | 'neutral'> = {
   PAST_DUE: 'caution', DUE_TODAY: 'caution', COMING_UP: 'info',
-  SCHEDULED_LATER: 'neutral', NOT_SCHEDULED: 'neutral',
+  SCHEDULED_LATER: 'neutral', NOT_SCHEDULED: 'neutral', DATE_UNAVAILABLE: 'caution',
 };
 
 export function GoalReviewWorklist({ ws }: { ws: Workspace }) {
   const [expanded, setExpanded] = useState(false);
-  const today = centerLocalDay(ws.timezone, new Date());
+  const [today, setToday] = useState<string | null>(() => centerLocalDay(ws.timezone, new Date()));
+  useEffect(() => {
+    let pending: ReturnType<typeof setTimeout> | undefined;
+    const refresh = () => {
+      if (pending) clearTimeout(pending);
+      const now = new Date();
+      setToday(centerLocalDay(ws.timezone, now));
+      const delay = nextReviewDayDelay(ws.timezone, now);
+      if (delay !== null) pending = setTimeout(refresh, delay);
+    };
+    const onVisible = () => { if (document.visibilityState === 'visible') refresh(); };
+    refresh();
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      if (pending) clearTimeout(pending);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [ws.timezone]);
   const rows = goalReviewRows(ws, today);
   const due = rows.filter(r => r.timing === 'PAST_DUE' || r.timing === 'DUE_TODAY').length;
   const upcoming = rows.filter(r => r.timing === 'COMING_UP').length;
@@ -32,12 +51,13 @@ export function GoalReviewWorklist({ ws }: { ws: Workspace }) {
         <CalendarClock size={19} className="shrink-0 text-brand-action" aria-hidden="true" />
         <h2 className="text-[18px] font-semibold">Goal review worklist</h2>
       </div>
-      <span className="text-[12px] text-brand-inkMuted">Centre-local date: {today}</span>
+      <span className="text-[12px] text-brand-inkMuted">Centre-local date: {today ?? 'Unavailable'}</span>
     </div>
     <p className="text-[13px] text-brand-inkMuted">
       Clinician-entered review dates for current plan versions. A date flag is a scheduling reminder only:
       it does not mean a goal was achieved, that observations are sufficient, or that a clinical review is approved.
     </p>
+    {!today && <p role="status" className="rounded-control border border-border-light p-3 text-[12px] text-brand-inkMuted" data-testid="goal-review-timezone-invalid">The saved centre timezone is not recognized. Review timing is unavailable until centre settings are corrected; goals and plan editing remain accessible.</p>}
     <div className="flex flex-wrap gap-2 text-[12px]" data-testid="goal-review-summary">
       <Pill tone={due ? 'caution' : 'neutral'}>{due} due or past date</Pill>
       <Pill tone="info">{upcoming} within 14 days</Pill>
