@@ -139,6 +139,11 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     expect((await post(h, handoffPath, therapist, body).expect(201)).body).toMatchObject({
       id: created.id, versionId: created.versionId, reused: true,
     });
+    expect((await post(h, handoffPath, therapist, {
+      ...body, requestId: '57bf6a97-568d-4e46-b275-07da6cd1a5e0',
+    }).expect(201)).body).toMatchObject({
+      id: created.id, versionId: created.versionId, reused: true,
+    });
     await post(h, handoffPath, therapist, { ...body, title: 'Different request with reused ID' }).expect(409);
     expect(await h.prisma.therapyPlan.count({ where: { id: created.id } })).toBe(1);
     expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.report_plan_drafted' } })).toBe(1);
