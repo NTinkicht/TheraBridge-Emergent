@@ -304,7 +304,10 @@ try {
     const savedGoalKey = oldestPlan.goals[0].key;
     await page.goto(base + '/app/clinical/' + child.id +
       '#plan?version=' + encodeURIComponent(oldestPlan.id) + '&goal=' + encodeURIComponent(savedGoalKey));
+    await page.waitForFunction(() =>
+      document.querySelector('[data-testid="plan-history-select-1"]')?.getAttribute('aria-pressed') === 'true');
     await page.getByTestId('plan-history-goal-' + savedGoalKey).waitFor();
+    await page.waitForFunction(() => document.activeElement?.id?.includes('plan-history-goal-'));
     assert.equal(await page.getByTestId('plan-history-select-1').getAttribute('aria-pressed'), 'true',
       'Historical evidence must select the exact original snapshot, not default version 2');
     assert(await page.evaluate(() => document.activeElement?.id?.includes('plan-history-goal-')),
