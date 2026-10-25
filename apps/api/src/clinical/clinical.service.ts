@@ -11,6 +11,15 @@ export const asDate = (d: string) => new Date(`${d}T00:00:00Z`);
 export const day = (d: Date) => d.toISOString().slice(0, 10);
 export const LOCKED = 'Signing, approval and release are disabled until an owner-approved clinical policy exists.';
 type Goal = { key: string; title: string; measure: string; baseline: number; target: number; horizon?: 'SHORT_TERM' | 'LONG_TERM'; targetOn?: string; reviewOn?: string };
+// Normalize optional fields for the measured-goal immutability check. The DTO
+// may materialize absent optional properties as undefined, while old JSON
+// snapshots omit them entirely. Neither representation is a definition change.
+const goalDefinition = (g?: Goal) => !g ? null : {
+  key: g.key, title: g.title, measure: g.measure,
+  baseline: g.baseline, target: g.target,
+  horizon: g.horizon ?? null, targetOn: g.targetOn ?? null, reviewOn: g.reviewOn ?? null,
+};
+
 // Snapshots are captured by the server, never accepted as client input.
 type ActivitySnapshot = { id: string; title: string; service: string; ageBand: string; minutes: number; materials: string[]; steps: string[]; safety: string[]; version: number; capturedAt: string };
 type ActivitySchedule = { cadence: 'WEEKLY' | 'MONTHLY'; startsOn: string; endsOn: string; weekdays?: number[]; monthDay?: number };
@@ -242,7 +251,7 @@ export class ClinicalService {
       const observed = await tx.observation.findMany({ where: { planVersionId: id }, select: { goalKey: true } });
       for (const o of observed) {
         const oldGoal = (fresh.goals as Goal[]).find(g => g.key === o.goalKey);
-        if (fingerprint(oldGoal ?? null) !== fingerprint(dto.goals.find(g => g.key === o.goalKey) ?? null)) throw new ConflictException('A goal with observations cannot be redefined. Start a new plan version.');
+        if (fingerprint(goalDefinition(oldGoal)) !== fingerprint(goalDefinition(dto.goals.find(g => g.key === o.goalKey)))) throw new ConflictException('A goal with observations cannot be redefined. Start a new plan version.');
       }
       const r = await tx.planVersion.updateMany({ where: { id, centerId, authorId: v.userId, status: { in: EDITABLE }, version: dto.version }, data: { summary: dto.summary, goals: dto.goals as unknown as Prisma.InputJsonValue, homeActivities: homeActivities as unknown as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
       if (r.count !== 1) throw new ConflictException(x.status !== 'DRAFT' ? 'Only a draft can be edited. Start a new version to make changes.' : 'This draft changed since you opened it. Reload to see the latest version.');
