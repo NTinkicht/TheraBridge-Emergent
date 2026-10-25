@@ -132,7 +132,8 @@ async function assess(browser,role,user,directory){
      }
      return session.activeContext?.role===expected?'verified':'role_mismatch_after_selection';
    },[user.email,c.role]);
-   const valid=identity==='verified';
+   // The browser evaluator returns a typed label; legacy offline mocks return true.
+   const valid=identity==='verified'||identity===true;
    if(!valid)authFailure='identity_'+identity;
    if(!valid){authFailure='authenticated_but_role_identity_mismatch';throw Error('identity_mismatch');}
   }catch{
