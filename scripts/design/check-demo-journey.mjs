@@ -318,11 +318,19 @@ try {
       return button?.hasAttribute('disabled') === true;
     }, shadowPlanId);
     await shadowPanel.getByTestId('goal-checkpoint-unsaved-lock').waitFor();
+    // TB-EM-039 extends the same all-plan dirty guard to supervisor handoff:
+    // a clean plan B must not let a clinician send a snapshot while plan A
+    // still contains browser-only, unsaved edits.
+    assert(await shadowPanel.getByTestId('plan-submit').isDisabled(),
+      'Draft B supervisor submit must be locked while draft A has unsaved edits');
+    await shadowPanel.getByTestId('home-plan-handoff-blocked').waitFor();
     await firstSummary.fill(originalText);
     await page.waitForFunction(id => {
       const button = document.querySelector('[data-testid="plan-' + id + '"] [data-testid="goal-checkpoint-save"]');
       return button?.hasAttribute('disabled') === false;
     }, shadowPlanId);
+    assert(await shadowPanel.getByTestId('plan-submit').isEnabled(),
+      'Clean draft B regains supervisor submit eligibility after draft A is restored');
     await page.unroute(twoPlanRoute);
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
