@@ -12,6 +12,7 @@ const progress = await pureModule('apps/web/src/lib/progress-analysis.ts');
 const assist = await pureModule('apps/web/src/lib/evidence-assist.ts');
 const comparison = await pureModule('apps/web/src/lib/plan-version-compare.ts');
 const planEvidence = await pureModule('apps/web/src/lib/plan-evidence.ts');
+const review = await pureModule('apps/web/src/lib/goal-review.ts');
 const schedule = await pureModule('apps/web/src/lib/home-schedule.ts');
 const pts = [
   { id:'p1', planVersionId:'v1', goalKey:'shared', observedOn:'2026-10-05', value:2 },
@@ -191,4 +192,44 @@ assert.equal(followup.count, 1);
 assert.equal(followup.source, null);
 assert.equal(planEvidence.evidenceForGoal(planObservations, 'no-such-version', 'g1').count, 0);
 assert.equal(planEvidence.sourceForGoal(null, 'v-initial', 'g1'), null);
+
+// TB-EM-033: review dates are centre-local scheduling flags ONLY.
+assert.equal(review.centerLocalDay('Asia/Dubai', new Date('2026-10-25T21:30:00Z')), '2026-10-26');
+assert.equal(review.centerLocalDay('America/Los_Angeles', new Date('2026-10-25T21:30:00Z')), '2026-10-25');
+const REVIEW_TODAY = '2026-10-25';
+assert.equal(review.reviewTiming('2026-10-24', REVIEW_TODAY), 'PAST_DUE');
+assert.equal(review.reviewTiming('2026-10-25', REVIEW_TODAY), 'DUE_TODAY');
+assert.equal(review.reviewTiming('2026-11-08', REVIEW_TODAY), 'COMING_UP');
+assert.equal(review.reviewTiming('2026-11-09', REVIEW_TODAY), 'SCHEDULED_LATER');
+assert.equal(review.reviewTiming('2026-02-30', REVIEW_TODAY), 'NOT_SCHEDULED');
+assert.equal(review.reviewTiming(undefined, REVIEW_TODAY), 'NOT_SCHEDULED');
+const reviewWs = {
+  plans: [
+    { id: 'p1', service: 'speech', title: 'Speech', versions: [
+      { id: 'new-v', number: 2, goals: [
+        { key: 'same', title: 'Current', reviewOn: '2026-10-24', horizon: 'SHORT_TERM' },
+        { key: 'later', title: 'Later', reviewOn: '2026-11-09' },
+      ], homeActivities: [{ templateId: 'a1', goalKey: 'same' }, { templateId: 'a2', goalKey: 'other' }] },
+      { id: 'old-v', number: 1, goals: [{ key: 'same', title: 'Historical', reviewOn: '2026-10-20' }], homeActivities: [] },
+    ] },
+    { id: 'p2', service: 'occupational', title: 'OT', versions: [
+      { id: 'ot-v', number: 1, goals: [{ key: 'a', title: 'Unscheduled' }], homeActivities: [] },
+    ] },
+  ],
+  observations: [
+    { id: 'o-new', planVersionId: 'new-v', goalKey: 'same' },
+    { id: 'o-old', planVersionId: 'old-v', goalKey: 'same' },
+    { id: 'o-other', planVersionId: 'new-v', goalKey: 'other' },
+    { id: 'o-ot', planVersionId: 'ot-v', goalKey: 'a' },
+  ],
+};
+const goalReviewRows = review.goalReviewRows(reviewWs, REVIEW_TODAY);
+assert.deepEqual(goalReviewRows.map(r => r.goalKey), ['same', 'later', 'a']);
+assert.equal(goalReviewRows[0].observationCount, 1);
+assert.equal(goalReviewRows[0].linkedActivityCount, 1);
+assert.equal(goalReviewRows[0].versionId, 'new-v');
+assert.equal(goalReviewRows[0].timing, 'PAST_DUE');
+assert.equal(goalReviewRows[2].timing, 'NOT_SCHEDULED');
+assert.equal(review.goalReviewAnchor('p1', 'same'), 'goal-review-p1-same');
+
 console.log('PASS: strict plan-version isolation, weekly/monthly bucket boundaries, source IDs, no fabricated trend, specialty-only activity shortlist, manual factual suggestions');
