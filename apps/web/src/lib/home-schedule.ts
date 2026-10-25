@@ -23,6 +23,15 @@ export function scheduleProblem(schedule?: ActivitySchedule): string | null {
     if (!Number.isInteger(schedule.monthDay) || schedule.monthDay! < 1 || schedule.monthDay! > 31 || schedule.weekdays !== undefined)
       return 'Choose a day of the month from 1 to 31.';
   } else return 'Choose a valid schedule pattern.';
+  let hasOccurrence = false;
+  for (let t = dateUTC(schedule.startsOn); t <= dateUTC(schedule.endsOn); t += 86_400_000) {
+    const d = new Date(t);
+    if (schedule.cadence === 'WEEKLY' ? schedule.weekdays!.includes(d.getUTCDay()) : d.getUTCDate() === schedule.monthDay) {
+      hasOccurrence = true;
+      break;
+    }
+  }
+  if (!hasOccurrence) return 'No practice dates occur within that range.';
   return null;
 }
 export function scheduledDays(schedule: ActivitySchedule, limit = 8): string[] {
