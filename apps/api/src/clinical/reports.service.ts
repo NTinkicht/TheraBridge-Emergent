@@ -80,7 +80,7 @@ export class ReportsService {
         if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return [];
         const item = raw as Record<string, unknown>;
         if (item.kind !== 'GOAL_CHECKPOINT' || typeof item.goalKey !== 'string' || !keys.has(item.goalKey) ||
-            typeof item.reviewedOn !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(item.reviewedOn) ||
+            typeof item.reviewedOn !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(item.reviewedOn) ||
             item.reviewedOn < day(from) || item.reviewedOn > day(to) || typeof item.at !== 'string') return [];
         return [{ ref: `goalCheckpoint:${current.id}:${index}`,
           planVersionId: current.id, goalKey: item.goalKey, reviewedOn: item.reviewedOn,
