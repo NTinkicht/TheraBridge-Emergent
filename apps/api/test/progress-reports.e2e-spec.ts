@@ -114,7 +114,12 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     await post(h, handoffPath, therapist, { ...body, selectedGoals: [{ planVersionId: plan.versionId, goalKey: 'unknown' }] }).expect(422);
     await post(h, handoffPath, therapist, { ...body, selectedGoals: [body.selectedGoals[0], body.selectedGoals[0]] }).expect(422);
     await post(h, handoffPath, therapist, { ...body, reportRevision: 123 }).expect(409);
-    const created = (await post(h, handoffPath, therapist, body).expect(201)).body;
+    const parallel = await Promise.all([
+      post(h, handoffPath, therapist, body).expect(201),
+      post(h, handoffPath, therapist, body).expect(201),
+    ]);
+    expect(parallel.map(x => x.body.reused).sort()).toEqual([false, true]);
+    const created = parallel.find(x => !x.body.reused)!.body;
     expect(created).toMatchObject({ id: body.requestId, reused: false, released: false });
     const savedPlan = await h.prisma.therapyPlan.findUniqueOrThrow({ where: { id: created.id }, include: { versions: true } });
     expect(savedPlan).toMatchObject({ centerId, childId: kid, service: 'speech', title: body.title });
