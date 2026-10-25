@@ -291,6 +291,35 @@ try {
         'Report-to-plan handoff must not clip at ' + width + 'px: ' + JSON.stringify(bounds));
     }
     await page.setViewportSize({ width: 1280, height: 900 });
+    // New handoff POST is intercepted, while genuine report PATCH autosave
+    // continues. Unknown result must retain exact payload and report lock.
+    const handoffRequests = [];
+    const handoffRoute = '**/clinical/reports/*/plan-drafts';
+    await page.route(handoffRoute, async route => {
+      handoffRequests.push(JSON.parse(route.request().postData()));
+      await route.fulfill({ status: 503, contentType: 'application/json',
+        body: '{"message":"Simulated unknown result"}' });
+    });
+    const reportSummary = page.getByTestId('report-section-summary');
+    await reportSummary.fill((await reportSummary.inputValue()) + '\\nSynthetic pre-handoff text must persist.');
+    await page.getByTestId('report-to-plan-create').click();
+    await page.getByTestId('report-to-plan-abandon').waitFor();
+    assert(await reportSummary.isDisabled(), 'Pending handoff must lock report text');
+    assert(await page.getByTestId('report-to-plan-title').isDisabled(), 'Unknown POST must freeze submitted payload');
+    assert(await page.getByTestId('report-to-plan-toggle').isDisabled(), 'Unknown POST must not reset request UUID');
+    const handoffSaved = await db.progressReport.findUniqueOrThrow({ where: { id: speechReport.id } });
+    assert(handoffSaved.sections.summary.includes('Synthetic pre-handoff text must persist.'),
+      'Handoff must wait for actual report autosave');
+    assert.equal(handoffRequests[0].reportRevision, handoffSaved.version,
+      'Handoff must use latest saved revision, not stale parent detail revision');
+    await page.getByTestId('report-to-plan-create').click();
+    await page.waitForFunction(() => document.querySelector('[data-testid="report-to-plan-create"]')?.textContent === 'Retry same request');
+    assert.equal(handoffRequests.length, 2);
+    assert.deepEqual(handoffRequests[1], handoffRequests[0], 'Retry must preserve exact submitted request UUID and content');
+    page.once('dialog', async dialog => { await dialog.accept(); });
+    await page.getByTestId('report-to-plan-abandon').click();
+    assert(!(await reportSummary.isDisabled()), 'Explicit abandon must unlock report editor');
+    await page.unroute(handoffRoute);
     await page.getByTestId('report-to-plan-toggle').click();
 
     const sourceDetail = await read(page, centerBase + '/clinical/reports/' + speechReport.id);
