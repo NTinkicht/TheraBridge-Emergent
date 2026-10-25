@@ -1,3 +1,10 @@
+## 2026-10-25 — TB-EM-037 goal-review reference comparison
+
+- Owner-authorized squash merge of PR #94 after success (six jobs), Codex clean and Mistral no blocking findings, head `53bf0f267a9408640c3411d4b6332a7547ad6063` to main `40118d49a1486237f54d71f55cc02e1a7dc9d743`. P3 advisories deferred.
+- New branch starts at that main SHA. Pure same-goal/same-version checkpoint grouping and explicit selected observation ID set comparison implemented, with recorded timestamp ordering and no outcome aggregation.
+- Added responsive, role-preserving synthetic browser overlay test and pure negative/edge regressions; old and current authorized versions use the same read-only component. Tests NOT YET VERIFIED at authorship.
+- No clinician approval, sign/co-sign, guardian release, consent, real AI/audio/STT, Render/Neon operations or hosted acceptance updates.
+
 ## 2026-10-25 — TB-EM-036 saved-claim inspector start
 
 - Confirmed PR #93 exact HEAD `060abbd87f3973b4208860fd3a4a6dd613268924`: all six jobs successful, Codex original P2 fixed, one review thread resolved, latest exact-head Codex found no major issues; squash-merged as `83c428d201d35fe0bac35c03cd8e4a664699bf39`.
