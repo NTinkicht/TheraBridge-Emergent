@@ -14,6 +14,45 @@ const comparison = await pureModule('apps/web/src/lib/plan-version-compare.ts');
 const planEvidence = await pureModule('apps/web/src/lib/plan-evidence.ts');
 const review = await pureModule('apps/web/src/lib/goal-review.ts');
 const schedule = await pureModule('apps/web/src/lib/home-schedule.ts');
+const checkpointCompare = await pureModule('apps/web/src/lib/goal-checkpoint-compare.ts');
+
+// TB-EM-037: checkpoint comparisons stay in ONE immutable plan-version/goal;
+// compare only explicit source IDs, never infer values or clinical outcomes.
+const checkpointV = {
+  id: 'plan-version-exact', goals: [{ key: 'shared', title: 'Same-version goal' }, { key: 'other', title: 'Another goal' }],
+  goalCheckpoints: [
+    { kind: 'GOAL_CHECKPOINT', goalKey: 'shared', at: '2026-10-10T08:00:00Z',
+      reviewedOn: '2026-10-09', summary: 'Earlier narrative', observationIds: ['obs-a', 'obs-b', 'obs-b'] },
+    { kind: 'GOAL_CHECKPOINT', goalKey: 'other', at: '2026-10-10T09:00:00Z',
+      reviewedOn: '2026-10-10', summary: 'Different goal', observationIds: ['obs-x'] },
+    { kind: 'GOAL_CHECKPOINT', goalKey: 'shared', at: '2026-10-12T08:00:00Z',
+      reviewedOn: '2026-10-02', summary: 'Later recorded, backdated review', observationIds: ['obs-b', 'obs-c'] },
+  ],
+};
+assert.deepEqual(checkpointCompare.checkpointTimeline(checkpointV, 'shared').map(x => x.index), [0, 2]);
+assert.deepEqual(checkpointCompare.checkpointTimeline(checkpointV, 'missing'), []);
+assert.equal(checkpointCompare.checkpointTimeline({ ...checkpointV, goalCheckpoints: [] }, 'shared').length, 0);
+const checkpointDelta = checkpointCompare.compareCheckpointReferences(checkpointV, 0, 2);
+assert.equal(checkpointDelta.planVersionId, 'plan-version-exact');
+assert.deepEqual(checkpointDelta.shared, ['obs-b']);
+assert.deepEqual(checkpointDelta.earlierOnly, ['obs-a']);
+assert.deepEqual(checkpointDelta.laterOnly, ['obs-c']);
+assert(!('outcome' in checkpointDelta) && !('progress' in checkpointDelta) && !('measurement' in checkpointDelta));
+assert.equal(checkpointCompare.compareCheckpointReferences(checkpointV, 2, 0), null);
+assert.equal(checkpointCompare.compareCheckpointReferences(checkpointV, 0, 1), null);
+assert.equal(checkpointCompare.compareCheckpointReferences(checkpointV, 0, 0), null);
+assert.equal(checkpointCompare.compareCheckpointReferences(checkpointV, -1, 2), null);
+assert.equal(checkpointCompare.compareCheckpointReferences(checkpointV, 0, 100), null);
+const stableEqualTime = { ...checkpointV, goalCheckpoints: [
+  { ...checkpointV.goalCheckpoints[0] }, { ...checkpointV.goalCheckpoints[2],
+    at: checkpointV.goalCheckpoints[0].at },
+] };
+assert.deepEqual(checkpointCompare.checkpointTimeline(stableEqualTime, 'shared').map(x => x.index), [0, 1]);
+assert.equal(checkpointCompare.compareCheckpointReferences(stableEqualTime, 1, 0), null);
+// The module receives the currently authorized version. It has no API, data
+// fetch or cross-version re-linking path, even for reused goal keys.
+assert.equal(checkpointV.goalCheckpoints[2].reviewedOn, '2026-10-02');
+
 const pts = [
   { id:'p1', planVersionId:'v1', goalKey:'shared', observedOn:'2026-10-05', value:2 },
   { id:'p2', planVersionId:'v1', goalKey:'shared', observedOn:'2026-10-11', value:4 },
