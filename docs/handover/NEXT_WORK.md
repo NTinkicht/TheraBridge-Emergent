@@ -1,3 +1,7 @@
+## 2026-10-25 — TB-EM-034 gates
+
+Run exact-head 6-job CI including PostgreSQL e2e for source/role/replay/immutability, seven-role browser and five viewport widths, web and API builds, secret scan, Docker Compose smoke. Fix all P0–P2 findings on the draft branch and request exact-head independent review before marking Ready. No automatic merge/deploy; follow owner process. Then milestone continues with evidence-linked report statements and explicit checkpoint follow-up reading, maintaining unsigned synthetic clinical-only boundaries.
+
 ## 2026-10-25 — TB-EM-033 review-readiness closeout
 
 Qualify exact HEAD of `feature/tb-em-033-goal-review-readiness`: API/web builds, PostgreSQL/regressions, pure date+version test, responsive seven-role Chromium and exact report→goal deep link, secret scan, Docker Compose smoke. Fix P0–P2 on same PR, independent exact-head review, resolve threads, mark ready only after gates. No merge or deploy without further owner instruction. Future Milestone 1 steps: persistent clinician-authored goal review checkpoints (separate from goal definition immutability), evidence-to-report statement trace UI and retrospective goal reviews; no automatic clinical effectiveness inference or guardian release.
