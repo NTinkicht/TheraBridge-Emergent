@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { FileCheck2, Link2Off } from 'lucide-react';
 import type { ReportVersion, StatementTrace } from '@/lib/reports';
 
@@ -28,6 +29,28 @@ function sourceGoal(v: ReportVersion, ref: string) {
 
 export function ReportStatementTrace({ version, childId }: { version: ReportVersion; childId: string }) {
   const traced = version.statementTrace ?? [];
+  const [sectionFilter, setSectionFilter] = useState<StatementTrace['section'] | 'all'>('all');
+  const [search, setSearch] = useState('');
+  const term = search.trim().toLocaleLowerCase();
+  const totalClaims = traced.reduce((sum, section) =>
+    sum + (section.status === 'LINKED_TO_SAVED_TEXT' ? section.claims.length : 0), 0);
+  const unavailableSections = traced.filter(section => section.status !== 'LINKED_TO_SAVED_TEXT').length;
+  // A search filters only attributable claims; never hide a mismatch warning
+  // in the selected section or turn it into a successful source attribution.
+  const shown = traced
+    .filter(section => sectionFilter === 'all' || section.section === sectionFilter)
+    .map(section => ({
+      ...section,
+      claims: section.status !== 'LINKED_TO_SAVED_TEXT' || !term ? section.claims :
+        section.claims.filter(claim =>
+          claim.text.toLocaleLowerCase().includes(term) ||
+          claim.sources.some(source =>
+            source.label.toLocaleLowerCase().includes(term) ||
+            source.ref.toLocaleLowerCase().includes(term))),
+    }))
+    .filter(section => section.status !== 'LINKED_TO_SAVED_TEXT' || section.claims.length > 0);
+  const shownClaims = shown.reduce((sum, section) =>
+    sum + (section.status === 'LINKED_TO_SAVED_TEXT' ? section.claims.length : 0), 0);
   return <section className="space-y-3 rounded-control border border-border-light bg-surface-subtle p-4"
     aria-label="Saved statement evidence trace" data-testid="saved-statement-trace">
     <div className="flex items-center gap-2">
@@ -38,7 +61,39 @@ export function ReportStatementTrace({ version, childId }: { version: ReportVers
     {!traced.length && <p className="text-[13px] text-brand-inkMuted" data-testid="statement-trace-empty">
       No clinician-applied, source-linked statements were recorded for this snapshot.
     </p>}
-    {traced.map(section => <div key={section.section}
+    {!!traced.length && <>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" data-testid="statement-trace-inspector">
+        <label className="space-y-1 text-[12px] font-semibold text-brand-inkMuted">
+          Report section
+          <select value={sectionFilter} onChange={event =>
+            setSectionFilter(event.target.value as StatementTrace['section'] | 'all')}
+            className="block min-h-[44px] w-full rounded-control border border-border-light bg-surface-white px-3 text-[13px] text-brand-ink"
+            data-testid="statement-trace-section-filter">
+            <option value="all">All sections</option>
+            {Object.entries(TITLES).map(([key, title]) =>
+              <option key={key} value={key}>{title}</option>)}
+          </select>
+        </label>
+        <label className="space-y-1 text-[12px] font-semibold text-brand-inkMuted">
+          Find statement or source
+          <input type="search" value={search} onChange={event => setSearch(event.target.value)}
+            placeholder="Search saved wording or source"
+            className="block min-h-[44px] w-full rounded-control border border-border-light bg-surface-white px-3 text-[13px] text-brand-ink"
+            data-testid="statement-trace-search" />
+        </label>
+      </div>
+      <p className="text-[12px] text-brand-inkMuted" role="status" aria-live="polite"
+        data-testid="statement-trace-result-count">
+        Showing {shownClaims} of {totalClaims} source-linked clinician statements.
+        {unavailableSections ? ` ${unavailableSections} section(s) have unavailable attribution; change filters to inspect all warnings.` : ''}
+        {' '}References are recorded, not clinically verified.
+      </p>
+      {!shown.length && <p className="rounded-control border border-border-light p-3 text-[13px] text-brand-inkMuted"
+        data-testid="statement-trace-no-matches">
+        No matching source-linked statements. Clear the search or choose another section.
+      </p>}
+    </>}
+    {shown.map(section => <div key={section.section}
       className="space-y-2 rounded-control border border-border-light bg-surface-white p-3"
       data-testid={`statement-trace-section-${section.section}`}>
       <div className="flex flex-wrap items-center gap-2">
@@ -57,7 +112,7 @@ export function ReportStatementTrace({ version, childId }: { version: ReportVers
         </p> :
         <ol className="space-y-3" data-testid={`statement-trace-claims-${section.section}`}>
           {section.claims.map(c => <li key={c.index} className="space-y-2 border-t border-border-light pt-2">
-            <p className="text-[12px] font-semibold">Statement {c.index} · clinician authored</p>
+            <p className="text-[12px] font-semibold">Statement {c.index} · clinician authored · {c.sources.length} recorded source{c.sources.length === 1 ? '' : 's'}</p>
             <p className="whitespace-pre-wrap break-words text-[13px]">{c.text}</p>
             <p className="text-[12px] font-semibold text-brand-inkMuted">Recorded source references</p>
             <ul className="space-y-1">
