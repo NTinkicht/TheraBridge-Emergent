@@ -1,0 +1,27 @@
+name: Grok independent PR review trigger
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  comment-review-request:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post exact-SHA review request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.payload.pull_request.head.sha;
+            const base = context.payload.pull_request.base.sha;
+            const number = context.payload.pull_request.number;
+            const title = context.payload.pull_request.title;
+            const body = `**Independent Grok review requested**\n\n- PR: #${number}\n- Title: ${title}\n- Exact HEAD: \`${sha}\`\n- Base: \`${base}\`\n- CI: check the Actions tab for this SHA before reviewing\n\nReply to this comment with:\n\n\`\`\`\nReview exact HEAD ${sha} of PR #${number}.\nUse the standard TheraBridge adversarial review format.\nRead-only. Do not approve, merge, or deploy.\n\`\`\`\n\nThis comment is generated automatically. Prior reviews of earlier SHAs do not apply.`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: number,
+              body
+            });
