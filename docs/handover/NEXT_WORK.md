@@ -1,3 +1,9 @@
+## 2026-10-25 — PR #88 reviewer corrections: closeout
+
+1. Verify exact-HEAD CI of synchronous transition lease, whitespace title validation, pending-submit synthetic browser race and navigation fallback changes. Inspect jobs; fix any P0–P2 failure on PR #88. Request exact-head independent re-review; resolve Codex's remaining race thread only after verification. No self-approval or automatic merge/deploy.
+2. Once independently qualified and merged by owner-authorized process, proceed to remaining Milestone 1 features: short/long-term objective metadata, goal due/review dates, weekly/monthly home plan, source provenance UI. Preserve no guardian clinical access, release or AI/STT activation.
+3. Keep historical CI runs distinct from current branch, and keep issue #61 hosted acceptance unchanged (53 PASS / 0 FAIL / 47 BLOCKED / 4 NOT TESTED, +4 historical supplemental PASS).
+
 ## 2026-10-25 — TB-EM-030 closeout gates
 
 1. Await exact HEAD GitHub CI for corrected PR #88; inspect API Postgres/browser failures and fix on SAME branch. Verify code review against latest head, especially report save lease, double-submit/ambiguous retry, durable fingerprint audit, role scopes and unchanged consent/release denials. Re-review/resolved threads before owner merge; do not automatically deploy/merge.
