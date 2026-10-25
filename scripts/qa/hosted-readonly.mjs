@@ -110,6 +110,26 @@ async function assess(browser,role,user,directory){
    }
    if(clicked.status==='rejected'||reply.status==='rejected'||!loggedIn)
     throw Error('login_not_confirmed');
+   // Accounts with multiple authorized contexts legitimately land on /select-context.
+   // Select only an unambiguous, already-authorized role; never bypass permissions.
+   if(page.url?.().includes('/select-context')){
+    const selected=await page.evaluate(async ([email,expected])=>{
+     const response=await fetch('/api/auth/session',{credentials:'include'});
+     if(!response.ok)return false;
+     const session=await response.json();
+     if(session.user?.email?.toLowerCase()!==email.toLowerCase())return false;
+     const matches=(session.contexts??[]).filter(ctx=>ctx.role===expected);
+     if(matches.length!==1)return false;
+     const context=matches[0];
+     const choice=context.type==='platform'?{platform:true}:{membershipId:context.membershipId,role:expected};
+     const change=await fetch('/api/auth/context',{method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json','X-CSRF-Token':session.csrfToken},
+      body:JSON.stringify(choice)});
+     return change.ok;
+    },[user.email,c.role]);
+    if(!selected)throw Error('authorized_context_not_unique_or_unavailable');
+    await page.goto(BASE+'/app',{waitUntil:'domcontentloaded',timeout:25000});
+   }
    await page.waitForURL(u=>u.pathname==='/app'||u.pathname.startsWith('/app/'),{timeout:20000});
    await page.getByTestId('product-shell').waitFor({timeout:15000});
    const valid=await page.evaluate(async ([email,expected])=>{
