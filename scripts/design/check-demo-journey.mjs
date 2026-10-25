@@ -209,6 +209,67 @@ try {
     await page.getByTestId('clinical-tab-plan').click();
     await page.getByTestId('goal-checkpoint-panel').first().waitFor();
     await page.getByTestId('goal-checkpoint-empty').first().waitFor();
+    // TB-EM-037: response-overlay test is ONLY a fictional read-model UI
+    // check, not proof that source IDs were clinically validated. All seven
+    // real role/permission checks still run against the original API.
+    const reviewCompareRoute = '**/api/centers/*/clinical/children/*';
+    let comparePlanId;
+    await page.route(reviewCompareRoute, async route => {
+      if (route.request().method() !== 'GET') return route.continue();
+      const response = await route.fetch();
+      if (response.status() !== 200) return route.fulfill({ response });
+      const data = await response.json();
+      const plan = data.plans.find(p => p.versions?.length && p.versions[0].goals?.length);
+      assert(plan, 'A visible authorized synthetic goal is required for checkpoint comparison');
+      comparePlanId = plan.id;
+      const version = plan.versions[0], goalKey = version.goals[0].key;
+      const referenceA = '00000000-0000-4000-8000-000000000371';
+      const referenceB = '00000000-0000-4000-8000-000000000372';
+      const referenceC = '00000000-0000-4000-8000-000000000373';
+      const synthetic = [
+        { kind: 'GOAL_CHECKPOINT', goalKey, at: '2026-10-10T08:00:00Z',
+          reviewedOn: '2026-10-10', summary: 'Fictional earlier review for browser layout',
+          observationIds: [referenceA, referenceB], authorId: 'fictional-user',
+          clinicalAuthorization: false, released: false },
+        { kind: 'GOAL_CHECKPOINT', goalKey, at: '2026-10-12T09:00:00Z',
+          reviewedOn: '2026-10-11', summary: 'Fictional later review for browser layout',
+          observationIds: [referenceB, referenceC], authorId: 'fictional-user',
+          clinicalAuthorization: false, released: false },
+      ];
+      await route.fulfill({ response, json: { ...data, plans: data.plans.map(p =>
+        p.id === plan.id ? { ...p, versions: p.versions.map(v =>
+          v.id === version.id ? { ...v, goalCheckpoints: synthetic } : v) } : p) } });
+    });
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+    const checkpointCompare = page.getByTestId('plan-' + comparePlanId)
+      .getByTestId('checkpoint-compare').first();
+    await checkpointCompare.getByTestId('checkpoint-compare-notes').waitFor();
+    assert.equal(await checkpointCompare.getByTestId('checkpoint-compare-notes').locator('article').count(), 2);
+    const referenceText = await checkpointCompare.getByTestId('checkpoint-compare-sources').innerText();
+    assert(referenceText.includes('Referenced in both reviews · 1') &&
+      referenceText.includes('Only in earlier review · 1') &&
+      referenceText.includes('Only in later review · 1'),
+      'Fictional source set differences must render without outcome inference');
+    assert(!referenceText.includes('improved') && !referenceText.includes('achieved'));
+    await checkpointCompare.getByTestId('checkpoint-compare-earlier').selectOption('1');
+    await checkpointCompare.getByTestId('checkpoint-compare-later').selectOption('0');
+    await checkpointCompare.getByTestId('checkpoint-compare-selection-warning').waitFor();
+    await checkpointCompare.getByTestId('checkpoint-compare-earlier').selectOption('0');
+    await checkpointCompare.getByTestId('checkpoint-compare-later').selectOption('1');
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      const rect = await checkpointCompare.evaluate(el => ({
+        right: el.getBoundingClientRect().right, scroll: document.documentElement.scrollWidth,
+      }));
+      assert(rect.right <= width + 6 && rect.scroll <= width + 8,
+        'Goal checkpoint comparison must not overflow ' + width + 'px: ' + JSON.stringify(rect));
+    }
+    await page.unroute(reviewCompareRoute);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('goal-checkpoint-empty').first().waitFor();
     await page.getByTestId('goal-checkpoint-goal').first().selectOption({ index: 1 });
     await page.getByTestId('goal-checkpoint-summary').first().fill('Reviewed available synthetic records; monitor further observations.');
     assert(await page.getByTestId('goal-checkpoint-save').first().isEnabled(),
