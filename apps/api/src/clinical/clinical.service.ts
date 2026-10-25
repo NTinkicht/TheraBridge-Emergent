@@ -310,6 +310,16 @@ export class ClinicalService {
         const oldGoal = (fresh.goals as Goal[]).find(g => g.key === o.goalKey);
         if (fingerprint(goalDefinition(oldGoal)) !== fingerprint(goalDefinition(dto.goals.find(g => g.key === o.goalKey)))) throw new ConflictException('A goal with observations cannot be redefined. Start a new plan version.');
       }
+      // A recorded checkpoint freezes the goal's definition in THIS plan
+      // version, even when the therapist linked zero measured observations.
+      for (const n of Array.isArray(fresh.reviewNotes) ? fresh.reviewNotes : []) {
+        if (!n || typeof n !== 'object' || Array.isArray(n) ||
+            n.kind !== 'GOAL_CHECKPOINT' || typeof n.goalKey !== 'string') continue;
+        const priorGoal = (fresh.goals as Goal[]).find(g => g.key === n.goalKey);
+        const proposed = dto.goals.find(g => g.key === n.goalKey);
+        if (fingerprint(goalDefinition(priorGoal)) !== fingerprint(goalDefinition(proposed)))
+          throw new ConflictException('A goal with recorded review checkpoints cannot be redefined. Start a new plan version.');
+      }
       const r = await tx.planVersion.updateMany({ where: { id, centerId, authorId: v.userId, status: { in: EDITABLE }, version: dto.version }, data: { summary: dto.summary, goals: dto.goals as unknown as Prisma.InputJsonValue, homeActivities: homeActivities as unknown as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
       if (r.count !== 1) throw new ConflictException(x.status !== 'DRAFT' ? 'Only a draft can be edited. Start a new version to make changes.' : 'This draft changed since you opened it. Reload to see the latest version.');
       await logCenterEvent(tx, centerId, 'clinical.plan_draft_saved', now, { actorUserId: v.userId, meta: { childId: x.plan.childId, planId: x.planId, planVersionId: id, goals: dto.goals.length, activityTemplates: ids.length } });
@@ -342,11 +352,30 @@ export class ClinicalService {
       });
       if (!fresh) throw new NotFoundException('Plan version unavailable');
       if (fresh.authorId !== v.userId) throw new ForbiddenException('Only the plan author can record its draft goal review.');
+      // Active child assignments alone are insufficient: a separate staff
+      // specialty revocation must also make new clinical writes impossible.
+      const member = await tx.membership.findFirst({ where: {
+        id: v.membershipId, centerId, userId: v.userId, status: 'ACTIVE',
+        specialties: { has: x.plan.service },
+      }, select: { id: true } });
+      if (!member) throw new ForbiddenException('This clinical specialty is no longer authorized.');
       if (!['DRAFT', 'RETURNED_FOR_REVISION'].includes(fresh.status))
         throw new ConflictException('Goal review checkpoints can only be added to an editable internal draft.');
       if (fresh.version !== dto.version) throw new ConflictException('The plan has changed. Reload before recording a checkpoint.');
-      if (!validCalendarDate(dto.reviewedOn) || asDate(dto.reviewedOn) > now)
-        throw new UnprocessableEntityException('Review date must be a valid calendar day, not in the future.');
+      const centre = await tx.center.findUniqueOrThrow({ where: { id: centerId },
+        select: { timezone: true } });
+      let localToday: string;
+      try {
+        const parts = new Intl.DateTimeFormat('en-US', {
+          timeZone: centre.timezone, year: 'numeric', month: '2-digit', day: '2-digit',
+        }).formatToParts(now);
+        const part = (type: string) => parts.find(p => p.type === type)?.value ?? '';
+        localToday = [part('year'), part('month'), part('day')].join('-');
+      } catch {
+        throw new UnprocessableEntityException('The center timezone is invalid. Correct it before recording a dated review.');
+      }
+      if (!validCalendarDate(dto.reviewedOn) || dto.reviewedOn > localToday)
+        throw new UnprocessableEntityException('Review date must be a valid center-local calendar day, not in the future.');
       if (dto.summary.trim().length < 10)
         throw new UnprocessableEntityException('Describe the completed review in at least 10 characters.');
       if (!(fresh.goals as Goal[]).some(g => g.key === dto.goalKey))
@@ -372,12 +401,9 @@ export class ClinicalService {
           version: { increment: 1 }, updatedAt: now },
       });
       if (updated.count !== 1) throw new ConflictException('Plan version changed during the goal review. Reload and retry.');
-      await logCenterEvent(tx, centerId, 'clinical.goal_checkpoint_recorded', now, {
-        actorUserId: v.userId, meta: {
-          childId: x.plan.childId, planVersionId: id, goalKey: dto.goalKey,
-          sourceCount: sources.length, reviewedOn: dto.reviewedOn,
-        },
-      });
+      // Do not mirror even metadata to centre-wide events: ordinary staff
+      // timelines include centre events but must not expose clinical reviews.
+      // The protected append-only plan-version ledger is the source of truth.
       return { persisted: true, version: dto.version + 1, released: false,
         clinicalAuthorization: false };
     });
