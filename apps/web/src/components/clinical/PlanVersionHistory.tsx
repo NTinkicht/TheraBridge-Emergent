@@ -52,7 +52,7 @@ function ActivityText({ a, templates }: { a: HomeActivity; templates: Template[]
  * Read-only inspection of versions from a SINGLE already-authorized plan.
  * Never uses mutable endpoints, copies goal measurements, or infers approval.
  */
-export function PlanVersionHistory({ plan, templates, target }: { plan: Plan; templates: Template[];
+export function PlanVersionHistory({ plan, templates, timezone, target }: { plan: Plan; templates: Template[]; timezone: string;
   target?: { versionId: string; goalKey: string };
 }) {
   const versions = [...plan.versions].sort((a, b) => b.number - a.number);
@@ -125,7 +125,7 @@ export function PlanVersionHistory({ plan, templates, target }: { plan: Plan; te
             {inspect.homeActivities.map((a, i) => <li key={a.templateId+'-'+i}><ActivityText a={a} templates={templates} /></li>)}
           </ul> : <p className="text-[13px] text-brand-inkMuted">No draft activities recorded.</p>}
           <HomePracticeCalendar key={inspect.id} activities={inspect.homeActivities} goals={inspect.goals}
-            templates={templates} versionNumber={inspect.number} timezone="Asia/Dubai" />
+            templates={templates} versionNumber={inspect.number} timezone={timezone} />
           {!!inspect.goalCheckpoints?.length && <>
             <h4 className="text-[14px] font-semibold">Recorded internal clinician goal checkpoints</h4>
             <ul className="space-y-2 text-[13px]" data-testid="plan-history-checkpoints">
