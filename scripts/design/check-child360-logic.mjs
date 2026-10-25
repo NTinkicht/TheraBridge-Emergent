@@ -11,6 +11,7 @@ async function pureModule(path) {
 const progress = await pureModule('apps/web/src/lib/progress-analysis.ts');
 const assist = await pureModule('apps/web/src/lib/evidence-assist.ts');
 const comparison = await pureModule('apps/web/src/lib/plan-version-compare.ts');
+const schedule = await pureModule('apps/web/src/lib/home-schedule.ts');
 const pts = [
   { id:'p1', planVersionId:'v1', goalKey:'shared', observedOn:'2026-10-05', value:2 },
   { id:'p2', planVersionId:'v1', goalKey:'shared', observedOn:'2026-10-11', value:4 },
@@ -125,5 +126,41 @@ assert.equal(comparison.comparePlanVersions(newer, older).from, 2);
 // Caller supplies two versions of ONE already-authorized plan; this module has
 // no backend access and does not modify either persisted snapshot.
 assert.equal(older.goals[0].measure, 'count');
+
+
+// Structured home-plan recurrence is local-calendar-only and bounded.
+// Missing day 31 does not roll over to another month or invent a task.
+const monthlySchedule = { cadence: 'MONTHLY', startsOn: '2026-10-01', endsOn: '2027-03-31', monthDay: 31 };
+assert.equal(schedule.scheduleProblem(monthlySchedule), null);
+assert.deepEqual(schedule.scheduledDays(monthlySchedule), ['2026-10-31', '2026-12-31', '2027-01-31', '2027-03-31']);
+const weeklySchedule = { cadence: 'WEEKLY', startsOn: '2026-10-19', endsOn: '2026-10-29', weekdays: [1, 3] };
+assert.deepEqual(schedule.scheduledDays(weeklySchedule), ['2026-10-19','2026-10-21','2026-10-26','2026-10-28']);
+assert.equal(schedule.isCalendarDay('2028-02-29'), true);
+assert.equal(schedule.isCalendarDay('2027-02-29'), false);
+assert.equal(schedule.isCalendarDay('2027-04-31'), false);
+assert(schedule.scheduleProblem({ ...weeklySchedule, weekdays: [1,1] }));
+assert(schedule.scheduleProblem({ ...weeklySchedule, weekdays: [] }));
+assert(schedule.scheduleProblem({ ...weeklySchedule, endsOn: '2026-10-18' }));
+assert(schedule.scheduleProblem({ ...monthlySchedule, monthDay: 32 }));
+assert(schedule.scheduleProblem({ ...monthlySchedule, weekdays: [1] }));
+assert(schedule.scheduleProblem({ cadence: 'MONTHLY', startsOn: '2027-02-01', endsOn: '2027-02-28', monthDay: 31 }));
+assert(schedule.scheduleProblem({ cadence: 'WEEKLY', startsOn: '2026-10-19', endsOn: '2026-10-19', weekdays: [2] }));
+assert.deepEqual(schedule.scheduledDays({ ...monthlySchedule, monthDay: 32 }), []);
+// Pure version-history comparison must include planning metadata, but never
+// imports observations from another version under the same goal key.
+const plannedGoal = { key: 'goal', title: 'Synthetic naming', measure: 'count', baseline: 1, target: 5 };
+const basePlan = { number: 1, summary: 'draft', goals: [plannedGoal], homeActivities: [
+  { templateId: 'picture', frequency: 'Weekly calendar draft', goalKey: 'goal', schedule: weeklySchedule }
+] };
+const plannedPlan = { number: 2, summary: 'draft', goals: [
+  { ...plannedGoal, horizon: 'LONG_TERM', reviewOn: '2026-11-12', targetOn: '2027-02-28' }
+], homeActivities: [
+  { templateId: 'picture', frequency: 'Weekly calendar draft', goalKey: 'goal', schedule: { ...weeklySchedule, weekdays: [2] } }
+] };
+const planningDelta = comparison.comparePlanVersions(basePlan, plannedPlan);
+assert.equal(planningDelta.goals[0].kind, 'changed');
+assert.equal(planningDelta.goals[0].definitionChanged, true);
+assert.equal(planningDelta.activities[0].kind, 'changed');
+assert(!('measurements' in planningDelta.goals[0]));
 
 console.log('PASS: strict plan-version isolation, weekly/monthly bucket boundaries, source IDs, no fabricated trend, specialty-only activity shortlist, manual factual suggestions');

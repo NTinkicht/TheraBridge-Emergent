@@ -27,7 +27,7 @@ export interface PlanDifference {
 }
 
 const ordered = (a: string, b: string) => a.localeCompare(b);
-const goalIdentity = (g: Goal) => [g.title, g.measure, g.baseline, g.target] as const;
+const goalIdentity = (g: Goal) => [g.title, g.measure, g.baseline, g.target, g.horizon ?? null, g.targetOn ?? null, g.reviewOn ?? null] as const;
 // Compare immutable clinical content, not the current mutable activity library.
 // Ignore snapshot revision/time metadata; those are not activity instructions.
 const snapshotIdentity = (a: HomeActivity) => {
@@ -38,7 +38,7 @@ const snapshotIdentity = (a: HomeActivity) => {
   }) : null;
 };
 const activityIdentity = (a: HomeActivity) =>
-  [a.goalKey ?? '', a.frequency, a.note ?? '', snapshotIdentity(a)] as const;
+  [a.goalKey ?? '', a.frequency, a.note ?? '', JSON.stringify(a.schedule ?? null), snapshotIdentity(a)] as const;
 const changed = (before: readonly unknown[], after: readonly unknown[]) =>
   before.length !== after.length || before.some((field, i) => field !== after[i]);
 

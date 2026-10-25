@@ -10,10 +10,59 @@ import type { AssessmentDto, AssessmentUpdateDto, ObservationDto, PlanDto, PlanV
 export const asDate = (d: string) => new Date(`${d}T00:00:00Z`);
 export const day = (d: Date) => d.toISOString().slice(0, 10);
 export const LOCKED = 'Signing, approval and release are disabled until an owner-approved clinical policy exists.';
-type Goal = { key: string; title: string; measure: string; baseline: number; target: number };
+type Goal = { key: string; title: string; measure: string; baseline: number; target: number; horizon?: 'SHORT_TERM' | 'LONG_TERM'; targetOn?: string; reviewOn?: string };
+// Normalize optional fields for the measured-goal immutability check. The DTO
+// may materialize absent optional properties as undefined, while old JSON
+// snapshots omit them entirely. Neither representation is a definition change.
+const goalDefinition = (g?: Goal) => !g ? null : {
+  key: g.key, title: g.title, measure: g.measure,
+  baseline: g.baseline, target: g.target,
+  horizon: g.horizon ?? null, targetOn: g.targetOn ?? null, reviewOn: g.reviewOn ?? null,
+};
+
 // Snapshots are captured by the server, never accepted as client input.
 type ActivitySnapshot = { id: string; title: string; service: string; ageBand: string; minutes: number; materials: string[]; steps: string[]; safety: string[]; version: number; capturedAt: string };
-type HomeActivity = { templateId: string; frequency: string; note?: string; goalKey?: string; snapshot?: ActivitySnapshot };
+type ActivitySchedule = { cadence: 'WEEKLY' | 'MONTHLY'; startsOn: string; endsOn: string; weekdays?: number[]; monthDay?: number };
+type HomeActivity = { templateId: string; frequency: string; note?: string; goalKey?: string; schedule?: ActivitySchedule; snapshot?: ActivitySnapshot };
+
+// All date-only fields are calendar dates, never UTC timestamps. Reject
+// invalid month/day combinations (February 30, non-leap Feb 29, etc.).
+const validCalendarDate = (value: string): boolean =>
+  /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+  Number(value.slice(0, 4)) >= 2000 && Number(value.slice(0, 4)) <= 2100 &&
+  !Number.isNaN(Date.parse(value + 'T00:00:00Z')) &&
+  new Date(value + 'T00:00:00Z').toISOString().slice(0, 10) === value;
+const calendarDays = (from: string, to: string): number =>
+  (Date.parse(to + 'T00:00:00Z') - Date.parse(from + 'T00:00:00Z')) / 86_400_000;
+function validateSchedule(schedule: ActivitySchedule) {
+  if (!validCalendarDate(schedule.startsOn) || !validCalendarDate(schedule.endsOn)) {
+    throw new UnprocessableEntityException('Enter valid start and end calendar dates for the activity schedule.');
+  }
+  const days = calendarDays(schedule.startsOn, schedule.endsOn);
+  if (days < 0 || days > 366) throw new UnprocessableEntityException('An activity schedule must cover at most one year and end after it starts.');
+  if (schedule.cadence === 'WEEKLY') {
+    if (!Array.isArray(schedule.weekdays) || !schedule.weekdays.length ||
+        new Set(schedule.weekdays).size !== schedule.weekdays.length || schedule.monthDay !== undefined) {
+      throw new UnprocessableEntityException('Weekly schedules require unique weekdays and no monthly day.');
+    }
+  } else if (schedule.cadence === 'MONTHLY') {
+    if (!Number.isInteger(schedule.monthDay) || schedule.monthDay! < 1 ||
+        schedule.monthDay! > 31 || schedule.weekdays !== undefined) {
+      throw new UnprocessableEntityException('Monthly schedules require one month day and no weekdays.');
+    }
+  } else throw new UnprocessableEntityException('Unsupported activity schedule cadence.');
+  // A valid-looking date range must actually contain a scheduled occurrence.
+  let hasOccurrence = false;
+  for (let t = Date.parse(schedule.startsOn + 'T00:00:00Z');
+       t <= Date.parse(schedule.endsOn + 'T00:00:00Z'); t += 86_400_000) {
+    const current = new Date(t);
+    if (schedule.cadence === 'WEEKLY'
+      ? schedule.weekdays!.includes(current.getUTCDay())
+      : current.getUTCDate() === schedule.monthDay) { hasOccurrence = true; break; }
+  }
+  if (!hasOccurrence) throw new UnprocessableEntityException('The selected period contains no scheduled activity dates.');
+}
+
 
 // Clinical drafts: therapists work on children actively assigned to them; clinical supervisors read and review the whole center.
 // Center administrators, coordinators and guardians never reach these records.
@@ -156,6 +205,11 @@ export class ClinicalService {
     // explicit goal association targets a goal saved in that same version;
     // older unlinked drafts remain readable/editable without inventing links.
     const keys = new Set(dto.goals.map((g) => g.key));
+    for (const g of dto.goals) {
+      if ((g.targetOn && !validCalendarDate(g.targetOn)) || (g.reviewOn && !validCalendarDate(g.reviewOn)))
+        throw new UnprocessableEntityException('Goal dates must be valid calendar dates.');
+    }
+    for (const a of dto.homeActivities) if (a.schedule) validateSchedule(a.schedule);
     if (dto.homeActivities.some((a) => a.goalKey && !keys.has(a.goalKey))) throw new UnprocessableEntityException('Link each home activity to a goal in this plan version.');
     const ids = uniq(dto.homeActivities.map(h => h.templateId));
     if (ids.length !== dto.homeActivities.length) throw new UnprocessableEntityException('An activity can only appear once in this plan version.');
@@ -182,16 +236,22 @@ export class ClinicalService {
         };
         // Drop any untrusted client keys: only the server-generated snapshot
         // can enter this version's JSON content.
-        return { templateId: activity.templateId, frequency: activity.frequency,
+        return { templateId: activity.templateId,
+          frequency: activity.schedule ? (activity.schedule.cadence === 'WEEKLY' ? 'Weekly calendar draft' : 'Monthly calendar draft') : activity.frequency,
           ...(activity.goalKey ? { goalKey: activity.goalKey } : {}),
           ...(activity.note !== undefined ? { note: activity.note } : {}),
+          ...(activity.schedule ? { schedule: {
+            cadence: activity.schedule.cadence,
+            startsOn: activity.schedule.startsOn, endsOn: activity.schedule.endsOn,
+            ...(activity.schedule.cadence === 'WEEKLY' ? { weekdays: activity.schedule.weekdays } : { monthDay: activity.schedule.monthDay }),
+          } } : {}),
           snapshot };
       });
       if (fresh.authorId !== v.userId) throw new ForbiddenException('Only the author can edit this plan version.');
       const observed = await tx.observation.findMany({ where: { planVersionId: id }, select: { goalKey: true } });
       for (const o of observed) {
         const oldGoal = (fresh.goals as Goal[]).find(g => g.key === o.goalKey);
-        if (fingerprint(oldGoal ?? null) !== fingerprint(dto.goals.find(g => g.key === o.goalKey) ?? null)) throw new ConflictException('A goal with observations cannot be redefined. Start a new plan version.');
+        if (fingerprint(goalDefinition(oldGoal)) !== fingerprint(goalDefinition(dto.goals.find(g => g.key === o.goalKey)))) throw new ConflictException('A goal with observations cannot be redefined. Start a new plan version.');
       }
       const r = await tx.planVersion.updateMany({ where: { id, centerId, authorId: v.userId, status: { in: EDITABLE }, version: dto.version }, data: { summary: dto.summary, goals: dto.goals as unknown as Prisma.InputJsonValue, homeActivities: homeActivities as unknown as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
       if (r.count !== 1) throw new ConflictException(x.status !== 'DRAFT' ? 'Only a draft can be edited. Start a new version to make changes.' : 'This draft changed since you opened it. Reload to see the latest version.');

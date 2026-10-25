@@ -108,6 +108,77 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     expect(invalid.childWideReferentStatus).toBe('UNAVAILABLE');
   });
 
+  it('retains optional short/long-term goal dates and scoped weekly/monthly home schedules in saved plan versions', async () => {
+    const { therapist, other, sup, kid, rosa } = await setup();
+    const template = await h.prisma.activityTemplate.create({
+      data: {
+        centerId, service: 'speech', title: 'Synthetic home picture practice', ageBand: '6-8',
+        minutes: 10, materials: ['cards'], steps: ['Practice'], safety: ['Adult supports'],
+        createdAt: h.clock.now(),
+      },
+    });
+    const plan = (await post(h, c(`clinical/children/${kid}/plans`), therapist,
+      { service: 'speech', title: 'Dated objectives and home schedule' }).expect(201)).body;
+    const url = c(`clinical/plan-versions/${plan.versionId}`);
+    const goal = {
+      key: 'naming', title: 'Names familiar pictures', measure: 'count',
+      baseline: 1, target: 8, horizon: 'SHORT_TERM',
+      targetOn: '2027-03-15', reviewOn: '2026-12-15',
+    };
+    const activity = {
+      templateId: template.id, goalKey: 'naming', frequency: 'Weekly calendar draft',
+      schedule: { cadence: 'WEEKLY', startsOn: '2026-10-19', endsOn: '2026-12-16', weekdays: [1, 3] },
+    };
+    const update = { summary: 'Synthetic, unapproved draft with dated objectives', goals: [goal], homeActivities: [activity], version: 1 };
+    await patch(therapist, url, { ...update, goals: [{ ...goal, targetOn: '2027-02-30' }] }).expect(422);
+    await patch(therapist, url, { ...update, goals: [{ ...goal, reviewOn: '2027-02-29' }] }).expect(422);
+    await patch(therapist, url, { ...update, goals: [{ ...goal, horizon: 'VERY_LONG' }] }).expect(400);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
+      schedule: { ...activity.schedule, weekdays: [1, 1] } }] }).expect(422);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
+      schedule: { ...activity.schedule, weekdays: [] } }] }).expect(400);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
+      schedule: { ...activity.schedule, monthDay: 10 } }] }).expect(422);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
+      schedule: { ...activity.schedule, endsOn: '2025-12-01' } }] }).expect(422);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
+      schedule: { ...activity.schedule, endsOn: '2028-12-01' } }] }).expect(422);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
+      schedule: { cadence: 'MONTHLY', startsOn: '2026-10-01', endsOn: '2027-03-31', weekdays: [1] } }] }).expect(422);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
+      schedule: { cadence: 'MONTHLY', startsOn: '2027-02-01', endsOn: '2027-02-28', monthDay: 31 } }] }).expect(422);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
+      schedule: { cadence: 'WEEKLY', startsOn: '2026-10-19', endsOn: '2026-10-19', weekdays: [2] } }] }).expect(422);
+
+    await patch(other, url, update).expect(404);
+    await patch(sup, url, update).expect(403);
+    await patch(therapist, url, update).expect(200);
+    const current = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: plan.versionId } });
+    expect(current.version).toBe(2);
+    expect(current.goals).toEqual([goal]);
+    expect(current.homeActivities).toEqual([expect.objectContaining({
+      templateId: template.id, goalKey: 'naming', schedule: activity.schedule,
+      snapshot: expect.objectContaining({ title: 'Synthetic home picture practice', safety: ['Adult supports'] }),
+    })]);
+    const viewed = (await get(sup, c(`clinical/children/${kid}`)).expect(200)).body;
+    expect(viewed.plans[0].versions[0].goals).toEqual([goal]);
+    expect(viewed.plans[0].versions[0].homeActivities[0].schedule).toEqual(activity.schedule);
+    await get(rosa, c(`clinical/children/${kid}`)).expect(403);
+    expect(JSON.stringify((await get(rosa, c('family/activities')).expect(200)).body))
+      .not.toContain('Synthetic home picture practice');
+
+    const longTerm = { ...goal, horizon: 'LONG_TERM', targetOn: '2028-02-29' };
+    const monthly = {
+      ...activity, frequency: 'Monthly calendar draft',
+      schedule: { cadence: 'MONTHLY', startsOn: '2026-10-01', endsOn: '2027-03-31', monthDay: 31 },
+    };
+    await patch(therapist, url, { summary: update.summary, goals: [longTerm], homeActivities: [monthly], version: 2 }).expect(200);
+    const updated = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: plan.versionId } });
+    expect(updated.goals).toEqual([longTerm]);
+    expect(updated.homeActivities).toEqual([expect.objectContaining({ schedule: monthly.schedule })]);
+    expect(await h.prisma.observation.count({ where: { planVersionId: plan.versionId } })).toBe(0);
+  });
+
   it('supports scoped activity duplication and author-only versioned edits without exposing global samples', async () => {
     const { therapist, other, sup, rosa } = await setup();
     const ot = await staff('ot-library@clin.test', ['THERAPIST'], ['occupational']);

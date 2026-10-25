@@ -8,6 +8,8 @@ import { Button, Card, LockedAction, Pill } from '@/components/design/ui';
 import { serviceLabel } from '@/components/operations/BookDialog';
 import { LOCKED_REASON, clinicalApi, type Goal, type HomeActivity, type PlanVersion, type Workspace } from '@/lib/clinical';
 import { ActivityCard } from './ActivityCard';
+import { HomeScheduleFields } from './HomeScheduleFields';
+import { scheduleProblem } from '@/lib/home-schedule';
 import { PlanVersionHistory } from './PlanVersionHistory';
 import { draftHomeActivitySuggestions } from '@/lib/evidence-assist';
 
@@ -17,14 +19,40 @@ const input = 'w-full rounded-control border border-border-light bg-transparent 
 
 function GoalRow({ g, onChange, onRemove, disabled, i }: { g: Goal; onChange: (g: Goal) => void; onRemove: () => void; disabled: boolean; i: number }) {
   return (
-    <li className="grid grid-cols-1 gap-2 rounded-control border border-border-light p-3 md:grid-cols-[1fr_120px_90px_90px_40px]" data-testid={`goal-${i}`}>
-      <input aria-label="Goal" className={input} value={g.title} disabled={disabled} onChange={(e) => onChange({ ...g, title: e.target.value })} placeholder="Goal, e.g. Uses two-word phrases" data-testid={`goal-title-${i}`} />
-      <select aria-label="Measure" className={input} value={g.measure} disabled={disabled} onChange={(e) => onChange({ ...g, measure: e.target.value as Goal['measure'] })} data-testid={`goal-measure-${i}`}>
-        <option value="percent">Percent</option><option value="count">Count</option><option value="level">Level</option>
-      </select>
-      <input aria-label="Baseline" type="number" className={input} value={g.baseline} disabled={disabled} onChange={(e) => onChange({ ...g, baseline: Number(e.target.value) })} data-testid={`goal-baseline-${i}`} />
-      <input aria-label="Target" type="number" className={input} value={g.target} disabled={disabled} onChange={(e) => onChange({ ...g, target: Number(e.target.value) })} data-testid={`goal-target-${i}`} />
-      {!disabled && <button type="button" aria-label="Remove goal" onClick={onRemove} className="grid h-10 w-10 place-items-center rounded-control hover:bg-surface-subtle" data-testid={`goal-remove-${i}`}><Trash2 size={16} aria-hidden="true" /></button>}
+    <li className="space-y-3 rounded-control border border-border-light p-3" data-testid={`goal-${i}`}>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_120px_100px_100px_auto]">
+        <input aria-label="Goal" className={input} value={g.title} disabled={disabled}
+          onChange={e => onChange({ ...g, title: e.target.value })} placeholder="Goal, e.g. Uses two-word phrases" data-testid={`goal-title-${i}`} />
+        <select aria-label="Measure" className={input} value={g.measure} disabled={disabled}
+          onChange={e => onChange({ ...g, measure: e.target.value as Goal['measure'] })} data-testid={`goal-measure-${i}`}>
+          <option value="percent">Percent</option><option value="count">Count</option><option value="level">Level</option>
+        </select>
+        <input aria-label="Baseline" type="number" className={input} value={g.baseline} disabled={disabled}
+          onChange={e => onChange({ ...g, baseline: Number(e.target.value) })} data-testid={`goal-baseline-${i}`} />
+        <input aria-label="Target" type="number" className={input} value={g.target} disabled={disabled}
+          onChange={e => onChange({ ...g, target: Number(e.target.value) })} data-testid={`goal-target-${i}`} />
+        {!disabled && <button type="button" aria-label="Remove goal" onClick={onRemove}
+          className="grid h-10 w-10 place-items-center rounded-control hover:bg-surface-subtle" data-testid={`goal-remove-${i}`}><Trash2 size={16} aria-hidden="true" /></button>}
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3" data-testid={`goal-planning-${i}`}>
+        <label className="text-[12px] font-semibold">Objective horizon
+          <select className={`mt-1 min-h-[42px] ${input}`} value={g.horizon ?? ''} disabled={disabled}
+            onChange={e => onChange({ ...g, horizon: e.target.value ? e.target.value as Goal['horizon'] : undefined })} data-testid={`goal-horizon-${i}`}>
+            <option value="">Not categorized (legacy)</option>
+            <option value="SHORT_TERM">Short-term</option>
+            <option value="LONG_TERM">Long-term</option>
+          </select>
+        </label>
+        <label className="text-[12px] font-semibold">Target date
+          <input type="date" className={`mt-1 min-h-[42px] ${input}`} value={g.targetOn ?? ''} disabled={disabled}
+            onChange={e => onChange({ ...g, targetOn: e.target.value || undefined })} data-testid={`goal-target-date-${i}`} />
+        </label>
+        <label className="text-[12px] font-semibold">Next review date
+          <input type="date" className={`mt-1 min-h-[42px] ${input}`} value={g.reviewOn ?? ''} disabled={disabled}
+            onChange={e => onChange({ ...g, reviewOn: e.target.value || undefined })} data-testid={`goal-review-date-${i}`} />
+        </label>
+      </div>
+      <p className="text-[12px] text-brand-inkMuted">Planning dates and objective horizon are clinician-entered. They do not indicate clinical progress or approval.</p>
     </li>
   );
 }
@@ -42,7 +70,8 @@ function VersionEditor({ centerId, ws, planId, service, v, run }: { centerId: st
   // must be explicitly associated by the clinician before draft save.
   const legacyTemplateIds = new Set(v.homeActivities.map(a => a.templateId));
   const unlinkedNew = acts.some(a => !legacyTemplateIds.has(a.templateId) && !a.goalKey);
-  const save = () => run(() => clinicalApi.saveVersion(centerId, v.id, { summary, goals: goals.filter((g) => g.title.trim()), homeActivities: acts.map(({ templateId, goalKey, frequency, note }) => ({ templateId, goalKey, frequency, note })), version: v.version }), 'Draft saved.');
+  const invalidSchedule = acts.some(a => !!scheduleProblem(a.schedule));
+  const save = () => run(() => clinicalApi.saveVersion(centerId, v.id, { summary, goals: goals.filter((g) => g.title.trim()), homeActivities: acts.map(({ templateId, goalKey, frequency, note, schedule }) => ({ templateId, goalKey, frequency, note, schedule })), version: v.version }), 'Draft saved.');
   return (
     <div className="space-y-4" data-testid={`plan-version-${v.number}`}>
       <div className="flex flex-wrap items-center gap-2"><Pill tone={STATUS[v.status][1]} testId="plan-version-status">{`Version ${v.number} · ${STATUS[v.status][0]}`}</Pill><span className="text-[13px] text-brand-inkMuted">by {v.author}</span></div>
@@ -66,7 +95,10 @@ function VersionEditor({ centerId, ws, planId, service, v, run }: { centerId: st
                   {goals.filter(g => g.title.trim()).map(g => <option key={g.key} value={g.key}>{g.title}</option>)}
                 </select>
               </label>
-              <input aria-label="How often" className={`${input} max-w-[180px]`} value={a.frequency} disabled={!edit} onChange={(e) => setActs(acts.map((x, j) => (j === i ? { ...x, frequency: e.target.value } : x)))} />
+              {!a.schedule && <input aria-label="How often (legacy frequency)" className={`${input} max-w-[180px]`} value={a.frequency} disabled={!edit} onChange={(e) => setActs(acts.map((x, j) => (j === i ? { ...x, frequency: e.target.value } : x)))} />}
+              <HomeScheduleFields schedule={a.schedule} disabled={!edit} index={i}
+                onChange={schedule => setActs(prev => prev.map((x, j) =>
+                  j === i ? { ...x, schedule, frequency: schedule ? (schedule.cadence === 'WEEKLY' ? 'Weekly calendar draft' : 'Monthly calendar draft') : 'As directed (undated)' } : x))} />
               {edit && <button type="button" aria-label="Remove activity" onClick={() => setActs(acts.filter((_, j) => j !== i))} className="grid h-10 w-10 place-items-center rounded-control hover:bg-surface-subtle"><Trash2 size={16} aria-hidden="true" /></button>}
             </li>
           ))}
@@ -88,7 +120,8 @@ function VersionEditor({ centerId, ws, planId, service, v, run }: { centerId: st
       <div className="flex flex-wrap items-start gap-2">
         {edit && <div>
           {unlinkedNew && <p role="status" className="mb-2 text-[12px] text-brand-inkMuted" data-testid="home-activity-unlinked">Choose a specific plan goal for each newly added activity before saving.</p>}
-          <Button disabled={unlinkedNew} onClick={() => void save()} data-testid="plan-save">Save draft</Button>
+          {invalidSchedule && <p role="status" className="mb-2 text-[12px] text-status-caution" data-testid="home-activity-invalid-schedule">Complete or remove invalid dated schedules before saving.</p>}
+          <Button disabled={unlinkedNew || invalidSchedule} onClick={() => void save()} data-testid="plan-save">Save draft</Button>
         </div>}
         {edit && <Button variant="secondary" onClick={() => void run(() => clinicalApi.submit(centerId, v.id, v.version), 'Draft sent to the clinical supervisor for review.')} data-testid="plan-submit">Send for review</Button>}
         {ws.canEdit && v.mine && ['WITHDRAWN','FROZEN_INTERNAL'].includes(v.status) && <Button variant="secondary" onClick={() => void run(() => clinicalApi.newVersion(centerId, planId), 'New draft version started.')} data-testid="plan-new-version">Start a new version</Button>}

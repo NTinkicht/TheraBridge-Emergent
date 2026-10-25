@@ -35,6 +35,20 @@ export class GoalDto {
   @IsIn(MEASURES) measure!: string;
   @IsNumber() baseline!: number;
   @IsNumber() target!: number;
+  // Optional for legacy and imported drafts; these are planning targets,
+  // not independently validated clinical outcomes.
+  @IsOptional() @IsIn(['SHORT_TERM', 'LONG_TERM']) horizon?: 'SHORT_TERM' | 'LONG_TERM';
+  @IsOptional() @Matches(DATE) targetOn?: string;
+  @IsOptional() @Matches(DATE) reviewOn?: string;
+}
+export class ActivityScheduleDto {
+  @IsIn(['WEEKLY', 'MONTHLY']) cadence!: 'WEEKLY' | 'MONTHLY';
+  @Matches(DATE) startsOn!: string;
+  @Matches(DATE) endsOn!: string;
+  @IsOptional() @IsArray() @ArrayMinSize(1) @ArrayMaxSize(7)
+  @IsInt({ each: true }) @Min(0, { each: true }) @Max(6, { each: true })
+  weekdays?: number[];
+  @IsOptional() @IsInt() @Min(1) @Max(31) monthDay?: number;
 }
 export class HomeActivityDto {
   @IsUUID() templateId!: string;
@@ -43,6 +57,8 @@ export class HomeActivityDto {
   @IsOptional() @Matches(/^[a-z0-9-]{1,40}$/) goalKey?: string;
   @IsString() @MaxLength(80) frequency!: string;
   @IsOptional() @IsString() @MaxLength(500) note?: string;
+  @IsOptional() @ValidateNested() @Type(() => ActivityScheduleDto)
+  schedule?: ActivityScheduleDto;
 }
 export class PlanVersionUpdateDto {
   @IsString() @MaxLength(4000) summary!: string;
