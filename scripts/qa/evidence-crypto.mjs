@@ -3,7 +3,7 @@
 // Keep the 256-bit secret OUTSIDE Git, Actions logs and artifacts.
 import {createCipheriv, createDecipheriv, randomBytes} from 'node:crypto';
 import {createReadStream, createWriteStream} from 'node:fs';
-import {readFile, writeFile, appendFile, stat, rm} from 'node:fs/promises';
+import {open, writeFile, appendFile, stat, rm} from 'node:fs/promises';
 import {pipeline} from 'node:stream/promises';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -32,10 +32,16 @@ export async function decryptFile(source,destination,keyHex){
  try{
   const length=(await stat(source)).size;
   if(length<MAGIC.length+IV_LEN+TAG_LEN)throw Error('truncated_evidence');
-  const header=await readFile(source,{encoding:null}); // only used locally to verify header/tag
-  if(!header.subarray(0,MAGIC.length).equals(MAGIC))throw Error('invalid_evidence_header');
-  const nonce=header.subarray(MAGIC.length,MAGIC.length+IV_LEN);
-  const tag=header.subarray(length-TAG_LEN);
+  const h=await open(source,'r');
+  let nonce,tag;
+  try{
+   const prefix=Buffer.alloc(MAGIC.length+IV_LEN);
+   tag=Buffer.alloc(TAG_LEN);
+   await h.read(prefix,0,prefix.length,0);
+   await h.read(tag,0,TAG_LEN,length-TAG_LEN);
+   if(!prefix.subarray(0,MAGIC.length).equals(MAGIC))throw Error('invalid_evidence_header');
+   nonce=prefix.subarray(MAGIC.length);
+  }finally{await h.close();}
   const decipher=createDecipheriv('aes-256-gcm',key,nonce);
   decipher.setAAD(MAGIC);
   decipher.setAuthTag(tag);
