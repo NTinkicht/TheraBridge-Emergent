@@ -42,8 +42,12 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
   const saveQueue = useRef<Promise<boolean> | null>(null);
   const handoffBusy = useRef(false);
   const [handoffLocked, setHandoffLocked] = useState(false);
+  // Reserve a shared synchronous lease before *any* report transition awaits
+  // autosave. Without this, a pending Submit/Save version can overlap handoff.
+  const transitionBusy = useRef(false);
+  const [transitionLocked, setTransitionLocked] = useState(false);
   const beginDecision = () => {
-    if (decisionBusy.current || handoffBusy.current) return false;
+    if (decisionBusy.current || handoffBusy.current || transitionBusy.current) return false;
     decisionBusy.current = true;
     setDecisionLocked(true);
     return true;
@@ -90,18 +94,21 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
   }, [centerId, id, onError]);
 
   const handoffGate = useCallback(async (): Promise<ReportHandoffLease> => {
-    if (decisionBusy.current || handoffBusy.current) throw new Error('Report editing is already busy.');
+    if (decisionBusy.current || handoffBusy.current || transitionBusy.current) throw new Error('Report editing is already busy.');
     handoffBusy.current = true;
     setHandoffLocked(true);
     // Lock typing synchronously before flushing the ENTIRE autosave queue.
     // The callback supplies the actual server-acknowledged revision, rather
     // than the stale revision last returned by the parent detail request.
-    const ok = await save();
-    if (!ok) {
-      handoffBusy.current = false;
-      setHandoffLocked(false);
-      throw new Error('The report text could not be saved before the handoff.');
+    let ok = false;
+    try { ok = await save(); }
+    finally {
+      if (!ok) {
+        handoffBusy.current = false;
+        setHandoffLocked(false);
+      }
     }
+    if (!ok) throw new Error('The report text could not be saved before the handoff.');
     return {
       revision: ver.current,
       release: () => { handoffBusy.current = false; setHandoffLocked(false); },
@@ -115,14 +122,14 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
   }, [handoffGateRef, handoffGate]);
 
   useEffect(() => {
-    const warn = (e: BeforeUnloadEvent) => { if (dirty.current || decisionBusy.current || handoffBusy.current || saveQueue.current) e.preventDefault(); };
+    const warn = (e: BeforeUnloadEvent) => { if (dirty.current || decisionBusy.current || handoffBusy.current || transitionBusy.current || saveQueue.current) e.preventDefault(); };
     window.addEventListener('beforeunload', warn);
     onSections(local.current);
     return () => { window.removeEventListener('beforeunload', warn); clearTimeout(timer.current); };
   }, []);
 
   const change = (k: string, v: string) => {
-    if (decisionBusy.current || handoffBusy.current) return;
+    if (decisionBusy.current || handoffBusy.current || transitionBusy.current) return;
     const next = { ...local.current, [k]: v };
     local.current = next;
     setSections(next);
@@ -135,11 +142,24 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
   };
 
   const act = async (fn: (v: number) => Promise<{ number: number }>, ok: (n: number) => string) => {
-    if (decisionBusy.current || handoffBusy.current) return;
+    if (decisionBusy.current || handoffBusy.current || transitionBusy.current) return;
+    // Set the ref synchronously: an immediately following handoff or evidence
+    // decision must not start while the first save/submission is in flight.
+    transitionBusy.current = true;
+    setTransitionLocked(true);
     setNotice(null);
-    if (!(await save())) return;
-    try { const r = await fn(ver.current); onSuccess(ok(r.number)); await onReload(); }
-    catch (e) { const t = errorText(e, onError); if (t) setNotice({ tone: 'danger', text: t }); }
+    try {
+      if (!(await save())) return;
+      const r = await fn(ver.current);
+      onSuccess(ok(r.number));
+      await onReload();
+    } catch (e) {
+      const t = errorText(e, onError);
+      if (t) setNotice({ tone: 'danger', text: t });
+    } finally {
+      transitionBusy.current = false;
+      setTransitionLocked(false);
+    }
   };
 
   const edit = d.canEdit;
@@ -171,18 +191,19 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
           }}/>
       </div>}
       {decisionLocked && <p role="status" aria-live="polite" className="text-[13px] text-brand-inkMuted" data-testid="report-decision-edit-lock">Recording evidence decision — report editing is temporarily paused to protect unsaved text.</p>}
+      {transitionLocked && <p role="status" aria-live="polite" className="text-[13px] text-brand-inkMuted" data-testid="report-transition-edit-lock">Saving or submitting report — related editing and home-plan handoff are temporarily paused.</p>}
       {handoffLocked && <p role="status" aria-live="polite" className="text-[13px] text-brand-inkMuted" data-testid="report-handoff-edit-lock">Saving report text and preparing the linked plan draft — report editing is paused until the handoff is confirmed or cancelled.</p>}
       {SECTIONS.map(([k, label, hint]) => (
         <label key={k} className="block text-[14px] font-semibold">
           {label}
           <span className="block text-[12px] font-normal text-brand-inkMuted">{hint}</span>
-          <textarea className={area} rows={k === 'goals' ? 8 : 4} value={sections[k] ?? ''} disabled={!edit || decisionLocked || handoffLocked} onChange={(e) => change(k, e.target.value)} data-testid={`report-section-${k}`} />
+          <textarea className={area} rows={k === 'goals' ? 8 : 4} value={sections[k] ?? ''} disabled={!edit || decisionLocked || handoffLocked || transitionLocked} onChange={(e) => change(k, e.target.value)} data-testid={`report-section-${k}`} />
         </label>
       ))}
       <div className="flex flex-wrap items-start gap-2 border-t border-border-light pt-4">
-        {edit && <Button variant="secondary" disabled={decisionLocked || handoffLocked} onClick={() => void act((v) => reportsApi.saveVersion(centerId, id, v), (n) => `Saved as version ${n}.`)} data-testid="report-save-version">Save version</Button>}
-        {edit && <Button disabled={decisionLocked || handoffLocked} onClick={() => void act((v) => reportsApi.submit(centerId, id, v), (n) => `Sent for review as version ${n}.`)} data-testid="report-submit">Send for review</Button>}
-        <Button variant="ghost" disabled={decisionLocked} onClick={() => { if (!decisionBusy.current && !handoffBusy.current) void save().then(ok => { if (ok) onPreview(); }); }} data-testid="report-preview-toggle">Preview family format</Button>
+        {edit && <Button variant="secondary" disabled={decisionLocked || handoffLocked || transitionLocked} onClick={() => void act((v) => reportsApi.saveVersion(centerId, id, v), (n) => `Saved as version ${n}.`)} data-testid="report-save-version">Save version</Button>}
+        {edit && <Button disabled={decisionLocked || handoffLocked || transitionLocked} onClick={() => void act((v) => reportsApi.submit(centerId, id, v), (n) => `Sent for review as version ${n}.`)} data-testid="report-submit">Send for review</Button>}
+        <Button variant="ghost" disabled={decisionLocked || handoffLocked || transitionLocked} onClick={() => { if (!decisionBusy.current && !handoffBusy.current && !transitionBusy.current) void save().then(ok => { if (ok) onPreview(); }); }} data-testid="report-preview-toggle">Preview family format</Button>
         <LockedAction id="report-release" label="Release to family" reason={LOCKED_REASON} />
       </div>
     </Card>
