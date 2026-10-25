@@ -77,6 +77,13 @@ describe('TB-EM-021 non-authorizing report suggestion decision ledger (real Post
     const observationId = (await post(h, W + '/observations', therapist, {
       planVersionId: plan.versionId, goalKey: 'words', observedOn: '2026-10-10', value: 30,
     }).expect(201)).body.id;
+    // TB-EM-035: source-picker links a saved goal-review checkpoint to
+    // EXACT plan version, goal and recorded observation. No inference.
+    await post(h, c(`clinical/plan-versions/${plan.versionId}/goal-checkpoints`), therapist, {
+      goalKey: 'words', reviewedOn: '2026-10-18',
+      summary: 'Reviewed this synthetic recorded value; no clinical inference.',
+      observationIds: [observationId], version: 2,
+    }).expect(200);
     const reportId = (await post(h, W + '/reports', therapist, {
       service: 'speech', title: 'Synthetic progress report',
       periodStart: '2026-09-01', periodEnd: '2026-10-19',
@@ -88,6 +95,17 @@ describe('TB-EM-021 non-authorizing report suggestion decision ledger (real Post
       claimValidation: 'REFERENCED_NOT_VERIFIED' });
     expect(first.latest.goals).toBeNull();
     const goalRef = `planVersion:${plan.versionId}:goal:words`;
+    const checkpoint = first.sources.goals.sources.find(
+      (source: { ref: string }) => source.ref.startsWith(`goalCheckpoint:${plan.versionId}:`),
+    );
+    expect(checkpoint?.label).toContain('Goal-review checkpoint 2026-10-18');
+    await post(h, D, therapist, { section: 'goals', action: 'APPLIED', version: 1,
+      proposalFingerprint: first.sources.goals.proposalFingerprint,
+      idempotencyKey: randomUUID(), claims: [{
+        text: 'Clinician reviewed the recorded goal checkpoint.',
+        sourceRefs: [`goalCheckpoint:${randomUUID()}:0`],
+      }] }).expect(422);
+
     expect(first.sources.goals.sources.map((s: { ref: string }) => s.ref)).toEqual(
       expect.arrayContaining([goalRef, `observation:${observationId}`]));
     const base = {
@@ -147,6 +165,20 @@ describe('TB-EM-021 non-authorizing report suggestion decision ledger (real Post
     expect(history.latest.goals.claimMap).toEqual([expect.objectContaining({ index: 0,
       sourceRefs: [goalRef, `observation:${observationId}`] })]);
     const snap = (await post(h, P + '/versions', therapist, { version: 2 }).expect(201)).body;
+    const savedVersion = (await get(therapist, c(`clinical/report-versions/${(await h.prisma.reportVersion.findFirstOrThrow({ where: { reportId, number: snap.number } })).id}`)).expect(200)).body;
+    expect(savedVersion.claimValidation).toBe('REFERENCED_NOT_VERIFIED');
+    expect(savedVersion.released).toBe(false);
+    expect(savedVersion.evidence.checkpoints).toEqual(expect.arrayContaining([
+      expect.objectContaining({ ref: checkpoint.ref, planVersionId: plan.versionId, goalKey: 'words' }),
+    ]));
+    expect(savedVersion.statementTrace).toEqual([expect.objectContaining({
+      section: 'goals', status: 'LINKED_TO_SAVED_TEXT',
+      claims: [expect.objectContaining({ index: 1, text: 'One recorded value was 30 percent.',
+        sources: expect.arrayContaining([expect.objectContaining({ ref: `observation:${observationId}` })]) })],
+    })]);
+    await get(guardian, c(`clinical/report-versions/${savedVersion.id}`)).expect(403);
+    await get(ot, c(`clinical/report-versions/${savedVersion.id}`)).expect(404);
+    await get(other, c(`clinical/report-versions/${savedVersion.id}`)).expect(404);
     const frozen = await h.prisma.reportVersion.findFirstOrThrow({
       where: { reportId, number: snap.number },
     });
