@@ -219,11 +219,22 @@ try {
       body.plans = body.plans.map(p => {
         if (p.service !== 'speech' || !p.versions?.length) return p;
         const first = p.versions[0];
+        const oldSnapshot = { id: 'saved-example', title: 'Original saved activity',
+          service: 'speech', ageBand: '6-8', minutes: 10,
+          materials: ['original cards'], steps: ['original instructions'],
+          safety: ['original safety guidance'], version: 1, capturedAt: '2026-10-01T09:00:00Z' };
+        const priorActivities = first.homeActivities.map((a, i) =>
+          i === 0 ? { ...a, snapshot: oldSnapshot } : a);
+        const currentActivities = first.homeActivities.map((a, i) =>
+          i === 0 ? { ...a, snapshot: { ...oldSnapshot,
+            title: 'Updated saved activity', steps: ['new saved instructions'],
+            safety: ['new saved safety'], version: 2 } } : a);
         return { ...p, versions: [
           { ...first, id: first.id + '-comparison-fixture', number: first.number + 1,
             summary: first.summary + ' Updated synthetic comparison.',
-            goals: first.goals.map((g, i) => i === 0 ? { ...g, target: g.target + 1 } : g) },
-          { ...first, status: 'SUPERSEDED' },
+            goals: first.goals.map((g, i) => i === 0 ? { ...g, target: g.target + 1 } : g),
+            homeActivities: currentActivities },
+          { ...first, status: 'SUPERSEDED', homeActivities: priorActivities },
         ] };
       });
       await route.fulfill({ response, body: JSON.stringify(body) });
@@ -236,6 +247,10 @@ try {
     await page.getByTestId('plan-history-inspection').waitFor();
     await page.getByTestId('plan-history-comparison').waitFor();
     assert((await page.getByTestId('plan-history-comparison').innerText()).includes('Goal definition changed.'));
+    const savedActivityComparison = await page.getByTestId('plan-history-comparison').innerText();
+    assert(savedActivityComparison.includes('Original saved activity'), 'Historical name must use saved snapshot');
+    assert(savedActivityComparison.includes('original safety guidance'), 'Historical safety must use saved snapshot');
+    assert(savedActivityComparison.includes('new saved safety'), 'Comparison must show changed saved safety');
     for (const width of [320, 390, 768, 1024, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       assert(await versionHistory.isVisible(), 'Version history must remain visible at ' + width);
