@@ -97,6 +97,7 @@ async function assess(browser,role,user,directory){
    ]);
    if(reply.status==='fulfilled'){
     loginResponse=reply.value;
+    if(loginResponse.status()!==200)authFailure='login_http_'+String(loginResponse.status());
     if(loginResponse.status()===200){
      loggedIn=true;
      // A bad __Host- cookie may be rejected by Chromium, so inspect its
@@ -108,18 +109,21 @@ async function assess(browser,role,user,directory){
       checks:{header:headerInspection.checks}});
     }
    }
-   if(clicked.status==='rejected'||reply.status==='rejected'||!loggedIn)
+   if(clicked.status==='rejected'||reply.status==='rejected'||!loggedIn){
+    if(authFailure==='authentication_or_identity_unverified') authFailure='login_response_or_click_unconfirmed';
     throw Error('login_not_confirmed');
+   }
+   authFailure='authenticated_but_workspace_not_ready';
    await page.waitForURL(u=>u.pathname==='/app'||u.pathname.startsWith('/app/'),{timeout:20000});
    await page.getByTestId('product-shell').waitFor({timeout:15000});
    const valid=await page.evaluate(async ([email,expected])=>{
      const r=await fetch('/api/auth/session',{credentials:'include'});if(!r.ok)return false;
      const s=await r.json();return s.activeContext?.role===expected&&s.user?.email?.toLowerCase()===email.toLowerCase();
    },[user.email,c.role]);
-   if(!valid)throw Error('identity_mismatch');
+   if(!valid){authFailure='authenticated_but_role_identity_mismatch';throw Error('identity_mismatch');}
   }catch{
    // Cookie FAIL survives invalid browser session and navigation failure.
-   rows.push(...missingBlockedRows(role,rows,'authentication_or_identity_unverified'));
+   rows.push(...missingBlockedRows(role,rows,authFailure));
    return rows;
   }
   if(!rows.some(r=>r.id===caseId(c.cookie))){
@@ -143,6 +147,11 @@ async function assess(browser,role,user,directory){
      // Keep the confirmed failure even when DOM checks and screenshots are unavailable.
      if(response?.status()!==200)issues.push('http_error');
      await page.getByTestId('product-shell').waitFor({timeout:15000});
+     // Prevent transient calendar skeletons from being mistaken for accepted UI.
+     if(route==='/app/schedule'){
+      try{await page.getByTestId('schedule-loading').waitFor({state:'hidden',timeout:12000});}
+      catch{pages.push({route,outcome:'BLOCKED',issues:['schedule_loading_not_finished']});continue;}
+     }
      await page.waitForTimeout(600);
      g=await metrics(page);
      issues.push(...inspectGeometry(g,width));
@@ -235,6 +244,10 @@ export async function run({credentialsFile=process.env.QA_USERS_FILE,output=proc
   caution:'No automatic updates to issue #61; sensitive screenshots remain private. Manual dialog/visual checks required.'};
  const path=join(out,'hosted-readonly-results.json');
  await writeFile(path,JSON.stringify(report,null,2)+'\n',{mode:0o600});
+ // Safe status summary for Actions logs; no cookies, emails, tokens or screenshots.
+ const problems=rows.filter(row=>row.status!=='PASS').map(row=>({id:row.id,role:row.role,status:row.status,reason:row.reason}));
+ console.log('QA_PUBLIC_SUMMARY '+JSON.stringify({counts,problems}));
+
  console.log(JSON.stringify({report:path,counts,total:rows.length}));
  return counts.FAIL===0&&counts.BLOCKED===0?0:1;
 }
