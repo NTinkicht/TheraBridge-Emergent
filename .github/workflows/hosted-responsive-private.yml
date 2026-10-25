@@ -1,0 +1,108 @@
+name: hosted-responsive-private
+
+# Never runs on PRs or pushes: authorized operator starts against the fixed
+# synthetic Render host after independently verifying its active deployment.
+on:
+  workflow_dispatch:
+    inputs:
+      deployed_sha:
+        description: 'Operator-verified LIVE Render 40-char SHA (recorded, NOT independently checked by runner)'
+        required: true
+        type: string
+      synthetic_only_authorized:
+        description: 'I authorize login/logout for seven fictional users on the fixed synthetic host'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tb-hosted-responsive-private
+  cancel-in-progress: false
+
+jobs:
+  capture-private:
+    if: ${{ inputs.synthetic_only_authorized == true }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    # Preinstalled matching Chromium binary, no flaky runtime browser CDN download.
+    container:
+      image: mcr.microsoft.com/playwright:v1.48.2-noble
+      options: --ipc=host
+    environment: hosted-responsive-private
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - name: Install exact locked Playwright JS dependency
+        run: |
+          corepack enable
+          yarn install --frozen-lockfile
+          node -e "if(require('playwright/package.json').version!=='1.48.2') process.exit(2)"
+          node -e "require('playwright').chromium.executablePath() && console.log('Matching Chromium binary path configured')"
+      - name: Validate approved private credentials and live public health
+        env:
+          TB_QA_USERS_JSON: ${{ secrets.TB_HOSTED_QA_USERS_JSON }}
+          TB_QA_EVIDENCE_KEY_HEX: ${{ secrets.TB_HOSTED_QA_EVIDENCE_KEY_HEX }}
+          TB_QA_DEPLOY_SHA: ${{ inputs.deployed_sha }}
+          TB_QA_PRIVATE_DIR: ${{ runner.temp }}/tb-hosted-private
+        run: |
+          umask 077
+          node scripts/qa/prepare-hosted-run.mjs
+      - name: Run read-only seven-role viewport and cookie collector
+        env:
+          QA_USERS_FILE: ${{ runner.temp }}/tb-hosted-private/users.json
+          QA_PRIVATE_OUTPUT: ${{ runner.temp }}/tb-hosted-private/evidence
+          QA_DEPLOY_SHA: ${{ inputs.deployed_sha }}
+        run: |
+          umask 077
+          set +e
+          node scripts/qa/hosted-readonly.mjs
+          exit_code=$?
+          set -e
+          printf '%s\n' "$exit_code" > "${{ runner.temp }}/tb-hosted-private/collector-exit"
+          # The collector's BLOCKED cases are expected until independent manual
+          # screenshot, dialog, a11y and cookie review. Never imply acceptance.
+          if [ "$exit_code" -eq 2 ]; then
+            echo 'QA runner precondition failed; check encrypted receipt if present.'
+          fi
+      - name: Encrypt evidence before upload
+        env:
+          TB_QA_EVIDENCE_KEY_HEX: ${{ secrets.TB_HOSTED_QA_EVIDENCE_KEY_HEX }}
+        run: |
+          umask 077
+          tar -czf "${{ runner.temp }}/tb-hosted-cleartext.tar.gz" \
+            -C "${{ runner.temp }}/tb-hosted-private" evidence
+          node scripts/qa/evidence-crypto.mjs encrypt \
+            "${{ runner.temp }}/tb-hosted-cleartext.tar.gz" \
+            "${{ runner.temp }}/therabridge-hosted-evidence.tbqa"
+          rm -f "${{ runner.temp }}/tb-hosted-cleartext.tar.gz"
+      - name: Upload ONLY AES-256-GCM ciphertext (no screenshots or tokens in the clear)
+        uses: actions/upload-artifact@v4
+        with:
+          name: therabridge-hosted-encrypted-${{ github.run_id }}
+          path: ${{ runner.temp }}/therabridge-hosted-evidence.tbqa
+          if-no-files-found: error
+          retention-days: 7
+      - name: Do not mark visual acceptance PASS automatically
+        run: |
+          test -f "${{ runner.temp }}/tb-hosted-private/collector-exit" || exit 2
+          test "$(cat "${{ runner.temp }}/tb-hosted-private/collector-exit")" = 0 || {
+            echo 'INCOMPLETE: evidence encrypted and uploaded; #61 baseline remains unchanged.'
+            exit 1
+          }
+      - name: Delete private credentials, plaintext evidence and key-independent ciphertext
+        if: always()
+        run: |
+          rm -rf "${{ runner.temp }}/tb-hosted-private"
+          rm -f "${{ runner.temp }}/tb-hosted-cleartext.tar.gz"
+          rm -f "${{ runner.temp }}/therabridge-hosted-evidence.tbqa"
