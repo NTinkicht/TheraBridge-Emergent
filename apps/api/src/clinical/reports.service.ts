@@ -237,7 +237,7 @@ export class ReportsService {
       // Serialize concurrent retries using the same request UUID. Without
       // this lock, both transactions may see no plan and the loser would get
       // a uniqueness exception instead of the same successful receipt.
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${centerId}), hashtext(${dto.requestId}))`;
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${centerId}), hashtext(${requestFingerprint}))`;
       const existing = await tx.therapyPlan.findUnique({ where: { id: dto.requestId } });
       if (existing) {
         const event = await tx.centerEvent.findFirst({
@@ -250,6 +250,22 @@ export class ReportsService {
           throw new ConflictException('This request identifier has already been used.');
         const version = await tx.planVersion.findFirstOrThrow({ where: { centerId, planId: existing.id }, orderBy: { number: 'asc' } });
         return { id: existing.id, versionId: version.id, reused: true, released: false };
+      }
+
+      // Recover a committed response even if the browser was reloaded and
+      // produced a NEW UUID for an otherwise identical report-to-plan intent.
+      // The append-only event is the durable source-to-target record.
+      const matchingEvent = await tx.centerEvent.findFirst({
+        where: { centerId, type: 'clinical.report_plan_drafted',
+          meta: { path: ['requestFingerprint'], equals: requestFingerprint } },
+      });
+      if (matchingEvent) {
+        const meta = matchingEvent.meta as { planId?: string; planVersionId?: string };
+        const samePlan = meta.planId ? await tx.therapyPlan.findFirst({
+          where: { id: meta.planId, centerId, childId: current.childId, service: current.service, createdById: v.userId },
+        }) : null;
+        if (!samePlan || !meta.planVersionId) throw new ConflictException('A matching handoff is being reconciled.');
+        return { id: samePlan.id, versionId: meta.planVersionId, reused: true, released: false };
       }
 
       if (!EDITABLE.includes(current.status))
