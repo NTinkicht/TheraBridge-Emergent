@@ -19,8 +19,22 @@ const shortDate = (value: string) => value?.slice(0, 10) || 'Not recorded';
 const field = 'min-h-[44px] w-full rounded-control border border-border-strong bg-surface-white px-3 py-2 text-[14px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action';
 
 function ActivityText({ a, templates }: { a: HomeActivity; templates: Template[] }) {
-  const t = templates.find(x => x.id === a.templateId);
-  return <span>{t?.title ?? 'Historic activity (template unavailable)'} · {a.frequency} · linked goal: {a.goalKey || 'Not recorded'}{a.note ? ' · '+a.note : ''}</span>;
+  const currentLibraryTemplate = templates.find(x => x.id === a.templateId);
+  // Use the immutable saved definition. A live template may have changed
+  // since this plan version was written. Clearly label the legacy fallback.
+  const t = a.snapshot ?? currentLibraryTemplate;
+  return <span className="break-words">
+    <span className="font-medium">{t?.title ?? 'Historic activity (template unavailable)'}</span>
+    {' · '}{a.frequency} · linked goal: {a.goalKey || 'Not recorded'}
+    {a.note ? ' · '+a.note : ''}
+    {!a.snapshot && <span className="text-brand-inkMuted"> · Legacy draft: title from current library, not a frozen snapshot</span>}
+    {a.snapshot && <span className="block mt-1 text-brand-inkMuted" data-testid="plan-history-activity-snapshot">
+      Saved activity definition: {a.snapshot.minutes} minutes · {a.snapshot.ageBand} ·
+      Materials: {a.snapshot.materials.join('; ') || 'None recorded'} ·
+      Steps: {a.snapshot.steps.join('; ') || 'None recorded'} ·
+      Safety: {a.snapshot.safety.join('; ') || 'None recorded'}
+    </span>}
+  </span>;
 }
 
 /**
@@ -111,7 +125,7 @@ export function PlanVersionHistory({ plan, templates }: { plan: Plan; templates:
             <h4 className="text-[14px] font-semibold">Draft activity changes</h4>
             {difference.activities.filter(a => a.kind !== 'unchanged').length ? <ul className="space-y-2">
               {difference.activities.filter(a => a.kind !== 'unchanged').map(a => <li key={a.templateId} className="rounded-control border border-border-light bg-surface-white p-3 text-[13px]">
-                <strong>{changeNames[a.kind]}: </strong>{templates.find(t => t.id === a.templateId)?.title ?? 'Historic activity'}
+                <strong>{changeNames[a.kind]}: </strong>{a.current?.snapshot?.title ?? a.previous?.snapshot?.title ?? templates.find(t => t.id === a.templateId)?.title ?? 'Historic activity'}
                 {a.previous && <p className="mt-1 text-brand-inkMuted">Previous: <ActivityText a={a.previous} templates={templates} /></p>}
                 {a.current && <p className="text-brand-inkMuted">Compared: <ActivityText a={a.current} templates={templates} /></p>}
               </li>)}
