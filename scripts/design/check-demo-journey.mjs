@@ -269,6 +269,30 @@ try {
     await page.goto(base + '/app/reports/' + speechReport.id);
     await page.getByTestId('report-evidence-assist').waitFor();
     await page.getByTestId('report-decisions-persistent').waitFor();
+    // Report-to-plan handoff is read-only until the clinician deliberately
+    // confirms a new draft. Exercise the saved-snapshot selector and controls.
+    await page.getByTestId('report-to-plan-toggle').click();
+    const handoff = page.getByTestId('report-to-plan-form');
+    await handoff.waitFor();
+    await page.getByTestId('report-to-plan-goals').waitFor();
+    const firstSavedGoal = page.getByTestId('report-to-plan-goal-0');
+    assert(await firstSavedGoal.count() > 0, 'Synthetic report snapshot must contain at least one goal');
+    assert(await page.getByTestId('report-to-plan-create').isDisabled(),
+      'A new plan must never be created without clinician-selected goals');
+    await firstSavedGoal.check();
+    assert(await page.getByTestId('report-to-plan-create').isEnabled());
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      const bounds = await page.evaluate(() => ({
+        viewport: innerWidth, page: document.documentElement.scrollWidth,
+        panel: document.querySelector('[data-testid="report-to-plan"]')?.getBoundingClientRect().toJSON(),
+      }));
+      assert(bounds.panel?.width > 0 && bounds.panel.right <= width + 6 && bounds.page <= width + 8,
+        'Report-to-plan handoff must not clip at ' + width + 'px: ' + JSON.stringify(bounds));
+    }
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.getByTestId('report-to-plan-toggle').click();
+
     const sourceDetail = await read(page, centerBase + '/clinical/reports/' + speechReport.id);
     assert.equal(sourceDetail.status, 200);
     const g = sourceDetail.body.evidence.goals[0];
