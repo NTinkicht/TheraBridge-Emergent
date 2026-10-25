@@ -9,6 +9,8 @@ export interface Evidence {
   plan: { id: string; title: string; versionNumber: number; status: string } | null;
   goals: GoalEvidence[];
   sessions: { drafts: number; completedVisits: number };
+  checkpoints?: { ref: string; planVersionId: string; goalKey: string;
+    reviewedOn: string; fingerprint: string }[];
 }
 export interface Dashboard {
   synthetic: true; period: { from: string; to: string };
@@ -29,7 +31,16 @@ export interface ReportDetail {
   report: { id: string; childId: string; childName: string; title: string; service: string; periodStart: string; periodEnd: string; status: 'DRAFT' | 'IN_REVIEW' | 'RETURNED_FOR_REVISION' | 'WITHDRAWN' | 'FROZEN_INTERNAL'; sections: Record<string, string>; reviewNotes: ReviewNote[]; version: number; author: string; mine: boolean; updatedAt: string };
   versions: { id: string; number: number; kind: 'CREATED' | 'SAVED' | 'SUBMITTED'; author: string; createdAt: string }[];
 }
-export interface ReportVersion { id: string; number: number; kind: string; sections: Record<string, string>; evidence: Evidence; author: string; createdAt: string }
+export interface StatementTrace {
+  section: 'assessment' | 'goals' | 'sessions';
+  status: 'LINKED_TO_SAVED_TEXT' | 'SECTION_EDITED' | 'SOURCE_MISMATCH' | 'PASSAGE_MISMATCH';
+  decisionId: string; passage: string | null;
+  claims: { index: number; text: string; sources: { ref: string; label: string }[] }[];
+  claimValidation: 'REFERENCED_NOT_VERIFIED';
+}
+export interface ReportVersion { id: string; number: number; kind: string;
+  sections: Record<string, string>; evidence: Evidence; author: string; createdAt: string;
+  statementTrace?: StatementTrace[]; claimValidation?: 'REFERENCED_NOT_VERIFIED'; released?: false }
 export interface FamilyProgress { snapshotId?: string; fingerprint?: string; notice?: string; childName: string; service: string; period: { from: string; to: string }; message: string; goals: { title: string; measure: string; baseline: number; target: number; status: GoalStatus; points: Point[] }[]; sample?: boolean; preview?: boolean; released: false }
 
 
