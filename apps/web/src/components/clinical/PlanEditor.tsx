@@ -9,6 +9,7 @@ import { serviceLabel } from '@/components/operations/BookDialog';
 import { LOCKED_REASON, clinicalApi, type Goal, type HomeActivity, type PlanVersion, type Workspace } from '@/lib/clinical';
 import { ActivityCard } from './ActivityCard';
 import { HomeScheduleFields } from './HomeScheduleFields';
+import { HomePracticeCalendar } from './HomePracticeCalendar';
 import { scheduleProblem } from '@/lib/home-schedule';
 import { PlanVersionHistory } from './PlanVersionHistory';
 import { PlanEvidenceTrail } from './PlanEvidenceTrail';
@@ -125,6 +126,8 @@ function VersionEditor({ centerId, ws, planId, service, v, source, run, onDirtyC
         {edit && <div className="mt-2 max-w-sm"><SelectField label="Add from the activity library" value="" testId="home-activity-add" onChange={(id) => id && setActs([...acts, { templateId: id, frequency: '3 times a week' }])}
           options={[{ value: '', label: 'Choose an activity' }, ...ws.templates.filter((t) => !acts.some((a) => a.templateId === t.id)).map((t) => ({ value: t.id, label: `${t.title} · ${serviceLabel(t.service)}` }))]} /></div>}
       </div>
+      <HomePracticeCalendar key={v.id} activities={acts} goals={goals} templates={ws.templates}
+        versionNumber={v.number} timezone={ws.timezone} unsaved={unsavedPlanEdits} />
       {edit && <div className="space-y-2 rounded-card border border-border-light bg-surface-subtle p-4" data-testid="home-plan-evidence-assist">
         <h3 className="text-[16px] font-semibold">Draft activity shortlist</h3>
         <p className="text-[13px] text-brand-inkMuted">Specialty-filtered local library, NOT AI advice or approved home practice. The therapist must check each goal, age and safety. No automatic family sharing.</p>
