@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GitCompareArrows, History } from 'lucide-react';
 import { Card, Pill } from '@/components/design/ui';
 import type { HomeActivity, PlanVersion, Template } from '@/lib/clinical';
@@ -50,8 +50,11 @@ function ActivityText({ a, templates }: { a: HomeActivity; templates: Template[]
  * Read-only inspection of versions from a SINGLE already-authorized plan.
  * Never uses mutable endpoints, copies goal measurements, or infers approval.
  */
-export function PlanVersionHistory({ plan, templates }: { plan: Plan; templates: Template[] }) {
+export function PlanVersionHistory({ plan, templates, target }: { plan: Plan; templates: Template[];
+  target?: { versionId: string; goalKey: string };
+}) {
   const versions = [...plan.versions].sort((a, b) => b.number - a.number);
+  const detailsRef = useRef<HTMLDetailsElement>(null);
   const [inspectId, setInspectId] = useState(versions[1]?.id ?? versions[0]?.id ?? '');
   const [beforeId, setBeforeId] = useState(versions[1]?.id ?? versions[0]?.id ?? '');
   const [afterId, setAfterId] = useState(versions[0]?.id ?? '');
@@ -59,10 +62,27 @@ export function PlanVersionHistory({ plan, templates }: { plan: Plan; templates:
   const before = versions.find(v => v.id === beforeId) ?? versions[versions.length - 1];
   const after = versions.find(v => v.id === afterId) ?? versions[0];
   const difference = before && after && before.id !== after.id ? comparePlanVersions(before, after) : null;
+  const targetVersion = target ? versions.find(v => v.id === target.versionId &&
+    v.goals.some(g => g.key === target.goalKey)) : undefined;
+  useEffect(() => {
+    if (!targetVersion) return;
+    setInspectId(targetVersion.id);
+    if (detailsRef.current) detailsRef.current.open = true;
+  }, [targetVersion?.id, target?.goalKey]);
+  useEffect(() => {
+    if (!targetVersion || inspectId !== targetVersion.id) return;
+    const frame = requestAnimationFrame(() => {
+      const id = 'plan-history-goal-' + plan.id + '-' + targetVersion.id + '-' + target!.goalKey;
+      const goal = document.getElementById(id);
+      goal?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      goal?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [targetVersion?.id, target?.goalKey, plan.id, inspectId]);
   if (versions.length < 2) return null;
 
   return (
-    <details className="mt-5 rounded-card border border-border-light bg-surface-subtle" data-testid="plan-version-history">
+    <details ref={detailsRef} className="mt-5 rounded-card border border-border-light bg-surface-subtle" data-testid="plan-version-history">
       <summary className="flex min-h-[44px] cursor-pointer items-center gap-2 px-4 py-3 text-[15px] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action">
         <History size={18} className="shrink-0 text-brand-action" aria-hidden="true" />
         Version history & comparison · {versions.length} versions
@@ -93,7 +113,10 @@ export function PlanVersionHistory({ plan, templates }: { plan: Plan; templates:
           <p className="whitespace-pre-wrap break-words text-[13px]">{inspect.summary || 'No summary recorded.'}</p>
           <h4 className="text-[14px] font-semibold">Goal definitions ({inspect.goals.length})</h4>
           {inspect.goals.length ? <ul className="list-inside list-disc space-y-1 text-[13px]">
-            {inspect.goals.map(g => <li key={g.key}>{g.title} · {g.measure} · baseline {g.baseline} · target {g.target} · {g.horizon === 'SHORT_TERM' ? 'Short-term' : g.horizon === 'LONG_TERM' ? 'Long-term' : 'Uncategorized'}{g.targetOn ? ' · Target ' + g.targetOn : ''}{g.reviewOn ? ' · Review ' + g.reviewOn : ''}</li>)}
+            {inspect.goals.map(g => <li key={g.key}
+              id={'plan-history-goal-' + plan.id + '-' + inspect.id + '-' + g.key} tabIndex={-1}
+              className="scroll-mt-20 rounded-control focus-visible:outline-2 focus-visible:outline-brand-action"
+              data-testid={'plan-history-goal-' + g.key}>{g.title} · {g.measure} · baseline {g.baseline} · target {g.target} · {g.horizon === 'SHORT_TERM' ? 'Short-term' : g.horizon === 'LONG_TERM' ? 'Long-term' : 'Uncategorized'}{g.targetOn ? ' · Target ' + g.targetOn : ''}{g.reviewOn ? ' · Review ' + g.reviewOn : ''}</li>)}
           </ul> : <p className="text-[13px] text-brand-inkMuted">No goals recorded.</p>}
           <h4 className="text-[14px] font-semibold">Draft home activities ({inspect.homeActivities.length})</h4>
           {inspect.homeActivities.length ? <ul className="list-inside list-disc space-y-1 text-[13px]">
