@@ -12,15 +12,17 @@ import { HomeScheduleFields } from './HomeScheduleFields';
 import { scheduleProblem } from '@/lib/home-schedule';
 import { PlanVersionHistory } from './PlanVersionHistory';
 import { PlanEvidenceTrail } from './PlanEvidenceTrail';
+import { GoalReviewWorklist } from './GoalReviewWorklist';
+import { goalReviewAnchor } from '@/lib/goal-review';
 import { draftHomeActivitySuggestions } from '@/lib/evidence-assist';
 
 type Run = (fn: () => Promise<unknown>, ok: string) => Promise<boolean>;
 const STATUS = { DRAFT: ['Draft', 'neutral'], IN_REVIEW: ['In review', 'info'], SUPERSEDED: ['Superseded', 'neutral'], RETURNED_FOR_REVISION: ['Returned for revision', 'caution'], WITHDRAWN: ['Withdrawn', 'neutral'], FROZEN_INTERNAL: ['Frozen internal', 'info'] } as const;
 const input = 'w-full rounded-control border border-border-light bg-transparent px-3 py-2 text-[14px]';
 
-function GoalRow({ g, onChange, onRemove, disabled, i }: { g: Goal; onChange: (g: Goal) => void; onRemove: () => void; disabled: boolean; i: number }) {
+function GoalRow({ g, onChange, onRemove, disabled, i, planId }: { g: Goal; onChange: (g: Goal) => void; onRemove: () => void; disabled: boolean; i: number; planId: string }) {
   return (
-    <li className="space-y-3 rounded-control border border-border-light p-3" data-testid={`goal-${i}`}>
+    <li id={goalReviewAnchor(planId, g.key)} tabIndex={-1} className="scroll-mt-20 space-y-3 rounded-control border border-border-light p-3 focus-visible:outline-2 focus-visible:outline-brand-action" data-testid={`goal-${i}`}>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_120px_100px_100px_auto]">
         <input aria-label="Goal" className={input} value={g.title} disabled={disabled}
           onChange={e => onChange({ ...g, title: e.target.value })} placeholder="Goal, e.g. Uses two-word phrases" data-testid={`goal-title-${i}`} />
@@ -81,7 +83,7 @@ function VersionEditor({ centerId, ws, planId, service, v, source, run }: { cent
       <label className="block text-[14px] font-medium">Plan summary<textarea className={`mt-1 ${input}`} rows={3} value={summary} disabled={!edit} onChange={(e) => setSummary(e.target.value)} data-testid="plan-summary" /></label>
       <div>
         <h3 className="text-[15px] font-semibold">Goals</h3>
-        <ul className="mt-2 space-y-2">{goals.map((g, i) => <GoalRow key={g.key} i={i} g={g} disabled={!edit} onChange={(n) => setGoals(goals.map((x, j) => (j === i ? n : x)))} onRemove={() => setGoals(goals.filter((_, j) => j !== i))} />)}</ul>
+        <ul className="mt-2 space-y-2">{goals.map((g, i) => <GoalRow key={g.key} i={i} g={g} planId={planId} disabled={!edit} onChange={(n) => setGoals(goals.map((x, j) => (j === i ? n : x)))} onRemove={() => setGoals(goals.filter((_, j) => j !== i))} />)}</ul>
         {!goals.length && <p className="text-[14px] text-brand-inkMuted" data-testid="goals-empty">No goals yet.</p>}
         {edit && <Button size="sm" variant="secondary" className="mt-2" onClick={() => setGoals([...goals, { key: `g${Date.now().toString(36)}`, title: '', measure: 'percent', baseline: 0, target: 80 }])} data-testid="goal-add"><Plus size={15} aria-hidden="true" />Add goal</Button>}
       </div>
@@ -150,8 +152,33 @@ function VersionEditor({ centerId, ws, planId, service, v, source, run }: { cent
 
 export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Workspace; run: Run }) {
   const [f, setF] = useState({ service: ws.child.services[0] ?? '', title: '' });
+  const [linkedEvidenceNote, setLinkedEvidenceNote] = useState('');
+  useEffect(() => {
+    // Saved report evidence can refer to a historical plan version. Never
+    // silently map it onto the latest goal or measurements of that plan.
+    const hash = window.location.hash;
+    if (!hash.startsWith('#plan?')) return;
+    const params = new URLSearchParams(hash.slice('#plan?'.length));
+    const versionId = params.get('version'), goalKey = params.get('goal');
+    if (!versionId || !goalKey) return;
+    const plan = ws.plans.find(p => p.versions.some(v => v.id === versionId &&
+      v.goals.some(g => g.key === goalKey)));
+    if (!plan) {
+      setLinkedEvidenceNote('This saved report goal refers to a plan version not visible in this workspace.');
+      return;
+    }
+    if (plan.versions[0]?.id === versionId) {
+      document.getElementById(goalReviewAnchor(plan.id, goalKey))?.scrollIntoView({ block: 'center' });
+      setLinkedEvidenceNote('Opened the matching current plan goal. Evidence remains version-specific.');
+    } else {
+      document.querySelector('[data-testid="plan-' + plan.id + '"]')?.scrollIntoView({ block: 'start' });
+      setLinkedEvidenceNote('The source goal belongs to a historical plan version. Inspect version history below; current evidence cannot be substituted.');
+    }
+  }, [ws]);
   return (
     <div className="space-y-5" data-testid="plans-panel">
+      {linkedEvidenceNote && <p role="status" className="rounded-control border border-border-light bg-surface-subtle p-3 text-[13px]" data-testid="report-goal-navigation-note">{linkedEvidenceNote}</p>}
+      <GoalReviewWorklist ws={ws} />
       {ws.plans.map((p) => {
         const current = p.versions[0];
         return (
