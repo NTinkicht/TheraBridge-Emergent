@@ -9,8 +9,8 @@ import { clinicalApi, type PlanVersion, type Workspace } from '@/lib/clinical';
 type Run = (fn: () => Promise<unknown>, ok: string) => Promise<boolean>;
 const input = 'mt-1 min-h-[44px] w-full rounded-control border border-border-light bg-surface-white px-3 py-2 text-[13px]';
 
-export function GoalCheckpointPanel({ centerId, version, ws, editable, run }: {
-  centerId: string; version: PlanVersion; ws: Workspace; editable: boolean; run: Run;
+export function GoalCheckpointPanel({ centerId, version, ws, editable, unsavedPlanEdits, run }: {
+  centerId: string; version: PlanVersion; ws: Workspace; editable: boolean; unsavedPlanEdits: boolean; run: Run;
 }) {
   const [goalKey, setGoalKey] = useState('');
   const [reviewedOn, setReviewedOn] = useState(() => centerLocalDay(ws.timezone, new Date()) ?? '');
@@ -20,7 +20,7 @@ export function GoalCheckpointPanel({ centerId, version, ws, editable, run }: {
   const observations = ws.observations.filter(o => o.planVersionId === version.id && o.goalKey === goalKey);
   const checkpoints = version.goalCheckpoints ?? [];
   const chosenGoal = version.goals.find(g => g.key === goalKey);
-  const canSave = editable && !busy && !!chosenGoal && !!reviewedOn &&
+  const canSave = editable && !unsavedPlanEdits && !busy && !!chosenGoal && !!reviewedOn &&
     summary.trim().length >= 10 && selected.length <= 20;
   const save = async () => {
     if (!canSave) return;
@@ -55,6 +55,8 @@ export function GoalCheckpointPanel({ centerId, version, ws, editable, run }: {
       </li>)}
     </ol> : <p className="text-[12px] text-brand-inkMuted" data-testid="goal-checkpoint-empty">No clinician review checkpoints recorded for this plan version.</p>}
     {editable && <>
+      {unsavedPlanEdits && <p role="status" className="rounded-control border border-border-light bg-status-cautionSurface p-3 text-[12px]"
+        data-testid="goal-checkpoint-unsaved-lock">Save the plan draft before recording a checkpoint. Recording one reloads the current plan version, so pending edits must not be discarded.</p>}
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px]">
         <label className="block text-[12px] font-semibold">Reviewed goal
           <select className={input} value={goalKey} disabled={busy} data-testid="goal-checkpoint-goal"
