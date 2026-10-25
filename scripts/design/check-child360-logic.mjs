@@ -195,6 +195,12 @@ assert.equal(planEvidence.sourceForGoal(null, 'v-initial', 'g1'), null);
 
 // TB-EM-033: review dates are centre-local scheduling flags ONLY.
 assert.equal(review.centerLocalDay('Asia/Dubai', new Date('2026-10-25T21:30:00Z')), '2026-10-26');
+assert.equal(review.centerLocalDay('Asia/Not_A_Zone', new Date('2026-10-25T21:30:00Z')), null);
+assert.equal(review.nextReviewDayDelay('Asia/Not_A_Zone', new Date('2026-10-25T19:59:00Z')), null);
+const midnightDelay = review.nextReviewDayDelay('Asia/Dubai', new Date('2026-10-25T19:59:00Z'));
+assert(midnightDelay >= 60_000 && midnightDelay < 61_000, 'Centre midnight updates on the local boundary');
+assert.equal(review.reviewTiming('2026-10-25', null), 'DATE_UNAVAILABLE');
+
 assert.equal(review.centerLocalDay('America/Los_Angeles', new Date('2026-10-25T21:30:00Z')), '2026-10-25');
 const REVIEW_TODAY = '2026-10-25';
 assert.equal(review.reviewTiming('2026-10-24', REVIEW_TODAY), 'PAST_DUE');
