@@ -294,9 +294,12 @@ try {
     // New handoff POST is intercepted, while genuine report PATCH autosave
     // continues. Unknown result must retain exact payload and report lock.
     const handoffRequests = [];
+    let secondRequestSeen;
+    const secondHandoffRequest = new Promise(resolve => { secondRequestSeen = resolve; });
     const handoffRoute = '**/clinical/reports/*/plan-drafts';
     await page.route(handoffRoute, async route => {
       handoffRequests.push(JSON.parse(route.request().postData()));
+      if (handoffRequests.length === 2) secondRequestSeen();
       await route.fulfill({ status: 503, contentType: 'application/json',
         body: '{"message":"Simulated unknown result"}' });
     });
@@ -313,7 +316,7 @@ try {
     assert.equal(handoffRequests[0].reportRevision, handoffSaved.version,
       'Handoff must use latest saved revision, not stale parent detail revision');
     await page.getByTestId('report-to-plan-create').click();
-    await page.waitForFunction(() => document.querySelector('[data-testid="report-to-plan-create"]')?.textContent === 'Retry same request');
+    await secondHandoffRequest;
     assert.equal(handoffRequests.length, 2);
     assert.deepEqual(handoffRequests[1], handoffRequests[0], 'Retry must preserve exact submitted request UUID and content');
     page.once('dialog', async dialog => { await dialog.accept(); });
