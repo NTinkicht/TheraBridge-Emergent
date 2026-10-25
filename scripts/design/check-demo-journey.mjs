@@ -312,6 +312,8 @@ try {
     await page.getByTestId('report-to-plan-create').click();
     await page.getByTestId('report-to-plan-abandon').waitFor();
     assert(await reportSummary.isDisabled(), 'Pending handoff must lock report text');
+    assert(await page.getByTestId('report-submit').isDisabled(), 'Unresolved handoff must block supervisor submission');
+    assert(await page.getByTestId('report-save-version').isDisabled(), 'Unresolved handoff must block save-version transition');
     assert(await page.getByTestId('report-to-plan-title').isDisabled(), 'Unknown POST must freeze submitted payload');
     assert(await page.getByTestId('report-to-plan-toggle').isDisabled(), 'Unknown POST must not reset request UUID');
     const handoffSaved = await db.progressReport.findUniqueOrThrow({ where: { id: speechReport.id } });
