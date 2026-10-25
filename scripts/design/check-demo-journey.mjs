@@ -462,6 +462,20 @@ try {
     await page.getByTestId('report-to-plan-needs-version').waitFor();
     await page.getByTestId('report-save-version').click();
     await page.getByTestId('report-to-plan-toggle').waitFor();
+    // TB-EM-035: legacy or unlinked saved report versions still render a
+    // truthful read-only trace. Nothing is guessed from their prose.
+    await page.getByTestId('history-compare-2').click();
+    await page.getByTestId('saved-statement-trace').waitFor();
+    await page.getByTestId('statement-trace-empty').waitFor();
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      const right = await page.getByTestId('saved-statement-trace').evaluate(el => el.getBoundingClientRect().right);
+      const scroll = await page.evaluate(() => document.documentElement.scrollWidth);
+      assert(right <= width + 6 && scroll <= width + 8,
+        'Saved statement trace must not overflow ' + width + 'px');
+    }
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.getByTestId('compare-close').click();
     // Report-to-plan handoff is read-only until explicit goal selection.
     await page.getByTestId('report-to-plan-toggle').click();
     const handoff = page.getByTestId('report-to-plan-form');
