@@ -16,6 +16,13 @@ export function ReportToPlanHandoff({ centerId, detail, prepare }: { centerId: s
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [sourceId, setSourceId] = useState(detail.versions[0]?.id ?? '');
+  // The report editor can save its FIRST version while this component is
+  // already mounted in the prerequisite state. Initialize the selector on
+  // that transition; otherwise it remains '' and the evidence never loads.
+  useEffect(() => {
+    if (!sourceId && detail.versions.length > 0) setSourceId(detail.versions[0].id);
+  }, [sourceId, detail.versions]);
+
   const [snapshot, setSnapshot] = useState<ReportVersion | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
