@@ -75,13 +75,17 @@ function VersionEditor({ centerId, ws, planId, service, v, source, run }: { cent
   const legacyTemplateIds = new Set(v.homeActivities.map(a => a.templateId));
   const unlinkedNew = acts.some(a => !legacyTemplateIds.has(a.templateId) && !a.goalKey);
   const invalidSchedule = acts.some(a => !!scheduleProblem(a.schedule));
+  const unsavedPlanEdits = summary !== v.summary ||
+    JSON.stringify(goals) !== JSON.stringify(v.goals) ||
+    JSON.stringify(acts) !== JSON.stringify(v.homeActivities);
   const save = () => run(() => clinicalApi.saveVersion(centerId, v.id, { summary, goals: goals.filter((g) => g.title.trim()), homeActivities: acts.map(({ templateId, goalKey, frequency, note, schedule }) => ({ templateId, goalKey, frequency, note, schedule })), version: v.version }), 'Draft saved.');
   return (
     <div className="space-y-4" data-testid={`plan-version-${v.number}`}>
       <div className="flex flex-wrap items-center gap-2"><Pill tone={STATUS[v.status][1]} testId="plan-version-status">{`Version ${v.number} · ${STATUS[v.status][0]}`}</Pill><span className="text-[13px] text-brand-inkMuted">by {v.author}</span></div>
       {v.reviewNotes.map((n, i) => <FormAlert key={i} tone="info" testId={`review-note-${i}`}>Supervisor review: {n.comment}</FormAlert>)}
       <PlanEvidenceTrail version={v} origin={source} observations={ws.observations} />
-      <GoalCheckpointPanel centerId={centerId} version={v} ws={ws} editable={edit} run={run} />
+      <GoalCheckpointPanel centerId={centerId} version={v} ws={ws} editable={edit}
+        unsavedPlanEdits={unsavedPlanEdits} run={run} />
       <label className="block text-[14px] font-medium">Plan summary<textarea className={`mt-1 ${input}`} rows={3} value={summary} disabled={!edit} onChange={(e) => setSummary(e.target.value)} data-testid="plan-summary" /></label>
       <div>
         <h3 className="text-[15px] font-semibold">Goals</h3>
