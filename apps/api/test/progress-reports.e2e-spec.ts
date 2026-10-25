@@ -109,6 +109,10 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     for (const unauthorized of [admin, ada, sup])
       await post(h, handoffPath, unauthorized, body).expect(403);
     await post(h, handoffPath, other, body).expect(404);
+    // Transform at the API boundary, not just the clinician UI: trimmed
+    // whitespace-only and one-letter titles must fail before persistence.
+    await post(h, handoffPath, therapist, { ...body, title: '   ' }).expect(400);
+    await post(h, handoffPath, therapist, { ...body, title: 'a  ' }).expect(400);
     await post(h, handoffPath, therapist, { ...body, selectedGoals: [] }).expect(400);
     await post(h, handoffPath, therapist, { ...body, sourceReportVersionId: plan.versionId }).expect(404);
     await post(h, handoffPath, therapist, { ...body, selectedGoals: [{ planVersionId: plan.versionId, goalKey: 'unknown' }] }).expect(422);
