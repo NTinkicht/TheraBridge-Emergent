@@ -153,6 +153,7 @@ function VersionEditor({ centerId, ws, planId, service, v, source, run }: { cent
 export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Workspace; run: Run }) {
   const [f, setF] = useState({ service: ws.child.services[0] ?? '', title: '' });
   const [linkedEvidenceNote, setLinkedEvidenceNote] = useState('');
+  const [historicGoal, setHistoricGoal] = useState<{ planId: string; versionId: string; goalKey: string } | null>(null);
   useEffect(() => {
     // Saved report evidence can refer to a historical plan version. Never
     // silently map it onto the latest goal or measurements of that plan.
@@ -171,8 +172,8 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
       document.getElementById(goalReviewAnchor(plan.id, goalKey))?.scrollIntoView({ block: 'center' });
       setLinkedEvidenceNote('Opened the matching current plan goal. Evidence remains version-specific.');
     } else {
-      document.querySelector('[data-testid="plan-' + plan.id + '"]')?.scrollIntoView({ block: 'start' });
-      setLinkedEvidenceNote('The source goal belongs to a historical plan version. Inspect version history below; current evidence cannot be substituted.');
+      setHistoricGoal({ planId: plan.id, versionId, goalKey });
+      setLinkedEvidenceNote('Historical source goal selected below in its exact saved plan version. Current evidence cannot be substituted.');
     }
   }, [ws]);
   return (
@@ -186,7 +187,8 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
             <h2 className="text-[18px] font-semibold">{p.title}</h2>
             <p className="mb-4 text-[13px] text-brand-inkMuted">{serviceLabel(p.service)} · {p.versions.length} version{p.versions.length > 1 ? 's' : ''}</p>
             <VersionEditor centerId={centerId} ws={ws} planId={p.id} service={p.service} v={current} source={p.source} run={run} />
-            <PlanVersionHistory key={p.id} plan={p} templates={ws.templates} />
+            <PlanVersionHistory key={p.id} plan={p} templates={ws.templates}
+              target={historicGoal?.planId === p.id ? { versionId: historicGoal.versionId, goalKey: historicGoal.goalKey } : undefined} />
           </Card>
         );
       })}
