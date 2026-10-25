@@ -208,6 +208,14 @@ try {
     await page.getByTestId('progress-periods-turn-taking').waitFor();
     await page.getByTestId('clinical-tab-plan').click();
     await page.getByTestId('plan-evidence-trail').first().waitFor();
+    // TB-EM-033 worklist is scoped to current authorized plan versions.
+    await page.getByTestId('goal-review-worklist').waitFor();
+    await page.getByTestId('goal-review-summary').waitFor();
+    assert((await page.getByTestId('goal-review-worklist').innerText()).includes('No review date'),
+      'Undated synthetic goals must not invent review deadlines');
+    await page.locator('[data-testid^="goal-review-open-"]').first().click();
+    assert(await page.evaluate(() => document.activeElement?.id.startsWith('goal-review-')),
+      'Review worklist must focus the actual authorized goal editor');
     await page.getByTestId('plan-evidence-goals').first().waitFor();
     await page.getByTestId('plan-source-none').first().waitFor();
     assert((await page.getByTestId('plan-evidence-trail').first().innerText()).includes('recorded observation'),
@@ -218,6 +226,8 @@ try {
       const scroll = await page.evaluate(() => document.documentElement.scrollWidth);
       assert(right <= width + 6 && scroll <= width + 8,
         'Plan evidence trace must remain within ' + width + 'px');
+      const reviewRight = await page.getByTestId('goal-review-worklist').evaluate(el => el.getBoundingClientRect().right);
+      assert(reviewRight <= width + 6, 'Goal review worklist must fit at ' + width + 'px');
     }
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.getByTestId('home-assist-toggle').click();
@@ -313,6 +323,18 @@ try {
     await page.goto(base + '/app/reports/' + speechReport.id);
     await page.getByTestId('report-evidence-assist').waitFor();
     await page.getByTestId('report-decisions-persistent').waitFor();
+    // An evidence entry links to its exact source version and goal. The new
+    // tab goes through the ordinary authorized child workspace route.
+    await page.locator('[data-testid^="evidence-sources-"] summary').first().click();
+    const linkToGoal = page.locator('[data-testid^="report-evidence-open-goal-"]').first();
+    const goalHref = await linkToGoal.getAttribute('href');
+    assert(goalHref?.includes('#plan?version=') && goalHref.includes('&goal='));
+    const linkedTab = await page.context().newPage();
+    await linkedTab.goto(base + goalHref);
+    await linkedTab.getByTestId('report-goal-navigation-note').waitFor();
+    assert((await linkedTab.getByTestId('report-goal-navigation-note').innerText()).includes('matching current plan goal'),
+      'Source goal link must resolve to the authorized exact current plan goal');
+    await linkedTab.close();
     // Synthetic seed has editable drafts but no saved immutable version.
     // Exercise the real clinician Save version operation as prerequisite.
     await page.getByTestId('report-to-plan-needs-version').waitFor();
