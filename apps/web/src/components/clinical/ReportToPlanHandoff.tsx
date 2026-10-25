@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { ClipboardList, Loader2 } from 'lucide-react';
 import { Button, Card } from '@/components/design/ui';
 import { reportsApi, type GoalEvidence, type ReportDetail, type ReportVersion } from '@/lib/reports';
@@ -35,6 +36,11 @@ export function ReportToPlanHandoff({ centerId, detail, prepare }: { centerId: s
   const attempt = useRef<Parameters<typeof reportsApi.createPlanDraft>[2] | null>(null);
   const lease = useRef<ReportHandoffLease | null>(null);
   const [uncertain, setUncertain] = useState(false);
+  const [completedPlanId, setCompletedPlanId] = useState<string | null>(null);
+  const [editorReleased, setEditorReleased] = useState(false);
+  // A confirmed response cannot become an unresolved attempt because client
+  // navigation stalls. Release the editor on actual unmount, not on POST.
+  useEffect(() => () => { lease.current?.release(); lease.current = null; }, []);
   useEffect(() => {
     if (!open || !sourceId) return;
     let active = true;
@@ -67,11 +73,10 @@ export function ReportToPlanHandoff({ centerId, detail, prepare }: { centerId: s
   const selectedGoals = goals.filter(g => selected.includes(refOf(g)));
   const validTitle = title.trim().length >= 3 && title.trim().length <= 120;
   const create = async () => {
-    if (busy.current || loading || (!attempt.current && (!snapshot || !validTitle || selectedGoals.length === 0 || selectedGoals.length > 12))) return;
+    if (busy.current || completedPlanId || loading || (!attempt.current && (!snapshot || !validTitle || selectedGoals.length === 0 || selectedGoals.length > 12))) return;
     busy.current = true;
     setSaving(true);
     setError('');
-    let succeeded = false;
     try {
       if (!attempt.current) {
         // The report editor must commit ALL outstanding text before a plan
@@ -86,10 +91,13 @@ export function ReportToPlanHandoff({ centerId, detail, prepare }: { centerId: s
           selectedGoals: selectedGoals.map(g => ({ planVersionId: g.planVersionId, goalKey: g.key })),
         };
       }
-      await reportsApi.createPlanDraft(centerId, detail.report.id, attempt.current);
-      succeeded = true;
-      // Do not unlock the report while client-side navigation is pending.
-      router.push('/app/clinical/' + detail.report.childId + '#plan');
+      const receipt = await reportsApi.createPlanDraft(centerId, detail.report.id, attempt.current);
+      setCompletedPlanId(receipt.id);
+      setUncertain(false);
+      // The draft is confirmed; show an ordinary link as a fallback in case
+      // soft navigation does not complete. Never issue the POST again.
+      try { router.push('/app/clinical/' + detail.report.childId + '#plan'); }
+      catch { setError('The draft was created, but navigation did not complete. Use Open draft below.'); }
     } catch (e) {
       if (attempt.current) {
         setUncertain(true);
@@ -100,11 +108,16 @@ export function ReportToPlanHandoff({ centerId, detail, prepare }: { centerId: s
         setError('Report text could not be saved before preparing a plan. Keep your report open and retry.');
       }
     } finally {
-      if (!succeeded) {
-        busy.current = false;
-        setSaving(false);
-      }
+      busy.current = false;
+      setSaving(false);
     }
+  };
+
+  const resumeReport = () => {
+    if (busy.current || !completedPlanId) return;
+    lease.current?.release();
+    lease.current = null;
+    setEditorReleased(true);
   };
 
   const abandon = () => {
@@ -159,9 +172,16 @@ export function ReportToPlanHandoff({ centerId, detail, prepare }: { centerId: s
           data-testid="report-to-plan-title" />
       </label>
       <p className="text-[12px] text-brand-inkMuted">A new plan starts in DRAFT status. Goal keys are new; earlier observations are never treated as measurements for this plan. Source report/version/goal references are recorded in the internal audit trail.</p>
+      {completedPlanId && <div className="space-y-2 rounded-control border border-border-light bg-surface-subtle p-3" role="status" data-testid="report-to-plan-completed">
+        <p className="text-[13px] font-semibold">Internal plan draft created. Nothing has been shared with families.</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link className="text-[14px] font-semibold text-brand-action underline" href={`/app/clinical/${detail.report.childId}#plan`} data-testid="report-to-plan-open-created">Open draft</Link>
+          {!editorReleased && <Button size="sm" variant="secondary" onClick={resumeReport} data-testid="report-to-plan-resume-report">Continue editing report</Button>}
+        </div>
+      </div>}
       {error && <p role="alert" className="rounded-control bg-status-dangerSurface p-3 text-[13px] text-status-danger" data-testid="report-to-plan-error">{error}</p>}
       {uncertain && <Button size="sm" variant="secondary" onClick={abandon} data-testid="report-to-plan-abandon">Abandon unresolved request</Button>}
-      <Button onClick={() => void create()} disabled={saving || (!uncertain && (loading || !snapshot || !validTitle || selectedGoals.length === 0 || selectedGoals.length > 12))}
+      <Button onClick={() => void create()} disabled={saving || !!completedPlanId || (!uncertain && (loading || !snapshot || !validTitle || selectedGoals.length === 0 || selectedGoals.length > 12))}
         data-testid="report-to-plan-create">{saving ? 'Preparing draft…' : uncertain ? 'Retry same request' : 'Create editable draft'}</Button>
     </div>}
   </Card>;
