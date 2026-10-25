@@ -213,6 +213,16 @@ try {
     await page.getByTestId('goal-checkpoint-summary').first().fill('Reviewed available synthetic records; monitor further observations.');
     assert(await page.getByTestId('goal-checkpoint-save').first().isEnabled(),
       'Therapist can prepare a draft checkpoint without posting it');
+    const summaryBox = page.getByTestId('plan-summary').first();
+    const beforeCheckpointEdit = await summaryBox.inputValue();
+    await summaryBox.fill(beforeCheckpointEdit + ' Unsaved synthetic change.');
+    await page.getByTestId('goal-checkpoint-unsaved-lock').first().waitFor();
+    assert(await page.getByTestId('goal-checkpoint-save').first().isDisabled(),
+      'Checkpoint must not discard unsaved plan goals, summary or home activities');
+    await summaryBox.fill(beforeCheckpointEdit);
+    assert(await page.getByTestId('goal-checkpoint-save').first().isEnabled(),
+      'Checkpoint becomes available again after reverting unsaved changes');
+
     // No POST in this read-only browser journey: the API suite verifies
     // persisted writes, replay conflicts and source isolation.
     await page.getByTestId('plan-evidence-trail').first().waitFor();
