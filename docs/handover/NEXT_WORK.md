@@ -1,3 +1,9 @@
+## 2026-10-25 — TB-EM-035 closeout gates
+
+1. Qualify new branch/PR exact HEAD with PostgreSQL report decision regression, frozen version source fidelity, pure multi-claim/stale/malformed cases, Next.js build, seven-role browser at five widths, secret scan, preview and Compose smoke. Fix P0–P2 findings on same branch and request exact-head independent review. Do not merge without owner approval.
+2. Next Milestone 1 continuation: in-report inspector for multiple clinician claim associations, richer longitudinal goal checkpoint comparison, immutable review provenance; maintain compatibility with legacy saved versions and keep family-visible content completely isolated.
+3. No external AI/STT, clinical signing/co-signing, consent, sensitive behavior safeguarding actions, authorized family report release or production pilot. Hosted issue #61 baseline stays 53 PASS, 0 FAIL, 47 BLOCKED, 4 NOT TESTED (+4 supplemental historical PASS).
+
 ## 2026-10-25 — TB-EM-034 gates
 
 Run exact-head 6-job CI including PostgreSQL e2e for source/role/replay/immutability, seven-role browser and five viewport widths, web and API builds, secret scan, Docker Compose smoke. Fix all P0–P2 findings on the draft branch and request exact-head independent review before marking Ready. No automatic merge/deploy; follow owner process. Then milestone continues with evidence-linked report statements and explicit checkpoint follow-up reading, maintaining unsigned synthetic clinical-only boundaries.
