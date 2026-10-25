@@ -464,7 +464,7 @@ try {
     await page.getByTestId('report-to-plan-toggle').waitFor();
     // TB-EM-035: legacy or unlinked saved report versions still render a
     // truthful read-only trace. Nothing is guessed from their prose.
-    await page.getByTestId('history-compare-2').click();
+    await page.locator('[data-testid^="history-compare-"]').first().click();
     await page.getByTestId('saved-statement-trace').waitFor();
     await page.getByTestId('statement-trace-empty').waitFor();
     for (const width of [320, 390, 768, 1024, 1440]) {
