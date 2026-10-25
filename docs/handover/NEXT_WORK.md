@@ -1,3 +1,7 @@
+## 2026-10-25 — PR #87 closeout and next vertical slice
+
+Complete exact final-head CI and verify review-thread status; merge PR #87 only once protected GitHub gates permit. No further P3 work required on this PR: seed-independent browser fixture and broader removed-item UI testing are later QA improvements, not blockers. Do not update hosted issue #61 without actual approved evidence. After merge return to clinician-controlled home-plan and report evidence traceability roadmap, preserving synthetic-only clinical restrictions. No real speech-to-text, AI medical inference, signing, approval or release authorized.
+
 ## 2026-10-25 — TB-EM-029 next gates
 
 1. Open draft PR from `feature/tb-em-029-plan-version-history`; run exact-head CI (including pure goal diff and seven-role disposable-browser regression), inspect failures, fix on same branch, and request independent review. Do not merge without required gates/owner authority.
