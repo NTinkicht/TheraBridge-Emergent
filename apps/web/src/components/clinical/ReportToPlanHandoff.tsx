@@ -142,7 +142,7 @@ export function ReportToPlanHandoff({ centerId, detail, prepare }: { centerId: s
       </fieldset>}
       <label className="block text-[13px] font-semibold">New draft title
         <input className="mt-1 min-h-[44px] w-full rounded-control border border-border-light bg-surface-white px-3 py-2 text-[14px]"
-          value={title} maxLength={120} onChange={e => { setTitle(e.target.value); requestId.current = null; }}
+          value={title} maxLength={120} disabled={saving || uncertain} onChange={e => setTitle(e.target.value)}
           data-testid="report-to-plan-title" />
       </label>
       <p className="text-[12px] text-brand-inkMuted">A new plan starts in DRAFT status. Goal keys are new; earlier observations are never treated as measurements for this plan. Source report/version/goal references are recorded in the internal audit trail.</p>
