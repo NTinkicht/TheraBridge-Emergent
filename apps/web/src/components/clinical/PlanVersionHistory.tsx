@@ -18,6 +18,14 @@ const changeNames: Record<ChangeKind, string> = {
 const shortDate = (value: string) => value?.slice(0, 10) || 'Not recorded';
 const field = 'min-h-[44px] w-full rounded-control border border-border-strong bg-surface-white px-3 py-2 text-[14px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action';
 
+function activityDifferenceTitle(templateId: string, current: HomeActivity | null, previous: HomeActivity | null, templates: Template[]): string {
+  const savedTitle = current?.snapshot?.title ?? previous?.snapshot?.title;
+  if (savedTitle) return savedTitle;
+  const liveTitle = templates.find(t => t.id === templateId)?.title;
+  return liveTitle ? 'Legacy activity — current-library title: ' + liveTitle : 'Historic activity (template unavailable)';
+}
+
+
 function ActivityText({ a, templates }: { a: HomeActivity; templates: Template[] }) {
   const currentLibraryTemplate = templates.find(x => x.id === a.templateId);
   // Use the immutable saved definition. A live template may have changed
@@ -125,7 +133,7 @@ export function PlanVersionHistory({ plan, templates }: { plan: Plan; templates:
             <h4 className="text-[14px] font-semibold">Draft activity changes</h4>
             {difference.activities.filter(a => a.kind !== 'unchanged').length ? <ul className="space-y-2">
               {difference.activities.filter(a => a.kind !== 'unchanged').map(a => <li key={a.templateId} className="rounded-control border border-border-light bg-surface-white p-3 text-[13px]">
-                <strong>{changeNames[a.kind]}: </strong>{a.current?.snapshot?.title ?? a.previous?.snapshot?.title ?? (templates.find(t => t.id === a.templateId)?.title ? 'Legacy activity — current-library title: ' + templates.find(t => t.id === a.templateId)!.title : 'Historic activity (template unavailable)')}
+                <strong>{changeNames[a.kind]}: </strong>{activityDifferenceTitle(a.templateId, a.current, a.previous, templates)}
                 {a.previous && <p className="mt-1 text-brand-inkMuted">Previous: <ActivityText a={a.previous} templates={templates} /></p>}
                 {a.current && <p className="text-brand-inkMuted">Compared: <ActivityText a={a.current} templates={templates} /></p>}
               </li>)}
