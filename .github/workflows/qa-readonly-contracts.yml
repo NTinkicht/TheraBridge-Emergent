@@ -5,6 +5,7 @@ on:
       - scripts/qa/hosted-readonly.mjs
       - scripts/qa/hosted-readonly.test.mjs
       - scripts/qa/private-runner.test.mjs
+      - scripts/qa/pinned-browser-smoke.mjs
       - scripts/qa/evidence-crypto.mjs
       - scripts/qa/prepare-hosted-run.mjs
       - .github/workflows/hosted-responsive-private.yml
@@ -14,6 +15,7 @@ on:
       - scripts/qa/hosted-readonly.mjs
       - scripts/qa/hosted-readonly.test.mjs
       - scripts/qa/private-runner.test.mjs
+      - scripts/qa/pinned-browser-smoke.mjs
       - scripts/qa/evidence-crypto.mjs
       - scripts/qa/prepare-hosted-run.mjs
       - .github/workflows/hosted-responsive-private.yml
