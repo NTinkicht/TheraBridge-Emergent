@@ -10,10 +10,40 @@ import type { AssessmentDto, AssessmentUpdateDto, ObservationDto, PlanDto, PlanV
 export const asDate = (d: string) => new Date(`${d}T00:00:00Z`);
 export const day = (d: Date) => d.toISOString().slice(0, 10);
 export const LOCKED = 'Signing, approval and release are disabled until an owner-approved clinical policy exists.';
-type Goal = { key: string; title: string; measure: string; baseline: number; target: number };
+type Goal = { key: string; title: string; measure: string; baseline: number; target: number; horizon?: 'SHORT_TERM' | 'LONG_TERM'; targetOn?: string; reviewOn?: string };
 // Snapshots are captured by the server, never accepted as client input.
 type ActivitySnapshot = { id: string; title: string; service: string; ageBand: string; minutes: number; materials: string[]; steps: string[]; safety: string[]; version: number; capturedAt: string };
-type HomeActivity = { templateId: string; frequency: string; note?: string; goalKey?: string; snapshot?: ActivitySnapshot };
+type ActivitySchedule = { cadence: 'WEEKLY' | 'MONTHLY'; startsOn: string; endsOn: string; weekdays?: number[]; monthDay?: number };
+type HomeActivity = { templateId: string; frequency: string; note?: string; goalKey?: string; schedule?: ActivitySchedule; snapshot?: ActivitySnapshot };
+
+// All date-only fields are calendar dates, never UTC timestamps. Reject
+// invalid month/day combinations (February 30, non-leap Feb 29, etc.).
+const validCalendarDate = (value: string): boolean =>
+  /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+  Number(value.slice(0, 4)) >= 2000 && Number(value.slice(0, 4)) <= 2100 &&
+  !Number.isNaN(Date.parse(value + 'T00:00:00Z')) &&
+  new Date(value + 'T00:00:00Z').toISOString().slice(0, 10) === value;
+const calendarDays = (from: string, to: string): number =>
+  (Date.parse(to + 'T00:00:00Z') - Date.parse(from + 'T00:00:00Z')) / 86_400_000;
+function validateSchedule(schedule: ActivitySchedule) {
+  if (!validCalendarDate(schedule.startsOn) || !validCalendarDate(schedule.endsOn)) {
+    throw new UnprocessableEntityException('Enter valid start and end calendar dates for the activity schedule.');
+  }
+  const days = calendarDays(schedule.startsOn, schedule.endsOn);
+  if (days < 0 || days > 366) throw new UnprocessableEntityException('An activity schedule must cover at most one year and end after it starts.');
+  if (schedule.cadence === 'WEEKLY') {
+    if (!Array.isArray(schedule.weekdays) || !schedule.weekdays.length ||
+        new Set(schedule.weekdays).size !== schedule.weekdays.length || schedule.monthDay !== undefined) {
+      throw new UnprocessableEntityException('Weekly schedules require unique weekdays and no monthly day.');
+    }
+  } else if (schedule.cadence === 'MONTHLY') {
+    if (!Number.isInteger(schedule.monthDay) || schedule.monthDay! < 1 ||
+        schedule.monthDay! > 31 || schedule.weekdays !== undefined) {
+      throw new UnprocessableEntityException('Monthly schedules require one month day and no weekdays.');
+    }
+  } else throw new UnprocessableEntityException('Unsupported activity schedule cadence.');
+}
+
 
 // Clinical drafts: therapists work on children actively assigned to them; clinical supervisors read and review the whole center.
 // Center administrators, coordinators and guardians never reach these records.
@@ -156,6 +186,11 @@ export class ClinicalService {
     // explicit goal association targets a goal saved in that same version;
     // older unlinked drafts remain readable/editable without inventing links.
     const keys = new Set(dto.goals.map((g) => g.key));
+    for (const g of dto.goals) {
+      if ((g.targetOn && !validCalendarDate(g.targetOn)) || (g.reviewOn && !validCalendarDate(g.reviewOn)))
+        throw new UnprocessableEntityException('Goal dates must be valid calendar dates.');
+    }
+    for (const a of dto.homeActivities) if (a.schedule) validateSchedule(a.schedule);
     if (dto.homeActivities.some((a) => a.goalKey && !keys.has(a.goalKey))) throw new UnprocessableEntityException('Link each home activity to a goal in this plan version.');
     const ids = uniq(dto.homeActivities.map(h => h.templateId));
     if (ids.length !== dto.homeActivities.length) throw new UnprocessableEntityException('An activity can only appear once in this plan version.');
@@ -185,6 +220,11 @@ export class ClinicalService {
         return { templateId: activity.templateId, frequency: activity.frequency,
           ...(activity.goalKey ? { goalKey: activity.goalKey } : {}),
           ...(activity.note !== undefined ? { note: activity.note } : {}),
+          ...(activity.schedule ? { schedule: {
+            cadence: activity.schedule.cadence,
+            startsOn: activity.schedule.startsOn, endsOn: activity.schedule.endsOn,
+            ...(activity.schedule.cadence === 'WEEKLY' ? { weekdays: activity.schedule.weekdays } : { monthDay: activity.schedule.monthDay }),
+          } } : {}),
           snapshot };
       });
       if (fresh.authorId !== v.userId) throw new ForbiddenException('Only the author can edit this plan version.');
