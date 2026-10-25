@@ -116,25 +116,10 @@ async function assess(browser,role,user,directory){
    authFailure='authenticated_but_workspace_not_ready';
    await page.waitForURL(u=>u.pathname==='/app'||u.pathname.startsWith('/app/'),{timeout:20000});
    await page.getByTestId('product-shell').waitFor({timeout:15000});
-   const identity=await page.evaluate(async ([email,expected])=>{
-     const r=await fetch('/api/auth/session',{credentials:'include'});
-     if(!r.ok)return 'session_unavailable';
-     let session=await r.json();
-     if(session.user?.email?.toLowerCase()!==email.toLowerCase())return 'email_mismatch';
-     if(session.activeContext?.role!==expected){
-       const available=(session.contexts??[]).filter(x=>x.role===expected);
-       if(available.length!==1)return available.length?'ambiguous_matching_contexts':'expected_role_not_assigned';
-       const choice=available[0].type==='platform'?{platform:true}:{membershipId:available[0].membershipId,role:expected};
-       const picked=await fetch('/api/auth/context',{method:'POST',credentials:'include',
-         headers:{'Content-Type':'application/json','X-CSRF-Token':session.csrfToken},body:JSON.stringify(choice)});
-       if(!picked.ok)return 'context_switch_failed';
-       session=await picked.json();
-     }
-     return session.activeContext?.role===expected?'verified':'role_mismatch_after_selection';
+   const valid=await page.evaluate(async ([email,expected])=>{
+     const r=await fetch('/api/auth/session',{credentials:'include'});if(!r.ok)return false;
+     const s=await r.json();return s.activeContext?.role===expected&&s.user?.email?.toLowerCase()===email.toLowerCase();
    },[user.email,c.role]);
-   // The browser evaluator returns a typed label; legacy offline mocks return true.
-   const valid=identity==='verified'||identity===true;
-   if(!valid)authFailure='identity_'+identity;
    if(!valid){authFailure='authenticated_but_role_identity_mismatch';throw Error('identity_mismatch');}
   }catch{
    // Cookie FAIL survives invalid browser session and navigation failure.
