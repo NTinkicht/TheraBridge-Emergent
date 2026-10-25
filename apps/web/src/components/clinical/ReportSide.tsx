@@ -6,6 +6,7 @@ import { History, MessageSquareText } from 'lucide-react';
 import { FormAlert } from '@/components/auth/Field';
 import { errorText } from '@/components/centers/kit';
 import { GoalChart, STATUS_TEXT } from '@/components/clinical/GoalChart';
+import { ReportStatementTrace } from './ReportStatementTrace';
 import { Button, Card, Pill } from '@/components/design/ui';
 import { KIND_LABEL, SECTIONS, reportsApi, type ReportDetail, type ReportVersion } from '@/lib/reports';
 
@@ -101,7 +102,7 @@ export function HistoryList({ centerId, d, onError, onCompare }: { centerId: str
   );
 }
 
-export function Compare({ v, current, onClose }: { v: ReportVersion; current: Record<string, string>; onClose: () => void }) {
+export function Compare({ v, current, childId, onClose }: { v: ReportVersion; current: Record<string, string>; childId: string; onClose: () => void }) {
   const changed = SECTIONS.filter(([k]) => (v.sections[k] ?? '') !== (current[k] ?? '')).length;
   return (
     <Card className="space-y-3 p-5" testId="report-compare">
@@ -109,6 +110,7 @@ export function Compare({ v, current, onClose }: { v: ReportVersion; current: Re
         <h2 className="text-[16px] font-semibold">Version {v.number} compared with the current draft</h2>
         <Button size="sm" variant="ghost" onClick={onClose} data-testid="compare-close">Close</Button>
       </div>
+      <ReportStatementTrace version={v} childId={childId} />
       <p className="text-[13px] text-brand-inkMuted" data-testid="compare-summary">{changed ? `${changed} of ${SECTIONS.length} sections changed since version ${v.number}.` : `No changes since version ${v.number}.`} Saved {when(v.createdAt)} by {v.author}.</p>
       {SECTIONS.map(([k, label]) => {
         const diff = (v.sections[k] ?? '') !== (current[k] ?? '');
