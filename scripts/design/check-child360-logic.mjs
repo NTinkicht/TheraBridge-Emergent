@@ -102,6 +102,23 @@ assert.equal(delta.goals.find(g => g.key === 'shared').definitionChanged, true);
 assert(!('measurements' in delta.goals.find(g => g.key === 'shared')));
 assert.deepEqual(delta.activities.map(a => [a.templateId, a.kind]), [
   ['added-activity','added'], ['picture','changed'], ['removed-activity','removed']]);
+// Persisted activity snapshot content must win over a mutable library title.
+// A template can be removed/re-added with the same ID and a new saved definition.
+const savedBase = { title: 'Original name', service: 'speech', ageBand: '6-8',
+  minutes: 15, materials: ['cards'], steps: ['Point'], safety: ['Supervise'],
+  version: 1, capturedAt: '2026-10-01T09:00:00Z' };
+const priorSaved = { ...older, homeActivities: [{ templateId: 'picture', goalKey: 'shared',
+  frequency: 'Weekly', snapshot: savedBase }] };
+const laterSaved = { ...newer, homeActivities: [{ templateId: 'picture', goalKey: 'shared',
+  frequency: 'Weekly', snapshot: { ...savedBase, title: 'Renamed at capture',
+    steps: ['Say the word'], safety: ['Check vision'], version: 2,
+    capturedAt: '2026-10-23T09:00:00Z' } }] };
+assert.equal(comparison.comparePlanVersions(priorSaved, laterSaved).activities[0].kind, 'changed');
+const metadataOnly = { ...newer, homeActivities: [{
+  ...priorSaved.homeActivities[0],
+  snapshot: { ...savedBase, version: 3, capturedAt: '2026-10-25T09:00:00Z' },
+}] };
+assert.equal(comparison.comparePlanVersions(priorSaved, metadataOnly).activities[0].kind, 'unchanged');
 assert.equal(comparison.comparePlanVersions(older, older).goals.every(g => g.kind === 'unchanged'), true);
 assert.equal(comparison.comparePlanVersions(older, older).activities.every(a => a.kind === 'unchanged'), true);
 assert.equal(comparison.comparePlanVersions(newer, older).from, 2);
