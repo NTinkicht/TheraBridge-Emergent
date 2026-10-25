@@ -145,6 +145,11 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
       schedule: { ...activity.schedule, endsOn: '2028-12-01' } }] }).expect(422);
     await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
       schedule: { cadence: 'MONTHLY', startsOn: '2026-10-01', endsOn: '2027-03-31', weekdays: [1] } }] }).expect(422);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
+      schedule: { cadence: 'MONTHLY', startsOn: '2027-02-01', endsOn: '2027-02-28', monthDay: 31 } }] }).expect(422);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
+      schedule: { cadence: 'WEEKLY', startsOn: '2026-10-19', endsOn: '2026-10-19', weekdays: [2] } }] }).expect(422);
+
     await patch(other, url, update).expect(404);
     await patch(sup, url, update).expect(403);
     await patch(therapist, url, update).expect(200);
