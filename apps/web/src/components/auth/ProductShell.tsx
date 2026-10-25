@@ -116,7 +116,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
           <select id="mobile-workspace-navigation" data-testid="mobile-nav-select"
             value={nav.find(n => n.key === active)?.href ?? '/app'}
             onChange={e => router.push(e.target.value)}
-            className="min-h-[44px] w-full rounded-control border border-border-strong bg-surface-white px-3 text-[14px] font-semibold text-brand-ink focus:border-brand-action focus:outline-none focus:ring-[3px] focus:ring-brand-action/20">
+            className={`min-h-[44px] w-full rounded-control border border-border-strong px-3 text-[14px] font-semibold focus:outline-none focus:ring-[3px] ${family ? 'bg-fam-accentTint text-fam-accent focus:border-fam-accent focus:ring-fam-accent/20' : 'bg-brand-actionTint text-brand-action focus:border-brand-action focus:ring-brand-action/20'}`}>
             {nav.map(n => <option key={n.href + ':' + (n.permission ?? '')} value={n.href}>{n.label}</option>)}
             {session.contexts.length > 1 && <option value="/select-context">Switch workspace</option>}
           </select>
