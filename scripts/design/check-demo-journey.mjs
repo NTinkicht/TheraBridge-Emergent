@@ -302,6 +302,10 @@ try {
       orderBy: { number: 'asc' },
     });
     const savedGoalKey = oldestPlan.goals[0].key;
+    // Follow the link from a different page, as a real report would.
+    // Fragment-only goto on the already-mounted child page does not remount
+    // the plan workspace and tests a different navigation path.
+    await page.goto(base + '/app/clinical');
     await page.goto(base + '/app/clinical/' + child.id +
       '#plan?version=' + encodeURIComponent(oldestPlan.id) + '&goal=' + encodeURIComponent(savedGoalKey));
     await page.waitForFunction(() =>
