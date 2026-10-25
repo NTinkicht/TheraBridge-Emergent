@@ -237,7 +237,7 @@ export class ReportsService {
       // Serialize concurrent retries using the same request UUID. Without
       // this lock, both transactions may see no plan and the loser would get
       // a uniqueness exception instead of the same successful receipt.
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${centerId}), hashtext(${requestFingerprint}))`;
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${centerId}), hashtext(${requestFingerprint}))::text AS lock_receipt`;
       const existing = await tx.therapyPlan.findUnique({ where: { id: dto.requestId } });
       if (existing) {
         const event = await tx.centerEvent.findFirst({
