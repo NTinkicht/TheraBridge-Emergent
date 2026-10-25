@@ -21,7 +21,7 @@ test('blocked collector results are written and still encrypted before being mar
  assert.match(workflow,/printf '%s\\n' "\$exit_code" > "\/__w\/_temp\/tb-hosted-private\/collector-exit"/);
  for(const step of ['Encrypt evidence before upload','Upload ONLY AES-256-GCM ciphertext','Do not mark visual acceptance PASS automatically']){
   const part=workflow.slice(workflow.indexOf('      - name: '+step));
-  assert(part.startsWith('      - name: '+step+'\n        if: ${{ always() && steps.collect.outcome == \'success\' }}'),'must continue after prior failure: '+step);
+  assert(part.split('\n')[1]==='        if: ${{ always() && steps.collect.outcome == \'success\' }}','must continue after prior failure: '+step);
  }
  assert(workflow.indexOf('Encrypt evidence before upload')<workflow.indexOf('Upload ONLY AES-256-GCM ciphertext'));
  assert(workflow.indexOf('Upload ONLY AES-256-GCM ciphertext')<workflow.indexOf('Do not mark visual acceptance PASS automatically'));
