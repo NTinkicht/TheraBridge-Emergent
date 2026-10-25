@@ -1,3 +1,10 @@
+## 2026-10-26 — TB-EM-039 clinician saved-draft handoff
+
+- Confirmed PR #98 owner-authorized merge at `d9921cb94dca0ca949f1af0b3d1847ebdc51a345`.
+- Scoped Slice 10 to single clinician plan-version handoff: pure advisory checklist, modern internal UI, submit button locked until all mounted plan edits are saved or discarded. Existing backend submit remains authoritative, so this is no clinical permission change.
+- Regression coverage: pure clean/dirty/other-dirty/new-unlinked states, missing goal/title/summary/safety/schedules/templates, advisory omissions never falsely block a genuinely saved draft. Chromium exercises unsaved schedule preventing submit and pristine reload restoring allowed submit without POST. Tests added, results pending.
+- No family clinical release, external AI/STT, real audio/patient data, clinical sign/co-sign, consent, safeguarding action, pilot or deployment.
+
 ## 2026-10-26 — TB-EM-038 planned home-practice calendar
 
 - Verified PR #95 merged (main `10f86222365e5ca83d838856e682b64cca8c71dd`), started next single-slice feature branch from main.
