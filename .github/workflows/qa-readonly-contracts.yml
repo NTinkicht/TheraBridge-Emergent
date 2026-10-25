@@ -4,11 +4,19 @@ on:
     paths:
       - scripts/qa/hosted-readonly.mjs
       - scripts/qa/hosted-readonly.test.mjs
+      - scripts/qa/private-runner.test.mjs
+      - scripts/qa/evidence-crypto.mjs
+      - scripts/qa/prepare-hosted-run.mjs
+      - .github/workflows/hosted-responsive-private.yml
       - .github/workflows/qa-readonly-contracts.yml
   pull_request:
     paths:
       - scripts/qa/hosted-readonly.mjs
       - scripts/qa/hosted-readonly.test.mjs
+      - scripts/qa/private-runner.test.mjs
+      - scripts/qa/evidence-crypto.mjs
+      - scripts/qa/prepare-hosted-run.mjs
+      - .github/workflows/hosted-responsive-private.yml
       - .github/workflows/qa-readonly-contracts.yml
 permissions:
   contents: read
@@ -25,4 +33,4 @@ jobs:
       - name: Check Gitleaks TOML configuration parses cleanly
         run: python3 -c 'import tomllib; tomllib.load(open(".gitleaks.toml","rb"))'
       - name: Run offline QA contract suite only (no secrets or external requests)
-        run: node --test scripts/qa/hosted-readonly.test.mjs
+        run: node --test scripts/qa/hosted-readonly.test.mjs scripts/qa/private-runner.test.mjs
