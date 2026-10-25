@@ -199,6 +199,13 @@ assert.equal(review.centerLocalDay('Asia/Not_A_Zone', new Date('2026-10-25T21:30
 assert.equal(review.nextReviewDayDelay('Asia/Not_A_Zone', new Date('2026-10-25T19:59:00Z')), null);
 const midnightDelay = review.nextReviewDayDelay('Asia/Dubai', new Date('2026-10-25T19:59:00Z'));
 assert(midnightDelay >= 60_000 && midnightDelay < 61_000, 'Centre midnight updates on the local boundary');
+const dstSpring = review.nextReviewDayDelay('America/Los_Angeles', new Date('2026-03-08T08:00:00Z'));
+const dstFall = review.nextReviewDayDelay('America/Los_Angeles', new Date('2026-11-01T07:00:00Z'));
+assert(dstSpring >= 23 * 3_600_000 && dstSpring < 23 * 3_600_000 + 1000,
+  'DST spring-forward date has a 23-hour local day, not a fixed 24-hour timer');
+assert(dstFall >= 25 * 3_600_000 && dstFall < 25 * 3_600_000 + 1000,
+  'DST fall-back date has a 25-hour local day, not a fixed 24-hour timer');
+
 assert.equal(review.reviewTiming('2026-10-25', null), 'DATE_UNAVAILABLE');
 
 assert.equal(review.centerLocalDay('America/Los_Angeles', new Date('2026-10-25T21:30:00Z')), '2026-10-25');
