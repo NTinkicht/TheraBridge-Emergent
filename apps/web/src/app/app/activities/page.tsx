@@ -48,6 +48,7 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
   const fetcher = useCallback(() => clinicalApi.templates(centerId), [centerId]);
   const { data, failed, reload } = useLoad(fetcher, onError);
   const [notice, setNotice] = useState('');
+  const [creating, setCreating] = useState(false);
   const [search, setSearch] = useState('');
   const [specialty, setSpecialty] = useState('all');
   const [ownership, setOwnership] = useState('all');
@@ -71,7 +72,14 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
     <div className="space-y-5">
       <PageTitle title="Activity library" body="Step-by-step home activities with safety guidance, ready to add to therapy plan drafts." testId="activities-title" />
       {notice && <FormAlert tone="success" testId="template-saved">{notice}</FormAlert>}
-      {session.permissions.includes('center.activities.manage') && <NewTemplate centerId={centerId} onError={onError} onDone={() => { setNotice('Activity created.'); void reload(); }} />}
+      {session.permissions.includes('center.activities.manage') && (
+        <div className="space-y-3">
+          <Button variant="secondary" onClick={() => setCreating(value => !value)} data-testid="template-form-toggle" aria-expanded={creating}>
+            <Plus size={16} aria-hidden="true" />{creating ? 'Close activity form' : 'Create activity'}
+          </Button>
+          {creating && <NewTemplate centerId={centerId} onError={onError} onDone={() => { setCreating(false); setNotice('Activity created.'); void reload(); }} />}
+        </div>
+      )}
       {failed && <ErrorState onRetry={() => void reload()} testId="activities-error" />}
       {!failed && !data && <Card className="p-5"><SkeletonRows rows={4} testId="activities-loading" /></Card>}
       {data && templates.length > 0 && <Card className="space-y-3 p-4" testId="activities-discovery">
