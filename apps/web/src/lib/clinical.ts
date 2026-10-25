@@ -7,6 +7,12 @@ export interface Template { id: string; title: string; service: string; ageBand:
 export interface PlanVersion { id: string; number: number; status: 'DRAFT' | 'IN_REVIEW' | 'SUPERSEDED' | 'RETURNED_FOR_REVISION' | 'WITHDRAWN' | 'FROZEN_INTERNAL'; summary: string; goals: Goal[]; homeActivities: HomeActivity[]; reviewNotes: { at: string; comment: string }[]; version: number; mine: boolean; author: string; updatedAt: string }
 export interface SessionActivity { id: string; templateId: string; minutes: number; objective: string; planVersionId?: string; goalKey?: string; completion: 'NOT_STARTED' | 'COMPLETED' | 'SKIPPED'; outcome?: 'ACHIEVED' | 'PARTIAL' | 'NOT_ACHIEVED'; assistance?: 'INDEPENDENT' | 'SOME_ASSISTANCE' | 'SUBSTANTIAL_ASSISTANCE'; observation: string; snapshot?: Template; authorId?: string; createdAt?: string }
 export interface CareTeamMember { assignmentId: string; displayName: string; service: string; isSpecialtyLead: boolean }
+export interface PlanOrigin {
+  reportId: string; reportTitle: string; reportVersionId: string;
+  reportVersionNumber: number; originalPlanVersionId: string; draftedAt: string;
+  selectedGoals: { planGoalKey: string; sourcePlanVersionId: string; sourceGoalKey: string }[];
+  draftOnly: true; released: false;
+}
 export interface Workspace {
   timezone: string; synthetic: true; locked: string; canEdit: boolean; canReview: boolean;
   careTeam: CareTeamMember[];
@@ -14,9 +20,9 @@ export interface Workspace {
   childWideReferentStatus?: 'NOT_DESIGNATED' | 'VISIBLE' | 'UNAVAILABLE';
   child: { id: string; name: string; services: string[]; dateOfBirth: string };
   assessments: { id: string; service: string; assessedOn: string; summary: string; areas: { area: string; finding: string }[]; version: number; author: string; mine: boolean; updatedAt: string }[];
-  plans: { id: string; service: string; title: string; versions: PlanVersion[] }[];
+  plans: { id: string; service: string; title: string; source?: PlanOrigin | null; versions: PlanVersion[] }[];
   notes: { executionStatus: 'IN_PROGRESS' | 'COMPLETED'; actualStart: string | null; actualEnd: string | null; attendance: 'PRESENT' | 'NO_SHOW'; activities: SessionActivity[]; id: string; service: string; sessionDate: string; appointmentId: string | null; sections: Record<string, string>; version: number; author: string; mine: boolean; updatedAt: string }[];
-  observations: { id: string; planVersionId: string; goalKey: string; value: number; observedOn: string; note: string | null; author: string }[];
+  observations: { id: string; planVersionId: string; goalKey: string; value: number; observedOn: string; note: string | null; sessionNoteId?: string | null; author: string }[];
   appointments: { id: string; service: string; startsAt: string; endsAt: string; room: string | null; status: string; hasNote: boolean }[];
   templates: Template[];
 }

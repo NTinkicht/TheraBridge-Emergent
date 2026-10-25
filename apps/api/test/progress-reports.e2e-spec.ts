@@ -140,6 +140,43 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
       childId: kid, reportId: id, reportVersionId: source.id, planId: created.id,
       selectedGoalRefs: [plan.versionId + ':two-word'], draftOnly: true, released: false,
     });
+    // Corrupted source audit metadata is NOT trusted as a UUID. It must not
+    // crash the child workspace or become invented provenance.
+    await h.prisma.centerEvent.create({
+      data: { centerId, type: 'clinical.report_plan_drafted', createdAt: h.clock.now(),
+        meta: { planId: plan.id, planVersionId: plan.versionId,
+          reportId: 'not-a-uuid', reportVersionId: 'also-not-a-uuid',
+          selectedGoalRefs: [plan.versionId + ':two-word'],
+          draftOnly: true, released: false } },
+    });
+    const validAfterBadEvent = (await get(therapist, W).expect(200)).body;
+    expect(validAfterBadEvent.plans.find((p: { id: string }) => p.id === plan.id).source).toBeNull();
+
+    // TB-EM-032: source provenance is visible only through the authorized
+    // child/plan projection; observations remain bound to the ORIGINAL
+    // plan-version IDs, never copied into the new report-derived plan.
+    const therapistWorkspace = (await get(therapist, W).expect(200)).body;
+    const sourcePlan = therapistWorkspace.plans.find((x: { id: string }) => x.id === created.id);
+    expect(sourcePlan).toMatchObject({
+      id: created.id, service: 'speech',
+      source: {
+        reportId: id, reportTitle: 'Autumn report', reportVersionId: source.id,
+        reportVersionNumber: source.number, originalPlanVersionId: created.versionId,
+        selectedGoals: [{
+          planGoalKey: 'g1', sourcePlanVersionId: plan.versionId, sourceGoalKey: 'two-word',
+        }], draftOnly: true, released: false,
+      },
+    });
+    expect(therapistWorkspace.plans.find((x: { id: string }) => x.id === plan.id).source).toBeNull();
+    expect(therapistWorkspace.observations.filter((o: { planVersionId: string }) =>
+      o.planVersionId === created.versionId)).toEqual([]);
+    expect(therapistWorkspace.observations.some((o: { planVersionId: string; goalKey: string }) =>
+      o.planVersionId === plan.versionId && o.goalKey === 'two-word')).toBe(true);
+    expect((await get(sup, W).expect(200)).body.plans
+      .find((x: { id: string }) => x.id === created.id).source.reportVersionId).toBe(source.id);
+    await get(other, W).expect(404);
+    for (const forbidden of [admin, ada, coord]) await get(forbidden, W).expect(403);
+
     expect((await post(h, handoffPath, therapist, body).expect(201)).body).toMatchObject({
       id: created.id, versionId: created.versionId, reused: true,
     });
@@ -150,7 +187,10 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     });
     await post(h, handoffPath, therapist, { ...body, title: 'Different request with reused ID' }).expect(409);
     expect(await h.prisma.therapyPlan.count({ where: { id: created.id } })).toBe(1);
-    expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.report_plan_drafted' } })).toBe(1);
+    expect(await h.prisma.centerEvent.count({ where: {
+      centerId, type: 'clinical.report_plan_drafted',
+      meta: { path: ['planId'], equals: created.id },
+    } })).toBe(1);
 
     expect((await patch(therapist, P, { sections: { summary: 'Draft summary', familySummary: 'Ivo enjoyed the picture games.' }, version: 1 }).expect(200)).body.version).toBe(2);
     expect((await patch(therapist, P, { sections: { summary: 'stale tab' }, version: 1 }).expect(409)).body.message).toMatch(/another window/);

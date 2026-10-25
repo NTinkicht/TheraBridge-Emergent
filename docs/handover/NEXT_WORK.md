@@ -1,3 +1,9 @@
+## 2026-10-25 — TB-EM-032 review and qualification gates
+
+1. Execute exact HEAD PostgreSQL API/scope, Next.js web build, pure goal source pairing, seven-role synthetic Chromium 320–1440 px, security scan, container preview and Docker Compose smoke. Correct actionable P0–P2 on same draft PR. Request independent exact-head review; no auto merge/deploy.
+2. After qualifying the first provenance display, extend Milestone 1: source-to-report sentence anchors, richer goal milestone reviews and longitudinal comparisons, read-only authorized cross-document navigation, dated home-practice calendar views. Never infer progress from family-practice feedback.
+3. Clinical sign/co-sign, releases, safeguarding, consent grants, supervisor-family discussions, external AI/STT and production pilots remain denied pending signed policy. Hosted #61 acceptance unchanged.
+
 ## 2026-10-25 — TB-EM-031 qualification and Milestone 1 continuation
 
 1. Run exact HEAD 6-job CI on the new PR: PostgreSQL clinical regressions and scope, pure calendar helper, frontend build, disposable seven-role/320–1440 responsive browser, Docker Compose smoke and secret scan. Fix any actionable P0–P2 in same branch, request exact-head independent source review; do not automatically merge or deploy.
