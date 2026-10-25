@@ -272,10 +272,12 @@ try {
             title: 'Updated saved activity', steps: ['new saved instructions'],
             safety: ['new saved safety'], version: 2 } } : a);
         return { ...p, versions: [
-          { ...first, id: first.id + '-comparison-fixture', number: first.number + 1,
+          { ...first, id: first.id + '-comparison-fixture', number: first.number + 2,
             summary: first.summary + ' Updated synthetic comparison.',
             goals: first.goals.map((g, i) => i === 0 ? { ...g, target: g.target + 1 } : g),
             homeActivities: currentActivities },
+          { ...first, id: first.id + '-intermediate-fixture', number: first.number + 1,
+            summary: first.summary + ' Intermediate saved definition.', homeActivities: priorActivities },
           { ...first, status: 'SUPERSEDED', homeActivities: priorActivities },
         ] };
       });
@@ -293,6 +295,22 @@ try {
     assert(savedActivityComparison.includes('Original saved activity'), 'Historical name must use saved snapshot');
     assert(savedActivityComparison.includes('original safety guidance'), 'Historical safety must use saved snapshot');
     assert(savedActivityComparison.includes('new saved safety'), 'Comparison must show changed saved safety');
+    // Codex P2: evidence about original version 1 must open version 1,
+    // not the default middle version of a THREE-version plan history.
+    const oldestPlan = await db.planVersion.findFirstOrThrow({
+      where: { centerId: center.id, plan: { childId: child.id, service: 'speech' } },
+      orderBy: { number: 'asc' },
+    });
+    const savedGoalKey = oldestPlan.goals[0].key;
+    await page.goto(base + '/app/clinical/' + child.id +
+      '#plan?version=' + encodeURIComponent(oldestPlan.id) + '&goal=' + encodeURIComponent(savedGoalKey));
+    await page.getByTestId('plan-history-goal-' + savedGoalKey).waitFor();
+    assert.equal(await page.getByTestId('plan-history-select-1').getAttribute('aria-pressed'), 'true',
+      'Historical evidence must select the exact original snapshot, not default version 2');
+    assert(await page.evaluate(() => document.activeElement?.id?.includes('plan-history-goal-')),
+      'Historical evidence must focus its precise saved goal definition');
+    assert((await page.getByTestId('report-goal-navigation-note').innerText()).includes('Historical source goal selected'));
+
     // TB-EM-031 uses the same disposable already-authorized workspace overlay.
     // Exercise the clinician's dated objective and scheduled activity fields
     // without saving or contaminating the seeded demonstration.
