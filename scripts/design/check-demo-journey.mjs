@@ -213,6 +213,17 @@ try {
     await page.getByTestId('goal-checkpoint-summary').first().fill('Reviewed available synthetic records; monitor further observations.');
     assert(await page.getByTestId('goal-checkpoint-save').first().isEnabled(),
       'Therapist can prepare a draft checkpoint without posting it');
+    // Codex P2: never discard dirty goal/plan text after a checkpoint POST
+    // reload. The same form must be blocked until the clinician saves first.
+    const sourceSummary = await page.getByTestId('plan-summary').first().inputValue();
+    await page.getByTestId('plan-summary').first().fill(sourceSummary + ' UNSAVED CHECKPOINT GUARD');
+    assert(await page.getByTestId('goal-checkpoint-save').first().isDisabled(),
+      'Unsaved plan edits must block checkpoint write');
+    await page.getByTestId('goal-checkpoint-unsaved-lock').first().waitFor();
+    await page.getByTestId('plan-summary').first().fill(sourceSummary);
+    assert(await page.getByTestId('goal-checkpoint-save').first().isEnabled(),
+      'Restoring saved plan content should permit the checkpoint');
+
     const summaryBox = page.getByTestId('plan-summary').first();
     const beforeCheckpointEdit = await summaryBox.inputValue();
     await summaryBox.fill(beforeCheckpointEdit + ' Unsaved synthetic change.');
