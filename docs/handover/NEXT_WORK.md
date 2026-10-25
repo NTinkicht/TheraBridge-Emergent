@@ -1,3 +1,9 @@
+## 2026-10-25 — TB-EM-031 qualification and Milestone 1 continuation
+
+1. Run exact HEAD 6-job CI on the new PR: PostgreSQL clinical regressions and scope, pure calendar helper, frontend build, disposable seven-role/320–1440 responsive browser, Docker Compose smoke and secret scan. Fix any actionable P0–P2 in same branch, request exact-head independent source review; do not automatically merge or deploy.
+2. After merge, Milestone 1 remains: richer goal milestone review workflows; persistent source/observation-to-goal traceability UI; complete dated calendar presentation and report-to-home-plan provenance. Retain separation of synthetic family-practice feedback from clinical observation evidence.
+3. All production, external AI/speech-to-text, clinical signing, consent grant, safeguarding escalation, release and parent clinical visibility remain policy blocked. Hosted issue #61 acceptance unchanged (53 PASS, 0 FAIL, 47 BLOCKED, 4 NOT TESTED, four historical supplemental PASS).
+
 ## 2026-10-25 — PR #88 reviewer corrections: closeout
 
 1. Verify exact-HEAD CI of synchronous transition lease, whitespace title validation, pending-submit synthetic browser race and navigation fallback changes. Inspect jobs; fix any P0–P2 failure on PR #88. Request exact-head independent re-review; resolve Codex's remaining race thread only after verification. No self-approval or automatic merge/deploy.
