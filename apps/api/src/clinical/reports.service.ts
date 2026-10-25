@@ -225,7 +225,8 @@ export class ReportsService {
       const ev = await this.evidence(tx, centerId, childId, dto.service, from, to);
       const sections = prefill(ev);
       const r = await tx.progressReport.create({ data: { centerId, childId, membershipId: v.membershipId, service: dto.service, title: dto.title.trim(), periodStart: from, periodEnd: to, sections, createdAt: now, updatedAt: now } });
-      await tx.reportVersion.create({ data: { reportId: r.id, centerId, number: 1, kind: 'CREATED', sections, evidence: ev as unknown as Prisma.InputJsonValue, authorId: v.userId, createdAt: now } });
+      await tx.reportVersion.create({ data: { reportId: r.id, centerId, number: 1, kind: 'CREATED', sections,
+        evidence: { ...ev, statementDecisionIds: [] } as unknown as Prisma.InputJsonValue, authorId: v.userId, createdAt: now } });
       await logCenterEvent(tx, centerId, 'clinical.report_drafted', now, { actorUserId: v.userId, meta: { childId, reportId: r.id } });
       return { id: r.id };
     });
@@ -382,8 +383,20 @@ export class ReportsService {
 
   private async snapshot(tx: Tx, r: ProgressReport, v: Viewer, kind: 'SAVED' | 'SUBMITTED', now: Date) {
     const last = await tx.reportVersion.aggregate({ where: { reportId: r.id }, _max: { number: true } });
-    const ev = await this.evidence(tx, r.centerId, r.childId, r.service, r.periodStart, r.periodEnd);
-    return tx.reportVersion.create({ data: { reportId: r.id, centerId: r.centerId, number: (last._max.number ?? 0) + 1, kind, sections: r.sections as Prisma.InputJsonValue, evidence: ev as unknown as Prisma.InputJsonValue, authorId: v.userId, createdAt: now } });
+    const [ev, existingDecisions] = await Promise.all([
+      this.evidence(tx, r.centerId, r.childId, r.service, r.periodStart, r.periodEnd),
+      tx.reportSuggestionDecision.findMany({
+        where: { centerId: r.centerId, reportId: r.id, action: 'APPLIED' },
+        select: { id: true }, orderBy: { createdAt: 'asc' },
+      }),
+    ]);
+    // Freeze eligible ledger identities at the same transactional boundary as
+    // the report snapshot. Source hashes alone cannot prove chronology: a
+    // later decision must never be retroactively attributed to this version.
+    const frozenEvidence = { ...ev, statementDecisionIds: existingDecisions.map(d => d.id) };
+    return tx.reportVersion.create({ data: { reportId: r.id, centerId: r.centerId,
+      number: (last._max.number ?? 0) + 1, kind, sections: r.sections as Prisma.InputJsonValue,
+      evidence: frozenEvidence as unknown as Prisma.InputJsonValue, authorId: v.userId, createdAt: now } });
   }
 
   async saveVersion(centerId: string, v: Viewer, id: string, version: number) {
@@ -400,10 +413,16 @@ export class ReportsService {
     const x = await this.prisma.reportVersion.findFirst({ where: { id: versionId, centerId } });
     if (!x) throw new NotFoundException('Report version not found');
     await this.report(centerId, v, x.reportId);
+    const frozen = x.evidence as { statementDecisionIds?: unknown };
+    const eligible = Array.isArray(frozen?.statementDecisionIds) &&
+      frozen.statementDecisionIds.length <= 1000 &&
+      frozen.statementDecisionIds.every((id: unknown) =>
+        typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(id))
+      ? frozen.statementDecisionIds as string[] : [];
     const [who, decisions] = await Promise.all([
       this.names([x.authorId]),
       this.prisma.reportSuggestionDecision.findMany({
-        where: { centerId, reportId: x.reportId, action: 'APPLIED' },
+        where: { centerId, reportId: x.reportId, action: 'APPLIED', id: { in: eligible } },
         select: { id: true, section: true, action: true, sectionHash: true,
           passageHash: true, claimMap: true, sourceManifest: true },
         orderBy: { createdAt: 'desc' }, take: 100,
