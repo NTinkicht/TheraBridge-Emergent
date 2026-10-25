@@ -249,7 +249,6 @@ try {
     await shadowPanel.getByTestId('goal-checkpoint-save').waitFor();
     assert(await shadowPanel.getByTestId('goal-checkpoint-save').isEnabled(),
       'Second plan permits a checkpoint while all plans are clean');
-    const firstPlan = page.locator('[data-testid^="plan-"]').filter({ has: page.getByTestId('plan-summary') }).first();
     const firstSummary = page.getByTestId('plan-summary').first();
     const originalText = await firstSummary.inputValue();
     await firstSummary.fill(originalText + ' DIRTY PLAN A');
