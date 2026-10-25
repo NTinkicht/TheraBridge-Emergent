@@ -234,6 +234,10 @@ export class ReportsService {
         reportId, sourceReportVersionId: dto.sourceReportVersionId,
         title: dto.title.trim(), selectedGoals: dto.selectedGoals,
       });
+      // Serialize concurrent retries using the same request UUID. Without
+      // this lock, both transactions may see no plan and the loser would get
+      // a uniqueness exception instead of the same successful receipt.
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${centerId}), hashtext(${dto.requestId}))`;
       const existing = await tx.therapyPlan.findUnique({ where: { id: dto.requestId } });
       if (existing) {
         const event = await tx.centerEvent.findFirst({
