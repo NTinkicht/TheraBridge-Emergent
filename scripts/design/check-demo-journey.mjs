@@ -265,7 +265,11 @@ try {
     await page.unroute(twoPlanRoute);
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
-
+    // Reload clears the checkpoint form's local goal/narrative selection.
+    // Re-enter it before asserting that unsaved-plan gating is reversible.
+    await page.getByTestId('goal-checkpoint-goal').first().selectOption({ index: 1 });
+    await page.getByTestId('goal-checkpoint-summary').first().fill(
+      'Re-entered synthetic review after the browser workspace remounted.');
 
     const summaryBox = page.getByTestId('plan-summary').first();
     const beforeCheckpointEdit = await summaryBox.inputValue();
