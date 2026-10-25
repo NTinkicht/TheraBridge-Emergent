@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   capture-private:
-    if: ${{ inputs.synthetic_only_authorized == true }}
+    if: ${{ github.ref == 'refs/heads/main' && inputs.synthetic_only_authorized == true }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     # Preinstalled matching Chromium binary, no flaky runtime browser CDN download.
