@@ -112,7 +112,7 @@ describe('TB-EM-021 non-authorizing report suggestion decision ledger (real Post
       section: 'goals', action: 'APPLIED', version: 1,
       proposalFingerprint: first.sources.goals.proposalFingerprint,
       idempotencyKey: randomUUID(),
-      claims: [{ text: 'One recorded value was 30 percent.', sourceRefs: [goalRef, `observation:${observationId}`] }],
+      claims: [{ text: 'One recorded value was 30 percent.', sourceRefs: [goalRef, `observation:${observationId}`, checkpoint.ref] }],
     };
     // Mechanical accuracy guard: a valid source cannot justify an invented 90
     // when the actual observation is 30, nor the wrong measurement unit.
@@ -154,7 +154,7 @@ describe('TB-EM-021 non-authorizing report suggestion decision ledger (real Post
     await post(h, D, therapist, { ...base, idempotencyKey: randomUUID() }).expect(409);
     const r = (await get(therapist, P).expect(200)).body;
     expect(r.report.sections.goals).toContain('One recorded value was 30 percent.');
-    expect(r.report.sections.goals).toContain(`- Claim 1: ${goalRef}, observation:${observationId}`);
+    expect(r.report.sections.goals).toContain(`- Claim 1: ${goalRef}, observation:${observationId}, ${checkpoint.ref}`);
     expect(r.report.sections.goals).toContain('Evidence references (internal draft; goals):');
     expect(r.report.status).toBe('DRAFT');
     const history = (await get(therapist, D).expect(200)).body;
@@ -163,7 +163,7 @@ describe('TB-EM-021 non-authorizing report suggestion decision ledger (real Post
       action: 'APPLIED', label: 'NON_CLINICAL_DRAFT' });
     expect(JSON.stringify(history.decisions)).not.toContain('One recorded value was');
     expect(history.latest.goals.claimMap).toEqual([expect.objectContaining({ index: 0,
-      sourceRefs: [goalRef, `observation:${observationId}`] })]);
+      sourceRefs: [goalRef, `observation:${observationId}`, checkpoint.ref] })]);
     const snap = (await post(h, P + '/versions', therapist, { version: 2 }).expect(201)).body;
     const savedVersion = (await get(therapist, c(`clinical/report-versions/${(await h.prisma.reportVersion.findFirstOrThrow({ where: { reportId, number: snap.number } })).id}`)).expect(200)).body;
     expect(savedVersion.claimValidation).toBe('REFERENCED_NOT_VERIFIED');
@@ -174,7 +174,10 @@ describe('TB-EM-021 non-authorizing report suggestion decision ledger (real Post
     expect(savedVersion.statementTrace).toEqual([expect.objectContaining({
       section: 'goals', status: 'LINKED_TO_SAVED_TEXT',
       claims: [expect.objectContaining({ index: 1, text: 'One recorded value was 30 percent.',
-        sources: expect.arrayContaining([expect.objectContaining({ ref: `observation:${observationId}` })]) })],
+        sources: expect.arrayContaining([
+          expect.objectContaining({ ref: `observation:${observationId}` }),
+          expect.objectContaining({ ref: checkpoint.ref }),
+        ]) })],
     })]);
     await get(guardian, c(`clinical/report-versions/${savedVersion.id}`)).expect(403);
     await get(ot, c(`clinical/report-versions/${savedVersion.id}`)).expect(404);
