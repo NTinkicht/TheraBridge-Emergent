@@ -42,6 +42,16 @@ function validateSchedule(schedule: ActivitySchedule) {
       throw new UnprocessableEntityException('Monthly schedules require one month day and no weekdays.');
     }
   } else throw new UnprocessableEntityException('Unsupported activity schedule cadence.');
+  // A valid-looking date range must actually contain a scheduled occurrence.
+  let hasOccurrence = false;
+  for (let t = Date.parse(schedule.startsOn + 'T00:00:00Z');
+       t <= Date.parse(schedule.endsOn + 'T00:00:00Z'); t += 86_400_000) {
+    const current = new Date(t);
+    if (schedule.cadence === 'WEEKLY'
+      ? schedule.weekdays!.includes(current.getUTCDay())
+      : current.getUTCDate() === schedule.monthDay) { hasOccurrence = true; break; }
+  }
+  if (!hasOccurrence) throw new UnprocessableEntityException('The selected period contains no scheduled activity dates.');
 }
 
 
@@ -217,7 +227,8 @@ export class ClinicalService {
         };
         // Drop any untrusted client keys: only the server-generated snapshot
         // can enter this version's JSON content.
-        return { templateId: activity.templateId, frequency: activity.frequency,
+        return { templateId: activity.templateId,
+          frequency: activity.schedule ? (activity.schedule.cadence === 'WEEKLY' ? 'Weekly calendar draft' : 'Monthly calendar draft') : activity.frequency,
           ...(activity.goalKey ? { goalKey: activity.goalKey } : {}),
           ...(activity.note !== undefined ? { note: activity.note } : {}),
           ...(activity.schedule ? { schedule: {
