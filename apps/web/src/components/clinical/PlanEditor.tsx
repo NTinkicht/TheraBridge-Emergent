@@ -10,6 +10,8 @@ import { LOCKED_REASON, clinicalApi, type Goal, type HomeActivity, type PlanVers
 import { ActivityCard } from './ActivityCard';
 import { HomeScheduleFields } from './HomeScheduleFields';
 import { HomePracticeCalendar } from './HomePracticeCalendar';
+import { HomePlanHandoff } from './HomePlanHandoff';
+import { homePlanHandoff } from '@/lib/home-plan-handoff';
 import { scheduleProblem } from '@/lib/home-schedule';
 import { PlanVersionHistory } from './PlanVersionHistory';
 import { PlanEvidenceTrail } from './PlanEvidenceTrail';
@@ -83,6 +85,9 @@ function VersionEditor({ centerId, ws, planId, service, v, source, run, onDirtyC
   const unsavedPlanEdits = summary !== v.summary ||
     JSON.stringify(goals) !== JSON.stringify(v.goals) ||
     JSON.stringify(acts) !== JSON.stringify(v.homeActivities);
+  const handoff = homePlanHandoff({ summary, goals, activities: acts, templates: ws.templates,
+    hasUnsavedEdits: unsavedPlanEdits, hasOtherPlanEdits: otherPlanDirty,
+    newlyAddedUnlinked: unlinkedNew }, scheduleProblem);
   // Any checkpoint's shared run() reloads ALL mounted plan editors.
   // Aggregate dirty state by exact version in the parent so a clean plan
   // cannot discard unsaved edits in another plan.
@@ -139,13 +144,17 @@ function VersionEditor({ centerId, ws, planId, service, v, source, run, onDirtyC
         {suggestOpen && draftHomeActivitySuggestions(ws,service,acts).length===0 && <p className="text-[13px]">No further centre activity templates for this specialty.</p>}
         <p className="text-[12px] text-brand-inkMuted">Suggestions require Save draft to persist; signing and release remain disabled.</p>
       </div>}
+      {edit && <HomePlanHandoff result={handoff} versionNumber={v.number} />}
       <div className="flex flex-wrap items-start gap-2">
         {edit && <div>
           {unlinkedNew && <p role="status" className="mb-2 text-[12px] text-brand-inkMuted" data-testid="home-activity-unlinked">Choose a specific plan goal for each newly added activity before saving.</p>}
           {invalidSchedule && <p role="status" className="mb-2 text-[12px] text-status-caution" data-testid="home-activity-invalid-schedule">Complete or remove invalid dated schedules before saving.</p>}
           <Button disabled={unlinkedNew || invalidSchedule} onClick={() => void save()} data-testid="plan-save">Save draft</Button>
         </div>}
-        {edit && <Button variant="secondary" onClick={() => void run(() => clinicalApi.submit(centerId, v.id, v.version), 'Draft sent to the clinical supervisor for review.')} data-testid="plan-submit">Send for review</Button>}
+        {edit && <Button variant="secondary" disabled={!handoff.canSendSavedDraft}
+          onClick={() => { if (!handoff.canSendSavedDraft) return;
+            void run(() => clinicalApi.submit(centerId, v.id, v.version), 'Saved draft sent to the clinical supervisor for review.'); }}
+          data-testid="plan-submit">Send saved draft for review</Button>}
         {ws.canEdit && v.mine && ['WITHDRAWN','FROZEN_INTERNAL'].includes(v.status) && <Button variant="secondary" onClick={() => void run(() => clinicalApi.newVersion(centerId, planId), 'New draft version started.')} data-testid="plan-new-version">Start a new version</Button>}
         <Button variant="ghost" onClick={() => { if (preview) setPreview(null); else void run(async () => setPreview(await clinicalApi.familyPreview(centerId, v.id)), 'Immutable internal preview generated.'); }} data-testid="plan-family-preview">{preview ? 'Hide family preview' : 'Preview as family'}</Button>
         <a href="/app/governance" className="p-2 text-[14px] text-brand-action underline">Version history & explicit withdrawal</a>
