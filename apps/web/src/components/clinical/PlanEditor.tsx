@@ -8,6 +8,7 @@ import { Button, Card, LockedAction, Pill } from '@/components/design/ui';
 import { serviceLabel } from '@/components/operations/BookDialog';
 import { LOCKED_REASON, clinicalApi, type Goal, type HomeActivity, type PlanVersion, type Workspace } from '@/lib/clinical';
 import { ActivityCard } from './ActivityCard';
+import { PlanVersionHistory } from './PlanVersionHistory';
 import { draftHomeActivitySuggestions } from '@/lib/evidence-assist';
 
 type Run = (fn: () => Promise<unknown>, ok: string) => Promise<boolean>;
@@ -123,6 +124,7 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
             <h2 className="text-[18px] font-semibold">{p.title}</h2>
             <p className="mb-4 text-[13px] text-brand-inkMuted">{serviceLabel(p.service)} · {p.versions.length} version{p.versions.length > 1 ? 's' : ''}</p>
             <VersionEditor centerId={centerId} ws={ws} planId={p.id} service={p.service} v={current} run={run} />
+            <PlanVersionHistory key={p.id} plan={p} templates={ws.templates} />
           </Card>
         );
       })}

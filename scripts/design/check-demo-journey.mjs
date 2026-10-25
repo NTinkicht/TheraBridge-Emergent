@@ -209,6 +209,62 @@ try {
     await page.getByTestId('clinical-tab-plan').click();
     await page.getByTestId('home-assist-toggle').click();
     await page.getByTestId('home-plan-evidence-assist').waitFor();
+    // TB-EM-029: browser-only, same-authorized-plan history fixture. No
+    // database record or permissions are changed by this response overlay.
+    const workspaceOverlay = '**/api/centers/*/clinical/children/*';
+    await page.route(workspaceOverlay, async route => {
+      if (route.request().method() !== 'GET') return route.continue();
+      const response = await route.fetch();
+      const body = await response.json();
+      body.plans = body.plans.map(p => {
+        if (p.service !== 'speech' || !p.versions?.length) return p;
+        const first = p.versions[0];
+        const oldSnapshot = { id: 'saved-example', title: 'Original saved activity',
+          service: 'speech', ageBand: '6-8', minutes: 10,
+          materials: ['original cards'], steps: ['original instructions'],
+          safety: ['original safety guidance'], version: 1, capturedAt: '2026-10-01T09:00:00Z' };
+        const priorActivities = first.homeActivities.map((a, i) =>
+          i === 0 ? { ...a, snapshot: oldSnapshot } : a);
+        const currentActivities = first.homeActivities.map((a, i) =>
+          i === 0 ? { ...a, snapshot: { ...oldSnapshot,
+            title: 'Updated saved activity', steps: ['new saved instructions'],
+            safety: ['new saved safety'], version: 2 } } : a);
+        return { ...p, versions: [
+          { ...first, id: first.id + '-comparison-fixture', number: first.number + 1,
+            summary: first.summary + ' Updated synthetic comparison.',
+            goals: first.goals.map((g, i) => i === 0 ? { ...g, target: g.target + 1 } : g),
+            homeActivities: currentActivities },
+          { ...first, status: 'SUPERSEDED', homeActivities: priorActivities },
+        ] };
+      });
+      await route.fulfill({ response, body: JSON.stringify(body) });
+    });
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+    const versionHistory = page.getByTestId('plan-version-history');
+    await versionHistory.locator('summary').click();
+    await page.getByTestId('plan-history-list').waitFor();
+    await page.getByTestId('plan-history-inspection').waitFor();
+    await page.getByTestId('plan-history-comparison').waitFor();
+    assert((await page.getByTestId('plan-history-comparison').innerText()).includes('Goal definition changed.'));
+    const savedActivityComparison = await page.getByTestId('plan-history-comparison').innerText();
+    assert(savedActivityComparison.includes('Original saved activity'), 'Historical name must use saved snapshot');
+    assert(savedActivityComparison.includes('original safety guidance'), 'Historical safety must use saved snapshot');
+    assert(savedActivityComparison.includes('new saved safety'), 'Comparison must show changed saved safety');
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      assert(await versionHistory.isVisible(), 'Version history must remain visible at ' + width);
+      const actualWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+      assert(actualWidth <= width + 8, 'Plan history must not overflow at ' + width);
+    }
+    await page.getByTestId('plan-history-select-1').click();
+    assert((await page.getByTestId('plan-history-inspection').innerText()).includes('Superseded'));
+    await page.getByTestId('plan-compare-after').selectOption(
+      await page.getByTestId('plan-compare-before').inputValue());
+    await page.getByText('Choose two different versions to compare their saved definitions.').waitFor();
+    await page.unroute(workspaceOverlay);
+    await page.setViewportSize({ width: 1280, height: 900 });
+
     const speechReport = await db.progressReport.findFirstOrThrow({ where: { centerId: center.id, childId: child.id, service: 'speech' } });
     await page.goto(base + '/app/reports/' + speechReport.id);
     await page.getByTestId('report-evidence-assist').waitFor();
