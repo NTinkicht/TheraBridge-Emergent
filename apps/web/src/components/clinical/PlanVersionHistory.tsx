@@ -122,6 +122,17 @@ export function PlanVersionHistory({ plan, templates, target }: { plan: Plan; te
           {inspect.homeActivities.length ? <ul className="list-inside list-disc space-y-1 text-[13px]">
             {inspect.homeActivities.map((a, i) => <li key={a.templateId+'-'+i}><ActivityText a={a} templates={templates} /></li>)}
           </ul> : <p className="text-[13px] text-brand-inkMuted">No draft activities recorded.</p>}
+          {!!inspect.goalCheckpoints?.length && <>
+            <h4 className="text-[14px] font-semibold">Recorded internal clinician goal checkpoints</h4>
+            <ul className="space-y-2 text-[13px]" data-testid="plan-history-checkpoints">
+              {inspect.goalCheckpoints.map((checkpoint, i) => <li key={checkpoint.at+'-'+i}
+                className="rounded-control border border-border-light bg-surface-white p-3">
+                <p className="font-semibold">{inspect.goals.find(g => g.key === checkpoint.goalKey)?.title ?? checkpoint.goalKey} · {checkpoint.reviewedOn}</p>
+                <p className="whitespace-pre-wrap break-words">{checkpoint.summary}</p>
+                <p className="break-all text-[12px] text-brand-inkMuted">{checkpoint.observationIds.length} explicit source observation(s) · internal, not approved</p>
+              </li>)}
+            </ul>
+          </>}
           {inspect.reviewNotes.length > 0 && <>
             <h4 className="text-[14px] font-semibold">Recorded review notes</h4>
             <ul className="space-y-2 text-[13px]">{inspect.reviewNotes.map((note, i) =>

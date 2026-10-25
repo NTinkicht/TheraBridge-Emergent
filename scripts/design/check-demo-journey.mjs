@@ -207,6 +207,82 @@ try {
     await page.getByTestId('progress-granularity').selectOption('month');
     await page.getByTestId('progress-periods-turn-taking').waitFor();
     await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('goal-checkpoint-panel').first().waitFor();
+    await page.getByTestId('goal-checkpoint-empty').first().waitFor();
+    await page.getByTestId('goal-checkpoint-goal').first().selectOption({ index: 1 });
+    await page.getByTestId('goal-checkpoint-summary').first().fill('Reviewed available synthetic records; monitor further observations.');
+    assert(await page.getByTestId('goal-checkpoint-save').first().isEnabled(),
+      'Therapist can prepare a draft checkpoint without posting it');
+    // Codex P2: never discard dirty goal/plan text after a checkpoint POST
+    // reload. The same form must be blocked until the clinician saves first.
+    const sourceSummary = await page.getByTestId('plan-summary').first().inputValue();
+    await page.getByTestId('plan-summary').first().fill(sourceSummary + ' UNSAVED CHECKPOINT GUARD');
+    assert(await page.getByTestId('goal-checkpoint-save').first().isDisabled(),
+      'Unsaved plan edits must block checkpoint write');
+    await page.getByTestId('goal-checkpoint-unsaved-lock').first().waitFor();
+    await page.getByTestId('plan-summary').first().fill(sourceSummary);
+    assert(await page.getByTestId('goal-checkpoint-save').first().isEnabled(),
+      'Restoring saved plan content should permit the checkpoint');
+    // Codex follow-up P2: checkpoint in plan B must never reload away dirty
+    // edits in plan A. Add a SECOND synthetic workspace plan via read-only
+    // response interception so this test cannot mutate the seeded database.
+    const twoPlanRoute = '**/api/centers/*/clinical/children/*';
+    const shadowPlanId = '00000000-0000-4000-8000-000000000092';
+    await page.route(twoPlanRoute, async route => {
+      if (route.request().method() !== 'GET') return route.continue();
+      const response = await route.fetch();
+      const data = await response.json();
+      const original = data.plans.find(p => p.versions?.length && p.versions[0].goals?.length);
+      assert(original, 'An authorized seed plan is needed for the two-plan regression');
+      const shadow = { ...original, id: shadowPlanId, title: 'Synthetic second plan for reload guard',
+        versions: original.versions.map((v, i) => ({
+          ...v, id: '00000000-0000-4000-8000-' + String(9200 + i).padStart(12, '0'),
+          mine: true,
+        })) };
+      await route.fulfill({ response, json: { ...data, plans: [...data.plans, shadow] } });
+    });
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+    const shadowPanel = page.getByTestId('plan-' + shadowPlanId);
+    await shadowPanel.getByTestId('goal-checkpoint-goal').selectOption({ index: 1 });
+    await shadowPanel.getByTestId('goal-checkpoint-summary').fill('Reviewed the available synthetic sources in the second plan.');
+    await shadowPanel.getByTestId('goal-checkpoint-save').waitFor();
+    assert(await shadowPanel.getByTestId('goal-checkpoint-save').isEnabled(),
+      'Second plan permits a checkpoint while all plans are clean');
+    const firstSummary = page.getByTestId('plan-summary').first();
+    const originalText = await firstSummary.inputValue();
+    await firstSummary.fill(originalText + ' DIRTY PLAN A');
+    await page.waitForFunction(id => {
+      const button = document.querySelector('[data-testid="plan-' + id + '"] [data-testid="goal-checkpoint-save"]');
+      return button?.hasAttribute('disabled') === true;
+    }, shadowPlanId);
+    await shadowPanel.getByTestId('goal-checkpoint-unsaved-lock').waitFor();
+    await firstSummary.fill(originalText);
+    await page.waitForFunction(id => {
+      const button = document.querySelector('[data-testid="plan-' + id + '"] [data-testid="goal-checkpoint-save"]');
+      return button?.hasAttribute('disabled') === false;
+    }, shadowPlanId);
+    await page.unroute(twoPlanRoute);
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+    // Reload clears the checkpoint form's local goal/narrative selection.
+    // Re-enter it before asserting that unsaved-plan gating is reversible.
+    await page.getByTestId('goal-checkpoint-goal').first().selectOption({ index: 1 });
+    await page.getByTestId('goal-checkpoint-summary').first().fill(
+      'Re-entered synthetic review after the browser workspace remounted.');
+
+    const summaryBox = page.getByTestId('plan-summary').first();
+    const beforeCheckpointEdit = await summaryBox.inputValue();
+    await summaryBox.fill(beforeCheckpointEdit + ' Unsaved synthetic change.');
+    await page.getByTestId('goal-checkpoint-unsaved-lock').first().waitFor();
+    assert(await page.getByTestId('goal-checkpoint-save').first().isDisabled(),
+      'Checkpoint must not discard unsaved plan goals, summary or home activities');
+    await summaryBox.fill(beforeCheckpointEdit);
+    assert(await page.getByTestId('goal-checkpoint-save').first().isEnabled(),
+      'Checkpoint becomes available again after reverting unsaved changes');
+
+    // No POST in this read-only browser journey: the API suite verifies
+    // persisted writes, replay conflicts and source isolation.
     await page.getByTestId('plan-evidence-trail').first().waitFor();
     // TB-EM-033 worklist is scoped to current authorized plan versions.
     await page.getByTestId('goal-review-worklist').waitFor();
@@ -247,6 +323,8 @@ try {
         'Plan evidence trace must remain within ' + width + 'px');
       const reviewRight = await page.getByTestId('goal-review-worklist').evaluate(el => el.getBoundingClientRect().right);
       assert(reviewRight <= width + 6, 'Goal review worklist must fit at ' + width + 'px');
+      const checkpointRight = await page.getByTestId('goal-checkpoint-panel').first().evaluate(el => el.getBoundingClientRect().right);
+      assert(checkpointRight <= width + 6, 'Goal checkpoint form must fit at ' + width + 'px');
     }
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.getByTestId('home-assist-toggle').click();

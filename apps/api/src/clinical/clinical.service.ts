@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import type { Viewer } from '../operations/children.service';
 import { TrialService } from '../operations/trial.service';
 import { assertActor, EDITABLE, fingerprint } from './governance-core';
-import type { AssessmentDto, AssessmentUpdateDto, ObservationDto, PlanDto, PlanVersionUpdateDto, ReviewDto, SessionNoteDto, SessionNoteUpdateDto, TemplateDto, TemplateUpdateDto, TemplateCopyDto } from './clinical.dto';
+import type { AssessmentDto, AssessmentUpdateDto, ObservationDto, PlanDto, PlanVersionUpdateDto, ReviewDto, SessionNoteDto, SessionNoteUpdateDto, TemplateDto, TemplateUpdateDto, TemplateCopyDto, GoalReviewCheckpointDto } from './clinical.dto';
 
 export const asDate = (d: string) => new Date(`${d}T00:00:00Z`);
 export const day = (d: Date) => d.toISOString().slice(0, 10);
@@ -207,7 +207,11 @@ export class ClinicalService {
       childWideReferentStatus: !c.referentMembershipId ? 'NOT_DESIGNATED'
         : visibleReferent ? 'VISIBLE' : 'UNAVAILABLE',
       assessments: assessments.map((a) => ({ id: a.id, service: a.service, assessedOn: day(a.assessedOn), summary: a.summary, areas: a.areas, status: a.status, version: a.version, author: who(a.membershipId), mine: a.membershipId === v.membershipId, updatedAt: a.updatedAt })),
-      plans: plans.map((p) => ({ id: p.id, service: p.service, title: p.title, source: planSource(p), versions: p.versions.map((x) => ({ id: x.id, number: x.number, status: x.status, summary: x.summary, goals: x.goals, homeActivities: x.homeActivities, reviewNotes: x.reviewNotes, version: x.version, mine: x.authorId === v.userId, author: users.find((u) => u.id === x.authorId)?.displayName ?? '', updatedAt: x.updatedAt })) })),
+      plans: plans.map((p) => ({ id: p.id, service: p.service, title: p.title, source: planSource(p), versions: p.versions.map((x) => ({ id: x.id, number: x.number, status: x.status, summary: x.summary, goals: x.goals, homeActivities: x.homeActivities, reviewNotes: (Array.isArray(x.reviewNotes) ? x.reviewNotes : []).filter((n: any) => n?.kind !== 'GOAL_CHECKPOINT'),
+        goalCheckpoints: (Array.isArray(x.reviewNotes) ? x.reviewNotes : []).filter((n: any) =>
+          n?.kind === 'GOAL_CHECKPOINT' && typeof n.goalKey === 'string' &&
+          (x.goals as Goal[]).some(g => g.key === n.goalKey)),
+        version: x.version, mine: x.authorId === v.userId, author: users.find((u) => u.id === x.authorId)?.displayName ?? '', updatedAt: x.updatedAt })) })),
       notes: notes.map((n) => ({ id: n.id, service: n.service, sessionDate: day(n.sessionDate), appointmentId: n.appointmentId, sections: n.sections, status: n.status, executionStatus: n.executionStatus, actualStart: n.actualStart, actualEnd: n.actualEnd, attendance: n.attendance, activities: n.activities, version: n.version, author: who(n.membershipId), mine: n.membershipId === v.membershipId, updatedAt: n.updatedAt })),
       observations: observations.map((o) => ({ id: o.id, planVersionId: o.planVersionId, goalKey: o.goalKey, value: o.value, observedOn: day(o.observedOn), note: o.note, sessionNoteId: o.sessionNoteId, author: who(o.membershipId) })),
       appointments: appointments.map((a) => ({ id: a.id, service: a.service, startsAt: a.startsAt, endsAt: a.endsAt, room: a.room, status: a.status, hasNote: notes.some((n) => n.appointmentId === a.id) })),
@@ -306,6 +310,16 @@ export class ClinicalService {
         const oldGoal = (fresh.goals as Goal[]).find(g => g.key === o.goalKey);
         if (fingerprint(goalDefinition(oldGoal)) !== fingerprint(goalDefinition(dto.goals.find(g => g.key === o.goalKey)))) throw new ConflictException('A goal with observations cannot be redefined. Start a new plan version.');
       }
+      // A recorded checkpoint freezes the goal's definition in THIS plan
+      // version, even when the therapist linked zero measured observations.
+      for (const n of Array.isArray(fresh.reviewNotes) ? fresh.reviewNotes : []) {
+        if (!n || typeof n !== 'object' || Array.isArray(n) ||
+            n.kind !== 'GOAL_CHECKPOINT' || typeof n.goalKey !== 'string') continue;
+        const priorGoal = (fresh.goals as Goal[]).find(g => g.key === n.goalKey);
+        const proposed = dto.goals.find(g => g.key === n.goalKey);
+        if (fingerprint(goalDefinition(priorGoal)) !== fingerprint(goalDefinition(proposed)))
+          throw new ConflictException('A goal with recorded review checkpoints cannot be redefined. Start a new plan version.');
+      }
       const r = await tx.planVersion.updateMany({ where: { id, centerId, authorId: v.userId, status: { in: EDITABLE }, version: dto.version }, data: { summary: dto.summary, goals: dto.goals as unknown as Prisma.InputJsonValue, homeActivities: homeActivities as unknown as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
       if (r.count !== 1) throw new ConflictException(x.status !== 'DRAFT' ? 'Only a draft can be edited. Start a new version to make changes.' : 'This draft changed since you opened it. Reload to see the latest version.');
       await logCenterEvent(tx, centerId, 'clinical.plan_draft_saved', now, { actorUserId: v.userId, meta: { childId: x.plan.childId, planId: x.planId, planVersionId: id, goals: dto.goals.length, activityTemplates: ids.length } });
@@ -324,6 +338,74 @@ export class ClinicalService {
       const ver = await tx.planVersion.create({ data: { planId, centerId, number: last.number + 1, summary: last.summary, goals: last.goals as Prisma.InputJsonValue, homeActivities: last.homeActivities as Prisma.InputJsonValue, authorId: v.userId, createdAt: now, updatedAt: now } });
       await logCenterEvent(tx, centerId, 'clinical.plan_version_started', now, { actorUserId: v.userId, meta: { childId: p.childId, planId, planVersionId: ver.id, number: ver.number } });
       return { id: ver.id, number: ver.number };
+    });
+  }
+
+  // Internal goal-review checkpoint, stored as a tagged append-only entry in
+  // the existing plan-version review ledger. This does NOT update definitions,
+  // measurements, source observations or any clinical approval state.
+  async recordGoalCheckpoint(centerId: string, v: Viewer, id: string, dto: GoalReviewCheckpointDto) {
+    const x = await this.version(centerId, id);
+    return this.write(centerId, v, x.plan.childId, x.plan.service, async (tx, now) => {
+      const fresh = await tx.planVersion.findFirst({
+        where: { id, centerId, plan: { centerId, childId: x.plan.childId, service: x.plan.service } },
+      });
+      if (!fresh) throw new NotFoundException('Plan version unavailable');
+      if (fresh.authorId !== v.userId) throw new ForbiddenException('Only the plan author can record its draft goal review.');
+      // Active child assignments alone are insufficient: a separate staff
+      // specialty revocation must also make new clinical writes impossible.
+      const member = await tx.membership.findFirst({ where: {
+        id: v.membershipId, centerId, userId: v.userId, status: 'ACTIVE',
+        specialties: { has: x.plan.service },
+      }, select: { id: true } });
+      if (!member) throw new ForbiddenException('This clinical specialty is no longer authorized.');
+      if (!['DRAFT', 'RETURNED_FOR_REVISION'].includes(fresh.status))
+        throw new ConflictException('Goal review checkpoints can only be added to an editable internal draft.');
+      if (fresh.version !== dto.version) throw new ConflictException('The plan has changed. Reload before recording a checkpoint.');
+      const centre = await tx.center.findUniqueOrThrow({ where: { id: centerId },
+        select: { timezone: true } });
+      let localToday: string;
+      try {
+        const parts = new Intl.DateTimeFormat('en-US', {
+          timeZone: centre.timezone, year: 'numeric', month: '2-digit', day: '2-digit',
+        }).formatToParts(now);
+        const part = (type: string) => parts.find(p => p.type === type)?.value ?? '';
+        localToday = [part('year'), part('month'), part('day')].join('-');
+      } catch {
+        throw new UnprocessableEntityException('The center timezone is invalid. Correct it before recording a dated review.');
+      }
+      if (!validCalendarDate(dto.reviewedOn) || dto.reviewedOn > localToday)
+        throw new UnprocessableEntityException('Review date must be a valid center-local calendar day, not in the future.');
+      if (dto.summary.trim().length < 10)
+        throw new UnprocessableEntityException('Describe the completed review in at least 10 characters.');
+      if (!(fresh.goals as Goal[]).some(g => g.key === dto.goalKey))
+        throw new UnprocessableEntityException('Choose a goal in this exact saved plan version.');
+      if (new Set(dto.observationIds).size !== dto.observationIds.length)
+        throw new UnprocessableEntityException('Observation sources must be unique.');
+      const sources = await tx.observation.findMany({
+        where: { id: { in: dto.observationIds }, centerId, childId: x.plan.childId,
+          planVersionId: id, goalKey: dto.goalKey },
+        select: { id: true },
+      });
+      if (sources.length !== dto.observationIds.length)
+        throw new UnprocessableEntityException('Every source must be a recorded observation of this exact plan version and goal.');
+      const prior = Array.isArray(fresh.reviewNotes) ? [...fresh.reviewNotes] : [];
+      const checkpoint = { kind: 'GOAL_CHECKPOINT', goalKey: dto.goalKey, authorId: v.userId,
+        reviewedOn: dto.reviewedOn, at: now.toISOString(), summary: dto.summary.trim(),
+        observationIds: [...dto.observationIds].sort(), clinicalAuthorization: false,
+        released: false };
+      const updated = await tx.planVersion.updateMany({
+        where: { id, centerId, authorId: v.userId, version: dto.version,
+          status: { in: ['DRAFT', 'RETURNED_FOR_REVISION'] } },
+        data: { reviewNotes: [...prior, checkpoint] as Prisma.InputJsonValue,
+          version: { increment: 1 }, updatedAt: now },
+      });
+      if (updated.count !== 1) throw new ConflictException('Plan version changed during the goal review. Reload and retry.');
+      // Do not mirror even metadata to centre-wide events: ordinary staff
+      // timelines include centre events but must not expose clinical reviews.
+      // The protected append-only plan-version ledger is the source of truth.
+      return { persisted: true, version: dto.version + 1, released: false,
+        clinicalAuthorization: false };
     });
   }
 

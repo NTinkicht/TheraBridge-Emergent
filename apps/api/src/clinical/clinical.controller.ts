@@ -3,7 +3,7 @@ import { SessionStartDto, SessionSaveDto } from './session.dto';
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Req } from '@nestjs/common';
 import { RequirePermission, TbRequest } from '../auth/access';
 import type { Viewer } from '../operations/children.service';
-import { AssessmentDto, AssessmentUpdateDto, ObservationDto, PlanDto, PlanVersionUpdateDto, ReviewDto, SessionNoteDto, SessionNoteUpdateDto, TemplateDto, TemplateUpdateDto, TemplateCopyDto } from './clinical.dto';
+import { AssessmentDto, AssessmentUpdateDto, ObservationDto, PlanDto, PlanVersionUpdateDto, ReviewDto, SessionNoteDto, SessionNoteUpdateDto, TemplateDto, TemplateUpdateDto, TemplateCopyDto, GoalReviewCheckpointDto } from './clinical.dto';
 import { GovernanceService } from './governance.service';
 import { ReportVersionDto } from './clinical.dto';
 import { ClinicalService } from './clinical.service';
@@ -49,6 +49,14 @@ export class ClinicalController {
   @RequirePermission('center.clinical.draft')
   saveVersion(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Body() dto: PlanVersionUpdateDto, @Req() req: TbRequest) {
     return this.clinical.updateVersion(c, viewer(req), id, dto);
+  }
+
+  @Post('clinical/plan-versions/:id/goal-checkpoints')
+  @HttpCode(200)
+  @RequirePermission('center.clinical.draft')
+  checkpoint(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string,
+    @Body() dto: GoalReviewCheckpointDto, @Req() req: TbRequest) {
+    return this.clinical.recordGoalCheckpoint(c, viewer(req), id, dto);
   }
 
   @Post('clinical/plan-versions/:id/submit')
