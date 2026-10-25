@@ -5,8 +5,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import type { Viewer } from '../operations/children.service';
 import { TrialService } from '../operations/trial.service';
 import { ClinicalService, LOCKED, asDate, day } from './clinical.service';
-import { EDITABLE } from './governance-core';
-import type { ProgressQueryDto, ReportCreateDto, ReportSaveDto, ReviewDto } from './clinical.dto';
+import { EDITABLE, fingerprint } from './governance-core';
+import type { ProgressQueryDto, ReportCreateDto, ReportSaveDto, ReviewDto, ReportToPlanDraftDto } from './clinical.dto';
 
 const DAY = 86_400_000;
 type Goal = { key: string; title: string; measure: string; baseline: number; target: number };
@@ -207,6 +207,91 @@ export class ReportsService {
       await tx.reportVersion.create({ data: { reportId: r.id, centerId, number: 1, kind: 'CREATED', sections, evidence: ev as unknown as Prisma.InputJsonValue, authorId: v.userId, createdAt: now } });
       await logCenterEvent(tx, centerId, 'clinical.report_drafted', now, { actorUserId: v.userId, meta: { childId, reportId: r.id } });
       return { id: r.id };
+    });
+  }
+
+  // Milestone 1 / TB-EM-030: clinician-initiated handoff from ONE saved
+  // evidence snapshot into a NEW internal draft. No report prose, outcome
+  // measurement or clinical recommendation is interpreted or transferred.
+  async createPlanDraftFromReport(centerId: string, v: Viewer, reportId: string, dto: ReportToPlanDraftDto) {
+    // Lock current child/service assignment and trial status with the normal
+    // clinician write transaction. No administrative or supervisor bypass.
+    const r = await this.report(centerId, v, reportId);
+    return this.clinical.write(centerId, v, r.childId, r.service, async (tx, now) => {
+      await tx.$queryRaw`SELECT id FROM progress_report WHERE id=${reportId}::uuid AND center_id=${centerId}::uuid FOR SHARE`;
+      const current = await tx.progressReport.findFirst({ where: { id: reportId, centerId } });
+      if (!current) throw new NotFoundException('Report not found');
+      if (current.membershipId !== v.membershipId) throw new ForbiddenException('Only the report author can prepare its linked plan draft.');
+
+      const snapshot = await tx.reportVersion.findFirst({
+        where: { id: dto.sourceReportVersionId, reportId, centerId },
+        select: { id: true, number: true, evidence: true },
+      });
+      if (!snapshot) throw new NotFoundException('Saved report version not found');
+      // A caller-chosen UUID is the plan ID. The immutable audit event binds
+      // retries to the same exact inputs; no second plan on a retried POST.
+      const requestFingerprint = fingerprint({
+        reportId, sourceReportVersionId: dto.sourceReportVersionId,
+        title: dto.title.trim(), selectedGoals: dto.selectedGoals,
+      });
+      const existing = await tx.therapyPlan.findUnique({ where: { id: dto.requestId } });
+      if (existing) {
+        const event = await tx.centerEvent.findFirst({
+          where: { centerId, type: 'clinical.report_plan_drafted', meta: { path: ['planId'], equals: dto.requestId } },
+        });
+        const meta = event?.meta as { requestFingerprint?: string } | undefined;
+        if (existing.centerId !== centerId || existing.childId !== current.childId ||
+            existing.service !== current.service || existing.createdById !== v.userId ||
+            meta?.requestFingerprint !== requestFingerprint)
+          throw new ConflictException('This request identifier has already been used.');
+        const version = await tx.planVersion.findFirstOrThrow({ where: { centerId, planId: existing.id }, orderBy: { number: 'asc' } });
+        return { id: existing.id, versionId: version.id, reused: true, released: false };
+      }
+
+      if (!EDITABLE.includes(current.status))
+        throw new ConflictException('The report is not an editable internal draft.');
+      if (current.version !== dto.reportRevision)
+        throw new ConflictException('The report changed. Reload and review the saved evidence snapshot.');
+
+      const evidence = snapshot.evidence as { goals?: unknown } | null;
+      if (!Array.isArray(evidence?.goals)) throw new UnprocessableEntityException('Saved report evidence does not contain selectable goals.');
+      const refs = dto.selectedGoals.map(g => g.planVersionId + ':' + g.goalKey);
+      if (new Set(refs).size !== refs.length) throw new UnprocessableEntityException('Select each recorded goal only once.');
+      // Exact version+key is essential: a goal key alone can be reused in
+      // unrelated plans/versions with incompatible units or definitions.
+      const candidates = evidence.goals as Array<Record<string, unknown>>;
+      const goals = dto.selectedGoals.map((ref, index) => {
+        const matches = candidates.filter(g => g && g.planVersionId === ref.planVersionId && g.key === ref.goalKey);
+        if (matches.length !== 1) throw new UnprocessableEntityException('Selected goal is not in this saved report snapshot.');
+        const g = matches[0];
+        if (typeof g.title !== 'string' || g.title.length < 3 || g.title.length > 300 ||
+            !['percent','count','level'].includes(String(g.measure)) ||
+            typeof g.baseline !== 'number' || !Number.isFinite(g.baseline) ||
+            typeof g.target !== 'number' || !Number.isFinite(g.target))
+          throw new UnprocessableEntityException('A saved goal definition is incomplete or invalid.');
+        // New keys intentionally have no cross-version measurement continuity.
+        return { key: 'g' + (index + 1), title: g.title, measure: g.measure as string, baseline: g.baseline, target: g.target };
+      });
+
+      const plan = await tx.therapyPlan.create({ data: {
+        id: dto.requestId, centerId, childId: current.childId, service: current.service,
+        title: dto.title.trim(), createdById: v.userId, createdAt: now,
+      } });
+      const version = await tx.planVersion.create({ data: {
+        planId: plan.id, centerId, number: 1, authorId: v.userId,
+        summary: `Draft candidate copied from saved report evidence snapshot #${snapshot.number}. Review all goal definitions and select suitable activities before any internal review. Not approved or released.`,
+        goals: goals as unknown as Prisma.InputJsonValue,
+        homeActivities: [], createdAt: now, updatedAt: now,
+      } });
+      // Append-only source traceability. No free-text report sections,
+      // observation values or patient details are placed in event metadata.
+      await logCenterEvent(tx, centerId, 'clinical.report_plan_drafted', now, {
+        actorUserId: v.userId,
+        meta: { childId: current.childId, reportId, reportVersionId: snapshot.id,
+          planId: plan.id, planVersionId: version.id, selectedGoalRefs: refs,
+          requestFingerprint, draftOnly: true, released: false },
+      });
+      return { id: plan.id, versionId: version.id, reused: false, released: false };
     });
   }
 
