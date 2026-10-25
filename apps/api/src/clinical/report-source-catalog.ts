@@ -39,7 +39,7 @@ export function suggestionSources(e: Evidence, reportId: string, section: Sectio
       }
     }
   }
-  if (section === 'goals') for (const checkpoint of e.checkpoints) {
+  if (section === 'goals') for (const checkpoint of e.checkpoints ?? []) {
     sources.push({
       ref: checkpoint.ref, label: `Goal-review checkpoint ${checkpoint.reviewedOn}, goal ${checkpoint.goalKey}`,
       fingerprint: checkpoint.fingerprint,
