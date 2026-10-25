@@ -269,8 +269,12 @@ try {
     await page.goto(base + '/app/reports/' + speechReport.id);
     await page.getByTestId('report-evidence-assist').waitFor();
     await page.getByTestId('report-decisions-persistent').waitFor();
-    // Report-to-plan handoff is read-only until the clinician deliberately
-    // confirms a new draft. Exercise the saved-snapshot selector and controls.
+    // Synthetic seed has editable drafts but no saved immutable version.
+    // Exercise the real clinician Save version operation as prerequisite.
+    await page.getByTestId('report-to-plan-needs-version').waitFor();
+    await page.getByTestId('report-save-version').click();
+    await page.getByTestId('report-to-plan-toggle').waitFor();
+    // Report-to-plan handoff is read-only until explicit goal selection.
     await page.getByTestId('report-to-plan-toggle').click();
     const handoff = page.getByTestId('report-to-plan-form');
     await handoff.waitFor();
