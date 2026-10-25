@@ -1,3 +1,7 @@
+## 2026-10-25 — TB-EM-033 review-readiness closeout
+
+Qualify exact HEAD of `feature/tb-em-033-goal-review-readiness`: API/web builds, PostgreSQL/regressions, pure date+version test, responsive seven-role Chromium and exact report→goal deep link, secret scan, Docker Compose smoke. Fix P0–P2 on same PR, independent exact-head review, resolve threads, mark ready only after gates. No merge or deploy without further owner instruction. Future Milestone 1 steps: persistent clinician-authored goal review checkpoints (separate from goal definition immutability), evidence-to-report statement trace UI and retrospective goal reviews; no automatic clinical effectiveness inference or guardian release.
+
 ## 2026-10-25 — TB-EM-032 review and qualification gates
 
 1. Execute exact HEAD PostgreSQL API/scope, Next.js web build, pure goal source pairing, seven-role synthetic Chromium 320–1440 px, security scan, container preview and Docker Compose smoke. Correct actionable P0–P2 on same draft PR. Request independent exact-head review; no auto merge/deploy.

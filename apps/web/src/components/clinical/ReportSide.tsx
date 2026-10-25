@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { History, MessageSquareText } from 'lucide-react';
 import { FormAlert } from '@/components/auth/Field';
 import { errorText } from '@/components/centers/kit';
@@ -25,6 +26,13 @@ export function Evidence({ d }: { d: ReportDetail }) {
           <details className="mt-2 rounded-control border border-border-light p-2 text-[12px]" data-testid={`evidence-sources-${g.key}`}>
             <summary className="cursor-pointer font-semibold text-brand-action">Trace recorded evidence ({g.points.length} in period)</summary>
             <p className="mt-2 break-all text-brand-inkMuted">Plan version: {g.planVersionId??'Historical evidence snapshot'}</p>
+            {g.planVersionId && <Link
+              href={`/app/clinical/${d.report.childId}#plan?version=${encodeURIComponent(g.planVersionId)}&goal=${encodeURIComponent(g.key)}`}
+              className="mt-2 inline-flex min-h-[44px] items-center rounded-control px-2 font-semibold text-brand-action underline"
+              data-testid={`report-evidence-open-goal-${g.key}`}>
+              Locate this recorded goal in its therapy plan (permission required)
+            </Link>}
+            <p className="text-brand-inkMuted">The source may be a historical plan version. The current plan must never be substituted for its recorded measurements.</p>
             {g.points.length ? <ul className="mt-2 space-y-1">
               {g.points.map((point,i)=><li key={point.observationId??i} className="break-all">{point.date} · {point.value} {g.measure} · Observation {point.observationId??'source ID unavailable'}{point.sessionNoteId?' · Session '+point.sessionNoteId:''}</li>)}
             </ul> : <p className="mt-2">No recorded observation in this period.</p>}

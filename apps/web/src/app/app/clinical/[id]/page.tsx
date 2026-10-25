@@ -35,7 +35,7 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
   // Returning from an internal report-to-plan handoff should open the new
   // plan editor. The hash carries NO clinical data or permissions.
   useEffect(() => {
-    if (window.location.hash === '#plan') setTab('plan');
+    if (window.location.hash === '#plan' || window.location.hash.startsWith('#plan?')) setTab('plan');
   }, []);
 
   const [notice, setNotice] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);

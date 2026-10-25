@@ -208,6 +208,33 @@ try {
     await page.getByTestId('progress-periods-turn-taking').waitFor();
     await page.getByTestId('clinical-tab-plan').click();
     await page.getByTestId('plan-evidence-trail').first().waitFor();
+    // TB-EM-033 worklist is scoped to current authorized plan versions.
+    await page.getByTestId('goal-review-worklist').waitFor();
+    await page.getByTestId('goal-review-summary').waitFor();
+    assert((await page.getByTestId('goal-review-worklist').innerText()).includes('No review date'),
+      'Undated synthetic goals must not invent review deadlines');
+    await page.locator('[data-testid^="goal-review-open-"]').first().click();
+    assert(await page.evaluate(() => document.activeElement?.id.startsWith('goal-review-')),
+      'Review worklist must focus the actual authorized goal editor');
+    // An invalid historic centre timezone must show a recoverable warning
+    // while leaving every existing plan/editor accessible.
+    const invalidTimezoneOverlay = '**/api/centers/*/clinical/children/*';
+    await page.route(invalidTimezoneOverlay, async route => {
+      if (route.request().method() !== 'GET') return route.continue();
+      const response = await route.fetch();
+      const workspace = await response.json();
+      await route.fulfill({ response, json: { ...workspace, timezone: 'Asia/Not_A_Zone' } });
+    });
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('goal-review-timezone-invalid').waitFor();
+    assert(await page.getByTestId('plan-summary').first().isVisible(), 'Plan editor survives unsupported centre timezone');
+    await page.unroute(invalidTimezoneOverlay);
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('goal-review-worklist').waitFor();
+    assert(!(await page.getByTestId('goal-review-timezone-invalid').count()), 'Valid centre timezone recovers');
+
     await page.getByTestId('plan-evidence-goals').first().waitFor();
     await page.getByTestId('plan-source-none').first().waitFor();
     assert((await page.getByTestId('plan-evidence-trail').first().innerText()).includes('recorded observation'),
@@ -218,6 +245,8 @@ try {
       const scroll = await page.evaluate(() => document.documentElement.scrollWidth);
       assert(right <= width + 6 && scroll <= width + 8,
         'Plan evidence trace must remain within ' + width + 'px');
+      const reviewRight = await page.getByTestId('goal-review-worklist').evaluate(el => el.getBoundingClientRect().right);
+      assert(reviewRight <= width + 6, 'Goal review worklist must fit at ' + width + 'px');
     }
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.getByTestId('home-assist-toggle').click();
@@ -243,10 +272,12 @@ try {
             title: 'Updated saved activity', steps: ['new saved instructions'],
             safety: ['new saved safety'], version: 2 } } : a);
         return { ...p, versions: [
-          { ...first, id: first.id + '-comparison-fixture', number: first.number + 1,
+          { ...first, id: first.id + '-comparison-fixture', number: first.number + 2,
             summary: first.summary + ' Updated synthetic comparison.',
             goals: first.goals.map((g, i) => i === 0 ? { ...g, target: g.target + 1 } : g),
             homeActivities: currentActivities },
+          { ...first, id: first.id + '-intermediate-fixture', number: first.number + 1,
+            summary: first.summary + ' Intermediate saved definition.', homeActivities: priorActivities },
           { ...first, status: 'SUPERSEDED', homeActivities: priorActivities },
         ] };
       });
@@ -264,6 +295,29 @@ try {
     assert(savedActivityComparison.includes('Original saved activity'), 'Historical name must use saved snapshot');
     assert(savedActivityComparison.includes('original safety guidance'), 'Historical safety must use saved snapshot');
     assert(savedActivityComparison.includes('new saved safety'), 'Comparison must show changed saved safety');
+    // Codex P2: evidence about original version 1 must open version 1,
+    // not the default middle version of a THREE-version plan history.
+    const oldestPlan = await db.planVersion.findFirstOrThrow({
+      where: { centerId: center.id, plan: { childId: child.id, service: 'speech' } },
+      orderBy: { number: 'asc' },
+    });
+    const savedGoalKey = oldestPlan.goals[0].key;
+    // Follow the link from a different page, as a real report would.
+    // Fragment-only goto on the already-mounted child page does not remount
+    // the plan workspace and tests a different navigation path.
+    await page.goto(base + '/app/clinical');
+    await page.goto(base + '/app/clinical/' + child.id +
+      '#plan?version=' + encodeURIComponent(oldestPlan.id) + '&goal=' + encodeURIComponent(savedGoalKey));
+    await page.waitForFunction(() =>
+      document.querySelector('[data-testid="plan-history-select-1"]')?.getAttribute('aria-pressed') === 'true');
+    await page.getByTestId('plan-history-goal-' + savedGoalKey).waitFor();
+    await page.waitForFunction(() => document.activeElement?.id?.includes('plan-history-goal-'));
+    assert.equal(await page.getByTestId('plan-history-select-1').getAttribute('aria-pressed'), 'true',
+      'Historical evidence must select the exact original snapshot, not default version 2');
+    assert(await page.evaluate(() => document.activeElement?.id?.includes('plan-history-goal-')),
+      'Historical evidence must focus its precise saved goal definition');
+    assert((await page.getByTestId('report-goal-navigation-note').innerText()).includes('Historical source goal selected'));
+
     // TB-EM-031 uses the same disposable already-authorized workspace overlay.
     // Exercise the clinician's dated objective and scheduled activity fields
     // without saving or contaminating the seeded demonstration.
@@ -313,6 +367,18 @@ try {
     await page.goto(base + '/app/reports/' + speechReport.id);
     await page.getByTestId('report-evidence-assist').waitFor();
     await page.getByTestId('report-decisions-persistent').waitFor();
+    // An evidence entry links to its exact source version and goal. The new
+    // tab goes through the ordinary authorized child workspace route.
+    await page.locator('[data-testid^="evidence-sources-"] summary').first().click();
+    const linkToGoal = page.locator('[data-testid^="report-evidence-open-goal-"]').first();
+    const goalHref = await linkToGoal.getAttribute('href');
+    assert(goalHref?.includes('#plan?version=') && goalHref.includes('&goal='));
+    const linkedTab = await page.context().newPage();
+    await linkedTab.goto(base + goalHref);
+    await linkedTab.getByTestId('report-goal-navigation-note').waitFor();
+    assert((await linkedTab.getByTestId('report-goal-navigation-note').innerText()).includes('matching current plan goal'),
+      'Source goal link must resolve to the authorized exact current plan goal');
+    await linkedTab.close();
     // Synthetic seed has editable drafts but no saved immutable version.
     // Exercise the real clinician Save version operation as prerequisite.
     await page.getByTestId('report-to-plan-needs-version').waitFor();
