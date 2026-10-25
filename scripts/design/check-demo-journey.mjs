@@ -531,7 +531,7 @@ try {
           tint: shell && getComputedStyle(shell).getPropertyValue('--fam-accentTint').trim(),
           background: computed?.backgroundColor,
           foreground: computed?.color,
-          indicator: indicator && getComputedStyle(indicator).backgroundColor,
+          indicator: isMobile ? computed?.color : (indicator && getComputedStyle(indicator).backgroundColor),
         };
       });
       assert(colors.bodyWidth <= width + 8, 'Family activities overflow at ' + width + 'px: ' + JSON.stringify(colors));
