@@ -49,6 +49,67 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
   }
 
 
+  it('records non-authorizing therapist goal checkpoints with exact saved observation sources', async () => {
+    const { therapist, other, sup, kid, rosa } = await setup();
+    const created = (await post(h, c(`clinical/children/${kid}/plans`), therapist, {
+      service: 'speech', title: 'Synthetic dated goal review'
+    }).expect(201)).body;
+    const verId = created.versionId;
+    await patch(therapist, c('clinical/plan-versions/' + verId), {
+      summary: 'Synthetic goal plan only', goals: [
+        { key: 'check', title: 'Names familiar pictures', measure: 'count', baseline: 1, target: 8 },
+        { key: 'other', title: 'Uses complete phrases', measure: 'count', baseline: 2, target: 10 },
+      ], homeActivities: [], version: 1,
+    }).expect(200);
+    const observe = async (goalKey: string) => (await post(h,
+      c(`clinical/children/${kid}/observations`), therapist, {
+        planVersionId: verId, goalKey, value: 3, observedOn: '2026-10-18',
+      }).expect(201)).body.id as string;
+    const exactSource = await observe('check');
+    const unrelatedSource = await observe('other');
+    const path = c(`clinical/plan-versions/${verId}/goal-checkpoints`);
+    const body = { goalKey: 'check', reviewedOn: '2026-10-18',
+      summary: 'Examined one recorded source; more observation visits may be needed.',
+      observationIds: [exactSource], version: 2 };
+    await post(h, path, other, body).expect(404);
+    await post(h, path, sup, body).expect(403);
+    await post(h, path, admin, body).expect(403);
+    await post(h, path, rosa, body).expect(403);
+    await post(h, path, therapist, { ...body, goalKey: 'not-in-plan' }).expect(422);
+    await post(h, path, therapist, { ...body, observationIds: [unrelatedSource] }).expect(422);
+    await post(h, path, therapist, { ...body, observationIds: [exactSource, exactSource] }).expect(422);
+    await post(h, path, therapist, { ...body, reviewedOn: '2026-02-30' }).expect(422);
+    await post(h, path, therapist, { ...body, reviewedOn: '2026-11-02' }).expect(422);
+    await post(h, path, therapist, { ...body, summary: 'short' }).expect(400);
+    const receipt = (await post(h, path, therapist, body).expect(200)).body;
+    expect(receipt).toMatchObject({
+      persisted: true, version: 3, released: false, clinicalAuthorization: false,
+    });
+    await post(h, path, therapist, body).expect(409); // CAS: no double append
+    const saved = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: verId } });
+    const checkpoints = (saved.reviewNotes as any[]).filter(n => n.kind === 'GOAL_CHECKPOINT');
+    expect(checkpoints).toHaveLength(1);
+    expect(checkpoints[0]).toMatchObject({
+      goalKey: 'check', reviewedOn: '2026-10-18',
+      observationIds: [exactSource], summary: body.summary,
+      clinicalAuthorization: false, released: false,
+    });
+    expect(saved.goals).toHaveLength(2);
+    expect(await h.prisma.observation.count({ where: { planVersionId: verId } })).toBe(2);
+    const read = (await get(sup, c('clinical/children/' + kid)).expect(200)).body;
+    expect(read.plans[0].versions[0].goalCheckpoints).toEqual([
+      expect.objectContaining({ goalKey: 'check', observationIds: [exactSource] }),
+    ]);
+    expect(read.plans[0].versions[0].reviewNotes).toEqual([]);
+    await get(rosa, c('clinical/children/' + kid)).expect(403);
+    const audit = await h.prisma.centerEvent.findFirstOrThrow({
+      where: { centerId, type: 'clinical.goal_checkpoint_recorded' },
+    });
+    expect(audit.meta).toMatchObject({ childId: kid, planVersionId: verId,
+      goalKey: 'check', sourceCount: 1 });
+    expect(JSON.stringify(audit.meta)).not.toContain(body.summary);
+  });
+
   it('Child360 includes authorized upcoming visits beyond tomorrow within its explicit 42-day window', async () => {
     const { therapist, other, sup, kid } = await setup();
     const membershipId = therapist.body.activeContext.membershipId;
