@@ -89,6 +89,12 @@ export const reportsApi = {
   list: (centerId: string, childId: string) => rest.get<{ items: ReportRow[] }>(c(centerId, `clinical/children/${childId}/reports`)),
   create: (centerId: string, childId: string, body: { service: string; title: string; periodStart: string; periodEnd: string }) => rest.send<{ id: string }>('POST', c(centerId, `clinical/children/${childId}/reports`), body),
   detail: (centerId: string, id: string) => rest.get<ReportDetail>(c(centerId, `clinical/reports/${id}`)),
+  createPlanDraft: (centerId: string, reportId: string, body: {
+    requestId: string; sourceReportVersionId: string; reportRevision: number; title: string;
+    selectedGoals: { planVersionId: string; goalKey: string }[];
+  }) => rest.send<{ id: string; versionId: string; reused: boolean; released: false }>(
+    'POST', c(centerId, `clinical/reports/${reportId}/plan-drafts`), body),
+
   autosave: (centerId: string, id: string, sections: Record<string, string>, version: number) => rest.send<{ version: number; savedAt: string }>('PATCH', c(centerId, `clinical/reports/${id}`), { sections, version }),
   saveVersion: (centerId: string, id: string, version: number) => rest.send<{ number: number; version: number }>('POST', c(centerId, `clinical/reports/${id}/versions`), { version }),
   submit: (centerId: string, id: string, version: number) => rest.send<{ number: number; version: number }>('POST', c(centerId, `clinical/reports/${id}/submit`), { version }),

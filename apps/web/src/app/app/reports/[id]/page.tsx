@@ -7,7 +7,8 @@ import { ArrowLeft, EyeOff, FlaskConical } from 'lucide-react';
 import { FormAlert } from '@/components/auth/Field';
 import { Workspace, errorText, useLoad } from '@/components/centers/kit';
 import { FamilyProgress } from '@/components/clinical/FamilyProgress';
-import { ReportEditor } from '@/components/clinical/ReportEditor';
+import { ReportEditor, type ReportHandoffGate } from '@/components/clinical/ReportEditor';
+import { ReportToPlanHandoff } from '@/components/clinical/ReportToPlanHandoff';
 import { Compare, Evidence, HistoryList, Review } from '@/components/clinical/ReportSide';
 import { Button, Card, Pill } from '@/components/design/ui';
 import { ErrorState, SkeletonRows } from '@/components/design/states';
@@ -25,6 +26,7 @@ function Report({ session, onError }: { session: SessionInfo; onError: (e: unkno
   const [live, setLive] = useState<Record<string, string> | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+  const handoffGateRef = useRef<ReportHandoffGate | null>(null);
   useEffect(() => { if (preview) { previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }, [preview]);
   const showPreview = async () => {
     try { setPreview(await reportsApi.familyPreview(centerId, id)); } catch (e) { errorText(e, onError); }
@@ -57,9 +59,10 @@ function Report({ session, onError }: { session: SessionInfo; onError: (e: unkno
       )}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0 space-y-5">
+          {data.canEdit && <ReportToPlanHandoff centerId={centerId} detail={data} prepare={() => { if (!handoffGateRef.current) throw new Error('Report editor is not ready.'); return handoffGateRef.current(); }} />}
           {success && <FormAlert tone="success" testId="report-notice-success">{success}</FormAlert>}
           {compare && <Compare v={compare} current={live ?? r.sections} onClose={() => setCompare(null)} />}
-          <ReportEditor key={`${r.status}-${r.version}`} centerId={centerId} d={data} onReload={reload} onError={onError} onPreview={() => { setSuccess(null); void showPreview(); }} onSections={setLive} onSuccess={setSuccess} />
+          <ReportEditor key={`${r.status}-${r.version}`} handoffGateRef={handoffGateRef} centerId={centerId} d={data} onReload={reload} onError={onError} onPreview={() => { setSuccess(null); void showPreview(); }} onSections={setLive} onSuccess={setSuccess} />
         </div>
         <div className="min-w-0 space-y-5">
           <Review centerId={centerId} d={data} onReload={reload} onError={onError} />

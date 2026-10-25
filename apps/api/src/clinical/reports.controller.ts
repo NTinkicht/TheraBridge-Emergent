@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
 import { RequirePermission, TbRequest } from '../auth/access';
 import type { Viewer } from '../operations/children.service';
-import { ProgressQueryDto, ReportCreateDto, ReportSaveDto, ReportVersionDto, ReviewDto, ReviewQueueQueryDto, ReportSuggestionDecisionDto } from './clinical.dto';
+import { ProgressQueryDto, ReportCreateDto, ReportSaveDto, ReportVersionDto, ReviewDto, ReviewQueueQueryDto, ReportSuggestionDecisionDto, ReportToPlanDraftDto } from './clinical.dto';
 import { GovernanceService } from './governance.service';
 import { FAMILY_PROGRESS_SAMPLE, ReportsService } from './reports.service';
 import { ReportDecisionsService } from './report-decisions.service';
@@ -35,6 +35,13 @@ export class ReportsController {
   @RequirePermission('center.clinical.draft')
   create(@Param('centerId', uuid()) c: string, @Param('childId', uuid()) id: string, @Body() dto: ReportCreateDto, @Req() req: TbRequest) {
     return this.reports.create(c, viewer(req), id, dto);
+  }
+
+  @Post('clinical/reports/:id/plan-drafts')
+  @RequirePermission('center.clinical.draft')
+  createPlanDraftFromReport(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string,
+    @Body() dto: ReportToPlanDraftDto, @Req() req: TbRequest) {
+    return this.reports.createPlanDraftFromReport(c, viewer(req), id, dto);
   }
 
   @Get('clinical/reports/:id')

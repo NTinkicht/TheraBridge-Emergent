@@ -94,6 +94,64 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     await get(other, P).expect(404);
     await get(ada, P).expect(403);
 
+    // Milestone 1: saved report snapshot -> fresh, clinician-controlled draft.
+    // Source is an immutable CREATED report version, not mutable live values.
+    const source = await h.prisma.reportVersion.findFirstOrThrow({
+      where: { centerId, reportId: id, kind: 'CREATED' },
+    });
+    const handoffPath = P + '/plan-drafts';
+    const body = {
+      sourceReportVersionId: source.id,
+      requestId: '2c931786-ccfa-4e19-82e6-11a111a1f040',
+      reportRevision: 1, title: 'Home-plan candidate from recorded report',
+      selectedGoals: [{ planVersionId: plan.versionId, goalKey: 'two-word' }],
+    };
+    for (const unauthorized of [admin, ada, sup])
+      await post(h, handoffPath, unauthorized, body).expect(403);
+    await post(h, handoffPath, other, body).expect(404);
+    // Transform at the API boundary, not just the clinician UI: trimmed
+    // whitespace-only and one-letter titles must fail before persistence.
+    await post(h, handoffPath, therapist, { ...body, title: '   ' }).expect(400);
+    await post(h, handoffPath, therapist, { ...body, title: 'a  ' }).expect(400);
+    await post(h, handoffPath, therapist, { ...body, selectedGoals: [] }).expect(400);
+    await post(h, handoffPath, therapist, { ...body, sourceReportVersionId: plan.versionId }).expect(404);
+    await post(h, handoffPath, therapist, { ...body, selectedGoals: [{ planVersionId: plan.versionId, goalKey: 'unknown' }] }).expect(422);
+    await post(h, handoffPath, therapist, { ...body, selectedGoals: [body.selectedGoals[0], body.selectedGoals[0]] }).expect(422);
+    await post(h, handoffPath, therapist, { ...body, reportRevision: 123 }).expect(409);
+    const parallel = await Promise.all([
+      post(h, handoffPath, therapist, body).expect(201),
+      post(h, handoffPath, therapist, body).expect(201),
+    ]);
+    expect(parallel.map(x => x.body.reused).sort()).toEqual([false, true]);
+    const created = parallel.find(x => !x.body.reused)!.body;
+    expect(created).toMatchObject({ id: body.requestId, reused: false, released: false });
+    const savedPlan = await h.prisma.therapyPlan.findUniqueOrThrow({ where: { id: created.id }, include: { versions: true } });
+    expect(savedPlan).toMatchObject({ centerId, childId: kid, service: 'speech', title: body.title });
+    expect(savedPlan.versions).toHaveLength(1);
+    expect(savedPlan.versions[0].status).toBe('DRAFT');
+    expect(savedPlan.versions[0].homeActivities).toEqual([]);
+    expect(savedPlan.versions[0].goals).toEqual([
+      { key: 'g1', title: 'Uses two-word phrases', measure: 'percent', baseline: 20, target: 80 },
+    ]);
+    expect(await h.prisma.observation.count({ where: { planVersionId: created.versionId } })).toBe(0);
+    const audit = await h.prisma.centerEvent.findMany({ where: { centerId, type: 'clinical.report_plan_drafted' } });
+    expect(audit).toHaveLength(1);
+    expect(audit[0].meta).toMatchObject({
+      childId: kid, reportId: id, reportVersionId: source.id, planId: created.id,
+      selectedGoalRefs: [plan.versionId + ':two-word'], draftOnly: true, released: false,
+    });
+    expect((await post(h, handoffPath, therapist, body).expect(201)).body).toMatchObject({
+      id: created.id, versionId: created.versionId, reused: true,
+    });
+    expect((await post(h, handoffPath, therapist, {
+      ...body, requestId: '57bf6a97-568d-4e46-b275-07da6cd1a5e0',
+    }).expect(201)).body).toMatchObject({
+      id: created.id, versionId: created.versionId, reused: true,
+    });
+    await post(h, handoffPath, therapist, { ...body, title: 'Different request with reused ID' }).expect(409);
+    expect(await h.prisma.therapyPlan.count({ where: { id: created.id } })).toBe(1);
+    expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.report_plan_drafted' } })).toBe(1);
+
     expect((await patch(therapist, P, { sections: { summary: 'Draft summary', familySummary: 'Ivo enjoyed the picture games.' }, version: 1 }).expect(200)).body.version).toBe(2);
     expect((await patch(therapist, P, { sections: { summary: 'stale tab' }, version: 1 }).expect(409)).body.message).toMatch(/another window/);
     await patch(sup, P, { sections: { summary: 'x' }, version: 2 }).expect(403);

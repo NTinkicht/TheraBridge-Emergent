@@ -269,6 +269,110 @@ try {
     await page.goto(base + '/app/reports/' + speechReport.id);
     await page.getByTestId('report-evidence-assist').waitFor();
     await page.getByTestId('report-decisions-persistent').waitFor();
+    // Synthetic seed has editable drafts but no saved immutable version.
+    // Exercise the real clinician Save version operation as prerequisite.
+    await page.getByTestId('report-to-plan-needs-version').waitFor();
+    await page.getByTestId('report-save-version').click();
+    await page.getByTestId('report-to-plan-toggle').waitFor();
+    // Report-to-plan handoff is read-only until explicit goal selection.
+    await page.getByTestId('report-to-plan-toggle').click();
+    const handoff = page.getByTestId('report-to-plan-form');
+    await handoff.waitFor();
+    await page.getByTestId('report-to-plan-goals').waitFor();
+    const firstSavedGoal = page.getByTestId('report-to-plan-goal-0');
+    assert(await firstSavedGoal.count() > 0, 'Synthetic report snapshot must contain at least one goal');
+    assert(await page.getByTestId('report-to-plan-create').isDisabled(),
+      'A new plan must never be created without clinician-selected goals');
+    await firstSavedGoal.check();
+    assert(await page.getByTestId('report-to-plan-create').isEnabled());
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      const bounds = await page.evaluate(() => ({
+        viewport: innerWidth, page: document.documentElement.scrollWidth,
+        panel: document.querySelector('[data-testid="report-to-plan"]')?.getBoundingClientRect().toJSON(),
+      }));
+      assert(bounds.panel?.width > 0 && bounds.panel.right <= width + 6 && bounds.page <= width + 8,
+        'Report-to-plan handoff must not clip at ' + width + 'px: ' + JSON.stringify(bounds));
+    }
+    await page.setViewportSize({ width: 1280, height: 900 });
+    // Codex P2: the reverse ordering matters. A report submission already
+    // in flight must reserve its lock BEFORE awaiting its save/POST, so
+    // starting handoff cannot create a draft while the report transitions.
+    const submitRaceRoute = '**/clinical/reports/' + speechReport.id + '/submit';
+    const earlyHandoffRoute = '**/clinical/reports/*/plan-drafts';
+    let releaseHeldSubmission;
+    let announceHeldSubmission;
+    const heldSubmission = new Promise(resolve => { releaseHeldSubmission = resolve; });
+    const submissionStarted = new Promise(resolve => { announceHeldSubmission = resolve; });
+    let prematurePlanPosts = 0;
+    await page.route(earlyHandoffRoute, async route => {
+      prematurePlanPosts += 1;
+      await route.fulfill({ status: 503, contentType: 'application/json',
+        body: '{"message":"Handoff must not have reached this endpoint"}' });
+    });
+    await page.route(submitRaceRoute, async route => {
+      announceHeldSubmission();
+      await heldSubmission;
+      // This is a synthetic failure: no report submission is committed.
+      await route.fulfill({ status: 503, contentType: 'application/json',
+        body: '{"message":"Synthetic interrupted report transition"}' });
+    });
+    await page.getByTestId('report-submit').click();
+    await submissionStarted;
+    await page.getByTestId('report-transition-edit-lock').waitFor();
+    assert(await page.getByTestId('report-section-summary').isDisabled(),
+      'Report fields must lock throughout in-flight submission');
+    assert(await page.getByTestId('report-save-version').isDisabled(),
+      'Save version is blocked during report submission');
+    assert(await page.getByTestId('report-submit').isDisabled(),
+      'Repeated report submission is blocked');
+    await page.getByTestId('report-to-plan-create').click();
+    await page.getByTestId('report-to-plan-error').waitFor();
+    assert.equal(prematurePlanPosts, 0,
+      'A handoff attempted during an already-running report transition must not POST');
+    releaseHeldSubmission();
+    await page.getByTestId('report-transition-edit-lock').waitFor({ state: 'hidden' });
+    assert(!(await page.getByTestId('report-section-summary').isDisabled()),
+      'Failed report transition must restore editing and handoff eligibility');
+    await page.unroute(submitRaceRoute);
+    await page.unroute(earlyHandoffRoute);
+
+    // New handoff POST is intercepted, while genuine report PATCH autosave
+    // continues. Unknown result must retain exact payload and report lock.
+    const handoffRequests = [];
+    let secondRequestSeen;
+    const secondHandoffRequest = new Promise(resolve => { secondRequestSeen = resolve; });
+    const handoffRoute = '**/clinical/reports/*/plan-drafts';
+    await page.route(handoffRoute, async route => {
+      handoffRequests.push(JSON.parse(route.request().postData()));
+      if (handoffRequests.length === 2) secondRequestSeen();
+      await route.fulfill({ status: 503, contentType: 'application/json',
+        body: '{"message":"Simulated unknown result"}' });
+    });
+    const reportSummary = page.getByTestId('report-section-summary');
+    await reportSummary.fill((await reportSummary.inputValue()) + '\\nSynthetic pre-handoff text must persist.');
+    await page.getByTestId('report-to-plan-create').click();
+    await page.getByTestId('report-to-plan-abandon').waitFor();
+    assert(await reportSummary.isDisabled(), 'Pending handoff must lock report text');
+    assert(await page.getByTestId('report-submit').isDisabled(), 'Unresolved handoff must block supervisor submission');
+    assert(await page.getByTestId('report-save-version').isDisabled(), 'Unresolved handoff must block save-version transition');
+    assert(await page.getByTestId('report-to-plan-title').isDisabled(), 'Unknown POST must freeze submitted payload');
+    assert(await page.getByTestId('report-to-plan-toggle').isDisabled(), 'Unknown POST must not reset request UUID');
+    const handoffSaved = await db.progressReport.findUniqueOrThrow({ where: { id: speechReport.id } });
+    assert(handoffSaved.sections.summary.includes('Synthetic pre-handoff text must persist.'),
+      'Handoff must wait for actual report autosave');
+    assert.equal(handoffRequests[0].reportRevision, handoffSaved.version,
+      'Handoff must use latest saved revision, not stale parent detail revision');
+    await page.getByTestId('report-to-plan-create').click();
+    await secondHandoffRequest;
+    assert.equal(handoffRequests.length, 2);
+    assert.deepEqual(handoffRequests[1], handoffRequests[0], 'Retry must preserve exact submitted request UUID and content');
+    page.once('dialog', async dialog => { await dialog.accept(); });
+    await page.getByTestId('report-to-plan-abandon').click();
+    assert(!(await reportSummary.isDisabled()), 'Explicit abandon must unlock report editor');
+    await page.unroute(handoffRoute);
+    await page.getByTestId('report-to-plan-toggle').click();
+
     const sourceDetail = await read(page, centerBase + '/clinical/reports/' + speechReport.id);
     assert.equal(sourceDetail.status, 200);
     const g = sourceDetail.body.evidence.goals[0];

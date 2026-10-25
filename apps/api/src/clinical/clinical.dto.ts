@@ -1,5 +1,5 @@
-import { Type } from 'class-transformer';
-import { ArrayMaxSize, IsArray, IsIn, IsInt, IsNumber, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength, ValidateNested } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsInt, IsNumber, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength, ValidateNested } from 'class-validator';
 import { SPECIALTIES } from '../applications/applications.dto';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -109,6 +109,23 @@ export class ReportCreateDto {
   @Matches(DATE) periodStart!: string;
   @Matches(DATE) periodEnd!: string;
 }
+// Only recorded, immutable report-version goal identities are accepted.
+// Clients never post their own goal text, measurements, or clinical advice.
+export class ReportPlanGoalRefDto {
+  @IsUUID() planVersionId!: string;
+  @Matches(/^[a-z0-9-]{1,40}$/) goalKey!: string;
+}
+export class ReportToPlanDraftDto {
+  @IsUUID() sourceReportVersionId!: string;
+  @IsUUID() requestId!: string;
+  @IsInt() @Min(1) reportRevision!: number;
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
+  @IsString() @MinLength(3) @MaxLength(120) title!: string;
+  @IsArray() @ArrayMinSize(1) @ArrayMaxSize(12)
+  @ValidateNested({ each: true }) @Type(() => ReportPlanGoalRefDto)
+  selectedGoals!: ReportPlanGoalRefDto[];
+}
+
 export class ReportSectionsDto {
   @IsOptional() @IsString() @MaxLength(8000) summary?: string;
   @IsOptional() @IsString() @MaxLength(8000) assessment?: string;

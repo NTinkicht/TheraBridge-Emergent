@@ -32,6 +32,12 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
     return () => { window.removeEventListener('beforeunload', unload); document.removeEventListener('click', click, true); window.removeEventListener('popstate', pop); };
   }, []);
   const [tab, setTab] = useState<(typeof TABS)[number][0]>('overview');
+  // Returning from an internal report-to-plan handoff should open the new
+  // plan editor. The hash carries NO clinical data or permissions.
+  useEffect(() => {
+    if (window.location.hash === '#plan') setTab('plan');
+  }, []);
+
   const [notice, setNotice] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
   const run = async (fn: () => Promise<unknown>, ok: string) => {
     try { await fn(); setNotice({ tone: 'success', text: ok }); await reload(); return true; } catch (e) { const t = errorText(e, onError); if (t) setNotice({ tone: 'danger', text: t }); return false; }
