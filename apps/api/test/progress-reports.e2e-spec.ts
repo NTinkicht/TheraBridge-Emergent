@@ -142,7 +142,7 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     });
     // Corrupted source audit metadata is NOT trusted as a UUID. It must not
     // crash the child workspace or become invented provenance.
-    const malformedEvent = await h.prisma.centerEvent.create({
+    await h.prisma.centerEvent.create({
       data: { centerId, type: 'clinical.report_plan_drafted', createdAt: h.clock.now(),
         meta: { planId: plan.id, planVersionId: plan.versionId,
           reportId: 'not-a-uuid', reportVersionId: 'also-not-a-uuid',
@@ -151,7 +151,6 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     });
     const validAfterBadEvent = (await get(therapist, W).expect(200)).body;
     expect(validAfterBadEvent.plans.find((p: { id: string }) => p.id === plan.id).source).toBeNull();
-    await h.prisma.centerEvent.delete({ where: { id: malformedEvent.id } });
 
     // TB-EM-032: source provenance is visible only through the authorized
     // child/plan projection; observations remain bound to the ORIGINAL
@@ -188,7 +187,10 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     });
     await post(h, handoffPath, therapist, { ...body, title: 'Different request with reused ID' }).expect(409);
     expect(await h.prisma.therapyPlan.count({ where: { id: created.id } })).toBe(1);
-    expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.report_plan_drafted' } })).toBe(1);
+    expect(await h.prisma.centerEvent.count({ where: {
+      centerId, type: 'clinical.report_plan_drafted',
+      meta: { path: ['planId'], equals: created.id },
+    } })).toBe(1);
 
     expect((await patch(therapist, P, { sections: { summary: 'Draft summary', familySummary: 'Ivo enjoyed the picture games.' }, version: 1 }).expect(200)).body.version).toBe(2);
     expect((await patch(therapist, P, { sections: { summary: 'stale tab' }, version: 1 }).expect(409)).body.message).toMatch(/another window/);
