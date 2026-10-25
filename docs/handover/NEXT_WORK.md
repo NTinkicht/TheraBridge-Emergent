@@ -1,3 +1,9 @@
+## 2026-10-25 — TB-EM-030 closeout gates
+
+1. Await exact HEAD GitHub CI for corrected PR #88; inspect API Postgres/browser failures and fix on SAME branch. Verify code review against latest head, especially report save lease, double-submit/ambiguous retry, durable fingerprint audit, role scopes and unchanged consent/release denials. Re-review/resolved threads before owner merge; do not automatically deploy/merge.
+2. After qualification, proceed to Milestone 1 short/long-term goal metadata and milestones; weekly/monthly dated home-activity plan scheduling; visible source-to-plan audit UX and richer evidence continuity. Keep one active PR at a time, no duplicate writer branch.
+3. Hosted acceptance issue #61 and pending safeguarding/clinical/AI policy gates remain separate; no CI browser run counts as hosted acceptance.
+
 ## 2026-10-25 — Milestone 1 / TB-EM-030 next actions
 
 1. Qualify `feature/tb-em-030-report-to-plan-draft` with exact-HEAD GitHub CI (API/PostgreSQL, web build, seven-role synthetic browser, Docker Compose, secret scan); correct any P0-P2 issue in this same PR; independent source review. No merge/deploy until approved gates. Verify authorization, report-version identity and request replay under concurrent calls as a possible P3 follow-up.
