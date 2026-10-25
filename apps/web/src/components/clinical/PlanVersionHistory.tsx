@@ -7,6 +7,7 @@ import type { HomeActivity, PlanVersion, Template } from '@/lib/clinical';
 import { comparePlanVersions, type ChangeKind } from '@/lib/plan-version-compare';
 import { scheduleDescription } from '@/lib/home-schedule';
 import { GoalCheckpointComparison } from './GoalCheckpointComparison';
+import { HomePracticeCalendar } from './HomePracticeCalendar';
 
 type Plan = { id: string; title: string; service: string; versions: PlanVersion[] };
 const statusNames: Record<PlanVersion['status'], string> = {
@@ -123,6 +124,8 @@ export function PlanVersionHistory({ plan, templates, target }: { plan: Plan; te
           {inspect.homeActivities.length ? <ul className="list-inside list-disc space-y-1 text-[13px]">
             {inspect.homeActivities.map((a, i) => <li key={a.templateId+'-'+i}><ActivityText a={a} templates={templates} /></li>)}
           </ul> : <p className="text-[13px] text-brand-inkMuted">No draft activities recorded.</p>}
+          <HomePracticeCalendar key={inspect.id} activities={inspect.homeActivities} goals={inspect.goals}
+            templates={templates} versionNumber={inspect.number} timezone="Asia/Dubai" />
           {!!inspect.goalCheckpoints?.length && <>
             <h4 className="text-[14px] font-semibold">Recorded internal clinician goal checkpoints</h4>
             <ul className="space-y-2 text-[13px]" data-testid="plan-history-checkpoints">
