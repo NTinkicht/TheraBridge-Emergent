@@ -1,3 +1,9 @@
+## 2026-10-26 — TB-EM-042 clinician event timeline qualification
+
+1. Open draft PR `feature/tb-em-042-child360-clinical-timeline` based exactly on owner-merged `main@91036e063db2afc07fac2d9cdb6951d47e4711d1` (PR #101). Require exact-head six-job CI including real PostgreSQL/API, web builds, pure event source/chronology tests, synthetic 7-role Chromium and 320/390/768/1024/1440, secret scan, live-session, preview and Docker Compose. Fix P0–P2 and obtain independent exact-head review before owner-authorized merge.
+2. Review event date semantics (plan.updatedAt last update vs clinician-reviewedOn vs server checkpoint.at), no hidden truncation, specialist filter, reused goalKey across plan versions, orphaned source-link honest labeling, effective keyboard/320px navigation, absence of family outcomes or clinical inference, no new data fetch or permissions. Existing authorized workspace remains the only clinical source.
+3. After merge, continue Milestone 1 with advanced progress/report context, source consistency cues and complete clinician care-journey acceptance, not duplicate earlier goals/activity/home-plan features. PR #97 reviewer control-plane remains isolated. Clinical signatures, approval, consent grants, safeguarding actions, family clinical release, external AI/STT, real patients and deployment/pilot remain NO-GO. Hosted issue #61 baseline unchanged.
+
 ## 2026-10-26 — TB-EM-041 saved plan preview qualification
 
 1. Open a DRAFT PR for `feature/tb-em-041-exact-plan-preview` from merged PR #100 `main@ab9a87737d5c104890ed4e40d5609fc58adae1fa`. Qualify six-job exact-head CI (PostgreSQL/API, Next builds, pure snapshot/report origin tests, seven-role 320–1440 Chromium, preview-container, live-session, gitleaks, Compose), independent exact-head P0–P2 reviewer, resolved threads, owner-approved merge. No auto deploy.

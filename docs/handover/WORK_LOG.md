@@ -1,3 +1,10 @@
+## 2026-10-26 — TB-EM-042 richer clinician Child 360 event timeline
+
+- Merged PR #101 to main after all 6 exact-head CI jobs and fresh Codex re-review; original nested-summary review thread resolved.
+- `child360Timeline` projects five event types solely from permission-scoped `Workspace`: plan-version last-updated records, clinician goal-review checkpoint entries (sort by server-at, show clinician-entered review day separately), measured observation records (exact planVersionId+goalKey), session notes, draft assessments. No appointments/family-practice participation is counted as clinical evidence, and orphaned links remain unattributed.
+- `Child360ClinicalTimeline` replaces the existing first-12-event timeline with event-type/specialty filters, count of matching events, explicit filter-empty state, and Show-more pagination in 12-row increments. Navigation targets only existing authorized section tabs. No API/schema/permissions/save/AI/release code touched.
+- Pure regression tests cover deterministic chronology, backdated review events, reused goalKey across service/version, missing source, specialty/kind filters and omission of appointment/family records. Synthetic browser checks filter semantics and existing five widths/permission journey. Actual CI not yet run at draft creation.
+
 ## 2026-10-26 — TB-EM-041 exact saved clinician home-plan inspection
 
 - PR #100 squash-merged into main after exact-head CI+reviews. Slice 12 is a pure read projection of exact saved `PlanVersion` + permitted local activity templates + optional source report metadata, never working form state.

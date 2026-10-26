@@ -176,6 +176,27 @@ try {
       return !!panel && (panel.querySelector('[data-testid="child360-family-practice-empty"]') !== null ||
         panel.querySelector('[data-testid="child360-family-practice-outcomes"]') !== null);
     });
+    // TB-EM-042: one authorized clinical workspace drives the timeline;
+    // filters never fetch additional patient records or infer outcomes.
+    const timelinePanel = page.getByTestId('child360-clinical-timeline');
+    await timelinePanel.waitFor();
+    assert((await timelinePanel.innerText()).includes('Family practice feedback and appointments are not treated as clinical evidence.'));
+    assert((await timelinePanel.getByTestId('child360-timeline-count').innerText()).includes('matching recorded event'));
+    await timelinePanel.getByTestId('child360-timeline-kind').selectOption('SESSION');
+    const filteredSessions = timelinePanel.getByTestId('child360-timeline-event');
+    for (let index = 0; index < await filteredSessions.count(); index++) {
+      assert((await filteredSessions.nth(index).innerText()).includes('Session note'),
+        'SESSION filter must not mix plan, assessment or observation events');
+    }
+    await timelinePanel.getByTestId('child360-timeline-kind').selectOption('ALL');
+    await timelinePanel.getByTestId('child360-timeline-service').selectOption('speech');
+    const scopedEvents = timelinePanel.getByTestId('child360-timeline-event');
+    for (let index = 0; index < await scopedEvents.count(); index++) {
+      assert((await scopedEvents.nth(index).innerText()).includes('Speech'),
+        'Service filter must show only events with the requested authorized specialty');
+    }
+    await timelinePanel.getByTestId('child360-timeline-service').selectOption('ALL');
+    assert((await timelinePanel.getByTestId('child360-timeline-kind').inputValue()) === 'ALL');
     // Actual Playwright viewport changes (Work Cloud Browser cannot resize).
     // Check the same production design shell at five widths without modifying
     // patient data or depending on screenshots as proof of correctness.

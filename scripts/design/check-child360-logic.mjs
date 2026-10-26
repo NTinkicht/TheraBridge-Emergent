@@ -17,7 +17,68 @@ const schedule = await pureModule('apps/web/src/lib/home-schedule.ts');
 const checkpointCompare = await pureModule('apps/web/src/lib/goal-checkpoint-compare.ts');
 const handoff = await pureModule('apps/web/src/lib/home-plan-handoff.ts');
 const homeDetail = await pureModule('apps/web/src/lib/home-activity-detail.ts');
+const childTimeline = await pureModule('apps/web/src/lib/child360-timeline.ts');
 const savedPreview = await pureModule('apps/web/src/lib/saved-home-plan-preview.ts');
+
+// TB-EM-042: one already-authorized workspace controls every timeline event.
+// Server-recorded checkpoint creation date orders reviews, never backdated
+// clinician-entered review dates. No clinical progress/approval/family claims.
+const timelineWorkspace = {
+  plans:[{id:'plan-speech',service:'speech',versions:[{
+    id:'pv-speech',number:2,version:4,status:'DRAFT',updatedAt:'2026-10-12T11:00:00Z',
+    goals:[{key:'reused-key',title:'Speech goal'}],
+    goalCheckpoints:[{kind:'GOAL_CHECKPOINT',goalKey:'reused-key',
+      at:'2026-10-20T12:00:00Z',reviewedOn:'2026-10-02',summary:'Prior dated review',
+      observationIds:[]},
+      {kind:'GOAL_CHECKPOINT',goalKey:'reused-key',
+        at:'2026-10-20T17:00:00Z',reviewedOn:'2026-10-01',
+        summary:'Newer checkpoint recorded on same day',observationIds:[]}],
+  }]},{id:'plan-ot',service:'ot',versions:[{
+    id:'pv-ot',number:1,version:2,status:'RETURNED_FOR_REVISION',
+    updatedAt:'2026-10-14T08:00:00Z',
+    goals:[{key:'reused-key',title:'Distinct OT goal'}],goalCheckpoints:[],
+  }]}],
+  notes:[{id:'note-speech',service:'speech',sessionDate:'2026-10-19',
+    executionStatus:'COMPLETED'},{id:'note-ot',service:'ot',
+    sessionDate:'2026-10-19',executionStatus:'IN_PROGRESS'}],
+  assessments:[{id:'assessment-speech',service:'speech',assessedOn:'2026-10-18'}],
+  observations:[
+    {id:'ob-speech',planVersionId:'pv-speech',goalKey:'reused-key',
+      observedOn:'2026-10-17',value:3},
+    {id:'ob-ot',planVersionId:'pv-ot',goalKey:'reused-key',
+      observedOn:'2026-10-18',value:7},
+    {id:'ob-orphan',planVersionId:'unavailable',goalKey:'reused-key',
+      observedOn:'2026-10-16',value:2},
+  ],
+  // Deliberately present; clinical timeline must not aggregate feedback,
+  // appointment attendance, messages, or drafts it didn't authorize.
+  appointments:[{id:'future-visit',status:'SCHEDULED',startsAt:'2026-12-01'}],
+  practiceFeedback:{items:[{id:'family-sample',practiceDate:'2026-10-21'}]},
+};
+const timelineEvents = childTimeline.child360Timeline(timelineWorkspace);
+assert.equal(timelineEvents.length,10);
+assert.deepEqual(timelineEvents.map(e => e.date),
+  [...timelineEvents.map(e => e.date)].sort().reverse());
+assert.equal(timelineEvents[0].kind,'GOAL_REVIEW');
+assert.equal(timelineEvents[0].date,'2026-10-20');
+assert.equal(timelineEvents[0].recordedAt,'2026-10-20T17:00:00Z');
+assert.equal(timelineEvents[1].recordedAt,'2026-10-20T12:00:00Z',
+  'Newer same-day server checkpoint must appear first, despite append index');
+assert(timelineEvents[0].detail.includes('reviewed on 2026-10-01'),
+  'Clinician-entered backdated review is not confused with server entry time');
+assert.equal(timelineEvents.find(e=>e.id==='observation-ob-speech').service,'speech');
+assert(timelineEvents.find(e=>e.id==='observation-ob-speech').detail.includes('Speech goal'));
+assert(timelineEvents.find(e=>e.id==='observation-ob-ot').detail.includes('Distinct OT goal'),
+  'Same reused goal key cannot cross plan-version scope');
+assert.equal(timelineEvents.find(e=>e.id==='observation-ob-orphan').service,null);
+assert(timelineEvents.find(e=>e.id==='observation-ob-orphan').detail.includes('no attribution inferred'));
+assert(!timelineEvents.some(e=>e.id.includes('family-sample')||e.id.includes('future-visit')));
+assert.equal(childTimeline.filterChild360Timeline(timelineEvents,'OBSERVATION','speech').length,1);
+assert.equal(childTimeline.filterChild360Timeline(timelineEvents,'ALL','ot').length,3);
+assert.equal(childTimeline.filterChild360Timeline(timelineEvents,'GOAL_REVIEW','ot').length,0);
+const timelineTwice = childTimeline.child360Timeline(timelineWorkspace);
+assert.deepEqual(timelineTwice,timelineEvents,'Same authorized input must order deterministically');
+assert.equal(timelineWorkspace.plans[0].versions[0].goalCheckpoints[0].reviewedOn,'2026-10-02');
 
 // TB-EM-041: a staff-only preview projects only the exact, already-authorized
 // persisted version. No unsaved working-copy input, clinical inference,
