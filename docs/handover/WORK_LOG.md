@@ -1,3 +1,10 @@
+## 2026-10-26 — TB-EM-044 internal report evidence comparison
+
+- Implemented a pure source-metadata comparison of saved immutable report-version and current authorized report evidence: exact version+goal identity, goal title/measure/baseline/target, source observation ID/date/value including prior sample, assessment IDs, report periods and session count deltas. Reports unverifiable source IDs/legacy goals explicitly, does not equate reused goals across versions and never declares clinical accuracy.
+- Added accessible read-only `ReportEvidenceDiff` disclosure to existing `ReportSide.Compare` via current permissioned report evidence; no request or persistence path added, and unchanged server `ReportStatementTrace` remains the source for attribution fingerprint statuses.
+- Pure tests include same vs altered recorded value, different version same key, legacy missing source identity, changed measure, empty samples, assessment/session/period changes. Seven-role synthetic Chromium opens saved report comparison and checks new inspector and non-clinical disclaimer.
+- Run `40394141714` exact HEAD `4d97f571e5f1f9c0a7f08eaa40600666cafd89a7` PASS **6/6**; Codex NO major findings; zero threads. This mandatory documentation update requires renewed exact-HEAD qualification. PR #103/#105 separately active; no hosted release or deployment.
+
 ## 2026-10-26 — TB-EM-043 Slice 14
 
 - Confirmed PR #102 merge `d242a001a880984fc9d4123dff5430aebc440019` and began a focused isolated progress-context branch.

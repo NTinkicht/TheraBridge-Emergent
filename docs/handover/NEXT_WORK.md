@@ -1,3 +1,9 @@
+## 2026-10-26 — TB-EM-044 review/merge gate
+
+1. Requalify report comparison PR #104 after mandatory four-file checkpoint update: six jobs green for final exact HEAD, independent P0–P2 review and zero unresolved discussions, then owner-directed (never automatic) merge. Carefully distinguish matching recorded source metadata from signed source integrity, evidence adequacy or clinical judgement. No new auth grants.
+2. Reconcile with other milestone branches (#103 progress evidence and #105 integrated navigation) if either merges to main; rerun CI on reconciled commit. Continue synthetic-only role and 320/390/768/1024/1440 acceptance, and separate hosted QA #61.
+3. No external AI/STT, real patients, safeguarding, consent grant, clinical signing/co-signing, guardian clinical report/home-plan release, PDF distribution, production/pilot or approval. Do not bypass owner policy gates.
+
 ## 2026-10-26 — TB-EM-043 qualification and remaining Milestone 1
 
 1. Open a focused draft PR for `feature/tb-em-043-goal-version-context`, base merged `main@d242a001a880984fc9d4123dff5430aebc440019`. Qualify complete six-job CI, independent exact-head P0–P2 review, resolved threads and owner-approved merge. Focus review on reused goal key across changed measurement units, observation/checkpoint exact-version identity, no attribution for orphan observations, disjoint service/plan scopes, current-versus-historical status, safe links and responsive mobile accordion.

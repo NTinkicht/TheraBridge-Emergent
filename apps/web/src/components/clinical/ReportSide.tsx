@@ -7,8 +7,9 @@ import { FormAlert } from '@/components/auth/Field';
 import { errorText } from '@/components/centers/kit';
 import { GoalChart, STATUS_TEXT } from '@/components/clinical/GoalChart';
 import { ReportStatementTrace } from './ReportStatementTrace';
+import { ReportEvidenceDiff } from './ReportEvidenceDiff';
 import { Button, Card, Pill } from '@/components/design/ui';
-import { KIND_LABEL, SECTIONS, reportsApi, type ReportDetail, type ReportVersion } from '@/lib/reports';
+import { KIND_LABEL, SECTIONS, reportsApi, type Evidence, type ReportDetail, type ReportVersion } from '@/lib/reports';
 
 const when = (s: string) => new Date(s).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
 
@@ -102,7 +103,7 @@ export function HistoryList({ centerId, d, onError, onCompare }: { centerId: str
   );
 }
 
-export function Compare({ v, current, childId, onClose }: { v: ReportVersion; current: Record<string, string>; childId: string; onClose: () => void }) {
+export function Compare({ v, current, currentEvidence, childId, onClose }: { v: ReportVersion; current: Record<string, string>; currentEvidence: Evidence; childId: string; onClose: () => void }) {
   const changed = SECTIONS.filter(([k]) => (v.sections[k] ?? '') !== (current[k] ?? '')).length;
   return (
     <Card className="space-y-3 p-5" testId="report-compare">
@@ -111,6 +112,7 @@ export function Compare({ v, current, childId, onClose }: { v: ReportVersion; cu
         <Button size="sm" variant="ghost" onClick={onClose} data-testid="compare-close">Close</Button>
       </div>
       <ReportStatementTrace version={v} childId={childId} />
+      <ReportEvidenceDiff saved={v.evidence} current={currentEvidence} />
       <p className="text-[13px] text-brand-inkMuted" data-testid="compare-summary">{changed ? `${changed} of ${SECTIONS.length} sections changed since version ${v.number}.` : `No changes since version ${v.number}.`} Saved {when(v.createdAt)} by {v.author}.</p>
       {SECTIONS.map(([k, label]) => {
         const diff = (v.sections[k] ?? '') !== (current[k] ?? '');

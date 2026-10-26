@@ -1,3 +1,10 @@
+## 2026-10-26 — TB-EM-044 source consistency evidence
+
+- `scripts/design/check-child360-logic.mjs` now pure-tests immutable vs current report evidence: same-version exact source IDs and values, changed value on same source ID, same goal key on different version, unavailable/legacy source identity, changed measure, no samples, date-period, assessment and session differences. Tests use fictional synthetic read models only.
+- `scripts/design/check-demo-journey.mjs` adds internal saved-vs-current report evidence disclosure, explicit NOT clinical validation notice and visible source/assessment/session summaries; existing seven-role permission and responsive loops retained.
+- PR #104 earlier exact head `4d97f571e5f1f9c0a7f08eaa40600666cafd89a7`: CI `40394141714` **PASS 6/6** (test, secret-scan, live-session, demo-journey, preview-container, compose); Codex NO major issues. Required docs additions change HEAD, so **new exact-head CI NOT RUN** at authoring and qualification pending.
+- No hosted QA issue #61 evidence, clinical source authentication/approval, guardian release or production verification claimed.
+
 ## 2026-10-26 — TB-EM-043 tests authored, awaiting exact-head CI
 
 - Pure: same reused `same-key` across speech plan v1 percent and v2 count and unrelated OT level goal; observation evidence, checkpoint notes and source IDs stay separate by BOTH `planVersionId` and `goalKey`. Definition field differences flagged, orphan evidence excluded, saved target/horizon/reviewOn retained, deterministic output checked.
