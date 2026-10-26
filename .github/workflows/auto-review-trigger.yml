@@ -31,8 +31,8 @@ jobs:
         run: |
           node -e 'const fs = require("node:fs");
           const eligible = process.env.REVIEW_AUTHOR === "NTinkicht" &&
-            /^\\/review-(mistral|grok|both) [0-9a-f]{40}$/i.test((process.env.REVIEW_BODY || "").trim());
-          fs.appendFileSync(process.env.GITHUB_OUTPUT, "eligible=" + eligible + "\\n");'
+            /^\/review-(mistral|grok|both) [0-9a-f]{40}$/i.test((process.env.REVIEW_BODY || "").trim());
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, "eligible=" + eligible + "\n");'
   dispatch:
     needs: qualify
     # Only qualified commands or eligible PR events enter concurrency.
