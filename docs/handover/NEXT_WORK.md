@@ -1,3 +1,10 @@
+## 2026-10-27 — TB-EM-046 required acceptance and release sequence
+
+1. Finish exact-head six-job CI and independent P0–P2 review for PR #105 against combined #103/#104 main, resolve any findings, and owner-authorized merge before promoting dependent PR #106.
+2. Retarget PR #106 to latest main, verify exact feature diff contains only acceptance tests/ledger/mandatory handover changes, re-run six-job CI at exact head (PostgreSQL/API, pure cross-document fixture, seven-role Chromium, responsive five widths, Docker/preview, secret scan/live-session), request independent Codex/Mistral review and resolve findings. No automatic merge, no hosted mutation.
+3. Assess all internal milestone1 gates as PASS/FAIL/NOT RUN with cited real run IDs; keep hosted external runner issue #81 BLOCKED/INCOMPLETE and clinical authorization/family release/real AI/STT/production NO-GO.
+4. Separate home activity per-plan duration override as independent next development slice if scoped milestone remainder is needed; do not alter immutable library minutes or loosen governance to pass acceptance.
+
 ## 2026-10-26 — TB-EM-045 integration qualification and handover
 
 1. Qualify draft PR #105, `feature/tb-em-045-clinician-journey-navigation`, after updating all four required checkpoint files. Re-run all six jobs at the new exact HEAD; require test, secret-scan, live-session, preview-container, seven-role/demo-journey and compose SUCCESS plus fresh independent Codex/Mistral P0–P2 review and resolved discussions. No automatic merge or deployment.

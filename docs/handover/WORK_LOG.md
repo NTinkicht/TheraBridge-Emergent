@@ -1,3 +1,10 @@
+## 2026-10-27 — TB-EM-046 integrated source-chain acceptance
+
+- Started work item #106 as an acceptance-only branch stacked on still-unmerged PR #105. Previous PRs #103 and #104 merged following exact-head 6/6 CI and independent no-blocking reviews. Slice #105 remains separately gated.
+- Added pure end-to-end sample linking authorized plan version v2/goal, exact observation v2, clinician home activity with saved snapshot priority; older reused-key goal version v1 with a different measurement unit remains isolated. Saved report evidence referring to v1 must be marked `NOT_IN_CURRENT` rather than silently attached to v2. Internal read-model output must contain no invented approval/release claims.
+- Added synthetic clinician Child 360 journey responsive check at 320/390/768/1024/1440px with all four stage buttons visible/focusable; existing seven-role browser permission checks retained.
+- Created `docs/qa/TB-EM-046-MILESTONE1-ACCEPTANCE.md` status ledger. No tests run yet at this HEAD; all six CI jobs and P0–P2 review required before owner-authorized merge; external hosted QA #81 separate.
+
 ## 2026-10-26 — TB-EM-045 integrated synthetic clinician journey
 
 - Independent Slice 16 draft branch from `main@d242a001a880984fc9d4123dff5430aebc440019`. Added four clearly separated Child 360 navigation stages to current plan, exact goal evidence, authorized reports and internal home practice. Uses existing permissioned tabs; no new endpoints or family disclosure.

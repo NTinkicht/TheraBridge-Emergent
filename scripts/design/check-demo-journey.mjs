@@ -179,6 +179,47 @@ try {
       await page.getByTestId('clinician-care-journey').waitFor();
     }
 
+    // TB-EM-046: final internal clinician navigation acceptance at each
+    // standard responsive width. No screenshots or real patient payloads.
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      const navGeometry = await page.getByTestId('clinician-care-journey').evaluate(panel => ({
+        panelRight: panel.getBoundingClientRect().right,
+        panelOverflow: panel.scrollWidth - panel.clientWidth,
+        links: [...panel.querySelectorAll('button[data-testid^="clinician-journey-"]')]
+          .map(button => ({ right: button.getBoundingClientRect().right,
+            width: button.getBoundingClientRect().width,
+            focusable: button.getAttribute('disabled') === null })),
+      }));
+      assert.equal(navGeometry.links.length,4,'All four clinician journey stages must exist at '+width+'px');
+      assert(navGeometry.panelRight <= width + 6 && navGeometry.panelOverflow <= 2,
+        'Care journey clipped at '+width+'px: '+JSON.stringify(navGeometry));
+      assert(navGeometry.links.every(link => link.right <= width + 6 &&
+        link.width >= 120 && link.focusable),
+        'Care journey controls must be visible at '+width+'px');
+      // Size/focusability alone do not prove operability: exercise real
+      // keyboard navigation and Enter activation for EACH stage at EACH width.
+      for (const [step, destination] of [
+        ['goals','plan'],['evidence','progress'],['reports','reports'],['home','plan'],
+      ]) {
+        const stage = page.getByTestId('clinician-journey-'+step);
+        await stage.focus();
+        assert(await stage.evaluate(el => {
+          const cs = getComputedStyle(el);
+          return document.activeElement === el && cs.visibility === 'visible' &&
+            cs.display !== 'none' && Number(cs.opacity) > 0 &&
+            cs.pointerEvents !== 'none' && el.getClientRects().length > 0;
+        }), 'Stage '+step+' must receive keyboard focus visibly at '+width+'px');
+        await stage.press('Enter');
+        assert.equal(await page.getByTestId('clinical-tab-'+destination).getAttribute('aria-selected'),'true',
+          'Keyboard Enter must open '+destination+' for stage '+step+' at '+width+'px');
+        assert(page.url().includes('/app/clinical/' + child.id),
+          'Responsive stage '+step+' must preserve authorized child identity at '+width+'px');
+        await page.getByTestId('clinical-tab-overview').click();
+        await page.getByTestId('clinician-care-journey').waitFor();
+      }
+    }
+    await page.setViewportSize({width:1280,height:900});
     // A transient request failure must never appear as a genuine empty result.
     const practiceRoute = '**/clinical/practice-feedback?childId=*';
     await page.route(practiceRoute, route => route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"Synthetic transient error"}' }));

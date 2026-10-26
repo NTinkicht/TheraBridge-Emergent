@@ -1,3 +1,9 @@
+## 2026-10-27 — TB-EM-046 acceptance additions (NOT RUN at branch HEAD)
+
+- Added cross-workstream pure fixture: saved v2 goal's actual observation, old v1 same goal key and incompatible percent measurement, saved home-activity snapshot preferred over updated template library, and internal saved report v1 source remains `NOT_IN_CURRENT` relative to v2. No cross-version evidence aggregation, clinical approval or family release.
+- Added seven-role synthetic browser checks that all four Child 360 care-stage controls are responsive and operable at widths 320, 390, 768, 1024 and 1440px. Existing exact-child navigation and role isolation tests retained.
+- New ledger `docs/qa/TB-EM-046-MILESTONE1-ACCEPTANCE.md`. **No exact-head tests/CI/reviews executed at authoring**. Hosted external acceptance issue #81 remains independently BLOCKED/INCOMPLETE; clinical/release/real patient safeguards unchanged.
+
 ## 2026-10-26 — TB-EM-045 synthetic care journey status, pending final-head verification
 
 - Pure test authored (NOT independently executed before original-head CI): two synthetic current plans, superseded plan and reused goalKey; asserts exact current-version observation count (2), current goal count (3), current home activity count (2), authored schedule count (1), no inferred reportCount.
