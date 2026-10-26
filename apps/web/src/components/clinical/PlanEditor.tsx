@@ -193,6 +193,7 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
     setDirtyVersions(prev => prev[versionId] === dirty ? prev : { ...prev, [versionId]: dirty });
   }, []);
   useEffect(() => {
+    const inspectHashTarget = () => {
     // Saved report evidence can refer to a historical plan version. Never
     // silently map it onto the latest goal or measurements of that plan.
     const hash = window.location.hash;
@@ -213,6 +214,10 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
       setHistoricGoal({ planId: plan.id, versionId, goalKey });
       setLinkedEvidenceNote('Historical source goal selected below in its exact saved plan version. Current evidence cannot be substituted.');
     }
+    };
+    inspectHashTarget();
+    window.addEventListener('hashchange', inspectHashTarget);
+    return () => window.removeEventListener('hashchange', inspectHashTarget);
   }, [ws]);
   return (
     <div className="space-y-5" data-testid="plans-panel">

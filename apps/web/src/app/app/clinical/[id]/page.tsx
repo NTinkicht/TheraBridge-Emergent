@@ -64,7 +64,7 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
         {tab === 'plan' && <PlansPanel centerId={centerId} ws={data} run={run} />}
         {tab === 'assessments' && <AssessmentsPanel centerId={centerId} ws={data} run={run} />}
         {tab === 'sessions' && <SessionsPanel centerId={centerId} ws={data} run={run} onPending={onPending} />}
-        {tab === 'progress' && <ProgressPanel centerId={centerId} ws={data} run={run} />}
+        {tab === 'progress' && <ProgressPanel centerId={centerId} ws={data} run={run} onNavigate={() => setTab('plan')} />}
         {tab === 'reports' && <ReportsPanel centerId={centerId} ws={data} run={run} onError={onError} />}
       </div>
     </div>

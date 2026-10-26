@@ -244,6 +244,40 @@ try {
     await page.getByTestId('clinical-tab-progress').click();
     await page.getByTestId('progress-granularity').selectOption('month');
     await page.getByTestId('progress-periods-turn-taking').waitFor();
+    // TB-EM-043: longitudinal goal context is a read-only authorized
+    // plan-version inspection, not a second evidence aggregation API.
+    const goalContextPanel = page.getByTestId('progress-goal-version-context');
+    await goalContextPanel.waitFor();
+    assert((await goalContextPanel.innerText()).includes('Matching goal keys or titles do not establish continuity'));
+    assert((await goalContextPanel.getByTestId('progress-context-count').innerText())
+      .includes('saved goal definition(s)'));
+    await goalContextPanel.getByTestId('progress-context-service').selectOption('speech');
+    assert((await goalContextPanel.getByTestId('progress-context-plan').first().innerText())
+      .includes('Speech'), 'Service filter must show only the already authorized speech plan');
+    const firstGoalContext = goalContextPanel.getByTestId('progress-context-goal').first();
+    await firstGoalContext.locator(':scope > summary').click();
+    assert((await firstGoalContext.getByTestId('progress-context-details').innerText())
+      .includes('Baseline'), 'Goal history must disclose saved baseline and target');
+    assert((await firstGoalContext.getByTestId('progress-context-open-goal').getAttribute('href'))
+      .includes('#plan?version='), 'Historical goal inspection must preserve exact plan version identity');
+    await goalContextPanel.getByTestId('progress-context-service').selectOption('ALL');
+    // A correct href is insufficient: the in-page link must actually switch
+    // the mounted tab and inspect the exact saved version in PlanEditor.
+    await firstGoalContext.getByTestId('progress-context-open-goal').click();
+    await page.getByTestId('plans-panel').waitFor();
+    assert.equal(await page.getByTestId('clinical-tab-plan').getAttribute('aria-selected'),'true',
+      'Goal deep link must activate the Plan tab from an already mounted Progress tab');
+    const planFocusMessage = await page.getByTestId('report-goal-navigation-note').innerText();
+    assert(planFocusMessage.includes('version') || planFocusMessage.includes('matching'),
+      'Goal deep link must identify the exact saved goal or explain unavailable permissioned source');
+    // Restore the original browser route before continuing unrelated history
+    // tests: preserving this fragment would automatically open historical
+    // <details>, so a later toggle would CLOSE rather than open them.
+    await page.evaluate(() => window.history.replaceState(null, '',
+      window.location.pathname + window.location.search));
+    await page.getByTestId('clinical-tab-progress').click();
+
+
     await page.getByTestId('clinical-tab-plan').click();
     await page.getByTestId('goal-checkpoint-panel').first().waitFor();
     await page.getByTestId('goal-checkpoint-empty').first().waitFor();
@@ -651,6 +685,17 @@ try {
     await page.locator('[data-testid^="history-compare-"]').first().click();
     await page.getByTestId('saved-statement-trace').waitFor();
     await page.getByTestId('statement-trace-empty').waitFor();
+    // TB-EM-044: saved report source inspector is explicit, read-only and
+    // labels differing periods/sources without claiming clinical validity.
+    const evidenceDifference = page.getByTestId('report-evidence-diff').first();
+    await evidenceDifference.waitFor();
+    await evidenceDifference.locator(':scope > summary').click();
+    assert((await evidenceDifference.innerText()).includes('NOT clinical validation'),
+      'Snapshot comparison must not claim clinical verification or approval');
+    await evidenceDifference.getByTestId('report-evidence-assessment-count').waitFor();
+    await evidenceDifference.getByTestId('report-evidence-session-count').waitFor();
+    await evidenceDifference.getByTestId('report-evidence-goal-diffs').waitFor();
+
     for (const width of [320, 390, 768, 1024, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       const right = await page.getByTestId('saved-statement-trace').evaluate(el => el.getBoundingClientRect().right);

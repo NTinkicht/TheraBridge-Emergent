@@ -5,6 +5,7 @@ import { SessionEditor } from './SessionEditor';
 import { Field } from '@/components/auth/Field';
 import { SelectField } from '@/components/centers/kit';
 import { GoalChart } from '@/components/clinical/GoalChart';
+import { GoalVersionContext } from './GoalVersionContext';
 import { currentGoals, historicalGoals, summarizeObservations, type Granularity } from '@/lib/progress-analysis';
 import { Button, Card, LockedAction, Pill } from '@/components/design/ui';
 import { serviceLabel } from '@/components/operations/BookDialog';
@@ -76,7 +77,7 @@ export function SessionsPanel({ centerId, ws, run, onPending }: { centerId: stri
   </div>;
 }
 
-export function ProgressPanel({ centerId, ws, run }: { centerId: string; ws: Workspace; run: Run }) {
+export function ProgressPanel({ centerId, ws, run, onNavigate }: { centerId: string; ws: Workspace; run: Run; onNavigate: () => void }) {
   const goals = currentGoals(ws).map(g => ({ ...g, versionId: g.planVersionId, plan: g.planTitle }));
   const [granularity, setGranularity] = useState<Granularity>('week');
   const [showHistory, setShowHistory] = useState(false);
@@ -111,6 +112,7 @@ export function ProgressPanel({ centerId, ws, run }: { centerId: string; ws: Wor
           </Card>
         );
       })}
+      <GoalVersionContext ws={ws} onNavigate={onNavigate} />
       {history.length > 0 && (
         <section className="space-y-3" aria-label="Previous plan version evidence" data-testid="progress-history">
           <Button variant="secondary" onClick={()=>setShowHistory(!showHistory)}

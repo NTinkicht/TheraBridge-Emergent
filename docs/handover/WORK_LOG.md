@@ -6,6 +6,20 @@
 - At docs update: run `40395177839` PASS 4 jobs (secret-scan, live-session, preview-container, demo-journey), test IN PROGRESS, compose NOT RUN; Codex P1 handover file omissions addressed by this change. Fresh exact-head CI and review required, no merge/deploy.
 - PRs #103 and #104 are independent and still separately qualifying. Hosted issue #61 remains outstanding; all clinical release and real data gates NO-GO.
 
+## 2026-10-26 — TB-EM-044 internal report evidence comparison
+
+- Implemented a pure source-metadata comparison of saved immutable report-version and current authorized report evidence: exact version+goal identity, goal title/measure/baseline/target, source observation ID/date/value including prior sample, assessment IDs, report periods and session count deltas. Reports unverifiable source IDs/legacy goals explicitly, does not equate reused goals across versions and never declares clinical accuracy.
+- Added accessible read-only `ReportEvidenceDiff` disclosure to existing `ReportSide.Compare` via current permissioned report evidence; no request or persistence path added, and unchanged server `ReportStatementTrace` remains the source for attribution fingerprint statuses.
+- Pure tests include same vs altered recorded value, different version same key, legacy missing source identity, changed measure, empty samples, assessment/session/period changes. Seven-role synthetic Chromium opens saved report comparison and checks new inspector and non-clinical disclaimer.
+- Run `40394141714` exact HEAD `4d97f571e5f1f9c0a7f08eaa40600666cafd89a7` PASS **6/6**; Codex NO major findings; zero threads. This mandatory documentation update requires renewed exact-HEAD qualification. PR #103/#105 separately active; no hosted release or deployment.
+
+## 2026-10-26 — TB-EM-043 Slice 14
+
+- Confirmed PR #102 merge `d242a001a880984fc9d4123dff5430aebc440019` and began a focused isolated progress-context branch.
+- `apps/web/src/lib/goal-version-context.ts` projects plan-version goal definitions and their own exact scoped observations and clinician checkpoint entries. Separates current vs previous version; nearest older same-key definition differences are labels, not evidence continuity. No cross-version observation aggregations or automatic determination of treatment effect.
+- `GoalVersionContext` renders authorized specialty filter, version-specific measurements/source IDs, objective milestone and review dates, source-reviewed checkpoint dates/notes and existing plan-version deep links from Progress. No new role, API, external release or clinical decisions.
+- Pure tests cover changed measure and target between reused goal keys, cross-service same key, orphan observation, review record isolation, dates and deterministic ordering. Seven-role synthetic browser adds scoped UI filter, read-only accordion, source metadata and exact-version link assertions; existing five-width test remains. CI/reviews pending.
+
 ## 2026-10-26 — TB-EM-042 richer clinician Child 360 event timeline
 
 - Merged PR #101 to main after all 6 exact-head CI jobs and fresh Codex re-review; original nested-summary review thread resolved.
