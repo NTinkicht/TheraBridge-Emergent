@@ -133,6 +133,18 @@ a real API result was received. Invalid JSON, HTTP failure, incomplete or
 oversized diffs, and head/base movement remain fail-closed and cannot grant
 a PASS. Unit fixtures are offline and **never send paid provider requests**.
 
+## Manual command preflight and concurrency
+
+A separate read-only, no-secrets `qualify` job validates the **entire**
+owner-authored `/review-mistral`, `/review-grok` or `/review-both`
+command with one exact 40-character hexadecimal HEAD. Only successful
+eligibility enters the `dispatch` job's serialized concurrency group.
+An ordinary owner comment (even one mentioning `/review-`) never replaces a
+pending automatic PR dispatcher. Automatic non-draft same-repository PR
+events continue to dispatch when the manual preflight is skipped; the
+original server-side command authorization and live exact-HEAD/BASE guards
+remain in place as a second protection.
+
 ## Merge requirements
 
 Both providers are optional advisory reviewers, not self-reviewers or merge

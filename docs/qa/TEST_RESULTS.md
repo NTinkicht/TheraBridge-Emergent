@@ -1,3 +1,8 @@
+## 2026-10-27 — PR #97 preflight gate verification (PENDING final HEAD)
+
+- New offline assertions execute the exact Node code from the GitHub Actions `qualify` shell gate and check owner-only valid commands (including uppercase), rejected mention-only/malformed/partial commands, leading/trailing whitespace, unauthorized authors, and the `dispatch.needs.qualify` dependency.
+- Earlier P1 fixture on stale HEAD reused a prior reservation; corrected at commit `8eb5935`. API `test` passed on that corrected head. Fresh exact-HEAD CI after added preflight and audit changes not yet verified; no live model API calls/clinical outcomes claimed.
+
 ## 2026-10-27 — PR #97 paid provider safety regressions added (PENDING exact-head CI)
 
 - Offline fake API tests now also cover base SHA change with identical HEAD, reservation persistence before a billed provider call, GitHub result-publication failure and retry suppression, GitHub reservation-write failure preventing any API request, and break rather than continue when a first provider observes stale HEAD while both provider APIs are enabled.

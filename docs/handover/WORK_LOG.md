@@ -1,3 +1,8 @@
+## 2026-10-27 — PR #97 CodeRabbit and Codex follow-up
+
+- CodeRabbit found that invalid owner comment events could compete with pending dispatches even with noncancelling job-level concurrency. Implemented an eligibility-only `qualify` job that executes no project code or paid API and gates `dispatch` eligibility; added fake-JS validation of exact owner/40-character SHA commands and rejection of ordinary comments.
+- Earlier Codex P1 in the test fixture was corrected by using a fresh unreserved head; its original-head test had reused head `a` and failed before exercising the reservation error, while corrected test at head `8eb5935` passed. New exact-head six-job CI and reviewer verdict still pending; no paid Mistral/xAI request was triggered.
+
 ## 2026-10-27 — PR #97 follow-up exact-head Codex findings
 
 - Received three additional valid P2 Codex findings after the clean PR #97 rebase: base-sensitive review dedup, durable paid attempt reservation, and fail-stop if HEAD/BASE becomes stale between providers. Implemented all in `.github/workflows/auto-review-trigger.yml`.

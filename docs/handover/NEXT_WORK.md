@@ -1,3 +1,9 @@
+## 2026-10-27 — PR #97 final dispatch qualification
+
+- Confirm owner-authored exact manual comments enter the dispatched review job ONLY through the read-only preflight and ineligible owner comments cannot occupy the paid concurrency queue; automatic PR dispatch is unaffected by preflight skip.
+- Require all six real CI jobs on final HEAD, especially offline preflight parser and provider reservation replay assertions, plus clean Gitleaks history. Recheck any new CodeRabbit/Codex findings; resolve only verified threads.
+- Explicit owner merge decision required after qualification. Paid reviewer opt-in stays disabled by default and hosted clinical/production gates remain separate.
+
 ## 2026-10-27 — PR #97 final qualification after new reviewer P2s
 
 - Verify all six exact-HEAD CI jobs on PR #97 after latest paid-call fixes and mandatory handover updates: test (including offline review fixtures), Gitleaks `--all`, live-session, preview-container, seven-role demo journey and Compose. Confirm the final clean branch remains based directly on main@294f3d4298bb9a6b378937f7e40c336572ddef1d; no scanner allowlist weakened.
