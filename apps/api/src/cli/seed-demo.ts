@@ -90,7 +90,59 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
   const passwords = parseHostedDemoPasswords(process.env);
   const now = new Date();
   const cid = id('center');
-  // Fail closed: a dedicated preview database may contain only this demo tenant and its users.
+  // The hosted demo is bootstrapped once. A platform admin may subsequently
+  // create other synthetic centres/users via normal workflows; their presence
+  // must not cause the entire preview to crash on restart.
+  if (process.env.DEPLOYMENT_ENV === 'preview') {
+    const existingDemo = await db.center.findUnique({ where: { id: cid } });
+    if (existingDemo) {
+      if (existingDemo.slug !== DEMO_SLUG || existingDemo.name !== "Children's Home Centre" || existingDemo.status !== 'ACTIVE') {
+        throw new Error('Existing synthetic demo centre identity/status changed; refusing startup.');
+      }
+      if (!passwords) throw new Error('Hosted demo requires external operator-managed passwords.');
+      for (const person of roster) {
+        const userId = id('user:' + person.key);
+        const email = DEMO_EMAILS[person.key];
+        const user = await db.user.findUnique({ where: { id: userId } });
+        if (!user || user.emailNormalized !== email || user.status !== 'ACTIVE') {
+          throw new Error('Existing synthetic demo account missing or changed: ' + person.key);
+        }
+        const identity = await db.authIdentity.findUnique({
+          where: { userId_provider: { userId, provider: 'local' } },
+        });
+        if (!identity?.passwordHash || identity.subject !== email ||
+            !(await verifyPassword(identity.passwordHash, passwords[email]))) {
+          throw new Error('Existing synthetic demo credential mismatch: ' + person.key);
+        }
+        if (person.key === 'platform') {
+          const roles = await db.platformRoleAssignment.count({
+            where: { userId, role: 'PLATFORM_ADMIN', revokedAt: null },
+          });
+          if (!roles) throw new Error('Existing synthetic platform role missing.');
+        } else {
+          const membership = await db.membership.findUnique({
+            where: { id: id('member:' + person.key) },
+          });
+          if (!membership || membership.centerId !== cid || membership.userId !== userId ||
+              membership.status !== 'ACTIVE') {
+            throw new Error('Existing synthetic demo membership missing or changed: ' + person.key);
+          }
+          const role = await db.roleAssignment.findUnique({
+            where: { membershipId_role: { membershipId: membership.id, role: person.role! } },
+          });
+          if (!role) throw new Error('Existing synthetic demo role missing: ' + person.key);
+        }
+      }
+      console.log('Existing hosted synthetic demo verified; retaining later-created centres and records.');
+      return {
+        center: DEMO_SLUG, family: 'Ahmed', child: 'Yusuf Ahmed', accounts: roster.length,
+        appointments: 10, historicalSessions: 8, observations: 16,
+        assessments: 2, plans: 2, reportDrafts: 2, credentials: 'EXTERNAL HOST SECRETS',
+      };
+    }
+  }
+  // Fail closed: first-time seeding still requires an otherwise-empty
+  // dedicated synthetic database; never overwrite unrelated tenants.
   const demoIds = roster.map(a => id('user:' + a.key));
   const [unrelatedCenters, unrelatedUsers] = await Promise.all([
     db.center.count({ where: { id: { not: cid } } }),
