@@ -1,3 +1,9 @@
+## 2026-10-26 — TB-EM-042 additions (NOT YET VERIFIED at authoring)
+
+- `scripts/design/check-child360-logic.mjs` adds the pure authorized timeline projection fixture: 2 distinct service/plan versions sharing a goal key, server-created checkpoint with backdated clinician date, completed/in-progress notes, assessment and 3 recorded observations including an orphan. Assert nine events, sorted dates, same-version goal labels, no attribution for orphan, filter event/service counts, deterministic order and no appointments/family outcomes in clinical evidence.
+- Existing seven-role synthetic Chromium `check-demo-journey.mjs` visits Child 360, verifies event-type filter excludes unrelated event categories, service scope shows speech-only records, restores filters and retains existing viewport 320/390/768/1024/1440 and role-isolation checks. Exact-head CI pending.
+- This is internal read-only clinical history, not a diagnosis, approval, guardian release, real hosted QA or proof of clinical efficacy; issue #61 acceptance baseline unchanged.
+
 ## 2026-10-26 — TB-EM-041 tests added (NOT YET EXECUTED)
 
 - Pure source check `scripts/design/check-child360-logic.mjs`: `savedPlanProjection` displays exact version ID/revision/summary/goal definitions/activity notes/saved snapshots; live library changes do not overwrite saved definition; later version cannot inherit original report goal mapping even if keys coincide; absent linked goal, legacy/missing snapshot behavior and absence of release/approval claims.
