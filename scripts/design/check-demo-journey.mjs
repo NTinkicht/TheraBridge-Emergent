@@ -433,7 +433,9 @@ try {
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
     const versionHistory = page.getByTestId('plan-version-history');
-    await versionHistory.locator('summary').click();
+    // Target only the parent <details> toggle: a nested saved-plan preview
+    // also renders a <summary> and must not make this selector ambiguous.
+    await versionHistory.locator(':scope > summary').click();
     await page.getByTestId('plan-history-list').waitFor();
     await page.getByTestId('plan-history-inspection').waitFor();
     // TB-EM-041: history preview uses exactly the selected stored version.
