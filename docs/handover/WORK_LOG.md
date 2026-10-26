@@ -1,3 +1,9 @@
+## 2026-10-27 — PR #97 follow-up exact-head Codex findings
+
+- Received three additional valid P2 Codex findings after the clean PR #97 rebase: base-sensitive review dedup, durable paid attempt reservation, and fail-stop if HEAD/BASE becomes stale between providers. Implemented all in `.github/workflows/auto-review-trigger.yml`.
+- Updated offline fake API test script to verify a rebase retaining the same HEAD is reviewed with a new base, result publication failure does not allow a second paid call, failed reservation prevents provider request, and a changed live HEAD after first provider stops the second. No paid network in tests, no opt-in changed.
+- Updated independent-review runbook to distinguish reservation from actual result, mark uncertain attempts INSUFFICIENT_EVIDENCE and require owner billing inspection/approval before any retry. Exact-head CI / reviewer follow-up pending.
+
 ## 2026-10-27 — PR #97 CodeRabbit remediation and audit history
 
 - Verified owner merge of #107 on main SHA `294f3d4298bb9a6b378937f7e40c336572ddef1d`.
