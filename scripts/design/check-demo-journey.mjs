@@ -244,6 +244,17 @@ try {
     assert((await firstGoalContext.getByTestId('progress-context-open-goal').getAttribute('href'))
       .includes('#plan?version='), 'Historical goal inspection must preserve exact plan version identity');
     await goalContextPanel.getByTestId('progress-context-service').selectOption('ALL');
+    // A correct href is insufficient: the in-page link must actually switch
+    // the mounted tab and inspect the exact saved version in PlanEditor.
+    await firstGoalContext.getByTestId('progress-context-open-goal').click();
+    await page.getByTestId('plans-panel').waitFor();
+    assert.equal(await page.getByTestId('clinical-tab-plan').getAttribute('aria-selected'),'true',
+      'Goal deep link must activate the Plan tab from an already mounted Progress tab');
+    const planFocusMessage = await page.getByTestId('report-goal-navigation-note').innerText();
+    assert(planFocusMessage.includes('version') || planFocusMessage.includes('matching'),
+      'Goal deep link must identify the exact saved goal or explain unavailable permissioned source');
+    await page.getByTestId('clinical-tab-progress').click();
+
 
     await page.getByTestId('clinical-tab-plan').click();
     await page.getByTestId('goal-checkpoint-panel').first().waitFor();
