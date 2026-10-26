@@ -29,7 +29,10 @@ const timelineWorkspace = {
     goals:[{key:'reused-key',title:'Speech goal'}],
     goalCheckpoints:[{kind:'GOAL_CHECKPOINT',goalKey:'reused-key',
       at:'2026-10-20T12:00:00Z',reviewedOn:'2026-10-02',summary:'Prior dated review',
-      observationIds:[]}],
+      observationIds:[]},
+      {kind:'GOAL_CHECKPOINT',goalKey:'reused-key',
+        at:'2026-10-20T17:00:00Z',reviewedOn:'2026-10-01',
+        summary:'Newer checkpoint recorded on same day',observationIds:[]}],
   }]},{id:'plan-ot',service:'ot',versions:[{
     id:'pv-ot',number:1,version:2,status:'RETURNED_FOR_REVISION',
     updatedAt:'2026-10-14T08:00:00Z',
@@ -53,12 +56,15 @@ const timelineWorkspace = {
   practiceFeedback:{items:[{id:'family-sample',practiceDate:'2026-10-21'}]},
 };
 const timelineEvents = childTimeline.child360Timeline(timelineWorkspace);
-assert.equal(timelineEvents.length,9);
+assert.equal(timelineEvents.length,10);
 assert.deepEqual(timelineEvents.map(e => e.date),
   [...timelineEvents.map(e => e.date)].sort().reverse());
 assert.equal(timelineEvents[0].kind,'GOAL_REVIEW');
 assert.equal(timelineEvents[0].date,'2026-10-20');
-assert(timelineEvents[0].detail.includes('reviewed on 2026-10-02'),
+assert.equal(timelineEvents[0].recordedAt,'2026-10-20T17:00:00Z');
+assert.equal(timelineEvents[1].recordedAt,'2026-10-20T12:00:00Z',
+  'Newer same-day server checkpoint must appear first, despite append index');
+assert(timelineEvents[0].detail.includes('reviewed on 2026-10-01'),
   'Clinician-entered backdated review is not confused with server entry time');
 assert.equal(timelineEvents.find(e=>e.id==='observation-ob-speech').service,'speech');
 assert(timelineEvents.find(e=>e.id==='observation-ob-speech').detail.includes('Speech goal'));
