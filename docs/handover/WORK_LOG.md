@@ -1,3 +1,11 @@
+## 2026-10-26 — TB-EM-045 integrated synthetic clinician journey
+
+- Independent Slice 16 draft branch from `main@d242a001a880984fc9d4123dff5430aebc440019`. Added four clearly separated Child 360 navigation stages to current plan, exact goal evidence, authorized reports and internal home practice. Uses existing permissioned tabs; no new endpoints or family disclosure.
+- Pure summary counts only current plan-version goals, observations matching **both** exact planVersionId and goalKey, current activities and actual authored draft schedules. Never invent report status/count from a workspace that has no report versions.
+- Regression tests: pure cross-specialty reused key with withdrawn/superseded version and orphan denial, no fictitious report count. Seven-role Chromium actually clicks all four stages, asserts intended tab and child URL, then returns to Child 360.
+- At docs update: run `40395177839` PASS 4 jobs (secret-scan, live-session, preview-container, demo-journey), test IN PROGRESS, compose NOT RUN; Codex P1 handover file omissions addressed by this change. Fresh exact-head CI and review required, no merge/deploy.
+- PRs #103 and #104 are independent and still separately qualifying. Hosted issue #61 remains outstanding; all clinical release and real data gates NO-GO.
+
 ## 2026-10-26 — TB-EM-044 internal report evidence comparison
 
 - Implemented a pure source-metadata comparison of saved immutable report-version and current authorized report evidence: exact version+goal identity, goal title/measure/baseline/target, source observation ID/date/value including prior sample, assessment IDs, report periods and session count deltas. Reports unverifiable source IDs/legacy goals explicitly, does not equate reused goals across versions and never declares clinical accuracy.

@@ -1,3 +1,10 @@
+## 2026-10-26 — TB-EM-045 synthetic care journey status, pending final-head verification
+
+- Pure test authored (NOT independently executed before original-head CI): two synthetic current plans, superseded plan and reused goalKey; asserts exact current-version observation count (2), current goal count (3), current home activity count (2), authored schedule count (1), no inferred reportCount.
+- Disposable seven-role Chromium CI run `40395177839`: **PASS** demo-journey on original feature HEAD `e7ed6c921ce0d9bd18c8ff297aae703cfa07f001`; four step-click/tab/child identity checks included and five standard responsive widths retained. This is synthetic CI coverage, NOT hosted QA.
+- Same original-head CI: **PASS** secret-scan, live-session, preview-container; **IN PROGRESS** test; **NOT RUN** compose (at time of writing). A new documentation commit changes HEAD; all results must be re-verified exact-head before any qualification or merge.
+- Codex identified missing mandatory checkpoint updates as P1, addressed by this documentation change. No production/family release/real data or external QA verification.
+
 ## 2026-10-26 — TB-EM-044 source consistency evidence
 
 - `scripts/design/check-child360-logic.mjs` now pure-tests immutable vs current report evidence: same-version exact source IDs and values, changed value on same source ID, same goal key on different version, unavailable/legacy source identity, changed measure, no samples, date-period, assessment and session differences. Tests use fictional synthetic read models only.

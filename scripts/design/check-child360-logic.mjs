@@ -17,6 +17,7 @@ const schedule = await pureModule('apps/web/src/lib/home-schedule.ts');
 const checkpointCompare = await pureModule('apps/web/src/lib/goal-checkpoint-compare.ts');
 const handoff = await pureModule('apps/web/src/lib/home-plan-handoff.ts');
 const homeDetail = await pureModule('apps/web/src/lib/home-activity-detail.ts');
+const clinicianJourney = await pureModule('apps/web/src/lib/clinician-journey.ts');
 const reportEvidenceDiff = await pureModule('apps/web/src/lib/report-evidence-diff.ts');
 const goalContext = await pureModule('apps/web/src/lib/goal-version-context.ts');
 const childTimeline = await pureModule('apps/web/src/lib/child360-timeline.ts');
@@ -642,5 +643,38 @@ const zeroSamplesReportDiff=reportEvidenceDiff.compareRecordedReportEvidence({
   ...frozenReportEvidence,goals:[evidenceGoal('v1','count',[])],
 },{...frozenReportEvidence,goals:[evidenceGoal('v1','count',[])]});
 assert.equal(zeroSamplesReportDiff.goals[0].status,'NO_OBSERVATIONS');
+
+// TB-EM-045: no invented report counts or attribution across old versions.
+// Only current exact-version goals and authored internal activity schedules
+// contribute to navigation summaries. Operations/guardian outcomes excluded.
+const careJourneyFixture = {
+  plans:[
+    {id:'speech',service:'speech',versions:[
+      {id:'speech-new',number:2,status:'DRAFT',
+        goals:[{key:'reused'}, {key:'another'}],
+        homeActivities:[{templateId:'a',frequency:'weekly',schedule:{cadence:'WEEKLY'}},
+          {templateId:'b',frequency:'as needed'}]},
+      {id:'speech-old',number:1,status:'SUPERSEDED',
+        goals:[{key:'reused'}],homeActivities:[{templateId:'legacy',frequency:'weekly'}]},
+    ]},
+    {id:'ot',service:'ot',versions:[
+      {id:'ot-new',number:1,status:'IN_REVIEW',goals:[{key:'reused'}],homeActivities:[]},
+    ]},
+  ],
+  observations:[
+    {id:'obs-current',planVersionId:'speech-new',goalKey:'reused'},
+    {id:'obs-other',planVersionId:'ot-new',goalKey:'reused'},
+    {id:'obs-old',planVersionId:'speech-old',goalKey:'reused'},
+    {id:'obs-orphan',planVersionId:'speech-new',goalKey:'not-a-current-goal'},
+  ],
+  reports:[{id:'not-loaded-here',status:'IN_REVIEW'}],
+  familyPractice:[{id:'not-clinical'}],
+};
+assert.deepEqual(clinicianJourney.clinicianJourneySummary(careJourneyFixture),{
+  currentPlanVersions:2,currentGoals:3,currentGoalObservations:2,
+  internalHomeActivities:2,scheduledHomeActivities:1,
+});
+assert(!('reportCount' in clinicianJourney.clinicianJourneySummary(careJourneyFixture)),
+  'Cannot fabricate report counts from an unrelated clinical read model');
 
 console.log('PASS: strict plan-version isolation, weekly/monthly bucket boundaries, source IDs, no fabricated trend, specialty-only activity shortlist, manual factual suggestions');

@@ -1,3 +1,9 @@
+## 2026-10-26 — TB-EM-045 integration qualification and handover
+
+1. Qualify draft PR #105, `feature/tb-em-045-clinician-journey-navigation`, after updating all four required checkpoint files. Re-run all six jobs at the new exact HEAD; require test, secret-scan, live-session, preview-container, seven-role/demo-journey and compose SUCCESS plus fresh independent Codex/Mistral P0–P2 review and resolved discussions. No automatic merge or deployment.
+2. After owner merges earlier milestone PRs #103 and #104, reconcile #105 with the new main and ensure the earlier progress/report components remain navigable from the four new buttons; re-qualify the final head if updated. Review cross-tenant/specialty, child URL continuity, mobile 320/390/768/1024/1440, permissioned reports and no fabricated source or report count.
+3. Perform separate end-to-end hosted acceptance, real cookie/session and external browser work tracked in #61/#81. Synthetic GitHub CI and this read-only journey do not establish clinical readiness. External AI/STT, signing, consent, safeguarding, guardian clinical releases, pilot and production remain NO-GO. PR #97 is independent.
+
 ## 2026-10-26 — TB-EM-044 review/merge gate
 
 1. Requalify report comparison PR #104 after mandatory four-file checkpoint update: six jobs green for final exact HEAD, independent P0–P2 review and zero unresolved discussions, then owner-directed (never automatic) merge. Carefully distinguish matching recorded source metadata from signed source integrity, evidence adequacy or clinical judgement. No new auth grants.

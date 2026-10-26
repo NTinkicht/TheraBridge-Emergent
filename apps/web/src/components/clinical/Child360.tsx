@@ -7,6 +7,7 @@ import { currentGoals } from '@/lib/progress-analysis';
 import { serviceLabel } from '@/components/operations/BookDialog';
 import { Card, Pill } from '@/components/design/ui';
 import { Child360ClinicalTimeline } from './Child360ClinicalTimeline';
+import { ClinicianJourneyPanel } from './ClinicianJourneyPanel';
 
 type Tab = 'plan' | 'assessments' | 'sessions' | 'progress' | 'reports';
 const dateOnly = (x: string) => x.slice(0,10);
@@ -53,6 +54,7 @@ export function Child360({ ws, centerId, onNavigate }: {ws: Workspace;centerId: 
         <p className="text-[13px] text-brand-inkMuted">One authorized clinical view · {ws.child.services.map(serviceLabel).join(' · ') || 'No service recorded'} · draft/internal evidence only</p>
         <p className="text-[12px] text-brand-inkMuted">Information is limited to your permitted specialties and assignments. This overview is never a family release.</p>
       </div>
+      <ClinicianJourneyPanel ws={ws} onNavigate={onNavigate} />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {cards.map(({name,count,icon:Icon,tab})=>(
           <button type="button" key={name} onClick={()=>onNavigate(tab)} className="rounded-card border border-border-light bg-surface-white p-4 text-left hover:border-brand-action focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action" data-testid={"child360-"+tab+"-"+name.replaceAll(' ','-')}>
