@@ -1,3 +1,11 @@
+## 2026-10-26 — TB-EM-041 exact saved clinician home-plan inspection
+
+- PR #100 squash-merged into main after exact-head CI+reviews. Slice 12 is a pure read projection of exact saved `PlanVersion` + permitted local activity templates + optional source report metadata, never working form state.
+- Component `SavedHomePlanPreview` appears on the clinician's current plan and selected historical version. Explicit warning marks pending browser edits excluded; current readonly snapshot and dated schedule/frequency/steps/safety/notes shown without signs of approval.
+- Original report goal mapping shown only for `origin.originalPlanVersionId === version.id`. Later plan versions show report origin pointer but mapping removed. Missing goal references/legacy library fallback explicitly identified.
+- Pure tests include source version isolation, frozen snapshot wins over changed mutable library, legacy/unavailable templates and absence of approved/released flags. Browser history test confirms snapshot source and editor test confirms unsaved notes don't bleed into saved preview. All tests pending independent CI at authoring.
+- No API/schema/write path, clinical authorization, guardian release, production or hosted #61 acceptance changed.
+
 ## 2026-10-26 — TB-EM-040 home-activity details / therapist instructions
 
 - Based on owner-merged main `f40360b595a42f8735e3f7a80be1221e00dbb0e6` (PR #99). Built `HomeActivityDetails` and pure snapshot-first definition selector. The existing `note` field is already validated by the server as an optional UTF-8 string, max 500 chars, and already transmitted by draft save. This unit exposes it in the clinician editor; unchanged server remains authoritative.
