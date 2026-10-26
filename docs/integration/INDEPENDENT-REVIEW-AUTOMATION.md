@@ -105,7 +105,21 @@ this GitHub workflow as though it were a GitHub API key.
 
 Review jobs use **job-level** concurrency keyed by PR number with
 `cancel-in-progress: false`. Skipped or irrelevant comment events cannot
-interrupt a provider request, and eligible jobs serialize. Case-insensitive
+interrupt a provider request, and eligible jobs serialize. Both the exact
+HEAD **and BASE** are part of request and provider-result deduplication:
+retargeting a PR with the same HEAD changes the diff and requires a new
+source-qualified result.
+
+**Metered-call reservation:** Before contacting a paid provider, the workflow
+persists a `therabridge-provider-attempt` marker scoped to provider, HEAD
+and BASE. If this GitHub write fails, the model is never called. If the call
+succeeds but result publication fails, or the outcome is otherwise uncertain,
+the attempt marker **prevents all automatic retries for the same comparison**.
+A reservation is NOT evidence of review success or a valid model verdict;
+mark it **UNKNOWN / INSUFFICIENT_EVIDENCE**. Do not delete its marker or
+re-trigger a paid review without separately checking the provider invoice and
+explicit owner approval. If the PR becomes stale during a provider call,
+discard the result and stop dispatching any remaining providers. Case-insensitive
 manual commands are normalized (including an uppercase exact SHA) before
 matching against the live GitHub head. For renames, both the source
 `previous_filename` and destination `filename` are checked against forbidden
