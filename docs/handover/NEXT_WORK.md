@@ -1,3 +1,9 @@
+## 2026-10-26 — TB-EM-040 qualification and next slice
+
+1. Open draft PR from `feature/tb-em-040-home-activity-details`, based at merged PR #99 `main@f40360b595a42f8735e3f7a80be1221e00dbb0e6`. Require exact-head six-job CI: PostgreSQL/API and web builds, pure snapshot priority and note tests, seven-role Chromium with five viewport widths, preview, live-session, secret scan and Docker Compose; independently review note max 500 client/server, dirty-state lock, saved snapshot vs current mutable library precedence, historical notes and calendar, specialty isolation, no guardian release. Fix P0–P2 and resolve threads before separate owner-authorized merge; no auto deploy.
+2. After merge continue focused Milestone 1 completion: source-consistent clinician report/plan internal preview, richer Child 360 clinical timeline, longitudinal progress/export context and report provenance gap closure. Do not invent a per-plan editable duration without compatible DTO and versioned server storage. Reassess completed items to avoid duplicate work.
+3. PR #97 control-plane AI reviewer remains separate. Clinical signing/co-sign, consent grant, guardian report/plan release, safeguard action, real audio/STT, provider AI, production pilot still NO-GO; hosted #61 not changed.
+
 ## 2026-10-26 — TB-EM-039 qualification and subsequent milestone
 
 1. Open draft PR for `feature/tb-em-039-home-plan-handoff` from merged main `d9921cb94dca0ca949f1af0b3d1847ebdc51a345`. Require six-job exact-head CI (PostgreSQL/API, Next, synthetic seven-role 320–1440 Chromium, secret scan, preview, live-session, Compose); independent review of save-first semantics including **other dirty plan**, server submit/version authority, no unintended hard gating of legacy plans, client-only advisory language, and correct safety-snapshot precedence. Fix P0–P2 before owner-authorized merge; never auto deploy.
