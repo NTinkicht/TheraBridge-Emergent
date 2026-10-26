@@ -262,7 +262,8 @@ await invokeMistral(offline);
 assert.equal(requests,beforeUncertain+1,'Durable attempt reservation must prevent a second charge');
 
 // If the reservation cannot be persisted, NEVER initiate a provider call.
-setLiveHead('a'.repeat(40));
+// Use a head not previously reviewed by this fixture (a was used above).
+setLiveHead('e'.repeat(40));
 github.rest.issues.createComment=async args=>{
   if(args.body.includes('therabridge-provider-attempt:Mistral:'))
     throw Error('synthetic reservation storage failure');
