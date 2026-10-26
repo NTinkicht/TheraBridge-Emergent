@@ -433,9 +433,20 @@ try {
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
     const versionHistory = page.getByTestId('plan-version-history');
-    await versionHistory.locator('summary').click();
+    // Target only the parent <details> toggle: a nested saved-plan preview
+    // also renders a <summary> and must not make this selector ambiguous.
+    await versionHistory.locator(':scope > summary').click();
     await page.getByTestId('plan-history-list').waitFor();
     await page.getByTestId('plan-history-inspection').waitFor();
+    // TB-EM-041: history preview uses exactly the selected stored version.
+    const historicPreview = page.getByTestId('plan-history-inspection')
+      .getByTestId('saved-home-plan-preview');
+    await historicPreview.locator('summary').click();
+    const historicPreviewBody = await historicPreview.getByTestId('saved-plan-preview-body').innerText();
+    assert(historicPreviewBody.includes('Original saved activity'),
+      'Selected historical preview must keep its own snapshot definition');
+    assert(!historicPreviewBody.includes('Updated saved activity'),
+      'Historical preview must not borrow the later snapshot');
     await page.getByTestId('plan-history-comparison').waitFor();
     assert((await page.getByTestId('plan-history-comparison').innerText()).includes('Goal definition changed.'));
     const savedActivityComparison = await page.getByTestId('plan-history-comparison').innerText();
@@ -468,6 +479,14 @@ try {
       'Historical evidence must focus its precise saved goal definition');
     assert((await page.getByTestId('report-goal-navigation-note').innerText()).includes('Historical source goal selected'));
 
+    // TB-EM-041: the active preview must show only the persisted version,
+    // not the browser's subsequently edited working copy.
+    const activeSavedPreview = page.getByTestId('saved-home-plan-preview').first();
+    await activeSavedPreview.locator('summary').click();
+    const originalSavedSummary = await activeSavedPreview.getByTestId('saved-plan-preview-summary').innerText();
+    assert(originalSavedSummary.trim().length > 0);
+    assert((await activeSavedPreview.getByTestId('saved-plan-preview-disclaimer').innerText())
+      .includes('No signing, consent, family distribution or clinical release'));
     // TB-EM-031 uses the same disposable already-authorized workspace overlay.
     // Exercise the clinician's dated objective and scheduled activity fields
     // without saving or contaminating the seeded demonstration.
@@ -488,6 +507,12 @@ try {
       'Synthetic clinician adaptation: use picture cards with adult guidance.');
     assert(await page.getByTestId('plan-submit').first().isDisabled(),
       'Therapist instruction edits must lock stale saved-version submission');
+    await activeSavedPreview.getByTestId('saved-plan-preview-unsaved').waitFor();
+    assert.equal((await activeSavedPreview.getByTestId('saved-plan-preview-summary').innerText()),originalSavedSummary,
+      'Saved preview must ignore unsaved form changes');
+    assert(!(await activeSavedPreview.getByTestId('saved-plan-preview-body').innerText())
+      .includes('Synthetic clinician adaptation: use picture cards'),
+      'Saved preview MUST NOT show pending unsaved therapist instructions');
     assert(await page.getByTestId('plan-save').first().isEnabled(),
       'Valid therapist instructions remain compatible with draft save');
     await page.getByTestId('activity-schedule-cadence-0').selectOption('WEEKLY');

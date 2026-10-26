@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { GitCompareArrows, History } from 'lucide-react';
 import { Card, Pill } from '@/components/design/ui';
-import type { HomeActivity, PlanVersion, Template } from '@/lib/clinical';
+import type { HomeActivity, PlanOrigin, PlanVersion, Template } from '@/lib/clinical';
 import { comparePlanVersions, type ChangeKind } from '@/lib/plan-version-compare';
 import { scheduleDescription } from '@/lib/home-schedule';
 import { GoalCheckpointComparison } from './GoalCheckpointComparison';
 import { HomePracticeCalendar } from './HomePracticeCalendar';
+import { SavedHomePlanPreview } from './SavedHomePlanPreview';
 
-type Plan = { id: string; title: string; service: string; versions: PlanVersion[] };
+type Plan = { id: string; title: string; service: string; versions: PlanVersion[]; source?: PlanOrigin | null };
 const statusNames: Record<PlanVersion['status'], string> = {
   DRAFT: 'Draft', IN_REVIEW: 'In review', SUPERSEDED: 'Superseded',
   RETURNED_FOR_REVISION: 'Returned for revision', WITHDRAWN: 'Withdrawn',
@@ -113,6 +114,8 @@ export function PlanVersionHistory({ plan, templates, timezone, target }: { plan
             <Pill tone="neutral">{statusNames[inspect.status]}</Pill>
           </div>
           <p className="whitespace-pre-wrap break-words text-[13px]">{inspect.summary || 'No summary recorded.'}</p>
+          <SavedHomePlanPreview key={inspect.id} version={inspect} templates={templates}
+            title={plan.title} service={plan.service} origin={plan.source} />
           <h4 className="text-[14px] font-semibold">Goal definitions ({inspect.goals.length})</h4>
           {inspect.goals.length ? <ul className="list-inside list-disc space-y-1 text-[13px]">
             {inspect.goals.map(g => <li key={g.key}
