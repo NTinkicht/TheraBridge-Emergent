@@ -757,4 +757,56 @@ assert.equal(chainDiff.goals[1].planVersionId,'chain-v2');
 assert(!('released' in chainSaved) && !('clinicallyApproved' in chainJourney),
   'Internal acceptance must not claim clinical approval or release');
 
+// TB-EM-046 REVIEW EDGE CASES: close nonblocking source-isolation
+// suggestions on already-merged #103/#104 and parent #105 without changing
+// clinical implementation or replaying a merged review.
+const sameDefinition = {
+  key:'shared',title:'Same words, same unit',measure:'count',
+  baseline:1,target:5,horizon:'SHORT_TERM',targetOn:'2026-12-15',
+  reviewOn:'2026-12-01',
+};
+const identicalButVersioned = {
+  plans:[{id:'exact-plan',title:'Fictional',service:'speech',versions:[
+    {id:'exact-v2',number:2,status:'DRAFT',
+      goals:[{...sameDefinition}],homeActivities:[],goalCheckpoints:[]},
+    {id:'exact-v1',number:1,status:'SUPERSEDED',
+      goals:[{...sameDefinition}],homeActivities:[],goalCheckpoints:[]},
+  ]}],
+  observations:[{id:'only-new',planVersionId:'exact-v2',
+    goalKey:'shared',observedOn:'2026-10-22',value:2}],
+};
+const identicalRows=goalContext.goalVersionContext(identicalButVersioned)[0].rows;
+assert.deepEqual(identicalRows[0].definitionDifferences,[]);
+assert.equal(identicalRows[0].sameKeyOlderVersion,1);
+assert.deepEqual(identicalRows[0].observations.map(o=>o.id),['only-new']);
+assert.deepEqual(identicalRows[1].observations,[],
+  'Identical definitions in a historical version cannot borrow new-version evidence');
+assert.equal(clinicianJourney.clinicianJourneySummary(identicalButVersioned)
+  .currentGoalObservations,1);
+const oldOnlyMeasurements = {
+  ...identicalButVersioned,
+  observations:[{id:'old-only',planVersionId:'exact-v1',
+    goalKey:'shared',observedOn:'2026-09-18',value:4}],
+};
+assert.equal(clinicianJourney.clinicianJourneySummary(oldOnlyMeasurements)
+  .currentGoalObservations,0,
+  'An old-only observation cannot inflate current clinician journey progress');
+assert.deepEqual(goalContext.goalVersionContext(oldOnlyMeasurements)[0].rows
+  .map(row=>row.observations.map(o=>o.id)),[[],['old-only']]);
+const onlyOldReportSource = reportEvidenceDiff.compareRecordedReportEvidence(
+  chainSavedReport,{...chainSavedReport,goals:[]});
+assert.equal(onlyOldReportSource.goals.length,1);
+assert.equal(onlyOldReportSource.goals[0].status,'NOT_IN_CURRENT');
+assert.equal(onlyOldReportSource.goals[0].planVersionId,'chain-v1');
+assert.equal(onlyOldReportSource.goals[0].savedSources,1);
+const sameIdChangedValue = reportEvidenceDiff.compareRecordedReportEvidence(
+  frozenReportEvidence,{
+    ...frozenReportEvidence,
+    goals:[evidenceGoal('v1','count',[evidenceRecord('o1',99)])],
+  });
+assert.equal(sameIdChangedValue.goals[0].status,'DIFFERENT_REFERENCES',
+  'Equal source ID with changed recorded value must NOT be called unchanged');
+assert(!('clinicallyValidated' in sameIdChangedValue),
+  'Record comparison must not confer clinical validation');
+
 console.log('PASS: strict plan-version isolation, weekly/monthly bucket boundaries, source IDs, no fabricated trend, specialty-only activity shortlist, manual factual suggestions');
