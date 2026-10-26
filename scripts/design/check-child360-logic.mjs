@@ -17,6 +17,72 @@ const schedule = await pureModule('apps/web/src/lib/home-schedule.ts');
 const checkpointCompare = await pureModule('apps/web/src/lib/goal-checkpoint-compare.ts');
 const handoff = await pureModule('apps/web/src/lib/home-plan-handoff.ts');
 const homeDetail = await pureModule('apps/web/src/lib/home-activity-detail.ts');
+const savedPreview = await pureModule('apps/web/src/lib/saved-home-plan-preview.ts');
+
+// TB-EM-041: a staff-only preview projects only the exact, already-authorized
+// persisted version. No unsaved working-copy input, clinical inference,
+// cross-version report goal mapping or mutable-library replacement.
+const basePreviewVersion = {
+  id:'saved-version-a',number:1,version:7,status:'DRAFT',
+  summary:'Original saved synthetic plan',author:'Synthetic therapist',
+  updatedAt:'2026-10-25T09:00:00Z',
+  goals:[{key:'goal-a',title:'Saved naming objective',measure:'count',
+    baseline:1,target:5,horizon:'SHORT_TERM',targetOn:'2026-11-12'}],
+  homeActivities:[{templateId:'t-a',frequency:'Weekly calendar draft',
+    goalKey:'goal-a',note:'Saved therapist instructions',
+    schedule:{cadence:'WEEKLY',startsOn:'2026-10-26',endsOn:'2026-11-09',weekdays:[1]},
+    snapshot:{id:'t-a',title:'Saved cards',service:'speech',ageBand:'6-8',
+      minutes:12,steps:['Show card'],materials:['Cards'],safety:['Adult supervision'],
+      version:2,capturedAt:'2026-10-25T09:00:00Z'}}],
+};
+const sourceReportPreview = {
+  reportId:'r-a',reportTitle:'Synthetic report',reportVersionNumber:3,
+  reportVersionId:'r-v3',originalPlanVersionId:'saved-version-a',
+  draftedAt:'2026-10-25',selectedGoals:[{planGoalKey:'goal-a',
+    sourcePlanVersionId:'report-source-plan-v8',sourceGoalKey:'original-goal'}],
+  draftOnly:true,released:false,
+};
+const changedLiveTemplate = {id:'t-a',title:'Altered live library title',
+  service:'speech',ageBand:'6-8',minutes:24,steps:['New step'],
+  materials:['New item'],safety:['Changed safety']};
+const exactSavedPreview = savedPreview.savedPlanProjection(
+  basePreviewVersion,[changedLiveTemplate],sourceReportPreview);
+assert.equal(exactSavedPreview.id,'saved-version-a');
+assert.equal(exactSavedPreview.summary,'Original saved synthetic plan');
+assert.equal(exactSavedPreview.activities[0].title,'Saved cards');
+assert.equal(exactSavedPreview.activities[0].durationMinutes,12);
+assert.deepEqual(exactSavedPreview.activities[0].safety,['Adult supervision']);
+assert.equal(exactSavedPreview.activities[0].note,'Saved therapist instructions');
+assert.equal(exactSavedPreview.activities[0].linkedGoalTitle,'Saved naming objective');
+assert.equal(exactSavedPreview.activities[0].definitionSource,'SAVED_SNAPSHOT');
+assert.deepEqual(exactSavedPreview.goals[0].source,{
+  sourcePlanVersionId:'report-source-plan-v8',sourceGoalKey:'original-goal'});
+assert.equal(exactSavedPreview.origin.goalMappingApplies,true);
+const laterSavedPreview=savedPreview.savedPlanProjection({
+  ...basePreviewVersion,id:'saved-version-b',number:2,version:1,
+  summary:'Later version title',goals:[{...basePreviewVersion.goals[0],title:'New definition'}],
+},[changedLiveTemplate],sourceReportPreview);
+assert.equal(laterSavedPreview.origin.goalMappingApplies,false);
+assert.equal(laterSavedPreview.goals[0].source,null,
+  'The report mapping of the original version MUST NOT carry forward');
+assert.equal(laterSavedPreview.activities[0].linkedGoalTitle,'New definition',
+  'Goal labels must resolve within this exact version only');
+const invalidGoalPreview=savedPreview.savedPlanProjection({
+  ...basePreviewVersion,goals:[],homeActivities:[{
+    templateId:'t-a',goalKey:'goal-a',frequency:'Undated'}],
+},[changedLiveTemplate],null);
+assert.equal(invalidGoalPreview.activities[0].linkedGoalTitle,null);
+assert.equal(invalidGoalPreview.activities[0].definitionSource,'CURRENT_LIBRARY');
+assert.equal(invalidGoalPreview.activities[0].durationMinutes,24);
+assert.equal(invalidGoalPreview.origin,null);
+const unavailablePreview=savedPreview.savedPlanProjection({
+  ...basePreviewVersion,homeActivities:[{templateId:'missing',frequency:'As directed'}],
+},[],null);
+assert.equal(unavailablePreview.activities[0].definitionSource,'MISSING');
+assert.equal(unavailablePreview.activities[0].durationMinutes,null);
+assert(!('approved' in exactSavedPreview) && !('released' in exactSavedPreview),
+  'The preview cannot imply approval or family release');
+assert.equal(basePreviewVersion.homeActivities[0].snapshot.title,'Saved cards');
 
 // TB-EM-040: clinician notes belong to the exact plan activity. Saved
 // definition wins over a newer, changed library template; no extra write path.
