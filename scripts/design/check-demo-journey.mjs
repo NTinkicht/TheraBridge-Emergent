@@ -227,6 +227,24 @@ try {
     await page.getByTestId('clinical-tab-progress').click();
     await page.getByTestId('progress-granularity').selectOption('month');
     await page.getByTestId('progress-periods-turn-taking').waitFor();
+    // TB-EM-043: longitudinal goal context is a read-only authorized
+    // plan-version inspection, not a second evidence aggregation API.
+    const goalContextPanel = page.getByTestId('progress-goal-version-context');
+    await goalContextPanel.waitFor();
+    assert((await goalContextPanel.innerText()).includes('Matching goal keys or titles do not establish continuity'));
+    assert((await goalContextPanel.getByTestId('progress-context-count').innerText())
+      .includes('saved goal definition(s)'));
+    await goalContextPanel.getByTestId('progress-context-service').selectOption('speech');
+    assert((await goalContextPanel.getByTestId('progress-context-plan').first().innerText())
+      .includes('Speech'), 'Service filter must show only the already authorized speech plan');
+    const firstGoalContext = goalContextPanel.getByTestId('progress-context-goal').first();
+    await firstGoalContext.locator(':scope > summary').click();
+    assert((await firstGoalContext.getByTestId('progress-context-details').innerText())
+      .includes('Baseline'), 'Goal history must disclose saved baseline and target');
+    assert((await firstGoalContext.getByTestId('progress-context-open-goal').getAttribute('href'))
+      .includes('#plan?version='), 'Historical goal inspection must preserve exact plan version identity');
+    await goalContextPanel.getByTestId('progress-context-service').selectOption('ALL');
+
     await page.getByTestId('clinical-tab-plan').click();
     await page.getByTestId('goal-checkpoint-panel').first().waitFor();
     await page.getByTestId('goal-checkpoint-empty').first().waitFor();
