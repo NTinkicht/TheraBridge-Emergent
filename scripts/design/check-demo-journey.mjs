@@ -196,7 +196,28 @@ try {
         'Care journey clipped at '+width+'px: '+JSON.stringify(navGeometry));
       assert(navGeometry.links.every(link => link.right <= width + 6 &&
         link.width >= 120 && link.focusable),
-        'Care journey controls must be visible and operable at '+width+'px');
+        'Care journey controls must be visible at '+width+'px');
+      // Size/focusability alone do not prove operability: exercise real
+      // keyboard navigation and Enter activation for EACH stage at EACH width.
+      for (const [step, destination] of [
+        ['goals','plan'],['evidence','progress'],['reports','reports'],['home','plan'],
+      ]) {
+        const stage = page.getByTestId('clinician-journey-'+step);
+        await stage.focus();
+        assert(await stage.evaluate(el => {
+          const cs = getComputedStyle(el);
+          return document.activeElement === el && cs.visibility === 'visible' &&
+            cs.display !== 'none' && Number(cs.opacity) > 0 &&
+            cs.pointerEvents !== 'none' && el.getClientRects().length > 0;
+        }), 'Stage '+step+' must receive keyboard focus visibly at '+width+'px');
+        await stage.press('Enter');
+        assert.equal(await page.getByTestId('clinical-tab-'+destination).getAttribute('aria-selected'),'true',
+          'Keyboard Enter must open '+destination+' for stage '+step+' at '+width+'px');
+        assert(page.url().includes('/app/clinical/' + child.id),
+          'Responsive stage '+step+' must preserve authorized child identity at '+width+'px');
+        await page.getByTestId('clinical-tab-overview').click();
+        await page.getByTestId('clinician-care-journey').waitFor();
+      }
     }
     await page.setViewportSize({width:1280,height:900});
     // A transient request failure must never appear as a genuine empty result.
