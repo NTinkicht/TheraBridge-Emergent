@@ -5,6 +5,7 @@ import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Goal, HomeActivity, Template } from '@/lib/clinical';
 import { centerLocalDay } from '@/lib/goal-review';
 import { isCalendarDay, practiceCalendarMonth, scheduleProblem } from '@/lib/home-schedule';
+import { homeActivityDefinition } from '@/lib/home-activity-detail';
 
 const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -121,17 +122,19 @@ export function HomePracticeCalendar({ activities, goals, templates, versionNumb
       {chosenEntries.length ? <ul className="space-y-2">
         {chosenEntries.map(entry => {
           const activity = activities[entry.activityIndex];
-          const title = activity.snapshot?.title ??
-            templates.find(t => t.id === entry.templateId)?.title ?? 'Activity (library entry unavailable)';
+          const definition = homeActivityDefinition(activity, templates);
           const goal = goals.find(g => g.key === entry.goalKey);
           return <li key={entry.activityIndex}
             className="min-w-0 rounded-control border border-border-light bg-surface-subtle p-2 text-[12px]"
             data-testid="home-calendar-item">
-            <p className="break-words font-semibold">{title}</p>
+            <p className="break-words font-semibold">{definition.title}</p>
             <p className="break-words text-brand-inkMuted">
               {goal ? 'Linked goal: ' + goal.title : 'No saved goal link'}
-              {!activity.snapshot && ' · Current library title, not a frozen snapshot'}
+              {definition.minutes !== null ? ' · '+definition.minutes+' min (activity definition)' : ''}
+              {definition.source !== 'SAVED_SNAPSHOT' ? ' · Current library/legacy source, not a frozen snapshot' : ''}
             </p>
+            {definition.note && <p className="mt-1 whitespace-pre-wrap break-words text-brand-inkMuted"
+              data-testid="home-calendar-therapist-instructions">Therapist instructions: {definition.note}</p>}
           </li>;
         })}
       </ul> : <p className="text-[12px] text-brand-inkMuted" data-testid="home-calendar-empty-day">
