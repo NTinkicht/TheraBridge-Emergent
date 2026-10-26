@@ -5,6 +5,7 @@ import { SessionEditor } from './SessionEditor';
 import { Field } from '@/components/auth/Field';
 import { SelectField } from '@/components/centers/kit';
 import { GoalChart } from '@/components/clinical/GoalChart';
+import { GoalVersionContext } from './GoalVersionContext';
 import { currentGoals, historicalGoals, summarizeObservations, type Granularity } from '@/lib/progress-analysis';
 import { Button, Card, LockedAction, Pill } from '@/components/design/ui';
 import { serviceLabel } from '@/components/operations/BookDialog';
@@ -111,6 +112,7 @@ export function ProgressPanel({ centerId, ws, run }: { centerId: string; ws: Wor
           </Card>
         );
       })}
+      <GoalVersionContext ws={ws} />
       {history.length > 0 && (
         <section className="space-y-3" aria-label="Previous plan version evidence" data-testid="progress-history">
           <Button variant="secondary" onClick={()=>setShowHistory(!showHistory)}
