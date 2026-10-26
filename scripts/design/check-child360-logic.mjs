@@ -18,8 +18,65 @@ const checkpointCompare = await pureModule('apps/web/src/lib/goal-checkpoint-com
 const handoff = await pureModule('apps/web/src/lib/home-plan-handoff.ts');
 const homeDetail = await pureModule('apps/web/src/lib/home-activity-detail.ts');
 const reportEvidenceDiff = await pureModule('apps/web/src/lib/report-evidence-diff.ts');
+const goalContext = await pureModule('apps/web/src/lib/goal-version-context.ts');
 const childTimeline = await pureModule('apps/web/src/lib/child360-timeline.ts');
 const savedPreview = await pureModule('apps/web/src/lib/saved-home-plan-preview.ts');
+
+// TB-EM-043: version-scoped longitudinal context never merges identical goal
+// keys, units or clinician reviews across stored versions or other plans.
+const goalHistoryFixture = {
+  plans:[
+    {id:'plan-sp',title:'Speech plan',service:'speech',versions:[
+      {id:'pv-new',number:2,status:'DRAFT',goals:[{
+        key:'same-key',title:'Naming objects',measure:'count',baseline:2,target:8,
+        horizon:'SHORT_TERM',targetOn:'2027-01-15',reviewOn:'2026-12-01',
+      }],goalCheckpoints:[{
+        kind:'GOAL_CHECKPOINT',goalKey:'same-key',
+        at:'2026-10-22T15:00:00Z',reviewedOn:'2026-10-20',
+        summary:'New snapshot review',observationIds:['new-obs'],
+      }]},
+      {id:'pv-old',number:1,status:'SUPERSEDED',goals:[{
+        key:'same-key',title:'Naming objects',measure:'percent',baseline:10,target:80,
+      }],goalCheckpoints:[{
+        kind:'GOAL_CHECKPOINT',goalKey:'same-key',at:'2026-09-01T08:00:00Z',
+        reviewedOn:'2026-09-01',summary:'Historical review',observationIds:['old-obs'],
+      }]},
+    ]},
+    {id:'plan-ot',title:'OT plan',service:'ot',versions:[
+      {id:'pv-ot',number:1,status:'DRAFT',goals:[{
+        key:'same-key',title:'Uses utensils',measure:'level',baseline:1,target:4,
+      }],goalCheckpoints:[]},
+    ]},
+  ],
+  observations:[
+    {id:'old-obs',planVersionId:'pv-old',goalKey:'same-key',value:50,observedOn:'2026-09-01'},
+    {id:'new-obs',planVersionId:'pv-new',goalKey:'same-key',value:3,observedOn:'2026-10-22'},
+    {id:'other-obs',planVersionId:'pv-ot',goalKey:'same-key',value:2,observedOn:'2026-10-23'},
+    {id:'orphan-obs',planVersionId:'not-available',goalKey:'same-key',value:90,observedOn:'2026-10-24'},
+  ],
+};
+const goalContextRows = goalContext.goalVersionContext(goalHistoryFixture);
+assert.equal(goalContextRows.length,2);
+assert.equal(goalContextRows[0].rows.length,2);
+const latestGoal = goalContextRows[0].rows[0], earlierGoal = goalContextRows[0].rows[1];
+assert.equal(latestGoal.currentVersion,true);
+assert.equal(earlierGoal.currentVersion,false);
+assert.deepEqual(latestGoal.observations.map(o=>o.id),['new-obs']);
+assert.deepEqual(earlierGoal.observations.map(o=>o.id),['old-obs']);
+assert.deepEqual(goalContextRows[1].rows[0].observations.map(o=>o.id),['other-obs']);
+assert.equal(latestGoal.checkpoints[0].summary,'New snapshot review');
+assert.equal(earlierGoal.checkpoints[0].summary,'Historical review');
+assert.equal(latestGoal.sameKeyOlderVersion,1);
+assert(latestGoal.definitionDifferences.includes('measure') && latestGoal.definitionDifferences.includes('target'));
+assert.equal(earlierGoal.sameKeyOlderVersion,null);
+assert.equal(goalContextRows[1].rows[0].sameKeyOlderVersion,null,
+  'Other specialty/plan must not be considered earlier continuity');
+assert.equal(latestGoal.horizon,'SHORT_TERM');
+assert.equal(latestGoal.targetOn,'2027-01-15');
+assert.deepEqual(goalContext.goalVersionContext(goalHistoryFixture),goalContextRows,
+  'Evidence context is deterministic and does not change authorized source data');
+assert.equal(goalHistoryFixture.observations.length,4,
+  'Unattributed observations must stay untouched and excluded');
 
 // TB-EM-042: one already-authorized workspace controls every timeline event.
 // Server-recorded checkpoint creation date orders reviews, never backdated

@@ -4,6 +4,12 @@
 2. Reconcile with other milestone branches (#103 progress evidence and #105 integrated navigation) if either merges to main; rerun CI on reconciled commit. Continue synthetic-only role and 320/390/768/1024/1440 acceptance, and separate hosted QA #61.
 3. No external AI/STT, real patients, safeguarding, consent grant, clinical signing/co-signing, guardian clinical report/home-plan release, PDF distribution, production/pilot or approval. Do not bypass owner policy gates.
 
+## 2026-10-26 — TB-EM-043 qualification and remaining Milestone 1
+
+1. Open a focused draft PR for `feature/tb-em-043-goal-version-context`, base merged `main@d242a001a880984fc9d4123dff5430aebc440019`. Qualify complete six-job CI, independent exact-head P0–P2 review, resolved threads and owner-approved merge. Focus review on reused goal key across changed measurement units, observation/checkpoint exact-version identity, no attribution for orphan observations, disjoint service/plan scopes, current-versus-historical status, safe links and responsive mobile accordion.
+2. Slice 15: report integrity, selected-source staleness and version amendment context WITHOUT clinical inference or permission expansion. Slice 16: integrated Child 360 → progress → report → home plan journey, source-consistent navigation and final synthetic seven-role acceptance. Avoid duplicate functionality from PRs #88–102. Existing hosted issue #61 QA and external browsers remain independent.
+3. Real external AI/STT, production/pilot patients, clinician signature/co-sign/approval, family release, purpose-specific consent and safeguarding workflows continue NO-GO pending separate decisions. PR #97 review automation control plane remains separate.
+
 ## 2026-10-26 — TB-EM-042 clinician event timeline qualification
 
 1. Open draft PR `feature/tb-em-042-child360-clinical-timeline` based exactly on owner-merged `main@91036e063db2afc07fac2d9cdb6951d47e4711d1` (PR #101). Require exact-head six-job CI including real PostgreSQL/API, web builds, pure event source/chronology tests, synthetic 7-role Chromium and 320/390/768/1024/1440, secret scan, live-session, preview and Docker Compose. Fix P0–P2 and obtain independent exact-head review before owner-authorized merge.
