@@ -1,3 +1,9 @@
+## 2026-10-26 — TB-EM-044 review/merge gate
+
+1. Requalify report comparison PR #104 after mandatory four-file checkpoint update: six jobs green for final exact HEAD, independent P0–P2 review and zero unresolved discussions, then owner-directed (never automatic) merge. Carefully distinguish matching recorded source metadata from signed source integrity, evidence adequacy or clinical judgement. No new auth grants.
+2. Reconcile with other milestone branches (#103 progress evidence and #105 integrated navigation) if either merges to main; rerun CI on reconciled commit. Continue synthetic-only role and 320/390/768/1024/1440 acceptance, and separate hosted QA #61.
+3. No external AI/STT, real patients, safeguarding, consent grant, clinical signing/co-signing, guardian clinical report/home-plan release, PDF distribution, production/pilot or approval. Do not bypass owner policy gates.
+
 ## 2026-10-26 — TB-EM-042 clinician event timeline qualification
 
 1. Open draft PR `feature/tb-em-042-child360-clinical-timeline` based exactly on owner-merged `main@91036e063db2afc07fac2d9cdb6951d47e4711d1` (PR #101). Require exact-head six-job CI including real PostgreSQL/API, web builds, pure event source/chronology tests, synthetic 7-role Chromium and 320/390/768/1024/1440, secret scan, live-session, preview and Docker Compose. Fix P0–P2 and obtain independent exact-head review before owner-authorized merge.
