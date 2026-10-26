@@ -12,6 +12,7 @@ import { HomeScheduleFields } from './HomeScheduleFields';
 import { HomeActivityDetails } from './HomeActivityDetails';
 import { HomePracticeCalendar } from './HomePracticeCalendar';
 import { HomePlanHandoff } from './HomePlanHandoff';
+import { SavedHomePlanPreview } from './SavedHomePlanPreview';
 import { homePlanHandoff } from '@/lib/home-plan-handoff';
 import { scheduleProblem } from '@/lib/home-schedule';
 import { PlanVersionHistory } from './PlanVersionHistory';
@@ -65,8 +66,8 @@ function GoalRow({ g, onChange, onRemove, disabled, i, planId }: { g: Goal; onCh
   );
 }
 
-function VersionEditor({ centerId, ws, planId, service, v, source, run, onDirtyChange, otherPlanDirty }: {
-  centerId: string; ws: Workspace; planId: string; service: string; v: PlanVersion;
+function VersionEditor({ centerId, ws, planId, planTitle, service, v, source, run, onDirtyChange, otherPlanDirty }: {
+  centerId: string; ws: Workspace; planId: string; planTitle: string; service: string; v: PlanVersion;
   source?: Workspace['plans'][number]['source']; run: Run;
   onDirtyChange: (versionId: string, dirty: boolean) => void; otherPlanDirty: boolean;
 }) {
@@ -100,6 +101,8 @@ function VersionEditor({ centerId, ws, planId, service, v, source, run, onDirtyC
       <div className="flex flex-wrap items-center gap-2"><Pill tone={STATUS[v.status][1]} testId="plan-version-status">{`Version ${v.number} · ${STATUS[v.status][0]}`}</Pill><span className="text-[13px] text-brand-inkMuted">by {v.author}</span></div>
       {v.reviewNotes.map((n, i) => <FormAlert key={i} tone="info" testId={`review-note-${i}`}>Supervisor review: {n.comment}</FormAlert>)}
       <PlanEvidenceTrail version={v} origin={source} observations={ws.observations} />
+      <SavedHomePlanPreview key={v.id} version={v} templates={ws.templates}
+        title={planTitle} service={service} origin={source} unsaved={unsavedPlanEdits} />
       <GoalCheckpointPanel centerId={centerId} version={v} ws={ws} editable={edit}
         unsavedPlanEdits={unsavedPlanEdits || otherPlanDirty} run={run} />
       <label className="block text-[14px] font-medium">Plan summary<textarea className={`mt-1 ${input}`} rows={3} value={summary} disabled={!edit} onChange={(e) => setSummary(e.target.value)} data-testid="plan-summary" /></label>
@@ -221,7 +224,7 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
           <Card key={p.id} className="p-5 md:p-6" testId={`plan-${p.id}`}>
             <h2 className="text-[18px] font-semibold">{p.title}</h2>
             <p className="mb-4 text-[13px] text-brand-inkMuted">{serviceLabel(p.service)} · {p.versions.length} version{p.versions.length > 1 ? 's' : ''}</p>
-            <VersionEditor centerId={centerId} ws={ws} planId={p.id} service={p.service}
+            <VersionEditor centerId={centerId} ws={ws} planId={p.id} planTitle={p.title} service={p.service}
               v={current} source={p.source} run={run} onDirtyChange={onDirtyChange}
               otherPlanDirty={Object.entries(dirtyVersions).some(([id, dirty]) => id !== current.id && dirty)} />
             <PlanVersionHistory key={p.id} plan={p} templates={ws.templates} timezone={ws.timezone}
