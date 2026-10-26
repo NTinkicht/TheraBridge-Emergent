@@ -1,3 +1,9 @@
+## 2026-10-26 — TB-EM-041 tests added (NOT YET EXECUTED)
+
+- Pure source check `scripts/design/check-child360-logic.mjs`: `savedPlanProjection` displays exact version ID/revision/summary/goal definitions/activity notes/saved snapshots; live library changes do not overwrite saved definition; later version cannot inherit original report goal mapping even if keys coincide; absent linked goal, legacy/missing snapshot behavior and absence of release/approval claims.
+- Disposable, existing seven-role Chromium journey adds saved plan inspection for active editor and exactly selected historical version, checks original stored snapshot instead of later template, explicit internal no-release disclaimer, unsaved editing warning and omission of browser-only therapist instructions while the plan editor remains dirty. Existing viewport/permission checks retained.
+- No hosted issue #61 evidence generated; no clinical approval. Exact-head CI and independent review pending.
+
 ## 2026-10-26 — TB-EM-040 test additions (NOT YET EXECUTED at creation)
 
 - `scripts/design/check-child360-logic.mjs`: pure `homeActivityDefinition` saved-snapshot wins over mutable template title/duration/steps/safety; note is plan-only, no snapshot changes; legacy and unavailable fallbacks explicit; note-only change visible as plan version difference; 500-character DTO-aligned limit.
