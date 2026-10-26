@@ -677,4 +677,84 @@ assert.deepEqual(clinicianJourney.clinicianJourneySummary(careJourneyFixture),{
 assert(!('reportCount' in clinicianJourney.clinicianJourneySummary(careJourneyFixture)),
   'Cannot fabricate report counts from an unrelated clinical read model');
 
+// TB-EM-046: one fictional clinician care chain across the ACTUAL pure
+// source projectors. The same key in superseded and current plan versions
+// MUST NOT imply evidence continuity, clinical success, or caregiver release.
+const careChainCurrent = {
+  id:'chain-v2',number:2,version:1,status:'DRAFT',summary:'Internal care draft',
+  author:'Synthetic therapist',updatedAt:'2026-10-22T09:00:00Z',
+  goals:[{key:'same-key',title:'Current naming task',measure:'count',baseline:1,
+    target:6,horizon:'SHORT_TERM',targetOn:'2026-11-10',reviewOn:'2026-11-01'}],
+  homeActivities:[{templateId:'synthetic-template',goalKey:'same-key',
+    frequency:'Twice weekly',note:'Therapist authored internal prompt',
+    snapshot:{id:'synthetic-template',title:'Saved card exercise',
+      minutes:11,ageBand:'6-8',materials:['Cards'],steps:['Name a card'],
+      safety:['Adult present'],service:'speech',version:2,
+      capturedAt:'2026-10-22T09:00:00Z'}}],
+  goalCheckpoints:[],
+};
+const careChainPrior = {
+  ...careChainCurrent,id:'chain-v1',number:1,status:'SUPERSEDED',
+  goals:[{key:'same-key',title:'Earlier naming proportion',
+    measure:'percent',baseline:0,target:70}],
+  homeActivities:[],
+};
+const chainWs = {
+  plans:[{id:'chain-plan',title:'Speech goals',service:'speech',
+    versions:[careChainCurrent,careChainPrior]}],
+  observations:[
+    {id:'chain-new-observation',planVersionId:'chain-v2',
+      goalKey:'same-key',observedOn:'2026-10-22',value:3},
+    {id:'chain-old-observation',planVersionId:'chain-v1',
+      goalKey:'same-key',observedOn:'2026-09-22',value:50},
+    {id:'orphan',planVersionId:'unavailable',goalKey:'same-key',
+      observedOn:'2026-10-23',value:100},
+  ],
+};
+const chainHistory=goalContext.goalVersionContext(chainWs);
+assert.deepEqual(chainHistory[0].rows[0].observations.map(o=>o.id),
+  ['chain-new-observation']);
+assert.deepEqual(chainHistory[0].rows[1].observations.map(o=>o.id),
+  ['chain-old-observation']);
+assert(chainHistory[0].rows[0].definitionDifferences.includes('measure'),
+  'A change in units is an explicit version boundary');
+const chainJourney=clinicianJourney.clinicianJourneySummary(chainWs);
+assert.equal(chainJourney.currentPlanVersions,1);
+assert.equal(chainJourney.currentGoals,1);
+assert.equal(chainJourney.currentGoalObservations,1);
+assert.equal(chainJourney.internalHomeActivities,1);
+const chainSaved=savedPreview.savedPlanProjection(careChainCurrent,[{
+  id:'synthetic-template',title:'Changed library card exercise',
+  minutes:50,materials:[],steps:[],safety:[],ageBand:'6-8',
+}],null);
+assert.equal(chainSaved.activities[0].definitionSource,'SAVED_SNAPSHOT');
+assert.equal(chainSaved.activities[0].title,'Saved card exercise');
+assert.equal(chainSaved.activities[0].linkedGoalTitle,'Current naming task');
+assert.equal(chainSaved.activities[0].note,'Therapist authored internal prompt');
+const chainEvidenceGoal=(versionId,key,measure,obsId,observedOn,value)=>({
+  key,title:'Recorded goal',planVersionId:versionId,measure,baseline:0,
+  target:measure==='percent'?70:6,
+  points:[{observationId:obsId,date:observedOn,value}],
+  prior:null,status:'insufficient',
+});
+const chainSavedReport={
+  period:{from:'2026-09-01',to:'2026-10-25'},
+  assessments:[],sessions:{drafts:0,completedVisits:0},
+  goals:[chainEvidenceGoal('chain-v1','same-key','percent',
+    'chain-old-observation','2026-09-22',50)],
+};
+const chainCurrentEvidence={
+  ...chainSavedReport,goals:[chainEvidenceGoal('chain-v2','same-key','count',
+    'chain-new-observation','2026-10-22',3)],
+};
+const chainDiff=reportEvidenceDiff.compareRecordedReportEvidence(
+  chainSavedReport,chainCurrentEvidence);
+assert.deepEqual(chainDiff.goals.map(g=>g.status),
+  ['NOT_IN_CURRENT','ADDED_SINCE_SNAPSHOT'],
+  'Source report goals never silently migrate to a newer plan version');
+assert.equal(chainDiff.goals[0].planVersionId,'chain-v1');
+assert.equal(chainDiff.goals[1].planVersionId,'chain-v2');
+assert(!('released' in chainSaved) && !('clinicallyApproved' in chainJourney),
+  'Internal acceptance must not claim clinical approval or release');
+
 console.log('PASS: strict plan-version isolation, weekly/monthly bucket boundaries, source IDs, no fabricated trend, specialty-only activity shortlist, manual factual suggestions');
