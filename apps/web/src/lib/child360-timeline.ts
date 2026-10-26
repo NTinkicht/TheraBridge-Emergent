@@ -8,6 +8,8 @@ export type ClinicalTimelineTab = 'plan' | 'assessments' | 'sessions' | 'progres
 export interface ClinicalTimelineEvent {
   id: string;
   date: string;
+  /** Full server timestamp when available, strictly for within-day order. */
+  recordedAt?: string;
   kind: ClinicalTimelineKind;
   title: string;
   detail: string;
@@ -29,7 +31,7 @@ export function child360Timeline(ws: Workspace): ClinicalTimelineEvent[] {
     });
     const versionDate = datePart(version.updatedAt);
     if (versionDate) events.push({
-      id: 'plan-' + version.id, date: versionDate, kind: 'PLAN_VERSION',
+      id: 'plan-' + version.id, date: versionDate, recordedAt: version.updatedAt, kind: 'PLAN_VERSION',
       title: 'Plan-version record',
       detail: `Plan v${version.number} · ${version.status.replaceAll('_', ' ').toLowerCase()} · last updated ${versionDate}`,
       service: plan.service, tab: 'plan', planVersionId: version.id,
@@ -41,7 +43,7 @@ export function child360Timeline(ws: Workspace): ClinicalTimelineEvent[] {
       // backdated review day. Show both dates without interpreting them.
       if (!recorded) continue;
       events.push({
-        id: 'goal-review-' + version.id + '-' + index, date: recorded, kind: 'GOAL_REVIEW',
+        id: 'goal-review-' + version.id + '-' + index, date: recorded, recordedAt: checkpoint.at, kind: 'GOAL_REVIEW',
         title: 'Clinician goal-review entry',
         detail: `Plan v${version.number} · ${version.goals.find(g => g.key === checkpoint.goalKey)?.title ?? 'Goal link unavailable'} · reviewed on ${checkpoint.reviewedOn} (clinician entered)`,
         service: plan.service, tab: 'plan', planVersionId: version.id, goalKey: checkpoint.goalKey,
@@ -81,8 +83,18 @@ export function child360Timeline(ws: Workspace): ClinicalTimelineEvent[] {
       planVersionId: observation.planVersionId, goalKey: observation.goalKey,
     });
   }
-  return events.sort((a, b) =>
-    b.date.localeCompare(a.date) || a.kind.localeCompare(b.kind) || a.id.localeCompare(b.id));
+  return events.sort((a, b) => {
+    const dayOrder = b.date.localeCompare(a.date);
+    if (dayOrder) return dayOrder;
+    // Two reviews created on the same calendar day must appear newest first.
+    // Day-only observations/sessions lack an authoritative timestamp, so do
+    // not invent a time-of-day for them.
+    if (a.recordedAt && b.recordedAt) {
+      const timestampOrder = b.recordedAt.localeCompare(a.recordedAt);
+      if (timestampOrder) return timestampOrder;
+    }
+    return a.kind.localeCompare(b.kind) || a.id.localeCompare(b.id);
+  });
 }
 
 export function filterChild360Timeline(events: readonly ClinicalTimelineEvent[],
