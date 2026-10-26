@@ -521,6 +521,9 @@ try {
       .includes('Planned for 2026-10-31'), 'Plan calendar must render chosen October date');
     assert((await practiceCalendar.getByTestId('home-calendar-item').count()) >= 1,
       'October 31 monthly practice must appear');
+    assert((await practiceCalendar.getByTestId('home-calendar-therapist-instructions').first().innerText())
+      .includes('Synthetic clinician adaptation: use picture cards'),
+      'Calendar preview must display unsaved clinician note from the exact plan activity');
     assert((await practiceCalendar.innerText()).includes('Unsaved plan edits'),
       'Calendar must clearly mark unsaved edits as a local preview');
     await practiceCalendar.getByTestId('home-calendar-month').fill('2027-02');
