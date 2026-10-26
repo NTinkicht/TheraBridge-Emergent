@@ -413,7 +413,7 @@ try {
           materials: ['original cards'], steps: ['original instructions'],
           safety: ['original safety guidance'], version: 1, capturedAt: '2026-10-01T09:00:00Z' };
         const priorActivities = first.homeActivities.map((a, i) =>
-          i === 0 ? { ...a, snapshot: oldSnapshot } : a);
+          i === 0 ? { ...a, snapshot: oldSnapshot, note: 'Historic synthetic therapist instructions' } : a);
         const currentActivities = first.homeActivities.map((a, i) =>
           i === 0 ? { ...a, snapshot: { ...oldSnapshot,
             title: 'Updated saved activity', steps: ['new saved instructions'],
@@ -442,6 +442,9 @@ try {
     assert(savedActivityComparison.includes('Original saved activity'), 'Historical name must use saved snapshot');
     assert(savedActivityComparison.includes('original safety guidance'), 'Historical safety must use saved snapshot');
     assert(savedActivityComparison.includes('new saved safety'), 'Comparison must show changed saved safety');
+    assert((await page.getByTestId('plan-history-inspection').innerText())
+      .includes('Therapist instructions: Historic synthetic therapist instructions'),
+      'Historical selected version must display the clinician note distinctly');
     // Codex P2: evidence about original version 1 must open version 1,
     // not the default middle version of a THREE-version plan history.
     const oldestPlan = await db.planVersion.findFirstOrThrow({
@@ -472,6 +475,21 @@ try {
     await page.getByTestId('goal-target-date-0').fill('2027-03-15');
     await page.getByTestId('goal-review-date-0').fill('2026-12-15');
     assert.equal(await page.getByTestId('goal-horizon-0').inputValue(), 'SHORT_TERM');
+    // TB-EM-040: show definition/safety/duration and edit plan-specific
+    // instructions only; a note edit cannot silently submit an older snapshot.
+    const activityDetail = page.getByTestId('home-activity-details-0').first();
+    await activityDetail.waitFor();
+    assert((await activityDetail.innerText()).includes('Duration is taken from the activity definition'),
+      'Activity duration must be sourced from its saved or visible template');
+    await activityDetail.getByTestId('home-activity-safety-0').waitFor();
+    const therapistNote = activityDetail.getByTestId('home-activity-instructions-0');
+    await therapistNote.fill('Synthetic clinician adaptation: use picture cards with adult guidance.');
+    assert.equal(await therapistNote.inputValue(),
+      'Synthetic clinician adaptation: use picture cards with adult guidance.');
+    assert(await page.getByTestId('plan-submit').first().isDisabled(),
+      'Therapist instruction edits must lock stale saved-version submission');
+    assert(await page.getByTestId('plan-save').first().isEnabled(),
+      'Valid therapist instructions remain compatible with draft save');
     await page.getByTestId('activity-schedule-cadence-0').selectOption('WEEKLY');
     // TB-EM-039: no stale supervisor handoff while the browser holds
     // clinician edits that have not been saved to the actual version.
@@ -503,6 +521,9 @@ try {
       .includes('Planned for 2026-10-31'), 'Plan calendar must render chosen October date');
     assert((await practiceCalendar.getByTestId('home-calendar-item').count()) >= 1,
       'October 31 monthly practice must appear');
+    assert((await practiceCalendar.getByTestId('home-calendar-therapist-instructions').first().innerText())
+      .includes('Synthetic clinician adaptation: use picture cards'),
+      'Calendar preview must display unsaved clinician note from the exact plan activity');
     assert((await practiceCalendar.innerText()).includes('Unsaved plan edits'),
       'Calendar must clearly mark unsaved edits as a local preview');
     await practiceCalendar.getByTestId('home-calendar-month').fill('2027-02');

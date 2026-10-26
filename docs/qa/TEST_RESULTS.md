@@ -1,3 +1,9 @@
+## 2026-10-26 — TB-EM-040 test additions (NOT YET EXECUTED at creation)
+
+- `scripts/design/check-child360-logic.mjs`: pure `homeActivityDefinition` saved-snapshot wins over mutable template title/duration/steps/safety; note is plan-only, no snapshot changes; legacy and unavailable fallbacks explicit; note-only change visible as plan version difference; 500-character DTO-aligned limit.
+- `scripts/design/check-demo-journey.mjs`: synthetic clinician edit of activity-specific note; `plan-submit` remains disabled while unsaved; active safety and definition duration visible; monthly calendar day includes authored note without save; historic plan inspection labels a frozen clinician note; maintains seven-role and 320/390/768/1024/1440 responsive checks. No real data or family disclosure.
+- Exact-head CI and independent reviewer results pending. Hosted QA ledger #61 unchanged (53 PASS / 0 FAIL / 47 BLOCKED / 4 NOT TESTED +4 historical supplemental PASS).
+
 ## 2026-10-26 — TB-EM-039 (added tests, NOT YET EXECUTED at writing)
 
 - `scripts/design/check-child360-logic.mjs`: pure handoff: clean valid draft permits requesting supervisor review, any dirty plan or new-unlinked draft is blocked, advisory missing summary/goal links/schedules/templates/goal dates do not become invented clinical eligibility gates. No approval state or outcome inference.

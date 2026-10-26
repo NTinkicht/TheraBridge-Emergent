@@ -9,6 +9,7 @@ import { serviceLabel } from '@/components/operations/BookDialog';
 import { LOCKED_REASON, clinicalApi, type Goal, type HomeActivity, type PlanVersion, type Workspace } from '@/lib/clinical';
 import { ActivityCard } from './ActivityCard';
 import { HomeScheduleFields } from './HomeScheduleFields';
+import { HomeActivityDetails } from './HomeActivityDetails';
 import { HomePracticeCalendar } from './HomePracticeCalendar';
 import { HomePlanHandoff } from './HomePlanHandoff';
 import { homePlanHandoff } from '@/lib/home-plan-handoff';
@@ -113,7 +114,7 @@ function VersionEditor({ centerId, ws, planId, service, v, source, run, onDirtyC
         <ul className="mt-2 space-y-2">
           {acts.map((a, i) => (
             <li key={i} className="flex flex-wrap items-center gap-2 rounded-control border border-border-light p-2 text-[14px]" data-testid={`home-activity-${i}`}>
-              <span className="min-w-0 flex-1 font-semibold">{ws.templates.find((t) => t.id === a.templateId)?.title ?? 'Activity'}</span>
+              <span className="min-w-0 flex-1 font-semibold">{a.snapshot?.title ?? ws.templates.find((t) => t.id === a.templateId)?.title ?? 'Activity (library entry unavailable)'}</span>
               <label className="min-w-[170px] flex-1 text-[12px] text-brand-inkMuted">Linked goal (plan v{v.number})
                 <select aria-label={`Linked goal for activity ${i + 1}`} data-testid={`home-activity-goal-${i}`} className={`mt-1 ${input}`} value={a.goalKey ?? ''} disabled={!edit} onChange={(e) => setActs(prev => prev.map((x, j) => j === i ? { ...x, goalKey: e.target.value || undefined } : x))}>
                   <option value="">Not linked{legacyTemplateIds.has(a.templateId) ? ' (existing draft)' : ' — select before saving'}</option>
@@ -124,6 +125,9 @@ function VersionEditor({ centerId, ws, planId, service, v, source, run, onDirtyC
               <HomeScheduleFields schedule={a.schedule} disabled={!edit} index={i}
                 onChange={schedule => setActs(prev => prev.map((x, j) =>
                   j === i ? { ...x, schedule, frequency: schedule ? (schedule.cadence === 'WEEKLY' ? 'Weekly calendar draft' : 'Monthly calendar draft') : 'As directed (undated)' } : x))} />
+              <HomeActivityDetails activity={a} templates={ws.templates} editable={edit} index={i}
+                onInstructionsChange={note => setActs(prev => prev.map((x, j) =>
+                  j === i ? { ...x, note } : x))} />
               {edit && <button type="button" aria-label="Remove activity" onClick={() => setActs(acts.filter((_, j) => j !== i))} className="grid h-10 w-10 place-items-center rounded-control hover:bg-surface-subtle"><Trash2 size={16} aria-hidden="true" /></button>}
             </li>
           ))}

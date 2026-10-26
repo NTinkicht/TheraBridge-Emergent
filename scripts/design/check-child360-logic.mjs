@@ -16,6 +16,46 @@ const review = await pureModule('apps/web/src/lib/goal-review.ts');
 const schedule = await pureModule('apps/web/src/lib/home-schedule.ts');
 const checkpointCompare = await pureModule('apps/web/src/lib/goal-checkpoint-compare.ts');
 const handoff = await pureModule('apps/web/src/lib/home-plan-handoff.ts');
+const homeDetail = await pureModule('apps/web/src/lib/home-activity-detail.ts');
+
+// TB-EM-040: clinician notes belong to the exact plan activity. Saved
+// definition wins over a newer, changed library template; no extra write path.
+const oldDefinition = {
+  id: 't1', title:'Saved picture activity', service:'speech', ageBand:'6-8',
+  minutes:12, materials:['Saved cards'], steps:['Name picture'],
+  safety:['Adult stays nearby'], version:2,capturedAt:'2026-10-20T09:00:00Z',
+};
+const mutableDefinition = {
+  ...oldDefinition,title:'Updated library picture activity',minutes:23,
+  steps:['Updated step'],safety:['Updated warning'],
+};
+const savedDetail = homeDetail.homeActivityDefinition({
+  templateId:'t1',frequency:'Weekly',note:'Clinician authored adaptation.',
+  snapshot:oldDefinition,
+},[mutableDefinition]);
+assert.equal(savedDetail.title,'Saved picture activity');
+assert.equal(savedDetail.minutes,12);
+assert.deepEqual(savedDetail.steps,['Name picture']);
+assert.deepEqual(savedDetail.safety,['Adult stays nearby']);
+assert.equal(savedDetail.note,'Clinician authored adaptation.');
+assert.equal(savedDetail.source,'SAVED_SNAPSHOT');
+const legacyDetail = homeDetail.homeActivityDefinition({templateId:'t1',frequency:'Weekly'},[mutableDefinition]);
+assert.equal(legacyDetail.source,'CURRENT_LIBRARY');
+assert.equal(legacyDetail.minutes,23);
+assert.equal(legacyDetail.note,'');
+const missingDetail = homeDetail.homeActivityDefinition({templateId:'missing',frequency:'As directed'},[mutableDefinition]);
+assert.equal(missingDetail.source,'MISSING');
+assert.equal(missingDetail.minutes,null);
+assert.deepEqual(missingDetail.safety,[]);
+assert.equal(homeDetail.MAX_THERAPIST_INSTRUCTION_LENGTH,500);
+const noteBefore={ number:1,summary:'Draft',goals:[],homeActivities:[
+  {templateId:'t1',frequency:'Weekly',snapshot:oldDefinition,note:'Before'},
+]};
+const noteAfter={...noteBefore,homeActivities:[
+  {...noteBefore.homeActivities[0],note:'After'},
+]};
+assert.equal(comparison.comparePlanVersions(noteBefore,noteAfter).activities[0].kind,'changed');
+assert.equal(oldDefinition.title,'Saved picture activity');
 
 // TB-EM-039: advisory planning checklist is NOT a clinical approval; only a
 // dirty-state guard prevents submitting a draft different from the screen.
