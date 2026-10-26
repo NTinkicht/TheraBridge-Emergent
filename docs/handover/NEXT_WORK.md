@@ -1,3 +1,9 @@
+## 2026-10-27 — PR #97 final qualification after new reviewer P2s
+
+- Verify all six exact-HEAD CI jobs on PR #97 after latest paid-call fixes and mandatory handover updates: test (including offline review fixtures), Gitleaks `--all`, live-session, preview-container, seven-role demo journey and Compose. Confirm the final clean branch remains based directly on main@294f3d4298bb9a6b378937f7e40c336572ddef1d; no scanner allowlist weakened.
+- Obtain CodeRabbit and independent exact-HEAD review; inspect any additional P0–P2. Reply and resolve all eight original/follow-up threads only with verified fixes. Keep paid provider opt-in OFF and treat an attempt reservation as uncertain, not a review.
+- This infra PR must not be merged until owner authorization and complete gates. Hosted external acceptance, clinical/guardian release, real patients and provider AI/STT remain separately NO-GO.
+
 ## 2026-10-27 — PR #97 qualification sequence
 
 1. Confirm PR #97 branch after clean rebase onto main #107 merge `294f3d4298bb9a6b378937f7e40c336572ddef1d`. Run six-job exact-head CI and independent CodeRabbit/Codex review. Verify Gitleaks `--all` passes with clean history, offline provider test has no network/billing, and all five original threads addressed/resolved. An automatically posted request is not a reviewer verdict.
