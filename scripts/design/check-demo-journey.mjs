@@ -162,6 +162,23 @@ try {
     await page.goto(base + '/app/clinical/' + child.id);
     await page.getByTestId('child-360').waitFor();
     await page.getByTestId('child360-family-practice').waitFor();
+    // TB-EM-045: the four intended clinician care stages are navigable from
+    // this authorized child, without inventing reports or changing any data.
+    const journey = page.getByTestId('clinician-care-journey');
+    await journey.waitFor();
+    assert((await journey.innerText()).includes('Report status loaded only when the authorized Reports tab opens'));
+    for (const [step,destination] of [
+      ['goals','plan'],['evidence','progress'],['reports','reports'],['home','plan'],
+    ]) {
+      await page.getByTestId('clinician-journey-'+step).click();
+      assert.equal(await page.getByTestId('clinical-tab-'+destination).getAttribute('aria-selected'),'true',
+        'Care-journey '+step+' must open its authorized section');
+      assert(page.url().includes('/app/clinical/' + child.id),
+        'Care journey must preserve the authorized child identity');
+      await page.getByTestId('clinical-tab-overview').click();
+      await page.getByTestId('clinician-care-journey').waitFor();
+    }
+
     // A transient request failure must never appear as a genuine empty result.
     const practiceRoute = '**/clinical/practice-feedback?childId=*';
     await page.route(practiceRoute, route => route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"Synthetic transient error"}' }));
