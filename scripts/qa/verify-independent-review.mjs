@@ -6,6 +6,41 @@ const yaml = readFileSync('.github/workflows/auto-review-trigger.yml', 'utf8');
 assert(yaml.includes('on:\n  pull_request:') && yaml.includes('  issue_comment:'), 'Review events missing');
 assert(!yaml.includes('Wait for exact-head CI conclusions'), 'Never confuse CI workflow names with jobs');
 assert(yaml.includes('TB_PAID_REVIEW_OPT_IN'), 'Mandatory owner cost gate missing');
+// Preflight runs without paid secrets, checkout or dispatched API calls.
+// Reject invalid owner comments BEFORE they can enter the per-PR queue.
+assert(yaml.includes('  qualify:\n') && yaml.includes('    needs: qualify\n'),
+  'Exact manual-command preflight is mandatory');
+assert(yaml.includes("needs.qualify.outputs.eligible == 'true'"),
+  'Dispatch must depend on exact preflight eligibility');
+assert(yaml.includes('cancel-in-progress: false'),
+  'In-progress paid calls must never be cancelled by later events');
+const gateStart=yaml.indexOf("          node -e '");
+const gateEnd=yaml.indexOf("'\n  dispatch:",gateStart);
+assert(gateStart>=0 && gateEnd>gateStart,'Preflight command missing');
+const gateBody=yaml.slice(gateStart+"          node -e '".length,gateEnd)
+  .split('\n').map((line,i)=>i===0?line:line.startsWith('          ')?line.slice(10):line).join('\n');
+const gate=new Function('process','require',gateBody);
+const validGate=(body,actor='NTinkicht')=>{
+  const output=[];
+  const fsMock={appendFileSync:(target,value)=>{
+    assert.equal(target,'offline-review-output');
+    output.push(value);
+  }};
+  gate({env:{REVIEW_BODY:body,REVIEW_AUTHOR:actor,GITHUB_OUTPUT:'offline-review-output'}},
+    name=>{assert.equal(name,'node:fs');return fsMock;});
+  assert.equal(output.length,1,'Preflight must output exactly once');
+  return output[0]==='eligible=true\n';
+};
+assert(validGate('/review-mistral '+'a'.repeat(40)));
+assert(validGate('/REVIEW-GROK '+'A'.repeat(40)));
+assert(validGate(' /review-both '+'b'.repeat(40)+' '));
+assert(!validGate('/review-both '+'b'.repeat(39)));
+assert(!validGate('please /review-grok '+'b'.repeat(40)));
+assert(!validGate('/review-grok '+'b'.repeat(40)+' trailing'));
+assert(!validGate('/review-grok '+'b'.repeat(40)+'\n@codex review'));
+assert(!validGate('Just mentioning /review-mistral in a normal comment'));
+assert(!validGate('/review-grok '+'b'.repeat(40),'another-user'));
+
 const marker = '          script: |\n';
 const split = yaml.split(marker);
 assert.equal(split.length, 2, 'Exactly one github-script block expected');
