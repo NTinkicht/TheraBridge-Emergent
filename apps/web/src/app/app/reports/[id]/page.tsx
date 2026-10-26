@@ -61,7 +61,7 @@ function Report({ session, onError }: { session: SessionInfo; onError: (e: unkno
         <div className="min-w-0 space-y-5">
           {data.canEdit && <ReportToPlanHandoff centerId={centerId} detail={data} prepare={() => { if (!handoffGateRef.current) throw new Error('Report editor is not ready.'); return handoffGateRef.current(); }} />}
           {success && <FormAlert tone="success" testId="report-notice-success">{success}</FormAlert>}
-          {compare && <Compare v={compare} current={live ?? r.sections} childId={r.childId} onClose={() => setCompare(null)} />}
+          {compare && <Compare v={compare} current={live ?? r.sections} currentEvidence={data.evidence} childId={r.childId} onClose={() => setCompare(null)} />}
           <ReportEditor key={`${r.status}-${r.version}`} handoffGateRef={handoffGateRef} centerId={centerId} d={data} onReload={reload} onError={onError} onPreview={() => { setSuccess(null); void showPreview(); }} onSections={setLive} onSuccess={setSuccess} />
         </div>
         <div className="min-w-0 space-y-5">
