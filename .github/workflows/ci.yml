@@ -80,6 +80,7 @@ jobs:
       - run: yarn workspace @therabridge/api build
       - run: yarn workspace @therabridge/web build
       - run: node scripts/design/check-child360-logic.mjs
+      - run: node scripts/qa/verify-independent-review.mjs
         env:
           API_UPSTREAM_ORIGIN: http://127.0.0.1:8001
 

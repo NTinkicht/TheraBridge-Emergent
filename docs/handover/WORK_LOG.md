@@ -1,3 +1,10 @@
+## 2026-10-27 — PR #97 CodeRabbit remediation and audit history
+
+- Verified owner merge of #107 on main SHA `294f3d4298bb9a6b378937f7e40c336572ddef1d`.
+- Remediated all five CodeRabbit review threads on PR #97 (two major security/availability and three minor correctness/docs). Workflow has job-level `cancel-in-progress:false`, case-normalized `/review-{mistral,grok,both}` commands, old+new filename sensitivity checks and escaped/mention-neutralized model prose.
+- Extended existing exact-JavaScript offline unit runner with uppercase selectors, stale payload/live head/base movement during fake calls, forbidden renamed path, excessive patch bytes, HTTP error, invalid response and forged comment/mention model text. This runner uses fake API callbacks only. Provider-paid APIs remain opt-in OFF.
+- Newly added computed-key fixture was flagged by Git history Gitleaks in intermediate commit, with no secret disclosed. Eliminated regex false positive and rebuilt a clean feature commit directly from latest merged main, instead of weakening scanner rules. Final-head CI and reviewer feedback pending; do not merge until six real jobs and all threads pass.
+
 ## 2026-10-27 — TB-EM-046 integrated source-chain acceptance
 
 - Started work item #106 as an acceptance-only branch stacked on still-unmerged PR #105. Previous PRs #103 and #104 merged following exact-head 6/6 CI and independent no-blocking reviews. Slice #105 remains separately gated.

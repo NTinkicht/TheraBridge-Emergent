@@ -1,3 +1,9 @@
+## 2026-10-27 — PR #97 reviewer dispatcher CI tests (NOT RUN at rebased HEAD)
+
+- Added exact GitHub Actions `github-script` offline fixtures, **no paid network requests**: uppercase manual selectors / SHA, zero spend by default, dedupe, stale pull event, head/base moving mid-call, forbidden source rename, excessive patches, HTTP 429, invalid JSON, escaped HTML/mentions/forged result markers, real PASS only after validated response. Failures return INSUFFICIENT_EVIDENCE.
+- CodeRabbit five comments addressed in code; initial intermediate-commit secret scan FAILED because generic regex matched computed fixture API-key name, not a real credential. Scanner allowlist NOT weakened; source fixed and branch is clean-rebased on merged main to drop the flagged intermediate commit from reachable git history.
+- Fresh full six-job CI, exact-head scanner, reviewer outcomes and thread resolution **NOT YET VERIFIED** at authoring. No live Mistral/Grok call authorized; hosted UI acceptance #81 remains separate.
+
 ## 2026-10-27 — TB-EM-046 acceptance additions (NOT RUN at branch HEAD)
 
 - Added cross-workstream pure fixture: saved v2 goal's actual observation, old v1 same goal key and incompatible percent measurement, saved home-activity snapshot preferred over updated template library, and internal saved report v1 source remains `NOT_IN_CURRENT` relative to v2. No cross-version evidence aggregation, clinical approval or family release.

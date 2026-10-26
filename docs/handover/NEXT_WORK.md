@@ -1,3 +1,9 @@
+## 2026-10-27 — PR #97 qualification sequence
+
+1. Confirm PR #97 branch after clean rebase onto main #107 merge `294f3d4298bb9a6b378937f7e40c336572ddef1d`. Run six-job exact-head CI and independent CodeRabbit/Codex review. Verify Gitleaks `--all` passes with clean history, offline provider test has no network/billing, and all five original threads addressed/resolved. An automatically posted request is not a reviewer verdict.
+2. Keep `TB_PAID_REVIEW_OPT_IN` disabled (default), no Mistral/xAI API secrets configured or invoked through ChatGPT, no live provider spending. Any future owner enablement must be separately authorized and usage-limited.
+3. Owner-authorized merge only when full CI, reviewer findings and context qualify. This is review-infrastructure code independent of clinician acceptance and hosted QA #81. The later per-plan activity-duration UI override, hosted acceptance, production/real data, AI/STT clinical release and consent remain separately gated.
+
 ## 2026-10-27 — TB-EM-046 required acceptance and release sequence
 
 1. Finish exact-head six-job CI and independent P0–P2 review for PR #105 against combined #103/#104 main, resolve any findings, and owner-authorized merge before promoting dependent PR #106.
