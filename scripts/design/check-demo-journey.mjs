@@ -634,6 +634,17 @@ try {
     await page.locator('[data-testid^="history-compare-"]').first().click();
     await page.getByTestId('saved-statement-trace').waitFor();
     await page.getByTestId('statement-trace-empty').waitFor();
+    // TB-EM-044: saved report source inspector is explicit, read-only and
+    // labels differing periods/sources without claiming clinical validity.
+    const evidenceDifference = page.getByTestId('report-evidence-diff').first();
+    await evidenceDifference.waitFor();
+    await evidenceDifference.locator(':scope > summary').click();
+    assert((await evidenceDifference.innerText()).includes('NOT clinical validation'),
+      'Snapshot comparison must not claim clinical verification or approval');
+    await evidenceDifference.getByTestId('report-evidence-assessment-count').waitFor();
+    await evidenceDifference.getByTestId('report-evidence-session-count').waitFor();
+    await evidenceDifference.getByTestId('report-evidence-goal-diffs').waitFor();
+
     for (const width of [320, 390, 768, 1024, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       const right = await page.getByTestId('saved-statement-trace').evaluate(el => el.getBoundingClientRect().right);
