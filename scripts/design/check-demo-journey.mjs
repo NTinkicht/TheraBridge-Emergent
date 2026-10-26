@@ -253,6 +253,11 @@ try {
     const planFocusMessage = await page.getByTestId('report-goal-navigation-note').innerText();
     assert(planFocusMessage.includes('version') || planFocusMessage.includes('matching'),
       'Goal deep link must identify the exact saved goal or explain unavailable permissioned source');
+    // Restore the original browser route before continuing unrelated history
+    // tests: preserving this fragment would automatically open historical
+    // <details>, so a later toggle would CLOSE rather than open them.
+    await page.evaluate(() => window.history.replaceState(null, '',
+      window.location.pathname + window.location.search));
     await page.getByTestId('clinical-tab-progress').click();
 
 
