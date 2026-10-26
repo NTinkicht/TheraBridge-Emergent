@@ -1,3 +1,10 @@
+## 2026-10-26 — TB-EM-043 Slice 14
+
+- Confirmed PR #102 merge `d242a001a880984fc9d4123dff5430aebc440019` and began a focused isolated progress-context branch.
+- `apps/web/src/lib/goal-version-context.ts` projects plan-version goal definitions and their own exact scoped observations and clinician checkpoint entries. Separates current vs previous version; nearest older same-key definition differences are labels, not evidence continuity. No cross-version observation aggregations or automatic determination of treatment effect.
+- `GoalVersionContext` renders authorized specialty filter, version-specific measurements/source IDs, objective milestone and review dates, source-reviewed checkpoint dates/notes and existing plan-version deep links from Progress. No new role, API, external release or clinical decisions.
+- Pure tests cover changed measure and target between reused goal keys, cross-service same key, orphan observation, review record isolation, dates and deterministic ordering. Seven-role synthetic browser adds scoped UI filter, read-only accordion, source metadata and exact-version link assertions; existing five-width test remains. CI/reviews pending.
+
 ## 2026-10-26 — TB-EM-042 richer clinician Child 360 event timeline
 
 - Merged PR #101 to main after all 6 exact-head CI jobs and fresh Codex re-review; original nested-summary review thread resolved.
