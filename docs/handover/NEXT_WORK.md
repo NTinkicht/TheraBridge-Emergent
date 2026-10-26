@@ -1,3 +1,9 @@
+## 2026-10-26 — TB-EM-039 qualification and subsequent milestone
+
+1. Open draft PR for `feature/tb-em-039-home-plan-handoff` from merged main `d9921cb94dca0ca949f1af0b3d1847ebdc51a345`. Require six-job exact-head CI (PostgreSQL/API, Next, synthetic seven-role 320–1440 Chromium, secret scan, preview, live-session, Compose); independent review of save-first semantics including **other dirty plan**, server submit/version authority, no unintended hard gating of legacy plans, client-only advisory language, and correct safety-snapshot precedence. Fix P0–P2 before owner-authorized merge; never auto deploy.
+2. Next logical work after merge: reassess remaining Milestone 1 gaps before Milestone 2 family operations. Prioritize only functionality not already merged or gated by owner policy. Keep PR #97 review-control-plane separate; avoid touching its branch.
+3. All production, family clinical report/home-plan release, external AI/STT, signature/co-sign, consent grants, safeguarding escalation and live pilot remain NO-GO. Hosted #61 acceptance ledger unchanged.
+
 ## 2026-10-26 — TB-EM-038 qualification and continuation
 
 1. Open DRAFT Slice 9 PR; require exact-head six-job CI, including PostgreSQL/API, Next web build, pure month recurrence, seven-role synthetic browser responsive 320/390/768/1024/1440, live-session, preview-container, secret scan and Compose. Independently review local-calendar date math, no 40-item truncation, cross-version isolation, saved historical snapshot title preference, missing schedules and forbidden family/clinical release. Fix P0–P2, resolve threads, request owner approval before merge. No auto deploy.

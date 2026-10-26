@@ -318,11 +318,19 @@ try {
       return button?.hasAttribute('disabled') === true;
     }, shadowPlanId);
     await shadowPanel.getByTestId('goal-checkpoint-unsaved-lock').waitFor();
+    // TB-EM-039 extends the same all-plan dirty guard to supervisor handoff:
+    // a clean plan B must not let a clinician send a snapshot while plan A
+    // still contains browser-only, unsaved edits.
+    assert(await shadowPanel.getByTestId('plan-submit').isDisabled(),
+      'Draft B supervisor submit must be locked while draft A has unsaved edits');
+    await shadowPanel.getByTestId('home-plan-handoff-blocked').waitFor();
     await firstSummary.fill(originalText);
     await page.waitForFunction(id => {
       const button = document.querySelector('[data-testid="plan-' + id + '"] [data-testid="goal-checkpoint-save"]');
       return button?.hasAttribute('disabled') === false;
     }, shadowPlanId);
+    assert(await shadowPanel.getByTestId('plan-submit').isEnabled(),
+      'Clean draft B regains supervisor submit eligibility after draft A is restored');
     await page.unroute(twoPlanRoute);
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
@@ -465,6 +473,12 @@ try {
     await page.getByTestId('goal-review-date-0').fill('2026-12-15');
     assert.equal(await page.getByTestId('goal-horizon-0').inputValue(), 'SHORT_TERM');
     await page.getByTestId('activity-schedule-cadence-0').selectOption('WEEKLY');
+    // TB-EM-039: no stale supervisor handoff while the browser holds
+    // clinician edits that have not been saved to the actual version.
+    await page.getByTestId('home-plan-handoff-blocked').waitFor();
+    assert(await page.getByTestId('plan-submit').isDisabled(),
+      'Unsaved home-plan changes must block submission of the older stored version');
+    assert((await page.getByTestId('home-plan-handoff-blocked').innerText()).includes('Save or discard'));
     assert(await page.getByTestId('plan-save').isDisabled(), 'An incomplete dated schedule must not save');
     await page.getByTestId('activity-schedule-start-0').fill('2026-10-19');
     await page.getByTestId('activity-schedule-end-0').fill('2026-12-16');
@@ -519,6 +533,13 @@ try {
     await page.getByText('Choose two different versions to compare their saved definitions.').waitFor();
     await page.unroute(workspaceOverlay);
     await page.setViewportSize({ width: 1280, height: 900 });
+    // Do not send a request; a reload should restore the exact unchanged
+    // saved version, including its eligibility for a review request.
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('home-plan-handoff-saved').first().waitFor();
+    assert(await page.getByTestId('plan-submit').first().isEnabled(),
+      'A clean saved draft remains eligible for the existing server-validated review path');
 
     const speechReport = await db.progressReport.findFirstOrThrow({ where: { centerId: center.id, childId: child.id, service: 'speech' } });
     await page.goto(base + '/app/reports/' + speechReport.id);

@@ -15,6 +15,49 @@ const planEvidence = await pureModule('apps/web/src/lib/plan-evidence.ts');
 const review = await pureModule('apps/web/src/lib/goal-review.ts');
 const schedule = await pureModule('apps/web/src/lib/home-schedule.ts');
 const checkpointCompare = await pureModule('apps/web/src/lib/goal-checkpoint-compare.ts');
+const handoff = await pureModule('apps/web/src/lib/home-plan-handoff.ts');
+
+// TB-EM-039: advisory planning checklist is NOT a clinical approval; only a
+// dirty-state guard prevents submitting a draft different from the screen.
+const goalHandoff = { key:'g1',title:'Synthetic naming',measure:'count',
+  baseline:0,target:5,targetOn:'2027-01-05',reviewOn:'2026-12-05' };
+const handoffTemplate = {id:'activity1',title:'Picture cards',service:'speech',
+  ageBand:'6-8',minutes:10,materials:[],steps:['Point'],safety:['Adult supervises']};
+const goodHandoff = {
+  summary:'Plan to practice fictional naming tasks',
+  goals:[goalHandoff],
+  activities:[{templateId:'activity1',goalKey:'g1',
+    frequency:'Weekly calendar draft',schedule:{
+      cadence:'WEEKLY',startsOn:'2026-11-02',endsOn:'2026-11-16',weekdays:[1],
+    },snapshot:{...handoffTemplate,version:1,capturedAt:'2026-10-25T08:00:00Z'}}],
+  templates:[],
+  hasUnsavedEdits:false,hasOtherPlanEdits:false,newlyAddedUnlinked:false,
+};
+const readyHandoff=handoff.homePlanHandoff(goodHandoff,schedule.scheduleProblem);
+assert.equal(readyHandoff.canSendSavedDraft,true);
+assert.equal(readyHandoff.blockingReason,null);
+assert.deepEqual(readyHandoff.attention,[]);
+assert.equal(handoff.homePlanHandoff({...goodHandoff,hasUnsavedEdits:true},
+  schedule.scheduleProblem).canSendSavedDraft,false);
+assert.equal(handoff.homePlanHandoff({...goodHandoff,hasOtherPlanEdits:true},
+  schedule.scheduleProblem).canSendSavedDraft,false);
+assert.equal(handoff.homePlanHandoff({...goodHandoff,newlyAddedUnlinked:true},
+  schedule.scheduleProblem).canSendSavedDraft,false);
+const incompleteHandoff=handoff.homePlanHandoff({
+  ...goodHandoff,summary:'',goals:[{...goalHandoff,targetOn:undefined}],
+  activities:[
+    {templateId:'activity1',frequency:'As directed'},
+    {templateId:'missing',goalKey:'incorrect',frequency:'monthly',
+      schedule:{cadence:'MONTHLY',startsOn:'2027-02-01',endsOn:'2027-02-28',monthDay:31}},
+  ],
+  templates:[handoffTemplate],
+},schedule.scheduleProblem);
+for(const key of ['summary','goal-links','schedule','undated','template','legacy','dates']){
+  assert(incompleteHandoff.attention.some(x=>x.id===key), 'Missing advisory '+key);
+}
+assert.equal(incompleteHandoff.canSendSavedDraft,true,
+  'Advisory omissions cannot become invented clinical gating rules');
+assert(!('approved' in readyHandoff) && !('clinicallySafe' in readyHandoff));
 
 // TB-EM-037: checkpoint comparisons stay in ONE immutable plan-version/goal;
 // compare only explicit source IDs, never infer values or clinical outcomes.

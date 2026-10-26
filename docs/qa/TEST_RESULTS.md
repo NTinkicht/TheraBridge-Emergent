@@ -1,3 +1,9 @@
+## 2026-10-26 — TB-EM-039 (added tests, NOT YET EXECUTED at writing)
+
+- `scripts/design/check-child360-logic.mjs`: pure handoff: clean valid draft permits requesting supervisor review, any dirty plan or new-unlinked draft is blocked, advisory missing summary/goal links/schedules/templates/goal dates do not become invented clinical eligibility gates. No approval state or outcome inference.
+- `scripts/design/check-demo-journey.mjs`: synthetic authenticated clinician workflow prepares an UNSAVED schedule, verifies `plan-submit` disabled and save-first explanation; after route overlay removal/reload, verifies stored clean draft can still request review. Also verifies plan B supervisor submission is blocked while plan A has dirty local edits and restored when plan A's contents are reverted, using the existing synthetic two-plan response overlay. Existing multi-role, viewport, exact-version and no-write browser suite retained.
+- No actual patient data or clinical signoff. Tests pending GitHub exact-head CI. Hosted external acceptance issue #61 unaffected.
+
 ## 2026-10-26 — TB-EM-038 (tests added; NOT YET RUN)
 
 - `scripts/design/check-child360-logic.mjs`: checks exact-version grouped month entries, weekly + monthly ordering, invalid/undated omission, missing 31st, invalid month, overlap, no completion/outcome fields; verifies 30 scheduled dates in a late month despite 40-event `scheduledDays` preview cap.
