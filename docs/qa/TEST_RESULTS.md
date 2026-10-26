@@ -1,3 +1,8 @@
+## 2026-10-27 — PR #97 paid provider safety regressions added (PENDING exact-head CI)
+
+- Offline fake API tests now also cover base SHA change with identical HEAD, reservation persistence before a billed provider call, GitHub result-publication failure and retry suppression, GitHub reservation-write failure preventing any API request, and break rather than continue when a first provider observes stale HEAD while both provider APIs are enabled.
+- Earlier clean commit `8e29c401296cd75d35a454628d5052ea8997ef04` passed secret-scan and review dispatch; newly added P2 logic/tests/docs alter HEAD, so all six jobs **NOT VERIFIED** at this update. No live API charges, no real patient data, no production release.
+
 ## 2026-10-27 — PR #97 reviewer dispatcher CI tests (NOT RUN at rebased HEAD)
 
 - Added exact GitHub Actions `github-script` offline fixtures, **no paid network requests**: uppercase manual selectors / SHA, zero spend by default, dedupe, stale pull event, head/base moving mid-call, forbidden source rename, excessive patches, HTTP 429, invalid JSON, escaped HTML/mentions/forged result markers, real PASS only after validated response. Failures return INSUFFICIENT_EVIDENCE.
