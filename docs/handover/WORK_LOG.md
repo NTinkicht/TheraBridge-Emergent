@@ -1,3 +1,10 @@
+## 2026-10-26 — TB-EM-040 home-activity details / therapist instructions
+
+- Based on owner-merged main `f40360b595a42f8735e3f7a80be1221e00dbb0e6` (PR #99). Built `HomeActivityDetails` and pure snapshot-first definition selector. The existing `note` field is already validated by the server as an optional UTF-8 string, max 500 chars, and already transmitted by draft save. This unit exposes it in the clinician editor; unchanged server remains authoritative.
+- Activity duration, steps, materials and safety come from plan's saved server-owned `snapshot` first; otherwise explicitly labeled live-library legacy fallback. Clinician notes are separate from template safety and do not rewrite its frozen definition. Saved history renders therapist instructions explicitly; internal calendar displays them without claiming delivery to families.
+- Pure test validates snapshot precedence over changed library, unavailable legacy source, note identity change, note bound; synthetic seven-role browser test edits notes, checks dirty submit guard, review safety/duration, historical note, calendar note and responsive journey. Tests added; exact-head CI/review not yet qualified.
+- No external AI/STT, data release, clinical signing, recording, real records, scheduling or production deployment.
+
 ## 2026-10-26 — TB-EM-039 clinician saved-draft handoff
 
 - Confirmed PR #98 owner-authorized merge at `d9921cb94dca0ca949f1af0b3d1847ebdc51a345`.
