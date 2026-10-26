@@ -160,7 +160,8 @@ await invokeMistral(async (url,options)=>{
   return result;
 });
 assert.equal(requests,beforeMove+1);
-assert.equal(comments.length,commentsBeforeMove,'Changed HEAD must discard model output');
+assert.equal(comments.length,commentsBeforeMove+1,'Only pre-paid reservation is posted on changed HEAD');
+assert(!latest().includes('**Verdict:'),'A stale review cannot publish a result');
 setLiveHead('3'.repeat(40));
 const baseBeforeMove=requests,commentsBeforeBase=comments.length;
 await invokeMistral(async (url,options)=>{
@@ -170,7 +171,8 @@ await invokeMistral(async (url,options)=>{
   return result;
 });
 assert.equal(requests,baseBeforeMove+1);
-assert.equal(comments.length,commentsBeforeBase,'Changed BASE must discard model output');
+assert.equal(comments.length,commentsBeforeBase+1,'Only pre-paid reservation is posted on changed BASE');
+assert(!latest().includes('**Verdict:'),'A stale base cannot publish a result');
 
 // Fail closed without any provider request when a renamed file's OLD path
 // is sensitive (e.g. .env -> ordinary filename), or the patch is oversized.
@@ -218,6 +220,78 @@ assert(!sanitized.includes('@codex review') && !sanitized.includes('@other'),
   'Untrusted mentions must be neutralized');
 assert(sanitized.includes('@'+String.fromCharCode(0x200b)+'codex'));
 assert(sanitized.includes('@'+String.fromCharCode(0x200b)+'other'));
+
+
+// Additional P2 paid-call safety regressions: base-sensitive dedupe,
+// pre-billing durable reservation and aborting stale multi-provider work.
+fixtureFiles=[{filename:'README.md',status:'modified',patch:'@@ -1 +1 @@\\n-old\\n+new'}];
+setLiveHead('9'.repeat(40));
+const firstBaseCalls=requests;
+await invokeMistral(fakeMistral);
+assert.equal(requests,firstBaseCalls+1);
+assert(comments.some(c=>c.body?.includes('therabridge-provider-attempt:Mistral:'+
+  '9'.repeat(40)+':'+base)));
+assert(comments.some(c=>c.body?.includes('therabridge-provider-review:Mistral:'+
+  '9'.repeat(40)+':'+base)));
+setLiveHead('9'.repeat(40),'c'.repeat(40)); // SAME HEAD, new BASE
+await invokeMistral(fakeMistral);
+assert.equal(requests,firstBaseCalls+2,
+  'Different base must permit review of changed comparison at same head');
+assert(latest().includes('BASE `'+'c'.repeat(40)+'`'));
+
+// Failure publishing a paid result cannot trigger repeat spending. Its
+// earlier reserved attempt blocks retry even when result marker is absent.
+setLiveHead('0'.repeat(40));
+const savedCreate=github.rest.issues.createComment;
+let syntheticPublishFailures=0;
+github.rest.issues.createComment=async args=>{
+  if(args.body.includes('### Mistral API review (non-binding)')) {
+    syntheticPublishFailures++;
+    throw Error('synthetic GitHub result publish failure');
+  }
+  return savedCreate(args);
+};
+const beforeUncertain=requests;
+await assert.rejects(()=>invokeMistral(fakeMistral),/synthetic GitHub result publish failure/);
+assert.equal(syntheticPublishFailures,1);
+assert.equal(requests,beforeUncertain+1);
+github.rest.issues.createComment=savedCreate;
+assert(comments.some(c=>c.body?.includes('therabridge-provider-attempt:Mistral:'+
+  '0'.repeat(40)+':'+base)));
+await invokeMistral(offline);
+assert.equal(requests,beforeUncertain+1,'Durable attempt reservation must prevent a second charge');
+
+// If the reservation cannot be persisted, NEVER initiate a provider call.
+setLiveHead('a'.repeat(40));
+github.rest.issues.createComment=async args=>{
+  if(args.body.includes('therabridge-provider-attempt:Mistral:'))
+    throw Error('synthetic reservation storage failure');
+  return savedCreate(args);
+};
+const beforeNoReservation=requests;
+await assert.rejects(()=>invokeMistral(offline),/synthetic reservation storage failure/);
+assert.equal(requests,beforeNoReservation);
+github.rest.issues.createComment=savedCreate;
+
+// Stale HEAD after first provider means second provider is not called.
+setLiveHead('b'.repeat(40));
+context.payload.comment.body='/review-both '+ 'b'.repeat(40);
+const beforeBothStale=requests;
+await action(github,context,core,{env:{
+  TB_PAID_REVIEW_OPT_IN:'true',MISTRAL_API_KEY:'offline-synthetic-fixture',
+  XAI_API_KEY:'offline-synthetic-fixture',
+}},async (url,options)=>{
+  requests++;
+  if(url.includes('mistral.ai')) {
+    const reply=await resultFor();
+    current={...current,head:{...current.head,sha:'c'.repeat(40)}};
+    return reply;
+  }
+  throw Error('STALE Grok must never receive the already-invalid diff');
+},AbortSignal,Buffer);
+assert.equal(requests,beforeBothStale+1,'Do not bill second provider after first result becomes stale');
+assert(!comments.some(c=>c.body?.includes('therabridge-provider-attempt:Grok:'+'b'.repeat(40))),
+  'Do not reserve or call subsequent provider after stale PR');
 
 console.log('PASS: review dispatch safety, uppercase commands, exact-head/base, zero spend, forbidden rename, failures and output escaping');
 
