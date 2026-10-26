@@ -95,7 +95,19 @@ export function GoalVersionContext({ ws, onNavigate }: { ws: Workspace; onNaviga
               </div>
             </div>
             <Link href={`/app/clinical/${encodeURIComponent(ws.child.id)}#plan?version=${encodeURIComponent(row.versionId)}&goal=${encodeURIComponent(row.goalKey)}`}
-              data-testid="progress-context-open-goal" onClick={onNavigate}
+              data-testid="progress-context-open-goal"
+              onClick={event => {
+                // A same-page hash-only Next navigation can resolve AFTER the
+                // Plan tab mounts. Set the exact target URL synchronously before
+                // switching tabs; keep modified clicks as normal links.
+                if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey ||
+                    event.button !== 0) return;
+                event.preventDefault();
+                const href = event.currentTarget.getAttribute('href');
+                if (!href) return;
+                window.history.pushState(null, '', href);
+                onNavigate();
+              }}
               className="inline-flex min-h-[44px] items-center font-semibold text-brand-action underline">
               Inspect this goal in its plan version
             </Link>
