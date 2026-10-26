@@ -1,3 +1,21 @@
+## 2026-10-27 — PR #97 final dispatch qualification
+
+- Confirm owner-authored exact manual comments enter the dispatched review job ONLY through the read-only preflight and ineligible owner comments cannot occupy the paid concurrency queue; automatic PR dispatch is unaffected by preflight skip.
+- Require all six real CI jobs on final HEAD, especially offline preflight parser and provider reservation replay assertions, plus clean Gitleaks history. Recheck any new CodeRabbit/Codex findings; resolve only verified threads.
+- Explicit owner merge decision required after qualification. Paid reviewer opt-in stays disabled by default and hosted clinical/production gates remain separate.
+
+## 2026-10-27 — PR #97 final qualification after new reviewer P2s
+
+- Verify all six exact-HEAD CI jobs on PR #97 after latest paid-call fixes and mandatory handover updates: test (including offline review fixtures), Gitleaks `--all`, live-session, preview-container, seven-role demo journey and Compose. Confirm the final clean branch remains based directly on main@294f3d4298bb9a6b378937f7e40c336572ddef1d; no scanner allowlist weakened.
+- Obtain CodeRabbit and independent exact-HEAD review; inspect any additional P0–P2. Reply and resolve all eight original/follow-up threads only with verified fixes. Keep paid provider opt-in OFF and treat an attempt reservation as uncertain, not a review.
+- This infra PR must not be merged until owner authorization and complete gates. Hosted external acceptance, clinical/guardian release, real patients and provider AI/STT remain separately NO-GO.
+
+## 2026-10-27 — PR #97 qualification sequence
+
+1. Confirm PR #97 branch after clean rebase onto main #107 merge `294f3d4298bb9a6b378937f7e40c336572ddef1d`. Run six-job exact-head CI and independent CodeRabbit/Codex review. Verify Gitleaks `--all` passes with clean history, offline provider test has no network/billing, and all five original threads addressed/resolved. An automatically posted request is not a reviewer verdict.
+2. Keep `TB_PAID_REVIEW_OPT_IN` disabled (default), no Mistral/xAI API secrets configured or invoked through ChatGPT, no live provider spending. Any future owner enablement must be separately authorized and usage-limited.
+3. Owner-authorized merge only when full CI, reviewer findings and context qualify. This is review-infrastructure code independent of clinician acceptance and hosted QA #81. The later per-plan activity-duration UI override, hosted acceptance, production/real data, AI/STT clinical release and consent remain separately gated.
+
 ## 2026-10-27 — TB-EM-046 required acceptance and release sequence
 
 1. Finish exact-head six-job CI and independent P0–P2 review for PR #105 against combined #103/#104 main, resolve any findings, and owner-authorized merge before promoting dependent PR #106.
