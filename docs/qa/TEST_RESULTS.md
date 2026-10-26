@@ -1,3 +1,9 @@
+## 2026-10-26 — TB-EM-043 tests authored, awaiting exact-head CI
+
+- Pure: same reused `same-key` across speech plan v1 percent and v2 count and unrelated OT level goal; observation evidence, checkpoint notes and source IDs stay separate by BOTH `planVersionId` and `goalKey`. Definition field differences flagged, orphan evidence excluded, saved target/horizon/reviewOn retained, deterministic output checked.
+- Browser: clinician Progress tab shows goal version context, specialty filter reveals only authorized plans, saved baseline and target in each expanded version, exact plan-version deep link; existing seven-role, five-width Chromium run retained. Test fixtures synthetic only.
+- No hosted #61 acceptance, medical effectiveness proof, signing or family release implied.
+
 ## 2026-10-26 — TB-EM-042 additions (NOT YET VERIFIED at authoring)
 
 - `scripts/design/check-child360-logic.mjs` adds the pure authorized timeline projection fixture: 2 distinct service/plan versions sharing a goal key, server-created checkpoint with backdated clinician date, completed/in-progress notes, assessment and 3 recorded observations including an orphan. Assert ten events, including two same-day goal checkpoints ordered newest-first by their full server-recorded timestamps, sorted dates, same-version goal labels, no attribution for orphan, filter event/service counts, deterministic order and no appointments/family outcomes in clinical evidence.
