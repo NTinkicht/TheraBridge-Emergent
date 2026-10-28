@@ -49,6 +49,11 @@ export const PERMISSIONS: Record<string, readonly Role[]> = {
   'center.practice.acknowledge': ['THERAPIST'],
   'family.practice.read': ['GUARDIAN'],
   'family.practice.record': ['GUARDIAN'],
+  // TB-EM-048: structured request/response ONLY; never clinical release or free-text messaging.
+  'family.home_plan_request.read': ['GUARDIAN'],
+  'family.home_plan_request.create': ['GUARDIAN'],
+  'center.home_plan_request.read': ['THERAPIST'],
+  'center.home_plan_request.respond': ['THERAPIST'],
 };
 
 // No clinical capability can be granted to anyone until an owner-approved clinical policy exists.
