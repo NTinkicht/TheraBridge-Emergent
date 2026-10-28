@@ -1,10 +1,11 @@
-# TheraBridge external AI reviews: disabled unless an owner explicitly opts into metered APIs.
+# Codex review requests are automatic for same-repo PRs (including drafts).
+# Metered Mistral/Grok APIs require explicit owner opt-in and are not auto-called for drafts.
 # Never checkout PR code, execute its instructions, approve, merge or deploy.
 name: independent-review-dispatch
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize, ready_for_review]
+    types: [opened, reopened, synchronize, ready_for_review, edited]
   issue_comment:
     types: [created]
 
@@ -35,12 +36,12 @@ jobs:
           fs.appendFileSync(process.env.GITHUB_OUTPUT, "eligible=" + eligible + "\n");'
   dispatch:
     needs: qualify
-    # Only qualified commands or eligible PR events enter concurrency.
+    # Only qualified commands or same-repo PR events enter concurrency.
     # Skipped comment events cannot cancel or replace pending paid requests.
     concurrency:
       group: independent-review-${{ github.event.pull_request.number || github.event.issue.number }}
       cancel-in-progress: false
-    if: always() && ((github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name == 'issue_comment' && github.event.issue.pull_request && needs.qualify.result == 'success' && needs.qualify.outputs.eligible == 'true'))
+    if: always() && ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name == 'issue_comment' && github.event.issue.pull_request && needs.qualify.result == 'success' && needs.qualify.outputs.eligible == 'true'))
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -48,8 +49,9 @@ jobs:
         uses: actions/github-script@v7
         env:
           TB_PAID_REVIEW_OPT_IN: ${{ vars.TB_PAID_REVIEW_OPT_IN }}
-          MISTRAL_API_KEY: ${{ secrets.TB_MISTRAL_REVIEW_API_KEY }}
-          XAI_API_KEY: ${{ secrets.TB_XAI_REVIEW_API_KEY }}
+          # No paid provider secrets in automatically reviewed draft PRs.
+          MISTRAL_API_KEY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && secrets.TB_MISTRAL_REVIEW_API_KEY || '' }}
+          XAI_API_KEY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && secrets.TB_XAI_REVIEW_API_KEY || '' }}
           MISTRAL_REVIEW_MODEL: ${{ vars.TB_MISTRAL_REVIEW_MODEL }}
           GROK_REVIEW_MODEL: ${{ vars.TB_GROK_REVIEW_MODEL }}
         with:
@@ -62,11 +64,11 @@ jobs:
             const number = manual ? context.issue.number : context.payload.pull_request.number;
             const current = (await github.rest.pulls.get({ ...repo, pull_number:number })).data;
             const pr = manual ? current : context.payload.pull_request;
-            if (current.state !== 'open' || (current.draft && !manual) ||
+            if (current.state !== 'open' ||
                 current.head.sha !== pr.head.sha || current.base.sha !== pr.base.sha ||
                 current.head.repo.full_name !== repo.owner + '/' + repo.repo ||
                 (manual && command[2] !== current.head.sha)) {
-              core.info('PR draft/stale/foreign or command SHA mismatch: no inference');
+              core.info('PR closed/stale/foreign or command SHA mismatch: no inference');
               return;
             }
             const sha = current.head.sha;
@@ -75,8 +77,8 @@ jobs:
               {owner, repo:repoName, issue_number:number, per_page:100});
             const marker = '<!-- therabridge-review-request:' + sha + ':' + current.base.sha + ' -->';
             const existing = comments.some(c => c.user?.login === 'github-actions[bot]' && c.body?.includes(marker));
+            const enabled = process.env.TB_PAID_REVIEW_OPT_IN === 'true' && (!current.draft || manual);
             if (!manual && !existing) {
-              const enabled = process.env.TB_PAID_REVIEW_OPT_IN === 'true';
               await github.rest.issues.createComment({owner,repo:repoName,issue_number:number,body:[
                 marker, '### Independent AI review dispatch — exact HEAD',
                 'HEAD: \`' + sha + '\` · BASE: \`' + current.base.sha + '\`',
@@ -87,8 +89,8 @@ jobs:
                 'No model can approve, merge, release clinical information, or replace six-job CI.'
               ].join('\n')});
             }
-            if (process.env.TB_PAID_REVIEW_OPT_IN !== 'true') {
-              core.notice('Provider API reviews disabled (zero-extra-spend default).');
+            if (!enabled) {
+              core.notice(current.draft && !manual ? 'Draft PR: automatic Codex request only; paid APIs disabled.' : 'Provider API reviews disabled (zero-extra-spend default).');
               if (manual) await github.rest.issues.createComment({owner,repo:repoName,issue_number:number,
                 body:'External review command for `'+sha+'` not executed: TB_PAID_REVIEW_OPT_IN is disabled. No model was called.'});
               return;
