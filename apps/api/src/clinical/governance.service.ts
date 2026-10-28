@@ -227,6 +227,54 @@ export class GovernanceService {
     return { enabled: true, synthetic: true, items: rows.map(row => this.handoverView(row, manager)) };
   }
 
+  // TB-EM-050: manager-only, read-only operational snapshot. It is NEVER an
+  // authorization decision, a future approval token or a transfer capability.
+  async handoverReadiness(centerId: string, v: Viewer, id: string) {
+    this.assertHandoverDemo();
+    if (!['CENTER_ADMIN','COORDINATOR'].includes(v.role)) throw new ForbiddenException();
+    return this.prisma.$transaction(async tx => {
+      await assertActor(tx, centerId, v, ['CENTER_ADMIN','COORDINATOR']);
+      const draft = await tx.caseloadTransferDraft.findFirst({
+        where: { id, centerId, status: { in: ['PENDING_ACK','ACKNOWLEDGED','CANCELLED'] } },
+      });
+      if (!draft) throw new NotFoundException('Operational handover proposal not found.');
+      const [child, source, recipient] = await Promise.all([
+        tx.child.findFirst({ where: { id: draft.childId, centerId },
+          select: { status: true, services: true } }),
+        tx.careAssignment.findFirst({ where: { centerId, childId: draft.childId,
+          membershipId: draft.fromMembershipId, service: draft.service, endedAt: null },
+          select: { id: true } }),
+        tx.membership.findFirst({ where: { id: draft.toMembershipId, centerId,
+          status: 'ACTIVE', user: { status: 'ACTIVE' }, roles: { some: { role: 'THERAPIST' } } },
+          select: { specialties: true } }),
+      ]);
+      const checks = [
+        { code: 'PROPOSAL_OPEN', met: draft.status !== 'CANCELLED',
+          label: 'Operational proposal remains open' },
+        { code: 'INCOMING_RECEIPT', met: draft.status === 'ACKNOWLEDGED',
+          label: 'Incoming therapist acknowledged receipt (not access)' },
+        { code: 'CHILD_SERVICE_ACTIVE', met: child?.status === 'ACTIVE' &&
+          !!child.services.includes(draft.service), label: 'Child and requested service remain active' },
+        { code: 'SOURCE_ASSIGNMENT_ACTIVE', met: !!source, label: 'Existing therapist assignment remains active' },
+        { code: 'RECIPIENT_QUALIFIED', met: !!recipient &&
+          recipient.specialties.includes(draft.service), label: 'Incoming therapist remains active and specialty-qualified' },
+        // No signed authorization or approved consent/clinical handover policy
+        // currently exists. These blockers MUST NOT be inferred from snapshots,
+        // acknowledgement, administrator role or legacy simulated consent drafts.
+        { code: 'SIGNED_CLINICAL_AUTHORIZATION', met: false,
+          label: 'Signed clinical authorization policy is not available' },
+        { code: 'PURPOSE_SPECIFIC_CONSENT', met: false,
+          label: 'Approved purpose-specific consent authorization is not available' },
+        { code: 'CLINICAL_HANDOVER_SCOPE', met: false,
+          label: 'Clinically approved transfer scope and receiving acceptance are not available' },
+      ];
+      return { proposalId: draft.id, childId: draft.childId, service: draft.service,
+        status: draft.status, synthetic: true, readonly: true, readyForTransfer: false,
+        assignmentChanged: false, accessGranted: false, clinicalHandover: false, released: false,
+        checks };
+    });
+  }
+
   async proposeHandover(centerId: string, v: Viewer, dto: HandoverProposalDto) {
     this.assertHandoverDemo();
     if (!['CENTER_ADMIN','COORDINATOR'].includes(v.role)) throw new ForbiddenException();
