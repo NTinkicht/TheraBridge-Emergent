@@ -1,3 +1,9 @@
+## 2026-10-29 — TB-EM-048 Codex pending-list P2 and tests
+
+- Added separated pending and completed-status queries (unbounded pending, 100 most recent completed) for guardian and assigned therapist scoped inboxes. No pending item can disappear under completed history; no status authorization changes.
+- Added PostgreSQL case with 101 newer answered requests and verified pending retrieval (NOT YET RUN at new HEAD).
+- CI on earlier commits failed in two preexisting permission-expectation tests because new correct permissions were not appended to hardcoded test matrices; fixed both without bypassing policy. Other previous jobs green but cannot qualify updated HEAD.
+
 ## 2026-10-29 — TB-EM-048 P1/P2 reviewer remediation
 
 - Codex #109 P1: reading the active guardian link without locking allowed a concurrent removal to commit before a therapist response. Added `FOR UPDATE` lock + revalidation on guardian_link inside response transaction. Added PostgreSQL blocked-response test with an uncommitted guardian-link removal.
