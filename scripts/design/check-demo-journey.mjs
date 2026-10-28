@@ -611,8 +611,20 @@ try {
     // instructions only; a note edit cannot silently submit an older snapshot.
     const activityDetail = page.getByTestId('home-activity-details-0').first();
     await activityDetail.waitFor();
-    assert((await activityDetail.innerText()).includes('Duration is taken from the activity definition'),
-      'Activity duration must be sourced from its saved or visible template');
+    assert((await activityDetail.innerText()).includes('The saved template duration stays unchanged'),
+      'Plan duration override must not alter the server-owned template snapshot');
+    const planDuration = activityDetail.getByTestId('home-activity-duration-override-0');
+    await planDuration.fill('7');
+    assert(await page.getByTestId('plan-save').first().isEnabled(), 'Valid 7-minute override permits draft save');
+    await planDuration.fill('121');
+    await page.getByTestId('home-activity-invalid-duration').waitFor();
+    assert(await page.getByTestId('plan-save').first().isDisabled(), 'Out-of-range override must block draft save');
+    await planDuration.fill('10.5');
+    assert(await page.getByTestId('plan-save').first().isDisabled(), 'Fractional duration must block draft save');
+    await planDuration.fill('7');
+    assert(await page.getByTestId('plan-save').first().isEnabled());
+    assert(!(await activeSavedPreview.getByTestId('saved-plan-preview-body').innerText()).includes('Plan-specific duration: 7'),
+      'Unsaved duration override must never leak into saved-plan preview');
     await activityDetail.getByTestId('home-activity-safety-0').waitFor();
     const therapistNote = activityDetail.getByTestId('home-activity-instructions-0');
     await therapistNote.fill('Synthetic clinician adaptation: use picture cards with adult guidance.');
