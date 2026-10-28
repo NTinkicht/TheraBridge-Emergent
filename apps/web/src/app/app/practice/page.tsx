@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight, FlaskConical, History, Sun } from 'lucide-react';
 import { Workspace, useLoad } from '@/components/centers/kit';
 import { ActivityCard } from '@/components/practice/ActivityCard';
+import { GuardianPlanRequestPanel } from '@/components/practice/GuardianPlanRequestPanel';
 import { RecordDialog } from '@/components/practice/RecordDialog';
 import { Pill } from '@/components/design/ui';
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
@@ -66,6 +67,7 @@ function Practice({ session, onError }: { session: SessionInfo; onError: (e: unk
             <button type="button" aria-pressed={view === 'week'} className={tab(view === 'week')} onClick={() => { setView('week'); setWeek(undefined); }} data-testid="practice-view-week"><CalendarDays size={15} aria-hidden="true" />This week</button>
             <button type="button" aria-pressed={view === 'history'} className={tab(view === 'history')} onClick={() => setView('history')} data-testid="practice-view-history"><History size={15} aria-hidden="true" />History</button>
           </div>
+          <GuardianPlanRequestPanel centerId={centerId} childId={child.id} />
           {view === 'week' && (
             <div className="flex items-center justify-between gap-2 rounded-control bg-fam-surface p-2" data-testid="practice-week-nav">
               <button type="button" className="rounded-full p-2 hover:bg-fam-tile" aria-label="Previous week" onClick={() => setWeek(shift(data.week.start, -7))} data-testid="practice-week-prev"><ChevronLeft size={18} aria-hidden="true" /></button>
