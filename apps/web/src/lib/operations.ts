@@ -25,6 +25,11 @@ export interface ChildDetail {
 }
 export interface ChildInput { firstName: string; lastName: string; preferredName?: string; dateOfBirth: string; services: string[] }
 export type HandoverStatus = 'PENDING_ACK' | 'ACKNOWLEDGED' | 'CANCELLED';
+export const HANDOVER_LABELS: Record<HandoverStatus, string> = {
+  PENDING_ACK: 'Awaiting incoming therapist receipt',
+  ACKNOWLEDGED: 'Receipt acknowledged — assignment unchanged',
+  CANCELLED: 'Proposal cancelled — assignment unchanged',
+};
 export interface HandoverProposal {
   id: string; service: string; status: HandoverStatus; reasonCode: string;
   createdAt: string; childId?: string; fromMembershipId?: string; toMembershipId?: string;
