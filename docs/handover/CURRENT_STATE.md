@@ -1,3 +1,7 @@
+## 2026-10-29 — TB-EM-048 Milestone 2 guardian home-plan requests (DRAFT / NOT QUALIFIED)
+
+After owner-authorized PR #108 merge `main@0453c5228b397ce6fd99bed05259a7e4c181540d`, started separate branch `feature/tb-em-048-guardian-plan-requests`. Added an opt-in, synthetic-only structured guardian request lifecycle with persistent PostgreSQL records, one-pending-per-link/service index, active-guardian/assigned-therapist row scoping, idempotent submissions and fixed acknowledgement/closed-unavailable responses. Added explicit role permissions, request/response API, guardian Practice and clinician Feedback panels, and real-PostgreSQL regression fixtures. No raw messages, medical advice, clinical plan publication, approval or signing. `HOME_PLAN_REQUESTS_DEMO` defaults OFF and is always prohibited for staging/production; hosted Render unchanged. **Exact-head CI, full browser acceptance, independent P0–P2 review NOT VERIFIED**. Keep as draft; no merge or deploy.
+
 ## 2026-10-29 — TB-EM-047 PR #108 clinician per-plan activity duration (DRAFT; qualification PENDING)
 
 - Focused synthetic-only clinician home-plan change on branch `feature/tb-em-047-home-duration-override`: optional whole-minute (1–120) per-plan duration via existing author-only and revision-checked plan-version update; server-owned saved activity snapshot minutes and library remain unchanged. Empty override omitted; explicit JSON null now rejected by DTO; all invalid values rejected at API boundary.
