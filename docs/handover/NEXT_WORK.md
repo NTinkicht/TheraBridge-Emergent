@@ -1,3 +1,7 @@
+## 2026-10-29 — TB-EM-048 final qualification after permission-matrix update
+
+Re-run exact-HEAD six-job CI after revised RBAC expectation tests and pending-history fix. Review latest Codex threads P1 guardian-link row race, P2 pending-idempotency rejection and P2 pending-history pagination/drop. Reply with tested fix evidence only; resolve after new exact-HEAD independent review. Keep this PR DRAFT and require owner merge authorization. Hosted and clinical release still NO-GO.
+
 ## 2026-10-29 — PR #109 corrected-head qualification
 
 Requalify latest exact HEAD after guardian-link row lock, idempotency rejection, concurrency test and CI browser journey were added. First inspect six real CI jobs (including PostgreSQL lock-wait test and Chromium family/staff workflow); fix failures and request new exact-HEAD Codex independent review. Resolve original P1/P2 threads only with verified fixes. Do not mark an old SHA's review as current. Draft/no merge until owner decision; production/hosted flag remains OFF and clinical NO-GO intact.
