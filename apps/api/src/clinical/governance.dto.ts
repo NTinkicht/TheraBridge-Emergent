@@ -1,4 +1,5 @@
 import { IsIn, IsInt, IsString, IsUUID, MaxLength, Min, MinLength } from 'class-validator';
+import { SPECIALTIES } from '../applications/applications.dto';
 export class TransitionDto {
   @IsInt() @Min(1) version!: number;
   @IsIn(['SUBMIT','RETURN','COMMENT','WITHDRAW','FREEZE','REOPEN']) action!: string;
@@ -10,7 +11,7 @@ export class HandoverProposalDto {
   @IsUUID() fromMembershipId!: string;
   @IsUUID() toMembershipId!: string;
   @IsIn(['STAFF_CHANGE', 'AVAILABILITY', 'FAMILY_REQUEST']) reasonCode!: string;
-  @IsIn(['speech', 'occupational', 'physical', 'behavioral', 'psychology', 'other']) service!: string;
+  @IsIn(SPECIALTIES) service!: string;
 }
 
 export class TransferDraftDto {
