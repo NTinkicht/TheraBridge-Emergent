@@ -1,3 +1,10 @@
+## 2026-10-29 — Immediate post-policy PR #111 qualification
+
+1. Verify corrected exact-HEAD CI for all six jobs; inspect new real PostgreSQL cancel-first/acknowledge-second concurrency test and frontend button guard. Fix red jobs before review.
+2. Inspect any new Codex comments on original e7caba SHA: apply real P0–P2 fixes, record every P3 as FIX_NOW, DEFER_ISSUE or DECLINE_WITH_REASON. **Do not treat the prior SHA review as qualifying the new HEAD**. Avoid duplicate Codex requests; request one final exact-head review only when CI green and stable.
+3. Confirm current PR #111 disposition ledger and issue #112. Keep draft/unmerged until complete qualification and owner authorization.
+4. Retain synthetic-only disabled-by-default handover flag, no clinical access transfer or release. After merge the documented review policy will apply repository-wide through AGENTS.md and the PR template.
+
 ## 2026-10-29 — TB-EM-049 corrected-head qualification
 
 Inspect exact-head six-job CI including PostgreSQL status migration, 17+ e2e suites, real row-lock tests, security routes, web build, live-session, demo-journey, preview-container, compose and secret scan. Fix failures and repeat at the new exact HEAD. Only after CI is green and code stabilizes, request one Codex P0-P2 re-review to conserve credits. Compare new independent findings with corrected code, resolve all actionable blockers before owner-authorized merge. Actual therapist re-assignment, clinical chart access, consent, signing and family release are NOT authorized in this operational handover preparation slice.
