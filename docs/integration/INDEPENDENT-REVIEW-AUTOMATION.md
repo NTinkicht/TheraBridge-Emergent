@@ -10,18 +10,20 @@ model actually reviewed a change.
 
 ## What is automatic
 
-On a non-draft, same-repository PR open/reopen/new commit/ready-for-review,
+On a same-repository PR open/reopen/new commit/ready-for-review/base edit, **including draft PRs**, 
 the workflow:
 1. Re-fetches the live PR and verifies both exact head and base SHAs;
-2. Posts one SHA-deduplicated `@codex review` request using the existing GitHub
+2. Posts one HEAD+BASE-deduplicated `@codex review` request using the existing GitHub
    integration. Codex's own review receipt is the evidence of completion;
-3. Only when the **explicit paid API opt-in** is enabled, gathers a complete,
+3. Only when the **explicit paid API opt-in** is enabled **and the PR is ready for review** (or an owner explicitly issued a valid manual provider-review command), gathers a complete,
    bounded text-only PR patch and invokes the configured Mistral and/or Grok
    API endpoint with read-only, no-tool reviewer instructions;
 4. Validates the model's response shape, finding file paths and severities,
    re-fetches exact head/base, then posts a SHA-scoped advisory result with
    model name and provider response ID. Failure, incomplete source evidence
    and malformed responses are `INSUFFICIENT_EVIDENCE`, never PASS.
+
+For automatic draft PR events, the workflow does not receive paid reviewer API keys and never makes a paid provider call, even if repository-wide opt-in is enabled. Explicit owner commands on drafts retain their separately authorized paid API behavior.
 
 No workflow step checks out or executes arbitrary PR content with provider
 credentials. Fork PRs are skipped instead of being silently given write
