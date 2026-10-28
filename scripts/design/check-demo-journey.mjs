@@ -1192,6 +1192,19 @@ try {
     await page.goto(base + '/app/practice');
     await page.getByTestId('practice-page').waitFor();
     assert.equal(await page.locator('[data-testid="practice-page"] [role="tablist"]').count(), 0);
+    // TB-EM-048: show only fixed request statuses; no care-plan drafts.
+    const guardianRequests = page.getByTestId('guardian-home-plan-requests');
+    await guardianRequests.waitFor();
+    const requestsBefore = await read(page, centerBase + '/family/home-plan-requests');
+    assert.equal(requestsBefore.status, 200);
+    assert.equal(requestsBefore.body.enabled, true);
+    assert.equal(requestsBefore.body.released, false);
+    await guardianRequests.getByTestId('guardian-home-plan-request-speech').click();
+    await guardianRequests.getByTestId('guardian-home-plan-history').getByText('Awaiting care-team acknowledgement').waitFor();
+    assert((await guardianRequests.innerText()).includes('No clinical plan or report delivered'));
+    const requestsAfter = await read(page, centerBase + '/family/home-plan-requests');
+    assert.equal(requestsAfter.body.items.filter(x => x.service === 'speech' && x.status === 'PENDING').length, 1);
+    assert.equal((await read(page, centerBase + '/clinical/home-plan-requests')).status, 403);
     await page.getByTestId('practice-view-week').click();
     assert.equal(await page.getByTestId('practice-view-week').getAttribute('aria-pressed'), 'true');
     await page.getByTestId('practice-view-history').click();
@@ -1252,7 +1265,25 @@ try {
       assert([200, 201].includes(submission), 'Practice outcome must persist through authenticated guardian API');
     }
   });
-  console.log('PASS: seven role logins + logout, centre and child read, scoped Speech/OT history, parent practice, blocked admin/parent/supervisor clinical/messaging access through real same-origin API');
+  // TB-EM-048: the same synthetic request is visible only to assigned
+  // therapist(s) and acknowledged without creating or releasing a plan.
+  await role('speech@childrens-home.therabridge.test', 'THERAPIST', async page => {
+    const r = await read(page, centerBase + '/clinical/home-plan-requests');
+    assert.equal(r.status, 200);
+    assert.equal(r.body.enabled, true);
+    assert(r.body.items.some(x => x.service === 'speech' && x.status === 'PENDING'));
+    await page.goto(base + '/app/practice-feedback');
+    const inbox = page.getByTestId('clinician-home-plan-requests');
+    await inbox.waitFor();
+    const pending = inbox.getByTestId('plan-request-acknowledge').first();
+    await pending.waitFor();
+    await pending.click();
+    await inbox.getByText('Received by care team (no plan shared)').first().waitFor();
+    const latest = await read(page, centerBase + '/clinical/home-plan-requests');
+    assert(latest.body.items.some(x => x.service === 'speech' && x.status === 'ACKNOWLEDGED'));
+    assert(latest.body.items.every(x => x.released === false && x.clinicalAuthorization === false));
+  });
+  console.log('PASS: seven role identities + synthetic guardian home-plan request and therapist acknowledgement, without clinical release');
 } finally {
   await browserInstance.close();
   await db.$disconnect();
