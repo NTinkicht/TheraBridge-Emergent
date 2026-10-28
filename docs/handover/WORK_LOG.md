@@ -1,3 +1,11 @@
+## 2026-10-29 — TB-EM-048 review findings and corrections
+
+- Codex final reviewed SHA 4a082bea P1: therapist membership role and specialty mutations could outrun a clinician response; fixed using common center→membership→care_assignment→guardian_link lock ordering and rechecks. WorkspaceService staff and self-profile edits now lock center and membership before writes, compatible with existing trial/assignment locks.
+- Independent Mistral P1 red API tests: corrected AC-9 exact guardian permission list and AC-11 exact reviewed write-route list; no permissive assertion used.
+- Independent review P2 responder membership audit FK: added to Prisma and this unmerged migration. P3 overlapping clinician row action: disabled all action buttons while any request in flight.
+- Reviewer test advisories: added PostgreSQL concurrency suite for revoke-role/revoke-specialty/end-assignment, concurrent keys, valid responder FK, 2 guardian links, and feature-off denial. Every clinical or non-synthetic release gate unchanged.
+- Previous failing CI 40765592359 tied to old SHA cannot be counted. Current SHA CI PENDING / NOT VERIFIED; wait for 6/6 exact-head before requesting one final Codex review.
+
 ## 2026-10-29 — TB-EM-048 Codex pending-list P2 and tests
 
 - Added separated pending and completed-status queries (unbounded pending, 100 most recent completed) for guardian and assigned therapist scoped inboxes. No pending item can disappear under completed history; no status authorization changes.
