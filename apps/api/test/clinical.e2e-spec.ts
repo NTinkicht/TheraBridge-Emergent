@@ -239,19 +239,26 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
       schedule: { cadence: 'WEEKLY', startsOn: '2026-10-19', endsOn: '2026-10-19', weekdays: [2] } }] }).expect(422);
 
+    // TB-EM-047: validate optional per-plan duration at the HTTP boundary.
+    // Explicit null must be rejected, not saved as a hidden/invalid override.
+    for (const badDuration of [null, 0, 121, 10.5, -1]) {
+      await patch(therapist, url, { ...update, homeActivities: [{ ...activity, durationMinutes: badDuration }] }).expect(400);
+    }
+    expect((await h.prisma.planVersion.findUniqueOrThrow({ where: { id: plan.versionId } })).version).toBe(1);
     await patch(other, url, update).expect(404);
     await patch(sup, url, update).expect(403);
-    await patch(therapist, url, update).expect(200);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity, durationMinutes: 7 }] }).expect(200);
     const current = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: plan.versionId } });
     expect(current.version).toBe(2);
     expect(current.goals).toEqual([goal]);
     expect(current.homeActivities).toEqual([expect.objectContaining({
-      templateId: template.id, goalKey: 'naming', schedule: activity.schedule,
-      snapshot: expect.objectContaining({ title: 'Synthetic home picture practice', safety: ['Adult supports'] }),
+      templateId: template.id, goalKey: 'naming', schedule: activity.schedule, durationMinutes: 7,
+      snapshot: expect.objectContaining({ title: 'Synthetic home picture practice', minutes: 10, safety: ['Adult supports'] }),
     })]);
     const viewed = (await get(sup, c(`clinical/children/${kid}`)).expect(200)).body;
     expect(viewed.plans[0].versions[0].goals).toEqual([goal]);
     expect(viewed.plans[0].versions[0].homeActivities[0].schedule).toEqual(activity.schedule);
+    expect(viewed.plans[0].versions[0].homeActivities[0].durationMinutes).toBe(7);
     await get(rosa, c(`clinical/children/${kid}`)).expect(403);
     expect(JSON.stringify((await get(rosa, c('family/activities')).expect(200)).body))
       .not.toContain('Synthetic home picture practice');
@@ -265,6 +272,9 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     const updated = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: plan.versionId } });
     expect(updated.goals).toEqual([longTerm]);
     expect(updated.homeActivities).toEqual([expect.objectContaining({ schedule: monthly.schedule })]);
+    const cleared = (updated.homeActivities as unknown as Array<{ durationMinutes?: number; snapshot: { minutes: number } }>)[0];
+    expect(cleared.durationMinutes).toBeUndefined();
+    expect(cleared.snapshot.minutes).toBe(10);
     expect(await h.prisma.observation.count({ where: { planVersionId: plan.versionId } })).toBe(0);
   });
 
