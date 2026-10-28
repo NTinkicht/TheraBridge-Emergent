@@ -219,6 +219,7 @@ model Membership {
   referredChildren Child[]          @relation("ChildReferent")
   roles            RoleAssignment[]
   sessions         Session[]
+  answeredHomePlanRequests HomePlanRequest[] @relation("HomePlanRequestResponder")
 
   @@unique([userId, centerId])
   @@map("membership")
@@ -727,6 +728,7 @@ model HomePlanRequest {
   center        Center    @relation(fields: [centerId], references: [id], onDelete: Restrict)
   child         Child     @relation(fields: [childId], references: [id], onDelete: Restrict)
   guardianLink  GuardianLink @relation(fields: [guardianLinkId], references: [id], onDelete: Restrict)
+  responder     Membership? @relation("HomePlanRequestResponder", fields: [respondedById], references: [id], onDelete: Restrict)
 
   @@index([centerId, childId, service, status])
   @@index([guardianLinkId, createdAt])
