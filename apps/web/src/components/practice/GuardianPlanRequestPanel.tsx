@@ -24,7 +24,7 @@ export function GuardianPlanRequestPanel({ centerId, childId }: { centerId: stri
     try {
       await practiceApi.requestHomePlan(centerId, { childId, service, requestKey: crypto.randomUUID() });
       await reload();
-    } catch (e) { setError(errorText(e) || 'Request not saved. Nothing was shared.'); }
+    } catch (e) { setError(errorText(e, () => {}) || 'Request not saved. Nothing was shared.'); }
     finally { setBusy(null); }
   };
   const child = data?.children.find(k => k.id === childId);
