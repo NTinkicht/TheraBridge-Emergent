@@ -1,3 +1,9 @@
+## 2026-10-29 — Automatic draft Codex review workflow test ledger
+
+- Offline regression assertions **ADDED, NOT YET RUN**: same-repository draft PR triggers first `@codex review` comment; repeated event same HEAD/BASE deduplicated; new commit and changed BASE each request fresh exact-SHA review. Synthetic test forces provider API opt-in and fake secrets during draft event and asserts **zero provider calls**; ready/manual paid controls remain covered by existing mock tests.
+- Workflow script validation and exact-head six-job GitHub CI **NOT VERIFIED**. End-to-end Codex App receipt from automatic bot comment **NOT VERIFIED**. Do not treat posted request or successful API call as completed independent review.
+- No production feature, real data, signing, AI/STT, consent or release changed. Hosted QA #81 remains independently INCOMPLETE.
+
 ## 2026-10-29 — PR #108 TB-EM-047 duration-override verification ledger
 
 - Original PR HEAD `ed5414add44e30228d8a476abcf6dd28f3edd65b`: CI `demo-journey` **FAIL** at stale exact-copy assertion ("Duration is taken from the activity definition"); other jobs were reported green by Mistral but original job logs were not used as qualification for subsequent commits. Corrected in `scripts/design/check-demo-journey.mjs`.
