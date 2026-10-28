@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button, Card } from '@/components/design/ui';
 import { SelectField } from '@/components/centers/kit';
 import { serviceLabel } from './BookDialog';
-import { opsApi, type ChildDetail, type Therapist, type HandoverInbox } from '@/lib/operations';
+import { opsApi, HANDOVER_LABELS, type ChildDetail, type Therapist, type HandoverInbox } from '@/lib/operations';
 
 export function HandoverProposalPanel({ centerId, child }: { centerId: string; child: ChildDetail }) {
   const [data, setData] = useState<HandoverInbox | null>(null);
@@ -15,8 +15,11 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
   const [error, setError] = useState('');
   const reload = useCallback(async () => {
     try {
-      const [d, t] = await Promise.all([opsApi.handovers(centerId), opsApi.therapists(centerId)]);
-      setData(d); setStaff(t.items); setError('');
+      const d = await opsApi.handovers(centerId);
+      setData(d);
+      if (d.enabled) setStaff((await opsApi.therapists(centerId)).items);
+      else setStaff([]);
+      setError('');
     } catch { setError('Could not load synthetic handover proposals.'); }
   }, [centerId]);
   useEffect(() => { void reload(); }, [reload]);
@@ -64,7 +67,7 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
         data-testid="handover-propose">Propose operational handover</Button>
       <ul className="space-y-2" data-testid="handover-manager-history">
         {own.map(r => <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-border-light p-3">
-          <span className="text-[13px]">{serviceLabel(r.service)} · {r.status.replaceAll('_',' ')}
+          <span className="text-[13px]">{serviceLabel(r.service)} · {HANDOVER_LABELS[r.status]}
             <span className="block text-brand-inkMuted">No clinical information or assignment changed</span>
           </span>
           {r.status !== 'CANCELLED' && <Button size="sm" variant="secondary" disabled={busy}
