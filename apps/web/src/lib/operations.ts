@@ -24,6 +24,18 @@ export interface ChildDetail {
   events: { id: number; type: string; actor: string | null; subject: string | null; meta: Record<string, unknown>; createdAt: string }[];
 }
 export interface ChildInput { firstName: string; lastName: string; preferredName?: string; dateOfBirth: string; services: string[] }
+export type HandoverStatus = 'PENDING_ACK' | 'ACKNOWLEDGED' | 'CANCELLED';
+export const HANDOVER_LABELS: Record<HandoverStatus, string> = {
+  PENDING_ACK: 'Awaiting incoming therapist receipt',
+  ACKNOWLEDGED: 'Receipt acknowledged — assignment unchanged',
+  CANCELLED: 'Proposal cancelled — assignment unchanged',
+};
+export interface HandoverProposal {
+  id: string; service: string; status: HandoverStatus; reasonCode: string;
+  createdAt: string; childId?: string; fromMembershipId?: string; toMembershipId?: string;
+  synthetic: true; accessGranted: false; assignmentChanged: false; clinicalHandover: false; released: false;
+}
+export interface HandoverInbox { enabled: boolean; synthetic: true; items: HandoverProposal[] }
 export interface Therapist { membershipId: string; displayName: string; title: string | null; specialties: string[] }
 export interface Dashboard { dayStart: string; timezone: string; today: Appointment[]; counts: { activeChildren: number; unassigned: number; noGuardian: number; therapists: number; pendingInvites: number; upcomingWeek: number }; trial: Trial }
 export interface FamilyOverview {
@@ -59,6 +71,14 @@ export const opsApi = {
     rest.send<{ id: string; connected: boolean; invited: boolean }>('POST', c(centerId, `children/${id}/guardians`), body),
   inviteGuardian: (centerId: string, id: string, linkId: string) => rest.send('POST', c(centerId, `children/${id}/guardians/${linkId}/invite`)),
   removeGuardian: (centerId: string, id: string, linkId: string, reason: string) => rest.send('POST', c(centerId, `children/${id}/guardians/${linkId}/remove`), { reason }),
+  handovers: (centerId: string) => rest.get<HandoverInbox>(c(centerId, 'governance/handover-proposals')),
+  proposeHandover: (centerId: string, body: { childId: string; fromMembershipId: string;
+    toMembershipId: string; service: string; reasonCode: 'STAFF_CHANGE' | 'AVAILABILITY' | 'FAMILY_REQUEST' }) =>
+    rest.send<HandoverProposal>('POST',c(centerId,'governance/handover-proposals'),body),
+  acknowledgeHandover: (centerId: string, id: string) =>
+    rest.send<HandoverProposal>('POST',c(centerId,`governance/handover-proposals/${id}/acknowledge`),{}),
+  cancelHandover: (centerId: string, id: string) =>
+    rest.send<HandoverProposal>('POST',c(centerId,`governance/handover-proposals/${id}/cancel`),{}),
   assign: (centerId: string, id: string, body: { membershipId: string; service: string; isLead: boolean }) => rest.send('POST', c(centerId, `children/${id}/assignments`), body),
   endAssignment: (centerId: string, id: string, aid: string) => rest.send('POST', c(centerId, `children/${id}/assignments/${aid}/end`)),
   designateReferent: (centerId: string, id: string, body: { membershipId: string | null; version: number; reason: string }) =>

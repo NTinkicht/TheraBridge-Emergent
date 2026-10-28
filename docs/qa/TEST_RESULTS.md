@@ -1,3 +1,15 @@
+## 2026-10-29 — Review policy implementation and P3 regression: NOT YET RUN
+
+Prior PR #111 e7caba017fac 6/6 exact-head CI PASS; cannot transfer that verdict to new HEAD. New PostgreSQL test deliberately holds the center FOR UPDATE lock, confirms one waiting cancellation then two waiting competing operations via pg_stat_activity, releases, verifies cancel 201 / acknowledge 404, one cancellation event, zero acknowledgement events and unchanged active assignments. Frontend manager panel disables duplicate source/service proposal when PENDING_ACK or ACKNOWLEDGED exists, with visible explanatory notice; server CAS/409 unchanged. Tests and code have been committed but exact-HEAD CI has not yet completed; do NOT claim PASS. No clinical release or production deployment.
+
+## 2026-10-29 — TB-EM-049 corrected test ledger
+
+Initial run 40772381693, head 0d170d3: test FAILURE (3 failed / 553 tests; handover.e2e-spec.ts only), compose SKIPPED; other jobs green. Real SQLSTATE 23514 prevented inserts. Source-equals-target test also expected 404 vs actual 422. Additive migration and service validation fixes applied (NOT VERIFIED at new HEAD). Added PostgreSQL tests for old simulation isolation, completed history cap, source assignment ended, concurrent specialty/assignment lock-wait, cancellation scope, duplicate proposal. All six corrected-head CI jobs and final independent P0-P2 review PENDING. No clinical handover/release allowed.
+
+## 2026-10-29 — TB-EM-049 handover preparation checks (NOT RUN)
+
+Added real PostgreSQL e2e suite handover.e2e-spec.ts with: manager proposal, duplicate pending prevention and cancel; wrong-therapist/unauthorized role denied; recipient sees only own opaque operational request without child identity or clinical drafts; receiver acknowledges with original assignment unchanged; invalid service reason/free-text rejection; inactive specialty denial; feature flag OFF read/write rejection; concurrent proposals dedupe. Updated full role permission test map, exact write-route inventory and security matrix. CI six-job new exact-head status NOT VERIFIED, no Codex result, no merge/deploy. Clinical release, reassignment and hosted #81 NO-GO intact.
+
 ## 2026-10-29 — PR #109 reviewer fixes / verification pending
 
 Previous exact-head run 40765592359 failed 2 assertions in apps/api/test/authz.e2e-spec.ts (AC-9/AC-11), causing Compose skip. Revised exact full permission and route snapshots without weakening; NEW HEAD CI PENDING.

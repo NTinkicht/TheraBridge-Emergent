@@ -1,3 +1,21 @@
+## 2026-10-29 — Immediate post-policy PR #111 qualification
+
+1. Verify corrected exact-HEAD CI for all six jobs; inspect new real PostgreSQL cancel-first/acknowledge-second concurrency test and frontend button guard. Fix red jobs before review.
+2. Inspect any new Codex comments on original e7caba SHA: apply real P0–P2 fixes, record every P3 as FIX_NOW, DEFER_ISSUE or DECLINE_WITH_REASON. **Do not treat the prior SHA review as qualifying the new HEAD**. Avoid duplicate Codex requests; request one final exact-head review only when CI green and stable.
+3. Confirm current PR #111 disposition ledger and issue #112. Keep draft/unmerged until complete qualification and owner authorization.
+4. Retain synthetic-only disabled-by-default handover flag, no clinical access transfer or release. After merge the documented review policy will apply repository-wide through AGENTS.md and the PR template.
+
+## 2026-10-29 — TB-EM-049 corrected-head qualification
+
+Inspect exact-head six-job CI including PostgreSQL status migration, 17+ e2e suites, real row-lock tests, security routes, web build, live-session, demo-journey, preview-container, compose and secret scan. Fix failures and repeat at the new exact HEAD. Only after CI is green and code stabilizes, request one Codex P0-P2 re-review to conserve credits. Compare new independent findings with corrected code, resolve all actionable blockers before owner-authorized merge. Actual therapist re-assignment, clinical chart access, consent, signing and family release are NOT authorized in this operational handover preparation slice.
+
+## 2026-10-29 — TB-EM-049 immediate next actions
+
+1. Run all six exact-HEAD CI jobs including Nest/Web TS build, PostgreSQL handover.e2e, route inventory and browser demo. Correct failures and rerun on new HEAD.
+2. Once code stable and CI green, request one credit-conscious Codex exact HEAD P0–P2 review; check authorization, idempotency, concurrency and leakage, and handle actual findings. Do not request Codex per intermediate commit.
+3. Require owner merge decision after all reviewers/CI green. Keep HANDOVER_DEMO OFF for hosted/production and unchanged clinical governance NO-GO.
+4. Next follow-up in same roadmap work item: *guarded actual therapist replacement and clinical handover acceptance* with independent authorization signatures/consent decision; do not implement by merely changing operational acknowledgement status.
+
 ## 2026-10-29 — PR #109 last qualification
 
 1. Inspect exact-head six-job CI for corrected source (especially PostgreSQL races, Prisma migration generate/typecheck, AC-9/AC-11 test suite, Chromium family/staff journey, Compose).

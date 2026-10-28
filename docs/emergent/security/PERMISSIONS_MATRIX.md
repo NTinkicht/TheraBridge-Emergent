@@ -29,6 +29,10 @@ Source of truth: `apps/api/src/auth/policy.ts`. The test `authz.e2e-spec.ts` fai
 | center.children.manage | CENTER_ADMIN, COORDINATOR |
 | center.families.manage | CENTER_ADMIN, COORDINATOR |
 | center.assignments.manage | CENTER_ADMIN, COORDINATOR |
+| center.handover.read | CENTER_ADMIN, COORDINATOR, THERAPIST |
+| center.handover.propose | CENTER_ADMIN, COORDINATOR |
+| center.handover.acknowledge | THERAPIST |
+| center.handover.cancel | CENTER_ADMIN, COORDINATOR |
 | center.schedule.read | CENTER_ADMIN, COORDINATOR, THERAPIST, CLINICAL_SUPERVISOR |
 | center.schedule.manage | CENTER_ADMIN, COORDINATOR |
 | center.appointments.status | CENTER_ADMIN, COORDINATOR, THERAPIST |

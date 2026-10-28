@@ -920,10 +920,14 @@ model CaseloadTransferDraft {
   fromMembershipId String @map("from_membership_id") @db.Uuid
   toMembershipId String @map("to_membership_id") @db.Uuid
   service String @db.VarChar(32)
+  // Legacy SIMULATION_ONLY stores free-text simulation reason; new handover statuses
+  // store a fixed operational reason code. See migration 20261029100000.
   reason String @db.VarChar(1000)
   status String @default("SIMULATION_ONLY") @db.VarChar(32)
   createdById String @map("created_by_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   @@index([centerId])
+  @@index([centerId, status, createdAt], map: "caseload_transfer_draft_center_status_created_idx")
+  @@index([centerId, toMembershipId, status, createdAt], map: "caseload_transfer_draft_center_target_status_created_idx")
   @@map("caseload_transfer_draft")
 }

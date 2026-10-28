@@ -6,7 +6,7 @@ import { Tx, logCenterEvent } from '../centers/history';
 import { ClinicalService } from './clinical.service';
 import { ReportsService } from './reports.service';
 import { EDITABLE, INTERNAL_NOTICE, assertActor, json, snapshot, transitionHistory } from './governance-core';
-import { TransferDraftDto, TransitionDto } from './governance.dto';
+import { TransferDraftDto, TransitionDto, HandoverProposalDto } from './governance.dto';
 
 @Injectable()
 export class GovernanceService {
@@ -174,10 +174,163 @@ export class GovernanceService {
       const policies = await tx.consentPolicyDraft.findMany({ where: { centerId }, orderBy: { number: 'desc' } });
       const records = await tx.consentRecordDraft.findMany({ where: { centerId }, orderBy: { createdAt: 'desc' } });
       const events = await tx.centerEvent.findMany({ where: { centerId, type: { not: { startsWith: 'clinical.' } } }, orderBy: { id: 'desc' }, take: 100, select: { id: true, type: true, createdAt: true, actorUserId: true } });
-      const transfers = await tx.caseloadTransferDraft.findMany({ where: { centerId }, orderBy: { createdAt: 'desc' } });
+      const transfers = await tx.caseloadTransferDraft.findMany({ where: { centerId, status: 'SIMULATION_ONLY' }, orderBy: { createdAt: 'desc' } });
       const staff = await tx.membership.findMany({ where: { centerId, status: 'ACTIVE', roles: { some: { role: 'THERAPIST' } } }, select: { id: true, user: { select: { displayName: true } } } });
       const assignments = await tx.careAssignment.findMany({ where: { centerId, endedAt: null }, select: { childId: true, membershipId: true, service: true } });
       return { synthetic: true, clinicalRelease: false, consentGrant: false, media: false, ai: false, recording: false, children: children.map(c => ({ ...c, guardians: c.guardians.map(g => ({ ...g, capabilities: c.status !== 'ACTIVE' || g.removedAt || !g.userId || !guardianMembers.has(g.userId) ? [] : ['synthetic_samples','operational_portal'], restrictions: 'Awaiting D4: no custody policy inferred', releaseReadiness: 'BLOCKED_POLICY' })) })), invitations: invitations.map(i => ({ ...i, status: i.status === 'PENDING' && i.expiresAt <= this.trial.now() ? 'EXPIRED' : i.status })), policies, records, events: events.map(e => ({ ...e, id: String(e.id) })), transfers, staff, assignments, blockers: ['D1','D4','D7','D-NEW-3','D-NEW-5','OR-15','OR-16'] };
+    });
+  }
+
+  // TB-EM-049 preliminary operational handover: intentionally no permission
+  // grant, clinical-document access, assignment mutation or automatic completion.
+  // Uses a separate status namespace from legacy SIMULATION_ONLY drafts.
+  private handoverEnabled() {
+    return process.env.HANDOVER_DEMO === 'true' &&
+      !['production', 'staging'].includes(process.env.DEPLOYMENT_ENV ?? '');
+  }
+  private assertHandoverDemo() {
+    if (!this.handoverEnabled()) throw new ForbiddenException('Synthetic operational handover is disabled.');
+  }
+  private handoverView(d: { id: string; centerId: string; childId: string; fromMembershipId: string;
+    toMembershipId: string; service: string; reason: string; status: string; createdAt: Date },
+    manager: boolean) {
+    return { id: d.id, service: d.service, reasonCode: d.reason, status: d.status,
+      createdAt: d.createdAt, ...(manager ? { childId: d.childId,
+        fromMembershipId: d.fromMembershipId, toMembershipId: d.toMembershipId } : {}),
+      synthetic: true, accessGranted: false, assignmentChanged: false,
+      clinicalHandover: false, released: false };
+  }
+
+  async handovers(centerId: string, v: Viewer) {
+    const manager = ['CENTER_ADMIN','COORDINATOR'].includes(v.role);
+    if (!manager && v.role !== 'THERAPIST') throw new ForbiddenException();
+    if (!this.handoverEnabled()) return { enabled: false, synthetic: true, items: [] };
+    const actor = await this.prisma.membership.findFirst({
+      where: { id: v.membershipId, centerId, userId: v.userId, status: 'ACTIVE',
+        user: { status: 'ACTIVE' }, center: { status: 'ACTIVE' },
+        roles: { some: { role: v.role } } },
+    });
+    if (!actor) throw new ForbiddenException('Active membership required.');
+    // All actionable proposals must remain accessible, even after >100 cancellations.
+    const scope = { centerId, ...(!manager ? { toMembershipId: v.membershipId } : {}) };
+    const [active, cancelled] = await Promise.all([
+      this.prisma.caseloadTransferDraft.findMany({
+        where: { ...scope, status: { in: ['PENDING_ACK','ACKNOWLEDGED'] } },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      }),
+      this.prisma.caseloadTransferDraft.findMany({
+        where: { ...scope, status: 'CANCELLED' },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 100,
+      }),
+    ]);
+    const rows = [...active, ...cancelled];
+    return { enabled: true, synthetic: true, items: rows.map(row => this.handoverView(row, manager)) };
+  }
+
+  async proposeHandover(centerId: string, v: Viewer, dto: HandoverProposalDto) {
+    this.assertHandoverDemo();
+    if (!['CENTER_ADMIN','COORDINATOR'].includes(v.role)) throw new ForbiddenException();
+    const now = this.trial.now();
+    return this.prisma.$transaction(async tx => {
+      // Center FOR UPDATE serializes proposal dedupe and staff/assignment edits.
+      await this.trial.assertWritable(tx, centerId, now);
+      await assertActor(tx, centerId, v, ['CENTER_ADMIN','COORDINATOR']);
+      const child = await tx.child.findFirst({ where: { centerId, id: dto.childId, status: 'ACTIVE' } });
+      if (!child || !child.services.includes(dto.service)) throw new NotFoundException('Active service not found.');
+      const from = await tx.careAssignment.findFirst({ where: { centerId,
+        childId: dto.childId, membershipId: dto.fromMembershipId,
+        service: dto.service, endedAt: null } });
+      if (!from) throw new NotFoundException('Current assignment not found.');
+      if (dto.fromMembershipId === dto.toMembershipId)
+        throw new UnprocessableEntityException('Choose different therapists.');
+      const incoming = await tx.membership.findFirst({
+        where: { id: dto.toMembershipId, centerId, status: 'ACTIVE',
+          user: { status: 'ACTIVE' }, roles: { some: { role: 'THERAPIST' } } },
+      });
+      if (!incoming || !incoming.specialties.includes(dto.service))
+        throw new UnprocessableEntityException('Incoming therapist is not active for this service.');
+      const existing = await tx.caseloadTransferDraft.findFirst({ where: {
+        centerId, childId: dto.childId, fromMembershipId: dto.fromMembershipId,
+        service: dto.service, status: { in: ['PENDING_ACK','ACKNOWLEDGED'] },
+      } });
+      if (existing) throw new ConflictException('A proposed handover is already open for this assignment.');
+      const draft = await tx.caseloadTransferDraft.create({ data: {
+        centerId, childId: dto.childId, fromMembershipId: dto.fromMembershipId,
+        toMembershipId: dto.toMembershipId, service: dto.service,
+        reason: dto.reasonCode, status: 'PENDING_ACK', createdById: v.userId, createdAt: now,
+      } });
+      await logCenterEvent(tx, centerId, 'handover.proposed', now, { actorUserId: v.userId,
+        meta: { handoverId: draft.id, childId: dto.childId, service: dto.service, synthetic: true } });
+      return this.handoverView(draft, true);
+    });
+  }
+
+  async acknowledgeHandover(centerId: string, v: Viewer, id: string) {
+    this.assertHandoverDemo();
+    if (v.role !== 'THERAPIST') throw new ForbiddenException();
+    const now = this.trial.now();
+    return this.prisma.$transaction(async tx => {
+      await this.trial.assertWritable(tx, centerId, now);
+      await assertActor(tx, centerId, v, ['THERAPIST']);
+      // Serialize against role/specialty revocation (including self-profile edits).
+      // Same center -> membership -> assignment lock order as home-plan responses.
+      const targetLock = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM membership WHERE id = ${v.membershipId}::uuid
+          AND center_id = ${centerId}::uuid FOR UPDATE
+      `;
+      if (!targetLock.length) throw new NotFoundException('Incoming therapist not found.');
+      const draft = await tx.caseloadTransferDraft.findFirst({ where: {
+        id, centerId, toMembershipId: v.membershipId, status: 'PENDING_ACK',
+      } });
+      if (!draft) throw new NotFoundException('Pending handover not found.');
+      // Direct row locks defend against writers which do not take the center lock.
+      const assignmentLock = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM care_assignment WHERE center_id = ${centerId}::uuid
+          AND child_id = ${draft.childId}::uuid
+          AND membership_id = ${draft.fromMembershipId}::uuid
+          AND service = ${draft.service} AND ended_at IS NULL FOR UPDATE
+      `;
+      if (!assignmentLock.length)
+        throw new ConflictException('Source assignment ended; ask the care coordinator.');
+      const target = await tx.membership.findFirst({ where: {
+        id: v.membershipId, centerId, status: 'ACTIVE', roles: { some: { role: 'THERAPIST' } },
+        user: { status: 'ACTIVE' }, specialties: { has: draft.service },
+      } });
+      const from = await tx.careAssignment.findFirst({ where: {
+        centerId, childId: draft.childId, membershipId: draft.fromMembershipId,
+        service: draft.service, endedAt: null, child: { status: 'ACTIVE' },
+      } });
+      if (!target || !from) throw new ConflictException('Therapist or source assignment changed; ask the care coordinator.');
+      const updated = await tx.caseloadTransferDraft.updateMany({
+        where: { id, centerId, toMembershipId: v.membershipId, status: 'PENDING_ACK' },
+        data: { status: 'ACKNOWLEDGED' },
+      });
+      if (updated.count !== 1) throw new ConflictException('Handover changed; refresh.');
+      await logCenterEvent(tx, centerId, 'handover.operational_acknowledged', now, {
+        actorUserId: v.userId, meta: { handoverId: id, service: draft.service, synthetic: true } });
+      return this.handoverView({ ...draft, status: 'ACKNOWLEDGED' }, false);
+    });
+  }
+
+  async cancelHandover(centerId: string, v: Viewer, id: string) {
+    this.assertHandoverDemo();
+    if (!['CENTER_ADMIN','COORDINATOR'].includes(v.role)) throw new ForbiddenException();
+    const now = this.trial.now();
+    return this.prisma.$transaction(async tx => {
+      await this.trial.assertWritable(tx, centerId, now);
+      await assertActor(tx, centerId, v, ['CENTER_ADMIN','COORDINATOR']);
+      const draft = await tx.caseloadTransferDraft.findFirst({ where: {
+        id, centerId, status: { in: ['PENDING_ACK','ACKNOWLEDGED'] },
+      } });
+      if (!draft) throw new NotFoundException('Open handover not found.');
+      const cancelled = await tx.caseloadTransferDraft.updateMany({
+        where: { id, centerId, status: { in: ['PENDING_ACK','ACKNOWLEDGED'] } },
+        data: { status: 'CANCELLED' },
+      });
+      if (cancelled.count !== 1) throw new ConflictException('Handover changed; refresh.');
+      await logCenterEvent(tx, centerId, 'handover.cancelled', now, { actorUserId: v.userId,
+        meta: { handoverId: id, childId: draft.childId, synthetic: true } });
+      return this.handoverView({ ...draft, status: 'CANCELLED' }, true);
     });
   }
 

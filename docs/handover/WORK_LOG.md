@@ -1,3 +1,26 @@
+## 2026-10-29 — Owner standing policy and PR #111 P3 dispositions
+
+- Wrote mandatory review disposition rules for all contributors in AGENTS.md and CONTINUITY_PROTOCOL.md, with detailed review ledger in REVIEW_DISPOSITION_RULE.md and future .github PR checklist. P0–P2 fixed before merge; safe small P3s fixed; bigger optional enhancements issue-tracked; unnecessary suggestions declined with rationale.
+- FIX_NOW: manager cannot submit another proposal on the same source/service while pending or acknowledged; UI explicitly explains and disables the action; backend 409 remains authoritative.
+- FIX_NOW: added actual PostgreSQL center-lock competition regression queuing cancellation before target acknowledgement, proving one cancel succeeds, acknowledgement fails closed, exactly one cancel event and no acknowledgement or assignment mutation.
+- DEFER_ISSUE: center-wide cap of 100 cancelled proposals may limit history on individual child detail; separate UX/pagination scope tracked at https://github.com/NTinkicht/TheraBridge-Emergent/issues/112 (all actionable proposals remain in inbox).
+- No declined findings this round. Codex request on prior e7caba SHA remains pending/not valid for new commits. Exact new-head six-job CI pending. No merge.
+
+## 2026-10-29 — TB-EM-049 original red CI and remediation
+
+- Initial exact-head 0d170d3 run 40772381693: one test suite red (3 failing cases), SQLSTATE 23514 legacy status CHECK, compose skipped; Mistral P0 and second independent review correctly flagged the product defect.
+- Added forward-only CHECK migration with strict status/reason enumeration, unique open proposal index and list indexes; documented proper original schema changes. Legacy governance access filtered to SIMULATION_ONLY to avoid cross-workflow presentation.
+- Corrected source validation order, target membership and active source assignment row-lock serialization for acknowledgement, center/status compare-and-set cancellation, and pending-plus-acknowledged unbounded actionable list separate from recent cancellations.
+- Regressions for old simulation isolation, 101 newer CANCELLED entries, assignment end, lock-wait concurrency against target specialty removal and source assignment end, terminal cancellation. UI labels and disabled-mode fetch optimized.
+- CI/new review pending. No production/hosted enablement or clinical authorization changed.
+
+## 2026-10-29 — TB-EM-049 operational handover proposal
+
+- Checked existing center assign/end/referent flows, CaseloadTransferDraft SIMULATION_ONLY, approved governance and role policies. Kept the old simulation path untouched and reused table only for separate nonauthorizing proposal statuses; no schema migrations.
+- Added permissioned governance propose/list/acknowledge/cancel routes, strict fixed-shape operational reason and specialty DTO, per-center locking/validation, auditable structured events and fail-closed demo guard. Explicit response booleans deny any inference of access or clinical release.
+- Added two operational UI surfaces, real PostgreSQL API regression tests, permission matrix and write-route inventory updates, product design decision.
+- No clinical document transfer, recipient data access, automatic reassignment, notification or appointment changes. Qualify CI and independent review before merge; next sub-slice must implement controlled assignment handoff only after separate decision gates.
+
 ## 2026-10-29 — TB-EM-048 review findings and corrections
 
 - Codex final reviewed SHA 4a082bea P1: therapist membership role and specialty mutations could outrun a clinician response; fixed using common center→membership→care_assignment→guardian_link lock ordering and rechecks. WorkspaceService staff and self-profile edits now lock center and membership before writes, compatible with existing trial/assignment locks.

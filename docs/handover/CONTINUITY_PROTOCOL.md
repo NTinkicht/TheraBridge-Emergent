@@ -11,6 +11,7 @@
 - **Emergent:** Temporary **writer/development environment**. It is not the sole store of requirements, decisions, credentials, datasets, infrastructure, or acceptance evidence.
 - **Human owner:** Approves architecture deviations, clinical/security policies, production access, secrets, release gates, and integration of work into the canonical product.
 - **Reviewers:** May audit code and tests independently. Reviews are not retroactively presumed to be complete or passed.
+- **Permanent review disposition:** Every reviewer suggestion requires a documented FIX_NOW, DEFER_ISSUE, or DECLINE_WITH_REASON decision before merge. All P0–P2 are resolved or independently disproven; small valuable P3s are included when safe, larger P3s become linked GitHub issues. Always requalify the exact final HEAD; avoid redundant per-push Codex requests. Follow `AGENTS.md` rules 13–15 and `docs/handover/REVIEW_DISPOSITION_RULE.md`.
 
 ### Critical platform realities
 
