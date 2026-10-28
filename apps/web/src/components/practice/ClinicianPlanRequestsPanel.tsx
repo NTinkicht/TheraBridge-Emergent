@@ -41,9 +41,9 @@ export function ClinicianPlanRequestsPanel({ centerId }: { centerId: string }) {
           <p className="text-[12px] text-brand-inkMuted">{HOME_REQUEST_STATUS[r.status]} · {new Date(r.createdAt).toLocaleDateString()}</p>
         </div>
         {r.status === 'PENDING' && <div className="flex flex-wrap gap-2">
-          <Button size="sm" disabled={busy === r.id} onClick={() => void respond(r.id,'ACKNOWLEDGED')}
+          <Button size="sm" disabled={busy !== null} onClick={() => void respond(r.id,'ACKNOWLEDGED')}
             data-testid="plan-request-acknowledge">Acknowledge received</Button>
-          <Button size="sm" variant="secondary" disabled={busy === r.id} onClick={() => void respond(r.id,'CLOSED_UNAVAILABLE')}
+          <Button size="sm" variant="secondary" disabled={busy !== null} onClick={() => void respond(r.id,'CLOSED_UNAVAILABLE')}
             data-testid="plan-request-close">Close unavailable</Button>
         </div>}
       </article>)}
