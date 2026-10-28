@@ -1,3 +1,7 @@
+## 2026-10-29 — Codex review automatically requested for draft PR commits (DRAFT PR, CI PENDING)
+
+Scoped review-automation change on `feature/tb-review-codex-drafts`, separate from clinical PR #109. The existing `.github/workflows/auto-review-trigger.yml` already sent HEAD+BASE-deduplicated `@codex review` comments for non-draft same-repository PR events, but skipped drafts. The branch allows draft opened/reopened/synchronize/ready/edited (base-change), retains live HEAD/BASE verification and same-repo restriction, and does not grant auto-approval, merge or release. Automatically reviewed drafts cannot receive paid provider secrets or initiate automatic Mistral/xAI metered inference; explicit owner manual provider commands retain their prior opt-in policy. Offline regression covers fresh draft, repeat same SHA, new HEAD, changed BASE and zero metered requests. **Six-job CI and independent review NOT YET VERIFIED.** PR #109 independently remains draft with its own unresolved P1 review and CI; this automation change does not qualify it.
+
 ## 2026-10-29 — TB-EM-047 PR #108 clinician per-plan activity duration (DRAFT; qualification PENDING)
 
 - Focused synthetic-only clinician home-plan change on branch `feature/tb-em-047-home-duration-override`: optional whole-minute (1–120) per-plan duration via existing author-only and revision-checked plan-version update; server-owned saved activity snapshot minutes and library remain unchanged. Empty override omitted; explicit JSON null now rejected by DTO; all invalid values rejected at API boundary.
