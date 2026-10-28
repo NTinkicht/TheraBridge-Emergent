@@ -125,7 +125,9 @@ export class HomePlanRequestsService {
           where: { guardianLinkId: link.id, service: dto.service, status: 'PENDING' },
         });
         if (!pending) throw new ConflictException('Please refresh the current request status.');
-        return { ...view(pending), replayed: true };
+        // A different request key has not been accepted. Returning success here
+        // would violate idempotency if its retry arrives after pending closes.
+        throw new ConflictException('A request for this service is already pending. Refresh its status before submitting again.');
       }
       const created = await tx.homePlanRequest.findUniqueOrThrow({ where: { requestKey: dto.requestKey } });
       await logCenterEvent(tx, centerId, 'family.home_plan_requested', now, {
@@ -172,6 +174,14 @@ export class HomePlanRequestsService {
       });
       if (!record || !await this.assigned(tx, centerId, record.childId, record.service, v.membershipId))
         throw new NotFoundException('Request not found');
+      // Removal does not lock the center, so serialize directly on the guardian
+      // link row, then revalidate. READ COMMITTED sees a completed removal after
+      // waiting. No response may commit against a revoked guardian link.
+      const validLink = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM guardian_link WHERE id = ${record.guardianLinkId}::uuid
+          AND center_id = ${centerId}::uuid AND removed_at IS NULL FOR UPDATE
+      `;
+      if (!validLink.length) throw new NotFoundException('Request not found');
       if (record.status !== 'PENDING') throw new ConflictException('This request has already been answered.');
       const updated = await tx.homePlanRequest.updateMany({
         where: { id, centerId, status: 'PENDING' },
