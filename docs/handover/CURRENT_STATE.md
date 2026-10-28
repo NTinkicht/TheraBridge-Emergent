@@ -1,3 +1,7 @@
+## 2026-10-29 — TB-EM-048 pending-inbox and CI authorization expectation fix
+
+Codex identified a further P2: an unanswered request could fall below the 100-row recent history window. Guardian and therapist inboxes now collect ALL currently pending records separately from the 100 most recent completed records, keeping older pending requests actionable. Added PostgreSQL 101-completed-record regression. Initial PR CI `test` FAILED due only to unchanged `operations.e2e-spec.ts` and `authz.e2e-spec.ts` hardcoded role lists; both were updated with the four explicit TB-EM-048 permissions without widening other roles. Current exact-head CI and independent review remain UNVERIFIED. Clinical and hosted NO-GO unchanged.
+
 ## 2026-10-29 — TB-EM-048 Codex review corrections (latest HEAD CI PENDING)
 
 Codex flagged P1 revocation/respond race and P2 false idempotency for a second key colliding with a pending request. The draft branch now locks/revalidates guardian_link under the response transaction before CAS update, and a conflicting second request key now returns HTTP 409 rather than a false replay. PostgreSQL tests exercise the guardian-link removal commit while response waits on the row lock, deny the response, and assert no response event; the different-key collision/retry path is also asserted. Synthetic seven-role CI demo now tests guardian request → assigned therapist acknowledgement in a disposable database only. All exact-head CI and independent re-review **NOT YET VERIFIED**. No merge/deploy/release.
