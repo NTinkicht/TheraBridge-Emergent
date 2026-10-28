@@ -24,7 +24,7 @@ const env = {
   AUTH_SECRET: randomBytes(32).toString('base64url'),
   HOST: '127.0.0.1', PORT: '8001', CORS_ORIGINS: 'http://127.0.0.1:3000',
   COOKIE_SECURE: 'false', TRUSTED_PROXY_CIDRS: '',
-  FAMILY_PRACTICE_DEMO: 'true', FAMILY_MESSAGING_DEMO: 'false',
+  FAMILY_PRACTICE_DEMO: 'true', HOME_PLAN_REQUESTS_DEMO: 'true', FAMILY_MESSAGING_DEMO: 'false',
   DEV_MAILBOX_ENABLED: 'false', DEV_OUTBOX_DIR: '',
 };
 const db = new PrismaClient();
