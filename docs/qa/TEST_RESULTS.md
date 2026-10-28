@@ -1,3 +1,9 @@
+## 2026-10-29 — TB-EM-048 provisional test ledger
+
+- PostgreSQL test assertions **ADDED, NOT VERIFIED**: guardian request with active assigned therapist; denied before assignment, wrong child, unknown service, free-text/extraneous fields, admin/guardian/supervisor/wrong therapist calls; idempotent key and duplicate pending; clinician fixed response; no clinical release; second request after acknowledgement; revoked guardian link and therapist reassignment removal; trial expiry mutation denial; audit event count.
+- Migration and Prisma-generated client **NOT YET VERIFIED**. Browser UI for family and clinician views **NOT YET EXECUTED** at this checkpoint. Six-job PR CI **NOT YET VERIFIED**. Reviewer verdict **PENDING**.
+- Clinical signing, releases, consent grants, safeguarding, real AI/STT, production use: **NO-GO**, unchanged. Hosted #81 acceptance remains **BLOCKED/INCOMPLETE**.
+
 ## 2026-10-29 — PR #108 TB-EM-047 duration-override verification ledger
 
 - Original PR HEAD `ed5414add44e30228d8a476abcf6dd28f3edd65b`: CI `demo-journey` **FAIL** at stale exact-copy assertion ("Duration is taken from the activity definition"); other jobs were reported green by Mistral but original job logs were not used as qualification for subsequent commits. Corrected in `scripts/design/check-demo-journey.mjs`.
