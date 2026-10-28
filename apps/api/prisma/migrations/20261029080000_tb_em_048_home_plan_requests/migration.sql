@@ -15,7 +15,8 @@ CREATE TABLE "home_plan_request" (
   CONSTRAINT "home_plan_request_status_check" CHECK ("status" IN ('PENDING','ACKNOWLEDGED','CLOSED_UNAVAILABLE')),
   CONSTRAINT "home_plan_request_center_id_fkey" FOREIGN KEY ("center_id") REFERENCES "center"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT "home_plan_request_child_id_fkey" FOREIGN KEY ("child_id") REFERENCES "child"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT "home_plan_request_guardian_link_id_fkey" FOREIGN KEY ("guardian_link_id") REFERENCES "guardian_link"("id") ON DELETE RESTRICT ON UPDATE CASCADE
+  CONSTRAINT "home_plan_request_guardian_link_id_fkey" FOREIGN KEY ("guardian_link_id") REFERENCES "guardian_link"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT "home_plan_request_responded_by_id_fkey" FOREIGN KEY ("responded_by_id") REFERENCES "membership"("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 CREATE UNIQUE INDEX "home_plan_request_request_key_key" ON "home_plan_request" ("request_key");
 CREATE INDEX "home_plan_request_center_id_child_id_service_status_idx" ON "home_plan_request" ("center_id","child_id","service","status");
