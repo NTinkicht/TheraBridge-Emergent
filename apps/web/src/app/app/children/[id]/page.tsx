@@ -7,6 +7,7 @@ import { ArrowLeft, CalendarPlus, MailPlus, UserPlus } from 'lucide-react';
 import { Field, FormAlert } from '@/components/auth/Field';
 import { HistoryCard, PageTitle, ReasonField, Row, SelectField, Workspace, errorText, useLoad } from '@/components/centers/kit';
 import { BookDialog, serviceLabel } from '@/components/operations/BookDialog';
+import { HandoverProposalPanel } from '@/components/operations/HandoverProposalPanel';
 import { ApptPill } from '@/components/operations/Dashboards';
 import { Button, Card, Pill } from '@/components/design/ui';
 import { Dialog, ErrorState, SkeletonRows } from '@/components/design/states';
@@ -185,6 +186,7 @@ function ChildPage({ id, session, onError }: { id: string; session: SessionInfo;
           </Card>
           <Guardians {...ctx} />
           <CareTeam {...ctx} />
+          {manage && child.status === 'ACTIVE' && <HandoverProposalPanel centerId={centerId} child={child} />}
           <Card className="p-5 md:p-6" testId="child-appointments">
             <h2 className="text-[18px] font-semibold">Appointments</h2>
             {!child.appointments.length ? <p className="mt-3 text-[14px] text-brand-inkMuted">No appointments yet.</p> : (
