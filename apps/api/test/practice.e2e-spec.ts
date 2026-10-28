@@ -53,8 +53,16 @@ describe('TB-EM-010 family home practice and outcomes (real PostgreSQL)', () => 
     throw new Error(`No PostgreSQL lock wait observed for ${query}`);
   }
 
-  beforeAll(async () => { h = await makeApp({ DEPLOYMENT_ENV: 'local', DEV_MAILBOX_ENABLED: 'true', HOME_PLAN_REQUESTS_DEMO: 'true' }); });
-  afterAll(async () => { await h.close(); });
+  const previousHomeRequestsFlag = process.env.HOME_PLAN_REQUESTS_DEMO;
+  beforeAll(async () => {
+    process.env.HOME_PLAN_REQUESTS_DEMO = 'true';
+    h = await makeApp({ DEPLOYMENT_ENV: 'local', DEV_MAILBOX_ENABLED: 'true' });
+  });
+  afterAll(async () => {
+    await h.close();
+    if (previousHomeRequestsFlag === undefined) delete process.env.HOME_PLAN_REQUESTS_DEMO;
+    else process.env.HOME_PLAN_REQUESTS_DEMO = previousHomeRequestsFlag;
+  });
   beforeEach(async () => {
     h.clock.t = Date.parse('2026-10-19T08:00:00Z');
     await resetDb(h.prisma);
