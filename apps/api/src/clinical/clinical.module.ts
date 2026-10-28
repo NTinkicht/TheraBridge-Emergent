@@ -8,9 +8,10 @@ import { ClinicalController } from './clinical.controller';
 import { ClinicalService } from './clinical.service';
 import { PracticeController } from './practice.controller';
 import { PracticeService } from './practice.service';
+import { HomePlanRequestsService } from './home-plan-requests.service';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { ReportDecisionsService } from './report-decisions.service';
 
-@Module({ imports: [CentersModule], controllers: [GovernanceController, ClinicalController, ReportsController, PracticeController], providers: [SessionExecutionService, GovernanceService, ClinicalService, ReportsService, ReportDecisionsService, PracticeService, { provide: CLINICAL_AI_PROVIDER, useClass: DisabledClinicalAiProvider }] })
+@Module({ imports: [CentersModule], controllers: [GovernanceController, ClinicalController, ReportsController, PracticeController], providers: [SessionExecutionService, GovernanceService, ClinicalService, ReportsService, ReportDecisionsService, PracticeService, HomePlanRequestsService, { provide: CLINICAL_AI_PROVIDER, useClass: DisabledClinicalAiProvider }] })
 export class ClinicalModule {}
