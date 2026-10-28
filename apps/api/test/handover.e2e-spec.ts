@@ -19,6 +19,23 @@ describe('TB-EM-049 synthetic operational handover proposal (PostgreSQL)', () =>
     } });
     return { id: m.id, who: await signIn(h, user.email) };
   }
+  const deferred = () => {
+    let resolve!: () => void;
+    const promise = new Promise<void>(r => { resolve = r; });
+    return { promise, resolve };
+  };
+  // Verify actual row-lock contention rather than assuming a particular timing.
+  async function waitForBlock(query: string) {
+    for (let i = 0; i < 150; i++) {
+      const rows = await h.prisma.$queryRaw<{ waiting: boolean }[]>`
+        SELECT EXISTS (SELECT 1 FROM pg_stat_activity
+          WHERE datname = current_database() AND pid <> pg_backend_pid()
+            AND wait_event_type = 'Lock' AND query ILIKE ${`%${query}%`}) AS waiting`;
+      if (rows[0].waiting) return;
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    throw new Error(`No PostgreSQL row-lock wait observed for ${query}`);
+  }
   beforeAll(async () => {
     savedFlag = process.env.HANDOVER_DEMO; process.env.HANDOVER_DEMO = 'true';
     h = await makeApp({ DEPLOYMENT_ENV: 'local' });
@@ -90,6 +107,73 @@ describe('TB-EM-049 synthetic operational handover proposal (PostgreSQL)', () =>
     } finally { process.env.HANDOVER_DEMO='true'; }
     expect(await h.prisma.centerEvent.count({ where: { type: 'handover.operational_acknowledged' } })).toBe(0);
   });
+  it('legacy governance access lists only simulation drafts, not operational handover proposals', async () => {
+    const proposal = (await start(admin, body()).expect(201)).body;
+    const legacy = (await h.http().get(c('access')).set('Cookie',admin.cookie).expect(200)).body;
+    expect(legacy.transfers).toEqual([]);
+    expect((await get(admin).expect(200)).body.items[0].id).toBe(proposal.id);
+  });
+
+  it('keeps every open proposal visible beyond 101 newer cancelled records', async () => {
+    const pending = (await start(admin, body()).expect(201)).body;
+    const user = admin.body.user.id as string;
+    await h.prisma.caseloadTransferDraft.createMany({ data: Array.from({length:101}, (_,i)=>({
+      centerId, childId, fromMembershipId: fromId, toMembershipId: targetId, service:'speech',
+      reason:'STAFF_CHANGE', status:'CANCELLED', createdById:user,
+      createdAt:new Date(h.clock.now().getTime() + (i+1)*1000),
+    })) });
+    const manager=(await get(admin).expect(200)).body.items;
+    const recipient=(await get(target).expect(200)).body.items;
+    expect(manager[0].id).toBe(pending.id);
+    expect(recipient[0].id).toBe(pending.id);
+    expect(manager.filter((p: { status:string }) => p.status === 'CANCELLED')).toHaveLength(100);
+    await ack(target,pending.id).expect(201);
+  });
+
+  it('ending the source assignment invalidates the pending acknowledgement', async () => {
+    const proposal=(await start(admin,body()).expect(201)).body;
+    await h.prisma.careAssignment.updateMany({ where: { centerId, childId, membershipId: fromId,
+      endedAt:null }, data: { endedAt:h.clock.now() } });
+    await ack(target,proposal.id).expect(409);
+    expect((await h.prisma.caseloadTransferDraft.findUniqueOrThrow({where:{id:proposal.id}})).status).toBe('PENDING_ACK');
+    expect(await h.prisma.centerEvent.count({where:{type:'handover.operational_acknowledged'}})).toBe(0);
+  });
+
+  it.each(['specialty','assignment'] as const)(
+    'does not acknowledge after concurrent %s revocation commits', async change => {
+      const proposal = (await start(admin,body()).expect(201)).body;
+      const started = deferred(), release = deferred();
+      const removing = h.prisma.$transaction(async tx => {
+        if (change === 'specialty') await tx.membership.update({
+          where:{id:targetId}, data:{specialties:[]},
+        });
+        else await tx.careAssignment.updateMany({
+          where:{centerId,childId,membershipId:fromId,endedAt:null},
+          data:{endedAt:h.clock.now()},
+        });
+        started.resolve();
+        await release.promise;
+      });
+      await started.promise;
+      const responding=ack(target,proposal.id).then(r=>r);
+      try { await waitForBlock(change === 'specialty' ? 'membership' : 'care_assignment'); }
+      finally { release.resolve(); }
+      await removing;
+      expect((await responding).status).toBe(409);
+      expect((await h.prisma.caseloadTransferDraft.findUniqueOrThrow({where:{id:proposal.id}})).status).toBe('PENDING_ACK');
+      expect(await h.prisma.centerEvent.count({where:{type:'handover.operational_acknowledged'}})).toBe(0);
+    }
+  );
+
+  it('cancellation is terminal, tenant scoped and cannot be acknowledged', async () => {
+    const proposal = (await start(admin,body()).expect(201)).body;
+    await cancel(admin,proposal.id).expect(201);
+    await cancel(admin,proposal.id).expect(404);
+    await ack(target,proposal.id).expect(404);
+    expect(await h.prisma.careAssignment.count({where:{endedAt:null}})).toBe(1);
+    expect(await h.prisma.centerEvent.count({where:{type:'handover.operational_acknowledged'}})).toBe(0);
+  });
+
   it('serializes competing proposals without creating multiple open handovers', async () => {
     const [a,b] = await Promise.all([start(admin,body()), start(admin,body())]);
     expect([a.status,b.status].sort()).toEqual([201,409]);
