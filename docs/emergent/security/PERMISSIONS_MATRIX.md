@@ -44,6 +44,10 @@ Source of truth: `apps/api/src/auth/policy.ts`. The test `authz.e2e-spec.ts` fai
 | center.activities.manage | THERAPIST, CLINICAL_SUPERVISOR |
 | family.activities.read | GUARDIAN |
 | family.progress.demo | GUARDIAN |
+| family.home_plan_request.read | GUARDIAN |
+| family.home_plan_request.create | GUARDIAN |
+| center.home_plan_request.read | THERAPIST |
+| center.home_plan_request.respond | THERAPIST |
 | center.practice.read | THERAPIST, CLINICAL_SUPERVISOR |
 | center.practice.acknowledge | THERAPIST |
 | family.practice.read | GUARDIAN |
