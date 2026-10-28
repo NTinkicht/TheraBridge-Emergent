@@ -1,3 +1,10 @@
+## 2026-10-29 — TB-EM-049 operational handover proposal
+
+- Checked existing center assign/end/referent flows, CaseloadTransferDraft SIMULATION_ONLY, approved governance and role policies. Kept the old simulation path untouched and reused table only for separate nonauthorizing proposal statuses; no schema migrations.
+- Added permissioned governance propose/list/acknowledge/cancel routes, strict fixed-shape operational reason and specialty DTO, per-center locking/validation, auditable structured events and fail-closed demo guard. Explicit response booleans deny any inference of access or clinical release.
+- Added two operational UI surfaces, real PostgreSQL API regression tests, permission matrix and write-route inventory updates, product design decision.
+- No clinical document transfer, recipient data access, automatic reassignment, notification or appointment changes. Qualify CI and independent review before merge; next sub-slice must implement controlled assignment handoff only after separate decision gates.
+
 ## 2026-10-29 — TB-EM-048 review findings and corrections
 
 - Codex final reviewed SHA 4a082bea P1: therapist membership role and specialty mutations could outrun a clinician response; fixed using common center→membership→care_assignment→guardian_link lock ordering and rechecks. WorkspaceService staff and self-profile edits now lock center and membership before writes, compatible with existing trial/assignment locks.
