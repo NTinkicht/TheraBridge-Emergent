@@ -179,12 +179,28 @@ export class HomePlanRequestsService {
       const center = await tx.center.findUnique({ where: { id: centerId } });
       if (!center || center.status !== 'ACTIVE') throw new NotFoundException('Center not found');
       if (trialExpired(center, now)) throw new ForbiddenException(TRIAL_ENDED);
+      // Common lock order with WorkspaceService.updateMember/updateMe and
+      // ChildrenService.endAssignment: center -> membership -> assignment -> guardian.
+      // Prevent revoked THERAPIST role, specialty or care assignment being
+      // acknowledged after its removal has committed concurrently.
+      const lockedMembership = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM membership WHERE id = ${v.membershipId}::uuid
+          AND center_id = ${centerId}::uuid FOR UPDATE
+      `;
+      if (!lockedMembership.length) throw new ForbiddenException('Active therapist membership required.');
       await this.activeActor(tx, centerId, v);
       const record = await tx.homePlanRequest.findFirst({
         where: { id, centerId, child: { centerId, status: 'ACTIVE' },
           guardianLink: { centerId, removedAt: null } },
       });
-      if (!record || !await this.assigned(tx, centerId, record.childId, record.service, v.membershipId))
+      if (!record) throw new NotFoundException('Request not found');
+      const lockedAssignment = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM care_assignment WHERE center_id = ${centerId}::uuid
+          AND child_id = ${record.childId}::uuid AND membership_id = ${v.membershipId}::uuid
+          AND service = ${record.service} AND ended_at IS NULL FOR UPDATE
+      `;
+      if (!lockedAssignment.length ||
+          !await this.assigned(tx, centerId, record.childId, record.service, v.membershipId))
         throw new NotFoundException('Request not found');
       // Removal does not lock the center, so serialize directly on the guardian
       // link row, then revalidate. READ COMMITTED sees a completed removal after
