@@ -84,6 +84,7 @@ function VersionEditor({ centerId, ws, planId, planTitle, service, v, source, ru
   const legacyTemplateIds = new Set(v.homeActivities.map(a => a.templateId));
   const unlinkedNew = acts.some(a => !legacyTemplateIds.has(a.templateId) && !a.goalKey);
   const invalidSchedule = acts.some(a => !!scheduleProblem(a.schedule));
+  const invalidDuration = acts.some(a => a.durationMinutes !== undefined && (!Number.isInteger(a.durationMinutes) || a.durationMinutes < 1 || a.durationMinutes > 120));
   const unsavedPlanEdits = summary !== v.summary ||
     JSON.stringify(goals) !== JSON.stringify(v.goals) ||
     JSON.stringify(acts) !== JSON.stringify(v.homeActivities);
@@ -156,8 +157,9 @@ function VersionEditor({ centerId, ws, planId, planTitle, service, v, source, ru
       <div className="flex flex-wrap items-start gap-2">
         {edit && <div>
           {unlinkedNew && <p role="status" className="mb-2 text-[12px] text-brand-inkMuted" data-testid="home-activity-unlinked">Choose a specific plan goal for each newly added activity before saving.</p>}
+          {invalidDuration && <p role="status" className="mb-2 text-[12px] text-status-caution" data-testid="home-activity-invalid-duration">Plan-specific durations must be whole numbers between 1 and 120 minutes.</p>}
           {invalidSchedule && <p role="status" className="mb-2 text-[12px] text-status-caution" data-testid="home-activity-invalid-schedule">Complete or remove invalid dated schedules before saving.</p>}
-          <Button disabled={unlinkedNew || invalidSchedule} onClick={() => void save()} data-testid="plan-save">Save draft</Button>
+          <Button disabled={unlinkedNew || invalidSchedule || invalidDuration} onClick={() => void save()} data-testid="plan-save">Save draft</Button>
         </div>}
         {edit && <Button variant="secondary" disabled={!handoff.canSendSavedDraft}
           onClick={() => { if (!handoff.canSendSavedDraft) return;
