@@ -225,6 +225,10 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
       'center.practice.acknowledge': ['THERAPIST'],
       'family.practice.read': ['GUARDIAN'],
       'family.practice.record': ['GUARDIAN'],
+      'family.home_plan_request.read': ['GUARDIAN'],
+      'family.home_plan_request.create': ['GUARDIAN'],
+      'center.home_plan_request.read': ['THERAPIST'],
+      'center.home_plan_request.respond': ['THERAPIST'],
     };
     const cases = ROLES.flatMap((role) => [...Object.keys(PERMISSIONS), ...CLINICAL_CAPABILITIES].map((p) => [role, p] as const));
     it.each(cases)('%s × %s', (role, permission) => {
