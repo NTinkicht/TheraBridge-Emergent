@@ -136,6 +136,29 @@ describe('TB-EM-010 family home practice and outcomes (real PostgreSQL)', () => 
     await post(h, c(`clinical/home-plan-requests/${again.id}/respond`), therapist, { status: 'ACKNOWLEDGED' }).expect(404);
   });
 
+  it('TB-EM-048: keeps pending requests visible after many completed records', async () => {
+    const { kid, link, guardian } = await family();
+    const therapist = await staff('history-check@practice.test', ['THERAPIST'], ['speech']);
+    await post(h, c(`children/${kid}/assignments`), admin,
+      { membershipId: therapist.body.activeContext.membershipId, service: 'speech', isLead: true }).expect(201);
+    const pending = (await post(h, c('family/home-plan-requests'), guardian,
+      { childId: kid, service: 'speech', requestKey: randomUUID() }).expect(200)).body;
+    const later = Array.from({ length: 101 }, (_, i) => ({
+      centerId, childId: kid, guardianLinkId: link, service: 'speech',
+      requestKey: randomUUID(), status: 'ACKNOWLEDGED',
+      createdAt: new Date(h.clock.t + (i + 1) * 60000),
+      respondedAt: new Date(h.clock.t + (i + 1) * 60000),
+    }));
+    await h.prisma.homePlanRequest.createMany({ data: later });
+    const clinician = (await get(therapist, c('clinical/home-plan-requests')).expect(200)).body;
+    expect(clinician.items[0].id).toBe(pending.id);
+    expect(clinician.items).toHaveLength(101);
+    const familyHistory = (await get(guardian, c('family/home-plan-requests')).expect(200)).body;
+    expect(familyHistory.items[0].id).toBe(pending.id);
+    await post(h, c(`clinical/home-plan-requests/${pending.id}/respond`),
+      therapist, { status: 'ACKNOWLEDGED' }).expect(200);
+  });
+
   it('TB-EM-048: concurrent guardian revocation completes before a blocked therapist response', async () => {
     const { kid, link, guardian } = await family();
     const therapist = await staff('request-guardian-race@practice.test', ['THERAPIST'], ['speech']);
