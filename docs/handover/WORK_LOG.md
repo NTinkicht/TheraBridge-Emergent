@@ -1,3 +1,10 @@
+## 2026-10-29 — TB-EM-048 P1/P2 reviewer remediation
+
+- Codex #109 P1: reading the active guardian link without locking allowed a concurrent removal to commit before a therapist response. Added `FOR UPDATE` lock + revalidation on guardian_link inside response transaction. Added PostgreSQL blocked-response test with an uncommitted guardian-link removal.
+- Codex #109 P2: a different request key against an existing pending request was incorrectly reported as successful replay. Now returns explicit 409, preserving genuine idempotency of accepted keys only; tests verify collision rejection, subsequent new request and same-key replay.
+- Enabled `HOME_PLAN_REQUESTS_DEMO=true` only in the CI isolated synthetic browser harness and added an actual guardian request → therapist acknowledgement journey, with no clinical plan released.
+- New exact-HEAD CI and reviewers pending; no clinical authorization/release.
+
 ## 2026-10-29 — TB-EM-048 next work unit opened after PR #108 merged
 
 - Verified predecessor PR #108 exact-head CI 6/6, clean Codex/Mistral/Grok, resolved original threads; owner requested merge and GitHub returned `merged:true` at `0453c5228b397ce6fd99bed05259a7e4c181540d`.
