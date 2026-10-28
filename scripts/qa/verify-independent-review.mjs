@@ -6,6 +6,9 @@ const yaml = readFileSync('.github/workflows/auto-review-trigger.yml', 'utf8');
 assert(yaml.includes('on:\n  pull_request:') && yaml.includes('  issue_comment:'), 'Review events missing');
 assert(!yaml.includes('Wait for exact-head CI conclusions'), 'Never confuse CI workflow names with jobs');
 assert(yaml.includes('TB_PAID_REVIEW_OPT_IN'), 'Mandatory owner cost gate missing');
+assert(yaml.includes('ready_for_review, edited'), 'Review dispatch must catch base edits and normal ready transitions');
+assert(!yaml.includes('github.event.pull_request.draft == false && github.event.pull_request.head'),
+  'Draft PRs must not be skipped for automatic Codex review');
 // Preflight runs without paid secrets, checkout or dispatched API calls.
 // Reject invalid owner comments BEFORE they can enter the per-PR queue.
 assert(yaml.includes('  qualify:\n') && yaml.includes('    needs: qualify\n'),
@@ -79,6 +82,37 @@ assert.equal(comments.length,1,'Automatic SHA request must be idempotent');
 assert(comments[0].body.includes('@codex review'));
 assert.equal(requests,0);
 
+// TB-EM-048 follow-up: Codex is automatic for drafts even when paid provider
+// opt-in happens to be enabled. Never call a metered API from draft events.
+const draft = {...pr, draft:true, head:{...pr.head,sha:'8'.repeat(40)}};
+current=draft;
+context.payload={pull_request:draft};
+const draftBefore=comments.length;
+await action(github,context,core,{env:{
+  TB_PAID_REVIEW_OPT_IN:'true', MISTRAL_API_KEY:'never-use-on-draft',
+  XAI_API_KEY:'never-use-on-draft',
+}},offline,AbortSignal,Buffer);
+assert.equal(comments.length,draftBefore+1);
+assert(comments.at(-1).body.includes('@codex review'));
+assert(comments.at(-1).body.includes('therabridge-review-request:'+'8'.repeat(40)+':'+base));
+assert(comments.at(-1).body.includes('Mistral API: NOT_ACTIVE'));
+assert.equal(requests,0,'Draft PRs must never invoke metered provider APIs automatically');
+await action(github,context,core,{env:{TB_PAID_REVIEW_OPT_IN:'true'}},offline,AbortSignal,Buffer);
+assert.equal(comments.length,draftBefore+1,'Same head/base must never repeat a draft Codex request');
+const changedDraft={...draft,head:{...draft.head,sha:'9'.repeat(40)}};
+current=changedDraft;
+context.payload={pull_request:changedDraft};
+await action(github,context,core,{env:{TB_PAID_REVIEW_OPT_IN:'false'}},offline,AbortSignal,Buffer);
+assert.equal(comments.length,draftBefore+2,'New commit on draft PR must request Codex again');
+const retargetedDraft={...changedDraft,base:{sha:'f'.repeat(40)}};
+current=retargetedDraft;
+context.payload={pull_request:retargetedDraft};
+await action(github,context,core,{env:{TB_PAID_REVIEW_OPT_IN:'false'}},offline,AbortSignal,Buffer);
+assert.equal(comments.length,draftBefore+3,'Changed base on same HEAD needs new review comparison');
+assert.equal(requests,0);
+
+// Restore initial fixture for manual exact-SHA commands.
+current=pr;
 context.eventName='issue_comment';
 context.payload={comment:{body:'/review-grok '+head}};
 await action(github,context,core,{env:{TB_PAID_REVIEW_OPT_IN:'false'}},offline,AbortSignal,Buffer);
