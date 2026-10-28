@@ -1,3 +1,11 @@
+## 2026-10-29 — TB-EM-048 next work unit opened after PR #108 merged
+
+- Verified predecessor PR #108 exact-head CI 6/6, clean Codex/Mistral/Grok, resolved original threads; owner requested merge and GitHub returned `merged:true` at `0453c5228b397ce6fd99bed05259a7e4c181540d`.
+- Scoped TB-EM-048 to **structured guardian request for consideration**, not family clinical plan delivery. Default-deny variable and non-production gate; no free text, shared clinical sources, documents, provider calls or release.
+- Added Prisma model/migration, permissions, request DTOs, API controller and dedicated service with active link, membership, service and current therapist-assignment checks; idempotency and pending uniqueness; two fixed response statuses; event audit. Wired family Practice and clinician Practice Feedback panels.
+- Added real PostgreSQL API tests for positive/replay, forbidden actors and extra fields, revocation, missing assignment, trial expiry and lifecycle transitions.
+- CI and independent review **NOT YET RUN / NOT VERIFIED** at documentation checkpoint.
+
 ## 2026-10-29 — TB-EM-047 PR #108 response to Codex, Mistral and Grok
 
 - Checked original head `ed5414add44e30228d8a476abcf6dd28f3edd65b` reviews. Codex: P1 missing required checkpoints, P2 null duration accepted, P2 historical comparison hid duration values. Mistral: P1 failing stale demo journey, P2 missing API/pure/browser tests, plus calendar display recommendation. Grok: no blocking findings, requested boundary coverage.
