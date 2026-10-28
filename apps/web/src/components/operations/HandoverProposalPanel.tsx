@@ -23,12 +23,17 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
     } catch { setError('Could not load synthetic handover proposals.'); }
   }, [centerId]);
   useEffect(() => { void reload(); }, [reload]);
+  const own = (data?.items ?? []).filter(p => p.childId === child.id);
   const active = child.assignments.filter(a => a.endedAt === null);
   const source = active.find(a => a.id === from);
   const eligible = staff.filter(t => t.membershipId !== source?.membershipId && source &&
     t.specialties.includes(source.service));
+  // Client-side prevention is advisory: the API/DB still enforce one open proposal.
+  const hasOpenForSource = !!source && own.some(r =>
+    r.fromMembershipId === source.membershipId && r.service === source.service &&
+    (r.status === 'PENDING_ACK' || r.status === 'ACKNOWLEDGED'));
   const submit = async () => {
-    if (!source || !to || busy) return;
+    if (!source || !to || busy || hasOpenForSource) return;
     setBusy(true); setError('');
     try {
       await opsApi.proposeHandover(centerId, { childId: child.id,
@@ -43,7 +48,6 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
     catch { setError('Could not cancel this proposal. Refresh its status.'); }
     finally { setBusy(false); }
   };
-  const own = (data?.items ?? []).filter(p => p.childId === child.id);
   return <Card className="space-y-3 p-5" testId="handover-manager">
     <h2 className="text-[18px] font-semibold">Therapist replacement preparation</h2>
     <p className="text-[13px] text-brand-inkMuted">
@@ -63,7 +67,11 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
       <SelectField label="Operational reason" value={reasonCode} onChange={v => setReasonCode(v as typeof reasonCode)}
         testId="handover-reason" options={[{value:'STAFF_CHANGE',label:'Staff change'},
         {value:'AVAILABILITY',label:'Availability'}, {value:'FAMILY_REQUEST',label:'Family request'}]} />
-      <Button size="sm" disabled={!source || !to || busy} onClick={() => void submit()}
+      {hasOpenForSource && <p className="text-[13px] text-brand-inkMuted" role="status"
+        data-testid="handover-open-source-notice">
+        This assignment already has an open handover proposal. Cancel it below before proposing another.
+      </p>}
+      <Button size="sm" disabled={!source || !to || busy || hasOpenForSource} onClick={() => void submit()}
         data-testid="handover-propose">Propose operational handover</Button>
       <ul className="space-y-2" data-testid="handover-manager-history">
         {own.map(r => <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-border-light p-3">
