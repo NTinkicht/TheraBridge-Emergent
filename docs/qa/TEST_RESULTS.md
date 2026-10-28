@@ -1,3 +1,10 @@
+## 2026-10-29 — TB-EM-048 reviewer regression additions (current head NOT VERIFIED)
+
+- Initial Codex P1 guardian removal/therapist response TOCTOU: **FIX IN CODE, CI PENDING**. New PostgreSQL test holds guardian_link removal transaction, waits for response lock contention, commits removal, expects response 404 and zero answer audit events.
+- Initial Codex P2 different-key false replay: **FIX IN CODE, CI PENDING**. New test expects HTTP 409 for an unaccepted second key while another pending request exists, then creates a valid request with that key after prior acknowledgement; identical accepted key replays original request.
+- Browser CI now enables request flag only on disposable localhost demo test DB, submits guardian request, verifies no draft leakage, and reopens as assigned therapist for fixed-status acknowledgement. **EXACT-HEAD RUN NOT YET VERIFIED**.
+- Original and current CI results must not be mixed; hosted clinical/production NO-GO unchanged.
+
 ## 2026-10-29 — TB-EM-048 provisional test ledger
 
 - PostgreSQL test assertions **ADDED, NOT VERIFIED**: guardian request with active assigned therapist; denied before assignment, wrong child, unknown service, free-text/extraneous fields, admin/guardian/supervisor/wrong therapist calls; idempotent key and duplicate pending; clinician fixed response; no clinical release; second request after acknowledgement; revoked guardian link and therapist reassignment removal; trial expiry mutation denial; audit event count.
