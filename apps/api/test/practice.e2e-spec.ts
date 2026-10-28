@@ -190,6 +190,98 @@ describe('TB-EM-010 family home practice and outcomes (real PostgreSQL)', () => 
     expect(await h.prisma.centerEvent.count({ where: { type: 'clinical.home_plan_request_answered' } })).toBe(0);
   });
 
+  it.each(['role', 'specialty'] as const)(
+    'TB-EM-048: concurrent therapist %s removal denies an in-flight acknowledgement',
+    async (change) => {
+      const { kid, guardian } = await family();
+      const therapist = await staff('concurrent-staff-'+change+'@practice.test', ['THERAPIST'], ['speech']);
+      const membershipId = therapist.body.activeContext.membershipId;
+      await post(h, c(`children/${kid}/assignments`), admin,
+        { membershipId, service: 'speech', isLead: true }).expect(201);
+      const request = (await post(h, c('family/home-plan-requests'), guardian,
+        { childId: kid, service: 'speech', requestKey: randomUUID() }).expect(200)).body;
+      const started = deferred(), release = deferred();
+      const removing = h.prisma.$transaction(async tx => {
+        await tx.$queryRaw`SELECT id FROM membership WHERE id = ${membershipId}::uuid FOR UPDATE`;
+        if (change === 'role')
+          await tx.roleAssignment.deleteMany({ where: { membershipId, role: 'THERAPIST' } });
+        else
+          await tx.membership.update({ where: { id: membershipId }, data: { specialties: [] } });
+        started.resolve();
+        await release.promise;
+      });
+      await started.promise;
+      const responding = post(h, c(`clinical/home-plan-requests/${request.id}/respond`),
+        therapist, { status: 'ACKNOWLEDGED' }).then(r => r);
+      try { await waitForBlock('membership'); }
+      finally { release.resolve(); }
+      await removing;
+      expect([403, 404]).toContain((await responding).status);
+      expect((await h.prisma.homePlanRequest.findUniqueOrThrow({ where: { id: request.id } })).status).toBe('PENDING');
+      expect(await h.prisma.centerEvent.count({ where: { type: 'clinical.home_plan_request_answered' } })).toBe(0);
+    });
+
+  it('TB-EM-048: a concurrent ended assignment prevents acknowledgement', async () => {
+    const { kid, guardian } = await family();
+    const therapist = await staff('concurrent-assignment@practice.test', ['THERAPIST'], ['speech']);
+    const membershipId = therapist.body.activeContext.membershipId;
+    await post(h, c(`children/${kid}/assignments`), admin,
+      { membershipId, service: 'speech', isLead: true }).expect(201);
+    const request = (await post(h, c('family/home-plan-requests'), guardian,
+      { childId: kid, service: 'speech', requestKey: randomUUID() }).expect(200)).body;
+    const started = deferred(), release = deferred();
+    const ending = h.prisma.$transaction(async tx => {
+      await tx.careAssignment.updateMany({
+        where: { centerId, childId: kid, membershipId, endedAt: null },
+        data: { endedAt: h.clock.now() },
+      });
+      started.resolve();
+      await release.promise;
+    });
+    await started.promise;
+    const responding = post(h, c(`clinical/home-plan-requests/${request.id}/respond`),
+      therapist, { status: 'ACKNOWLEDGED' }).then(r => r);
+    try { await waitForBlock('care_assignment'); }
+    finally { release.resolve(); }
+    await ending;
+    expect((await responding).status).toBe(404);
+    expect((await h.prisma.homePlanRequest.findUniqueOrThrow({ where: { id: request.id } })).status).toBe('PENDING');
+    expect(await h.prisma.centerEvent.count({ where: { type: 'clinical.home_plan_request_answered' } })).toBe(0);
+  });
+
+  it('TB-EM-048: concurrent different keys create one pending request, and winner replays', async () => {
+    const { kid, guardian } = await family();
+    const therapist = await staff('concurrent-requests@practice.test', ['THERAPIST'], ['speech']);
+    await post(h, c(`children/${kid}/assignments`), admin,
+      { membershipId: therapist.body.activeContext.membershipId, service: 'speech', isLead: true }).expect(201);
+    const a = { childId: kid, service: 'speech', requestKey: randomUUID() };
+    const b = { ...a, requestKey: randomUUID() };
+    const responses = await Promise.all([
+      post(h, c('family/home-plan-requests'), guardian, a),
+      post(h, c('family/home-plan-requests'), guardian, b),
+    ]);
+    expect(responses.map(x => x.status).sort()).toEqual([200, 409]);
+    const winning = responses[0].status === 200 ? a : b;
+    const id = responses.find(x => x.status === 200)!.body.id;
+    expect((await post(h, c('family/home-plan-requests'), guardian, winning).expect(200)).body)
+      .toMatchObject({ id, replayed: true });
+    expect(await h.prisma.homePlanRequest.count()).toBe(1);
+    expect(await h.prisma.centerEvent.count({ where: { type: 'family.home_plan_requested' } })).toBe(1);
+  });
+
+  it('TB-EM-048: responder membership foreign key enforces integrity', async () => {
+    const { kid, guardian } = await family();
+    const therapist = await staff('responder-integrity@practice.test', ['THERAPIST'], ['speech']);
+    await post(h, c(`children/${kid}/assignments`), admin,
+      { membershipId: therapist.body.activeContext.membershipId, service: 'speech', isLead: true }).expect(201);
+    const request = (await post(h, c('family/home-plan-requests'), guardian,
+      { childId: kid, service: 'speech', requestKey: randomUUID() }).expect(200)).body;
+    await expect(h.prisma.homePlanRequest.update({
+      where: { id: request.id }, data: { respondedById: randomUUID() },
+    })).rejects.toThrow();
+    expect((await h.prisma.homePlanRequest.findUniqueOrThrow({ where: { id: request.id } })).respondedById).toBeNull();
+  });
+
   it('TB-EM-048: assignment loss and trial expiry do not bypass tenant-scoped request permissions', async () => {
     const { kid, guardian } = await family();
     const therapist = await staff('request-revocation@practice.test', ['THERAPIST'], ['speech']);
