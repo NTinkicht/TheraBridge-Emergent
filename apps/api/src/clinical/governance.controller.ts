@@ -21,6 +21,10 @@ export class GovernanceController {
   handovers(@Param('centerId', uuid()) c: string, @Req() r: TbRequest) {
     return this.service.handovers(c, viewer(r));
   }
+  @Get('handover-proposals/:id/readiness') @RequirePermission('center.governance.read')
+  handoverReadiness(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Req() r: TbRequest) {
+    return this.service.handoverReadiness(c, viewer(r), id);
+  }
   @Post('handover-proposals') @RequirePermission('center.handover.propose')
   proposeHandover(@Param('centerId', uuid()) c: string, @Body() d: HandoverProposalDto, @Req() r: TbRequest) {
     return this.service.proposeHandover(c, viewer(r), d);
