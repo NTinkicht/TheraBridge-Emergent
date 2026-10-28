@@ -1,3 +1,7 @@
+## 2026-10-29 — Codex automatic review dispatch qualification
+
+Open separate focused PR for draft-Codex workflow; run exact-head test (including `node scripts/qa/verify-independent-review.mjs`), all six CI jobs, independent Codex P0–P2 review, and resolve findings before authorized merge into main. Confirm the new workflow actually posts a `github-actions[bot]` SHA marker and the Codex integration responds on a draft PR. Then future same-repo draft changes will request Codex on each new HEAD/BASE, without manual prompting. Keep optional Mistral/Grok paid API mode unchanged (zero-spend default, never automatically paid on drafts). PR #109 P1 role/specialty revocation concurrency still requires separate remediation and exact-head CI; do not merge it until qualified.
+
 ## 2026-10-29 — TB-EM-047 PR #108 next qualification gates
 
 1. Verify latest exact-HEAD six CI jobs (test with PostgreSQL, secret-scan, live-session, preview-container, demo-journey, compose) following the corrective commits. An earlier head failed demo-journey due to stale copy; do not reuse its status.
