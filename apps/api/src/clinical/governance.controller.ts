@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Req } from '@nestjs/common';
 import { RequirePermission, TbRequest } from '../auth/access';
 import { GovernanceService } from './governance.service';
-import { TransferDraftDto, TransitionDto } from './governance.dto';
+import { TransferDraftDto, TransitionDto, HandoverProposalDto } from './governance.dto';
 const uuid = () => new ParseUUIDPipe();
 const viewer = (r: TbRequest) => ({ userId: r.auth!.session.userId, membershipId: r.auth!.session.activeMembershipId!, role: r.auth!.session.activeRole! });
 @Controller('centers/:centerId/governance')
@@ -17,6 +17,22 @@ export class GovernanceController {
   preview(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Req() r: TbRequest) { return this.service.preview(c, viewer(r), id); }
   @Get('access') @RequirePermission('center.governance.read')
   access(@Param('centerId', uuid()) c: string, @Req() r: TbRequest) { return this.service.access(c, viewer(r)); }
+  @Get('handover-proposals') @RequirePermission('center.handover.read')
+  handovers(@Param('centerId', uuid()) c: string, @Req() r: TbRequest) {
+    return this.service.handovers(c, viewer(r));
+  }
+  @Post('handover-proposals') @RequirePermission('center.handover.propose')
+  proposeHandover(@Param('centerId', uuid()) c: string, @Body() d: HandoverProposalDto, @Req() r: TbRequest) {
+    return this.service.proposeHandover(c, viewer(r), d);
+  }
+  @Post('handover-proposals/:id/acknowledge') @RequirePermission('center.handover.acknowledge')
+  acknowledgeHandover(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Req() r: TbRequest) {
+    return this.service.acknowledgeHandover(c, viewer(r), id);
+  }
+  @Post('handover-proposals/:id/cancel') @RequirePermission('center.handover.cancel')
+  cancelHandover(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Req() r: TbRequest) {
+    return this.service.cancelHandover(c, viewer(r), id);
+  }
   @Post('transfer-simulations') @RequirePermission('center.governance.read')
   transfer(@Param('centerId', uuid()) c: string, @Body() d: TransferDraftDto, @Req() r: TbRequest) { return this.service.transfer(c, viewer(r), d); }
   @Post('release') @RequirePermission('clinical.report.release')
