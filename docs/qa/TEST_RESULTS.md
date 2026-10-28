@@ -1,3 +1,14 @@
+## 2026-10-29 — PR #109 reviewer fixes / verification pending
+
+Previous exact-head run 40765592359 failed 2 assertions in apps/api/test/authz.e2e-spec.ts (AC-9/AC-11), causing Compose skip. Revised exact full permission and route snapshots without weakening; NEW HEAD CI PENDING.
+Added tests (not verified yet) for:
+- concurrent role removal, specialty removal and assignment ending block a therapist response using real PostgreSQL row lock contention; after revocation commit response must deny and no clinical.home_plan_request_answered event is recorded;
+- rival keys simultaneously sent for same pending link/service → one 200, one 409, winner idempotently replays, exactly one event;
+- responding membership FK rejects nonexistent membership;
+- two linked guardians submit independent request keys and get distinct scoped results; clinician responds independently;
+- HOME_PLAN_REQUESTS_DEMO=false returns only disabled empty status views and rejects mutations.
+Existing tests for guardian revocation race, history pending beyond 100, valid/invalid statuses and cross-role denial retained. All six CI jobs and final Codex review NOT YET VERIFIED. Hosted #81 and clinical NO-GO unchanged.
+
 ## 2026-10-29 — TB-EM-048 new verification items
 
 - Earlier GitHub CI `test` FAIL: 2 test suites (`operations.e2e-spec.ts`, `authz.e2e-spec.ts`) retained old fixed permission expectations; new correct guardian and therapist request permissions were unlisted. Expected matrices updated. Initial `practice.e2e-spec.ts` PASS prior to adding revocation-lock and history-limit cases.
