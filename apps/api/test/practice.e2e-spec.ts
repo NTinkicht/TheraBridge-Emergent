@@ -98,8 +98,9 @@ describe('TB-EM-010 family home practice and outcomes (real PostgreSQL)', () => 
     const first = (await post(h, target, guardian, body).expect(200)).body;
     expect(first).toMatchObject({ status: 'PENDING', synthetic: true, released: false, clinicalAuthorization: false, replayed: false });
     expect((await post(h, target, guardian, body).expect(200)).body).toMatchObject({ id: first.id, replayed: true });
-    expect((await post(h, target, guardian, { ...body, requestKey: randomUUID() }).expect(200)).body)
-      .toMatchObject({ id: first.id, replayed: true });
+    await post(h, target, guardian, { ...body, requestKey: randomUUID() }).expect(409);
+    const collisionKey = randomUUID();
+    await post(h, target, guardian, { ...body, requestKey: collisionKey }).expect(409);
     expect(await h.prisma.homePlanRequest.count()).toBe(1);
     expect((await get(guardian, target).expect(200)).body.items.map((r: { id: string }) => r.id)).toEqual([first.id]);
     expect((await get(other, inbox).expect(200)).body.items).toEqual([]);
@@ -118,8 +119,12 @@ describe('TB-EM-010 family home practice and outcomes (real PostgreSQL)', () => 
     const familyView = (await get(guardian, target).expect(200)).body;
     expect(familyView.items[0].status).toBe('ACKNOWLEDGED');
     expect(JSON.stringify(familyView)).not.toMatch(/summary|goals|planVersion|reportId|safetyNote/);
-    const again = (await post(h, target, guardian, { ...body, requestKey: randomUUID() }).expect(200)).body;
+    // The earlier rejected key is now a genuinely new request, not a false replay.
+    const again = (await post(h, target, guardian, { ...body, requestKey: collisionKey }).expect(200)).body;
     expect(again.status).toBe('PENDING');
+    expect(again.id).not.toBe(first.id);
+    expect((await post(h, target, guardian, { ...body, requestKey: collisionKey }).expect(200)).body)
+      .toMatchObject({ id: again.id, replayed: true });
     expect(await h.prisma.homePlanRequest.count()).toBe(2);
     expect(await h.prisma.centerEvent.count({ where: { type: 'family.home_plan_requested' } })).toBe(2);
     expect(await h.prisma.centerEvent.count({ where: { type: 'clinical.home_plan_request_answered' } })).toBe(1);
