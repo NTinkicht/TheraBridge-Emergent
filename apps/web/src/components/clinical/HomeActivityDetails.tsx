@@ -31,6 +31,7 @@ export function HomeActivityDetails({ activity, templates, editable, index, onIn
     <label className="block max-w-[260px] text-[12px] font-semibold">Duration for this plan (minutes)
       <input type="number" min={1} max={120} step={1} disabled={!editable}
         value={activity.durationMinutes ?? ''} data-testid={`home-activity-duration-override-${index}`}
+        aria-invalid={activity.durationMinutes != null && (!Number.isInteger(activity.durationMinutes) || activity.durationMinutes < 1 || activity.durationMinutes > 120)}
         onChange={e => onDurationChange(e.target.value === '' ? undefined : Number(e.target.value))}
         placeholder={definition.minutes === null ? 'No source duration' : `Template: ${definition.minutes} min`}
         className="mt-1 w-full rounded-control border border-border-light bg-surface-white px-3 py-2 text-[13px] disabled:opacity-60" />
