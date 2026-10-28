@@ -282,6 +282,50 @@ describe('TB-EM-010 family home practice and outcomes (real PostgreSQL)', () => 
     expect((await h.prisma.homePlanRequest.findUniqueOrThrow({ where: { id: request.id } })).respondedById).toBeNull();
   });
 
+  it('TB-EM-048: two authorized guardians can request independently for one child', async () => {
+    const { kid, guardian: first } = await family();
+    const secondLink = await post(h, c(`children/${kid}/guardians`), admin,
+      { displayName: 'Second Guardian', email: 'second@family.test', relationship: 'father', invite: true }).expect(201);
+    const second = await accept('second@family.test', 'Second Guardian');
+    const therapist = await staff('both-guardians@practice.test', ['THERAPIST'], ['speech']);
+    await post(h, c(`children/${kid}/assignments`), admin,
+      { membershipId: therapist.body.activeContext.membershipId, service: 'speech', isLead: true }).expect(201);
+    const body = { childId: kid, service: 'speech', requestKey: randomUUID() };
+    const a = (await post(h, c('family/home-plan-requests'), first, body).expect(200)).body;
+    const b = (await post(h, c('family/home-plan-requests'), second,
+      { ...body, requestKey: randomUUID() }).expect(200)).body;
+    expect(a.id).not.toBe(b.id);
+    expect(secondLink.body.id).toBeTruthy();
+    expect((await get(first, c('family/home-plan-requests')).expect(200)).body.items.map((x: { id: string }) => x.id)).toContain(a.id);
+    expect((await get(first, c('family/home-plan-requests')).expect(200)).body.items.map((x: { id: string }) => x.id)).not.toContain(b.id);
+    const inbox = (await get(therapist, c('clinical/home-plan-requests')).expect(200)).body.items;
+    expect(inbox.map((x: { id: string }) => x.id)).toEqual(expect.arrayContaining([a.id, b.id]));
+    await post(h, c(`clinical/home-plan-requests/${a.id}/respond`), therapist, { status: 'ACKNOWLEDGED' }).expect(200);
+    await post(h, c(`clinical/home-plan-requests/${b.id}/respond`), therapist, { status: 'CLOSED_UNAVAILABLE' }).expect(200);
+    expect(await h.prisma.homePlanRequest.count({ where: { status: 'PENDING' } })).toBe(0);
+  });
+
+  it('TB-EM-048: the request feature fails closed without its synthetic flag', async () => {
+    const { kid, guardian } = await family();
+    const therapist = await staff('flag-off@practice.test', ['THERAPIST'], ['speech']);
+    const prior = process.env.HOME_PLAN_REQUESTS_DEMO;
+    try {
+      process.env.HOME_PLAN_REQUESTS_DEMO = 'false';
+      const guardianView = (await get(guardian, c('family/home-plan-requests')).expect(200)).body;
+      expect(guardianView).toMatchObject({ enabled: false, released: false, children: [], items: [] });
+      expect((await get(therapist, c('clinical/home-plan-requests')).expect(200)).body)
+        .toMatchObject({ enabled: false, released: false, items: [] });
+      await post(h, c('family/home-plan-requests'), guardian,
+        { childId: kid, service: 'speech', requestKey: randomUUID() }).expect(403);
+      await post(h, c(`clinical/home-plan-requests/${randomUUID()}/respond`),
+        therapist, { status: 'ACKNOWLEDGED' }).expect(403);
+      expect(await h.prisma.homePlanRequest.count()).toBe(0);
+    } finally {
+      if (prior === undefined) delete process.env.HOME_PLAN_REQUESTS_DEMO;
+      else process.env.HOME_PLAN_REQUESTS_DEMO = prior;
+    }
+  });
+
   it('TB-EM-048: assignment loss and trial expiry do not bypass tenant-scoped request permissions', async () => {
     const { kid, guardian } = await family();
     const therapist = await staff('request-revocation@practice.test', ['THERAPIST'], ['speech']);
