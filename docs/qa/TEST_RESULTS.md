@@ -1,3 +1,9 @@
+## 2026-10-29 — TB-EM-048 new verification items
+
+- Earlier GitHub CI `test` FAIL: 2 test suites (`operations.e2e-spec.ts`, `authz.e2e-spec.ts`) retained old fixed permission expectations; new correct guardian and therapist request permissions were unlisted. Expected matrices updated. Initial `practice.e2e-spec.ts` PASS prior to adding revocation-lock and history-limit cases.
+- New regression 101 newer answered records plus old pending request: ADDED, exact-HEAD NOT RUN; expected all pending remain reachable while only 100 recent completed are returned.
+- Final current-HEAD CI 6/6 and independent no-blocking reviewer result: NOT VERIFIED. Nothing merged or deployed.
+
 ## 2026-10-29 — TB-EM-048 reviewer regression additions (current head NOT VERIFIED)
 
 - Initial Codex P1 guardian removal/therapist response TOCTOU: **FIX IN CODE, CI PENDING**. New PostgreSQL test holds guardian_link removal transaction, waits for response lock contention, commits removal, expects response 404 and zero answer audit events.
