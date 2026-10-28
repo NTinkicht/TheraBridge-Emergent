@@ -1,3 +1,11 @@
+## 2026-10-29 — TB-EM-049 original red CI and remediation
+
+- Initial exact-head 0d170d3 run 40772381693: one test suite red (3 failing cases), SQLSTATE 23514 legacy status CHECK, compose skipped; Mistral P0 and second independent review correctly flagged the product defect.
+- Added forward-only CHECK migration with strict status/reason enumeration, unique open proposal index and list indexes; documented proper original schema changes. Legacy governance access filtered to SIMULATION_ONLY to avoid cross-workflow presentation.
+- Corrected source validation order, target membership and active source assignment row-lock serialization for acknowledgement, center/status compare-and-set cancellation, and pending-plus-acknowledged unbounded actionable list separate from recent cancellations.
+- Regressions for old simulation isolation, 101 newer CANCELLED entries, assignment end, lock-wait concurrency against target specialty removal and source assignment end, terminal cancellation. UI labels and disabled-mode fetch optimized.
+- CI/new review pending. No production/hosted enablement or clinical authorization changed.
+
 ## 2026-10-29 — TB-EM-049 operational handover proposal
 
 - Checked existing center assign/end/referent flows, CaseloadTransferDraft SIMULATION_ONLY, approved governance and role policies. Kept the old simulation path untouched and reused table only for separate nonauthorizing proposal statuses; no schema migrations.
