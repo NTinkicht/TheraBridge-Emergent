@@ -36,6 +36,17 @@ describe('TB-EM-049 synthetic operational handover proposal (PostgreSQL)', () =>
     }
     throw new Error(`No PostgreSQL row-lock wait observed for ${query}`);
   }
+  async function waitForBlockedCount(query: string, minimum: number) {
+    for (let i = 0; i < 150; i++) {
+      const rows = await h.prisma.$queryRaw<{ blocked: number }[]>`
+        SELECT COUNT(*)::int AS blocked FROM pg_stat_activity
+        WHERE datname = current_database() AND pid <> pg_backend_pid()
+          AND wait_event_type = 'Lock' AND query ILIKE ${`%${query}%`}`;
+      if (rows[0].blocked >= minimum) return;
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    throw new Error(`Expected ${minimum} PostgreSQL lock waits on ${query}`);
+  }
   beforeAll(async () => {
     savedFlag = process.env.HANDOVER_DEMO; process.env.HANDOVER_DEMO = 'true';
     h = await makeApp({ DEPLOYMENT_ENV: 'local' });
@@ -164,6 +175,36 @@ describe('TB-EM-049 synthetic operational handover proposal (PostgreSQL)', () =>
       expect(await h.prisma.centerEvent.count({where:{type:'handover.operational_acknowledged'}})).toBe(0);
     }
   );
+
+  it('serializes cancellation and acknowledgement when both compete for the center row', async () => {
+    const proposal = (await start(admin,body()).expect(201)).body;
+    const locked = deferred(), release = deferred();
+    const holder = h.prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM "center" WHERE id = ${centerId}::uuid FOR UPDATE`;
+      locked.resolve();
+      await release.promise;
+    });
+    await locked.promise;
+    // Queue cancellation first; verify it is blocked before enqueuing acknowledgement.
+    const cancelling = cancel(admin, proposal.id).then(res => res);
+    try {
+      await waitForBlockedCount('SELECT id FROM "center"', 1);
+      const acknowledging = ack(target, proposal.id).then(res => res);
+      try { await waitForBlockedCount('SELECT id FROM "center"', 2); }
+      finally { release.resolve(); }
+      await holder;
+      const [cancelResult, ackResult] = await Promise.all([cancelling, acknowledging]);
+      expect(cancelResult.status).toBe(201);
+      expect(ackResult.status).toBe(404);
+    } finally {
+      release.resolve();
+      await holder;
+    }
+    expect((await h.prisma.caseloadTransferDraft.findUniqueOrThrow({where:{id:proposal.id}})).status).toBe('CANCELLED');
+    expect(await h.prisma.centerEvent.count({where:{type:'handover.cancelled'}})).toBe(1);
+    expect(await h.prisma.centerEvent.count({where:{type:'handover.operational_acknowledged'}})).toBe(0);
+    expect(await h.prisma.careAssignment.count({where:{centerId,childId,endedAt:null}})).toBe(1);
+  });
 
   it('cancellation is terminal, tenant scoped and cannot be acknowledged', async () => {
     const proposal = (await start(admin,body()).expect(201)).body;
