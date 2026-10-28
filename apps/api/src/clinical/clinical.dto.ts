@@ -57,6 +57,8 @@ export class HomeActivityDto {
   @IsOptional() @Matches(/^[a-z0-9-]{1,40}$/) goalKey?: string;
   @IsString() @MaxLength(80) frequency!: string;
   @IsOptional() @IsString() @MaxLength(500) note?: string;
+  // Optional per-plan duration; never changes the server-owned library snapshot.
+  @IsOptional() @IsInt() @Min(1) @Max(120) durationMinutes?: number;
   @IsOptional() @ValidateNested() @Type(() => ActivityScheduleDto)
   schedule?: ActivityScheduleDto;
 }
