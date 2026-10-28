@@ -1,3 +1,33 @@
+## 2026-10-29 — PR #109 reviewer fixes / verification pending
+
+Previous exact-head run 40765592359 failed 2 assertions in apps/api/test/authz.e2e-spec.ts (AC-9/AC-11), causing Compose skip. Revised exact full permission and route snapshots without weakening; NEW HEAD CI PENDING.
+Added tests (not verified yet) for:
+- concurrent role removal, specialty removal and assignment ending block a therapist response using real PostgreSQL row lock contention; after revocation commit response must deny and no clinical.home_plan_request_answered event is recorded;
+- rival keys simultaneously sent for same pending link/service → one 200, one 409, winner idempotently replays, exactly one event;
+- responding membership FK rejects nonexistent membership;
+- two linked guardians submit independent request keys and get distinct scoped results; clinician responds independently;
+- HOME_PLAN_REQUESTS_DEMO=false returns only disabled empty status views and rejects mutations.
+Existing tests for guardian revocation race, history pending beyond 100, valid/invalid statuses and cross-role denial retained. All six CI jobs and final Codex review NOT YET VERIFIED. Hosted #81 and clinical NO-GO unchanged.
+
+## 2026-10-29 — TB-EM-048 new verification items
+
+- Earlier GitHub CI `test` FAIL: 2 test suites (`operations.e2e-spec.ts`, `authz.e2e-spec.ts`) retained old fixed permission expectations; new correct guardian and therapist request permissions were unlisted. Expected matrices updated. Initial `practice.e2e-spec.ts` PASS prior to adding revocation-lock and history-limit cases.
+- New regression 101 newer answered records plus old pending request: ADDED, exact-HEAD NOT RUN; expected all pending remain reachable while only 100 recent completed are returned.
+- Final current-HEAD CI 6/6 and independent no-blocking reviewer result: NOT VERIFIED. Nothing merged or deployed.
+
+## 2026-10-29 — TB-EM-048 reviewer regression additions (current head NOT VERIFIED)
+
+- Initial Codex P1 guardian removal/therapist response TOCTOU: **FIX IN CODE, CI PENDING**. New PostgreSQL test holds guardian_link removal transaction, waits for response lock contention, commits removal, expects response 404 and zero answer audit events.
+- Initial Codex P2 different-key false replay: **FIX IN CODE, CI PENDING**. New test expects HTTP 409 for an unaccepted second key while another pending request exists, then creates a valid request with that key after prior acknowledgement; identical accepted key replays original request.
+- Browser CI now enables request flag only on disposable localhost demo test DB, submits guardian request, verifies no draft leakage, and reopens as assigned therapist for fixed-status acknowledgement. **EXACT-HEAD RUN NOT YET VERIFIED**.
+- Original and current CI results must not be mixed; hosted clinical/production NO-GO unchanged.
+
+## 2026-10-29 — TB-EM-048 provisional test ledger
+
+- PostgreSQL test assertions **ADDED, NOT VERIFIED**: guardian request with active assigned therapist; denied before assignment, wrong child, unknown service, free-text/extraneous fields, admin/guardian/supervisor/wrong therapist calls; idempotent key and duplicate pending; clinician fixed response; no clinical release; second request after acknowledgement; revoked guardian link and therapist reassignment removal; trial expiry mutation denial; audit event count.
+- Migration and Prisma-generated client **NOT YET VERIFIED**. Browser UI for family and clinician views **NOT YET EXECUTED** at this checkpoint. Six-job PR CI **NOT YET VERIFIED**. Reviewer verdict **PENDING**.
+- Clinical signing, releases, consent grants, safeguarding, real AI/STT, production use: **NO-GO**, unchanged. Hosted #81 acceptance remains **BLOCKED/INCOMPLETE**.
+
 ## 2026-10-29 — PR #108 TB-EM-047 duration-override verification ledger
 
 - Original PR HEAD `ed5414add44e30228d8a476abcf6dd28f3edd65b`: CI `demo-journey` **FAIL** at stale exact-copy assertion ("Duration is taken from the activity definition"); other jobs were reported green by Mistral but original job logs were not used as qualification for subsequent commits. Corrected in `scripts/design/check-demo-journey.mjs`.

@@ -1,3 +1,32 @@
+## 2026-10-29 — TB-EM-048 review findings and corrections
+
+- Codex final reviewed SHA 4a082bea P1: therapist membership role and specialty mutations could outrun a clinician response; fixed using common center→membership→care_assignment→guardian_link lock ordering and rechecks. WorkspaceService staff and self-profile edits now lock center and membership before writes, compatible with existing trial/assignment locks.
+- Independent Mistral P1 red API tests: corrected AC-9 exact guardian permission list and AC-11 exact reviewed write-route list; no permissive assertion used.
+- Independent review P2 responder membership audit FK: added to Prisma and this unmerged migration. P3 overlapping clinician row action: disabled all action buttons while any request in flight.
+- Reviewer test advisories: added PostgreSQL concurrency suite for revoke-role/revoke-specialty/end-assignment, concurrent keys, valid responder FK, 2 guardian links, and feature-off denial. Every clinical or non-synthetic release gate unchanged.
+- Previous failing CI 40765592359 tied to old SHA cannot be counted. Current SHA CI PENDING / NOT VERIFIED; wait for 6/6 exact-head before requesting one final Codex review.
+
+## 2026-10-29 — TB-EM-048 Codex pending-list P2 and tests
+
+- Added separated pending and completed-status queries (unbounded pending, 100 most recent completed) for guardian and assigned therapist scoped inboxes. No pending item can disappear under completed history; no status authorization changes.
+- Added PostgreSQL case with 101 newer answered requests and verified pending retrieval (NOT YET RUN at new HEAD).
+- CI on earlier commits failed in two preexisting permission-expectation tests because new correct permissions were not appended to hardcoded test matrices; fixed both without bypassing policy. Other previous jobs green but cannot qualify updated HEAD.
+
+## 2026-10-29 — TB-EM-048 P1/P2 reviewer remediation
+
+- Codex #109 P1: reading the active guardian link without locking allowed a concurrent removal to commit before a therapist response. Added `FOR UPDATE` lock + revalidation on guardian_link inside response transaction. Added PostgreSQL blocked-response test with an uncommitted guardian-link removal.
+- Codex #109 P2: a different request key against an existing pending request was incorrectly reported as successful replay. Now returns explicit 409, preserving genuine idempotency of accepted keys only; tests verify collision rejection, subsequent new request and same-key replay.
+- Enabled `HOME_PLAN_REQUESTS_DEMO=true` only in the CI isolated synthetic browser harness and added an actual guardian request → therapist acknowledgement journey, with no clinical plan released.
+- New exact-HEAD CI and reviewers pending; no clinical authorization/release.
+
+## 2026-10-29 — TB-EM-048 next work unit opened after PR #108 merged
+
+- Verified predecessor PR #108 exact-head CI 6/6, clean Codex/Mistral/Grok, resolved original threads; owner requested merge and GitHub returned `merged:true` at `0453c5228b397ce6fd99bed05259a7e4c181540d`.
+- Scoped TB-EM-048 to **structured guardian request for consideration**, not family clinical plan delivery. Default-deny variable and non-production gate; no free text, shared clinical sources, documents, provider calls or release.
+- Added Prisma model/migration, permissions, request DTOs, API controller and dedicated service with active link, membership, service and current therapist-assignment checks; idempotency and pending uniqueness; two fixed response statuses; event audit. Wired family Practice and clinician Practice Feedback panels.
+- Added real PostgreSQL API tests for positive/replay, forbidden actors and extra fields, revocation, missing assignment, trial expiry and lifecycle transitions.
+- CI and independent review **NOT YET RUN / NOT VERIFIED** at documentation checkpoint.
+
 ## 2026-10-29 — TB-EM-047 PR #108 response to Codex, Mistral and Grok
 
 - Checked original head `ed5414add44e30228d8a476abcf6dd28f3edd65b` reviews. Codex: P1 missing required checkpoints, P2 null duration accepted, P2 historical comparison hid duration values. Mistral: P1 failing stale demo journey, P2 missing API/pure/browser tests, plus calendar display recommendation. Grok: no blocking findings, requested boundary coverage.

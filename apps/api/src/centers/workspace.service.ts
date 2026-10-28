@@ -123,6 +123,10 @@ export class WorkspaceService {
   async updateMember(centerId: string, id: string, actorUserId: string, dto: UpdateStaffDto) {
     const now = this.clock.now();
     await this.prisma.$transaction(async (tx) => {
+      // Serialize therapist roles and specialties against active clinical request responses.
+      // Always acquire center before membership, including when adding a therapist seat.
+      await tx.$queryRaw`SELECT id FROM "center" WHERE id = ${centerId}::uuid FOR NO KEY UPDATE`;
+      await tx.$queryRaw`SELECT id FROM "membership" WHERE id = ${id}::uuid AND center_id = ${centerId}::uuid FOR UPDATE`;
       const m = await this.member(centerId, id, tx);
       if (m.status === 'REVOKED') throw new ConflictException('Access was revoked. Send a new invitation to restore it.');
       const current = m.roles.map((r) => r.role);
@@ -173,6 +177,9 @@ export class WorkspaceService {
   async updateMe(centerId: string, membershipId: string, actor: { userId: string; role: Role }, dto: UpdateProfileDto) {
     const now = this.clock.now();
     await this.prisma.$transaction(async (tx) => {
+      // Self-service changes can include specialties: use same lock order as staff edits.
+      await tx.$queryRaw`SELECT id FROM "center" WHERE id = ${centerId}::uuid FOR NO KEY UPDATE`;
+      await tx.$queryRaw`SELECT id FROM "membership" WHERE id = ${membershipId}::uuid AND center_id = ${centerId}::uuid FOR UPDATE`;
       if (dto.displayName) await tx.user.update({ where: { id: actor.userId }, data: { displayName: clean(dto.displayName) } });
       const profile = profileData(dto);
       await tx.membership.update({ where: { id: membershipId }, data: profile });

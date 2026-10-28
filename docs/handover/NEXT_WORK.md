@@ -1,3 +1,26 @@
+## 2026-10-29 — PR #109 last qualification
+
+1. Inspect exact-head six-job CI for corrected source (especially PostgreSQL races, Prisma migration generate/typecheck, AC-9/AC-11 test suite, Chromium family/staff journey, Compose).
+2. If failures, fix code/tests and rerun exact-head CI; do not spend Codex review until CI is all green and HEAD stable.
+3. Then request one Codex independent exact-HEAD P0–P2 re-review covering staff-role/specialty, end-assignment and guardian revocations; address actionable findings.
+4. Reply to existing four Codex inline threads and three independent reviewed-body findings with tested evidence, resolve only after verifying fixes; request owner merge authorization separately.
+5. No clinical content, signing, consent/release, or production operations enabled; next milestone remains therapist replacement and controlled clinical handover.
+
+## 2026-10-29 — TB-EM-048 final qualification after permission-matrix update
+
+Re-run exact-HEAD six-job CI after revised RBAC expectation tests and pending-history fix. Review latest Codex threads P1 guardian-link row race, P2 pending-idempotency rejection and P2 pending-history pagination/drop. Reply with tested fix evidence only; resolve after new exact-HEAD independent review. Keep this PR DRAFT and require owner merge authorization. Hosted and clinical release still NO-GO.
+
+## 2026-10-29 — PR #109 corrected-head qualification
+
+Requalify latest exact HEAD after guardian-link row lock, idempotency rejection, concurrency test and CI browser journey were added. First inspect six real CI jobs (including PostgreSQL lock-wait test and Chromium family/staff workflow); fix failures and request new exact-HEAD Codex independent review. Resolve original P1/P2 threads only with verified fixes. Do not mark an old SHA's review as current. Draft/no merge until owner decision; production/hosted flag remains OFF and clinical NO-GO intact.
+
+## 2026-10-29 — TB-EM-048 qualification and next unit
+
+1. Qualify synthetic guardian home-plan requests on exact current PR branch: Prisma migration on fresh PostgreSQL, Nest/Web compile, e2e permission and idempotency tests, five-width seven-role browser, Gitleaks, live-session, preview-container and Compose. Fix any errors with a new exact-head qualification cycle.
+2. Obtain independent Codex P0–P2 code review; inspect Grok/Mistral when actually received and verify model/source evidence. Resolve all actionable threads. A prior review on PR #108 cannot qualify TB-EM-048.
+3. Keep `HOME_PLAN_REQUESTS_DEMO` OFF for hosted/production by default. No family-facing clinical content or safeguarding discussion. External QA #81 stays INCOMPLETE.
+4. After exact-head CI and review, request owner authorization to merge. Next queue: therapist replacement and controlled clinical handover, separate PR.
+
 ## 2026-10-29 — TB-EM-047 PR #108 next qualification gates
 
 1. Verify latest exact-HEAD six CI jobs (test with PostgreSQL, secret-scan, live-session, preview-container, demo-journey, compose) following the corrective commits. An earlier head failed demo-journey due to stale copy; do not reuse its status.

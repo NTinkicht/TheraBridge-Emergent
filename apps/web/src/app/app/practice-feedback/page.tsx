@@ -8,6 +8,7 @@ import { PageTitle, SelectField, Workspace, errorText, useLoad } from '@/compone
 import { Button, Card, Pill } from '@/components/design/ui';
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
 import { serviceLabel } from '@/components/operations/BookDialog';
+import { ClinicianPlanRequestsPanel } from '@/components/practice/ClinicianPlanRequestsPanel';
 import type { SessionInfo } from '@/lib/auth';
 import { CHOICE_LABEL, CHOICE_TONE, dayName, practiceApi, type FeedbackItem } from '@/lib/practice';
 
@@ -53,6 +54,8 @@ function InboxView({ session, onError }: { session: SessionInfo; onError: (e: un
       {invalid && <p className="rounded-control bg-status-dangerSurface p-3 text-[14px] text-status-danger" role="alert" data-testid="feedback-period-error">Choose a start date on or before the end date.</p>}
       {!invalid && failed && <ErrorState onRetry={() => void reload()} testId="feedback-error" />}
       {!invalid && !failed && !data && <Card className="p-5"><SkeletonRows rows={3} testId="feedback-loading" /></Card>}
+      {session.activeContext?.type === 'center' && session.activeContext.role === 'THERAPIST' &&
+        <ClinicianPlanRequestsPanel centerId={centerId} />}
       {!invalid && data && (
         <>
           <p className="text-[14px] text-brand-inkMuted" data-testid="feedback-counts">{data.counts.new} new of {data.counts.total} answers{data.canAcknowledge ? '' : ' · supervisors can read but not acknowledge'}</p>
