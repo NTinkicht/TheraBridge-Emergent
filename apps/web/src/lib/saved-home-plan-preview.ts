@@ -60,7 +60,7 @@ export function savedPlanProjection(
         templateId: a.templateId, title: definition?.title ?? 'Activity definition unavailable',
         durationMinutes: a.durationMinutes ?? definition?.minutes ?? null,
         templateDurationMinutes: definition?.minutes ?? null,
-        durationOverridden: a.durationMinutes !== undefined,
+        durationOverridden: a.durationMinutes != null,
         ageBand: definition?.ageBand ?? null,
         materials: definition?.materials ?? [], steps: definition?.steps ?? [],
         safety: definition?.safety ?? [], note: a.note ?? '', frequency: a.frequency,
