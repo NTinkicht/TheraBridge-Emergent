@@ -130,7 +130,7 @@ export function HomePracticeCalendar({ activities, goals, templates, versionNumb
             <p className="break-words font-semibold">{definition.title}</p>
             <p className="break-words text-brand-inkMuted">
               {goal ? 'Linked goal: ' + goal.title : 'No saved goal link'}
-              {definition.minutes !== null ? ' · '+definition.minutes+' min (activity definition)' : ''}
+              {activity.durationMinutes != null ? ' · '+activity.durationMinutes+' min (plan-specific; template '+(definition.minutes ?? 'unavailable')+' min)' : definition.minutes !== null ? ' · '+definition.minutes+' min (activity definition)' : ''}
               {definition.source !== 'SAVED_SNAPSHOT' ? ' · Current library/legacy source, not a frozen snapshot' : ''}
             </p>
             {definition.note && <p className="mt-1 whitespace-pre-wrap break-words text-brand-inkMuted"
