@@ -38,6 +38,7 @@ function ActivityText({ a, templates }: { a: HomeActivity; templates: Template[]
   return <span className="break-words">
     <span className="font-medium">{t?.title ?? 'Historic activity (template unavailable)'}</span>
     {' · '}{a.frequency} · linked goal: {a.goalKey || 'Not recorded'}{a.schedule && <span className="block text-brand-inkMuted">Planned cadence: {scheduleDescription(a.schedule)} (internal draft only)</span>}
+    <span className="mt-1 block text-brand-inkMuted" data-testid="plan-history-activity-duration">{a.durationMinutes != null ? `Plan-specific duration: ${a.durationMinutes} minutes · ` : 'No plan-specific duration · '}Template duration: {t?.minutes ?? 'unavailable'} minutes (saved source when available)</span>
     {a.note && <span className="mt-1 block whitespace-pre-wrap text-brand-inkMuted" data-testid="plan-history-activity-instructions">Therapist instructions: {a.note}</span>}
     {!a.snapshot && <span className="text-brand-inkMuted"> · Legacy draft: title from current library, not a frozen snapshot</span>}
     {a.snapshot && <span className="block mt-1 text-brand-inkMuted" data-testid="plan-history-activity-snapshot">
