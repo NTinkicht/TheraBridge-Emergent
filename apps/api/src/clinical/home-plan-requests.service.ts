@@ -66,10 +66,15 @@ export class HomePlanRequestsService {
       include: { child: { select: { id: true, firstName: true, preferredName: true, services: true } } },
       orderBy: { createdAt: 'asc' },
     });
-    const rows = await this.prisma.homePlanRequest.findMany({
-      where: { centerId, guardianLinkId: { in: links.map(l => l.id) } },
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 100,
-    });
+    const owned = { centerId, guardianLinkId: { in: links.map(l => l.id) } };
+    // Do not let bounded completed history hide an old pending request.
+    const [pending, recent] = await Promise.all([
+      this.prisma.homePlanRequest.findMany({ where: { ...owned, status: 'PENDING' },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] }),
+      this.prisma.homePlanRequest.findMany({ where: { ...owned, status: { not: 'PENDING' } },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 100 }),
+    ]);
+    const rows = [...pending, ...recent];
     return {
       synthetic: true, released: false, enabled,
       children: links.map(l => ({ id: l.child.id, name: l.child.preferredName ?? l.child.firstName, services: l.child.services })),
@@ -147,13 +152,20 @@ export class HomePlanRequestsService {
       select: { childId: true, service: true },
     });
     const scope = pairs.filter(p => m.specialties.includes(p.service));
-    const rows = await this.prisma.homePlanRequest.findMany({
-      where: { centerId, child: { centerId, status: 'ACTIVE' },
-        guardianLink: { centerId, removedAt: null },
-        OR: scope.length ? scope.map(p => ({ childId: p.childId, service: p.service })) : [{ id: '00000000-0000-0000-0000-000000000000' }] },
-      include: { child: { select: { firstName: true, preferredName: true } } },
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 100,
-    });
+    const where = { centerId, child: { centerId, status: 'ACTIVE' as const },
+      guardianLink: { centerId, removedAt: null },
+      OR: scope.length ? scope.map(p => ({ childId: p.childId, service: p.service })) :
+        [{ id: '00000000-0000-0000-0000-000000000000' }] };
+    const include = { child: { select: { firstName: true, preferredName: true } } } as const;
+    // Pending work is never truncated by historical status records. The 100
+    // newest responses remain visible without hiding outstanding obligations.
+    const [pending, recent] = await Promise.all([
+      this.prisma.homePlanRequest.findMany({ where: { ...where, status: 'PENDING' },
+        include, orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] }),
+      this.prisma.homePlanRequest.findMany({ where: { ...where, status: { not: 'PENDING' } },
+        include, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 100 }),
+    ]);
+    const rows = [...pending, ...recent];
     return { synthetic: true, released: false, enabled,
       items: rows.map(r => ({ ...view(r), childName: r.child.preferredName ?? r.child.firstName })) };
   }
