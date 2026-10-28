@@ -136,6 +136,37 @@ describe('TB-EM-010 family home practice and outcomes (real PostgreSQL)', () => 
     await post(h, c(`clinical/home-plan-requests/${again.id}/respond`), therapist, { status: 'ACKNOWLEDGED' }).expect(404);
   });
 
+  it('TB-EM-048: concurrent guardian revocation completes before a blocked therapist response', async () => {
+    const { kid, link, guardian } = await family();
+    const therapist = await staff('request-guardian-race@practice.test', ['THERAPIST'], ['speech']);
+    const membershipId = therapist.body.activeContext.membershipId;
+    await post(h, c(`children/${kid}/assignments`), admin,
+      { membershipId, service: 'speech', isLead: true }).expect(201);
+    const request = (await post(h, c('family/home-plan-requests'), guardian,
+      { childId: kid, service: 'speech', requestKey: randomUUID() }).expect(200)).body;
+    const started = deferred();
+    const release = deferred();
+    // Simulate a link-removal transaction that has updated the row but not
+    // committed; the response must wait for its FOR UPDATE lock, then deny.
+    const removing = h.prisma.$transaction(async tx => {
+      await tx.guardianLink.update({ where: { id: link }, data: { removedAt: h.clock.now() } });
+      started.resolve();
+      await release.promise;
+    });
+    await started.promise;
+    const responding = post(h, c(`clinical/home-plan-requests/${request.id}/respond`),
+      therapist, { status: 'ACKNOWLEDGED' }).then(r => r);
+    try {
+      await waitForBlock('guardian_link');
+    } finally {
+      release.resolve();
+    }
+    await removing;
+    expect((await responding).status).toBe(404);
+    expect((await h.prisma.homePlanRequest.findUniqueOrThrow({ where: { id: request.id } })).status).toBe('PENDING');
+    expect(await h.prisma.centerEvent.count({ where: { type: 'clinical.home_plan_request_answered' } })).toBe(0);
+  });
+
   it('TB-EM-048: assignment loss and trial expiry do not bypass tenant-scoped request permissions', async () => {
     const { kid, guardian } = await family();
     const therapist = await staff('request-revocation@practice.test', ['THERAPIST'], ['speech']);
