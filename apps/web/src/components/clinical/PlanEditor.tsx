@@ -95,7 +95,7 @@ function VersionEditor({ centerId, ws, planId, planTitle, service, v, source, ru
   // cannot discard unsaved edits in another plan.
   useEffect(() => { onDirtyChange(v.id, unsavedPlanEdits); }, [v.id, unsavedPlanEdits, onDirtyChange]);
   useEffect(() => () => { onDirtyChange(v.id, false); }, [v.id, onDirtyChange]);
-  const save = () => run(() => clinicalApi.saveVersion(centerId, v.id, { summary, goals: goals.filter((g) => g.title.trim()), homeActivities: acts.map(({ templateId, goalKey, frequency, note, schedule }) => ({ templateId, goalKey, frequency, note, schedule })), version: v.version }), 'Draft saved.');
+  const save = () => run(() => clinicalApi.saveVersion(centerId, v.id, { summary, goals: goals.filter((g) => g.title.trim()), homeActivities: acts.map(({ templateId, goalKey, frequency, note, durationMinutes, schedule }) => ({ templateId, goalKey, frequency, note, durationMinutes, schedule })), version: v.version }), 'Draft saved.');
   return (
     <div className="space-y-4" data-testid={`plan-version-${v.number}`}>
       <div className="flex flex-wrap items-center gap-2"><Pill tone={STATUS[v.status][1]} testId="plan-version-status">{`Version ${v.number} · ${STATUS[v.status][0]}`}</Pill><span className="text-[13px] text-brand-inkMuted">by {v.author}</span></div>
@@ -129,6 +129,7 @@ function VersionEditor({ centerId, ws, planId, planTitle, service, v, source, ru
                 onChange={schedule => setActs(prev => prev.map((x, j) =>
                   j === i ? { ...x, schedule, frequency: schedule ? (schedule.cadence === 'WEEKLY' ? 'Weekly calendar draft' : 'Monthly calendar draft') : 'As directed (undated)' } : x))} />
               <HomeActivityDetails activity={a} templates={ws.templates} editable={edit} index={i}
+                onDurationChange={durationMinutes => setActs(prev => prev.map((x, j) => j === i ? { ...x, durationMinutes } : x))}
                 onInstructionsChange={note => setActs(prev => prev.map((x, j) =>
                   j === i ? { ...x, note } : x))} />
               {edit && <button type="button" aria-label="Remove activity" onClick={() => setActs(acts.filter((_, j) => j !== i))} className="grid h-10 w-10 place-items-center rounded-control hover:bg-surface-subtle"><Trash2 size={16} aria-hidden="true" /></button>}
