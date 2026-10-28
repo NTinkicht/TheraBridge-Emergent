@@ -1,3 +1,7 @@
+## 2026-10-29 — TB-EM-049 corrected-head qualification
+
+Inspect exact-head six-job CI including PostgreSQL status migration, 17+ e2e suites, real row-lock tests, security routes, web build, live-session, demo-journey, preview-container, compose and secret scan. Fix failures and repeat at the new exact HEAD. Only after CI is green and code stabilizes, request one Codex P0-P2 re-review to conserve credits. Compare new independent findings with corrected code, resolve all actionable blockers before owner-authorized merge. Actual therapist re-assignment, clinical chart access, consent, signing and family release are NOT authorized in this operational handover preparation slice.
+
 ## 2026-10-29 — TB-EM-049 immediate next actions
 
 1. Run all six exact-HEAD CI jobs including Nest/Web TS build, PostgreSQL handover.e2e, route inventory and browser demo. Correct failures and rerun on new HEAD.
