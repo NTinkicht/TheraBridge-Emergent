@@ -1,3 +1,10 @@
+## 2026-10-29 — TB-EM-048 qualification and next unit
+
+1. Qualify synthetic guardian home-plan requests on exact current PR branch: Prisma migration on fresh PostgreSQL, Nest/Web compile, e2e permission and idempotency tests, five-width seven-role browser, Gitleaks, live-session, preview-container and Compose. Fix any errors with a new exact-head qualification cycle.
+2. Obtain independent Codex P0–P2 code review; inspect Grok/Mistral when actually received and verify model/source evidence. Resolve all actionable threads. A prior review on PR #108 cannot qualify TB-EM-048.
+3. Keep `HOME_PLAN_REQUESTS_DEMO` OFF for hosted/production by default. No family-facing clinical content or safeguarding discussion. External QA #81 stays INCOMPLETE.
+4. After exact-head CI and review, request owner authorization to merge. Next queue: therapist replacement and controlled clinical handover, separate PR.
+
 ## 2026-10-29 — TB-EM-047 PR #108 next qualification gates
 
 1. Verify latest exact-HEAD six CI jobs (test with PostgreSQL, secret-scan, live-session, preview-container, demo-journey, compose) following the corrective commits. An earlier head failed demo-journey due to stale copy; do not reuse its status.
