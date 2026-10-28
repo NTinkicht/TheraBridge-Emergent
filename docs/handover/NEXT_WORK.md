@@ -1,3 +1,11 @@
+## 2026-10-29 — PR #109 last qualification
+
+1. Inspect exact-head six-job CI for corrected source (especially PostgreSQL races, Prisma migration generate/typecheck, AC-9/AC-11 test suite, Chromium family/staff journey, Compose).
+2. If failures, fix code/tests and rerun exact-head CI; do not spend Codex review until CI is all green and HEAD stable.
+3. Then request one Codex independent exact-HEAD P0–P2 re-review covering staff-role/specialty, end-assignment and guardian revocations; address actionable findings.
+4. Reply to existing four Codex inline threads and three independent reviewed-body findings with tested evidence, resolve only after verifying fixes; request owner merge authorization separately.
+5. No clinical content, signing, consent/release, or production operations enabled; next milestone remains therapist replacement and controlled clinical handover.
+
 ## 2026-10-29 — TB-EM-048 final qualification after permission-matrix update
 
 Re-run exact-HEAD six-job CI after revised RBAC expectation tests and pending-history fix. Review latest Codex threads P1 guardian-link row race, P2 pending-idempotency rejection and P2 pending-history pagination/drop. Reply with tested fix evidence only; resolve after new exact-HEAD independent review. Keep this PR DRAFT and require owner merge authorization. Hosted and clinical release still NO-GO.
