@@ -1,3 +1,11 @@
+## 2026-10-29 — Owner standing policy and PR #111 P3 dispositions
+
+- Wrote mandatory review disposition rules for all contributors in AGENTS.md and CONTINUITY_PROTOCOL.md, with detailed review ledger in REVIEW_DISPOSITION_RULE.md and future .github PR checklist. P0–P2 fixed before merge; safe small P3s fixed; bigger optional enhancements issue-tracked; unnecessary suggestions declined with rationale.
+- FIX_NOW: manager cannot submit another proposal on the same source/service while pending or acknowledged; UI explicitly explains and disables the action; backend 409 remains authoritative.
+- FIX_NOW: added actual PostgreSQL center-lock competition regression queuing cancellation before target acknowledgement, proving one cancel succeeds, acknowledgement fails closed, exactly one cancel event and no acknowledgement or assignment mutation.
+- DEFER_ISSUE: center-wide cap of 100 cancelled proposals may limit history on individual child detail; separate UX/pagination scope tracked at https://github.com/NTinkicht/TheraBridge-Emergent/issues/112 (all actionable proposals remain in inbox).
+- No declined findings this round. Codex request on prior e7caba SHA remains pending/not valid for new commits. Exact new-head six-job CI pending. No merge.
+
 ## 2026-10-29 — TB-EM-049 original red CI and remediation
 
 - Initial exact-head 0d170d3 run 40772381693: one test suite red (3 failing cases), SQLSTATE 23514 legacy status CHECK, compose skipped; Mistral P0 and second independent review correctly flagged the product defect.
