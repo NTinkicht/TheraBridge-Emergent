@@ -171,6 +171,19 @@ assert.equal(exactSavedPreview.id,'saved-version-a');
 assert.equal(exactSavedPreview.summary,'Original saved synthetic plan');
 assert.equal(exactSavedPreview.activities[0].title,'Saved cards');
 assert.equal(exactSavedPreview.activities[0].durationMinutes,12);
+assert.equal(exactSavedPreview.activities[0].templateDurationMinutes,12);
+assert.equal(exactSavedPreview.activities[0].durationOverridden,false);
+const overriddenPreview = savedPreview.savedPlanProjection({
+  ...basePreviewVersion, homeActivities: [{...basePreviewVersion.homeActivities[0],durationMinutes:7}],
+},[changedLiveTemplate],sourceReportPreview);
+assert.equal(overriddenPreview.activities[0].durationMinutes,7);
+assert.equal(overriddenPreview.activities[0].templateDurationMinutes,12);
+assert.equal(overriddenPreview.activities[0].durationOverridden,true);
+assert.equal(overriddenPreview.activities[0].definitionSource,'SAVED_SNAPSHOT');
+assert.equal(basePreviewVersion.homeActivities[0].snapshot.minutes,12);
+const clearedPreview = savedPreview.savedPlanProjection(basePreviewVersion,[changedLiveTemplate],sourceReportPreview);
+assert.equal(clearedPreview.activities[0].durationMinutes,12);
+assert.equal(clearedPreview.activities[0].durationOverridden,false);
 assert.deepEqual(exactSavedPreview.activities[0].safety,['Adult supervision']);
 assert.equal(exactSavedPreview.activities[0].note,'Saved therapist instructions');
 assert.equal(exactSavedPreview.activities[0].linkedGoalTitle,'Saved naming objective');
@@ -241,6 +254,15 @@ const noteAfter={...noteBefore,homeActivities:[
   {...noteBefore.homeActivities[0],note:'After'},
 ]};
 assert.equal(comparison.comparePlanVersions(noteBefore,noteAfter).activities[0].kind,'changed');
+const durationBefore={...noteBefore,homeActivities:[{...noteBefore.homeActivities[0],durationMinutes:5}]};
+const durationAfter={...noteBefore,number:2,homeActivities:[{...noteBefore.homeActivities[0],durationMinutes:15}]};
+const durationDiff=comparison.comparePlanVersions(durationBefore,durationAfter);
+assert.equal(durationDiff.activities[0].kind,'changed');
+assert.equal(durationDiff.activities[0].previous.durationMinutes,5);
+assert.equal(durationDiff.activities[0].current.durationMinutes,15);
+assert.equal(durationDiff.activities[0].previous.snapshot.minutes,oldDefinition.minutes);
+assert.equal(durationDiff.activities[0].current.snapshot.minutes,oldDefinition.minutes);
+assert.equal(comparison.comparePlanVersions(noteBefore,{...noteBefore,number:2}).activities[0].kind,'unchanged');
 assert.equal(oldDefinition.title,'Saved picture activity');
 
 // TB-EM-039: advisory planning checklist is NOT a clinical approval; only a

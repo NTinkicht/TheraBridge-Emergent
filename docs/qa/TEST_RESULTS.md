@@ -1,3 +1,11 @@
+## 2026-10-29 — PR #108 TB-EM-047 duration-override verification ledger
+
+- Original PR HEAD `ed5414add44e30228d8a476abcf6dd28f3edd65b`: CI `demo-journey` **FAIL** at stale exact-copy assertion ("Duration is taken from the activity definition"); other jobs were reported green by Mistral but original job logs were not used as qualification for subsequent commits. Corrected in `scripts/design/check-demo-journey.mjs`.
+- New API regression assertions **ADDED, NOT VERIFIED AT NEW HEAD**: explicit null, zero, 121, fractional 10.5, negative -1 => HTTP 400 without revision mutation; valid 7 minutes persists in homeActivities with original snapshot 10; omitting override on next save removes it, snapshot unchanged. Existing role/specialty denials retained.
+- Pure logic assertions **ADDED, NOT VERIFIED AT NEW HEAD**: saved projection retains source minutes and flags effective override; clearing falls back to original; changes between 5/15 overrides are recorded with same immutable snapshot minutes.
+- Synthetic Chromium assertions **ADDED, NOT VERIFIED AT NEW HEAD**: 7 allowed, 121 and 10.5 disable Save, unsaved value never shown in persisted preview; corrected display-copy check. Historical comparison now renders each override explicitly.
+- Full current exact-head CI six jobs: **NOT VERIFIED**. Independent fresh exact-head reviews: **NOT VERIFIED**. Hosted browser/cookie QA #81: **BLOCKED/INCOMPLETE**. No clinical approval, release, or production readiness established.
+
 ## 2026-10-27 — PR #97 preflight gate verification (PENDING final HEAD)
 
 - New offline assertions execute the exact Node code from the GitHub Actions `qualify` shell gate and check owner-only valid commands (including uppercase), rejected mention-only/malformed/partial commands, leading/trailing whitespace, unauthorized authors, and the `dispatch.needs.qualify` dependency.

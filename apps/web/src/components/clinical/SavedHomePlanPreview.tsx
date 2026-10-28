@@ -97,6 +97,7 @@ export function SavedHomePlanPreview({ version, templates, origin, title, servic
                 {a.durationMinutes !== null ? a.durationMinutes+' minutes · ' : 'Duration unavailable · '}
                 {a.ageBand ?? 'Age band unavailable'} · {a.frequency}
               </p>
+              {a.durationOverridden && <p className="text-brand-inkMuted" data-testid="saved-plan-duration-override">Plan-specific duration: {a.durationMinutes} min; unchanged template snapshot: {a.templateDurationMinutes ?? 'unavailable'} min.</p>}
               <p className="text-brand-inkMuted" data-testid="saved-plan-preview-source">
                 {a.definitionSource === 'SAVED_SNAPSHOT' ? 'Server-saved activity snapshot for this version.' :
                   a.definitionSource === 'CURRENT_LIBRARY' ? 'Legacy fallback: current library content, NOT a saved definition.' :

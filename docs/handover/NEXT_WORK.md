@@ -1,3 +1,12 @@
+## 2026-10-29 — TB-EM-047 PR #108 next qualification gates
+
+1. Verify latest exact-HEAD six CI jobs (test with PostgreSQL, secret-scan, live-session, preview-container, demo-journey, compose) following the corrective commits. An earlier head failed demo-journey due to stale copy; do not reuse its status.
+2. Obtain fresh Codex and independent P0–P2 review of **current corrected HEAD**, respond to findings, resolve review threads only when fixed, and rerun checks after every new commit. Existing Grok/Mistral/Codex comments were bound to original `ed5414a` only.
+3. After green exact-head qualification, request explicit owner merge decision. Do not automatically merge; keep synthetic/clinical NO-GO and hosted #81 separate.
+4. Next development unit **after qualification**: guardian home-plan request/tracking/clinician response; do not enable guardian access to unsigned plans or reports.
+
+The per-plan duration override is implemented on draft PR #108, not an unstarted future slice; the feature is NOT yet qualified or merged.
+
 ## 2026-10-27 — PR #97 final dispatch qualification
 
 - Confirm owner-authored exact manual comments enter the dispatched review job ONLY through the read-only preflight and ineligible owner comments cannot occupy the paid concurrency queue; automatic PR dispatch is unaffected by preflight skip.

@@ -4,12 +4,13 @@ import { Clock3, ShieldAlert } from 'lucide-react';
 import type { HomeActivity, Template } from '@/lib/clinical';
 import { homeActivityDefinition, MAX_THERAPIST_INSTRUCTION_LENGTH } from '@/lib/home-activity-detail';
 
-export function HomeActivityDetails({ activity, templates, editable, index, onInstructionsChange }: {
+export function HomeActivityDetails({ activity, templates, editable, index, onInstructionsChange, onDurationChange }: {
   activity: HomeActivity;
   templates: Template[];
   editable: boolean;
   index: number;
   onInstructionsChange: (text: string) => void;
+  onDurationChange: (minutes: number | undefined) => void;
 }) {
   const definition = homeActivityDefinition(activity, templates);
   return <div className="w-full space-y-3 rounded-control border border-border-light bg-surface-subtle p-3"
@@ -25,8 +26,17 @@ export function HomeActivityDetails({ activity, templates, editable, index, onIn
       {definition.source === 'SAVED_SNAPSHOT' ? 'Saved activity definition for this plan version.' :
         definition.source === 'CURRENT_LIBRARY' ? 'Current activity-library definition (not a frozen snapshot). Saving this draft captures the server-owned definition.' :
         'Activity definition unavailable. Review the library association before continuing.'}
-      {' '}Duration is taken from the activity definition; this editor does not override it.
+      {' '}The saved template duration stays unchanged; an optional plan-specific duration can be recorded below.
     </p>
+    <label className="block max-w-[260px] text-[12px] font-semibold">Duration for this plan (minutes)
+      <input type="number" min={1} max={120} step={1} disabled={!editable}
+        value={activity.durationMinutes ?? ''} data-testid={`home-activity-duration-override-${index}`}
+        aria-invalid={activity.durationMinutes != null && (!Number.isInteger(activity.durationMinutes) || activity.durationMinutes < 1 || activity.durationMinutes > 120)}
+        onChange={e => onDurationChange(e.target.value === '' ? undefined : Number(e.target.value))}
+        placeholder={definition.minutes === null ? 'No source duration' : `Template: ${definition.minutes} min`}
+        className="mt-1 w-full rounded-control border border-border-light bg-surface-white px-3 py-2 text-[13px] disabled:opacity-60" />
+      <span className="mt-1 block text-[11px] font-normal text-brand-inkMuted">Optional override, 1–120 minutes. Template remains {definition.minutes ?? 'unknown'} minutes. Saved with draft only.</span>
+    </label>
     <div className="grid gap-3 sm:grid-cols-2">
       <div className="space-y-1">
         <p className="text-[12px] font-semibold">Materials</p>

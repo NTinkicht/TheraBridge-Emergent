@@ -38,7 +38,7 @@ const snapshotIdentity = (a: HomeActivity) => {
   }) : null;
 };
 const activityIdentity = (a: HomeActivity) =>
-  [a.goalKey ?? '', a.frequency, a.note ?? '', JSON.stringify(a.schedule ?? null), snapshotIdentity(a)] as const;
+  [a.goalKey ?? '', a.frequency, a.note ?? '', a.durationMinutes ?? null, JSON.stringify(a.schedule ?? null), snapshotIdentity(a)] as const;
 const changed = (before: readonly unknown[], after: readonly unknown[]) =>
   before.length !== after.length || before.some((field, i) => field !== after[i]);
 

@@ -1,5 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsInt, IsNumber, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength, ValidateNested } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsInt, IsNumber, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength, ValidateIf, ValidateNested } from 'class-validator';
 import { SPECIALTIES } from '../applications/applications.dto';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -57,6 +57,8 @@ export class HomeActivityDto {
   @IsOptional() @Matches(/^[a-z0-9-]{1,40}$/) goalKey?: string;
   @IsString() @MaxLength(80) frequency!: string;
   @IsOptional() @IsString() @MaxLength(500) note?: string;
+  // Optional per-plan duration; never changes the server-owned library snapshot.
+  @ValidateIf((_object, value) => value !== undefined) @IsInt() @Min(1) @Max(120) durationMinutes?: number;
   @IsOptional() @ValidateNested() @Type(() => ActivityScheduleDto)
   schedule?: ActivityScheduleDto;
 }

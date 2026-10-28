@@ -7,6 +7,8 @@ export interface SavedPlanActivity {
   templateId: string;
   title: string;
   durationMinutes: number | null;
+  templateDurationMinutes: number | null;
+  durationOverridden: boolean;
   ageBand: string | null;
   materials: readonly string[];
   steps: readonly string[];
@@ -56,7 +58,10 @@ export function savedPlanProjection(
       const definition = a.snapshot ?? library;
       return {
         templateId: a.templateId, title: definition?.title ?? 'Activity definition unavailable',
-        durationMinutes: definition?.minutes ?? null, ageBand: definition?.ageBand ?? null,
+        durationMinutes: a.durationMinutes ?? definition?.minutes ?? null,
+        templateDurationMinutes: definition?.minutes ?? null,
+        durationOverridden: a.durationMinutes != null,
+        ageBand: definition?.ageBand ?? null,
         materials: definition?.materials ?? [], steps: definition?.steps ?? [],
         safety: definition?.safety ?? [], note: a.note ?? '', frequency: a.frequency,
         schedule: a.schedule ?? null,

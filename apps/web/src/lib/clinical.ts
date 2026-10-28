@@ -2,7 +2,7 @@ import { rest } from './auth';
 
 export interface Goal { key: string; title: string; measure: 'percent' | 'count' | 'level'; baseline: number; target: number; horizon?: 'SHORT_TERM' | 'LONG_TERM'; targetOn?: string; reviewOn?: string }
 export interface ActivitySchedule { cadence: 'WEEKLY' | 'MONTHLY'; startsOn: string; endsOn: string; weekdays?: number[]; monthDay?: number }
-export interface HomeActivity { templateId: string; frequency: string; note?: string; goalKey?: string; schedule?: ActivitySchedule; snapshot?: Template & { version: number; capturedAt: string } }
+export interface HomeActivity { templateId: string; frequency: string; note?: string; durationMinutes?: number; goalKey?: string; schedule?: ActivitySchedule; snapshot?: Template & { version: number; capturedAt: string } }
 export interface Template { id: string; title: string; service: string; ageBand: string; minutes: number; materials: string[]; steps: string[]; safety: string[]; library?: 'center' | 'synthetic'; version?: number; mine?: boolean }
 export interface GoalCheckpoint {
   kind: 'GOAL_CHECKPOINT'; goalKey: string; authorId: string; reviewedOn: string;

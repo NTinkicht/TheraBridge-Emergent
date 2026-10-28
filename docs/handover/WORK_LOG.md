@@ -1,3 +1,10 @@
+## 2026-10-29 — TB-EM-047 PR #108 response to Codex, Mistral and Grok
+
+- Checked original head `ed5414add44e30228d8a476abcf6dd28f3edd65b` reviews. Codex: P1 missing required checkpoints, P2 null duration accepted, P2 historical comparison hid duration values. Mistral: P1 failing stale demo journey, P2 missing API/pure/browser tests, plus calendar display recommendation. Grok: no blocking findings, requested boundary coverage.
+- Changed DTO to validate duration when present **including null**, so undefined remains optional but explicit null is HTTP 400. Added historical activity duration readout; calendar prefers per-plan override while retaining template source; saved projection guards legacy null. Clinician input marks invalid values; browser test exercises 7, 121, 10.5 and unsaved preview isolation.
+- Extended PostgreSQL clinical e2e to assert invalid durations reject with no write; 7-minute duration persists while immutable template snapshot stays 10; clearing on the next save omits override. Added pure read projection and two-version change-detection assertions; repaired stale demo-journey text assertion.
+- Changed code and synthetic tests only on feature branch. Exact-head six-job CI and fresh independent reviewer responses **PENDING**, no merge and no deployment.
+
 ## 2026-10-27 — PR #97 CodeRabbit and Codex follow-up
 
 - CodeRabbit found that invalid owner comment events could compete with pending dispatches even with noncancelling job-level concurrency. Implemented an eligibility-only `qualify` job that executes no project code or paid API and gates `dispatch` eligibility; added fake-JS validation of exact owner/40-character SHA commands and rejection of ordinary comments.

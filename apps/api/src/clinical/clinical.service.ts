@@ -23,7 +23,7 @@ const goalDefinition = (g?: Goal) => !g ? null : {
 // Snapshots are captured by the server, never accepted as client input.
 type ActivitySnapshot = { id: string; title: string; service: string; ageBand: string; minutes: number; materials: string[]; steps: string[]; safety: string[]; version: number; capturedAt: string };
 type ActivitySchedule = { cadence: 'WEEKLY' | 'MONTHLY'; startsOn: string; endsOn: string; weekdays?: number[]; monthDay?: number };
-type HomeActivity = { templateId: string; frequency: string; note?: string; goalKey?: string; schedule?: ActivitySchedule; snapshot?: ActivitySnapshot };
+type HomeActivity = { templateId: string; frequency: string; note?: string; durationMinutes?: number; goalKey?: string; schedule?: ActivitySchedule; snapshot?: ActivitySnapshot };
 
 // All date-only fields are calendar dates, never UTC timestamps. Reject
 // invalid month/day combinations (February 30, non-leap Feb 29, etc.).
@@ -297,6 +297,7 @@ export class ClinicalService {
           frequency: activity.schedule ? (activity.schedule.cadence === 'WEEKLY' ? 'Weekly calendar draft' : 'Monthly calendar draft') : activity.frequency,
           ...(activity.goalKey ? { goalKey: activity.goalKey } : {}),
           ...(activity.note !== undefined ? { note: activity.note } : {}),
+          ...(activity.durationMinutes !== undefined ? { durationMinutes: activity.durationMinutes } : {}),
           ...(activity.schedule ? { schedule: {
             cadence: activity.schedule.cadence,
             startsOn: activity.schedule.startsOn, endsOn: activity.schedule.endsOn,
