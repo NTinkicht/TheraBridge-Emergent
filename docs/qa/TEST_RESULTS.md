@@ -1,3 +1,7 @@
+## 2026-10-29 — TB-EM-050 read-only handover readiness (NOT RUN at first commit)
+
+Baseline PR #111 merged main ef1761a36d62bd626baf9a587798f0fc11afd35b; exact-head PR CI run 40778143037 passed all six. TB-EM-050 new endpoint and UI code not yet executed in CI at documentation checkpoint. New real PostgreSQL handover.e2e tests assert: manager-only GET, read-only fixed-shape readyForTransfer=false regardless of operational acknowledgement, active source/target specialty checks, flags off denied, nonexistent and cross-tenant proposals 404, recipient therapist 403, cancelled not open, zero readiness audit writes and unchanged assignment. Required new-head CI and independent re-review NOT VERIFIED; no claims of passing tests or clinical readiness.
+
 ## 2026-10-29 — Review policy implementation and P3 regression: NOT YET RUN
 
 Prior PR #111 e7caba017fac 6/6 exact-head CI PASS; cannot transfer that verdict to new HEAD. New PostgreSQL test deliberately holds the center FOR UPDATE lock, confirms one waiting cancellation then two waiting competing operations via pg_stat_activity, releases, verifies cancel 201 / acknowledge 404, one cancellation event, zero acknowledgement events and unchanged active assignments. Frontend manager panel disables duplicate source/service proposal when PENDING_ACK or ACKNOWLEDGED exists, with visible explanatory notice; server CAS/409 unchanged. Tests and code have been committed but exact-HEAD CI has not yet completed; do NOT claim PASS. No clinical release or production deployment.
