@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Card } from '@/components/design/ui';
-import { opsApi, type HandoverInbox } from '@/lib/operations';
+import { opsApi, HANDOVER_LABELS, type HandoverInbox } from '@/lib/operations';
 import { serviceLabel } from '@/components/operations/BookDialog';
 
 export function HandoverInboxPanel({ centerId }: { centerId: string }) {
@@ -32,7 +32,7 @@ export function HandoverInboxPanel({ centerId }: { centerId: string }) {
       {!data.items.length && <li className="text-[13px]">No operational handover requests.</li>}
       {data.items.map(h => <li key={h.id} className="flex flex-wrap items-center justify-between gap-3 rounded-control border border-border-light p-3">
         <div className="text-[13px]">
-          <strong>{serviceLabel(h.service)}</strong> · {h.status.replaceAll('_',' ')}
+          <strong>{serviceLabel(h.service)}</strong> · {HANDOVER_LABELS[h.status]}
           <span className="block text-brand-inkMuted">No child details or clinical documents exposed</span>
         </div>
         {h.status === 'PENDING_ACK' && <Button size="sm" disabled={busy}
