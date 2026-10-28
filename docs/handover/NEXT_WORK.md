@@ -1,3 +1,10 @@
+## 2026-10-29 — TB-EM-049 immediate next actions
+
+1. Run all six exact-HEAD CI jobs including Nest/Web TS build, PostgreSQL handover.e2e, route inventory and browser demo. Correct failures and rerun on new HEAD.
+2. Once code stable and CI green, request one credit-conscious Codex exact HEAD P0–P2 review; check authorization, idempotency, concurrency and leakage, and handle actual findings. Do not request Codex per intermediate commit.
+3. Require owner merge decision after all reviewers/CI green. Keep HANDOVER_DEMO OFF for hosted/production and unchanged clinical governance NO-GO.
+4. Next follow-up in same roadmap work item: *guarded actual therapist replacement and clinical handover acceptance* with independent authorization signatures/consent decision; do not implement by merely changing operational acknowledgement status.
+
 ## 2026-10-29 — PR #109 last qualification
 
 1. Inspect exact-head six-job CI for corrected source (especially PostgreSQL races, Prisma migration generate/typecheck, AC-9/AC-11 test suite, Chromium family/staff journey, Compose).
