@@ -5,6 +5,16 @@ import { SPECIALTIES } from '../applications/applications.dto';
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 export const MEASURES = ['percent', 'count', 'level'] as const;
 
+// TB-EM-048 fixed-shape operational requests: no free text, no draft content.
+export class HomePlanRequestDto {
+  @IsUUID() childId!: string;
+  @IsIn(SPECIALTIES) service!: string;
+  @IsUUID() requestKey!: string;
+}
+export class HomePlanRequestResponseDto {
+  @IsIn(['ACKNOWLEDGED', 'CLOSED_UNAVAILABLE']) status!: 'ACKNOWLEDGED' | 'CLOSED_UNAVAILABLE';
+}
+
 export class ReviewQueueQueryDto {
   @IsOptional() @IsUUID() childId?: string;
   @IsOptional() @IsIn(SPECIALTIES) service?: string;
