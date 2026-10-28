@@ -1,3 +1,10 @@
+## 2026-10-29 — Workflow automation for automatic Codex reviews
+
+- Inspected `.github/workflows/auto-review-trigger.yml` and confirmed draft PR event filter caused `independent-review-dispatch` to skip PR #108/#109 unless explicitly requested.
+- Updated same-repo PR triggers to automatically request `@codex review` on draft open, reopen, synchronize, ready and edited-base with exact current HEAD/BASE comparison marker dedupe; does not execute PR code.
+- Protected paid APIs: draft automatic event cannot access Mistral/xAI secrets and `enabled` calculation prohibits charges even if owner-wide opt-in is enabled. Manual owner `/review-*` pathway unchanged.
+- Extended exact-workflow offline regression fixtures and integration instructions. Distinct focused PR required. No claimed passing CI, no clinical release, no owner credentials changed.
+
 ## 2026-10-29 — TB-EM-047 PR #108 response to Codex, Mistral and Grok
 
 - Checked original head `ed5414add44e30228d8a476abcf6dd28f3edd65b` reviews. Codex: P1 missing required checkpoints, P2 null duration accepted, P2 historical comparison hid duration values. Mistral: P1 failing stale demo journey, P2 missing API/pure/browser tests, plus calendar display recommendation. Grok: no blocking findings, requested boundary coverage.
