@@ -1,3 +1,12 @@
+## First independent review dispositions — 2026-10-29
+
+- `FIX_NOW` performance suggestion: removed the read-only interactive transaction and its row locks from readiness. The endpoint performs fresh active manager membership/role verification and bounded, tenant-scoped, lock-free reads. These are advisory observations, **not a serializable or authorizing snapshot**; checkedAt records evaluation time.
+- `FIX_NOW` UI status consistency: Check readiness updates both the displayed proposal status and the checklist from the same server response. An explicit checkedAt timestamp and recheck guidance prevent assuming a cached checklist is still current.
+- `FIX_NOW` tests: child archive after ACKNOWLEDGED must set CHILD_SERVICE_ACTIVE false with INCOMING_RECEIPT true, and a clinical supervisor must receive HTTP 403. Both added to PostgreSQL e2e.
+- `DEFER_ISSUE` broader two-session Playwright acceptance [#114](https://github.com/NTinkicht/TheraBridge-Emergent/issues/114): backend and UI code fixed in this PR; dedicated cross-role browser fixture planned separately.
+- `DECLINE_WITH_REASON` none.
+- Independent first-round reviewers and Codex found no security/clinical blockers at original `7b6551f8dc`; their reviews do not automatically qualify the corrected HEAD. Six new-head CI jobs and round-two review required before merge.
+
 # TB-EM-050 — Non-authorizing operational handover readiness snapshot
 
 **Workstream:** Therapist replacement and controlled clinical handover, following merged PR #111 (TB-EM-049).
