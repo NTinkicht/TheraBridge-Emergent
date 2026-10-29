@@ -81,6 +81,7 @@ const extract = (source, start, end) => {
 const readiness = extract(service,
   'async handoverReadiness(centerId:', 'async proposeHandover(');
 const ack = extract(service, 'async acknowledgeHandover(', 'async cancelHandover(');
+const view = extract(service, 'private handoverView(', 'async handovers(');
 const legacyTransfer = service.slice(service.indexOf('async transfer(centerId:'));
 assert.ok(legacyTransfer.includes('tx.caseloadTransferDraft.create('),
   'Legacy transfer-simulations must remain non-authorizing draft creation');
@@ -92,12 +93,19 @@ assert.ok(controller.includes("@Post('transfer-simulations')"));
 assert.ok(!controller.includes("@Post('transfers')") &&
   !controller.includes("@Post('handover-proposals/:id/execute')"),
   'An executable transfer route appeared without clinical policy sign-off');
-for (const text of [readiness, ack]) {
+assert.ok(ack.includes('return this.handoverView('),
+  'Operational acknowledgement no longer returns the protected handover view');
+for (const text of [readiness, view]) {
   for (const invariant of ['assignmentChanged: false','accessGranted: false',
     'clinicalHandover: false','released: false']) {
     assert.ok(text.includes(invariant), `Non-authorizing response lost ${invariant}`);
   }
 }
+assert.ok(!ack.includes('tx.careAssignment.create(') &&
+  !ack.includes('tx.careAssignment.update(') &&
+  !ack.includes('tx.careAssignment.updateMany(') &&
+  !ack.includes('tx.careAssignment.delete('),
+  'Operational acknowledgement must never reassign a child');
 for (const x of ['readyForTransfer: false', "code: 'SIGNED_CLINICAL_AUTHORIZATION'",
   "code: 'PURPOSE_SPECIFIC_CONSENT'", "code: 'CLINICAL_HANDOVER_SCOPE'"])
   assert.ok(readiness.includes(x), `Handover readiness lost ${x}`);
