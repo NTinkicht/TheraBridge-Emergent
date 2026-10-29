@@ -1,3 +1,12 @@
+## 2026-10-29 — PR #113 review cycle 1 corrections
+
+- Inspected all PR comments and review threads. Codex first round completed no major issues on 7b6551f8dc; Mistral first round NO_BLOCKING_FINDINGS; latest independent review identified avoidable interactive transaction row locks, stale manager row status, missing archived-child and supervisor regressions.
+- FIX_NOW: changed `GovernanceService.handoverReadiness` to active-manager role+center-verified direct Prisma queries, dropping read-only interactive transaction; point-in-time advisory reading not an authorization token. Add checkedAt string.
+- FIX_NOW: when manager checks a proposal, update the matching UI row status from authoritative readiness reply, so cancelled row no longer advertises a cancel action; timestamp and refresh guidance shown.
+- FIX_NOW: added archived-child/retained-ACK and supervisor-forbidden cases in PostgreSQL e2e, without any clinical access or assignment changes.
+- DEFER_ISSUE: independent two-session Playwright regression tracked in https://github.com/NTinkicht/TheraBridge-Emergent/issues/114; requires browser multi-user fixture beyond this narrow PR, not a P0-P2 blocker.
+- New six-job exact-head CI and round-two independent review PENDING; no second review sent prior to stable green CI. Never count old Codex/CI for new HEAD.
+
 ## 2026-10-29 — Merge TB-EM-049 and start TB-EM-050
 
 - Owner-directed PR #111 merged to main@ef1761a36d62bd626baf9a587798f0fc11afd35b with exact-head required CI 6/6 success (run 40778143037) and two independent no-blocking approvals; no Codex review required per owner.
