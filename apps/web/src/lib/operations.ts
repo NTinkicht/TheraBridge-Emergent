@@ -36,6 +36,12 @@ export interface HandoverProposal {
   synthetic: true; accessGranted: false; assignmentChanged: false; clinicalHandover: false; released: false;
 }
 export interface HandoverInbox { enabled: boolean; synthetic: true; items: HandoverProposal[] }
+export interface HandoverReadiness {
+  proposalId: string; childId: string; service: string; status: HandoverStatus; checkedAt: string;
+  synthetic: true; readonly: true; readyForTransfer: false; assignmentChanged: false;
+  accessGranted: false; clinicalHandover: false; released: false;
+  checks: { code: string; met: boolean; label: string }[];
+}
 export interface Therapist { membershipId: string; displayName: string; title: string | null; specialties: string[] }
 export interface Dashboard { dayStart: string; timezone: string; today: Appointment[]; counts: { activeChildren: number; unassigned: number; noGuardian: number; therapists: number; pendingInvites: number; upcomingWeek: number }; trial: Trial }
 export interface FamilyOverview {
@@ -72,6 +78,8 @@ export const opsApi = {
   inviteGuardian: (centerId: string, id: string, linkId: string) => rest.send('POST', c(centerId, `children/${id}/guardians/${linkId}/invite`)),
   removeGuardian: (centerId: string, id: string, linkId: string, reason: string) => rest.send('POST', c(centerId, `children/${id}/guardians/${linkId}/remove`), { reason }),
   handovers: (centerId: string) => rest.get<HandoverInbox>(c(centerId, 'governance/handover-proposals')),
+  handoverReadiness: (centerId: string, id: string) =>
+    rest.get<HandoverReadiness>(c(centerId, `governance/handover-proposals/${id}/readiness`)),
   proposeHandover: (centerId: string, body: { childId: string; fromMembershipId: string;
     toMembershipId: string; service: string; reasonCode: 'STAFF_CHANGE' | 'AVAILABILITY' | 'FAMILY_REQUEST' }) =>
     rest.send<HandoverProposal>('POST',c(centerId,'governance/handover-proposals'),body),

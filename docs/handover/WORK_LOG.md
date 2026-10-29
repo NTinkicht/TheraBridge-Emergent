@@ -1,3 +1,20 @@
+## 2026-10-29 — PR #113 review cycle 1 corrections
+
+- Inspected all PR comments and review threads. Codex first round completed no major issues on 7b6551f8dc; Mistral first round NO_BLOCKING_FINDINGS; latest independent review identified avoidable interactive transaction row locks, stale manager row status, missing archived-child and supervisor regressions.
+- FIX_NOW: changed `GovernanceService.handoverReadiness` to active-manager role+center-verified direct Prisma queries, dropping read-only interactive transaction; point-in-time advisory reading not an authorization token. Add checkedAt string.
+- FIX_NOW: when manager checks a proposal, update the matching UI row status from authoritative readiness reply, so cancelled row no longer advertises a cancel action; timestamp and refresh guidance shown.
+- FIX_NOW: added archived-child/retained-ACK and supervisor-forbidden cases in PostgreSQL e2e, without any clinical access or assignment changes.
+- DEFER_ISSUE: independent two-session Playwright regression tracked in https://github.com/NTinkicht/TheraBridge-Emergent/issues/114; requires browser multi-user fixture beyond this narrow PR, not a P0-P2 blocker.
+- New six-job exact-head CI and round-two independent review PENDING; no second review sent prior to stable green CI. Never count old Codex/CI for new HEAD.
+
+## 2026-10-29 — Merge TB-EM-049 and start TB-EM-050
+
+- Owner-directed PR #111 merged to main@ef1761a36d62bd626baf9a587798f0fc11afd35b with exact-head required CI 6/6 success (run 40778143037) and two independent no-blocking approvals; no Codex review required per owner.
+- Created independent feature/tb-em-050-handover-readiness from exact merge commit. Built NestJS GET readiness route using existing manager governance permission, active actor+tenant checks, opt-in synthetic flag, read-only child/assignment/membership validations, fixed-shape explicit false authorization markers.
+- Manager Child Care Team UI now has Check readiness per operational proposal; no transfer action, clinical content, or recipient visibility. PostgreSQL regression checks nonauthorizing acknowledged state, stale staff/assignment, cancelled proposal, cross-center/nonmanager denial and feature flag off.
+- Created docs/product/TB-EM-050-HANDOVER-READINESS.md. No migration, new clinical permissions, or new data processing.
+- New exact-head six-job CI, external review and merge NOT VERIFIED. Clinical NO-GO and hosted issue #81 unchanged.
+
 ## 2026-10-29 — Owner standing policy and PR #111 P3 dispositions
 
 - Wrote mandatory review disposition rules for all contributors in AGENTS.md and CONTINUITY_PROTOCOL.md, with detailed review ledger in REVIEW_DISPOSITION_RULE.md and future .github PR checklist. P0–P2 fixed before merge; safe small P3s fixed; bigger optional enhancements issue-tracked; unnecessary suggestions declined with rationale.

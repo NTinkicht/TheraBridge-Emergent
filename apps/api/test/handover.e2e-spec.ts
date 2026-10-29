@@ -12,7 +12,7 @@ describe('TB-EM-049 synthetic operational handover proposal (PostgreSQL)', () =>
   const cancel = (who: Signed, id: string) => post(h, c(`handover-proposals/${id}/cancel`), who, {});
   const body = () => ({ childId, fromMembershipId: fromId, toMembershipId: targetId,
     service: 'speech', reasonCode: 'STAFF_CHANGE' });
-  async function member(name: string, role: 'CENTER_ADMIN' | 'THERAPIST', specialties: string[] = []) {
+  async function member(name: string, role: 'CENTER_ADMIN' | 'THERAPIST' | 'CLINICAL_SUPERVISOR', specialties: string[] = []) {
     const user = await createUser(h.prisma, name + '@handover.test');
     const m = await h.prisma.membership.create({ data: {
       centerId, userId: user.id, specialties, roles: { create: { role } },
@@ -213,6 +213,83 @@ describe('TB-EM-049 synthetic operational handover proposal (PostgreSQL)', () =>
     await ack(target,proposal.id).expect(404);
     expect(await h.prisma.careAssignment.count({where:{endedAt:null}})).toBe(1);
     expect(await h.prisma.centerEvent.count({where:{type:'handover.operational_acknowledged'}})).toBe(0);
+  });
+
+  it('TB-EM-050 manager readiness is read-only, always blocked and isolated from recipient', async () => {
+    const proposal = (await start(admin, body()).expect(201)).body;
+    const path = c(`handover-proposals/${proposal.id}/readiness`);
+    const read = (who: Signed, url = path) => h.http().get(url).set('Cookie', who.cookie);
+    const initial = (await read(admin).expect(200)).body;
+    expect(initial).toMatchObject({ proposalId: proposal.id, childId, service:'speech',
+      status:'PENDING_ACK', synthetic:true, readonly:true, readyForTransfer:false,
+      assignmentChanged:false, accessGranted:false, clinicalHandover:false, released:false });
+    expect(initial.checks).toEqual(expect.arrayContaining([
+      expect.objectContaining({code:'PROPOSAL_OPEN',met:true}),
+      expect.objectContaining({code:'INCOMING_RECEIPT',met:false}),
+      expect.objectContaining({code:'SIGNED_CLINICAL_AUTHORIZATION',met:false}),
+      expect.objectContaining({code:'PURPOSE_SPECIFIC_CONSENT',met:false}),
+      expect.objectContaining({code:'CLINICAL_HANDOVER_SCOPE',met:false}),
+    ]));
+    await read(target).expect(403);
+    await read(therapist).expect(403);
+    await read(outsider).expect(403);
+    const supervisor = await member('supervisor', 'CLINICAL_SUPERVISOR');
+    await read(supervisor.who).expect(403);
+    expect(Number.isFinite(Date.parse(initial.checkedAt))).toBe(true);
+    await read(admin,c(`handover-proposals/${randomUUID()}/readiness`)).expect(404);
+    expect(await h.prisma.centerEvent.count({where:{type:{startsWith:'handover.readiness'}}})).toBe(0);
+    await ack(target, proposal.id).expect(201);
+    const acknowledged=(await read(admin).expect(200)).body;
+    expect(acknowledged.checks).toEqual(expect.arrayContaining([
+      expect.objectContaining({code:'INCOMING_RECEIPT',met:true}),
+      expect.objectContaining({code:'SIGNED_CLINICAL_AUTHORIZATION',met:false}),
+    ]));
+    expect(acknowledged.readyForTransfer).toBe(false);
+    await h.prisma.child.update({ where: { id: childId }, data: { status: 'ARCHIVED' } });
+    const archived = (await read(admin).expect(200)).body;
+    expect(archived.status).toBe('ACKNOWLEDGED');
+    expect(archived.checks).toEqual(expect.arrayContaining([
+      expect.objectContaining({code:'CHILD_SERVICE_ACTIVE',met:false}),
+      expect.objectContaining({code:'INCOMING_RECEIPT',met:true}),
+      expect.objectContaining({code:'SIGNED_CLINICAL_AUTHORIZATION',met:false}),
+    ]));
+    expect(archived.readyForTransfer).toBe(false);
+    await h.prisma.child.update({ where: { id: childId }, data: { status: 'ACTIVE' } });
+    await h.prisma.membership.update({where:{id:targetId},data:{specialties:[]}});
+    const noSpecialty=(await read(admin).expect(200)).body;
+    expect(noSpecialty.checks).toContainEqual(expect.objectContaining({
+      code:'RECIPIENT_QUALIFIED',met:false,
+    }));
+    await h.prisma.careAssignment.updateMany({where:{centerId,childId,membershipId:fromId,endedAt:null},
+      data:{endedAt:h.clock.now()}});
+    const invalid=(await read(admin).expect(200)).body;
+    expect(invalid.checks).toContainEqual(expect.objectContaining({
+      code:'SOURCE_ASSIGNMENT_ACTIVE',met:false,
+    }));
+    await cancel(admin,proposal.id).expect(201);
+    expect((await read(admin).expect(200)).body.checks).toContainEqual(expect.objectContaining({
+      code:'PROPOSAL_OPEN',met:false,
+    }));
+    expect(await h.prisma.careAssignment.count({where:{centerId,childId,endedAt:null}})).toBe(0);
+    process.env.HANDOVER_DEMO='false';
+    try { await read(admin).expect(403); }
+    finally { process.env.HANDOVER_DEMO='true'; }
+  });
+
+  it('TB-EM-050 readiness does not reveal cross-center proposals to another manager', async () => {
+    const proposal = (await start(admin,body()).expect(201)).body;
+    const otherCenter=(await h.prisma.center.create({data:{
+      name:'Other synthetic center',slug:'other-readiness-center',timezone:'Asia/Dubai',
+    }})).id;
+    const secondAdmin=await createUser(h.prisma,'second-admin@handover.test');
+    await h.prisma.membership.create({data:{
+      centerId:otherCenter,userId:secondAdmin.id,roles:{create:{role:'CENTER_ADMIN'}},
+    }});
+    const signed=await signIn(h,secondAdmin.email);
+    const response=await h.http().get(`/api/centers/${otherCenter}/governance/handover-proposals/${proposal.id}/readiness`)
+      .set('Cookie',signed.cookie).expect(404);
+    expect(response.body).not.toHaveProperty('childId');
+    expect(response.body).not.toHaveProperty('checks');
   });
 
   it('serializes competing proposals without creating multiple open handovers', async () => {

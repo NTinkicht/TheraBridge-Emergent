@@ -1,3 +1,17 @@
+## 2026-10-29 — PR #113 final corrected-HEAD qualification and second review
+
+1. Wait for all six latest-HEAD GitHub CI jobs (test incl PostgreSQL archived-child and supervisor regression, secret-scan, live-session, preview-container, demo-journey, compose) to pass. Fix failures on feature/tb-em-050-handover-readiness, rerun on any new commit; do not infer status from old 7b6551f8dc green run.
+2. Re-read PR #113 comments, threads, Codex summary and exact HEAD/BASE. If no already pending request at current HEAD+BASE, post **one** owner-authorized second Codex review for the corrected SHA after CI green; provide exact SHA and focus on lock-free authorization, child archival, UI freshness, no data grants or clinical signing/release. Otherwise avoid duplicate request. Obtain and disposition all findings.
+3. Apply universal policy FIX_NOW / DEFER_ISSUE / DECLINE_WITH_REASON to all fresh suggestions; browser multi-session UI test deferred to #114 with criteria, while on-demand status synchronization is already fixed. No automatic merge.
+4. Clinical approvals, purpose-specific consent, genuine transfer/reassignment and real family/clinician access remain explicit NO-GO pending owner-signed policy. Hosted QA #81 incomplete.
+
+## 2026-10-29 — TB-EM-050 draft PR qualification
+
+1. Open draft PR from feature/tb-em-050-handover-readiness based on merged main@ef1761a36d62bd626baf9a587798f0fc11afd35b. Verify readiness code contains no assignment/clinical/consent writes.
+2. Require six successful CI jobs at final exact HEAD (real PostgreSQL handover tests, authz/route inventory, Next.js compile/UX, security scan, live-session, preview-container, demo-journey and Compose). Fix red job causes and rerun.
+3. Apply owner-approved reviewer disposition policy (every P0-P3 FIX_NOW / DEFER_ISSUE / DECLINE_WITH_REASON). Obtain independent current-head P0–P2 review after stabilization; avoid duplicate/overlapping Codex usage. Owner decides when to merge.
+4. Next policy dependency: authorized sign-off for real staff replacement, purpose-specific consent, receiving clinician scope and clinical documentation visibility. Until these decisions, no actual transfer or release; hosted QA #81 remains incomplete. Follow-up issue #112 is deferred P3 history UX.
+
 ## 2026-10-29 — Immediate post-policy PR #111 qualification
 
 1. Verify corrected exact-HEAD CI for all six jobs; inspect new real PostgreSQL cancel-first/acknowledge-second concurrency test and frontend button guard. Fix red jobs before review.

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button, Card } from '@/components/design/ui';
 import { SelectField } from '@/components/centers/kit';
 import { serviceLabel } from './BookDialog';
-import { opsApi, HANDOVER_LABELS, type ChildDetail, type Therapist, type HandoverInbox } from '@/lib/operations';
+import { opsApi, HANDOVER_LABELS, type ChildDetail, type Therapist, type HandoverInbox, type HandoverReadiness } from '@/lib/operations';
 
 export function HandoverProposalPanel({ centerId, child }: { centerId: string; child: ChildDetail }) {
   const [data, setData] = useState<HandoverInbox | null>(null);
@@ -13,6 +13,7 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
   const [reasonCode, setReasonCode] = useState<'STAFF_CHANGE'|'AVAILABILITY'|'FAMILY_REQUEST'>('STAFF_CHANGE');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [readiness, setReadiness] = useState<HandoverReadiness | null>(null);
   const reload = useCallback(async () => {
     try {
       const d = await opsApi.handovers(centerId);
@@ -36,6 +37,7 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
     if (!source || !to || busy || hasOpenForSource) return;
     setBusy(true); setError('');
     try {
+      setReadiness(null);
       await opsApi.proposeHandover(centerId, { childId: child.id,
         fromMembershipId: source.membershipId, toMembershipId: to, service: source.service, reasonCode });
       setFrom(''); setTo(''); await reload();
@@ -44,8 +46,22 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
   };
   const cancel = async (id: string) => {
     if (busy) return; setBusy(true); setError('');
-    try { await opsApi.cancelHandover(centerId,id); await reload(); }
+    try { setReadiness(null); await opsApi.cancelHandover(centerId,id); await reload(); }
     catch { setError('Could not cancel this proposal. Refresh its status.'); }
+    finally { setBusy(false); }
+  };
+  const assess = async (id: string) => {
+    if (busy) return;
+    setBusy(true); setError(''); setReadiness(null);
+    try {
+      const snap = await opsApi.handoverReadiness(centerId, id);
+      setReadiness(snap);
+      // Another session may have acknowledged or cancelled since the list loaded.
+      // Keep the visible row and action buttons consistent with this fresh snapshot.
+      setData(prev => prev ? { ...prev,
+        items: prev.items.map(item => item.id === id ? { ...item, status: snap.status } : item),
+      } : prev);
+    } catch { setError('Could not verify this operational readiness snapshot.'); }
     finally { setBusy(false); }
   };
   return <Card className="space-y-3 p-5" testId="handover-manager">
@@ -78,8 +94,28 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
           <span className="text-[13px]">{serviceLabel(r.service)} · {HANDOVER_LABELS[r.status]}
             <span className="block text-brand-inkMuted">No clinical information or assignment changed</span>
           </span>
-          {r.status !== 'CANCELLED' && <Button size="sm" variant="secondary" disabled={busy}
-            onClick={() => void cancel(r.id)}>Cancel proposal</Button>}
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="secondary" disabled={busy}
+              onClick={() => void assess(r.id)}>Check readiness</Button>
+            {r.status !== 'CANCELLED' && <Button size="sm" variant="secondary" disabled={busy}
+              onClick={() => void cancel(r.id)}>Cancel proposal</Button>}
+          </div>
+          {readiness?.proposalId === r.id && <div className="w-full space-y-2 border-t border-border-light pt-3"
+            data-testid="handover-readiness">
+            <p className="text-[13px] font-semibold text-brand-ink">Transfer remains blocked — no authorization or access granted</p>
+            <p className="text-[12px] text-brand-inkMuted" data-testid="handover-readiness-checked">
+              Checked {new Date(readiness.checkedAt).toLocaleString()}. Recheck to see current operational status.
+            </p>
+            <ul className="space-y-1">
+              {readiness.checks.map(check => <li key={check.code} className="text-[13px] text-brand-inkMuted">
+                {check.met ? '✓' : '—'} {check.label}
+              </li>)}
+            </ul>
+            <p className="text-[12px] text-brand-inkMuted">
+              Operational snapshot only. The checklist cannot approve a clinical handover, change staff assignments,
+              authorize consent, or release records.
+            </p>
+          </div>}
         </li>)}
       </ul>
     </>}
