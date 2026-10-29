@@ -53,8 +53,15 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
   const assess = async (id: string) => {
     if (busy) return;
     setBusy(true); setError(''); setReadiness(null);
-    try { setReadiness(await opsApi.handoverReadiness(centerId, id)); }
-    catch { setError('Could not verify this operational readiness snapshot.'); }
+    try {
+      const snap = await opsApi.handoverReadiness(centerId, id);
+      setReadiness(snap);
+      // Another session may have acknowledged or cancelled since the list loaded.
+      // Keep the visible row and action buttons consistent with this fresh snapshot.
+      setData(prev => prev ? { ...prev,
+        items: prev.items.map(item => item.id === id ? { ...item, status: snap.status } : item),
+      } : prev);
+    } catch { setError('Could not verify this operational readiness snapshot.'); }
     finally { setBusy(false); }
   };
   return <Card className="space-y-3 p-5" testId="handover-manager">
@@ -96,6 +103,9 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
           {readiness?.proposalId === r.id && <div className="w-full space-y-2 border-t border-border-light pt-3"
             data-testid="handover-readiness">
             <p className="text-[13px] font-semibold text-brand-ink">Transfer remains blocked — no authorization or access granted</p>
+            <p className="text-[12px] text-brand-inkMuted" data-testid="handover-readiness-checked">
+              Checked on demand. Recheck readiness to get current operational status.
+            </p>
             <ul className="space-y-1">
               {readiness.checks.map(check => <li key={check.code} className="text-[13px] text-brand-inkMuted">
                 {check.met ? '✓' : '—'} {check.label}
