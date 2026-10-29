@@ -1,3 +1,10 @@
+## 2026-10-29 — TB-EM-051 policy/technical-design draft qualification
+
+1. Verify `scripts/qa/verify-tb-em-051-gates.mjs` executes in required `test` CI on exact final PR head. Its positive pass means only **unsigned/blocked** state and unchanged runtime invariants. Fix any test errors; rerun all six jobs at changed HEAD; do not confuse green CI with policy approval.
+2. Audit plan and register against private canonical human signoff list: D10/PFR-CT-01, OR-15/D-NEW-2, OR-16, D7, D-NEW-5, D4, D1, clinical scope and security/audit. Record owner names, verifiable signatures/digests and scope only after genuine authorized decisions; until then all `UNSIGNED`, `BLOCKED`.
+3. Obtain exact-head independent P0–P2 review after CI stable; log all reviewer findings as FIX_NOW/DEFER_ISSUE/DECLINE_WITH_REASON. Respect review-budget rule; no duplicate Codex request on intermediate commits. Owner approval required before merging design PR.
+4. Later work **blocked by issue #115**: actual caseload replacement, transfer of pending items/clinical data, signer/consent/grants and production deployment. Plan for atomic source assignment revocation and target grant only after signed policy, no direct route now. Deferred history #112, cross-session browser #114, external hosted QA #81 not part of this design scope.
+
 ## 2026-10-29 — PR #113 final corrected-HEAD qualification and second review
 
 1. Wait for all six latest-HEAD GitHub CI jobs (test incl PostgreSQL archived-child and supervisor regression, secret-scan, live-session, preview-container, demo-journey, compose) to pass. Fix failures on feature/tb-em-050-handover-readiness, rerun on any new commit; do not infer status from old 7b6551f8dc green run.
