@@ -104,7 +104,7 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
             data-testid="handover-readiness">
             <p className="text-[13px] font-semibold text-brand-ink">Transfer remains blocked — no authorization or access granted</p>
             <p className="text-[12px] text-brand-inkMuted" data-testid="handover-readiness-checked">
-              Checked on demand. Recheck readiness to get current operational status.
+              Checked {new Date(readiness.checkedAt).toLocaleString()}. Recheck to see current operational status.
             </p>
             <ul className="space-y-1">
               {readiness.checks.map(check => <li key={check.code} className="text-[13px] text-brand-inkMuted">
