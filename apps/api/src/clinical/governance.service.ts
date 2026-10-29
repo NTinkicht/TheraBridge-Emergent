@@ -232,19 +232,28 @@ export class GovernanceService {
   async handoverReadiness(centerId: string, v: Viewer, id: string) {
     this.assertHandoverDemo();
     if (!['CENTER_ADMIN','COORDINATOR'].includes(v.role)) throw new ForbiddenException();
-    return this.prisma.$transaction(async tx => {
-      await assertActor(tx, centerId, v, ['CENTER_ADMIN','COORDINATOR']);
-      const draft = await tx.caseloadTransferDraft.findFirst({
+    // Advisory GET only: use lock-free, short-lived reads so the readiness
+    // checklist cannot pin a transaction or block legitimate staff edits.
+    // The AccessGuard checks the permission; this fresh DB lookup revalidates
+    // current center membership, user state and the active manager role.
+    const actor = await this.prisma.membership.findFirst({
+      where: { id: v.membershipId, centerId, userId: v.userId, status: 'ACTIVE',
+        user: { status: 'ACTIVE' }, center: { status: 'ACTIVE' },
+        roles: { some: { role: v.role } } },
+      select: { id: true },
+    });
+    if (!actor) throw new ForbiddenException('Your workspace access has changed.');
+    const draft = await this.prisma.caseloadTransferDraft.findFirst({
         where: { id, centerId, status: { in: ['PENDING_ACK','ACKNOWLEDGED','CANCELLED'] } },
       });
       if (!draft) throw new NotFoundException('Operational handover proposal not found.');
       const [child, source, recipient] = await Promise.all([
-        tx.child.findFirst({ where: { id: draft.childId, centerId },
+        this.prisma.child.findFirst({ where: { id: draft.childId, centerId },
           select: { status: true, services: true } }),
-        tx.careAssignment.findFirst({ where: { centerId, childId: draft.childId,
+        this.prisma.careAssignment.findFirst({ where: { centerId, childId: draft.childId,
           membershipId: draft.fromMembershipId, service: draft.service, endedAt: null },
           select: { id: true } }),
-        tx.membership.findFirst({ where: { id: draft.toMembershipId, centerId,
+        this.prisma.membership.findFirst({ where: { id: draft.toMembershipId, centerId,
           status: 'ACTIVE', user: { status: 'ACTIVE' }, roles: { some: { role: 'THERAPIST' } } },
           select: { specialties: true } }),
       ]);
@@ -272,7 +281,6 @@ export class GovernanceService {
         status: draft.status, synthetic: true, readonly: true, readyForTransfer: false,
         assignmentChanged: false, accessGranted: false, clinicalHandover: false, released: false,
         checks };
-    });
   }
 
   async proposeHandover(centerId: string, v: Viewer, dto: HandoverProposalDto) {
