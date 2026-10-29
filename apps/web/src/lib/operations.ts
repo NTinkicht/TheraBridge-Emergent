@@ -37,7 +37,7 @@ export interface HandoverProposal {
 }
 export interface HandoverInbox { enabled: boolean; synthetic: true; items: HandoverProposal[] }
 export interface HandoverReadiness {
-  proposalId: string; childId: string; service: string; status: HandoverStatus;
+  proposalId: string; childId: string; service: string; status: HandoverStatus; checkedAt: string;
   synthetic: true; readonly: true; readyForTransfer: false; assignmentChanged: false;
   accessGranted: false; clinicalHandover: false; released: false;
   checks: { code: string; met: boolean; label: string }[];
