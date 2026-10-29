@@ -12,7 +12,7 @@ describe('TB-EM-049 synthetic operational handover proposal (PostgreSQL)', () =>
   const cancel = (who: Signed, id: string) => post(h, c(`handover-proposals/${id}/cancel`), who, {});
   const body = () => ({ childId, fromMembershipId: fromId, toMembershipId: targetId,
     service: 'speech', reasonCode: 'STAFF_CHANGE' });
-  async function member(name: string, role: 'CENTER_ADMIN' | 'THERAPIST', specialties: string[] = []) {
+  async function member(name: string, role: 'CENTER_ADMIN' | 'THERAPIST' | 'CLINICAL_SUPERVISOR', specialties: string[] = []) {
     const user = await createUser(h.prisma, name + '@handover.test');
     const m = await h.prisma.membership.create({ data: {
       centerId, userId: user.id, specialties, roles: { create: { role } },
@@ -233,6 +233,9 @@ describe('TB-EM-049 synthetic operational handover proposal (PostgreSQL)', () =>
     await read(target).expect(403);
     await read(therapist).expect(403);
     await read(outsider).expect(403);
+    const supervisor = await member('supervisor', 'CLINICAL_SUPERVISOR');
+    await read(supervisor.who).expect(403);
+    expect(Number.isFinite(Date.parse(initial.checkedAt))).toBe(true);
     await read(admin,c(`handover-proposals/${randomUUID()}/readiness`)).expect(404);
     expect(await h.prisma.centerEvent.count({where:{type:{startsWith:'handover.readiness'}}})).toBe(0);
     await ack(target, proposal.id).expect(201);
@@ -242,6 +245,16 @@ describe('TB-EM-049 synthetic operational handover proposal (PostgreSQL)', () =>
       expect.objectContaining({code:'SIGNED_CLINICAL_AUTHORIZATION',met:false}),
     ]));
     expect(acknowledged.readyForTransfer).toBe(false);
+    await h.prisma.child.update({ where: { id: childId }, data: { status: 'ARCHIVED' } });
+    const archived = (await read(admin).expect(200)).body;
+    expect(archived.status).toBe('ACKNOWLEDGED');
+    expect(archived.checks).toEqual(expect.arrayContaining([
+      expect.objectContaining({code:'CHILD_SERVICE_ACTIVE',met:false}),
+      expect.objectContaining({code:'INCOMING_RECEIPT',met:true}),
+      expect.objectContaining({code:'SIGNED_CLINICAL_AUTHORIZATION',met:false}),
+    ]));
+    expect(archived.readyForTransfer).toBe(false);
+    await h.prisma.child.update({ where: { id: childId }, data: { status: 'ACTIVE' } });
     await h.prisma.membership.update({where:{id:targetId},data:{specialties:[]}});
     const noSpecialty=(await read(admin).expect(200)).body;
     expect(noSpecialty.checks).toContainEqual(expect.objectContaining({
