@@ -85,6 +85,8 @@ flowchart TD
 
 **TB-EM-051 deliverable itself must instead prove all gates remain `UNSIGNED`, all real transfer actions `BLOCKED`, and existing TB-EM-049/050 flags unchanged.** These future positive-path tests are specifications, **not executed acceptance**.
 
+**Signed-decision blocker tracking:** [TB-EM-051 policy issue #115](https://github.com/NTinkicht/TheraBridge-Emergent/issues/115). Creating or closing this engineering issue is not human clinical authorization.
+
 ## 6. Exact boundaries, deliverables and exit criteria
 
 **In scope now:** decision register, architectural lifecycle, policy traceability, negative-path test designs, executable CI integrity check for the unsigned policy register, documentation/QA checkpoint and owner review. **Out of scope:** any new real transfer endpoint, mutation, migration, permissions grant, UI approval button, background job, patient record handling, clinical signing, safeguarded family messaging, consent action, hosted configuration or deployment.
