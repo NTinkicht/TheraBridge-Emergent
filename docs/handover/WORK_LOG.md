@@ -1,3 +1,12 @@
+## 2026-10-29 — TB-EM-051 design-only authorization gate
+
+- Verified prior work TB-EM-049/#111 and TB-EM-050/#113 merged, using main merge commit `05cec48b929206cb14371cc36805aa3b0ee4f9fc` for new branch. New owner instruction interpreted as authorization to prepare *design/decision artifacts only*, not clinical policy signature.
+- Read `NTinkicht/TheraBridge` private CB-SRS-001 / CB-SDD-001 / CB-SAD-001 / RMP and V0.9.16 validation/decision register. They label proposed `transferCaseload` as defective/unapproved, role mapping and consent policies unsigned; canonical candidate route `POST /api/v1/assignments/transfers` is **not an approved app route**.
+- Added detailed proposed lifecycle (acknowledgement and readiness do not grant authority), policy/question/owner matrix, current-actor permission checks, atomic/versioned source-to-target replacement design, disposition for EVERY open item, emergency suspension/quarantine, no signer provenance transfer, authorization-before-idempotency, tenant/specialty/revocation races and required negative path oracles.
+- Added machine-readable nine UNSIGNED policy gates, zero approvals and disabled real transfer; CI test checks register and current non-authorizing runtime invariants plus six deliberately corrupted contract fixtures. The required test job calls it. This is a test of **remaining blocked**, not a test of actual transfer.
+- Created GitHub policy signoff issue [#115](https://github.com/NTinkicht/TheraBridge-Emergent/issues/115). Existing P3 issues #112/#114 and hosted QA #81 remain separate.
+- No new executable transfer/consent/release code, database changes, deploy or policy signing. Tests and CI not yet verified at this documentation commit.
+
 ## 2026-10-29 — PR #113 review cycle 1 corrections
 
 - Inspected all PR comments and review threads. Codex first round completed no major issues on 7b6551f8dc; Mistral first round NO_BLOCKING_FINDINGS; latest independent review identified avoidable interactive transaction row locks, stale manager row status, missing archived-child and supervisor regressions.
