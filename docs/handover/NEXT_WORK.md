@@ -1,3 +1,10 @@
+## 2026-10-30 — M2-H01 exact-HEAD qualification and migration-identity decision
+
+1. Run required PR CI including seven migration-guard cases, both seed fault-injection tests, clean DB migrations, existing through-012 upgrade simulation, demo seven-role browser and preview deployment checks. Resolve type/build/runtime regressions and repeat all six jobs on corrected exact HEAD.
+2. Obtain the `_prisma_migrations` ledger from a disposable/synthetic representative upgraded database, identify actual published 049 folder and checksums, then determine whether any chronology correction is *needed*. Never rewrite historical applied migration names or checksums. If a remediation is required, develop a forward-only, upgrade-tested plan first.
+3. Ensure the deferred credential-file write behavior is documented for filesystem write failure recovery; never export a credential file on a failed transaction.
+4. Review all independent PR feedback and disposition with FIX_NOW / DEFER_ISSUE / DECLINE_WITH_REASON, with 6/6 exact-head CI and explicit owner merge approval. Keep clinical transfer and family release disabled.
+
 ## 2026-10-29 — TB-EM-051 policy/technical-design draft qualification
 
 1. Verify `scripts/qa/verify-tb-em-051-gates.mjs` executes in required `test` CI on exact final PR head. Its positive pass means only **unsigned/blocked** state and unchanged runtime invariants. Fix any test errors; rerun all six jobs at changed HEAD; do not confuse green CI with policy approval.
