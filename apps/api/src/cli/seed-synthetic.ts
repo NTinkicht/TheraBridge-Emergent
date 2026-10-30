@@ -36,11 +36,12 @@ export function assertSeedAllowed(env: Record<string, string | undefined>): void
 // Idempotent. Every run issues fresh random passwords and revokes the accounts' sessions, so credentials are disposable.
 export async function runSeed(prisma: PrismaClient, outFile = CREDENTIALS_FILE): Promise<{ email: string; password: string }[]> {
   // Argon2 runs before acquiring an interactive transaction/row locks.
-  const prepared = await Promise.all(SEED_ACCOUNTS.map(async a => {
+  const prepared: { account: typeof SEED_ACCOUNTS[number]; email: string; password: string; passwordHash: string }[] = [];
+  for (const a of SEED_ACCOUNTS) {
     const email = a.email.toLowerCase();
     const password = `tb-${randomToken(18)}`;
-    return { account: a, email, password, passwordHash: await hashPassword(password) };
-  }));
+    prepared.push({ account: a, email, password, passwordHash: await hashPassword(password) });
+  }
   // Keep all DB writes atomic; publish disposable credentials only after commit.
   const out = await prisma.$transaction(async (tx) => {
   const centers: Record<string, string> = {};
