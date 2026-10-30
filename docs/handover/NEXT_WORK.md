@@ -1,3 +1,10 @@
+## 2026-10-30 — M2-H01 reviewer remediation qualification
+
+1. Re-run six exact-HEAD jobs after all P2/P3 fixes, especially the real PostgreSQL rollback tests and the seven-role demo. Do not reuse `06b2f21` green CI as new-head qualification.
+2. Once code is stable and CI green, mark PR #137 ready and use the existing automated single Codex review; do not manually duplicate paid review. Check new comments and disposition every finding.
+3. Preserve all published migration identities; retain GH-18 chronology issue OPEN until the actual applied `_prisma_migrations` ledger can justify any forward-compatible repair.
+4. Require explicit owner merge decision. Do not activate real transfer, real health data, or family clinical release.
+
 ## 2026-10-30 — M2-H01 exact-HEAD qualification and migration-identity decision
 
 1. Run required PR CI including seven migration-guard cases, both seed fault-injection tests, clean DB migrations, existing through-012 upgrade simulation, demo seven-role browser and preview deployment checks. Resolve type/build/runtime regressions and repeat all six jobs on corrected exact HEAD.
