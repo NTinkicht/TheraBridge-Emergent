@@ -1,3 +1,19 @@
+## 2026-10-30 — M2-H01 / GH-18 provisional verification ledger
+
+| Acceptance item | Result | Evidence / limitation |
+|---|---|---|
+| Published Prisma migrations are immutable | NOT RUN | New guard compares base and HEAD blob SHAs on PR |
+| Migration guard negative-path fixtures (7) | NOT RUN | `node --test scripts/qa/check-migration-history.test.mjs` in `test` CI |
+| Synthetic account DB seed fault injection | NOT RUN | Jest `seed-transactions.e2e-spec.ts` |
+| Children's Home demo DB seed fault injection | NOT RUN | Same Jest suite; protected credentials exported only after transaction |
+| Fresh DB + migration continuity | NOT RUN | Existing CI Prisma migrate deploy/status test preserved |
+| Hosted demo seven-role idempotent seed | NOT RUN | Existing `demo-journey`/preview CI |
+| Six exact-HEAD CI jobs | NOT RUN | Qualification required before merge |
+| Independent review | NOT RUN | Required after code stabilization |
+| Clinical authorization and real-data deployment | BLOCKED / NO-GO | Unchanged signed-policy gates |
+
+Historical migration folder rename from GH-18 is not applied: no evidence yet that rewriting a published Prisma migration identifier can safely preserve existing deployments. Must inspect deployed migration ledgers and validate a forward-compatible plan if needed; never imply this audit subitem has passed.
+
 ## 2026-10-29 — TB-EM-051 unsigned transfer policy check (NOT RUN at initial design commit)
 
 Created `docs/policy/TB-EM-051-AUTHORIZATION-GATES.json` with nine unsigned owner gates, zero signatures, blocked activation in development/CI/preview/staging/production and explicit denial scenarios. Created `scripts/qa/verify-tb-em-051-gates.mjs`: validates decision uniqueness/completeness, fails on any unexpectedly enabled/approved state; seven policy negative fixture mutations must be rejected (plus an assignment-mutation sentinel), and the current governance controller/service must still expose only non-authorizing simulation/operational proposal/readiness with hardcoded no-access/transfer markers. Wired into `.github/workflows/ci.yml` required test job. **NOT EXECUTED** at this checkpoint; exact new SHA six CI jobs and independent P0–P2 review pending. The script is a source/contract guard, not a proof of real clinical permissions or transfer readiness. No patient, consent, safeguarding, clinician signature, family release, external AI or hosted acceptance undertaken. Clinical NO-GO / external QA #81 unchanged.
