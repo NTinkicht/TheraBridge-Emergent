@@ -66,7 +66,7 @@ describe('M2-H01 real PostgreSQL rollback and protected-file consistency', () =>
   // failure occurs after earlier writes, so rollback must undo them.
   function failAt(model: string, method: string, message: string): PrismaClient {
     const wrapper = {
-      $transaction: (fn: (tx: any) => Promise<unknown>, options?: object) =>
+      $transaction: (fn: (tx: any) => Promise<unknown>, options?: { timeout?: number; maxWait?: number }) =>
         h.prisma.$transaction(async tx => {
           const poisoned = new Proxy(tx, {
             get(target, name: string | symbol) {
