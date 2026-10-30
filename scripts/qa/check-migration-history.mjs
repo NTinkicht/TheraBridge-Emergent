@@ -9,11 +9,12 @@ const ROOT = 'apps/api/prisma/migrations/';
 const folder = path => path.startsWith(ROOT) ? path.slice(ROOT.length).split('/')[0] : null;
 const isMigration = name => /^\d{14}_[A-Za-z0-9_-]+$/.test(name || '');
 
-export function validateMigrationHistory(before, after) {
+export function validateMigrationHistory(before, after, now = new Date()) {
   const errors = [];
   const oldFolders = new Set([...before.keys()].map(folder).filter(isMigration));
   const newFolders = new Set([...after.keys()].map(folder).filter(isMigration));
   const highestExisting = [...oldFolders].sort().at(-1) ?? '';
+  const latestAllowed = new Date(now.getTime() + 2 * 86_400_000).toISOString().replace(/\D/g, '').slice(0, 14);
 
   // All published SQL and migration metadata must remain byte-identical.
   for (const [path, sha] of before) {
@@ -33,6 +34,9 @@ export function validateMigrationHistory(before, after) {
     if (oldFolders.has(name)) continue;
     if (highestExisting && name <= highestExisting) {
       errors.push('New migration must follow published history (' + highestExisting + '): ' + name);
+    }
+    if (name.slice(0, 14) > latestAllowed) {
+      errors.push('New migration timestamp is too far in the future: ' + name);
     }
     if (!after.has(ROOT + name + '/migration.sql')) {
       errors.push('New migration lacks migration.sql: ' + name);
