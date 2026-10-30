@@ -24,7 +24,10 @@ function validateUnsignedDesign(p) {
   assert.deepEqual([...p.appliesTo].sort(), ['ci','development','preview','production','staging']);
   assert.equal(p.canonicalSpecCandidate.operation, 'transferCaseload');
   assert.equal(p.canonicalSpecCandidate.state, 'PROPOSED_NOT_IMPLEMENTABLE');
-  assert.ok(Array.isArray(p.decisionGates) && p.decisionGates.length >= 9);
+  // A missing required gate must reach its named-ID assertion below, not
+  // fail prematurely with an unhelpful generic length assertion.
+  // All nine required IDs are explicitly checked, so a count check is redundant.
+  assert.ok(Array.isArray(p.decisionGates), 'Decision gates must be an array');
   const ids = p.decisionGates.map(d => d.id);
   assert.equal(new Set(ids).size, ids.length, 'Decision gate IDs must be unique');
   for (const id of ['D10_TRANSFER','OR15_ROLE_MATRIX','OR16_IDEMPOTENCY_AND_DENIAL',
