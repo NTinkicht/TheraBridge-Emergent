@@ -1,3 +1,9 @@
+## 2026-10-30 — M2-H01 first exact-HEAD CI receipt
+
+Commit `b1155a1673a5efe2cf67765188cb9211ac884568`; [GitHub Actions CI run 41056461993](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41056461993): **6/6 SUCCESS** on this recorded commit. Required jobs `test`, `secret-scan`, `live-session`, `preview-container`, `demo-journey`, and `compose` all concluded successfully. The `test` job included migration guard negative fixtures, exact base-HEAD migration immutability, Prisma additive upgrade, API fault-injection seed tests, TS check, API build and real browser regression. The demo and preview jobs exercised the existing hosted-synthetic demo startup behavior.
+
+**Scope caveat:** This receipt applies exclusively to the cited SHA. Subsequent documentation/implementation commits require a fresh six-job qualification. The migration identifier rename suggested in #134 remains intentionally excluded pending existing-deployment migration ledger review; therefore GH-18 is not declared fully closed. Independent review and merge approval remain pending.
+
 ## 2026-10-30 — M2-H01 / GH-18 provisional verification ledger
 
 | Acceptance item | Result | Evidence / limitation |
