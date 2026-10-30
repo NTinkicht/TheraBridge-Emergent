@@ -14,13 +14,13 @@ function validateUnsignedDesign(p) {
   assert.equal(p.schemaVersion, 1);
   assert.equal(p.workUnit, 'TB-EM-051');
   assert.equal(p.status, 'DESIGN_CANDIDATE_UNAPPROVED');
-  assert.equal(p.clinicalActivation, 'BLOCKED');
+  assert.equal(p.clinicalActivation, 'BLOCKED', 'Clinical activation must remain BLOCKED');
   assert.equal(p.approvalKind, 'HUMAN_SIGNATURE_REQUIRED');
-  assert.equal(p.signedPolicyCount, 0);
-  assert.equal(p.executableTransferEnabled, false);
+  assert.equal(p.signedPolicyCount, 0, 'Signed policy count must remain zero');
+  assert.equal(p.executableTransferEnabled, false, 'Executable transfer must remain disabled');
   assert.equal(p.implementationAuthorization, 'NOT_GRANTED');
   assert.equal(p.humanDecisionEvidence, 'NOT_SUBMITTED');
-  assert.deepEqual(p.approvals, []);
+  assert.deepEqual(p.approvals, [], 'Approvals must remain empty');
   assert.deepEqual([...p.appliesTo].sort(), ['ci','development','preview','production','staging']);
   assert.equal(p.canonicalSpecCandidate.operation, 'transferCaseload');
   assert.equal(p.canonicalSpecCandidate.state, 'PROPOSED_NOT_IMPLEMENTABLE');
@@ -38,11 +38,30 @@ function validateUnsignedDesign(p) {
       assert.ok(typeof gate[field] === 'string' && gate[field].length >= 12,
         `Missing accountable decision context for ${gate.id}:${field}`);
   }
-  for (const id of ['DENY_UNSIGNED_ALL_ENVS','ATOMIC_ALL_OR_NOTHING',
-    'CONCURRENT_REVOKE_VS_COMMIT','NO_UNRELEASED_FAMILY_DOCUMENT',
-    'IDEMPOTENCY_SCOPE_BEFORE_REPLAY']) {
-    assert.ok(p.proposedTestScenarios.includes(id), `Missing negative-path scenario ${id}`);
-  }
+  // Preserve the entire proposed denial and concurrency test contract.
+  // Any future change to its scope must be explicit and independently reviewed.
+  const requiredScenarios = [
+    'DENY_UNSIGNED_ALL_ENVS',
+    'DENY_UNRELATED_TENANT',
+    'DENY_DEACTIVATED_SOURCE_OR_TARGET',
+    'DENY_WRONG_SERVICE',
+    'DENY_STALE_ASSIGNMENT_VERSION',
+    'DENY_WITH_OPEN_ITEMS_UNRESOLVED',
+    'DENY_IF_GUARDIAN_RESTRICTED',
+    'DENY_IF_CONSENT_WITHDRAWN',
+    'DENY_IF_SIGNER_AUTHORITY_ASSUMED',
+    'DENY_IF_SAFEGUARDING_POLICY_MISSING',
+    'CONCURRENT_REVOKE_VS_COMMIT',
+    'ATOMIC_ALL_OR_NOTHING',
+    'NO_CROSS_SPECIALTY_CONTENT',
+    'NO_UNRELEASED_FAMILY_DOCUMENT',
+    'IDEMPOTENCY_SCOPE_BEFORE_REPLAY',
+    'RETRY_UNKNOWN_OUTCOME',
+    'EMERGENCY_SUSPEND_QUARANTINE',
+    'AUDIT_PROVENANCE_WITHOUT_CLINICAL_TEXT',
+  ];
+  assert.deepEqual([...p.proposedTestScenarios].sort(), [...requiredScenarios].sort(),
+    'Test scenarios must preserve the full 18-case unsigned transfer acceptance contract');
   for (const phrase of ['Operational proposal acknowledged', 'A draft consent record',
     'Existing manual child assignment controls']) {
     assert.ok(p.explicitNonAuthorizations.includes(phrase),
@@ -53,18 +72,28 @@ validateUnsignedDesign(policy);
 
 // Negative fixtures demonstrate the validator fails if a future change silently
 // marks an approval, enables execution, or drops a policy gate.
-for (const mutation of [
-  p => { p.executableTransferEnabled = true; },
-  p => { p.signedPolicyCount = 1; },
-  p => { p.decisionGates[0].state = 'APPROVED'; },
-  p => { p.decisionGates.shift(); },
-  p => { p.approvals.push({id:'fictional-unapproved-signature'}); },
-  p => { p.clinicalActivation = 'ENABLED'; },
-]) {
+const rejectedMutations = [
+  { label: 'unauthorized executable transfer', expected: /Executable transfer/,
+    mutate: p => { p.executableTransferEnabled = true; } },
+  { label: 'invented signed-policy count', expected: /Signed policy count/,
+    mutate: p => { p.signedPolicyCount = 1; } },
+  { label: 'unauthorized gate approval', expected: /Unsigned-only work unit/,
+    mutate: p => { p.decisionGates[0].state = 'APPROVED'; } },
+  { label: 'missing required policy gate', expected: /Missing protected decision gate/,
+    mutate: p => { p.decisionGates.shift(); } },
+  { label: 'injected signature', expected: /Approvals must remain empty/,
+    mutate: p => { p.approvals.push({id:'fictional-unapproved-signature'}); } },
+  { label: 'clinical activation', expected: /Clinical activation must remain BLOCKED/,
+    mutate: p => { p.clinicalActivation = 'ENABLED'; } },
+  { label: 'silently dropped consent-withdrawal test', expected: /Test scenarios must preserve the full/,
+    mutate: p => { p.proposedTestScenarios = p.proposedTestScenarios.filter(
+      id => id !== 'DENY_IF_CONSENT_WITHDRAWN'); } },
+];
+for (const {label, expected, mutate} of rejectedMutations) {
   const corrupt = structuredClone(policy);
-  mutation(corrupt);
-  assert.throws(() => validateUnsignedDesign(corrupt),
-    'Unsafe synthetic policy fixture was not rejected');
+  mutate(corrupt);
+  assert.throws(() => validateUnsignedDesign(corrupt), expected,
+    `Unsafe synthetic policy mutation was not specifically rejected: ${label}`);
 }
 
 // Read-only source integrity check: operational acknowledgement and readiness
@@ -86,6 +115,7 @@ const legacyTransfer = service.slice(service.indexOf('async transfer(centerId:')
 assert.ok(legacyTransfer.includes('tx.caseloadTransferDraft.create('),
   'Legacy transfer-simulations must remain non-authorizing draft creation');
 assert.ok(!legacyTransfer.includes('tx.careAssignment.update') &&
+  !legacyTransfer.includes('tx.careAssignment.updateMany(') &&
   !legacyTransfer.includes('tx.careAssignment.create') &&
   !legacyTransfer.includes('tx.careAssignment.delete'),
   'Legacy simulated transfer unexpectedly mutates real assignments');
@@ -114,5 +144,5 @@ assert.equal((readiness.match(/met: false/g) ?? []).length, 3,
 assert.ok(auth.includes('signed owner decisions') && auth.includes('Denial by default'),
   'Owner decision precedence / default-deny instructions missing');
 
-console.log('TB-EM-051 PASS: all 9 decision gates unsigned; six negative fixtures rejected;');
+console.log('TB-EM-051 PASS: all 9 decision gates unsigned; full 18-case contract and 7 specific negative fixtures checked;');
 console.log('legacy transfer simulation and operational/readiness paths remain non-authorizing.');
