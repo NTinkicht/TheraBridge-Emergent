@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 
 const ROOT = 'apps/api/prisma/migrations/';
 const folder = path => path.startsWith(ROOT) ? path.slice(ROOT.length).split('/')[0] : null;
-const isMigration = name => /^\\d{14}_[A-Za-z0-9_-]+$/.test(name || '');
+const isMigration = name => /^\d{14}_[A-Za-z0-9_-]+$/.test(name || '');
 
 export function validateMigrationHistory(before, after) {
   const errors = [];
@@ -44,8 +44,8 @@ export function validateMigrationHistory(before, after) {
 function trackedMigrations(ref) {
   const out = execFileSync('git', ['ls-tree', '-r', '-z', ref, '--', ROOT], { encoding: 'utf8' });
   const files = new Map();
-  for (const entry of out.split('\\0').filter(Boolean)) {
-    const tab = entry.indexOf('\\t');
+  for (const entry of out.split('\0').filter(Boolean)) {
+    const tab = entry.indexOf('\t');
     const meta = entry.slice(0, tab).split(' ');
     const path = entry.slice(tab + 1);
     if (tab < 0 || meta[1] !== 'blob' || !path.startsWith(ROOT)) {
