@@ -65,11 +65,19 @@ function validateUnsignedDesign(p) {
   ];
   assert.deepEqual([...p.proposedTestScenarios].sort(), [...requiredScenarios].sort(),
     'Test scenarios must preserve the full 18-case unsigned transfer acceptance contract');
-  for (const phrase of ['Operational proposal acknowledged', 'A draft consent record',
-    'Existing manual child assignment controls']) {
-    assert.ok(p.explicitNonAuthorizations.includes(phrase),
-      `Missing explicit no-authorization boundary: ${phrase}`);
-  }
+  const requiredNonAuthorizations = [
+    'Operational proposal acknowledged',
+    'Operational readiness checks passing',
+    'Existing manual child assignment controls',
+    'Admin membership/role',
+    'Legacy SIMULATION_ONLY transfer draft',
+    'A draft consent record',
+    'Synthetic CI passing',
+    'Independent AI review passing',
+  ];
+  assert.deepEqual([...p.explicitNonAuthorizations].sort(),
+    [...requiredNonAuthorizations].sort(),
+    'Explicit non-authorizations must preserve all 8 boundary declarations');
 }
 validateUnsignedDesign(policy);
 
@@ -112,7 +120,9 @@ const extract = (source, start, end) => {
 };
 const readiness = extract(service,
   'async handoverReadiness(centerId:', 'async proposeHandover(');
+const propose = extract(service, 'async proposeHandover(', 'async acknowledgeHandover(');
 const ack = extract(service, 'async acknowledgeHandover(', 'async cancelHandover(');
+const cancel = extract(service, 'async cancelHandover(', 'async transfer(');
 const view = extract(service, 'private handoverView(', 'async handovers(');
 const legacyTransfer = service.slice(service.indexOf('async transfer(centerId:'));
 assert.ok(legacyTransfer.includes('tx.caseloadTransferDraft.create('),
@@ -134,11 +144,23 @@ for (const text of [readiness, view]) {
     assert.ok(text.includes(invariant), `Non-authorizing response lost ${invariant}`);
   }
 }
-assert.ok(!ack.includes('tx.careAssignment.create(') &&
-  !ack.includes('tx.careAssignment.update(') &&
-  !ack.includes('tx.careAssignment.updateMany(') &&
-  !ack.includes('tx.careAssignment.delete('),
-  'Operational acknowledgement must never reassign a child');
+// Source-level tripwire (not a replacement for database permission tests):
+// guard every operational handover lifecycle method, not just acknowledgement.
+// The expression tolerates whitespace and includes all Prisma write methods.
+const assignmentWrite = /\\b(?:tx|this\\.prisma)\\s*\\.\\s*careAssignment\\s*\\.\\s*(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\\s*\\(/;
+const assertNoAssignmentWrite = (region, label) => assert.ok(!assignmentWrite.test(region),
+  `${label} must never mutate care assignments`);
+for (const [label, region] of [
+  ['Operational proposal', propose],
+  ['Operational acknowledgement', ack],
+  ['Operational cancellation', cancel],
+  ['Legacy transfer simulation', legacyTransfer],
+]) assertNoAssignmentWrite(region, label);
+// Negative fixture confirms this guard detects a mutation even with whitespace.
+assert.throws(() => assertNoAssignmentWrite(
+  propose + '\\n await tx . careAssignment . updateMany ( { data: {} } );',
+  'Synthetic corrupted proposal'),
+  /Synthetic corrupted proposal must never mutate care assignments/);
 for (const x of ['readyForTransfer: false', "code: 'SIGNED_CLINICAL_AUTHORIZATION'",
   "code: 'PURPOSE_SPECIFIC_CONSENT'", "code: 'CLINICAL_HANDOVER_SCOPE'"])
   assert.ok(readiness.includes(x), `Handover readiness lost ${x}`);
