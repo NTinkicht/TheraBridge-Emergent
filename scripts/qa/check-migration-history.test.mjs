@@ -14,7 +14,7 @@ test('identical published migrations pass', () => {
 });
 test('new later migration is allowed', () => {
   const next = after(); next.set(later, 'new-blob');
-  assert.deepEqual(validateMigrationHistory(before(), next), []);
+  assert.deepEqual(validateMigrationHistory(before(), next, new Date('2026-12-02T00:00:00Z')), []);
 });
 test('modifying previously published SQL is rejected', () => {
   const next = after(); next.set(old, 'changed-blob');
@@ -35,4 +35,18 @@ test('adding scripts to an existing published migration is rejected', () => {
 test('migration folder without migration.sql is rejected', () => {
   const next = after(); next.set(root + '20261201000000_tb_em_052/README.md', 'new-blob');
   assert.match(validateMigrationHistory(before(), next).join(' '), /lacks migration.sql/);
+});
+
+test('far-future migration timestamp is rejected even if lexically appended', () => {
+  const next = after(); next.set(root + '20991231235959_future/migration.sql', 'blob-new');
+  assert.match(validateMigrationHistory(before(), next, new Date('2026-10-30T00:00:00Z')).join(' '), /too far in the future/);
+});
+test('published migration_lock.toml cannot be modified', () => {
+  const prior = before(); prior.set(root + 'migration_lock.toml', 'lock-old');
+  const next = after(); next.set(root + 'migration_lock.toml', 'lock-new');
+  assert.match(validateMigrationHistory(prior, next).join(' '), /Published migration file modified/);
+});
+test('renaming a published migration is blocked even if the SQL blob is identical', () => {
+  const next = new Map([[root + '20261201000000_tb_em_052/migration.sql', 'blob-sha-1']]);
+  assert.match(validateMigrationHistory(before(), next, new Date('2026-12-02T00:00:00Z')).join(' '), /deleted\\/renamed/);
 });
