@@ -1,3 +1,19 @@
+## 2026-10-30 — PR #137 independent review remediation evidence
+
+| Check | State | Evidence |
+| --- | --- | --- |
+| P2 protected demo credentials fail before DB commit | IMPLEMENTED; NEW HEAD CI PENDING | Exclusive file create, write, fsync before DB mutates; rollback cleanup |
+| Filesystem TOCTOU collision | NEW HEAD CI PENDING | Mock write of rival credentials file between checks; assert no account insert |
+| Real PostgreSQL rollback | NEW HEAD CI PENDING | Fault injection after initial DB writes for both synthetic and demo seeds |
+| Argon2 CPU work outside transaction | IMPLEMENTED; NEW HEAD CI PENDING | Sequential password pre-hash before interactive DB transaction |
+| Migration new-folder future skew and direct-main-push guard | NEW HEAD CI PENDING | Added negative fixtures and GitHub main-push comparison |
+| Exact corrected-HEAD six CI jobs | NOT VERIFIED | Previous `06b2f21` success applies only to older commit |
+| Independent final-head review | NOT VERIFIED | Prior Codex no-findings receipt is outdated after fixes |
+| Migration chronology rename | OPEN / NOT DONE | Historic migration identity left unchanged pending applied-DB ledger |
+| Clinical/real-data deployment | BLOCKED / NO-GO | Signed owner policies absent |
+
+Review disposition: PR #137 conversation comment #6531973532.
+
 ## 2026-10-30 — M2-H01 first exact-HEAD CI receipt
 
 Commit `b1155a1673a5efe2cf67765188cb9211ac884568`; [GitHub Actions CI run 41056461993](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41056461993): **6/6 SUCCESS** on this recorded commit. Required jobs `test`, `secret-scan`, `live-session`, `preview-container`, `demo-journey`, and `compose` all concluded successfully. The `test` job included migration guard negative fixtures, exact base-HEAD migration immutability, Prisma additive upgrade, API fault-injection seed tests, TS check, API build and real browser regression. The demo and preview jobs exercised the existing hosted-synthetic demo startup behavior.
