@@ -35,37 +35,39 @@ export function assertSeedAllowed(env: Record<string, string | undefined>): void
 
 // Idempotent. Every run issues fresh random passwords and revokes the accounts' sessions, so credentials are disposable.
 export async function runSeed(prisma: PrismaClient, outFile = CREDENTIALS_FILE): Promise<{ email: string; password: string }[]> {
+  // Keep all DB writes atomic; publish disposable credentials only after commit.
+  const out = await prisma.$transaction(async (tx) => {
   const centers: Record<string, string> = {};
   for (const c of SEED_CENTERS) {
-    centers[c.slug] = (await prisma.center.upsert({ where: { slug: c.slug }, create: c, update: { name: c.name, timezone: c.timezone, status: 'ACTIVE' } })).id;
+    centers[c.slug] = (await tx.center.upsert({ where: { slug: c.slug }, create: c, update: { name: c.name, timezone: c.timezone, status: 'ACTIVE' } })).id;
   }
-  const out: { email: string; password: string }[] = [];
+    const out: { email: string; password: string }[] = [];
   for (const a of SEED_ACCOUNTS) {
     const password = `tb-${randomToken(18)}`;
     const email = a.email.toLowerCase();
-    const user = await prisma.user.upsert({
+    const user = await tx.user.upsert({
       where: { emailNormalized: email },
       create: { email, emailNormalized: email, displayName: a.displayName },
       update: { displayName: a.displayName, status: 'ACTIVE' },
     });
     const passwordHash = await hashPassword(password);
-    await prisma.authIdentity.upsert({
+    await tx.authIdentity.upsert({
       where: { userId_provider: { userId: user.id, provider: 'local' } },
       create: { userId: user.id, provider: 'local', subject: email, passwordHash },
       update: { passwordHash, passwordChangedAt: new Date() },
     });
-    await prisma.session.updateMany({ where: { userId: user.id, revokedAt: null }, data: { revokedAt: new Date(), revokedReason: 'seed_rotated' } });
-    if (a.platform && !(await prisma.platformRoleAssignment.count({ where: { userId: user.id, revokedAt: null } }))) {
-      await prisma.platformRoleAssignment.create({ data: { userId: user.id, source: 'synthetic_seed', reason: 'Synthetic platform administrator for development' } });
+    await tx.session.updateMany({ where: { userId: user.id, revokedAt: null }, data: { revokedAt: new Date(), revokedReason: 'seed_rotated' } });
+    if (a.platform && !(await tx.platformRoleAssignment.count({ where: { userId: user.id, revokedAt: null } }))) {
+      await tx.platformRoleAssignment.create({ data: { userId: user.id, source: 'synthetic_seed', reason: 'Synthetic platform administrator for development' } });
     }
     for (const m of a.memberships) {
-      const membership = await prisma.membership.upsert({
+      const membership = await tx.membership.upsert({
         where: { userId_centerId: { userId: user.id, centerId: centers[m.center] } },
         create: { userId: user.id, centerId: centers[m.center], status: m.status ?? 'ACTIVE' },
         update: { status: m.status ?? 'ACTIVE' },
       });
       for (const role of m.roles) {
-        await prisma.roleAssignment.upsert({
+        await tx.roleAssignment.upsert({
           where: { membershipId_role: { membershipId: membership.id, role } },
           create: { membershipId: membership.id, role },
           update: {},
@@ -74,7 +76,9 @@ export async function runSeed(prisma: PrismaClient, outFile = CREDENTIALS_FILE):
     }
     out.push({ email, password });
   }
-  await prisma.auditEvent.create({ data: { type: 'seed.synthetic', meta: { accounts: out.length } } });
+  await tx.auditEvent.create({ data: { type: 'seed.synthetic', meta: { accounts: out.length } } });
+    return out;
+  }, { timeout: 120_000 });
   mkdirSync(dirname(outFile), { recursive: true, mode: 0o700 });
   writeFileSync(outFile, JSON.stringify({ generatedAt: new Date().toISOString(), note: 'Synthetic, disposable. Never commit.', accounts: out }, null, 2), { mode: 0o600 });
   chmodSync(outFile, 0o600);
