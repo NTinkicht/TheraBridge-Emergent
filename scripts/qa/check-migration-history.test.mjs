@@ -22,7 +22,7 @@ test('modifying previously published SQL is rejected', () => {
 });
 test('deleting or renaming published SQL is rejected', () => {
   const next = new Map([[later, 'new-blob']]);
-  assert.match(validateMigrationHistory(before(), next).join(' '), /deleted\\/renamed/);
+  assert.match(validateMigrationHistory(before(), next).join(' '), /deleted\/renamed/);
 });
 test('new backdated migration is rejected', () => {
   const next = after(); next.set(earlier, 'new-blob');
