@@ -147,7 +147,7 @@ for (const text of [readiness, view]) {
 // Source-level tripwire (not a replacement for database permission tests):
 // guard every operational handover lifecycle method, not just acknowledgement.
 // The expression tolerates whitespace and includes all Prisma write methods.
-const assignmentWrite = /\\b(?:tx|this\\.prisma)\\s*\\.\\s*careAssignment\\s*\\.\\s*(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\\s*\\(/;
+const assignmentWrite = /\b(?:tx|this\.prisma)\s*\.\s*careAssignment\s*\.\s*(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/;
 const assertNoAssignmentWrite = (region, label) => assert.ok(!assignmentWrite.test(region),
   `${label} must never mutate care assignments`);
 for (const [label, region] of [
@@ -158,7 +158,7 @@ for (const [label, region] of [
 ]) assertNoAssignmentWrite(region, label);
 // Negative fixture confirms this guard detects a mutation even with whitespace.
 assert.throws(() => assertNoAssignmentWrite(
-  propose + '\\n await tx . careAssignment . updateMany ( { data: {} } );',
+  propose + '\n await tx . careAssignment . updateMany ( { data: {} } );',
   'Synthetic corrupted proposal'),
   /Synthetic corrupted proposal must never mutate care assignments/);
 for (const x of ['readyForTransfer: false', "code: 'SIGNED_CLINICAL_AUTHORIZATION'",
