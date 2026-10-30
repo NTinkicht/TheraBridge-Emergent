@@ -48,5 +48,5 @@ test('published migration_lock.toml cannot be modified', () => {
 });
 test('renaming a published migration is blocked even if the SQL blob is identical', () => {
   const next = new Map([[root + '20261201000000_tb_em_052/migration.sql', 'blob-sha-1']]);
-  assert.match(validateMigrationHistory(before(), next, new Date('2026-12-02T00:00:00Z')).join(' '), /deleted\\/renamed/);
+  assert.match(validateMigrationHistory(before(), next, new Date('2026-12-02T00:00:00Z')).join(' '), /deleted\/renamed/);
 });
