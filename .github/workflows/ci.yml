@@ -63,10 +63,10 @@ jobs:
       - run: yarn install --frozen-lockfile
       - name: Verify migration guard negative-path tests
         run: node --test scripts/qa/check-migration-history.test.mjs
-      - name: Enforce immutable published migration history against PR base
-        if: github.event_name == 'pull_request'
+      - name: Enforce immutable published migration history against PR base or previous main
+        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.before != '0000000000000000000000000000000000000000')
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
         run: node scripts/qa/check-migration-history.mjs
       - run: yarn workspace @therabridge/api prisma generate
       - name: Check additive migration after TB-EM-012 was already applied
