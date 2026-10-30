@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { createHash } from 'node:crypto';
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { PrismaClient, Role } from '@prisma/client';
 import { hashPassword, passwordPolicyError, verifyPassword } from '../auth/password';
@@ -90,8 +90,19 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
   const passwords = parseHostedDemoPasswords(process.env);
   const now = new Date();
   const cid = id('center');
-  // All verification and demo database mutations share one atomic transaction.
-  const { result, credentialsToWrite } = await db.$transaction(async (tx) => {
+  // Prepare all passwords/hashes before locking a database connection.
+  // For local demo bootstrap, write the exclusively created, fsynced credential
+  // file BEFORE account mutations, so filesystem failure cannot strand identities.
+  const prepared = await Promise.all(roster.map(async a => {
+    const email = DEMO_EMAILS[a.key];
+    const password = passwords?.[email] ?? ('tb-' + randomToken(20));
+    return { email, password, passwordHash: await hashPassword(password), role: a.role ?? 'PLATFORM_ADMIN' };
+  }));
+  const byEmail = new Map(prepared.map(p => [p.email, p]));
+  let createdCredentialFile = false;
+  try {
+    // All database writes and tenant/collision checks share one transaction.
+    const result = await db.$transaction(async (tx) => {
   // Fail closed: a dedicated preview database may contain only this demo tenant and its users.
   const demoIds = roster.map(a => id('user:' + a.key));
   const [unrelatedCenters, unrelatedUsers] = await Promise.all([
@@ -130,6 +141,24 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     if (c.slug !== DEMO_SLUG || c.name !== "Children's Home Centre") throw new Error('Demo centre ID collision.');
   }
 
+  if (!passwords && !preexistingUsers.length) {
+    // No database mutation has yet occurred. Fail immediately for EEXIST,
+    // EACCES, ENOSPC, or a read-only credential directory.
+    mkdirSync(dirname(credentialFile), { recursive: true, mode: 0o700 });
+    const fd = openSync(credentialFile, 'wx', 0o600);
+    createdCredentialFile = true;
+    try {
+      writeFileSync(fd, JSON.stringify({
+        synthetic: true, center: DEMO_SLUG, createdAt: now.toISOString(),
+        accounts: prepared.map(({ email, password, role }) => ({ email, password, role })),
+      }, null, 2));
+      fsyncSync(fd);
+    } finally {
+      closeSync(fd);
+    }
+    chmodSync(credentialFile, 0o600);
+  }
+
   const center = await tx.center.upsert({
     where: { id: cid },
     create: {
@@ -139,7 +168,6 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     },
     update: {},
   });
-  const credentials: { email: string; password: string; role: string }[] = [];
   const users: Record<string, string> = {}, members: Record<string, string> = {};
   for (const a of roster) {
     const email = DEMO_EMAILS[a.key];
@@ -152,9 +180,9 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
       throw new Error('Hosted demo password no longer matches existing account; refusing silent rotation for ' + email);
     }
     if (!identity) {
-      const password = passwords?.[email] ?? ('tb-' + randomToken(20));
-      await tx.authIdentity.create({ data: { userId: user.id, provider: 'local', subject: email, passwordHash: await hashPassword(password) } });
-      if (!passwords) credentials.push({ email, password, role: a.role ?? 'PLATFORM_ADMIN' });
+      const selected = byEmail.get(email);
+      if (!selected) throw new Error('Missing prepared demo identity: ' + email);
+      await tx.authIdentity.create({ data: { userId: user.id, provider: 'local', subject: email, passwordHash: selected.passwordHash } });
     }
     if (a.key === 'platform') {
       if (!await tx.platformRoleAssignment.count({ where: { userId: user.id, role: 'PLATFORM_ADMIN', revokedAt: null } })) {
@@ -386,22 +414,20 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     });
   }
 
-    if (!passwords && !preexistingUsers.length && credentials.length !== roster.length) {
-      throw new Error('Partial demo identities detected; secure credential export not safe.');
+    return { center: center.slug, family: 'Ahmed', child: 'Yusuf Ahmed', accounts: roster.length, appointments: 10, historicalSessions: 8, observations: 16, assessments: 2, plans: 2, reportDrafts: 2, credentials: passwords ? 'EXTERNAL HOST SECRETS' : credentialFile };
+    }, { timeout: 180_000 });
+    return result;
+  } catch (error) {
+    // The database transaction has failed/rolled back. The file was only
+    // created by this run (wx) and must not publish unusable credentials.
+    if (createdCredentialFile) {
+      try { unlinkSync(credentialFile); }
+      catch (cleanupError) {
+        throw new AggregateError([error, cleanupError], 'Demo seed failed and credential cleanup also failed');
+      }
     }
-    return {
-      result: { center: center.slug, family: 'Ahmed', child: 'Yusuf Ahmed', accounts: roster.length, appointments: 10, historicalSessions: 8, observations: 16, assessments: 2, plans: 2, reportDrafts: 2, credentials: passwords ? 'EXTERNAL HOST SECRETS' : credentialFile },
-      credentialsToWrite: !passwords && !preexistingUsers.length ? credentials : null,
-    };
-  }, { timeout: 180_000 });
-
-  // No credential file can be published for a rolled-back transaction.
-  if (credentialsToWrite) {
-    mkdirSync(dirname(credentialFile), { recursive: true, mode: 0o700 });
-    writeFileSync(credentialFile, JSON.stringify({ synthetic: true, center: DEMO_SLUG, createdAt: now.toISOString(), accounts: credentialsToWrite }, null, 2), { flag: 'wx', mode: 0o600 });
-    chmodSync(credentialFile, 0o600);
+    throw error;
   }
-  return result;
 }
 
 if (require.main === module) {
