@@ -1,3 +1,10 @@
+## 2026-10-30 — PR #137 independent review corrections
+
+- P2 FIX_NOW: credential material for new local demo identities is created securely via exclusive file open, written and fsynced before the corresponding DB mutations; failure rolls back and deletes this run's file. Avoid post-commit unexported password scenario and preserve collision-denial behavior.
+- P3 FIX_NOW: moved Argon2 hash work outside both interactive transactions, sequentially to bound memory; added a real PostgreSQL rollback/credential cleanup regression, a TOCTOU EEXIST race fixture, far-future migration and migration-lock metadata rejection, and direct-main-push guard in CI.
+- P3 recommendations not requiring code: exact rationale and disposition documented at PR #137 issue comment #6531973532.
+- Historical Prisma migrations unchanged. Final changed HEAD requires fresh 6/6 CI and independent review; no automatic merge.
+
 ## 2026-10-30 — M2-H01 / GH-18 first implementation checkpoint
 
 - Created `feature/m2-h01-migration-ci-seed-integrity` from current `main` after PR #116 merge.
