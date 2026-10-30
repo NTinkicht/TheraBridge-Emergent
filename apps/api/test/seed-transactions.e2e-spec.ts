@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -19,6 +19,43 @@ describe('M2-H01 synthetic seed transaction boundaries (fault injection)', () =>
     await expect(runSeed(db as unknown as PrismaClient, destination)).rejects.toThrow('injected synthetic user-write failure');
     expect(db.$transaction).toHaveBeenCalledTimes(1);
     expect(existsSync(destination)).toBe(false);
+  });
+
+  it('never commits accounts when a rival claims the credential path after the preflight check', async () => {
+    const destination = join(tmpdir(), 'tb-h01-file-race-' + randomUUID() + '.json');
+    const keys = ['DEPLOYMENT_ENV', 'DEMO_SEED_CONFIRM', 'DATABASE_URL', 'DEMO_PASSWORDS_JSON'] as const;
+    const original = Object.fromEntries(keys.map(k => [k, process.env[k]]));
+    process.env.DEPLOYMENT_ENV = 'ci';
+    process.env.DEMO_SEED_CONFIRM = 'CHILDRENS_HOME_SYNTHETIC_ONLY';
+    process.env.DATABASE_URL = 'postgresql://synthetic:synthetic@127.0.0.1:5432/synthetic_test';
+    delete process.env.DEMO_PASSWORDS_JSON;
+    const upsert = jest.fn();
+    const tx = {
+      center: {
+        count: jest.fn(async () => 0),
+        findUnique: jest.fn(async (args: { where: { id?: string; slug?: string } }) => {
+          if (args.where.id) writeFileSync(destination, 'owned-by-another-writer', { flag: 'wx', mode: 0o600 });
+          return null;
+        }),
+        upsert,
+      },
+      user: {
+        count: jest.fn(async () => 0),
+        findUnique: jest.fn(async () => null),
+      },
+    };
+    const db = { $transaction: jest.fn(async (cb: (tx: unknown) => Promise<unknown>) => cb(tx)) };
+    try {
+      await expect(seedChildrensHome(db as unknown as PrismaClient, destination)).rejects.toThrow(/EEXIST/);
+      expect(upsert).not.toHaveBeenCalled();
+      expect(readFileSync(destination, 'utf8')).toBe('owned-by-another-writer');
+    } finally {
+      if (existsSync(destination)) unlinkSync(destination);
+      for (const key of keys) {
+        if (original[key] === undefined) delete process.env[key];
+        else process.env[key] = original[key];
+      }
+    }
   });
 
   it('does not export hosted demo credentials if a center write fails inside the transaction', async () => {
