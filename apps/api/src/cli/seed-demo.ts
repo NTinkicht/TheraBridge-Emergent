@@ -93,11 +93,12 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
   // Prepare all passwords/hashes before locking a database connection.
   // For local demo bootstrap, write the exclusively created, fsynced credential
   // file BEFORE account mutations, so filesystem failure cannot strand identities.
-  const prepared = await Promise.all(roster.map(async a => {
+  const prepared: { email: string; password: string; passwordHash: string; role: string }[] = [];
+  for (const a of roster) {
     const email = DEMO_EMAILS[a.key];
     const password = passwords?.[email] ?? ('tb-' + randomToken(20));
-    return { email, password, passwordHash: await hashPassword(password), role: a.role ?? 'PLATFORM_ADMIN' };
-  }));
+    prepared.push({ email, password, passwordHash: await hashPassword(password), role: a.role ?? 'PLATFORM_ADMIN' });
+  }
   const byEmail = new Map(prepared.map(p => [p.email, p]));
   let createdCredentialFile = false;
   try {
