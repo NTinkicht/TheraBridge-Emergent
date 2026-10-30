@@ -35,6 +35,12 @@ export function assertSeedAllowed(env: Record<string, string | undefined>): void
 
 // Idempotent. Every run issues fresh random passwords and revokes the accounts' sessions, so credentials are disposable.
 export async function runSeed(prisma: PrismaClient, outFile = CREDENTIALS_FILE): Promise<{ email: string; password: string }[]> {
+  // Argon2 runs before acquiring an interactive transaction/row locks.
+  const prepared = await Promise.all(SEED_ACCOUNTS.map(async a => {
+    const email = a.email.toLowerCase();
+    const password = `tb-${randomToken(18)}`;
+    return { account: a, email, password, passwordHash: await hashPassword(password) };
+  }));
   // Keep all DB writes atomic; publish disposable credentials only after commit.
   const out = await prisma.$transaction(async (tx) => {
   const centers: Record<string, string> = {};
@@ -42,15 +48,12 @@ export async function runSeed(prisma: PrismaClient, outFile = CREDENTIALS_FILE):
     centers[c.slug] = (await tx.center.upsert({ where: { slug: c.slug }, create: c, update: { name: c.name, timezone: c.timezone, status: 'ACTIVE' } })).id;
   }
     const out: { email: string; password: string }[] = [];
-  for (const a of SEED_ACCOUNTS) {
-    const password = `tb-${randomToken(18)}`;
-    const email = a.email.toLowerCase();
+  for (const { account: a, email, password, passwordHash } of prepared) {
     const user = await tx.user.upsert({
       where: { emailNormalized: email },
       create: { email, emailNormalized: email, displayName: a.displayName },
       update: { displayName: a.displayName, status: 'ACTIVE' },
     });
-    const passwordHash = await hashPassword(password);
     await tx.authIdentity.upsert({
       where: { userId_provider: { userId: user.id, provider: 'local' } },
       create: { userId: user.id, provider: 'local', subject: email, passwordHash },
