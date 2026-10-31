@@ -141,6 +141,47 @@ describe('TB-EM-049 synthetic operational handover proposal (PostgreSQL)', () =>
     await ack(target,pending.id).expect(201);
   });
 
+  it('paginates child-scoped cancellations without leaking identity to incoming therapists', async () => {
+    const pending = (await start(admin, body()).expect(201)).body;
+    const unrelatedId = (await h.prisma.child.create({ data: {
+      centerId, firstName: 'Unrelated', lastName: 'Synthetic', dateOfBirth: new Date('2020-01-01'),
+      services: ['speech'], createdById: admin.body.user.id,
+    } })).id;
+    const user = admin.body.user.id as string;
+    const old = await h.prisma.caseloadTransferDraft.create({ data: {
+      centerId, childId, fromMembershipId: fromId, toMembershipId: targetId,
+      service: 'speech', reason: 'STAFF_CHANGE', status: 'CANCELLED', createdById: user,
+      createdAt: new Date(h.clock.now().getTime() - 3600000),
+    } });
+    await h.prisma.caseloadTransferDraft.createMany({ data: Array.from({ length: 101 }, (_, i) => ({
+      centerId, childId: unrelatedId, fromMembershipId: fromId, toMembershipId: targetId,
+      service: 'speech', reason: 'STAFF_CHANGE', status: 'CANCELLED', createdById: user,
+      createdAt: new Date(h.clock.now().getTime() + i * 1000),
+    })) });
+    const scoped = (await h.http().get(c('handover-proposals') + '?childId=' + childId)
+      .set('Cookie', admin.cookie).expect(200)).body;
+    expect(scoped.items.map((item: { id: string }) => item.id)).toContain(old.id);
+    expect(scoped.items.map((item: { id: string }) => item.id)).toContain(pending.id);
+    expect(scoped.nextCancelledOffset).toBeNull();
+
+    const page1 = (await h.http().get(c('handover-proposals')).set('Cookie', admin.cookie).expect(200)).body;
+    expect(page1.items.map((item: { id: string }) => item.id)).not.toContain(old.id);
+    expect(page1.nextCancelledOffset).toBe(100);
+    const page2 = (await h.http().get(c('handover-proposals') + '?cancelledOffset=100')
+      .set('Cookie', admin.cookie).expect(200)).body;
+    expect(page2.items.map((item: { id: string }) => item.id)).toContain(old.id);
+    expect(page2.items.map((item: { id: string }) => item.id)).toContain(pending.id);
+    expect(page2.nextCancelledOffset).toBeNull();
+    await h.http().get(c('handover-proposals') + '?childId=' + childId).set('Cookie', target.cookie).expect(403);
+    await h.http().get(c('handover-proposals') + '?cancelledOffset=100').set('Cookie', target.cookie).expect(403);
+    await h.http().get(c('handover-proposals') + '?childId=not-uuid').set('Cookie', admin.cookie).expect(400);
+    await h.http().get(c('handover-proposals') + '?cancelledOffset=-1').set('Cookie', admin.cookie).expect(400);
+    const foreign = await h.prisma.center.create({ data: { name: 'Other synthetic', slug: 'other-handover', timezone: 'UTC' } });
+    await h.http().get('/api/centers/' + foreign.id + '/governance/handover-proposals?childId=' + childId)
+      .set('Cookie', admin.cookie).expect(404);
+    expect(await h.prisma.careAssignment.count({ where: { centerId, childId, endedAt: null } })).toBe(1);
+  });
+
   it('ending the source assignment invalidates the pending acknowledgement', async () => {
     const proposal=(await start(admin,body()).expect(201)).body;
     await h.prisma.careAssignment.updateMany({ where: { centerId, childId, membershipId: fromId,
