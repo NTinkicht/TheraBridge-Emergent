@@ -1,3 +1,8 @@
+## 2026-10-31 — M2-H04 #142 merged; M2-H05 planning checkpoint opened
+
+- M2-H04 (#120/#119/#126) plus explicitly carried #124/#121 merged to `main` as `b95a0ce6e5504c7660bdc265ea08ba3f9a754e23` (PR #142). All six exact-HEAD CI jobs PASS, Codex reviewed final HEAD `58c0c40` with no major issues; 17 Codex findings FIX_NOW and resolved, no outstanding deferrals.
+- Immediate next ordered item: M2-H05 (#122 timezone/scheduling, #123 withdrawn clinical evidence/report conflict messages, #125 strict input validation). Draft documentation only; **NOT IMPLEMENTED / NOT TESTED**. Owner-gated clinical operations remain NO-GO.
+
 ## 2026-10-31 — M2-H04 five-issue composite implementation starts (#142)
 
 - Owner expressly directed carryover of **unimplemented #124/#121** from merged documentation-only #141 into **M2-H04 PR #142**, together with original #120/#119/#126. Opened draft at `aa83a6f`; review body and work-unit document explicitly list the five obligations, audit severities and safety gates.

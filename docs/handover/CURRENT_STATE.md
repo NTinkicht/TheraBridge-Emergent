@@ -1,3 +1,9 @@
+## 2026-10-31 — CURRENT: M2-H05 planning-only draft (after M2-H04 merge)
+
+- **Latest verified merge:** [M2-H04 PR #142](https://github.com/NTinkicht/TheraBridge-Emergent/pull/142) merged as `b95a0ce6e5504c7660bdc265ea08ba3f9a754e23`; #124/#121 H03 carryover plus #120/#119/#126 H04 fixes, six exact-HEAD CI PASS ([run 41227497493](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41227497493)), final-head Codex no major issues and 17 review findings fixed/dispositioned.
+- **Current frozen item 6/12:** M2-H05 — Clinical, Scheduling and Validation Correctness: **#122, #123, #125**. Draft planning checkpoint only: **implementation NOT STARTED; tests NOT RUN; final independent implementation review NOT DONE**. See `docs/emergent/workunits/M2-H05.md`.
+- Synthetic-only and clinical sign-off/release/consent/safeguarding/production **NO-GO** unchanged. Earlier dated sections below are historical checkpoints and superseded for current next action.
+
 ## 2026-10-31 — LATEST: M2-H04 combined implementation checkpoint on PR #142 (draft, unqualified)
 
 - Five-issue code changes are now in PR #142: #124 HTTP hardening, #121 transactionally-ended therapist assignments/series/visits and guardian notices, #120 current-schema FK/index/audit-trigger and transfer-version migration, #119 center-lock downgrade and batched conflict reads, #126 list bounds/reminder dedupe/expired rate-limit pruning. Tests include real-PostgreSQL suspension/referent/series and audit-trigger regressions, reminder idempotency, shared password-change rate limiting and migration-history guard.

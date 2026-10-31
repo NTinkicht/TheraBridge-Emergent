@@ -1,3 +1,15 @@
+## 2026-10-31 — M2-H04 completion evidence and M2-H05 draft baseline
+
+| Gate | Result | Evidence |
+| --- | --- | --- |
+| M2-H04 PR #142 implementation (#124/#121 carryover + #120/#119/#126) | **MERGED** | `b95a0ce6e5504c7660bdc265ea08ba3f9a754e23` |
+| PR #142 exact final HEAD | **VERIFIED** | `58c0c40989d289cab838953a2403af706e300f41` |
+| PR #142 test / secret-scan / live-session / preview-container / demo-journey / compose | **6/6 PASS** | [run 41227497493](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41227497493) |
+| PR #142 independent Codex final-head review | **PASS — no major issues** | Exact `58c0c40` receipt; all 17 distinct findings FIX_NOW and review threads resolved |
+| M2-H05 (#122/#123/#125) implementation / tests / final review | **NOT STARTED / NOT RUN / NOT QUALIFIED** | Planning-only draft checkpoint in `docs/emergent/workunits/M2-H05.md`; no claims of code remediation |
+
+Synthetic data only; clinical signing, release and production approval still NO-GO. Historical QA entries below record their original state and are not current M2-H05 results.
+
 ## 2026-10-31 — M2-H04 #142 combined five-issue checkpoint (test status NOT VERIFIED)
 
 | Gate | Current status | Evidence / limitation |

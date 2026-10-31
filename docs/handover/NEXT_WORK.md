@@ -1,3 +1,10 @@
+## 2026-10-31 — CURRENT: implement M2-H05 (#122, #123, #125)
+
+1. [PR #142](https://github.com/NTinkicht/TheraBridge-Emergent/pull/142) **merged** as `b95a0ce6e5504c7660bdc265ea08ba3f9a754e23`, finishing original M2-H04 #120/#119/#126 and approved H03 carryover #124/#121 with six exact-HEAD CI green and Codex final-head review clean.
+2. Current new draft **M2-H05 (6/12): #122 timezone/DST/date windows, #123 RETURNED_FOR_REVISION diagnostics + WITHDRAWN evidence exclusion, #125 calendar/IANA/numeric/trim validation.** Read the exact criteria and plan in `docs/emergent/workunits/M2-H05.md`. Planning checkpoint is **NOT IMPLEMENTED / NOT TESTED**.
+3. Implement and regress each of the three issues using synthetic fixtures and real PostgreSQL where needed; retain clinical signing/release/consent/safeguarding NO-GO. After 6/6 exact final-head CI green, get independent Codex review, disposition all comments and qualify Rule 16 merge.
+4. Upon eligible merge, continue only to next frozen item **M2-H06 (#127/#128/#129/#130)**. Historical instructions below are superseded.
+
 ## 2026-10-31 — CURRENT: M2-H04 PR #142, five required issues
 
 1. **Complete both owner-approved carried-over P1 issues in PR #142: #124 HTTP security and #121 therapist revocation.** PR #141 merged documents only; its feature scope is not complete and must not be treated as fixed.
