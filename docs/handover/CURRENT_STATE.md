@@ -1,3 +1,9 @@
+## 2026-10-31 — M2-H05 Codex code review: two P2 fixes implemented; requalification pending
+
+- [PR #143](https://github.com/NTinkicht/TheraBridge-Emergent/pull/143) moved to ready-for-review at final docs HEAD `7f77d66`. Codex's exact-HEAD review identified two **P2** regressions, both **FIX_NOW**: room-only recurring-series updates could shift a legacy DST-fold booking; globally trimmed goal titles could block summary-only saves of observed/checkpointed legacy drafts.
+- Remediations on branch: `02a0485` preserves booked occurrence instants unless the series' wall time actually changes; `51c672d` restores the exact stored immutable goal title when its trimmed equivalent round-trips. PostgreSQL/HTTP regressions: `57651b9` (Paris fold room-only update) and `ca12b89` (legacy measured title byte-faithful save plus real redefinition still rejected).
+- **At this checkpoint** fresh exact-HEAD 6/6 CI and new independent Codex review remain PENDING; do not merge based on older six-job green run 41233986911 or Codex review of `7f77d66`. All clinical activation, consent/release, live records and production remain NO-GO. Next after qualified merge: M2-H06 #127/#128/#129/#130.
+
 ## 2026-10-31 — M2-H05 implementation HEAD CI qualified; final review/handover HEAD gate separate
 
 - [PR #143](https://github.com/NTinkicht/TheraBridge-Emergent/pull/143) implements frozen #122, #123 and #125. Its implementation HEAD `55163d5fe7d1d567d8ec66f1499bc9d745c459f0` completed **23/23 suites, 611/611 API tests** and **6/6 exact-HEAD CI PASS** ([run 41233257189](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41233257189)). Includes new HTTP-invalid-zone/percentage tests, 23/25-hour DST days, fold/gap policies, withdrawn-plan evidence and stale report submission guard, historical snapshot preservation, and tenant-scoped SQL status selection. Previously recorded red runs were resolved by later commits.
