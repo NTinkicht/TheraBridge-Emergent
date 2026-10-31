@@ -1,7 +1,9 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
-import type { Prisma, Role } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { assertActor } from '../clinical/governance-core';
+import type { Viewer } from '../common/viewer';
+export type { Viewer } from '../common/viewer';
 import { describeEvents, invitationView, logCenterEvent, uniq, withUniqueGuard } from '../centers/history';
 import { InvitationsService } from '../centers/invitations.service';
 import { terminateTherapistCare } from '../centers/therapist-lifecycle';
@@ -11,7 +13,6 @@ import type { AssignmentDto, ChildDto, GuardianDto, ListChildrenQuery, UpdateChi
 import { lockCenter, TrialService } from './trial.service';
 import { NoticesService } from './notices.service';
 
-export interface Viewer { userId: string; membershipId: string; role: Role }
 const clean = (s: string) => s.trim().replace(/\s+/g, ' ');
 // Therapists see only children they are actively assigned to; other center roles see the whole center.
 export const childScope = (v: Viewer): Prisma.ChildWhereInput =>
