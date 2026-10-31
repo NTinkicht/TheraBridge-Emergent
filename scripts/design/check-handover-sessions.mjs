@@ -105,6 +105,23 @@ try {
     }
     assert.equal(await db.careAssignment.count({where:{centerId:center.id,childId:child.id,
       membershipId:target.id,service:'speech',endedAt:null}}),0,'Acknowledgement must not assign the incoming therapist');
+    // #131 live DOM: unique control IDs and complete arrow/Home/End tab keyboard.
+    const duplicates = await manager.page.evaluate(() => {
+      const ids = Array.from(document.querySelectorAll('[id]'), e => e.id);
+      return ids.filter((id, i) => ids.indexOf(id) !== i);
+    });
+    assert.deepEqual(duplicates, [], 'Duplicate DOM control IDs');
+    await manager.page.goto(base+'/app/team');
+    const members=manager.page.getByTestId('team-tab-members');
+    const invitations=manager.page.getByTestId('team-tab-invitations');
+    await members.waitFor();
+    await members.focus();
+    await members.press('ArrowRight');
+    assert.equal(await invitations.getAttribute('aria-selected'),'true');
+    await invitations.press('Home');
+    assert.equal(await members.getAttribute('aria-selected'),'true');
+    await members.press('End');
+    assert.equal(await invitations.getAttribute('aria-selected'),'true');
     const unauthorized = await incoming.page.evaluate(async url => {
       const response = await fetch(url); return {status:response.status,
         text:await response.text()};
