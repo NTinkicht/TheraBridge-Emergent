@@ -1,3 +1,4 @@
+import { navigateTabs } from '@/lib/a11y-tabs';
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
@@ -78,9 +79,9 @@ function ApplicationsList({ onError }: { onError: (e: unknown) => void }) {
         <p className="mt-1 text-[15px] text-brand-inkMuted">Review each application and record a decision. Approval does not create the center yet.</p>
       </div>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div role="tablist" aria-label="Filter by status" className="flex gap-1 overflow-x-auto rounded-control bg-surface-white p-1 shadow-sm" data-testid="applications-tabs">
+        <div role="tablist" onKeyDown={navigateTabs} aria-label="Filter by status" className="flex gap-1 overflow-x-auto rounded-control bg-surface-white p-1 shadow-sm" data-testid="applications-tabs">
           {TABS.map((t) => (
-            <button key={t.key || 'all'} role="tab" aria-selected={status === t.key} onClick={() => { setStatus(t.key); setPage(1); }} data-testid={`applications-tab-${t.key || 'all'}`}
+            <button key={t.key || 'all'} role="tab" aria-selected={status === t.key} tabIndex={status === t.key ? 0 : -1} id={`applications-tab-${t.key || "all"}`} onClick={() => { setStatus(t.key); setPage(1); }} data-testid={`applications-tab-${t.key || 'all'}`}
               className={`inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-[8px] px-3 text-[14px] font-medium transition-colors ${status === t.key ? 'bg-brand-action text-white' : 'text-brand-inkMuted hover:bg-surface-subtle'}`}>
               {t.label}
               {data && <span className={`tnum rounded-full px-1.5 text-[12px] ${status === t.key ? 'bg-white/20' : 'bg-surface-subtle'}`}>{countFor(t.key, data.counts)}</span>}
