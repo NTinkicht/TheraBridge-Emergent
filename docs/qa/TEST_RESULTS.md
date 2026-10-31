@@ -1,3 +1,17 @@
+## 2026-10-31 — PR #137 follow-up P3 regression ledger (NOT RUN at documentation checkpoint)
+
+| Regression | State | Expected invariant |
+| --- | --- | --- |
+| PostgreSQL committed then the client loses COMMIT acknowledgement | ADDED, NOT YET VERIFIED | Seven local identities are committed and the protected credential file remains available |
+| Existing demo user missing a local authentication identity | ADDED, NOT YET VERIFIED | Seed refuses an unexported random password; DB remains at six identities; prior credentials preserved |
+| Interrupted pre-COMMIT credential staging | ADDED, NOT YET VERIFIED | No demo users + preexisting file gives actionable, fail-closed recovery message; after verified test-file removal rerun creates seven identities |
+| Previously covered mid-transaction PostgreSQL rollback | CODE UPDATED, RE-RUN PENDING | Zero committed identities after rollback; newly staged file removed only when zero demo identities are independently confirmed |
+| Exact corrected-HEAD six CI jobs | NOT VERIFIED | Must qualify final HEAD, not prior `49c99db` or `5daa691` |
+| Independent Codex review of final HEAD | NOT VERIFIED | Prior reviews do not qualify the new code |
+| Migration chronology, production and clinical use | OPEN / NO-GO | No historical rewrite, no real clinical activation |
+
+Review source: PR #137 review 5717799244, follow-up 5717859375. Code commits: `05d7f7a`, `5daa691`.
+
 ## 2026-10-30 — PR #137 independent review remediation evidence
 
 | Check | State | Evidence |
