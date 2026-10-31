@@ -124,7 +124,22 @@ try {
   // Tab B holds an uninserted transcript BEFORE tab A completes.
   const uninserted = '  Uninserted العربية café 😀\nsecond line  ';
   await remote.getByLabel('Editable transcript (not saved)', { exact: true }).fill(uninserted);
-  await note.getByLabel('Actual end', { exact: true }).fill(new Date(Date.now()-1000-new Date().getTimezoneOffset()*60000).toISOString().slice(0,19));
+  // datetime-local is now explicitly interpreted in the CENTER timezone, not the browser's OS zone.
+  // Read the authoritative center setting from the authenticated API rather than assuming CI runner TZ.
+  const centerTz = await page.evaluate(async () => {
+    const s = await (await fetch('/api/auth/session', { credentials: 'include' })).json();
+    const centerId = s.activeContext?.centerId;
+    if (!centerId) throw new Error('No active center for synthetic session test');
+    const response = await fetch('/api/centers/' + centerId + '/summary', { credentials: 'include' });
+    if (!response.ok) throw new Error('Center timezone unavailable in synthetic test');
+    return (await response.json()).center.timezone;
+  });
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+    timeZone: centerTz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  }).formatToParts(new Date(Date.now() - 5000)).map(p => [p.type, p.value]));
+  const centerEnd = parts.year + '-' + parts.month + '-' + parts.day + 'T' + parts.hour + ':' + parts.minute + ':' + parts.second;
+  await note.getByLabel('Actual end', { exact: true }).fill(centerEnd);
   page.once('dialog', d => d.accept());
   await note.getByRole('button', { name: 'Review and complete session', exact: true }).click();
   await note.getByText('Completed · unsigned', { exact: true }).waitFor().catch(async e => { console.error(await note.innerText()); throw e; });
