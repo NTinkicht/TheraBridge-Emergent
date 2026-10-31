@@ -54,10 +54,16 @@ export function blocked(role,reason){
 }
 // Stable, secret-free authentication diagnostics. Never serialize responses,
 // cookies, email addresses, URLs, tokens or error messages from the page.
-export function authFailureCode(stage,loginStatus){
+export function authFailureCode(stage,loginStatus,signals={}){
  if(stage==='submit'&&loginStatus===401)return 'login_http_401';
  if(stage==='submit'&&loginStatus===429)return 'login_http_429';
  if(stage==='submit'&&typeof loginStatus==='number')return 'login_http_other';
+ if(stage==='submit'&&signals.csrfHttpStatus>=400)return 'csrf_http_error';
+ if(stage==='submit'&&signals.csrfRequestFailed)return 'csrf_network_error';
+ if(stage==='submit'&&signals.loginRequestFailed)return 'login_network_error';
+ if(stage==='submit'&&signals.loginRequestSeen)return 'login_response_timeout';
+ if(stage==='submit'&&signals.clientPageError)return 'client_runtime_error';
+ if(stage==='submit'&&signals.csrfHttpStatus===200)return 'login_not_dispatched_after_csrf';
  return ({form:'login_form_unavailable',submit:'login_response_unverified',
   redirect:'login_redirect_unverified',context:'authorized_context_unverified',
   shell:'authenticated_shell_unavailable',identity:'session_identity_unverified'})[stage]??'authentication_unverified';
@@ -93,10 +99,29 @@ async function assess(browser,role,user,directory){
  const page=await context.newPage();
  let loggedIn=false,loginAttempted=false;
  let authStage='form',loginHttpStatus=null;
+ // Only fixed statuses and booleans are retained; never capture URLs, response
+ // bodies, request payloads, exceptions or credentials from the browser.
+ const signals={csrfHttpStatus:null,csrfRequestFailed:false,loginRequestSeen:false,
+  loginRequestFailed:false,clientPageError:false};
+ const routeOf=r=>{try{return new URL(r.url()).pathname;}catch{return '';}};
+ page.on?.('request',r=>{if(r.method()==='POST'&&routeOf(r)==='/api/auth/login')signals.loginRequestSeen=true;});
+ page.on?.('requestfailed',r=>{
+  if(routeOf(r)==='/api/auth/csrf')signals.csrfRequestFailed=true;
+  if(r.method()==='POST'&&routeOf(r)==='/api/auth/login')signals.loginRequestFailed=true;
+ });
+ page.on?.('response',r=>{if(routeOf(r)==='/api/auth/csrf')signals.csrfHttpStatus=r.status();});
+ page.on?.('pageerror',()=>{signals.clientPageError=true;});
  try{
   let loginResponse,headerInspection=null;
   try{
    await page.goto(BASE+'/login',{waitUntil:'domcontentloaded',timeout:25000});
+   // Next.js can render server HTML before React attaches the submit handler.
+   // Wait for network quiet and a short hydration buffer before interacting.
+   if(page.waitForLoadState){
+    try{await page.waitForLoadState('networkidle',{timeout:12000});}
+    catch{await page.waitForTimeout?.(1000);}
+    await page.waitForTimeout?.(350);
+   }
    await page.getByTestId('login-email-input').fill(user.email);
    await page.getByTestId('login-password-input').fill(user.password);
    // Attach handlers to both operations immediately; preserve a successful
@@ -158,7 +183,7 @@ async function assess(browser,role,user,directory){
    if(!valid)throw Error('identity_mismatch');
   }catch{
    // Cookie FAIL survives invalid browser session and navigation failure.
-   const code=authFailureCode(authStage,loginHttpStatus);
+   const code=authFailureCode(authStage,loginHttpStatus,signals);
    rows.push(...missingBlockedRows(role,rows,'authentication_or_identity_unverified')
     .map(row=>({...row,diagnostic:code})));
    return rows;
