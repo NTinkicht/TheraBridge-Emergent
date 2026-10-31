@@ -512,16 +512,21 @@ export class ClinicalService {
   }
 
   async addObservation(centerId: string, v: Viewer, childId: string, dto: ObservationDto) {
-    const x = await this.prisma.planVersion.findFirst({ where: { id: dto.planVersionId, centerId, plan: { childId } }, include: { plan: true } });
-    if (x?.status === 'WITHDRAWN') throw new ConflictException({ code: 'PLAN_VERSION_WITHDRAWN', message: 'Withdrawn plan versions cannot receive active observations.' });
-    if (!x || !(x.goals as Goal[]).some((g) => g.key === dto.goalKey)) throw new UnprocessableEntityException('Choose a goal from this child’s plan.');
-    if (asDate(dto.observedOn) > this.trial.now()) throw new UnprocessableEntityException('Observations cannot be dated in the future.');
-    return this.write(centerId, v, childId, x.plan.service, async (tx, now) => {
-      const fresh = await tx.planVersion.findFirst({ where: { id: dto.planVersionId, centerId, plan: { centerId, childId, service: x.plan.service } } });
-      if (fresh?.status === 'WITHDRAWN') throw new ConflictException({ code: 'PLAN_VERSION_WITHDRAWN', message: 'Withdrawn plan versions cannot receive active observations.' });
-      if (!fresh || !(fresh.goals as Goal[]).some(g => g.key === dto.goalKey)) throw new UnprocessableEntityException('Choose a goal from this child’s plan.');
-      if (dto.sessionNoteId && !await tx.sessionNote.findFirst({ where: { id: dto.sessionNoteId, centerId, childId, service: x.plan.service, membershipId: v.membershipId } })) throw new UnprocessableEntityException('Choose your own session note for this child and service.');
-      const o = await tx.observation.create({ data: { centerId, childId, planVersionId: x.id, goalKey: dto.goalKey, membershipId: v.membershipId, sessionNoteId: dto.sessionNoteId ?? null, value: dto.value, observedOn: asDate(dto.observedOn), note: dto.note || null, createdAt: now } });
+    // Scope authorization must precede every document-specific error, even a
+    // withdrawal conflict. A former therapist with a known plan ID must get
+    // the same 404 as any other caller without an active care assignment.
+    return this.write(centerId, v, childId, undefined, async (tx, now) => {
+      const fresh = await tx.planVersion.findFirst({
+        where: { id: dto.planVersionId, centerId, plan: { centerId, childId } },
+        include: { plan: true },
+      });
+      if (!fresh) throw new UnprocessableEntityException('Choose a goal from this child’s plan.');
+      await this.child(tx, centerId, v, childId, fresh.plan.service);
+      if (fresh.status === 'WITHDRAWN') throw new ConflictException({ code: 'PLAN_VERSION_WITHDRAWN', message: 'Withdrawn plan versions cannot receive active observations.' });
+      if (!(fresh.goals as Goal[]).some(g => g.key === dto.goalKey)) throw new UnprocessableEntityException('Choose a goal from this child’s plan.');
+      if (asDate(dto.observedOn) > now) throw new UnprocessableEntityException('Observations cannot be dated in the future.');
+      if (dto.sessionNoteId && !await tx.sessionNote.findFirst({ where: { id: dto.sessionNoteId, centerId, childId, service: fresh.plan.service, membershipId: v.membershipId } })) throw new UnprocessableEntityException('Choose your own session note for this child and service.');
+      const o = await tx.observation.create({ data: { centerId, childId, planVersionId: fresh.id, goalKey: dto.goalKey, membershipId: v.membershipId, sessionNoteId: dto.sessionNoteId ?? null, value: dto.value, observedOn: asDate(dto.observedOn), note: dto.note || null, createdAt: now } });
       await logCenterEvent(tx, centerId, 'clinical.observation_recorded', now, { actorUserId: v.userId, meta: { childId, observationId: o.id, goalKey: dto.goalKey } });
       return { id: o.id };
     });
