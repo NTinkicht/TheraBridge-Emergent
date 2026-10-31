@@ -67,16 +67,16 @@ try {
     await manager.page.goto(base+'/app/children/'+child.id);
     const panel=manager.page.getByTestId('handover-manager');
     await panel.waitFor();
-    await panel.getByText('Awaiting', {exact:false}).first().waitFor().catch(()=>{});
+    await panel.getByTestId('handover-row-'+first.data.id).waitFor();
     assert((await panel.innerText()).includes('No clinical information or assignment changed'));
     await incoming.page.goto(base+'/app/practice-feedback');
     const inbox=incoming.page.getByTestId('handover-inbox');
     await inbox.waitFor();
     await inbox.getByTestId('handover-acknowledge').first().click();
     await inbox.getByText(/acknowledged/i).first().waitFor();
-    await panel.getByRole('button',{name:'Check readiness'}).first().click();
+    await panel.getByTestId('handover-row-'+first.data.id).getByRole('button',{name:'Check readiness'}).click();
     await panel.getByTestId('handover-readiness').waitFor();
-    assert((await panel.innerText()).includes('Receipt acknowledged'));
+    assert.equal(await panel.getByTestId('handover-row-'+first.data.id).getAttribute('data-status'),'ACKNOWLEDGED');
     assert((await panel.innerText()).includes('Transfer remains blocked'));
     const firstSnapshot = await db.caseloadTransferDraft.findUniqueOrThrow({where:{id:first.data.id}});
     assert.equal(firstSnapshot.status,'ACKNOWLEDGED');
@@ -92,12 +92,12 @@ try {
     await panel.waitFor();
     const cancelSecond=await write(otherManager.page,otherManager.session,route+'/'+newProposal.data.id+'/cancel','POST',{});
     assert.equal(cancelSecond.status,201);
-    const rows=panel.locator('li').filter({hasText:'No clinical information or assignment changed'});
-    const pendingRow=rows.filter({hasText:'Awaiting'}).first();
+    const pendingRow=panel.getByTestId('handover-row-'+newProposal.data.id);
+    await pendingRow.waitFor();
     // Current server status must replace stale action buttons with CANCELLED.
     await pendingRow.getByRole('button',{name:'Check readiness'}).click();
     await panel.getByTestId('handover-readiness').waitFor();
-    assert((await panel.innerText()).includes('Proposal cancelled'));
+    assert.equal(await pendingRow.getAttribute('data-status'),'CANCELLED');
     assert.equal(await pendingRow.getByRole('button',{name:'Cancel proposal'}).count(),0);
     for(const width of [320,390]) {
       await manager.page.setViewportSize({width,height:850});
