@@ -1,3 +1,4 @@
+import { navigateTabs } from '@/lib/a11y-tabs';
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -135,14 +136,14 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
         <p className="text-[14px] text-brand-inkMuted">{data.canReview ? 'Clinical supervisor review' : 'Therapist workspace'} · everything here is a draft</p>
       </div>
       <p className="flex items-start gap-2 rounded-control bg-status-cautionSurface p-3 text-[13px]" data-testid="clinical-synthetic-banner"><FlaskConical size={16} className="mt-0.5 shrink-0" aria-hidden="true" />Synthetic data only, not for clinical use. {data.locked} Media capture and AI processing are not available.</p>
-      <div role="tablist" aria-label="Clinical sections" className="flex gap-1 overflow-x-auto border-b border-border-light">
+      <div role="tablist" onKeyDown={navigateTabs} aria-label="Clinical sections" className="flex gap-1 overflow-x-auto border-b border-border-light">
         {TABS.map(([k, l]) => (
-          <button key={k} role="tab" type="button" aria-selected={tab === k} onClick={() => { if (pending.current.size && !window.confirm('Unsaved session or transcript remains. Switch sections and discard it?')) return; setTab(k); setNotice(null); }} data-testid={`clinical-tab-${k}`}
+          <button key={k} role="tab" type="button" aria-selected={tab === k} tabIndex={tab === k ? 0 : -1} id={`clinical-tab-${k}`} aria-controls="clinical-tabpanel" onClick={() => { if (pending.current.size && !window.confirm('Unsaved session or transcript remains. Switch sections and discard it?')) return; setTab(k); setNotice(null); }} data-testid={`clinical-tab-${k}`}
             className={`min-h-[44px] shrink-0 border-b-2 px-4 text-[14px] font-semibold transition-colors ${tab === k ? 'border-brand-action text-brand-action' : 'border-transparent text-brand-inkMuted hover:text-brand-ink'}`}>{l}</button>
         ))}
       </div>
       {notice && <FormAlert tone={notice.tone} testId={`clinical-notice-${notice.tone}`}>{notice.text}</FormAlert>}
-      <div role="tabpanel">
+      <div role="tabpanel" id="clinical-tabpanel" aria-labelledby={`clinical-tab-${tab}`}>
         {tab === 'overview' && <Child360 ws={sharedData!} centerId={centerId} onNavigate={setTab} />}
         {tab === 'plan' && <PlansPanel centerId={centerId} ws={sharedData!} run={run}
           pagination={{ hasMore: currentPages?.hasMore ?? data.hasMorePlans, loading: pageLoading, error: pageError, load: loadOlderPlans }} />}
