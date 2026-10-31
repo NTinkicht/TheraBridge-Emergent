@@ -60,6 +60,13 @@ describe('TB-EM-011 non-authorizing governance (real PostgreSQL)', () => {
   expect(workspace.activePlanVersions).toEqual([]);
   expect(workspace.currentDraftPlanVersions).toEqual([]);
   expect(workspace.plans[0].versions[0].status).toBe('WITHDRAWN');
+  // Existing draft report still has a frozen CREATED evidence version that
+  // referenced this plan. It must not silently rebind to an empty evidence set.
+  await h.prisma.progressReport.update({ where: { id: report }, data: { sections: {
+    summary: 'Synthetic report written against the earlier plan', assessment: '', goals: '', sessions: '', recommendations: '', familySummary: '',
+  } } });
+  const rejected = await transition(therapist, 'SUBMIT', 1, 'REPORT', report).expect(409);
+  expect(rejected.body.code).toBe('PLAN_VERSION_WITHDRAWN');
   await post(h, path(`clinical/children/${kid}/observations`), therapist, {
     planVersionId: plan, goalKey: goal.key, value: 25, observedOn: '2026-01-01',
   }).expect(409);
