@@ -3,9 +3,11 @@ import type { MembershipStatus, Prisma, Role } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { CLOCK, Clock } from '../common/clock';
 import { TrialService } from '../operations/trial.service';
+import { NoticesService } from '../operations/notices.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type { ListStaffQuery, UpdateCenterDto, UpdateProfileDto, UpdateStaffDto } from './centers.dto';
 import { DIRECTORY_ROLES, SETUP_STEPS, STAFF_ROLES, SetupKey, Tx, clean, completeSetupStep, describeEvents, logCenterEvent, uniq } from './history';
+import { terminateTherapistCare } from './therapist-lifecycle';
 
 const PAGE_SIZE = 25;
 const MANUAL_STEPS: SetupKey[] = ['review_permissions'];
@@ -38,6 +40,7 @@ export class WorkspaceService {
     private readonly audit: AuditService,
     @Inject(CLOCK) private readonly clock: Clock,
     private readonly trial: TrialService,
+    private readonly notices: NoticesService,
   ) {}
 
   async settings(centerId: string) {
@@ -122,7 +125,7 @@ export class WorkspaceService {
 
   async updateMember(centerId: string, id: string, actorUserId: string, dto: UpdateStaffDto) {
     const now = this.clock.now();
-    await this.prisma.$transaction(async (tx) => {
+    const cancelled = await this.prisma.$transaction(async (tx) => {
       // Serialize therapist roles and specialties against active clinical request responses.
       // Always acquire center before membership, including when adding a therapist seat.
       await tx.$queryRaw`SELECT id FROM "center" WHERE id = ${centerId}::uuid FOR NO KEY UPDATE`;
@@ -135,12 +138,23 @@ export class WorkspaceService {
       const added = next.filter((r) => !current.includes(r));
       if (added.includes('THERAPIST') && m.status === 'ACTIVE') await this.trial.assertTherapistSeat(tx, centerId, now, id);
       const removed = current.filter((r) => !next.includes(r));
+      const leavingSpecialties = dto.specialties ? m.specialties.filter((s) => !dto.specialties!.includes(s)) : [];
+      const changes = [] as { id: string; before: Date }[];
+      if (current.includes('THERAPIST') && !next.includes('THERAPIST')) {
+        changes.push(...(await terminateTherapistCare(tx, centerId, id, actorUserId, now, 'Therapist role removed')).noticeAppointments);
+      } else if (current.includes('THERAPIST')) {
+        for (const service of leavingSpecialties) {
+          changes.push(...(await terminateTherapistCare(tx, centerId, id, actorUserId, now, 'Therapist specialty removed', { service })).noticeAppointments);
+        }
+      }
       if (removed.length) await tx.roleAssignment.deleteMany({ where: { membershipId: id, role: { in: removed } } });
       if (added.length) await tx.roleAssignment.createMany({ data: added.map((role) => ({ membershipId: id, role })) });
       const profile = profileData(dto);
       await tx.membership.update({ where: { id }, data: profile });
       await logCenterEvent(tx, centerId, 'member.updated', now, { actorUserId, subjectUserId: m.userId, membershipId: id, meta: { added, removed, fields: Object.keys(profile) } });
+      return changes;
     });
+    await this.notices.changed(cancelled, 'cancelled');
     await this.audit.record('member.updated', { actorUserId, meta: { centerId, membershipId: id } });
     return this.memberDetail(centerId, id);
   }
@@ -149,9 +163,9 @@ export class WorkspaceService {
     if (id === actor.membershipId) throw new UnprocessableEntityException('You cannot change your own access. Ask another administrator.');
     const t = TRANSITIONS[action];
     const now = this.clock.now();
-    await this.prisma.$transaction(async (tx) => {
+    const cancelled = await this.prisma.$transaction(async (tx) => {
       // Serialise status changes per center so two administrators cannot remove each other at the same time.
-      await tx.$queryRaw`SELECT id FROM "center" WHERE id = ${centerId}::uuid FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM "center" WHERE id = ${centerId}::uuid FOR NO KEY UPDATE`;
       const m = await this.member(centerId, id, tx);
       if (!t.from.includes(m.status)) throw new ConflictException(`This member is ${m.status.toLowerCase()}, so that change is not available.`);
       if (action === 'reactivate' && m.roles.some((r) => r.role === 'THERAPIST')) await this.trial.assertTherapistSeat(tx, centerId, now, id);
@@ -160,11 +174,16 @@ export class WorkspaceService {
         if (!others) throw new ConflictException('This is the only active administrator. Ask the TheraBridge platform team to invite another administrator first.');
       }
       await tx.membership.update({ where: { id }, data: { status: t.to, statusReason: action === 'reactivate' ? null : reason ?? null, statusChangedAt: now } });
+      const cascade = t.to !== 'ACTIVE'
+        ? await terminateTherapistCare(tx, centerId, id, actor.userId, now, `Therapist membership ${action}`)
+        : null;
       if (t.to !== 'ACTIVE') {
         await tx.session.updateMany({ where: { activeMembershipId: id, revokedAt: null }, data: { revokedAt: now, revokedReason: `membership_${action}` } });
       }
       await logCenterEvent(tx, centerId, t.event, now, { actorUserId: actor.userId, subjectUserId: m.userId, membershipId: id, meta: reason ? { reason } : {} });
+      return cascade?.noticeAppointments ?? [];
     });
+    await this.notices.changed(cancelled, 'cancelled');
     await this.audit.record(t.event as 'member.suspended', { actorUserId: actor.userId, meta: { centerId, membershipId: id } });
     return this.memberDetail(centerId, id);
   }
@@ -176,17 +195,26 @@ export class WorkspaceService {
 
   async updateMe(centerId: string, membershipId: string, actor: { userId: string; role: Role }, dto: UpdateProfileDto) {
     const now = this.clock.now();
-    await this.prisma.$transaction(async (tx) => {
+    const cancelled = await this.prisma.$transaction(async (tx) => {
       // Self-service changes can include specialties: use same lock order as staff edits.
       await tx.$queryRaw`SELECT id FROM "center" WHERE id = ${centerId}::uuid FOR NO KEY UPDATE`;
       await tx.$queryRaw`SELECT id FROM "membership" WHERE id = ${membershipId}::uuid AND center_id = ${centerId}::uuid FOR UPDATE`;
+      const m = await tx.membership.findFirstOrThrow({ where: { id: membershipId, centerId }, include: { roles: true } });
+      const changes: { id: string; before: Date }[] = [];
+      if (dto.specialties && m.roles.some((r) => r.role === 'THERAPIST')) {
+        for (const service of m.specialties.filter((s) => !dto.specialties!.includes(s))) {
+          changes.push(...(await terminateTherapistCare(tx, centerId, membershipId, actor.userId, now, 'Therapist specialty removed', { service })).noticeAppointments);
+        }
+      }
       if (dto.displayName) await tx.user.update({ where: { id: actor.userId }, data: { displayName: clean(dto.displayName) } });
       const profile = profileData(dto);
       await tx.membership.update({ where: { id: membershipId }, data: profile });
       const fields = [...Object.keys(profile), ...(dto.displayName ? ['displayName'] : [])];
       await logCenterEvent(tx, centerId, 'member.profile_updated', now, { actorUserId: actor.userId, subjectUserId: actor.userId, membershipId, meta: { fields } });
       if (actor.role === 'CENTER_ADMIN') await completeSetupStep(tx, centerId, 'your_profile', actor.userId, now);
+      return changes;
     });
+    await this.notices.changed(cancelled, 'cancelled');
     await this.audit.record('member.profile_updated', { actorUserId: actor.userId, meta: { centerId, membershipId } });
     return this.me(centerId, membershipId);
   }

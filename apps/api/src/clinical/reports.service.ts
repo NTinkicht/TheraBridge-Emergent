@@ -218,7 +218,7 @@ export class ReportsService {
   async list(centerId: string, v: Viewer, childId: string) {
     await this.clinical.child(this.prisma, centerId, v, childId);
     const services = v.role === 'THERAPIST' ? (await this.clinical.therapistAssignments(this.prisma, centerId, v, childId)).map((a) => a.service) : null;
-    const rows = await this.prisma.progressReport.findMany({ where: { centerId, childId, ...(services ? { service: { in: services } } : {}) }, include: { _count: { select: { versions: true } } }, orderBy: { updatedAt: 'desc' } });
+    const rows = await this.prisma.progressReport.findMany({ where: { centerId, childId, ...(services ? { service: { in: services } } : {}) }, include: { _count: { select: { versions: true } } }, orderBy: { updatedAt: 'desc' }, take: 200 });
     const team = await this.prisma.membership.findMany({ where: { id: { in: uniq(rows.map((r) => r.membershipId)) } }, select: { id: true, user: { select: { displayName: true } } } });
     return { items: rows.map((r) => ({ id: r.id, title: r.title, service: r.service, periodStart: day(r.periodStart), periodEnd: day(r.periodEnd), status: r.status, versions: r._count.versions, author: team.find((t) => t.id === r.membershipId)?.user.displayName ?? '', mine: r.membershipId === v.membershipId, updatedAt: r.updatedAt })) };
   }

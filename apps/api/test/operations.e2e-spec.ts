@@ -315,4 +315,37 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     await post(h, `/api/centers/${otherCenter}/children/${kid}/assignments`, other, { membershipId: admin.body.activeContext.membershipId, service: 'speech' }).expect(404);
     await post(h, `/api/centers/${otherCenter}/appointments`, other, { childId: kid, membershipId: admin.body.activeContext.membershipId, service: 'speech', startsAt: at(1, 9), endsAt: at(1, 10) }).expect(404);
   });
+
+  it('M2-H04: therapist suspension atomically ends assigned series, visits and referent; notifies a connected guardian', async () => {
+    const therapist = await staff('cascade-therapist@ops.test', ['THERAPIST']);
+    const memberId = therapist.body.activeContext.membershipId as string;
+    const kid = (await post(h, c('children'), admin, child()).expect(201)).body.id as string;
+    await post(h, c(`children/${kid}/assignments`), admin, { membershipId: memberId, service: 'speech', isLead: true }).expect(201);
+    const detail = (await get(admin, c(`children/${kid}`)).expect(200)).body;
+    await patch(admin, c(`children/${kid}/referent`), { membershipId: memberId, version: detail.version, reason: 'Current care contact' }).expect(200);
+    await post(h, c(`children/${kid}/guardians`), admin, { displayName: 'Guardian Notice', email: 'cascade-parent@ops.test', relationship: 'parent', invite: true }).expect(201);
+    await accept('cascade-parent@ops.test', 'Guardian Notice');
+    const d = new Date(h.clock.now().getTime() + 2 * DAY).toISOString().slice(0, 10);
+    const weekday = ((new Date(`${d}T12:00:00Z`).getUTCDay() + 6) % 7) + 1;
+    const seriesId = (await post(h, c('series'), admin, { childId: kid, membershipId: memberId, service: 'speech', startDate: d, startTime: '10:00', durationMinutes: 60, weekdays: [weekday], intervalWeeks: 1, count: 3 }).expect(201)).body.id as string;
+    expect(await h.prisma.appointment.count({ where: { seriesId, status: 'SCHEDULED' } })).toBe(3);
+    await post(h, c(`staff/${memberId}/suspend`), admin, { reason: 'Safety access suspension' }).expect(200);
+    expect(await h.prisma.careAssignment.count({ where: { centerId, childId: kid, membershipId: memberId, endedAt: null } })).toBe(0);
+    expect((await h.prisma.appointmentSeries.findUniqueOrThrow({ where: { id: seriesId } })).status).toBe('ENDED');
+    expect(await h.prisma.appointment.count({ where: { seriesId, status: 'SCHEDULED' } })).toBe(0);
+    expect((await h.prisma.child.findUniqueOrThrow({ where: { id: kid } })).referentMembershipId).toBeNull();
+    expect(await h.prisma.childReferentHistory.count({ where: { childId: kid } })).toBe(2);
+    expect(h.app.get(DevMailboxService).list().filter((m) => m.to === 'cascade-parent@ops.test' && m.subject.includes('Appointment cancelled')).length).toBeGreaterThan(0);
+    // Active-only uniqueness: the same clinician may be assigned historically
+    // again after administrator reactivation, but old series stay ended.
+    await post(h, c(`staff/${memberId}/reactivate`), admin).expect(200);
+    await post(h, c(`children/${kid}/assignments`), admin, { membershipId: memberId, service: 'speech' }).expect(201);
+  });
+
+  it('M2-H04: audit entries are immutable in PostgreSQL, not merely via API conventions', async () => {
+    await post(h, c('children'), admin, child()).expect(201);
+    const row = await h.prisma.auditEvent.findFirstOrThrow({ where: { type: 'child.registered' } });
+    await expect(h.prisma.$executeRaw`UPDATE audit_event SET type = 'tampered' WHERE id = ${row.id}`).rejects.toThrow(/append-only/);
+    await expect(h.prisma.$executeRaw`DELETE FROM audit_event WHERE id = ${row.id}`).rejects.toThrow(/append-only/);
+  });
 });

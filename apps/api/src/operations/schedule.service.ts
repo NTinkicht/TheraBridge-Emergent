@@ -60,6 +60,31 @@ export class ScheduleService {
     return null;
   }
 
+  // Batch the read for up to 60 repeating visits instead of making two
+  // database round-trips for every occurrence under the center lock.
+  async clashesForSlots(tx: Tx, slots: { childId: string; membershipId: string; startsAt: Date; endsAt: Date }[], excludeIds: string[] = []): Promise<(string | null)[]> {
+    if (!slots.length) return [];
+    const earliest = new Date(Math.min(...slots.map((s) => s.startsAt.getTime())));
+    const latest = new Date(Math.max(...slots.map((s) => s.endsAt.getTime())));
+    const existing = await tx.appointment.findMany({
+      where: {
+        status: 'SCHEDULED', startsAt: { lt: latest }, endsAt: { gt: earliest },
+        OR: [
+          { membershipId: { in: [...new Set(slots.map((s) => s.membershipId))] } },
+          { childId: { in: [...new Set(slots.map((s) => s.childId))] } },
+        ],
+        ...(excludeIds.length ? { id: { notIn: excludeIds } } : {}),
+      },
+      select: { membershipId: true, childId: true, startsAt: true, endsAt: true },
+    });
+    return slots.map((slot) => {
+      const overlap = (a: typeof existing[number]) => a.startsAt < slot.endsAt && a.endsAt > slot.startsAt;
+      if (existing.some((a) => a.membershipId === slot.membershipId && overlap(a))) return 'The therapist already has an appointment at this time.';
+      if (existing.some((a) => a.childId === slot.childId && overlap(a))) return 'The child already has an appointment at this time.';
+      return null;
+    });
+  }
+
   private async assertFree(tx: Tx, a: { childId: string; membershipId: string; startsAt: Date; endsAt: Date }, excludeId?: string) {
     const reason = await this.clash(tx, a, excludeId ? [excludeId] : []);
     if (reason) throw new ConflictException(reason);
@@ -142,7 +167,7 @@ export class ScheduleService {
     const mine = v.role === 'THERAPIST' ? { membershipId: v.membershipId } : {};
     const children: Prisma.ChildWhereInput = { centerId, status: 'ACTIVE', ...childScope(v) };
     const [today, week, activeChildren, unassigned, noGuardian, therapists, pendingInvites, trial] = await Promise.all([
-      this.prisma.appointment.findMany({ where: { centerId, ...mine, startsAt: { gte: start, lt: end } }, include: { child: true, notices: true }, orderBy: { startsAt: 'asc' } }),
+      this.prisma.appointment.findMany({ where: { centerId, ...mine, startsAt: { gte: start, lt: end } }, include: { child: true, notices: true }, orderBy: { startsAt: 'asc' }, take: 500 }),
       this.prisma.appointment.count({ where: { centerId, ...mine, status: 'SCHEDULED', startsAt: { gte: now, lt: new Date(start.getTime() + 7 * DAY) } } }),
       this.prisma.child.count({ where: children }),
       this.prisma.child.count({ where: { ...children, assignments: { none: { endedAt: null } } } }),

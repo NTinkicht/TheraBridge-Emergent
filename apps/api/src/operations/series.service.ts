@@ -57,11 +57,8 @@ export class SeriesService {
         const startsAt = zonedToUtc(date, dto.startTime, tz);
         return { date, startsAt, endsAt: new Date(startsAt.getTime() + dto.durationMinutes * 60_000) };
       });
-      const conflicts: { date: string; reason: string }[] = [];
-      for (const s of slots) {
-        const reason = await this.schedule.clash(tx, { childId: dto.childId, membershipId: dto.membershipId, startsAt: s.startsAt, endsAt: s.endsAt });
-        if (reason) conflicts.push({ date: s.date, reason });
-      }
+      const reasons = await this.schedule.clashesForSlots(tx, slots.map((s) => ({ childId: dto.childId, membershipId: dto.membershipId, startsAt: s.startsAt, endsAt: s.endsAt })));
+      const conflicts: { date: string; reason: string }[] = slots.flatMap((s, i) => reasons[i] ? [{ date: s.date, reason: reasons[i]! }] : []);
       if (conflicts.length && (!dto.skipConflicts || conflicts.length === slots.length)) {
         throw clashError(`${conflicts.length} of ${slots.length} visits clash with existing appointments.`, conflicts);
       }
@@ -111,11 +108,8 @@ export class SeriesService {
         return { o, startsAt, endsAt: new Date(startsAt.getTime() + next.durationMin * 60_000) };
       });
       if (plan.some((p) => p.startsAt < now)) throw new UnprocessableEntityException('Visits cannot be moved into the past.');
-      const conflicts: { date: string; reason: string }[] = [];
-      for (const p of plan) {
-        const reason = await this.schedule.clash(tx, { childId: s.childId, membershipId: next.membershipId, startsAt: p.startsAt, endsAt: p.endsAt }, plan.map((x) => x.o.id));
-        if (reason) conflicts.push({ date: fromDate(p.o.occurrenceDate!), reason });
-      }
+      const reasons = await this.schedule.clashesForSlots(tx, plan.map((p) => ({ childId: s.childId, membershipId: next.membershipId, startsAt: p.startsAt, endsAt: p.endsAt })), plan.map((x) => x.o.id));
+      const conflicts: { date: string; reason: string }[] = plan.flatMap((p, i) => reasons[i] ? [{ date: fromDate(p.o.occurrenceDate!), reason: reasons[i]! }] : []);
       if (conflicts.length) throw clashError(`${conflicts.length} of ${plan.length} visits would clash. Nothing was changed.`, conflicts);
       for (const p of plan) {
         await tx.appointment.update({ where: { id: p.o.id }, data: { membershipId: next.membershipId, startsAt: p.startsAt, endsAt: p.endsAt, ...(dto.room !== undefined ? { room: dto.room || null } : {}), version: { increment: 1 } } });
