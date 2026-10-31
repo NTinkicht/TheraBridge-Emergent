@@ -232,6 +232,15 @@ export class ClinicalService {
       assessments: assessments.map((a) => ({ id: a.id, service: a.service, assessedOn: day(a.assessedOn), summary: a.summary, areas: a.areas, status: a.status, version: a.version, author: who(a.membershipId), mine: a.membershipId === v.membershipId, updatedAt: a.updatedAt })),
       hasMorePlans,
       hasMoreAssessments,
+      // This synthetic environment has no clinical approval gate enabled.
+      // Never treat the latest WITHDRAWN version as the active plan. A future
+      // signed approval policy may populate active versions; for now the
+      // explicit active list remains empty rather than inventing approval.
+      activePlanVersions: plans.flatMap(p => p.versions.filter(x => x.status === 'APPROVED')
+        .slice(0, 1).map(x => ({ planId: p.id, planVersionId: x.id, service: p.service, number: x.number }))),
+      currentDraftPlanVersions: plans.flatMap(p => p.versions.filter(x =>
+        ['DRAFT', 'RETURNED_FOR_REVISION', 'IN_REVIEW', 'FROZEN_INTERNAL'].includes(x.status))
+        .slice(0, 1).map(x => ({ planId: p.id, planVersionId: x.id, service: p.service, number: x.number, status: x.status }))),
       plans: plans.map((p) => ({ id: p.id, service: p.service, title: p.title, source: planSource(p), versions: p.versions.map((x) => ({ id: x.id, number: x.number, status: x.status, summary: x.summary, goals: x.goals, homeActivities: x.homeActivities, reviewNotes: (Array.isArray(x.reviewNotes) ? x.reviewNotes : []).filter((n: any) => n?.kind !== 'GOAL_CHECKPOINT'),
         goalCheckpoints: (Array.isArray(x.reviewNotes) ? x.reviewNotes : []).filter((n: any) =>
           n?.kind === 'GOAL_CHECKPOINT' && typeof n.goalKey === 'string' &&
@@ -479,10 +488,12 @@ export class ClinicalService {
 
   async addObservation(centerId: string, v: Viewer, childId: string, dto: ObservationDto) {
     const x = await this.prisma.planVersion.findFirst({ where: { id: dto.planVersionId, centerId, plan: { childId } }, include: { plan: true } });
+    if (x?.status === 'WITHDRAWN') throw new ConflictException({ code: 'PLAN_VERSION_WITHDRAWN', message: 'Withdrawn plan versions cannot receive active observations.' });
     if (!x || !(x.goals as Goal[]).some((g) => g.key === dto.goalKey)) throw new UnprocessableEntityException('Choose a goal from this child’s plan.');
     if (asDate(dto.observedOn) > this.trial.now()) throw new UnprocessableEntityException('Observations cannot be dated in the future.');
     return this.write(centerId, v, childId, x.plan.service, async (tx, now) => {
       const fresh = await tx.planVersion.findFirst({ where: { id: dto.planVersionId, centerId, plan: { centerId, childId, service: x.plan.service } } });
+      if (fresh?.status === 'WITHDRAWN') throw new ConflictException({ code: 'PLAN_VERSION_WITHDRAWN', message: 'Withdrawn plan versions cannot receive active observations.' });
       if (!fresh || !(fresh.goals as Goal[]).some(g => g.key === dto.goalKey)) throw new UnprocessableEntityException('Choose a goal from this child’s plan.');
       if (dto.sessionNoteId && !await tx.sessionNote.findFirst({ where: { id: dto.sessionNoteId, centerId, childId, service: x.plan.service, membershipId: v.membershipId } })) throw new UnprocessableEntityException('Choose your own session note for this child and service.');
       const o = await tx.observation.create({ data: { centerId, childId, planVersionId: x.id, goalKey: dto.goalKey, membershipId: v.membershipId, sessionNoteId: dto.sessionNoteId ?? null, value: dto.value, observedOn: asDate(dto.observedOn), note: dto.note || null, createdAt: now } });
