@@ -25,6 +25,7 @@ const env = {
   HOST: '127.0.0.1', PORT: '8001', CORS_ORIGINS: 'http://127.0.0.1:3000',
   COOKIE_SECURE: 'false', TRUSTED_PROXY_CIDRS: '',
   FAMILY_PRACTICE_DEMO: 'true', HOME_PLAN_REQUESTS_DEMO: 'true', FAMILY_MESSAGING_DEMO: 'false',
+  HANDOVER_DEMO: 'true',
   DEV_MAILBOX_ENABLED: 'false', DEV_OUTBOX_DIR: '',
 };
 const db = new PrismaClient();
@@ -59,6 +60,7 @@ try {
   await ready('http://127.0.0.1:8001/api/health');
   await ready('http://127.0.0.1:3000/login');
   await run('node', ['scripts/design/check-demo-journey.mjs']);
+  await run('node', ['scripts/design/check-handover-sessions.mjs']);
 } finally {
   for (const p of children) if (p.exitCode === null) p.kill('SIGTERM');
   await db.$disconnect();
