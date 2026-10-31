@@ -208,6 +208,10 @@ jobs:
       - run: cp .env.example .env
       - run: docker compose build
       - run: docker compose up -d --wait
+      - name: Verify API and web runtime identities are non-root
+        run: |
+          test "$(docker compose exec -T api id -u)" = 1000
+          test "$(docker compose exec -T web id -u)" = 1000
       - name: Smoke test through the running containers
         run: |
           curl -fsS http://localhost:8001/api/health | python3 -c 'import json,sys; h=json.load(sys.stdin); assert h["status"] == "ok" and h["service"] == "therabridge-api" and h["database"]["status"] == "up" and h["migrations"]["applied"] >= 1'
@@ -270,6 +274,7 @@ jobs:
           printf 'DEMO_PASSWORDS_JSON=%s\n' "$(tr -d '\n' < .workspace/local-credentials/render-demo-passwords.json)" >> /tmp/therabridge-preview-ci.env
           printf 'AUTH_SECRET=%s\n' "$(openssl rand -hex 32)" >> /tmp/therabridge-preview-ci.env
           docker run -d --name tb-preview-ci --network host --env-file /tmp/therabridge-preview-ci.env tb-synthetic-preview:ci
+          test "$(docker exec tb-preview-ci id -u)" = 1000
           for attempt in $(seq 1 120); do
             if curl -fsS http://127.0.0.1:10000/login >/dev/null 2>&1; then break; fi
             sleep 2
