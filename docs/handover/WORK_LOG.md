@@ -1,3 +1,10 @@
+## 2026-10-31 — Owner changes future merge protocol (new draft PR checkpoint)
+
+- PR #137 merged after exact-HEAD 6/6 CI and Codex no findings: `3d133c278f0b1fad3ba84b0e8e2ce70db1443ee8`.
+- Drafted AGENTS.md Rule 16, REVIEW_DISPOSITION_RULE.md and PR template: autonomous merge for qualified ordinary synthetic-only PRs, only after every review comment is dispositioned and all permitted deferrals have linked issues with owner/criteria/priority/safety rationale.
+- No waiver of clinical or production approvals; no bypass of CI, branch protection, P0–P2 remediation, independent final-head review. Policy effective after merge to main, not at draft creation.
+- Next security work unit GH-01 (#117) is the intended substantive scope; implementation NOT STARTED at this checkpoint.
+
 ## 2026-10-31 — PR #137 follow-up review P3 dispositions implemented
 
 - FIX_NOW (review 5717799244 P3-1): after an interactive transaction rejects, query committed demo local identities before deleting newly staged credentials; retain on visible identities or failed verification, with explicit operator recovery message.
