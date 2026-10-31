@@ -93,6 +93,10 @@ jobs:
           yarn workspace @therabridge/api prisma migrate status
       - run: yarn workspace @therabridge/api typecheck
       - run: yarn workspace @therabridge/api test
+      - name: Gate measured API fingerprint-core coverage (95/90/95/95)
+        run: yarn workspace @therabridge/api test:coverage:core
+      - name: Web configuration unit tests
+        run: yarn workspace @therabridge/web test
       - run: yarn workspace @therabridge/api build
       - run: yarn workspace @therabridge/web build
       - name: M2-H06 frontend timezone, CSRF, shared session and response-header regression
