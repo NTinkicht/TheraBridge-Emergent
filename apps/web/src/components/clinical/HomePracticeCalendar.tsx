@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Goal, HomeActivity, Template } from '@/lib/clinical';
 import { centerLocalDay } from '@/lib/goal-review';
@@ -32,9 +32,18 @@ export function HomePracticeCalendar({ activities, goals, templates, versionNumb
   const [month, setMonth] = useState(firstScheduledMonth ?? centerMonth);
   const [selectedDay, setSelectedDay] = useState('');
   const monthValid = isCalendarDay(month + '-01');
-  const entries = practiceCalendarMonth(activities, month);
-  const days = new Map<string, typeof entries>();
-  for (const entry of entries) days.set(entry.date, [...(days.get(entry.date) ?? []), entry]);
+  // The recurrence projector iterates up to 366 days. Selection changes and
+  // unrelated parent renders must not recompute it.
+  const { entries, days } = useMemo(() => {
+    const projected = practiceCalendarMonth(activities, month);
+    const byDay = new Map<string, typeof projected>();
+    for (const entry of projected) {
+      const bucket = byDay.get(entry.date) ?? [];
+      bucket.push(entry);
+      byDay.set(entry.date, bucket);
+    }
+    return { entries: projected, days: byDay };
+  }, [activities, month]);
   const chosenDay = selectedDay.startsWith(month + '-') && isCalendarDay(selectedDay) ?
     selectedDay : (entries[0]?.date ?? month + '-01');
   const chosenEntries = days.get(chosenDay) ?? [];
