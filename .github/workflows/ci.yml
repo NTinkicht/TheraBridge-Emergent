@@ -5,11 +5,17 @@ on:
     branches: ["**"]
   pull_request:
 
+# Superseded pushes to the same ref should not consume two costly Docker jobs.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
   secret-scan:
+    timeout-minutes: 10
     runs-on: ubuntu-24.04
     env:
       GITLEAKS_VERSION: 8.30.1
@@ -30,6 +36,7 @@ jobs:
         run: /tmp/gitleaks dir . --config .gitleaks.toml --redact=100 --no-banner --exit-code 1
 
   test:
+    timeout-minutes: 30
     runs-on: ubuntu-24.04
     services:
       postgres:
@@ -189,6 +196,7 @@ jobs:
         run: rm -f .workspace/local-credentials/childrens-home-demo.json
 
   compose:
+    timeout-minutes: 25
     runs-on: ubuntu-24.04
     needs: test
     steps:
