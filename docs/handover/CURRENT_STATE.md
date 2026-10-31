@@ -1,3 +1,8 @@
+## 2026-10-31 — M2-H05 implementation HEAD CI qualified; final review/handover HEAD gate separate
+
+- [PR #143](https://github.com/NTinkicht/TheraBridge-Emergent/pull/143) implements frozen #122, #123 and #125. Its implementation HEAD `55163d5fe7d1d567d8ec66f1499bc9d745c459f0` completed **23/23 suites, 611/611 API tests** and **6/6 exact-HEAD CI PASS** ([run 41233257189](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41233257189)). Includes new HTTP-invalid-zone/percentage tests, 23/25-hour DST days, fold/gap policies, withdrawn-plan evidence and stale report submission guard, historical snapshot preservation, and tenant-scoped SQL status selection. Previously recorded red runs were resolved by later commits.
+- **At this checkpoint:** after documentation commits, reverify all six checks on the new HEAD, then mark ready for review and obtain a new independent Codex review of *that same final HEAD*. Disposition any new comments before Rule 16 merge. Canonical PR body holds live gate status. Clinical/real data/signing/safeguarding/consent/release/production remain NO-GO. Next frozen item after eligible merge: **M2-H06 #127/#128/#129/#130**.
+
 ## 2026-10-31 — CURRENT: M2-H05 #143 implementation in review qualification
 
 - [PR #143](https://github.com/NTinkicht/TheraBridge-Emergent/pull/143) remains **OPEN DRAFT**, now contains application and regression-test changes for frozen **#122, #123, #125** (item 6/12). DST folds select the earlier instant; gaps explicitly reject. Current center-local day boundaries and date validation no longer use host-timezone assumptions or regex-only checks. Reports/governance distinguish stale versions and invalid states; WITHDRAWN plans stay historical and cannot enter new active evidence/observations.
