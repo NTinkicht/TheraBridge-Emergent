@@ -135,6 +135,9 @@ describe('M2-H01 real PostgreSQL rollback and protected-file consistency', () =>
           });
           return fn(poisoned);
         }, options),
+      // The seed's post-error recovery check must query committed state
+      // outside the failed transaction, as the real Prisma client would.
+      authIdentity: { count: (args: any) => h.prisma.authIdentity.count(args) },
     };
     return wrapper as unknown as PrismaClient;
   }
