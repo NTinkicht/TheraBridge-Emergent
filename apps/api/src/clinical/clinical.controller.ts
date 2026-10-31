@@ -17,12 +17,18 @@ export class ClinicalController {
 
   @Get('clinical/children/:childId')
   @RequirePermission('center.clinical.read')
-  workspace(@Param('centerId', uuid()) c: string, @Param('childId', uuid()) id: string, @Req() req: TbRequest, @Query('planOffset') rawOffset?: string) {
+  workspace(@Param('centerId', uuid()) c: string, @Param('childId', uuid()) id: string, @Req() req: TbRequest,
+    @Query('planOffset') rawOffset?: string, @Query('assessmentOffset') rawAssessmentOffset?: string) {
     const offset = rawOffset === undefined ? 0 : Number(rawOffset);
+    const assessmentOffset = rawAssessmentOffset === undefined ? 0 : Number(rawAssessmentOffset);
     if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100_000 || (rawOffset !== undefined && !/^\d+$/.test(rawOffset))) {
       throw new BadRequestException('Invalid plan pagination offset.');
     }
-    return this.clinical.workspace(c, viewer(req), id, offset);
+    if (!Number.isSafeInteger(assessmentOffset) || assessmentOffset < 0 || assessmentOffset > 100_000 ||
+        (rawAssessmentOffset !== undefined && !/^\d+$/.test(rawAssessmentOffset))) {
+      throw new BadRequestException('Invalid assessment pagination offset.');
+    }
+    return this.clinical.workspace(c, viewer(req), id, offset, assessmentOffset);
   }
 
   @Post('clinical/children/:childId/assessments')

@@ -475,3 +475,8 @@ See [implementation evidence](../emergent/workunits/TB-EM-015.md) for exact comm
 
 - Codex identified that older plans loaded in the Therapy Plan tab vanished from Progress and Sessions on tab switch, and that a bounded template library had no server-side search/pagination path. Both are treated as **blocking P2** findings.
 - Pending next-head CI: share older plan/evidence pages in the parent child workspace; expose bounded searchable/paged activity templates including specialty-before-cap filtering and plan-editor search; regression-test 210 library entries, plan-tab to Progress-tab persistence, and selection beyond the initial library page. **All six CI jobs and new Codex review are required; not yet qualified.**
+
+### M2-H04 `21b5f5d`/`b0dce10` CI and Codex follow-ups (2026-10-31)
+
+- `21b5f5d` demo-journey failed because its old result-count expectation assumed client-only filtering; the updated exact-head run on `b0dce10` passed API/web build, PostgreSQL test job, secret scan, live-session and preview-container but failed a synthetic-browser assertion that tried to wait for a native `<option>` to be *visible* (the option existed but HTML option nodes are not visible to that wait). The browser regression now checks option existence before selecting it.
+- Codex also found a real assessment-history retrieval gap after the 200-assessment cap and a search-input focus loss during server-side refresh. Corrections add shared 200-record assessment pages, a visible retrieval button, 206-assessment PostgreSQL coverage, and persistent search controls. **Pending new exact-HEAD six-job CI and Codex verification; no merge qualified yet.**

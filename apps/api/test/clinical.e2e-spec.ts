@@ -100,6 +100,28 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     await get(therapist, c('activities?offset=-1')).expect(400);
   });
 
+  it('M2-H04 Codex P2: older/backdated assessments are reachable in stable authorized pages', async () => {
+    const { therapist, kid } = await setup();
+    const base = Date.parse('2026-01-01T00:00:00Z');
+    await h.prisma.assessment.createMany({ data: Array.from({ length: 205 }, (_, i) => ({
+      centerId, childId: kid, membershipId: therapist.body.activeContext.membershipId,
+      service: 'speech', assessedOn: new Date(base + i * DAY), summary: `Historical assessment ${i}`,
+      areas: [], createdAt: h.clock.now(), updatedAt: h.clock.now(),
+    })) });
+    const backdated = (await post(h, c(`clinical/children/${kid}/assessments`), therapist,
+      { service: 'speech', assessedOn: '2025-10-01', summary: 'Late-entered older assessment', areas: [] }).expect(201)).body.id;
+    const first = (await get(therapist, c(`clinical/children/${kid}`)).expect(200)).body;
+    expect(first.assessments).toHaveLength(200);
+    expect(first.hasMoreAssessments).toBe(true);
+    expect(first.assessments.some((a: { id: string }) => a.id === backdated)).toBe(false);
+    const older = (await get(therapist, c(`clinical/children/${kid}?assessmentOffset=200`)).expect(200)).body;
+    expect(older.assessments).toHaveLength(6);
+    expect(older.hasMoreAssessments).toBe(false);
+    expect(older.assessments.some((a: { id: string }) => a.id === backdated)).toBe(true);
+    expect(new Set([...first.assessments, ...older.assessments].map((a: { id: string }) => a.id)).size).toBe(206);
+    await get(therapist, c(`clinical/children/${kid}?assessmentOffset=-1`)).expect(400);
+  });
+
 
   it('hides a same-center different-child assessment ID just like an unknown ID', async () => {
     const { therapist, other } = await setup();

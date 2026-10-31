@@ -17,7 +17,8 @@ const input = 'mt-1 w-full rounded-control border border-border-light bg-transpa
 const today = () => zonedParts(new Date().toISOString()).date;
 const SECTIONS = [['focus', 'Session focus'], ['activities', 'Activities used'], ['response', 'Child’s response'], ['nextSteps', 'Next steps']] as const;
 
-export function AssessmentsPanel({ centerId, ws, run }: { centerId: string; ws: Workspace; run: Run }) {
+export function AssessmentsPanel({ centerId, ws, run, pagination }: { centerId: string; ws: Workspace; run: Run;
+  pagination: { hasMore: boolean; loading: boolean; error: string; load: () => Promise<void> } }) {
   const [f, setF] = useState({ service: ws.child.services[0] ?? '', assessedOn: today(), summary: '', area: '', finding: '' });
   return (
     <div className="space-y-4" data-testid="assessments-panel">
@@ -30,6 +31,10 @@ export function AssessmentsPanel({ centerId, ws, run }: { centerId: string; ws: 
         </Card>
       ))}
       {!ws.assessments.length && <p className="text-[14px] text-brand-inkMuted" data-testid="assessments-empty">No initial assessment recorded yet.</p>}
+      {pagination.hasMore && <Button variant="secondary" disabled={pagination.loading} onClick={() => void pagination.load()} data-testid="assessments-load-more">
+        {pagination.loading ? 'Loading earlier assessments…' : 'Load earlier assessments'}
+      </Button>}
+      {pagination.error && <p role="alert" className="text-[13px] text-status-caution" data-testid="assessments-load-error">{pagination.error}</p>}
       {ws.canEdit && (
         <Card className="space-y-3 p-5" testId="assessment-form">
           <h3 className="text-[16px] font-semibold">New initial assessment (draft)</h3>

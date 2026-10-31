@@ -103,6 +103,7 @@ try {
     const speechTemplates = items.filter(t => t.service === 'speech');
     assert(speechTemplates.length > 0, 'Seed requires Speech activity examples');
     await search.fill('  LANGUAGE  ');
+    assert(await search.isFocused(), 'Activity search field must stay mounted and focused while results reload');
     await count(speechTemplates.length);
     assert.equal(await cardCount(), speechTemplates.length, 'Displayed specialty label must be searchable');
     await search.fill('unlikely-synthetic-library-result-4c7fbb');
@@ -547,11 +548,35 @@ try {
     });
     await page.getByTestId('plan-template-search').first().fill('Beyond cap');
     await page.getByTestId('plan-template-find').first().click();
-    await page.getByTestId('home-activity-add').first().locator(`option[value="${extraTemplateId}"]`).waitFor();
+    await page.waitForFunction(id => !!document.querySelector(`[data-testid="home-activity-add"] option[value="${id}"]`), extraTemplateId);
     await page.getByTestId('home-activity-add').first().selectOption(extraTemplateId);
     assert((await page.locator('[data-testid^="home-activity-"]').allInnerTexts()).some(text => text.includes('Beyond cap synthetic practice')),
       'The plan editor must retain a template retrieved beyond the initial library cap');
     await page.unroute(planLibraryRoute);
+    await page.reload();
+    // Bounded assessments also need a clinician-visible route to old,
+    // backdated records. Keep them in the shared workspace across tabs.
+    const pagedAssessmentRoute = '**/api/centers/*/clinical/children/*';
+    const oldAssessmentId = '00000000-0000-4000-8000-000000000095';
+    await page.route(pagedAssessmentRoute, async route => {
+      if (route.request().method() !== 'GET') return route.continue();
+      const response = await route.fetch();
+      const data = await response.json();
+      const offset = Number(new URL(route.request().url()).searchParams.get('assessmentOffset') || '0');
+      return route.fulfill({ response, json: offset > 0 ? { ...data, assessments: [{
+        id: oldAssessmentId, service: 'speech', assessedOn: '2025-01-01',
+        summary: 'Earlier assessment pagination fixture', areas: [], version: 1,
+        author: 'Synthetic Therapist', mine: true, updatedAt: '2025-01-02T00:00:00Z',
+      }], hasMoreAssessments: false } : { ...data, hasMoreAssessments: true } });
+    });
+    await page.reload();
+    await page.getByTestId('clinical-tab-assessments').click();
+    await page.getByTestId('assessments-load-more').click();
+    await page.getByTestId('assessment-' + oldAssessmentId).waitFor();
+    await page.getByTestId('clinical-tab-overview').click();
+    await page.getByTestId('clinical-tab-assessments').click();
+    await page.getByTestId('assessment-' + oldAssessmentId).waitFor();
+    await page.unroute(pagedAssessmentRoute);
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
     // Reload clears the checkpoint form's local goal/narrative selection.

@@ -90,8 +90,10 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
         </div>
       )}
       {failed && <ErrorState onRetry={() => void reload()} testId="activities-error" />}
-      {!failed && !first && <Card className="p-5"><SkeletonRows rows={4} testId="activities-loading" /></Card>}
-      {first && <Card className="space-y-3 p-4" testId="activities-discovery">
+      {!failed && !data && <Card className="p-5"><SkeletonRows rows={4} testId="activities-loading" /></Card>}
+      {/* Keep the search input mounted while fetching a new query, otherwise
+          typing the first character removes its focused DOM node. */}
+      {data && <Card className="space-y-3 p-4" testId="activities-discovery">
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,180px)_minmax(0,180px)]">
           <label className="block text-[13px] font-medium">Search activities
             <span className="relative mt-1 block">
@@ -122,7 +124,7 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[13px] text-brand-inkMuted" role="status" data-testid="activities-result-count">
-            Showing {templates.length}{hasMore ? '+' : ''} matching activities
+            {first ? `Showing ${templates.length}${hasMore ? '+' : ''} matching activities` : 'Searching activities…'}
           </p>
           {filtering && <Button size="sm" variant="ghost"
             onClick={() => { setSearch(''); setSpecialty('all'); setOwnership('all'); }} data-testid="activities-clear-filters">

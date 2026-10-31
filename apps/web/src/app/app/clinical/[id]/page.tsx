@@ -18,6 +18,7 @@ import type { Workspace as ClinicalWorkspace } from '@/lib/clinical';
 
 const TABS = [['overview', 'Child 360°'], ['plan', 'Therapy plan'], ['assessments', 'Assessments'], ['sessions', 'Sessions'], ['progress', 'Progress'], ['reports', 'Reports']] as const;
 type OlderPages = { key: string; plans: ClinicalWorkspace['plans']; observations: ClinicalWorkspace['observations']; offset: number; hasMore: boolean };
+type AssessmentPages = { key: string; items: ClinicalWorkspace['assessments']; offset: number; hasMore: boolean };
 
 function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e: unknown) => void }) {
   const { id } = useParams<{ id: string }>();
@@ -32,10 +33,29 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
   const [pageLoading, setPageLoading] = useState(false);
   const [pageError, setPageError] = useState('');
   const currentPages = olderPages?.key === pageKey ? olderPages : null;
+  const [assessmentPages, setAssessmentPages] = useState<AssessmentPages | null>(null);
+  const [assessmentLoading, setAssessmentLoading] = useState(false);
+  const [assessmentError, setAssessmentError] = useState('');
+  const currentAssessments = assessmentPages?.key === pageKey ? assessmentPages : null;
   const sharedData = useMemo(() => data ? { ...data,
+    assessments: [...data.assessments, ...(currentAssessments?.items ?? []).filter(a => !data.assessments.some(x => x.id === a.id))],
     plans: [...data.plans, ...(currentPages?.plans ?? []).filter(p => !data.plans.some(x => x.id === p.id))],
     observations: [...data.observations, ...(currentPages?.observations ?? []).filter(o => !data.observations.some(x => x.id === o.id))],
-  } : null, [data, currentPages]);
+  } : null, [data, currentPages, currentAssessments]);
+  const loadOlderAssessments = async () => {
+    if (!data || assessmentLoading || !(currentAssessments?.hasMore ?? data.hasMoreAssessments)) return;
+    const offset = currentAssessments?.offset ?? data.assessments.length;
+    setAssessmentLoading(true); setAssessmentError('');
+    try {
+      const page = await clinicalApi.workspace(centerId, id, 0, offset);
+      setAssessmentPages(prev => {
+        const old = prev?.key === pageKey ? prev : null;
+        return { key: pageKey, items: [...(old?.items ?? []), ...page.assessments.filter(a => !old?.items.some(x => x.id === a.id))],
+          offset: offset + page.assessments.length, hasMore: page.hasMoreAssessments };
+      });
+    } catch { setAssessmentError('Earlier assessments could not be loaded. Please retry.'); }
+    finally { setAssessmentLoading(false); }
+  };
   const loadOlderPlans = async () => {
     if (!data || pageLoading || !(currentPages?.hasMore ?? data.hasMorePlans)) return;
     const offset = currentPages?.offset ?? data.plans.length;
@@ -87,6 +107,21 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
           setPageError('');
         } catch { setPageError('Older plans could not be refreshed. Reload this child to retry.'); }
       }
+      if (currentAssessments && data) {
+        try {
+          let offset = data.assessments.length;
+          const items: ClinicalWorkspace['assessments'] = [];
+          let more = true;
+          while (offset < currentAssessments.offset && more) {
+            const page = await clinicalApi.workspace(centerId, id, 0, offset);
+            items.push(...page.assessments); offset += page.assessments.length;
+            more = page.hasMoreAssessments;
+            if (!page.assessments.length) break;
+          }
+          setAssessmentPages({ key: pageKey, items, offset, hasMore: more });
+          setAssessmentError('');
+        } catch { setAssessmentError('Earlier assessments could not be refreshed. Please reload.'); }
+      }
       return true;
     } catch (e) { const t = errorText(e, onError); if (t) setNotice({ tone: 'danger', text: t }); return false; }
   };
@@ -111,7 +146,9 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
         {tab === 'overview' && <Child360 ws={sharedData!} centerId={centerId} onNavigate={setTab} />}
         {tab === 'plan' && <PlansPanel centerId={centerId} ws={sharedData!} run={run}
           pagination={{ hasMore: currentPages?.hasMore ?? data.hasMorePlans, loading: pageLoading, error: pageError, load: loadOlderPlans }} />}
-        {tab === 'assessments' && <AssessmentsPanel centerId={centerId} ws={sharedData!} run={run} />}
+        {tab === 'assessments' && <AssessmentsPanel centerId={centerId} ws={sharedData!} run={run}
+          pagination={{ hasMore: currentAssessments?.hasMore ?? data.hasMoreAssessments,
+            loading: assessmentLoading, error: assessmentError, load: loadOlderAssessments }} />}
         {tab === 'sessions' && <SessionsPanel centerId={centerId} ws={sharedData!} run={run} onPending={onPending} />}
         {tab === 'progress' && <ProgressPanel centerId={centerId} ws={sharedData!} run={run} onNavigate={() => setTab('plan')} />}
         {tab === 'reports' && <ReportsPanel centerId={centerId} ws={sharedData!} run={run} onError={onError} />}
