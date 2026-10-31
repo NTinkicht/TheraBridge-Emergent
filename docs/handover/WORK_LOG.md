@@ -1,3 +1,7 @@
+# Latest work log — 2026-10-31 — M2-H05 merge and M2-H06 draft opening
+
+Merged [#143](https://github.com/NTinkicht/TheraBridge-Emergent/pull/143) at `f30a659` after final 616/616 tests, 6/6 CI successes and Codex no-major-findings on exact final HEAD; all four Codex review threads resolved; no deferred findings. Opened frozen item **M2-H06** (#127–#130) with an initial planning-only branch and workunit record. **No M2-H06 code or tests have been completed at this checkpoint**. Next: implementation, six exact-HEAD checks, explicit review disposition, independent Codex round. Clinical release gates remain closed.
+
 ## 2026-10-31 — M2-H05 security P1 review disposition
 
 - Independent Codex review at `7a75667` caught a clinical status side channel when a revoked therapist could submit a known WITHDRAWN plan ID. **FIX_NOW** `bc70c5f` moves checks past transactional child and specialty scope; `e6b9f88` validates authorized 409 vs revoked 404 indistinguishable from unknown ID in PostgreSQL/HTTP. Previous qualified heads superseded; final exact-head CI/re-review pending. No deferrals, no clinical activation.
