@@ -309,6 +309,15 @@ export class ReportsService {
       if (!Array.isArray(evidence?.goals)) throw new UnprocessableEntityException('Saved report evidence does not contain selectable goals.');
       const refs = dto.selectedGoals.map(g => g.planVersionId + ':' + g.goalKey);
       if (new Set(refs).size !== refs.length) throw new UnprocessableEntityException('Select each recorded goal only once.');
+      const sourceIds = uniq(dto.selectedGoals.map(g => g.planVersionId));
+      const eligibleVersions = await tx.planVersion.findMany({
+        where: { centerId, id: { in: sourceIds }, status: { not: 'WITHDRAWN' },
+          plan: { centerId, childId: current.childId, service: current.service } },
+        select: { id: true },
+      });
+      if (eligibleVersions.length !== sourceIds.length)
+        throw new ConflictException({ code: 'PLAN_VERSION_WITHDRAWN',
+          message: 'Cannot use withdrawn or unavailable plan versions as sources for a new clinical draft.' });
       // Exact version+key is essential: a goal key alone can be reused in
       // unrelated plans/versions with incompatible units or definitions.
       const candidates = evidence.goals as Array<Record<string, unknown>>;
