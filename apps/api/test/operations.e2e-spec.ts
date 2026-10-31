@@ -311,6 +311,36 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     })).toBe(0);
   });
 
+  it('M2-H04 Codex P2: therapist discovery pages beyond 200, filters specialty before the cap and resolves exact assigned IDs', async () => {
+    // Direct synthetic fixtures bypass the three-seat trial onboarding limit:
+    // this tests directory scalability and tenant/specialty query behavior.
+    const users = await h.prisma.user.createManyAndReturn({ data: Array.from({ length: 205 }, (_, i) => ({
+      email: `directory-${i}@ops.test`, emailNormalized: `directory-${i}@ops.test`,
+      displayName: `${i < 200 ? 'Alpha Occupational' : 'Zulu Speech'} ${String(i).padStart(3, '0')}`,
+    })) });
+    const memberships = await h.prisma.membership.createManyAndReturn({ data: users.map((u) => ({
+      userId: u.id, centerId, status: 'ACTIVE' as const,
+      specialties: [u.displayName.startsWith('Zulu') ? 'speech' : 'occupational'], responsibilities: [],
+    })) });
+    await h.prisma.roleAssignment.createMany({ data: memberships.map(m => ({ membershipId: m.id, role: 'THERAPIST' as const })) });
+    const first = (await get(admin, c('therapists?limit=100')).expect(200)).body;
+    expect(first.items).toHaveLength(100);
+    expect(first.hasMore).toBe(true);
+    expect(first.nextOffset).toBe(100);
+    const last = (await get(admin, c('therapists?offset=200&limit=100')).expect(200)).body;
+    expect(last.items).toHaveLength(5);
+    expect(last.hasMore).toBe(false);
+    const speech = (await get(admin, c('therapists?service=speech')).expect(200)).body;
+    expect(speech.items).toHaveLength(5);
+    expect(speech.items.every((t: { specialties: string[] }) => t.specialties.includes('speech'))).toBe(true);
+    const target = speech.items[4].membershipId;
+    const exact = (await get(admin, c(`therapists?ids=${target}`)).expect(200)).body;
+    expect(exact.items.map((t: { membershipId: string }) => t.membershipId)).toEqual([target]);
+    const searched = (await get(admin, c('therapists?service=speech&search=Zulu%20Speech%20204')).expect(200)).body;
+    expect(searched.items).toHaveLength(1);
+    await get(admin, c('therapists?offset=-1')).expect(400);
+  });
+
   it('isolates centers and hides other families', async () => {
     const kid = (await post(h, c('children'), admin, child()).expect(201)).body.id;
     await post(h, '/api/platform/centers', ops, { name: 'Other Ops', timezone: 'UTC', country: 'France', city: 'Lyon', specialties: ['speech'], firstAdmin: { email: 'o@other.test', displayName: 'Other Admin' } }).expect(201);

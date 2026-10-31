@@ -312,8 +312,17 @@ export class ChildrenService {
     await this.notices.changed(cascade.noticeAppointments, 'cancelled');
   }
 
-  async therapists(centerId: string) {
-    const rows = await this.prisma.membership.findMany({ where: { centerId, status: 'ACTIVE', roles: { some: { role: 'THERAPIST' } } }, include: { user: { select: { displayName: true } } }, orderBy: { user: { displayName: 'asc' } }, take: 200 });
-    return { items: rows.map((m) => ({ membershipId: m.id, displayName: m.user.displayName, title: m.title, specialties: m.specialties })) };
+  async therapists(centerId: string, options: { offset?: number; limit?: number; service?: string; search?: string; ids?: string[] } = {}) {
+    const offset = options.offset ?? 0, limit = options.limit ?? 100;
+    const batch = await this.prisma.membership.findMany({ where: {
+      centerId, status: 'ACTIVE', roles: { some: { role: 'THERAPIST' } },
+      ...(options.service ? { specialties: { has: options.service } } : {}),
+      ...(options.search ? { user: { displayName: { contains: options.search, mode: 'insensitive' } } } : {}),
+      ...(options.ids ? { id: { in: options.ids } } : {}),
+    }, include: { user: { select: { displayName: true } } },
+    orderBy: [{ user: { displayName: 'asc' } }, { id: 'asc' }], skip: offset, take: limit + 1 });
+    const hasMore = batch.length > limit;
+    return { items: batch.slice(0, limit).map((m) => ({ membershipId: m.id, displayName: m.user.displayName,
+      title: m.title, specialties: m.specialties })), hasMore, nextOffset: hasMore ? offset + limit : null };
   }
 }

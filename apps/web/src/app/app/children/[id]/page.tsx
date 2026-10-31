@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, CalendarPlus, MailPlus, UserPlus } from 'lucide-react';
@@ -75,9 +75,51 @@ function CareTeam({ centerId, child, manage, canDesignate, run }: Ctx) {
   const [referentMember, setReferentMember] = useState(child.referent?.membershipId ?? '');
   const [referentReason, setReferentReason] = useState('');
   const [therapists, setTherapists] = useState<Therapist[]>([]);
+  const [referentCandidates, setReferentCandidates] = useState<Therapist[]>([]);
+  const [therapistSearch, setTherapistSearch] = useState('');
+  const [nextTherapistOffset, setNextTherapistOffset] = useState<number | null>(null);
+  const [loadingTherapists, setLoadingTherapists] = useState(false);
+  const [therapistError, setTherapistError] = useState('');
+  const therapistRequest = useRef(0);
   const [f, setF] = useState({ membershipId: '', service: child.services[0] ?? '', isLead: true });
-  useEffect(() => { if (open || referentOpen) void opsApi.therapists(centerId).then((r) => setTherapists(r.items)).catch(() => setTherapists([])); }, [open, referentOpen, centerId]);
   const active = child.assignments.filter((a) => !a.endedAt);
+  const activeIds = [...new Set(active.map(a => a.membershipId))].join(',');
+  useEffect(() => {
+    if (!open) return;
+    const revision = ++therapistRequest.current;
+    setLoadingTherapists(true); setTherapistError(''); setTherapists([]); setNextTherapistOffset(null);
+    void opsApi.therapists(centerId, { service: f.service, search: therapistSearch.trim(), limit: 100 })
+      .then(page => { if (revision === therapistRequest.current) {
+        setTherapists(page.items); setNextTherapistOffset(page.nextOffset);
+      } }).catch(() => { if (revision === therapistRequest.current) setTherapistError('Unable to load eligible therapists.'); })
+      .finally(() => { if (revision === therapistRequest.current) setLoadingTherapists(false); });
+    return () => { therapistRequest.current++; };
+  }, [open, centerId, f.service, therapistSearch]);
+  useEffect(() => {
+    if (!referentOpen || !activeIds) { setReferentCandidates([]); return; }
+    let live = true;
+    const ids = activeIds.split(',');
+    // Referent selection is limited to currently assigned members. Fetch
+    // exact IDs in bounded batches so a late-sorting active therapist is not
+    // lost behind unrelated members in the directory.
+    void Promise.all(Array.from({ length: Math.ceil(ids.length / 100) }, (_, i) =>
+      opsApi.therapists(centerId, { ids: ids.slice(i * 100, i * 100 + 100).join(','), limit: 100 })))
+      .then(pages => { if (live) setReferentCandidates(pages.flatMap(p => p.items)); })
+      .catch(() => { if (live) setReferentCandidates([]); });
+    return () => { live = false; };
+  }, [referentOpen, centerId, activeIds]);
+  const loadMoreTherapists = async () => {
+    if (loadingTherapists || nextTherapistOffset === null) return;
+    const revision = therapistRequest.current;
+    setLoadingTherapists(true); setTherapistError('');
+    try {
+      const page = await opsApi.therapists(centerId, { service: f.service, search: therapistSearch.trim(), limit: 100, offset: nextTherapistOffset });
+      if (revision === therapistRequest.current) {
+        setTherapists(prev => [...prev, ...page.items]); setNextTherapistOffset(page.nextOffset);
+      }
+    } catch { if (revision === therapistRequest.current) setTherapistError('Unable to load more eligible therapists.'); }
+    finally { if (revision === therapistRequest.current) setLoadingTherapists(false); }
+  };
   const qualified = therapists.filter((t) => t.specialties.includes(f.service));
   return (
     <Card className="p-5 md:p-6" testId="care-team-card">
@@ -120,7 +162,7 @@ function CareTeam({ centerId, child, manage, canDesignate, run }: Ctx) {
           <SelectField label="Referent" value={referentMember} onChange={setReferentMember}
             testId="referent-therapist-select" options={[
               { value: '', label: 'No child-wide referent' },
-              ...active.filter(a => therapists.some(m => m.membershipId === a.membershipId && m.specialties.includes(a.service))).filter((a, i, rows) => rows.findIndex(b => b.membershipId === a.membershipId) === i)
+              ...active.filter(a => referentCandidates.some(m => m.membershipId === a.membershipId && m.specialties.includes(a.service))).filter((a, i, rows) => rows.findIndex(b => b.membershipId === a.membershipId) === i)
                 .map(a => ({ value: a.membershipId, label: a.therapist })),
             ]}/>
           <ReasonField label="Reason (audit history)" value={referentReason} onChange={setReferentReason} testId="referent-reason"/>
@@ -130,7 +172,13 @@ function CareTeam({ centerId, child, manage, canDesignate, run }: Ctx) {
         footer={<><Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button><Button data-testid="assign-save" onClick={() => void (async () => { if (f.membershipId && await run(() => opsApi.assign(centerId, child.id, f), 'Therapist assigned.')) setOpen(false); })()}>Assign</Button></>}>
         <div className="space-y-4">
           <SelectField label="Service" value={f.service} onChange={(service) => setF({ ...f, service, membershipId: '' })} testId="assign-service-select" options={child.services.map((s) => ({ value: s, label: serviceLabel(s) }))} />
+          <label className="block text-[13px] font-medium">Search eligible therapists
+            <input type="search" value={therapistSearch} onChange={e => setTherapistSearch(e.target.value)}
+              className="mt-1 w-full rounded-control border border-border-light bg-transparent px-3 py-2 text-[14px]" data-testid="assign-therapist-search" placeholder="Name" />
+          </label>
           <SelectField label="Therapist" value={f.membershipId} onChange={(membershipId) => setF({ ...f, membershipId })} testId="assign-therapist-select" options={[{ value: '', label: qualified.length ? 'Choose a therapist' : 'No therapist lists this specialty' }, ...qualified.map((t) => ({ value: t.membershipId, label: t.displayName }))]} />
+          {nextTherapistOffset !== null && <Button size="sm" variant="secondary" disabled={loadingTherapists} onClick={() => void loadMoreTherapists()} data-testid="assign-therapist-load-more">{loadingTherapists ? 'Loading…' : 'Load more eligible therapists'}</Button>}
+          {therapistError && <p role="alert" className="text-[13px] text-status-caution">{therapistError}</p>}
           <p className="text-[13px] text-brand-inkMuted">Only active therapists whose profile lists {serviceLabel(f.service).toLowerCase()} are shown.</p>
           <label className="flex items-center gap-2 text-[14px]"><input type="checkbox" className="h-4 w-4 accent-[#0F5692]" checked={f.isLead} onChange={(e) => setF({ ...f, isLead: e.target.checked })} data-testid="assign-lead-checkbox" /> Lead therapist for this service</label>
         </div>

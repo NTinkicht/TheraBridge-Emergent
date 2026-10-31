@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
 import { RequirePermission, TbRequest } from '../auth/access';
 import type { Viewer } from '../operations/children.service';
 import { ProgressQueryDto, ReportCreateDto, ReportSaveDto, ReportVersionDto, ReviewDto, ReviewQueueQueryDto, ReportSuggestionDecisionDto, ReportToPlanDraftDto } from './clinical.dto';
@@ -27,8 +27,12 @@ export class ReportsController {
 
   @Get('clinical/children/:childId/reports')
   @RequirePermission('center.clinical.read')
-  list(@Param('centerId', uuid()) c: string, @Param('childId', uuid()) id: string, @Req() req: TbRequest) {
-    return this.reports.list(c, viewer(req), id);
+  list(@Param('centerId', uuid()) c: string, @Param('childId', uuid()) id: string, @Req() req: TbRequest, @Query('offset') rawOffset?: string) {
+    const offset = rawOffset === undefined ? 0 : Number(rawOffset);
+    if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100_000 || (rawOffset !== undefined && !/^\d+$/.test(rawOffset))) {
+      throw new BadRequestException('Invalid report pagination offset.');
+    }
+    return this.reports.list(c, viewer(req), id, offset);
   }
 
   @Post('clinical/children/:childId/reports')
