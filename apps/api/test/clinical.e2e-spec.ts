@@ -183,7 +183,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     await post(h, path, therapist, { ...body, goalKey: 'not-in-plan' }).expect(422);
     await post(h, path, therapist, { ...body, observationIds: [unrelatedSource] }).expect(422);
     await post(h, path, therapist, { ...body, observationIds: [exactSource, exactSource] }).expect(422);
-    await post(h, path, therapist, { ...body, reviewedOn: '2026-02-30' }).expect(422);
+    await post(h, path, therapist, { ...body, reviewedOn: '2026-02-30' }).expect(400);
     await post(h, path, therapist, { ...body, reviewedOn: '2026-11-02' }).expect(422);
     await post(h, path, therapist, { ...body, summary: 'short' }).expect(400);
     const receipt = (await post(h, path, therapist, body).expect(200)).body;
@@ -323,8 +323,8 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
       schedule: { cadence: 'WEEKLY', startsOn: '2026-10-19', endsOn: '2026-12-16', weekdays: [1, 3] },
     };
     const update = { summary: 'Synthetic, unapproved draft with dated objectives', goals: [goal], homeActivities: [activity], version: 1 };
-    await patch(therapist, url, { ...update, goals: [{ ...goal, targetOn: '2027-02-30' }] }).expect(422);
-    await patch(therapist, url, { ...update, goals: [{ ...goal, reviewOn: '2027-02-29' }] }).expect(422);
+    await patch(therapist, url, { ...update, goals: [{ ...goal, targetOn: '2027-02-30' }] }).expect(400);
+    await patch(therapist, url, { ...update, goals: [{ ...goal, reviewOn: '2027-02-29' }] }).expect(400);
     await patch(therapist, url, { ...update, goals: [{ ...goal, horizon: 'VERY_LONG' }] }).expect(400);
     await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
       schedule: { ...activity.schedule, weekdays: [1, 1] } }] }).expect(422);
@@ -392,7 +392,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     };
     // A therapist may only author an activity in an active declared specialty.
     await post(h, c('activities'), ot, data).expect(403);
-    await post(h, c('activities'), therapist, { ...data, title: '    ' }).expect(422);
+    await post(h, c('activities'), therapist, { ...data, title: '    ' }).expect(400);
     await post(h, c('activities'), admin, data).expect(403);
     const originalId = (await post(h, c('activities'), therapist, data).expect(201)).body.id;
     const original = await h.prisma.activityTemplate.findUniqueOrThrow({ where: { id: originalId } });
