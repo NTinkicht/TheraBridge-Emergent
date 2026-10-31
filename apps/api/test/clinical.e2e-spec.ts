@@ -163,15 +163,14 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     await patch(therapist, planPath, {
       summary: 'Original synthetic draft', goals: [goal], homeActivities: [], version: 1,
     }).expect(200);
-    await post(h, c(`clinical/children/${kid}/observations`), therapist, {
-      planVersionId: versionId, goalKey: 'legacy', value: 2, observedOn: '2026-10-18',
-    }).expect(201);
-    // Imported drafts persisted before M2-H05 could have leading/trailing
-    // whitespace. The new pipe trims client input, but immutable stored
-    // definitions cannot be silently rewritten.
+    // Model a legacy import BEFORE the first measurement: the database
+    // correctly forbids rewriting a goal definition after observation.
     await h.prisma.planVersion.update({ where: { id: versionId }, data: {
       goals: [{ ...goal, title: '  Names familiar objects  ' }],
     } });
+    await post(h, c(`clinical/children/${kid}/observations`), therapist, {
+      planVersionId: versionId, goalKey: 'legacy', value: 2, observedOn: '2026-10-18',
+    }).expect(201);
     await patch(therapist, planPath, {
       summary: 'Summary-only revision after import', goals: [goal], homeActivities: [], version: 2,
     }).expect(200);
