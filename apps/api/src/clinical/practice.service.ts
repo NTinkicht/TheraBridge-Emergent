@@ -164,7 +164,7 @@ export class PracticeService {
     if (o.acknowledgedAt) return { id, acknowledgedAt: o.acknowledgedAt, already: true };
     return this.prisma.$transaction(async (tx) => {
       await this.trial.assertWritable(tx, centerId, now);
-      const n = await tx.practiceOutcome.updateMany({ where: { id, acknowledgedAt: null }, data: { acknowledgedAt: now, acknowledgedById: v.membershipId } });
+      const n = await tx.practiceOutcome.updateMany({ where: { id, centerId, childId: o.childId, service: o.service, acknowledgedAt: null }, data: { acknowledgedAt: now, acknowledgedById: v.membershipId } });
       if (n.count === 1) await logCenterEvent(tx, centerId, 'clinical.practice_acknowledged', now, { actorUserId: v.userId, meta: { childId: o.childId, outcomeId: id, synthetic: true } });
       const x = await tx.practiceOutcome.findUniqueOrThrow({ where: { id } });
       return { id, acknowledgedAt: x.acknowledgedAt, already: n.count !== 1 };

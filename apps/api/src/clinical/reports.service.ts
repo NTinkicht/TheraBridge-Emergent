@@ -365,7 +365,7 @@ export class ReportsService {
 
   // Lock the draft at the version the author is looking at; every write bumps the version.
   private async bump(tx: Tx, r: ProgressReport, v: Viewer, version: number, now: Date, data: Prisma.ProgressReportUpdateManyMutationInput = {}) {
-    const n = await tx.progressReport.updateMany({ where: { id: r.id, membershipId: v.membershipId, status: { in: EDITABLE }, version }, data: { ...data, updatedAt: now, version: { increment: 1 } } });
+    const n = await tx.progressReport.updateMany({ where: { id: r.id, centerId: r.centerId, childId: r.childId, service: r.service, membershipId: v.membershipId, status: { in: EDITABLE }, version }, data: { ...data, updatedAt: now, version: { increment: 1 } } });
     if (n.count !== 1) throw this.why(r, v);
     return tx.progressReport.findUniqueOrThrow({ where: { id: r.id } });
   }
