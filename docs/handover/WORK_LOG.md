@@ -1,3 +1,10 @@
+## 2026-10-31 — M2-H05 #143 implementation and initial CI repair
+
+- Implemented frozen #122: center-local fold/gap and day-boundary logic in `common/zoned.ts` / `operations/schedule.service.ts`; host-TZ independent, DST/day-length and leap/month-end tests. Audit's `common/time.ts` and old rollover method are obsolete in current architecture.
+- Implemented frozen #123: actual report/governance CAS/status error distinctions, withdrawal-safe current evidence and draft-workspace selection, and denial of newly appended observations on WITHDRAWN versions; historical snapshots retained. Synthetic real-PostgreSQL regression for returned report/stale resubmission/withdrawn evidence/workspace.
+- Implemented frozen #125: strict Gregorian date, IANA timezone, measure-aware numeric and trimmed non-password string validators on current DTOs, with new positive/negative validation tests. No new permission or clinical authorization grant.
+- Initial [run 41232387309](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41232387309) found TS18048 from a possibly undefined current plan in report progress; fixed at `e469b7c`. A follow-up withheld-plan workspace test was added at `42c4e08`. Six exact-final-HEAD CI and fresh independent Codex implementation review remain pending, so PR remains draft. NO-GO clinical/governance protections intact.
+
 ## 2026-10-31 — M2-H04 #142 merged; M2-H05 planning checkpoint opened
 
 - M2-H04 (#120/#119/#126) plus explicitly carried #124/#121 merged to `main` as `b95a0ce6e5504c7660bdc265ea08ba3f9a754e23` (PR #142). All six exact-HEAD CI jobs PASS, Codex reviewed final HEAD `58c0c40` with no major issues; 17 Codex findings FIX_NOW and resolved, no outstanding deferrals.
