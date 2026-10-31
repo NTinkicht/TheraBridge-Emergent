@@ -81,7 +81,7 @@ export function HomePracticeCalendar({ activities, goals, templates, versionNumb
       <button type="button" aria-label="Previous month" disabled={!canGoBack}
         data-testid="home-calendar-previous"
         onClick={() => setMonth(shiftMonth(month, -1) ?? month)}
-        className="grid min-h-[40px] min-w-[40px] place-items-center rounded-control border border-border-light bg-surface-white focus-visible:outline-2 focus-visible:outline-brand-action disabled:opacity-40">
+        className="grid min-h-[44px] min-w-[44px] place-items-center rounded-control border border-border-light bg-surface-white focus-visible:outline-2 focus-visible:outline-brand-action disabled:opacity-40">
         <ChevronLeft size={18} aria-hidden="true" />
       </button>
       <label className="min-w-0 text-center text-[12px] font-semibold">
@@ -94,7 +94,7 @@ export function HomePracticeCalendar({ activities, goals, templates, versionNumb
       <button type="button" aria-label="Next month" disabled={!canGoForward}
         data-testid="home-calendar-next"
         onClick={() => setMonth(shiftMonth(month, 1) ?? month)}
-        className="grid min-h-[40px] min-w-[40px] place-items-center rounded-control border border-border-light bg-surface-white focus-visible:outline-2 focus-visible:outline-brand-action disabled:opacity-40">
+        className="grid min-h-[44px] min-w-[44px] place-items-center rounded-control border border-border-light bg-surface-white focus-visible:outline-2 focus-visible:outline-brand-action disabled:opacity-40">
         <ChevronRight size={18} aria-hidden="true" />
       </button>
     </div>
@@ -114,7 +114,7 @@ export function HomePracticeCalendar({ activities, goals, templates, versionNumb
             aria-label={date + ': ' + count + ' planned home-practice item(s)'}
             aria-pressed={chosen}
             onClick={() => setSelectedDay(date)}
-            className={'min-w-0 rounded-control border py-1 text-center focus-visible:outline-2 focus-visible:outline-brand-action ' +
+            className={'min-h-[44px] min-w-0 rounded-control border py-1 text-center focus-visible:outline-2 focus-visible:outline-brand-action ' +
               (chosen ? 'border-brand-action bg-brand-actionTint' : 'border-transparent hover:bg-surface-subtle')}>
             <span className="block text-[12px] font-semibold sm:text-[13px]">{day}</span>
             <span className={'mx-auto mt-0.5 block min-h-[13px] text-[10px] ' +
