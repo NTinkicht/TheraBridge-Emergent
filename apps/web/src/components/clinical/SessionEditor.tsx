@@ -7,12 +7,12 @@ import { serviceLabel } from '@/components/operations/BookDialog';
 import { clinicalApi, LOCKED_REASON, type SessionActivity, type Workspace } from '@/lib/clinical';
 import { Dictation } from './Dictation';
 import { ApiError } from '@/lib/api';
-import { formatZonedDateTimeInput, zonedDateTimeInputToIso } from '@/lib/operations';
+import { formatZonedDateTimeInput, preservedZonedInstant, zonedDateTimeInputToIso } from '@/lib/operations';
 const input = 'mt-1 w-full rounded-control border border-border-light bg-transparent px-3 py-2 text-[14px]';
 const options = (items: string[]) => items.map(value => ({ value, label: value.replaceAll('_', ' ').toLowerCase() }));
 const localTime = (iso: string | null, tz: string, seconds = false) => formatZonedDateTimeInput(iso, tz, seconds);
 export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string; n: Workspace['notes'][number]; ws: Workspace; onPending: (id: string, pending: boolean) => void }) {
-  const [sections, setSections] = useState(n.sections), [activities, setActivities] = useState(n.activities), [start, setStart] = useState(localTime(n.actualStart, ws.timezone)), [end, setEnd] = useState(localTime(n.actualEnd, ws.timezone, true)), [attendance, setAttendance] = useState(n.attendance);
+  const [sections, setSections] = useState(n.sections), [activities, setActivities] = useState(n.activities), [start, setStart] = useState(localTime(n.actualStart, ws.timezone)), [end, setEnd] = useState(localTime(n.actualEnd, ws.timezone, true)), [endOriginal, setEndOriginal] = useState(n.actualEnd), [attendance, setAttendance] = useState(n.attendance);
   const [unresolved, setUnresolved] = useState(false), [saving, setSaving] = useState(false), [startError, setStartError] = useState<string>(), [pinnedStart, setPinnedStart] = useState(n.actualStart), [completed, setCompleted] = useState(n.executionStatus === 'COMPLETED'), [dirty, setDirty] = useState(false), [transcriptPending, setTranscriptPending] = useState(false), [status, setStatus] = useState('Saved on server'), [error, setError] = useState(false), [query, setQuery] = useState('');
   type Note = Workspace['notes'][number];
   const [conflicted, setConflicted] = useState(false), [server, setServer] = useState<Note | null>(null), [reconciling, setReconciling] = useState(false);
@@ -41,7 +41,7 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
       if (current.version !== server.version || current.executionStatus === 'COMPLETED') { await recoverConflict(); return; }
       if (keepServer) {
         setRetainedLocal(previous => [previous, JSON.stringify(localEvidence(), null, 2)].filter(Boolean).join('\n\n--- Retained local version ---\n\n'));
-        setSections(current.sections); setActivities(current.activities); setStart(localTime(current.actualStart, ws.timezone)); setEnd(localTime(current.actualEnd, ws.timezone, true)); setAttendance(current.attendance); setPinnedStart(current.actualStart);
+        setSections(current.sections); setActivities(current.activities); setStart(localTime(current.actualStart, ws.timezone)); setEnd(localTime(current.actualEnd, ws.timezone, true)); setAttendance(current.attendance); setPinnedStart(current.actualStart); setEndOriginal(current.actualEnd);
         version.current = current.version; retry.current = null; setUnresolved(false); setConflicted(false); setReconciling(false); setDirty(false); setStatus('Server version retained. Previous local evidence is available below.');
       } else {
         // GET revalidates access/version; PATCH still enforces authorization and optimistic locking atomically.
@@ -60,7 +60,7 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
     version.current = n.version;
     setSections(n.sections); setActivities(n.activities);
     setStart(localTime(n.actualStart, ws.timezone)); setEnd(localTime(n.actualEnd, ws.timezone, true));
-    setPinnedStart(n.actualStart); setAttendance(n.attendance);
+    setPinnedStart(n.actualStart); setEndOriginal(n.actualEnd); setAttendance(n.attendance);
     setCompleted(n.executionStatus === 'COMPLETED');
   }, [n.id, n.version, ws.timezone]); // Prop identity/version is authoritative; dirty state is a guard, not a reset trigger.
 
@@ -81,9 +81,9 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
     setStartError(undefined);
     busy.current = true; setSaving(true); setStatus('Saving…'); setError(false); const rev = revision.current;
     try {
-      const body = retry.current ?? { version: reconciledVersion ?? version.current, mutationKey: crypto.randomUUID(), sections, activities: activities.map(({ id, templateId, minutes, objective, planVersionId, goalKey, completion, outcome, assistance, observation }) => ({ id, templateId, minutes, objective, planVersionId, goalKey, completion, outcome, assistance, observation })), actualStart: parsedStart, actualEnd: end ? zonedDateTimeInputToIso(end, ws.timezone) : undefined, attendance, executionStatus: finish ? 'COMPLETED' : 'IN_PROGRESS' };
+      const body = retry.current ?? { version: reconciledVersion ?? version.current, mutationKey: crypto.randomUUID(), sections, activities: activities.map(({ id, templateId, minutes, objective, planVersionId, goalKey, completion, outcome, assistance, observation }) => ({ id, templateId, minutes, objective, planVersionId, goalKey, completion, outcome, assistance, observation })), actualStart: parsedStart, actualEnd: preservedZonedInstant(end, endOriginal, ws.timezone), attendance, executionStatus: finish ? 'COMPLETED' : 'IN_PROGRESS' };
       retry.current = body; setUnresolved(true);
-      const result = await clinicalApi.saveSession(centerId, n.id, body); version.current = result.version; retry.current = null; setUnresolved(false); setPinnedStart(body.actualStart); setConflicted(false); setReconciling(false); setServer(null);
+      const result = await clinicalApi.saveSession(centerId, n.id, body); version.current = result.version; retry.current = null; setUnresolved(false); setPinnedStart(body.actualStart); setEndOriginal(body.actualEnd ?? null); setConflicted(false); setReconciling(false); setServer(null);
       if (rev === revision.current) { setDirty(false); setStatus(`Saved on server · ${new Date(result.updatedAt).toLocaleTimeString()}`); } else setStatus('Newer edits are not saved yet');
       if (body.executionStatus === 'COMPLETED') setCompleted(true);
     } catch (e) {
