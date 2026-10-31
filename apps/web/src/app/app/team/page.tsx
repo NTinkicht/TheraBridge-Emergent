@@ -173,7 +173,7 @@ function Team({ session, onError }: { session: SessionInfo; onError: (e: unknown
       <div role="tablist" onKeyDown={navigateTabs} aria-label="Team views" className="inline-flex gap-1 rounded-control bg-surface-white p-1 shadow-sm">
         {(['members', 'invitations'] as const).map((t) => (
           <button key={t} role="tab" aria-selected={tab === t} tabIndex={tab === t ? 0 : -1} id={`team-tab-${t}`} aria-controls="team-tabpanel" onClick={() => { setTab(t); setNotice(null); }} data-testid={`team-tab-${t}`}
-            className={`min-h-[40px] rounded-[8px] px-4 text-[14px] font-medium transition-colors ${tab === t ? 'bg-brand-action text-white' : 'text-brand-inkMuted hover:bg-surface-subtle'}`}>{t === 'members' ? 'Members' : 'Invitations'}</button>
+            className={`min-h-[44px] rounded-[8px] px-4 text-[14px] font-medium transition-colors ${tab === t ? 'bg-brand-action text-white' : 'text-brand-inkMuted hover:bg-surface-subtle'}`}>{t === 'members' ? 'Members' : 'Invitations'}</button>
         ))}
       </div>
       <div role="tabpanel" id="team-tabpanel" aria-labelledby={`team-tab-${tab}`}>
