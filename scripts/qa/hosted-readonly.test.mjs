@@ -17,7 +17,7 @@ test('auth diagnostics classify stages without exposing identity or credentials'
  for(const [stage,status,expected] of cases){
   const code=authFailureCode(stage,status);
   assert.equal(code,expected);
-  assert.equal(/[\\s@]/.test(code),false);
+  assert.equal(/[@ ]/.test(code),false);
  }
 });
 test('42 unique IDs N-052..N-093',()=>{
