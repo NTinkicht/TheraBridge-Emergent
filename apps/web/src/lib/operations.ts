@@ -35,7 +35,7 @@ export interface HandoverProposal {
   createdAt: string; childId?: string; fromMembershipId?: string; toMembershipId?: string;
   synthetic: true; accessGranted: false; assignmentChanged: false; clinicalHandover: false; released: false;
 }
-export interface HandoverInbox { enabled: boolean; synthetic: true; items: HandoverProposal[] }
+export interface HandoverInbox { enabled: boolean; synthetic: true; items: HandoverProposal[]; nextCancelledOffset?: number | null }
 export interface HandoverReadiness {
   proposalId: string; childId: string; service: string; status: HandoverStatus; checkedAt: string;
   synthetic: true; readonly: true; readyForTransfer: false; assignmentChanged: false;
@@ -81,7 +81,12 @@ export const opsApi = {
     rest.send<{ id: string; connected: boolean; invited: boolean }>('POST', c(centerId, `children/${id}/guardians`), body),
   inviteGuardian: (centerId: string, id: string, linkId: string) => rest.send('POST', c(centerId, `children/${id}/guardians/${linkId}/invite`)),
   removeGuardian: (centerId: string, id: string, linkId: string, reason: string) => rest.send('POST', c(centerId, `children/${id}/guardians/${linkId}/remove`), { reason }),
-  handovers: (centerId: string) => rest.get<HandoverInbox>(c(centerId, 'governance/handover-proposals')),
+  handovers: (centerId: string, query?: { childId?: string; cancelledOffset?: number }) => {
+    const params = new URLSearchParams();
+    if (query?.childId) params.set('childId', query.childId);
+    if (query?.cancelledOffset !== undefined) params.set('cancelledOffset', String(query.cancelledOffset));
+    return rest.get<HandoverInbox>(c(centerId, `governance/handover-proposals${params.size ? `?${params}` : ''}`));
+  },
   handoverReadiness: (centerId: string, id: string) =>
     rest.get<HandoverReadiness>(c(centerId, `governance/handover-proposals/${id}/readiness`)),
   proposeHandover: (centerId: string, body: { childId: string; fromMembershipId: string;
