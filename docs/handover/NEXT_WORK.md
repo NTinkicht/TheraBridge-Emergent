@@ -1,3 +1,7 @@
+# Latest next work — 2026-10-31 — M2-H06
+
+M2-H05 #143 merged `f30a659`; do not reopen it. Implement frozen **M2-H06 Frontend Reliability and Architecture** (#127, #128, #129, #130), in this order: (1) SessionEditor stable render, timestamp/timezone, center context and CSRF isolation (#127); (2) ReportToPlanHandoff partial failure idempotent recovery and global ApiError/401 handling (#128); (3) authenticated App Router layout/session provider, schedule single fetch, feature-gated messaging (#129); (4) UI error/not-found recovery, production dev-route gating, security headers (#130). Current M2-H06 branch is planning-only; **NOT IMPLEMENTED/NOT TESTED**. After implementation require exact-HEAD six CI successes, Codex review, explicit FIX_NOW/DEFER_ISSUE/DECLINE_WITH_REASON tracking and no unresolved blockers before merge. Next frozen item M2-H07 (#131,#132,#112,#114). TB-EM-052/#115 and TB-EM-053 still need signed owner/clinical approvals; NO-GO.
+
 ## 2026-10-31 — CURRENT: security P1 requalification before M2-H05 merge
 
 1. Codex's withdrawal side-channel P1 at `7a75667` addressed by `bc70c5f` and `e6b9f88`: revoked therapist receives no clinical status feedback. All prior P2 and P3 fixes remain on branch; no deferrals.
