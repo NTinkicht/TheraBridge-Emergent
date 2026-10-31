@@ -105,7 +105,9 @@ export class SeriesService {
       const occ = await tx.appointment.findMany({ where: { seriesId: id, status: 'SCHEDULED', isException: false, occurrenceDate: { gte: asDate(dto.fromDate) }, startsAt: { gt: now } }, orderBy: { startsAt: 'asc' } });
       if (!occ.length) throw new UnprocessableEntityException('There are no upcoming visits in this series from that date.');
       const plan = occ.map((o) => {
-        const startsAt = zonedToUtc(fromDate(o.occurrenceDate!), next.startTime, tz);
+        // A room, clinician or duration edit must never reinterpret an existing
+        // booked DST-fold instant. Resolve the wall clock only when its time changes.
+        const startsAt = next.startTime === s.startTime ? o.startsAt : zonedToUtc(fromDate(o.occurrenceDate!), next.startTime, tz);
         return { o, startsAt, endsAt: new Date(startsAt.getTime() + next.durationMin * 60_000) };
       });
       if (plan.some((p) => p.startsAt < now)) throw new UnprocessableEntityException('Visits cannot be moved into the past.');
