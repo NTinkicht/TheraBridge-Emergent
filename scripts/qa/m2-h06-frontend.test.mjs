@@ -26,6 +26,8 @@ test('M2-H06 #127: actual clinical center time round-trips independently of brow
   const display = ops.formatZonedDateTimeInput(source, 'Asia/Dubai');
   assert.equal(display, '2026-05-10T10:00');
   assert.equal(ops.zonedDateTimeInputToIso(display, 'Asia/Dubai'), source);
+  assert.equal(ops.formatZonedDateTimeInput('2026-05-10T06:00:37.000Z', 'Asia/Dubai', true), '2026-05-10T10:00:37');
+  assert.equal(ops.zonedDateTimeInputToIso('2026-05-10T10:00:37', 'Asia/Dubai'), '2026-05-10T06:00:37.000Z');
   assert.equal(ops.formatZonedDateTimeInput(source, 'Europe/Paris'), '2026-05-10T08:00');
   assert.equal(ops.zonedDateTimeInputToIso('2026-05-10T08:00', 'Europe/Paris'), source);
   ops.setCenterTz('Asia/Dubai');
