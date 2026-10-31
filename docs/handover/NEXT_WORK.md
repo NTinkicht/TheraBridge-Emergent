@@ -1,3 +1,9 @@
+## 2026-10-31 — CURRENT: M2-H05 final review-driven regression gate
+
+1. Source and tests now cover three Codex P2 fixes plus two Mistral P3 compatibility/boundary suggestions (latest: `ff05058`, `9f3b979`, `7871202`). All FIX_NOW; no deferrals.
+2. Wait for 6/6 exact-final-HEAD CI and new Codex code review. Disposition and resolve inline threads before merge under Rule 16. Clinical signing, consent, releases, real data, production NO-GO.
+3. Upon qualified merge, immediately open M2-H06 #127/#128/#129/#130 draft and request opening Codex review.
+
 ## 2026-10-31 — CURRENT next step: M2-H05 third P2 and final HEAD gate
 
 1. Addressed Codex long-title P2 in `a79735c`/`276a7e7`/`ca001a7` (legacy 250-character measured goal round-trips; new 250-character goal rejected). All three Codex P2s FIX_NOW; no deferrals.
