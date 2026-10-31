@@ -143,7 +143,7 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
       <Button size="sm" disabled={!source || !to || busy || hasOpenForSource} onClick={() => void submit()}
         data-testid="handover-propose">Propose operational handover</Button>
       <ul className="space-y-2" data-testid="handover-manager-history">
-        {own.map(r => <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-border-light p-3">
+        {own.map(r => <li key={r.id} data-testid={`handover-row-${r.id}`} data-status={r.status} className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-border-light p-3">
           <span className="text-[13px]">{serviceLabel(r.service)} · {HANDOVER_LABELS[r.status]}
             <span className="block text-brand-inkMuted">No clinical information or assignment changed</span>
           </span>
