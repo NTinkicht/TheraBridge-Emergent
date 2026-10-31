@@ -153,6 +153,28 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.plan_draft_saved' } })).toBe(0);
   });
 
+  it('M2-H05 Mistral P3: unchanged unmeasured legacy title retains exact bytes', async () => {
+    const { therapist, kid } = await setup();
+    const versionId = (await post(h, c(`clinical/children/${kid}/plans`), therapist, {
+      service: 'speech', title: 'Historical unmeasured goal formatting',
+    }).expect(201)).body.versionId as string;
+    const goal = { key: 'legacy-unmeasured', title: 'Valid initial goal', measure: 'count', baseline: 0, target: 2 };
+    const planPath = c(`clinical/plan-versions/${versionId}`);
+    await patch(therapist, planPath, {
+      summary: 'Original draft', goals: [goal], homeActivities: [], version: 1,
+    }).expect(200);
+    const historicTitle = ' ' + 'Z'.repeat(248) + ' ';
+    await h.prisma.planVersion.update({ where: { id: versionId }, data: {
+      goals: [{ ...goal, title: historicTitle }],
+    } });
+    await patch(therapist, planPath, {
+      summary: 'A summary-only change', goals: [{ ...goal, title: historicTitle.trim() }],
+      homeActivities: [], version: 2,
+    }).expect(200);
+    const saved = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: versionId } });
+    expect((saved.goals as Array<{ title: string }>)[0].title).toBe(historicTitle);
+  });
+
   it('M2-H05 Codex P2: measured 250-character legacy title can round-trip; new long titles fail', async () => {
     const { therapist, kid } = await setup();
     const versionId = (await post(h, c(`clinical/children/${kid}/plans`), therapist, {
