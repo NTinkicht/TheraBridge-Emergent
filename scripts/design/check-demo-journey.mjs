@@ -475,7 +475,12 @@ try {
     await page.getByTestId('clinical-tab-plan').click();
     await page.getByTestId('plans-load-more').click();
     const olderPanel = page.getByTestId('plan-' + originalPlan.id);
+    // Wait for the older page to be re-fetched AFTER the shared workspace
+    // reload, not merely for a preview rendered before the reload completed.
+    const refreshedOlderPage = page.waitForResponse(response => response.request().method() === 'GET' &&
+      response.url().includes('/clinical/children/') && new URL(response.url()).searchParams.get('planOffset') === '1');
     await olderPanel.getByTestId('plan-family-preview').click();
+    await refreshedOlderPage;
     await olderPanel.getByTestId('family-preview').waitFor();
     assert(await olderPanel.getByTestId('family-preview').isVisible(),
       'An older plan preview must remain mounted after its same-child workspace refresh');
