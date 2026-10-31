@@ -1,3 +1,11 @@
+## 2026-10-31 — M2-H02 / GH-01 specialty isolation implementation queue
+
+1. Implement GH-01 (#117) in this draft PR: audit current code/fixtures first, then enforce child + required specialty authorization for therapist clinical/report/governance/practice reads and mutations, including cross-caseload denials and linked goal/session specialty consistency.
+2. Add real PostgreSQL/HTTP regression matrix covering allowed same-specialty actions, denied wrong-specialty, unassigned, inactive/revoked and cross-center/child access (non-confirming 404), plus mismatch 400. Preserve existing admin/coordinator authorization only where policy truly permits it.
+3. Maintain strict synthetic-only and clinical NO-GO boundaries; no release, consent, real records or production rollout.
+4. Verify all six exact-final-HEAD CI jobs, independent review, and every P0–P3 finding's FIX_NOW / DEFER_ISSUE / DECLINE_WITH_REASON ledger. The new autonomous merge policy is **proposed**; apply only after it is effective on main and fully qualified.
+5. Keep GH-18 historical Prisma migration chronology OPEN, using no unsafe in-place rename.
+
 ## 2026-10-31 — PR #137 final P3 qualification
 
 1. Verify six required CI jobs on the FINAL documentation/code HEAD: `test`, `secret-scan`, `live-session`, `preview-container`, `demo-journey`, `compose`. The `test` job must pass the new real-PostgreSQL COMMIT-acknowledgement, missing-identity, and interrupted-seed fixtures.

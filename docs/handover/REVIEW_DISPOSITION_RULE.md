@@ -22,7 +22,22 @@ Do not label tenant isolation, authorization, data loss, security or clinical-go
 4. Create a GitHub issue for each deferred improvement (or a well-defined issue covering related suggestions). Record why it is safe to defer and what would change its priority.
 5. Run required exact-HEAD CI jobs: `test`, `secret-scan`, `live-session`, `preview-container`, `demo-journey`, `compose`. Update QA records; never infer new-HEAD success from a previous SHA.
 6. Credit-conscious Codex: one request only after stable green CI where possible. Check pending/completed exact-SHA/base requests; no per-push review spam. If the owner orders a follow-on change while Codex is running, code the change, mark old review SHA outdated, and only re-request on the final stable SHA if still needed.
-7. Verify no blocking P0–P2 comments, unresolved critical threads, mandatory missing approval, or red/incomplete CI before owner-authorized merge. Clinical deployment still requires signed governance decisions independently of CI.
+7. Verify no blocking P0–P2 comments, unresolved critical threads, mandatory signed clinical approval, or red/incomplete exact-HEAD CI before merger. For ordinary synthetic-only development PRs, use the standing owner authorization in AGENTS.md Rule 16 once it is effective. Clinical deployment still requires signed governance decisions independently of CI.
+
+## Autonomous merge eligibility (standing owner decision 2026-10-31)
+
+This rule becomes effective **only when the PR containing AGENTS.md Rule 16 is merged to `main`**. Until then, use the prior per-PR owner approval requirement.
+
+For each future ordinary synthetic-only PR, the primary writer must record these facts **before** merging:
+
+- Exact **final** HEAD SHA/base, PR open/ready/mergeable, no conflict or branch-protection bypass, all **six required** CI job names and conclusions on that HEAD.
+- One completed independent final-HEAD review; no unresolved blocking findings or stale review.
+- Full inventory of **all** top-level and inline comments from all reviewers on all revisions, including P3/edge-case suggestions; for each, an evidence-backed `FIX_NOW`, `DEFER_ISSUE`, or `DECLINE_WITH_REASON`.
+- Every applicable P0/P1/P2 fixed and regression-tested, or disproven with independent verification. Low-risk scope-aligned P3s fixed where practicable.
+- Every deferred **non-blocking** finding linked to a dedicated or well-scoped GitHub issue that lists its severity/priority, rationale, acceptance criteria, assigned responsible owner or explicit next action, safety boundaries, and why it may safely wait.
+- No change that implicitly activates clinical signing, consent, release, real health data, safeguarding, real AI/STT, production deployment, or changes published migration identities without explicit owner-gated authorization.
+
+If any item fails, **do not merge**: fix, defer with evidence when allowed, or ask the owner about a true policy decision. When all pass, merge without requesting another owner response and publish the exact resulting merge SHA and dispositions. Never use GitHub auto-merge as a substitute for checking review comments.
 
 ## Disposition log for PR #111
 
