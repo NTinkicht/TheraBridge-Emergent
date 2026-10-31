@@ -1,3 +1,12 @@
+## 2026-10-31 — CURRENT ordered next work: M2-H03 PR #141 (#124, #121)
+
+1. **Work on [PR #141](https://github.com/NTinkicht/TheraBridge-Emergent/pull/141), item 4/12 (M2-H03).** Its opening HEAD `bbc85cdb174be6b1f43726e161b54cfd8a82cbb3` only planned the work; **implementation is NOT STARTED**, so do not merge or mark work complete based on its documentation-only CI/reviews.
+2. **#124 HTTP security:** inventory current NestJS/Fastify routes and Prisma errors; implement private no-store responses, safe rate limiting across sessions/instances, GET read-only semantics, known-error sanitization, CORS allowlist and global body limit. Add negative and compatibility regression tests.
+3. **#121 therapist revocation:** inventory current membership, assignments, child referents, recurring series, future appointments and notices. Keep every cascade tenant-pinned and transactional with established lock order; regression-test concurrent membership revocation, last child-referent removal, series reschedule/cancellation and exactly-one-winner behavior.
+4. Re-run real PostgreSQL API tests and six required jobs on the final implementation HEAD; get an independent exact-head Codex review; disposition all P0–P3 findings. Merge only after Rule 16 qualifies, preserving synthetic-only and unsigned clinical NO-GO gates.
+5. **Immediately after #141 qualifies and merges, open next frozen item M2-H04 — Database Integrity, Concurrency and Performance (#120, #119, #126)** under Rule 17. Do not reorder or silently skip issues.
+6. Historical instructions below that describe M2-S01 or #139 as still open were correct only when written and are **superseded** by this checkpoint.
+
 ## 2026-10-31 — Frozen Milestone 2 next actions after M2-H02 merge
 
 1. **M2-S01 (#35) family messaging:** finish server deny-by-default on every free-text route and deployed permission disclosure; test synthetic fixture-only behavior, all-denied deployment modes, historical read denial after revoked guardian link and independent household privacy. Run six exact-head jobs and obtain independent Codex review before merge.

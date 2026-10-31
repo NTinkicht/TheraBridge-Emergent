@@ -1,3 +1,17 @@
+## 2026-10-31 — Current M2-H03 #141: planning-only review, NOT functional qualification
+
+| Check | Result | Evidence / remaining limitation |
+| --- | --- | --- |
+| Predecessor M2-S01 #140 | PASS / MERGED | Main `803ad48343f4881045622853c04c7eafefea6380`; 580/580 tests, six green CI jobs, completed no-blocking reviews |
+| M2-H03 opening HEAD `bbc85cdb` | PLANNING-ONLY | Only work-unit plan and AGENTS Rule 17; no HTTP or therapist-revocation runtime changes |
+| Opening-head GitHub CI | PASS FOR DOCS DIFF ONLY | `41193760260` (six jobs green); this does not establish #124/#121 functionality |
+| M2-H03 HTTP and revocation implementation | **NOT STARTED / NOT TESTED** | #124/#121 still require code changes and real-PostgreSQL regression tests |
+| Codex/Gemini/Grok/Mistral reviews | PLANNING HEAD ONLY | Codex P2 stale handover records fixed in subsequent commit; other reviewers' current-issue acceptance guidance captured in the plan |
+| Current post-review-fix HEAD CI | NOT YET VERIFIED | Re-run and record exact final HEAD; current documentation changes do not substitute for feature tests |
+| Clinical signatures, safeguarding, consent, releases, real-data deployment | NO-GO | Owner governance gates remain unsigned; no production changes |
+
+Older test notes below are historical snapshots and may contain superseded M2-S01 next-action status.
+
 ## 2026-10-31 — M2-S01 first CI diagnostic and UI notice repair
 
 - Initial head `4b4bc1c` passed API typecheck, API tests and API build, but both demo-browser journeys failed while waiting for `messages-demo-disabled`: deployed permission withholding also hid the informational locked-message page.

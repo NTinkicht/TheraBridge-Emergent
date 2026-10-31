@@ -1,3 +1,11 @@
+## 2026-10-31 — CURRENT: M2-H03 (#124, #121) planning checkpoint; M2-S01 merged
+
+- **Latest predecessor:** M2-S01 [PR #140](https://github.com/NTinkicht/TheraBridge-Emergent/pull/140) merged to `main` at `803ad48343f4881045622853c04c7eafefea6380` after 580/580 API tests, six green required CI jobs and no-blocking independent reviews. Its fail-closed family messaging remains synthetic-only; safeguarding approval is still NO-GO.
+- **Current frozen-roadmap item 4/12:** M2-H03 [PR #141](https://github.com/NTinkicht/TheraBridge-Emergent/pull/141) is the HTTP Security and Therapist Revocation work unit for [#124](https://github.com/NTinkicht/TheraBridge-Emergent/issues/124) and [#121](https://github.com/NTinkicht/TheraBridge-Emergent/issues/121). The opening HEAD `bbc85cdb174be6b1f43726e161b54cfd8a82cbb3` contained only a work-unit plan and AGENTS Rule 17.
+- **Implementation: NOT STARTED. Functional regression tests: NOT RUN. Clinical/deployment activation: NO-GO.** Six passing jobs at the *opening documentation-only* commit are not evidence of HTTP or revocation corrections. Codex flagged this stale handover state at that HEAD (P2), which this checkpoint fixes.
+- Work proceeds on #141 under the scoped M2-H03 plan. After implementation, require real-PostgreSQL regressions, all six exact-final-HEAD CI jobs, independent final-code review and explicit finding dispositions. Do not merge a planning-only checkpoint. **Next after a qualifying #141 merge: M2-H04 (#120, #119, #126)**.
+- Entries below record historical states at their original dates; instructions naming M2-S01 as still open/next have been superseded by this latest checkpoint.
+
 ## 2026-10-31 — M2-S01 (#35) safeguarding D-NEW-5 fail-closed implementation (DRAFT)
 
 - The preceding [M2-H02 PR #139](https://github.com/NTinkicht/TheraBridge-Emergent/pull/139) merged to main at `dafe526b2565cf31aa749af71db0eed7f67bfe13` after **574/574 API tests, 6/6 CI jobs and exact-HEAD Codex no findings**. This supersedes the older "#139 open" checkpoint below.
