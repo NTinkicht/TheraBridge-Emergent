@@ -330,6 +330,11 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     const weekday = ((new Date(`${d}T12:00:00Z`).getUTCDay() + 6) % 7) + 1;
     const seriesId = (await post(h, c('series'), admin, { childId: kid, membershipId: memberId, service: 'speech', startDate: d, startTime: '10:00', durationMinutes: 60, weekdays: [weekday], intervalWeeks: 1, count: 3 }).expect(201)).body.id as string;
     expect(await h.prisma.appointment.count({ where: { seriesId, status: 'SCHEDULED' } })).toBe(3);
+    const original = await h.prisma.appointment.findMany({ where: { seriesId }, orderBy: { startsAt: 'asc' } });
+    await patch(admin, c(`series/${seriesId}`), { fromDate: d, startTime: '11:00', version: 1 }).expect(200);
+    const shifted = await h.prisma.appointment.findMany({ where: { seriesId }, orderBy: { startsAt: 'asc' } });
+    expect(shifted.map((a) => a.startsAt.getTime() - original.find((o) => o.id === a.id)!.startsAt.getTime())).toEqual([3_600_000, 3_600_000, 3_600_000]);
+    expect(shifted.map((a) => a.version)).toEqual([2, 2, 2]);
     await post(h, c(`staff/${memberId}/suspend`), admin, { reason: 'Safety access suspension' }).expect(200);
     expect(await h.prisma.careAssignment.count({ where: { centerId, childId: kid, membershipId: memberId, endedAt: null } })).toBe(0);
     expect((await h.prisma.appointmentSeries.findUniqueOrThrow({ where: { id: seriesId } })).status).toBe('ENDED');
@@ -356,12 +361,31 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     await post(h, c(`children/${kid}/assignments`), admin, { membershipId: therapist.body.activeContext.membershipId, service: 'speech' }).expect(201);
     await post(h, c(`children/${kid}/guardians`), admin, { displayName: 'Reminder Recipient', email: 'sweep-parent@ops.test', relationship: 'parent', invite: true }).expect(201);
     await accept('sweep-parent@ops.test', 'Reminder Recipient');
+    const reminderStart = new Date(h.clock.now().getTime() + 12 * 3_600_000);
     const appointmentId = (await post(h, c('appointments'), admin, { childId: kid,
-      membershipId: therapist.body.activeContext.membershipId, service: 'speech', startsAt: at(1, 9), endsAt: at(1, 10) }).expect(201)).body.id as string;
+      membershipId: therapist.body.activeContext.membershipId, service: 'speech', startsAt: reminderStart.toISOString(), endsAt: new Date(reminderStart.getTime() + 3_600_000).toISOString() }).expect(201)).body.id as string;
     const notices = h.app.get(NoticesService);
     expect((await notices.runDue(h.clock.now())).sent).toBe(1);
     expect((await notices.runDue(h.clock.now())).sent).toBe(0);
     expect(await h.prisma.appointmentNotice.count({ where: { appointmentId, kind: 'reminder_24h' } })).toBe(1);
     expect(h.app.get(DevMailboxService).list().filter((m) => m.to === 'sweep-parent@ops.test' && m.subject.includes('Reminder:')).length).toBe(1);
+  });
+
+  it('M2-H04: removing one therapist specialty preserves unrelated assignments and referent', async () => {
+    const therapist = await staff('specialty-therapist@ops.test', ['THERAPIST']);
+    const memberId = therapist.body.activeContext.membershipId as string;
+    await patch(admin, c(`staff/${memberId}`), { specialties: ['speech', 'physical'] }).expect(200);
+    const kid = (await post(h, c('children'), admin, child({ services: ['speech', 'physical'] })).expect(201)).body.id as string;
+    await post(h, c(`children/${kid}/assignments`), admin, { membershipId: memberId, service: 'speech' }).expect(201);
+    await post(h, c(`children/${kid}/assignments`), admin, { membershipId: memberId, service: 'physical' }).expect(201);
+    const before = (await get(admin, c(`children/${kid}`)).expect(200)).body;
+    await patch(admin, c(`children/${kid}/referent`), { membershipId: memberId, version: before.version, reason: 'Assigned coordinator' }).expect(200);
+    const speechId = (await post(h, c('appointments'), admin, { childId: kid, membershipId: memberId, service: 'speech', startsAt: at(1, 9), endsAt: at(1, 10) }).expect(201)).body.id;
+    const physicalId = (await post(h, c('appointments'), admin, { childId: kid, membershipId: memberId, service: 'physical', startsAt: at(1, 10), endsAt: at(1, 11) }).expect(201)).body.id;
+    await patch(admin, c(`staff/${memberId}`), { specialties: ['speech'] }).expect(200);
+    expect((await h.prisma.appointment.findUniqueOrThrow({ where: { id: speechId } })).status).toBe('SCHEDULED');
+    expect((await h.prisma.appointment.findUniqueOrThrow({ where: { id: physicalId } })).status).toBe('CANCELLED');
+    expect(await h.prisma.careAssignment.count({ where: { centerId, childId: kid, membershipId: memberId, endedAt: null } })).toBe(1);
+    expect((await h.prisma.child.findUniqueOrThrow({ where: { id: kid } })).referentMembershipId).toBe(memberId);
   });
 });

@@ -415,4 +415,3 @@ Blocked until owner's Emergent plan is returned and accepted. No code implemente
 3. Audit coverage of legacy #124/#121/#120/#119/#126 against actual split models. Flag any missing actor FK, direct user-disable lifecycle, per-row series update, pagination/clinical evidence retention or residual P3 as actionable before merge; do not silently defer it.
 4. Mark ready, request a new final-implementation `@codex review`, disposition every comment and link any owner-approved deferrals, then Rule16-qualify and auto-merge. Open M2-H05 (#122, #123, #125) immediately after a qualified merge.
 5. Clinical consent, signing, family release, real data and deployment remain NO-GO.
-

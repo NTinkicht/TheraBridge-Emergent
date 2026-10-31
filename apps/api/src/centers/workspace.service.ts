@@ -148,6 +148,10 @@ export class WorkspaceService {
         }
       }
       if (removed.length) await tx.roleAssignment.deleteMany({ where: { membershipId: id, role: { in: removed } } });
+      if (removed.includes('THERAPIST')) {
+        await tx.session.updateMany({ where: { activeMembershipId: id, activeRole: 'THERAPIST', revokedAt: null },
+          data: { revokedAt: now, revokedReason: 'therapist_role_removed' } });
+      }
       if (added.length) await tx.roleAssignment.createMany({ data: added.map((role) => ({ membershipId: id, role })) });
       const profile = profileData(dto);
       await tx.membership.update({ where: { id }, data: profile });

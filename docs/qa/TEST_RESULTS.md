@@ -455,4 +455,3 @@ See [implementation evidence](../emergent/workunits/TB-EM-015.md) for exact comm
 | DB integrity and reminder sweep regressions | New real DB fixtures added, run PENDING |
 | Final-head six required CI jobs + independent Codex | PENDING; PR #142 DRAFT, NO MERGE |
 | Protected clinical/real-data release | NO-GO; unchanged |
-

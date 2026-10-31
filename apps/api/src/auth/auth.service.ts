@@ -137,7 +137,13 @@ export class AuthService {
     // Shared PostgreSQL counter: all sessions and API instances for this account
     // consume one budget before the expensive Argon2 current-password check.
     const rateKey = `password-change:${hmac(this.cfg.secret, auth.session.userId)}`;
-    if ((await this.limits.hit(rateKey, WINDOW_MS, this.clock.now())) > PASSWORD_CHANGE_LIMIT) {
+    const ipRateKey = `password-change-ip:${hmac(this.cfg.secret, meta.ip)}`;
+    const now = this.clock.now();
+    const [accountAttempts, ipAttempts] = await Promise.all([
+      this.limits.hit(rateKey, WINDOW_MS, now),
+      this.limits.hit(ipRateKey, WINDOW_MS, now),
+    ]);
+    if (accountAttempts > PASSWORD_CHANGE_LIMIT || ipAttempts > IP_LIMIT) {
       await this.audit.record('auth.password.change_rate_limited', { actorUserId: auth.session.userId, ip: meta.ip });
       throw new HttpException('Too many password-change attempts. Please try again later.', HttpStatus.TOO_MANY_REQUESTS);
     }

@@ -7,7 +7,7 @@ describe('GH-08 Prisma exception response privacy', () => {
 
   it.each([
     ['P2002', 409],
-    ['P2003', 409],
+    ['P2003', 400],
     ['P2014', 409],
     ['P2025', 404],
     ['P2028', 500],

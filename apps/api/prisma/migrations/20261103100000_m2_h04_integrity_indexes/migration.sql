@@ -28,6 +28,18 @@ ALTER TABLE consent_record_draft ADD CONSTRAINT consent_record_draft_center_fk F
 ALTER TABLE consent_record_draft ADD CONSTRAINT consent_record_draft_child_fk FOREIGN KEY (child_id) REFERENCES child(id) ON DELETE RESTRICT NOT VALID;
 ALTER TABLE caseload_transfer_draft ADD CONSTRAINT caseload_transfer_draft_center_fk FOREIGN KEY (center_id) REFERENCES center(id) ON DELETE RESTRICT NOT VALID;
 ALTER TABLE caseload_transfer_draft ADD CONSTRAINT caseload_transfer_draft_child_fk FOREIGN KEY (child_id) REFERENCES child(id) ON DELETE RESTRICT NOT VALID;
+ALTER TABLE assessment ADD CONSTRAINT assessment_membership_fk FOREIGN KEY (membership_id) REFERENCES membership(id) ON DELETE RESTRICT NOT VALID;
+ALTER TABLE therapy_plan ADD CONSTRAINT therapy_plan_creator_fk FOREIGN KEY (created_by_id) REFERENCES app_user(id) ON DELETE RESTRICT NOT VALID;
+ALTER TABLE plan_version ADD CONSTRAINT plan_version_author_fk FOREIGN KEY (author_id) REFERENCES app_user(id) ON DELETE RESTRICT NOT VALID;
+ALTER TABLE session_note ADD CONSTRAINT session_note_membership_fk FOREIGN KEY (membership_id) REFERENCES membership(id) ON DELETE RESTRICT NOT VALID;
+ALTER TABLE observation ADD CONSTRAINT observation_membership_fk FOREIGN KEY (membership_id) REFERENCES membership(id) ON DELETE RESTRICT NOT VALID;
+ALTER TABLE progress_report ADD CONSTRAINT progress_report_membership_fk FOREIGN KEY (membership_id) REFERENCES membership(id) ON DELETE RESTRICT NOT VALID;
+ALTER TABLE governance_snapshot ADD CONSTRAINT governance_snapshot_author_fk FOREIGN KEY (author_id) REFERENCES app_user(id) ON DELETE RESTRICT NOT VALID;
+ALTER TABLE governance_snapshot ADD CONSTRAINT governance_snapshot_generator_fk FOREIGN KEY (generated_by_id) REFERENCES app_user(id) ON DELETE RESTRICT NOT VALID;
+ALTER TABLE consent_record_draft ADD CONSTRAINT consent_record_draft_creator_fk FOREIGN KEY (created_by_id) REFERENCES app_user(id) ON DELETE RESTRICT NOT VALID;
+ALTER TABLE caseload_transfer_draft ADD CONSTRAINT caseload_transfer_draft_creator_fk FOREIGN KEY (created_by_id) REFERENCES app_user(id) ON DELETE RESTRICT NOT VALID;
+ALTER TABLE caseload_transfer_draft ADD CONSTRAINT caseload_transfer_draft_from_fk FOREIGN KEY (from_membership_id) REFERENCES membership(id) ON DELETE RESTRICT NOT VALID;
+ALTER TABLE caseload_transfer_draft ADD CONSTRAINT caseload_transfer_draft_to_fk FOREIGN KEY (to_membership_id) REFERENCES membership(id) ON DELETE RESTRICT NOT VALID;
 
 ALTER TABLE assessment VALIDATE CONSTRAINT assessment_center_fk;
 ALTER TABLE assessment VALIDATE CONSTRAINT assessment_child_fk;
@@ -46,6 +58,18 @@ ALTER TABLE consent_record_draft VALIDATE CONSTRAINT consent_record_draft_center
 ALTER TABLE consent_record_draft VALIDATE CONSTRAINT consent_record_draft_child_fk;
 ALTER TABLE caseload_transfer_draft VALIDATE CONSTRAINT caseload_transfer_draft_center_fk;
 ALTER TABLE caseload_transfer_draft VALIDATE CONSTRAINT caseload_transfer_draft_child_fk;
+ALTER TABLE assessment VALIDATE CONSTRAINT assessment_membership_fk;
+ALTER TABLE therapy_plan VALIDATE CONSTRAINT therapy_plan_creator_fk;
+ALTER TABLE plan_version VALIDATE CONSTRAINT plan_version_author_fk;
+ALTER TABLE session_note VALIDATE CONSTRAINT session_note_membership_fk;
+ALTER TABLE observation VALIDATE CONSTRAINT observation_membership_fk;
+ALTER TABLE progress_report VALIDATE CONSTRAINT progress_report_membership_fk;
+ALTER TABLE governance_snapshot VALIDATE CONSTRAINT governance_snapshot_author_fk;
+ALTER TABLE governance_snapshot VALIDATE CONSTRAINT governance_snapshot_generator_fk;
+ALTER TABLE consent_record_draft VALIDATE CONSTRAINT consent_record_draft_creator_fk;
+ALTER TABLE caseload_transfer_draft VALIDATE CONSTRAINT caseload_transfer_draft_creator_fk;
+ALTER TABLE caseload_transfer_draft VALIDATE CONSTRAINT caseload_transfer_draft_from_fk;
+ALTER TABLE caseload_transfer_draft VALIDATE CONSTRAINT caseload_transfer_draft_to_fk;
 
 ALTER TABLE caseload_transfer_draft ADD COLUMN version INTEGER NOT NULL DEFAULT 1;
 

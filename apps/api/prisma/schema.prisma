@@ -88,6 +88,12 @@ model User {
   tokens          VerificationToken[]
   memberships     Membership[]
   platformRoles   PlatformRoleAssignment[] @relation("PlatformRoleHolder")
+  authoredPlanVersions PlanVersion[]
+  createdTherapyPlans TherapyPlan[]
+  snapshotAuthors GovernanceSnapshot[] @relation("SnapshotAuthor")
+  snapshotGenerators GovernanceSnapshot[] @relation("SnapshotGenerator")
+  createdConsentDrafts ConsentRecordDraft[]
+  createdTransferDrafts CaseloadTransferDraft[]
 
   @@map("app_user")
 }
@@ -229,6 +235,12 @@ model Membership {
   roles            RoleAssignment[]
   sessions         Session[]
   answeredHomePlanRequests HomePlanRequest[] @relation("HomePlanRequestResponder")
+  assessments Assessment[]
+  sessionNotes SessionNote[]
+  observations Observation[]
+  progressReports ProgressReport[]
+  transfersFrom CaseloadTransferDraft[] @relation("TransferFrom")
+  transfersTo CaseloadTransferDraft[] @relation("TransferTo")
 
   @@unique([userId, centerId])
   @@map("membership")
@@ -609,6 +621,7 @@ model Assessment {
   updatedAt    DateTime @map("updated_at") @db.Timestamptz(3)
   center       Center   @relation(fields: [centerId], references: [id], onDelete: Restrict, map: "assessment_center_fk")
   child        Child    @relation(fields: [childId], references: [id], onDelete: Restrict, map: "assessment_child_fk")
+  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Restrict, map: "assessment_membership_fk")
 
   @@index([centerId, childId])
   @@map("assessment")
@@ -625,6 +638,7 @@ model TherapyPlan {
   versions  PlanVersion[]
   center    Center        @relation(fields: [centerId], references: [id], onDelete: Restrict, map: "therapy_plan_center_fk")
   child     Child         @relation(fields: [childId], references: [id], onDelete: Restrict, map: "therapy_plan_child_fk")
+  creator   User          @relation(fields: [createdById], references: [id], onDelete: Restrict, map: "therapy_plan_creator_fk")
 
   @@index([centerId, childId])
   @@map("therapy_plan")
@@ -646,6 +660,7 @@ model PlanVersion {
   updatedAt      DateTime    @map("updated_at") @db.Timestamptz(3)
   plan           TherapyPlan @relation(fields: [planId], references: [id], onDelete: Restrict)
   center         Center      @relation(fields: [centerId], references: [id], onDelete: Restrict, map: "plan_version_center_fk")
+  author         User        @relation(fields: [authorId], references: [id], onDelete: Restrict, map: "plan_version_author_fk")
 
   @@unique([planId, number])
   @@map("plan_version")
@@ -674,6 +689,7 @@ model SessionNote {
   updatedAt     DateTime @map("updated_at") @db.Timestamptz(3)
   center        Center   @relation(fields: [centerId], references: [id], onDelete: Restrict, map: "session_note_center_fk")
   child         Child    @relation(fields: [childId], references: [id], onDelete: Restrict, map: "session_note_child_fk")
+  membership    Membership @relation(fields: [membershipId], references: [id], onDelete: Restrict, map: "session_note_membership_fk")
 
   @@index([centerId, childId])
   @@map("session_note")
@@ -693,6 +709,7 @@ model Observation {
   createdAt     DateTime @map("created_at") @db.Timestamptz(3)
   center        Center   @relation(fields: [centerId], references: [id], onDelete: Restrict, map: "observation_center_fk")
   child         Child    @relation(fields: [childId], references: [id], onDelete: Restrict, map: "observation_child_fk")
+  membership    Membership @relation(fields: [membershipId], references: [id], onDelete: Restrict, map: "observation_membership_fk")
 
   @@index([childId, goalKey, observedOn])
   @@map("observation")
@@ -785,6 +802,7 @@ model ProgressReport {
   suggestionDecisions ReportSuggestionDecision[]
   center       Center          @relation(fields: [centerId], references: [id], onDelete: Restrict, map: "progress_report_center_fk")
   child        Child           @relation(fields: [childId], references: [id], onDelete: Restrict, map: "progress_report_child_fk")
+  membership   Membership     @relation(fields: [membershipId], references: [id], onDelete: Restrict, map: "progress_report_membership_fk")
 
   @@index([centerId, childId])
   @@index([centerId, childId, status], map: "progress_report_center_child_status_idx")
@@ -870,6 +888,8 @@ model GovernanceSnapshot {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   center Center @relation(fields: [centerId], references: [id], onDelete: Restrict, map: "governance_snapshot_center_fk")
   child Child @relation(fields: [childId], references: [id], onDelete: Restrict, map: "governance_snapshot_child_fk")
+  author User @relation("SnapshotAuthor", fields: [authorId], references: [id], onDelete: Restrict, map: "governance_snapshot_author_fk")
+  generator User @relation("SnapshotGenerator", fields: [generatedById], references: [id], onDelete: Restrict, map: "governance_snapshot_generator_fk")
   @@index([centerId, kind, documentId])
   @@map("governance_snapshot")
 }
@@ -921,6 +941,7 @@ model ConsentRecordDraft {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   center Center @relation(fields: [centerId], references: [id], onDelete: Restrict, map: "consent_record_draft_center_fk")
   child Child @relation(fields: [childId], references: [id], onDelete: Restrict, map: "consent_record_draft_child_fk")
+  creator User @relation(fields: [createdById], references: [id], onDelete: Restrict, map: "consent_record_draft_creator_fk")
   @@index([centerId, childId, guardianLinkId])
   @@map("consent_record_draft")
 }
@@ -966,6 +987,9 @@ model CaseloadTransferDraft {
   version Int @default(1)
   center Center @relation(fields: [centerId], references: [id], onDelete: Restrict, map: "caseload_transfer_draft_center_fk")
   child Child @relation(fields: [childId], references: [id], onDelete: Restrict, map: "caseload_transfer_draft_child_fk")
+  creator User @relation(fields: [createdById], references: [id], onDelete: Restrict, map: "caseload_transfer_draft_creator_fk")
+  fromMember Membership @relation("TransferFrom", fields: [fromMembershipId], references: [id], onDelete: Restrict, map: "caseload_transfer_draft_from_fk")
+  toMember Membership @relation("TransferTo", fields: [toMembershipId], references: [id], onDelete: Restrict, map: "caseload_transfer_draft_to_fk")
   @@index([centerId])
   @@index([centerId, status, createdAt], map: "caseload_transfer_draft_center_status_created_idx")
   @@index([centerId, toMembershipId, status, createdAt], map: "caseload_transfer_draft_center_target_status_created_idx")
