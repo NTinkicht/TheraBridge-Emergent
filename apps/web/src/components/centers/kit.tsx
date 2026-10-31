@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Ban, CheckCircle2, Clock3, History, MailCheck, PauseCircle, Repeat, XCircle } from 'lucide-react';
 import { ProductShell } from '@/components/auth/ProductShell';
 import { FormAlert } from '@/components/auth/Field';
@@ -108,10 +108,11 @@ export function ChoiceGroup({ label, options, value, onChange, error, testId, co
 }
 
 export function SelectField({ label, value, onChange, options, testId }: { label: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[]; testId: string }) {
+  const fieldId = useId();
   return (
     <div className="space-y-1.5">
-      <label htmlFor={testId} className="block text-[14px] font-medium">{label}</label>
-      <select id={testId} value={value} onChange={(e) => onChange(e.target.value)} data-testid={testId}
+      <label htmlFor={fieldId} className="block text-[14px] font-medium">{label}</label>
+      <select id={fieldId} value={value} onChange={(e) => onChange(e.target.value)} data-testid={testId}
         className="block min-h-[48px] w-full rounded-control border border-border-strong bg-surface-white px-3 text-[15px] focus:border-brand-action focus:outline-none focus:ring-[3px] focus:ring-brand-action/20">
         {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
@@ -176,10 +177,11 @@ export function HistoryCard({ events, testId }: { events: HistoryEvent[]; testId
 }
 
 export function ReasonField({ value, onChange, testId, label = 'Reason (kept in the history)' }: { value: string; onChange: (v: string) => void; testId: string; label?: string }) {
+  const fieldId = useId();
   return (
     <div className="space-y-1.5">
-      <label htmlFor={testId} className="block text-[14px] font-medium">{label}</label>
-      <textarea id={testId} rows={3} maxLength={500} value={value} onChange={(e) => onChange(e.target.value)} data-testid={testId}
+      <label htmlFor={fieldId} className="block text-[14px] font-medium">{label}</label>
+      <textarea id={fieldId} rows={3} maxLength={500} value={value} onChange={(e) => onChange(e.target.value)} data-testid={testId}
         className="block w-full rounded-control border border-border-strong bg-surface-white px-3.5 py-3 text-[15px] focus:border-brand-action focus:outline-none focus:ring-[3px] focus:ring-brand-action/20" />
     </div>
   );
