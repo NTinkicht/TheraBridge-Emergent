@@ -1,3 +1,9 @@
+## 2026-10-31 — CURRENT: M2-H05 Codex P2 repairs awaiting final-head qualification
+
+1. Two Codex P2 findings reviewed on #143 exact HEAD `7f77d66`: **FIX_NOW** for unchanged-wall-time recurring bookings shifting during DST fold (`02a0485`, regression `57651b9`), and for legacy immutable goal-title formatting breaking summary-only edits (`51c672d`, regression `ca12b89`). Both fixes are pushed.
+2. **Gate still pending at this checkpoint:** six jobs and new Codex review on final updated head, plus reviewer disposition/threads. Merge only after Rule 16. Never activate signing, consent, clinical release or real data.
+3. After qualified merge open draft M2-H06 #127/#128/#129/#130 and request opening `@codex review`.
+
 ## 2026-10-31 — M2-H05 code CI green: remaining exact-final-HEAD review gates
 
 1. Implementation HEAD `55163d5fe7d1d567d8ec66f1499bc9d745c459f0` is **6/6 CI PASS** ([run 41233257189](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41233257189)), **611/611 API tests PASS** across 23 suites. All frozen #122/#123/#125 features are implemented and regression-tested on this code HEAD; no clinical activation.
