@@ -1,3 +1,7 @@
+## 2026-10-31 — M2-H05 review P3 fixes before final qualification
+
+- `ff05058`, `9f3b979`: extend exact immutable legacy title preservation for genuinely unchanged unmeasured goals; real DB/HTTP regression. `7871202`: explicit Europe/Paris fall-back start-time edit picks earlier occurrence; separate room-only booking preservation remains. All three Codex P2s + both small Mistral P3 suggestions FIX_NOW; no deferrals. Requalify latest HEAD before merge.
+
 ## 2026-10-31 — M2-H05 Codex third P2: long legacy goal title compatibility
 
 - `a79735c` + `276a7e7` preserve unchanged measured goal titles in historical 201–300 range while enforcing a new title max of 200 for newly authored/redefined definitions; PostgreSQL/HTTP test `ca001a7`. Corrected test fixture ordering `6ea9fc4` following 612/613 red run. Three Codex P2 findings total: all **FIX_NOW**, none deferred. Requalify on newest HEAD before Rule 16 merge.
