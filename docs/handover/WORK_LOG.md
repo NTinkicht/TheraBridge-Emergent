@@ -1,3 +1,8 @@
+## 2026-10-31 — M2-H05 implementation code CI success and final review preparation
+
+- Code HEAD `55163d5fe7d1d567d8ec66f1499bc9d745c459f0`: [GitHub Actions run 41233257189](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41233257189) all six jobs **PASS** (test, secret-scan, live-session, preview-container, demo-journey, compose), 23/23 real-PostgreSQL suites, **611/611 tests**. New HTTP boundary invalid-zone/percent/date/trim regressions, changed fold/gap contracts, full browser journeys and Docker Compose succeeded. Report-after-withdrawal saved-evidence guard covered. Earlier partial runs were red due TS narrowing and old test assertions; all were fixed before this run.
+- Reconciled planning reviewer suggestions in PR #143 body with evidence and technical reasons. At this document checkpoint final-head CI after doc updates and independent Codex implementation review still required. No clinical release, real records, production or signed-governance operations authorized. After eligible merge open M2-H06 immediately.
+
 ## 2026-10-31 — M2-H05 #143 implementation and initial CI repair
 
 - Implemented frozen #122: center-local fold/gap and day-boundary logic in `common/zoned.ts` / `operations/schedule.service.ts`; host-TZ independent, DST/day-length and leap/month-end tests. Audit's `common/time.ts` and old rollover method are obsolete in current architecture.
