@@ -1,8 +1,7 @@
-import { createHash } from 'node:crypto';
+import { orderedJsonFingerprint as hash } from '../common/fingerprints';
 import type { Evidence } from './reports.service';
 import { suggestionSources, type Section } from './report-source-catalog';
 
-const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const SECTIONS: Section[] = ['assessment', 'goals', 'sessions'];
 export type TraceStatus = 'LINKED_TO_SAVED_TEXT' | 'SECTION_EDITED' | 'SOURCE_MISMATCH' | 'PASSAGE_MISMATCH';
 export type ClaimTrace = { index: number; text: string; sources: { ref: string; label: string }[] };
