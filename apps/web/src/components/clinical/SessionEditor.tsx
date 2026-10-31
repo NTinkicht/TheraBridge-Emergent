@@ -10,9 +10,9 @@ import { ApiError } from '@/lib/api';
 import { formatZonedDateTimeInput, zonedDateTimeInputToIso } from '@/lib/operations';
 const input = 'mt-1 w-full rounded-control border border-border-light bg-transparent px-3 py-2 text-[14px]';
 const options = (items: string[]) => items.map(value => ({ value, label: value.replaceAll('_', ' ').toLowerCase() }));
-const localTime = (iso: string | null, tz: string) => formatZonedDateTimeInput(iso, tz);
+const localTime = (iso: string | null, tz: string, seconds = false) => formatZonedDateTimeInput(iso, tz, seconds);
 export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string; n: Workspace['notes'][number]; ws: Workspace; onPending: (id: string, pending: boolean) => void }) {
-  const [sections, setSections] = useState(n.sections), [activities, setActivities] = useState(n.activities), [start, setStart] = useState(localTime(n.actualStart, ws.timezone)), [end, setEnd] = useState(localTime(n.actualEnd, ws.timezone)), [attendance, setAttendance] = useState(n.attendance);
+  const [sections, setSections] = useState(n.sections), [activities, setActivities] = useState(n.activities), [start, setStart] = useState(localTime(n.actualStart, ws.timezone)), [end, setEnd] = useState(localTime(n.actualEnd, ws.timezone, true)), [attendance, setAttendance] = useState(n.attendance);
   const [unresolved, setUnresolved] = useState(false), [saving, setSaving] = useState(false), [startError, setStartError] = useState<string>(), [pinnedStart, setPinnedStart] = useState(n.actualStart), [completed, setCompleted] = useState(n.executionStatus === 'COMPLETED'), [dirty, setDirty] = useState(false), [transcriptPending, setTranscriptPending] = useState(false), [status, setStatus] = useState('Saved on server'), [error, setError] = useState(false), [query, setQuery] = useState('');
   type Note = Workspace['notes'][number];
   const [conflicted, setConflicted] = useState(false), [server, setServer] = useState<Note | null>(null), [reconciling, setReconciling] = useState(false);
@@ -41,7 +41,7 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
       if (current.version !== server.version || current.executionStatus === 'COMPLETED') { await recoverConflict(); return; }
       if (keepServer) {
         setRetainedLocal(previous => [previous, JSON.stringify(localEvidence(), null, 2)].filter(Boolean).join('\n\n--- Retained local version ---\n\n'));
-        setSections(current.sections); setActivities(current.activities); setStart(localTime(current.actualStart, ws.timezone)); setEnd(localTime(current.actualEnd, ws.timezone)); setAttendance(current.attendance); setPinnedStart(current.actualStart);
+        setSections(current.sections); setActivities(current.activities); setStart(localTime(current.actualStart, ws.timezone)); setEnd(localTime(current.actualEnd, ws.timezone, true)); setAttendance(current.attendance); setPinnedStart(current.actualStart);
         version.current = current.version; retry.current = null; setUnresolved(false); setConflicted(false); setReconciling(false); setDirty(false); setStatus('Server version retained. Previous local evidence is available below.');
       } else {
         // GET revalidates access/version; PATCH still enforces authorization and optimistic locking atomically.
@@ -59,7 +59,7 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
     if (dirty || busy.current || conflicted || unresolved) return;
     version.current = n.version;
     setSections(n.sections); setActivities(n.activities);
-    setStart(localTime(n.actualStart, ws.timezone)); setEnd(localTime(n.actualEnd, ws.timezone));
+    setStart(localTime(n.actualStart, ws.timezone)); setEnd(localTime(n.actualEnd, ws.timezone, true));
     setPinnedStart(n.actualStart); setAttendance(n.attendance);
     setCompleted(n.executionStatus === 'COMPLETED');
   }, [n.id, n.version, ws.timezone]); // Prop identity/version is authoritative; dirty state is a guard, not a reset trigger.
@@ -138,7 +138,7 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
       <p className="text-[14px]">No automatic merge or overwrite. Review notes, activities, observations, timing and attendance. Copy any evidence you need before leaving this page.</p>
       <div className="grid min-w-0 gap-3 md:grid-cols-2">
         <div className="min-w-0"><h5 className="font-semibold">Local evidence</h5><pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words text-[13px]">{conflicted ? JSON.stringify(localEvidence(), null, 2) : retainedLocal}</pre></div>
-        <div className="min-w-0"><h5 className="font-semibold">Server evidence{server ? ` · version ${server.version}` : ''}</h5><pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words text-[13px]">{server ? JSON.stringify({ sections: server.sections, activities: server.activities, actualStart: localTime(server.actualStart, ws.timezone), actualEnd: localTime(server.actualEnd, ws.timezone), attendance: server.attendance, executionStatus: server.executionStatus }, null, 2) : 'Server recovery unavailable. Local evidence is unchanged.'}</pre></div>
+        <div className="min-w-0"><h5 className="font-semibold">Server evidence{server ? ` · version ${server.version}` : ''}</h5><pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words text-[13px]">{server ? JSON.stringify({ sections: server.sections, activities: server.activities, actualStart: localTime(server.actualStart, ws.timezone), actualEnd: localTime(server.actualEnd, ws.timezone, true), attendance: server.attendance, executionStatus: server.executionStatus }, null, 2) : 'Server recovery unavailable. Local evidence is unchanged.'}</pre></div>
       </div>
       {conflicted && <div className="flex flex-wrap gap-2">
         <Button variant="secondary" disabled={saving || (unresolved && !!server)} onClick={() => void (async () => { busy.current = true; setSaving(true); try { await recoverConflict(); } catch (e) { setError(true); setStatus((e as Error).message + ' Recovery failed. Local evidence is retained; retry recovery.'); } finally { busy.current = false; setSaving(false); } })()}>Retry server recovery</Button>
