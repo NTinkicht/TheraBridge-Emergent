@@ -460,3 +460,8 @@ See [implementation evidence](../emergent/workunits/TB-EM-015.md) for exact comm
 
 - GitHub Actions run `41213918173` on exact HEAD `61d806864021ca2606f15597d5e68fff5006effd`: **six of six required jobs PASS** (`test`, `secret-scan`, `live-session`, `preview-container`, `demo-journey`, `compose`); API PostgreSQL Jest **592/592 PASS across 21 suites**. The forward-only migration applied and API/web built.
 - Codex on that head flagged two **P2** issues, neither waived: an oldest-first 200-plan cap making new drafts inaccessible, and synthetic outbox failure stranding reminder reservations. Fixes and focused regressions are being added in the same PR. **No final-head PASS claimed until these fixes run again**. A second Codex review must inspect that amended HEAD.
+
+### M2-H04 `6c8e87b` second review checkpoint (2026-10-31)
+
+- Run `41215010673` on `6c8e87b7414650beaa3b5ae28cd6a202fe963bb8`: all 21 PostgreSQL test suites, **594/594 API tests PASS**; remaining Compose verification was still in progress at this checkpoint.
+- Codex's second implementation review found one further **P2** in `PlanEditor`: a same-child workspace refresh after a family preview unmounted already-loaded older plan pages. Revised UI code preserves and refreshes prior pages, with a read-only synthetic Playwright overlay exercising an older-plan preview through a workspace reload. **Third exact-head CI and Codex review pending; do not merge yet.**

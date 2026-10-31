@@ -195,10 +195,14 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
   const [hasMorePlans, setHasMorePlans] = useState(ws.hasMorePlans);
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [planLoadError, setPlanLoadError] = useState('');
+  // A save or family-preview action refreshes `ws` for this same child. Keep
+  // already loaded older pages mounted so their local preview/editor state is
+  // not lost; only a child/centre switch should reset page navigation.
   useEffect(() => {
     setOlderPlans([]); setOlderObservations([]); setPlanOffset(ws.plans.length);
     setHasMorePlans(ws.hasMorePlans); setPlanLoadError('');
-  }, [ws]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [centerId, ws.child.id]);
   const activeWs = useMemo<Workspace>(() => ({ ...ws,
     plans: [...ws.plans, ...olderPlans.filter(p => !ws.plans.some(x => x.id === p.id))],
     observations: [...ws.observations, ...olderObservations.filter(o => !ws.observations.some(x => x.id === o.id))],
@@ -213,6 +217,28 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
       setPlanOffset(n => n + page.plans.length); setHasMorePlans(page.hasMorePlans);
     } catch { setPlanLoadError('Older plans could not be loaded. Retry to view the full history.'); }
     finally { setLoadingPlans(false); }
+  };
+  // The parent action handler reloads the first page. Refresh any older pages
+  // separately after a successful action, retaining the mounted editors and
+  // their local preview state while their authoritative versions are updated.
+  const runPlanAction: Run = async (fn, ok) => {
+    const success = await run(fn, ok);
+    if (success && planOffset > ws.plans.length) {
+      try {
+        let offset = ws.plans.length;
+        const plans: Workspace['plans'] = [], observations: Workspace['observations'] = [];
+        let more = true;
+        while (offset < planOffset && more) {
+          const page = await clinicalApi.workspace(centerId, ws.child.id, offset);
+          plans.push(...page.plans); observations.push(...page.observations);
+          offset += page.plans.length; more = page.hasMorePlans;
+          if (page.plans.length === 0) break;
+        }
+        setOlderPlans(plans); setOlderObservations(observations);
+        setPlanOffset(offset); setHasMorePlans(more);
+      } catch { setPlanLoadError('Older plans could not be refreshed. Reload this child to retry.'); }
+    }
+    return success;
   };
   const [linkedEvidenceNote, setLinkedEvidenceNote] = useState('');
   const [historicGoal, setHistoricGoal] = useState<{ planId: string; versionId: string; goalKey: string } | null>(null);
@@ -258,7 +284,7 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
             <h2 className="text-[18px] font-semibold">{p.title}</h2>
             <p className="mb-4 text-[13px] text-brand-inkMuted">{serviceLabel(p.service)} · {p.versions.length} version{p.versions.length > 1 ? 's' : ''}</p>
             <VersionEditor centerId={centerId} ws={activeWs} planId={p.id} planTitle={p.title} service={p.service}
-              v={current} source={p.source} run={run} onDirtyChange={onDirtyChange}
+              v={current} source={p.source} run={runPlanAction} onDirtyChange={onDirtyChange}
               otherPlanDirty={Object.entries(dirtyVersions).some(([id, dirty]) => id !== current.id && dirty)} />
             <PlanVersionHistory key={p.id} plan={p} templates={ws.templates} timezone={ws.timezone}
               target={historicGoal?.planId === p.id ? { versionId: historicGoal.versionId, goalKey: historicGoal.goalKey } : undefined} />
@@ -272,7 +298,7 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
         <Card className="grid grid-cols-1 items-end gap-3 p-5 sm:grid-cols-[180px_1fr_auto]" testId="plan-create">
           <SelectField label="Service" value={f.service} onChange={(service) => setF({ ...f, service })} testId="plan-service" options={ws.child.services.map((s) => ({ value: s, label: serviceLabel(s) }))} />
           <Field label="New plan title" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} testId="plan-title" />
-          <Button onClick={() => void (async () => { if (await run(() => clinicalApi.plan(centerId, ws.child.id, f), 'Plan created with a first draft.')) setF({ ...f, title: '' }); })()} data-testid="plan-create-button">Create plan</Button>
+          <Button onClick={() => void (async () => { if (await runPlanAction(() => clinicalApi.plan(centerId, ws.child.id, f), 'Plan created with a first draft.')) setF({ ...f, title: '' }); })()} data-testid="plan-create-button">Create plan</Button>
         </Card>
       )}
     </div>

@@ -447,6 +447,41 @@ try {
     await page.unroute(twoPlanRoute);
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
+    // M2-H04 Codex P2: after loading an older plan, the family-preview action
+    // refreshes the same-child workspace. It must not unmount the older plan
+    // and lose the local preview. Exercise that exact sequence through the UI
+    // using a read-only, scoped workspace response overlay.
+    const pagedPlanRoute = '**/api/centers/*/clinical/children/*';
+    const pagedShadowId = '00000000-0000-4000-8000-000000000097';
+    let originalPlan, originalWorkspace;
+    await page.route(pagedPlanRoute, async route => {
+      if (route.request().method() !== 'GET') return route.continue();
+      const response = await route.fetch();
+      const data = await response.json();
+      if (!originalWorkspace) {
+        originalWorkspace = data;
+        originalPlan = data.plans.find(p => p.versions?.length);
+        assert(originalPlan, 'The synthetic clinic must contain an authorized saved plan');
+      }
+      const offset = Number(new URL(route.request().url()).searchParams.get('planOffset') || '0');
+      if (offset > 0) return route.fulfill({ response, json: { ...originalWorkspace, plans: [originalPlan], hasMorePlans: false } });
+      const shadow = { ...originalPlan, id: pagedShadowId, title: 'Recent plan — pagination fixture',
+        versions: originalPlan.versions.map((v, i) => ({ ...v,
+          id: '00000000-0000-4000-8000-' + String(9700 + i).padStart(12, '0'),
+        })) };
+      return route.fulfill({ response, json: { ...data, plans: [shadow], hasMorePlans: true } });
+    });
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('plans-load-more').click();
+    const olderPanel = page.getByTestId('plan-' + originalPlan.id);
+    await olderPanel.getByTestId('plan-family-preview').click();
+    await olderPanel.getByTestId('family-preview').waitFor();
+    assert(await olderPanel.getByTestId('family-preview').isVisible(),
+      'An older plan preview must remain mounted after its same-child workspace refresh');
+    await page.unroute(pagedPlanRoute);
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
     // Reload clears the checkpoint form's local goal/narrative selection.
     // Re-enter it before asserting that unsaved-plan gating is reversible.
     await page.getByTestId('goal-checkpoint-goal').first().selectOption({ index: 1 });
