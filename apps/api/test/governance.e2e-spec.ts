@@ -44,6 +44,22 @@ describe('TB-EM-011 non-authorizing governance (real PostgreSQL)', () => {
   expect(wrong.body.code).toBe('INVALID_REPORT_STATUS');
  });
 
+ it('M2-H05 Codex P1: revoked assignment cannot learn withdrawn status from observations', async () => {
+  await transition(therapist, 'SUBMIT', 1).expect(201);
+  await transition(therapist, 'WITHDRAW', 2).expect(201);
+  const pathToObservation = path(`clinical/children/${kid}/observations`);
+  const body = { planVersionId: plan, goalKey: 'phrases', value: 40, observedOn: '2026-01-01' };
+  const permitted = await post(h, pathToObservation, therapist, body).expect(409);
+  expect(permitted.body.code).toBe('PLAN_VERSION_WITHDRAWN');
+  await h.prisma.careAssignment.updateMany({
+    where: { centerId: c, childId: kid, membershipId: memberId },
+    data: { endedAt: h.clock.now() },
+  });
+  const withdrawn = await post(h, pathToObservation, therapist, body).expect(404);
+  const unknown = await post(h, pathToObservation, therapist, { ...body, planVersionId: randomUUID() }).expect(404);
+  expect(withdrawn.body).toEqual(unknown.body);
+ });
+
  it('M2-H05 excludes WITHDRAWN versions from current report evidence but retains history', async () => {
   const first = await transition(therapist, 'SUBMIT', 1).expect(201);
   await transition(therapist, 'WITHDRAW', 2).expect(201);
