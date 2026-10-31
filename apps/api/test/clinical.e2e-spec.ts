@@ -49,6 +49,23 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
   }
 
 
+  it('hides a same-center different-child assessment ID just like an unknown ID', async () => {
+    const { therapist, other } = await setup();
+    const childB = (await post(h, c('children'), admin,
+      { firstName: 'Other', lastName: 'Child', dateOfBirth: '2020-01-02', services: ['speech'] }).expect(201)).body.id;
+    await post(h, c(`children/${childB}/assignments`), admin,
+      { membershipId: other.body.activeContext.membershipId, service: 'speech' }).expect(201);
+    const assessment = (await post(h, c(`clinical/children/${childB}/assessments`), other,
+      { service: 'speech', assessedOn: '2026-10-18', summary: 'Restricted speech assessment', areas: [] }).expect(201)).body;
+    const body = { service: 'speech', assessedOn: '2026-10-18',
+      summary: 'Attempted overwrite of another child', areas: [], version: 1 };
+    const wrongChild = await patch(therapist, c(`clinical/assessments/${assessment.id}`), body).expect(404);
+    const unknown = await patch(therapist, c('clinical/assessments/00000000-0000-0000-0000-000000000000'), body).expect(404);
+    expect(wrongChild.body).toEqual(unknown.body);
+    expect((await h.prisma.assessment.findUniqueOrThrow({ where: { id: assessment.id } })).summary).toBe('Restricted speech assessment');
+    expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.assessment_updated' } })).toBe(0);
+  });
+
   it('records non-authorizing therapist goal checkpoints with exact saved observation sources', async () => {
     const { therapist, other, sup, kid, rosa } = await setup();
     const created = (await post(h, c(`clinical/children/${kid}/plans`), therapist, {

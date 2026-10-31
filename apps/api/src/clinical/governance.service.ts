@@ -113,7 +113,9 @@ export class GovernanceService {
     return this.prisma.$transaction(async tx => {
       await assertActor(tx, centerId, v, ['THERAPIST','CLINICAL_SUPERVISOR']);
       const assignments = v.role === 'THERAPIST' ? await this.clinical.therapistAssignments(tx, centerId, v) : null;
-      const scope = assignments ? { OR: assignments.map(a => ({ childId: a.childId, service: a.service })) } : {};
+      const scope = assignments ? { OR: assignments.length
+        ? assignments.map(a => ({ childId: a.childId, service: a.service }))
+        : [{ childId: '00000000-0000-0000-0000-000000000000' }] } : {};
       const plans = await tx.planVersion.findMany({ where: { centerId, plan: { centerId, ...scope } }, include: { plan: true }, orderBy: { updatedAt: 'desc' } });
       const reports = await tx.progressReport.findMany({ where: { centerId, ...scope }, orderBy: { updatedAt: 'desc' } });
       const authors = await tx.user.findMany({ where: { OR: [{ id: { in: plans.map(p => p.authorId) } }, { memberships: { some: { id: { in: reports.map(r => r.membershipId) } } } }] }, select: { id: true, displayName: true, memberships: { where: { centerId }, select: { id: true } } } });

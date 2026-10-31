@@ -549,7 +549,16 @@ describe('TB-EM-010 family home practice and outcomes (real PostgreSQL)', () => 
     const A = c(`clinical/practice-feedback/${first.id}/acknowledge`);
     await post(h, A, sup).expect(403);
     await post(h, A, other).expect(404);
-    expect((await post(h, A, therapist).expect(200)).body.already).toBe(false);
+    // Two independently assigned therapists racing to acknowledge one synthetic
+    // item must record only the winning actor and emit exactly one audit event.
+    await post(h, c(`children/${kid}/assignments`), admin,
+      { membershipId: other.body.activeContext.membershipId, service: 'speech', isLead: false }).expect(201);
+    const ack = await Promise.all([post(h, A, therapist), post(h, A, other)]);
+    expect(ack.map(x => x.status)).toEqual([200, 200]);
+    expect(ack.map(x => x.body.already).sort()).toEqual([false, true]);
+    const winner = await h.prisma.practiceOutcome.findUniqueOrThrow({ where: { id: first.id } });
+    expect([therapist.body.activeContext.membershipId, other.body.activeContext.membershipId]).toContain(winner.acknowledgedById);
+    expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.practice_acknowledged' } })).toBe(1);
     expect((await post(h, A, therapist).expect(200)).body.already).toBe(true);
     expect((await get(therapist, `${F}?status=acknowledged`).expect(200)).body.items).toHaveLength(1);
     expect((await get(therapist, `${F}?status=new`).expect(200)).body.items).toHaveLength(2);
