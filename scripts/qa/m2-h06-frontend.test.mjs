@@ -78,7 +78,7 @@ test('M2-H06 #127/#128: 401 clears stale CSRF and alerts the shared session list
 test('M2-H06 #129: cross-route session provider and disabled messaging fail closed', () => {
   assert.match(read('apps/web/src/app/app/layout.tsx'), /AppSessionProvider/);
   assert.match(read('apps/web/src/components/auth/useSession.ts'), /useSharedSession/);
-  assert.doesNotMatch(read('apps/web/src/app/app/children/[id]/page.tsx'), /listMessages\\s*\\(/);
+  assert.doesNotMatch(read('apps/web/src/app/app/children/[id]/page.tsx'), /listMessages\s*\(/);
   assert.match(read('apps/web/src/app/app/messages/page.tsx'), /never invokes the disabled thread API/);
 });
 
@@ -89,9 +89,9 @@ test('M2-H06 #130: Next.js response headers and existing diagnostics route gates
   assert.equal(h['X-Content-Type-Options'], 'nosniff');
   assert.equal(h['X-Frame-Options'], 'DENY');
   assert.equal(h['Referrer-Policy'], 'strict-origin-when-cross-origin');
-  assert.match(h['Permissions-Policy'], /microphone=\\(\\)/);
+  assert.match(h['Permissions-Policy'], /microphone=\(\)/);
   assert.match(read('apps/web/src/app/dev/feasibility/page.tsx'), /ENABLE_FEASIBILITY_DIAGNOSTICS.*true/);
-  assert.match(read('apps/web/src/app/dev/feasibility/page.tsx'), /notFound\\(\\)/);
+  assert.match(read('apps/web/src/app/dev/feasibility/page.tsx'), /notFound\(\)/);
   for (const name of ['error.tsx', 'global-error.tsx', 'not-found.tsx']) {
     assert.match(read('apps/web/src/app/' + name), /role="alert"/);
   }
