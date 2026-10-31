@@ -1,3 +1,7 @@
+## 2026-10-31 — CURRENT: M2-H05 Codex P1 security leak fixed; review gate pending
+
+- Codex exact `7a75667` found pre-auth withdrawal-status response after clinician assignment revocation. **P1 FIX_NOW** `bc70c5f` now authorizes active child and matching plan specialty before any status/goal diagnostics inside the transaction; `e6b9f88` tests revoked withdrawn/unknown plan requests return identical 404 while authorized withdrawal returns 409. No deferral; all clinical release/real record gates remain NO-GO. Requalify latest HEAD with six CI jobs and new Codex review before merge.
+
 ## 2026-10-31 — CURRENT: M2-H05 review P3 compatibility + DST boundary fixes
 
 - Small Mistral suggestions **FIX_NOW**: `ff05058` + `9f3b979` preserve unmeasured legacy 250-char whitespace title on unchanged save; `7871202` asserts explicit DST-fold time edits intentionally choose earlier instant while room-only edits preserve a prior booking. Three Codex P2s and both P3 suggestions handled, no deferred findings. Final exact-HEAD 6/6 CI + independent Codex review remain pending; no clinical activation or production.
