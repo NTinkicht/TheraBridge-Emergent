@@ -166,6 +166,52 @@ try {
     assert.equal(await page.getByTestId('handover-staff-more').count(), 1,
       'An obsolete exhausted page must not overwrite the new search pagination cursor');
 
+    // The scheduler has a separate therapist picker. Its older page must be
+    // isolated from a newer search by the same request-revision rule.
+    await page.unroute('**' + centerBase + '/therapists?*');
+    const scheduleOldId = 'synthetic-schedule-old-therapist';
+    const scheduleNewId = 'synthetic-schedule-fresh-therapist';
+    const scheduleStaleId = 'synthetic-schedule-stale-page';
+    let scheduleHeldPage;
+    let notifySchedulePage;
+    const schedulePageRequested = new Promise(resolve => { notifySchedulePage = resolve; });
+    await page.route('**' + centerBase + '/therapists?*', async route => {
+      const query = new URL(route.request().url()).searchParams;
+      if (query.get('offset') === '100' && !query.get('search')) {
+        scheduleHeldPage = route;
+        notifySchedulePage();
+        return;
+      }
+      const fresh = query.get('search') === 'fresh';
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+        items: [{ membershipId: fresh ? scheduleNewId : scheduleOldId,
+          displayName: fresh ? 'Fresh Therapist' : 'Original Therapist', specialties: [sourceAssignment.service] }],
+        hasMore: true, nextOffset: 100,
+      }) });
+    });
+    await page.goto(base + '/app/schedule');
+    const scheduleFilter = page.getByTestId('schedule-therapist-filter');
+    await scheduleFilter.locator(`option[value="${scheduleOldId}"]`).waitFor({ state: 'attached' });
+    await page.getByTestId('schedule-therapist-more').click();
+    await schedulePageRequested;
+    await page.getByTestId('schedule-therapist-search').fill('fresh');
+    const scheduleFresh = scheduleFilter.locator(`option[value="${scheduleNewId}"]`);
+    await scheduleFresh.waitFor({ state: 'attached' });
+    const scheduleLateResponse = page.waitForResponse(response =>
+      new URL(response.url()).searchParams.get('offset') === '100' &&
+      response.url().includes(centerBase + '/therapists'));
+    await scheduleHeldPage.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+      items: [{ membershipId: scheduleStaleId, displayName: 'Stale Scheduler Page',
+        specialties: [sourceAssignment.service] }], hasMore: false, nextOffset: null,
+    }) });
+    await scheduleLateResponse;
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    assert.equal(await scheduleFresh.count(), 1, 'Schedule must retain the newest therapist search result');
+    assert.equal(await scheduleFilter.locator(`option[value="${scheduleStaleId}"]`).count(), 0,
+      'Schedule must discard a delayed page from an earlier search');
+    assert.equal(await page.getByTestId('schedule-therapist-more').count(), 1,
+      'Schedule must preserve the fresh search cursor after an obsolete page completes');
+
   });
   await role('speech@childrens-home.therabridge.test', 'THERAPIST', async page => {
     // TB-EM-024: test the actual staff library, not the guardian sample page.

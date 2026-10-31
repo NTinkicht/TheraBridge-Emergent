@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, CalendarPlus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FormAlert } from '@/components/auth/Field';
 import { PageTitle, SelectField, Workspace, useLoad } from '@/components/centers/kit';
@@ -72,6 +72,7 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
   const [therapistSearch, setTherapistSearch] = useState('');
   const [therapistNext, setTherapistNext] = useState<number | null>(null);
   const [therapistLoading, setTherapistLoading] = useState(false);
+  const therapistRequest = useRef(0);
   const [chosenTherapistName, setChosenTherapistName] = useState('');
   const [children, setChildren] = useState<ChildRow[]>([]);
   const [booking, setBooking] = useState<{ date: string; start: string } | null | false>(false);
@@ -93,23 +94,26 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
     void opsApi.children(centerId, {}).then((r) => setChildren(r.items)).catch(() => setChildren([]));
   }, [centerId]);
   useEffect(() => {
-    if (isTherapist) return;
-    let live = true;
+    const revision = ++therapistRequest.current;
+    if (isTherapist) return () => { therapistRequest.current++; };
     setTherapistLoading(true); setTherapists([]); setTherapistNext(null);
     void opsApi.therapists(centerId, { search: therapistSearch.trim(), limit: 100 })
-      .then(page => { if (live) { setTherapists(page.items); setTherapistNext(page.nextOffset); } })
-      .catch(() => { if (live) setTherapists([]); })
-      .finally(() => { if (live) setTherapistLoading(false); });
-    return () => { live = false; };
+      .then(page => { if (revision === therapistRequest.current) { setTherapists(page.items); setTherapistNext(page.nextOffset); } })
+      .catch(() => { if (revision === therapistRequest.current) setTherapists([]); })
+      .finally(() => { if (revision === therapistRequest.current) setTherapistLoading(false); });
+    return () => { therapistRequest.current++; };
   }, [centerId, isTherapist, therapistSearch]);
   const loadMoreTherapists = async () => {
     if (therapistLoading || therapistNext === null) return;
+    const revision = therapistRequest.current;
     setTherapistLoading(true);
     try {
       const page = await opsApi.therapists(centerId, { search: therapistSearch.trim(), offset: therapistNext, limit: 100 });
-      setTherapists(prev => [...prev, ...page.items]); setTherapistNext(page.nextOffset);
+      if (revision === therapistRequest.current) {
+        setTherapists(prev => [...prev, ...page.items]); setTherapistNext(page.nextOffset);
+      }
     } catch { /* The existing directory remains available; retry via Load more. */ }
-    finally { setTherapistLoading(false); }
+    finally { if (revision === therapistRequest.current) setTherapistLoading(false); }
   };
 
   const shown = data ? data.items.filter((a) => days.includes(dayKey(a.startsAt))) : [];
@@ -140,7 +144,7 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
           {!isTherapist && <div className="space-y-2">
             <label className="block text-[12px] font-medium">Find therapist
               <input type="search" className="mt-1 w-full rounded-control border border-border-light px-3 py-2 text-[14px]" value={therapistSearch}
-                onChange={e => setTherapistSearch(e.target.value)} data-testid="schedule-therapist-search" placeholder="Search name" />
+                onChange={e => { therapistRequest.current++; setTherapistSearch(e.target.value); }} data-testid="schedule-therapist-search" placeholder="Search name" />
             </label>
             <SelectField label="Therapist" value={therapist} onChange={value => { setTherapist(value); setChosenTherapistName(therapists.find(t => t.membershipId === value)?.displayName ?? 'Selected therapist'); }} testId="schedule-therapist-filter" options={[
               { value: '', label: 'All therapists' },
