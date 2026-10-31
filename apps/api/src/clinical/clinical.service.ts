@@ -523,11 +523,21 @@ export class ClinicalService {
     if (options.ownership === 'mine') conditions.push({ centerId, createdById: v?.userId ?? '__none__' });
     if (options.ownership === 'center') conditions.push({ centerId });
     if (options.ownership === 'samples') conditions.push({ centerId: null });
-    if (options.search) conditions.push({ OR: [
-      { title: { contains: options.search, mode: 'insensitive' } },
-      { ageBand: { contains: options.search, mode: 'insensitive' } },
-      { service: { contains: options.search, mode: 'insensitive' } },
-    ] });
+    if (options.search) {
+      // Keep displayed specialty names searchable after moving discovery to
+      // SQL; e.g. "language" must also match the stored `speech` service.
+      const labels = { speech: 'speech language', occupational: 'occupational therapy',
+        physical: 'physical therapy', behavioral: 'behavioral therapy',
+        feeding: 'feeding therapy', developmental: 'developmental therapy' };
+      const serviceMatches = Object.entries(labels).filter(([service, label]) =>
+        label.includes(options.search!.toLowerCase()) || service.includes(options.search!.toLowerCase())).map(([service]) => service);
+      conditions.push({ OR: [
+        { title: { contains: options.search, mode: 'insensitive' } },
+        { ageBand: { contains: options.search, mode: 'insensitive' } },
+        { service: { contains: options.search, mode: 'insensitive' } },
+        ...(serviceMatches.length ? [{ service: { in: serviceMatches } }] : []),
+      ] });
+    }
     const rows = await this.prisma.activityTemplate.findMany({
       where: { AND: conditions },
       orderBy: [{ service: 'asc' }, { title: 'asc' }, { id: 'asc' }],

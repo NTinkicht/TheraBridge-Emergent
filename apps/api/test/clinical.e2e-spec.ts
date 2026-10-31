@@ -91,6 +91,8 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     expect(last.items.some((t: { title: string }) => t.title === 'Speech needle 4')).toBe(true);
     const searched = (await get(therapist, c('activities?search=Speech%20needle%204')).expect(200)).body;
     expect(searched.items.map((t: { title: string }) => t.title)).toEqual(['Speech needle 4']);
+    const language = (await get(therapist, c('activities?search=LANGUAGE&service=speech')).expect(200)).body;
+    expect(language.items).toHaveLength(5);
     const scoped = (await get(therapist, c(`clinical/children/${kid}`)).expect(200)).body;
     expect(scoped.templates).toHaveLength(5);
     expect(scoped.templates.every((t: { service: string }) => t.service === 'speech')).toBe(true);

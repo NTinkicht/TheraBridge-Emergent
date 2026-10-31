@@ -92,10 +92,12 @@ try {
     const ownership = page.getByTestId('activities-ownership-filter');
     const specialty = page.getByTestId('activities-specialty-filter');
     const list = page.getByTestId('activities-list');
-    const count = async expected => assert.equal(
-      await page.getByTestId('activities-result-count').innerText(),
-      'Showing ' + expected + ' of ' + items.length + ' activities'
-    );
+    const count = async expected => {
+      // Search and filters are now server-side; wait for the corresponding
+      // bounded response instead of checking a stale previous query frame.
+      await page.waitForFunction(n => document.querySelector('[data-testid="activities-result-count"]')?.textContent?.trim() ===
+        `Showing ${n} matching activities`, expected);
+    };
     const cardCount = () => list.locator(':scope > div').count();
     await count(items.length);
     const speechTemplates = items.filter(t => t.service === 'speech');
