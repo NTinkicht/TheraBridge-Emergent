@@ -72,7 +72,7 @@ export class GovernanceService {
       await this.trial.assertWritable(tx, centerId, now);
       await assertActor(tx, centerId, v, ['THERAPIST','CLINICAL_SUPERVISOR']);
       const d = await this.document(tx, centerId, v, kind, id);
-      if (d.sourceVersion !== dto.version) throw new ConflictException('This document changed. Reload before continuing.');
+      if (d.sourceVersion !== dto.version) throw new ConflictException({ code: 'VERSION_CONFLICT', message: 'Document version conflict. Reload before continuing.' });
       const review = ['RETURN','COMMENT'].includes(dto.action);
       if (review ? v.role !== 'CLINICAL_SUPERVISOR' : v.role !== 'THERAPIST' || d.authorId !== v.userId) throw new ForbiddenException('Only the author or an explicitly authorized reviewer can perform this action.');
       let to = d.status;
@@ -82,7 +82,12 @@ export class GovernanceService {
       else if (dto.action === 'WITHDRAW' && d.status === 'IN_REVIEW') to = 'WITHDRAWN';
       else if (dto.action === 'FREEZE' && EDITABLE.includes(d.status)) to = 'FROZEN_INTERNAL';
       else if (dto.action === 'REOPEN' && d.status === 'WITHDRAWN' && d.kind === 'REPORT') to = 'DRAFT';
-      else throw new ConflictException('This transition is not available from the current state.');
+      else throw new ConflictException({
+        code: d.kind === 'REPORT' ? 'INVALID_REPORT_STATUS' : 'INVALID_PLAN_STATUS',
+        message: dto.action === 'SUBMIT'
+          ? 'Only DRAFT or RETURNED_FOR_REVISION documents can be submitted for review.'
+          : 'This transition is not available from the current document status.',
+      });
       if (dto.action === 'SUBMIT') {
         if (d.kind === 'PLAN' && !(d.content.goals as unknown[]).length) throw new UnprocessableEntityException('Add at least one goal before review.');
         if (d.kind === 'REPORT' && !((d.content.sections as Record<string,string>).summary ?? '').trim()) throw new UnprocessableEntityException('Write the clinician summary before review.');
@@ -93,7 +98,7 @@ export class GovernanceService {
       const notes = review ? json([...(d.notes as object[]), { by: v.userId, byName: actor.displayName, at: now.toISOString(), comment: dto.reason.trim(), kind: dto.action === 'RETURN' ? 'returned' : 'comment' }]) : undefined;
       const data = { status: to, version: { increment: 1 }, updatedAt: now, ...(notes ? { reviewNotes: notes } : {}) };
       const n = d.kind === 'PLAN' ? await tx.planVersion.updateMany({ where: { id, centerId, version: dto.version, status: d.status }, data }) : await tx.progressReport.updateMany({ where: { id, centerId, version: dto.version, status: d.status }, data });
-      if (n.count !== 1) throw new ConflictException('This document changed. Reload before continuing.');
+      if (n.count !== 1) throw new ConflictException({ code: 'VERSION_CONFLICT', message: 'Document version conflict. Reload before continuing.' });
       await transitionHistory(tx, s, d.status, to, dto.reason.trim(), v.userId, now);
       const event = dto.action === 'SUBMIT' ? 'submitted' : dto.action === 'RETURN' ? 'returned' : dto.action === 'COMMENT' ? 'commented' : dto.action.toLowerCase();
       await logCenterEvent(tx, centerId, `clinical.${d.kind.toLowerCase()}_${event}`, now, { actorUserId: v.userId, meta: { childId: d.childId, documentId: id, snapshotId: s.id, from: d.status, to } });
