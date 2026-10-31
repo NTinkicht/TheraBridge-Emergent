@@ -13,7 +13,7 @@ describe('TB-EM-011 non-authorizing governance (real PostgreSQL)', () => {
  const transition=(s:Signed,action:string,version:number,kind='PLAN',id=plan,reason='Synthetic internal governance reason')=>post(h,path(`governance/documents/${kind}/${id}/transitions`),s,{action,version,reason});
  const patch=(body:object)=>h.http().patch(path(`clinical/plan-versions/${plan}`)).set('Origin',ORIGIN).set('Cookie',therapist.cookie).set('X-CSRF-Token',therapist.csrf).send(body);
  const goal={key:'phrases',title:'Synthetic goal',measure:'percent',baseline:20,target:80};
- async function actor(name:string,role:'THERAPIST'|'CLINICAL_SUPERVISOR'|'CENTER_ADMIN'|'GUARDIAN',center=c){const u=await createUser(h.prisma,`${name}@governance.test`);const m=await h.prisma.membership.create({data:{centerId:center,userId:u.id,roles:{create:{role}}}});return {s:await signIn(h,u.email),u,m};}
+ async function actor(name:string,role:'THERAPIST'|'CLINICAL_SUPERVISOR'|'CENTER_ADMIN'|'GUARDIAN',center=c){const u=await createUser(h.prisma,`${name}@governance.test`);const m=await h.prisma.membership.create({data:{centerId:center,userId:u.id,specialties:role==='THERAPIST'?['speech','ot']:[],roles:{create:{role}}}});return {s:await signIn(h,u.email),u,m};}
  beforeAll(async()=>{h=await makeApp();});afterAll(async()=>h.close());
  beforeEach(async()=>{
   await resetDb(h.prisma);c=(await h.prisma.center.create({data:{slug:'governance',name:'Synthetic governance center',timezone:'UTC'}})).id;
@@ -69,6 +69,26 @@ describe('TB-EM-011 non-authorizing governance (real PostgreSQL)', () => {
  });
  it('only one concurrent transition succeeds and creates one snapshot',async()=>{
   const r=await Promise.all([transition(therapist,'FREEZE',1),transition(therapist,'SUBMIT',1)]);expect(r.map(x=>x.status).sort()).toEqual([201,409]);expect(await h.prisma.governanceSnapshot.count()).toBe(1);
+  expect((await h.prisma.planVersion.findUniqueOrThrow({where:{id:plan}})).version).toBe(2);
+  expect(await h.prisma.centerEvent.count({where:{centerId:c,type:{in:['clinical.plan_freeze','clinical.plan_submitted']}}})).toBe(1);
+ });
+ it('allows exactly one report CAS transition and audit event for concurrent updates',async()=>{
+  const r=await Promise.all([transition(therapist,'FREEZE',1,'REPORT',report),transition(therapist,'FREEZE',1,'REPORT',report)]);
+  expect(r.map(x=>x.status).sort()).toEqual([201,409]);
+  expect((await h.prisma.progressReport.findUniqueOrThrow({where:{id:report}})).version).toBe(2);
+  expect(await h.prisma.governanceHistory.count({where:{centerId:c,kind:'REPORT',documentId:report}})).toBe(1);
+  expect(await h.prisma.centerEvent.count({where:{centerId:c,type:'clinical.report_freeze'}})).toBe(1);
+ });
+ it('revokes clinical, report, governance and progress reads when membership specialty is removed',async()=>{
+  await h.prisma.membership.update({where:{id:memberId},data:{specialties:[]}});
+  await get(therapist,`clinical/children/${kid}`).expect(404);
+  await get(therapist,`clinical/children/${kid}/reports`).expect(404);
+  await get(therapist,`clinical/reports/${report}`).expect(404);
+  await get(therapist,`governance/documents/PLAN/${plan}/history`).expect(404);
+  await transition(therapist,'FREEZE',1).expect(404);
+  expect((await get(therapist,'governance/documents').expect(200)).body.items).toEqual([]);
+  expect((await get(therapist,'clinical/progress').expect(200)).body.children).toEqual([]);
+  expect(await h.prisma.governanceSnapshot.count()).toBe(0);
  });
  it('denies cross-specialty clinical records in therapist workspace', async () => {
   await h.prisma.child.update({where:{id:kid},data:{services:['speech','ot']}});

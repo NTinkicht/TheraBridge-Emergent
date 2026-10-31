@@ -70,10 +70,30 @@ function validateSchedule(schedule: ActivitySchedule) {
 export class ClinicalService {
   constructor(private readonly prisma: PrismaService, private readonly trial: TrialService) {}
 
+  // Authoritative child + specialty pairs. A care assignment alone is insufficient:
+  // a suspended membership or removed membership specialty must revoke access.
+  async therapistAssignments(db: Tx | PrismaService, centerId: string, v: Viewer, childId?: string) {
+    if (v.role !== 'THERAPIST') return [];
+    const member = await db.membership.findFirst({
+      where: { id: v.membershipId, centerId, userId: v.userId, status: 'ACTIVE',
+        user: { status: 'ACTIVE' }, roles: { some: { role: 'THERAPIST' } } },
+      select: { specialties: true },
+    });
+    if (!member?.specialties.length) return [];
+    return db.careAssignment.findMany({
+      where: { centerId, membershipId: v.membershipId, endedAt: null,
+        service: { in: member.specialties }, ...(childId ? { childId } : {}) },
+      select: { childId: true, service: true },
+    });
+  }
+
   async child(db: Tx | PrismaService, centerId: string, v: Viewer, childId: string, service?: string) {
     if (!['THERAPIST', 'CLINICAL_SUPERVISOR'].includes(v.role)) throw new ForbiddenException('Clinical records are restricted.');
-    const where: Prisma.ChildWhereInput = v.role === 'THERAPIST' ? { assignments: { some: { membershipId: v.membershipId, endedAt: null, ...(service ? { service } : {}) } } } : {};
-    const c = await db.child.findFirst({ where: { id: childId, centerId, status: 'ACTIVE', ...where } });
+    if (v.role === 'THERAPIST') {
+      const assigned = await this.therapistAssignments(db, centerId, v, childId);
+      if (!assigned.some(a => !service || a.service === service)) throw new NotFoundException('Child not found');
+    }
+    const c = await db.child.findFirst({ where: { id: childId, centerId, status: 'ACTIVE' } });
     if (!c || (service && !c.services.includes(service))) throw new NotFoundException('Child not found');
     return c;
   }
@@ -95,10 +115,7 @@ export class ClinicalService {
     const c = await this.child(this.prisma, centerId, v, childId);
     // A therapist may see only the services assigned to that therapist for this child.
     const assignedServices = v.role === 'THERAPIST'
-      ? (await this.prisma.careAssignment.findMany({
-          where: { centerId, childId, membershipId: v.membershipId, endedAt: null },
-          select: { service: true },
-        })).map(a => a.service)
+      ? (await this.therapistAssignments(this.prisma, centerId, v, childId)).map(a => a.service)
       : null;
     const serviceScope = assignedServices ? { service: { in: assignedServices } } : {};
     const [assessments, plans, notes, appointments, templates, assignments] = await Promise.all([

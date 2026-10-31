@@ -114,7 +114,7 @@ export class ReportsService {
 
   async dashboard(centerId: string, v: Viewer, q: ProgressQueryDto) {
     const { from, to } = this.period(q.from, q.to, 90);
-    const pairs = v.role === 'THERAPIST' ? await this.prisma.careAssignment.findMany({ where: { centerId, membershipId: v.membershipId, endedAt: null }, select: { childId: true, service: true } }) : null;
+    const pairs = v.role === 'THERAPIST' ? await this.clinical.therapistAssignments(this.prisma, centerId, v) : null;
     const kids = await this.prisma.child.findMany({ where: { centerId, status: 'ACTIVE', ...(pairs ? { id: { in: uniq(pairs.map((p) => p.childId)) } } : {}) }, orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }] });
     const name = (id: string) => { const k = kids.find((x) => x.id === id)!; return `${k.preferredName ?? k.firstName} ${k.lastName}`; };
     const scope = q.childId ? kids.filter((k) => k.id === q.childId) : kids;
@@ -212,7 +212,7 @@ export class ReportsService {
 
   async list(centerId: string, v: Viewer, childId: string) {
     await this.clinical.child(this.prisma, centerId, v, childId);
-    const services = v.role === 'THERAPIST' ? (await this.prisma.careAssignment.findMany({ where: { centerId, childId, membershipId: v.membershipId, endedAt: null } })).map((a) => a.service) : null;
+    const services = v.role === 'THERAPIST' ? (await this.clinical.therapistAssignments(this.prisma, centerId, v, childId)).map((a) => a.service) : null;
     const rows = await this.prisma.progressReport.findMany({ where: { centerId, childId, ...(services ? { service: { in: services } } : {}) }, include: { _count: { select: { versions: true } } }, orderBy: { updatedAt: 'desc' } });
     const team = await this.prisma.membership.findMany({ where: { id: { in: uniq(rows.map((r) => r.membershipId)) } }, select: { id: true, user: { select: { displayName: true } } } });
     return { items: rows.map((r) => ({ id: r.id, title: r.title, service: r.service, periodStart: day(r.periodStart), periodEnd: day(r.periodEnd), status: r.status, versions: r._count.versions, author: team.find((t) => t.id === r.membershipId)?.user.displayName ?? '', mine: r.membershipId === v.membershipId, updatedAt: r.updatedAt })) };
