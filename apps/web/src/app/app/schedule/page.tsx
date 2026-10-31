@@ -116,7 +116,7 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
     finally { if (revision === therapistRequest.current) setTherapistLoading(false); }
   };
 
-  const shown = data ? data.items.filter((a) => days.includes(dayKey(a.startsAt))) : [];
+  const shown = useMemo(() => data ? data.items.filter((a) => days.includes(dayKey(a.startsAt))) : [], [data, days]);
   const step = view === 'day' ? 1 : 7;
   const label = view === 'day' ? dayTitle(anchor, { weekday: 'long', month: 'short', day: 'numeric' }) : `${dayTitle(days[0], { month: 'short', day: 'numeric' })} – ${dayTitle(days[6], { month: 'short', day: 'numeric' })}`;
   const done = (m: string) => { setBooking(false); setEditing(null); setSelected(null); setNotice(m); void reload(); };
