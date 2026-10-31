@@ -1,3 +1,9 @@
+## 2026-10-31 — M2-S01 first CI diagnostic and UI notice repair
+
+- Initial head `4b4bc1c` passed API typecheck, API tests and API build, but both demo-browser journeys failed while waiting for `messages-demo-disabled`: deployed permission withholding also hid the informational locked-message page.
+- Corrected the page to use existing harmless, read-only session permissions (`family.portal.read|center.summary.read`) so the **disabled notice is visible**, without reinstating `center.messages.use` or any messaging API capability.
+- This repair must be requalified on its own exact-head test, secret scan, preview, browser, demo journey and compose checks. No merge/activation is claimed here.
+
 ## 2026-10-31 — M2-S01 family messaging fail-closed checkpoint
 
 | Gate | State | Evidence/limitation |
