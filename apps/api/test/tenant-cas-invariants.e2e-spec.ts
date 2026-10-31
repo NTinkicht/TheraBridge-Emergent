@@ -5,14 +5,18 @@ import ts from 'typescript';
 // An AST guard (not a grep) prevents future clinical CAS writes from silently
 // dropping their center boundary.
 const files = [
-  'clinical.service.ts', 'governance.service.ts', 'home-plan-requests.service.ts',
-  'practice.service.ts', 'report-decisions.service.ts', 'reports.service.ts',
-  'session.service.ts',
+  'clinical/clinical.service.ts', 'clinical/governance.service.ts',
+  'clinical/home-plan-requests.service.ts', 'clinical/practice.service.ts',
+  'clinical/report-decisions.service.ts', 'clinical/reports.service.ts',
+  'clinical/session.service.ts',
+  'centers/invitations.service.ts',
+  'operations/children.service.ts', 'operations/series.service.ts',
 ];
 const tenantModels = new Set([
   'assessment', 'planVersion', 'sessionNote', 'activityTemplate',
   'progressReport', 'practiceOutcome', 'homePlanRequest',
   'caseloadTransferDraft', 'reportSuggestionDecision',
+  'invitation', 'guardianLink', 'appointment', 'careAssignment', 'child',
 ]);
 function key(n: ts.PropertyName): string | null {
   return ts.isIdentifier(n) || ts.isStringLiteral(n) ? n.text : null;
@@ -28,7 +32,7 @@ describe('M2-H02: clinical CAS tenancy invariant', () => {
     let audited = 0;
     for (const name of files) {
       const source = ts.createSourceFile(name,
-        readFileSync(resolve(__dirname, '../src/clinical', name), 'utf8'),
+        readFileSync(resolve(__dirname, '../src', name), 'utf8'),
         ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
       const visit = (node: ts.Node) => {
         if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) &&
@@ -50,7 +54,7 @@ describe('M2-H02: clinical CAS tenancy invariant', () => {
       };
       visit(source);
     }
-    expect(audited).toBeGreaterThanOrEqual(14);
+    expect(audited).toBeGreaterThanOrEqual(25);
     expect(absent).toEqual([]);
   });
 });

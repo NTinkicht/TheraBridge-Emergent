@@ -137,7 +137,7 @@ export class SeriesService {
       if (s.status !== 'ACTIVE') throw new ConflictException('This series has already ended.');
       const occ = await tx.appointment.findMany({ where: { seriesId: id, status: 'SCHEDULED', occurrenceDate: { gte: asDate(dto.fromDate) }, startsAt: { gt: now } }, select: { id: true, startsAt: true } });
       if (!occ.length) throw new UnprocessableEntityException('There are no upcoming visits in this series from that date.');
-      await tx.appointment.updateMany({ where: { id: { in: occ.map((o) => o.id) } }, data: { status: 'CANCELLED', statusReason: dto.reason, version: { increment: 1 } } });
+      await tx.appointment.updateMany({ where: { centerId, id: { in: occ.map((o) => o.id) } }, data: { status: 'CANCELLED', statusReason: dto.reason, version: { increment: 1 } } });
       const remaining = await tx.appointment.count({ where: { seriesId: id, status: 'SCHEDULED', startsAt: { gt: now } } });
       await tx.appointmentSeries.update({ where: { id }, data: { untilDate: asDate(addDays(dto.fromDate, -1)) < s.startDate ? s.startDate : asDate(addDays(dto.fromDate, -1)), ...(remaining ? {} : { status: 'ENDED' }), version: { increment: 1 } } });
       await logCenterEvent(tx, centerId, 'series.cancelled', now, { actorUserId, membershipId: s.membershipId, meta: { childId: s.childId, seriesId: id, fromDate: dto.fromDate, visits: occ.length, reason: dto.reason } });

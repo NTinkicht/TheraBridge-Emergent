@@ -563,6 +563,11 @@ describe('TB-EM-010 family home practice and outcomes (real PostgreSQL)', () => 
     await post(h, O, ada, body).expect(404);
     await post(h, O, ada, { ...body, templateId: mwf.id, practiceDate: '2026-10-19', idempotencyKey: randomUUID() }).expect(404);
     expect((await get(therapist, F).expect(200)).body.items.filter((x: { guardianAccessRemoved: boolean }) => x.guardianAccessRemoved)).toHaveLength(2);
+    // Membership specialty removal must immediately hide practice feedback,
+    // even if the old CareAssignment row remains active.
+    await h.prisma.membership.update({ where: { id: therapist.body.activeContext.membershipId }, data: { specialties: [] } });
+    expect((await get(therapist, F).expect(200)).body.items).toEqual([]);
+    await post(h, A, therapist).expect(404);
 
     process.env.FAMILY_PRACTICE_DEMO = 'false';
     try {

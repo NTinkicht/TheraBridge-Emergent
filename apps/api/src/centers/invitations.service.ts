@@ -131,7 +131,7 @@ export class InvitationsService {
     const token = randomToken();
     const updated = await this.prisma.$transaction(async (tx) => {
       const r = await tx.invitation.updateMany({
-        where: { id, status: 'PENDING', sendCount: inv.sendCount },
+        where: { id, centerId, status: 'PENDING', sendCount: inv.sendCount },
         data: { tokenHash: sha256(token), expiresAt: new Date(now.getTime() + INVITE_TTL_MS), sendCount: { increment: 1 }, lastSentAt: now },
       });
       if (r.count !== 1) throw new ConflictException('This invitation changed. Reload to see the latest status.');
@@ -147,7 +147,7 @@ export class InvitationsService {
     await this.pending(centerId, id, kind);
     const now = this.clock.now();
     const updated = await this.prisma.$transaction(async (tx) => {
-      const r = await tx.invitation.updateMany({ where: { id, status: 'PENDING' }, data: { status: 'REVOKED', revokedAt: now, revokedById: actorUserId } });
+      const r = await tx.invitation.updateMany({ where: { id, centerId, status: 'PENDING' }, data: { status: 'REVOKED', revokedAt: now, revokedById: actorUserId } });
       if (r.count !== 1) throw new ConflictException('This invitation changed. Reload to see the latest status.');
       await logCenterEvent(tx, centerId, 'invitation.revoked', now, { actorUserId, invitationId: id });
       return tx.invitation.findUniqueOrThrow({ where: { id } });
@@ -160,7 +160,7 @@ export class InvitationsService {
     const old = await this.pending(centerId, id, 'FIRST_ADMIN');
     const now = this.clock.now();
     const { invitation, token } = await withUniqueGuard(() => this.prisma.$transaction(async (tx) => {
-      const r = await tx.invitation.updateMany({ where: { id, status: 'PENDING' }, data: { status: 'REPLACED', revokedAt: now, revokedById: actorUserId } });
+      const r = await tx.invitation.updateMany({ where: { id, centerId, status: 'PENDING' }, data: { status: 'REPLACED', revokedAt: now, revokedById: actorUserId } });
       if (r.count !== 1) throw new ConflictException('This invitation changed. Reload to see the latest status.');
       const created = await this.createInTx(tx, { centerId, kind: 'FIRST_ADMIN', email: dto.email, displayName: dto.displayName, roles: ['CENTER_ADMIN'], invitedById: actorUserId }, now);
       await tx.invitation.update({ where: { id }, data: { replacedById: created.invitation.id } });
@@ -207,7 +207,7 @@ export class InvitationsService {
   }
 
   private async claimAndJoin(tx: Tx, inv: Invitation, userId: string, now: Date): Promise<string> {
-    const claimed = await tx.invitation.updateMany({ where: { id: inv.id, status: 'PENDING', expiresAt: { gt: now } }, data: { status: 'ACCEPTED', acceptedAt: now, acceptedUserId: userId } });
+    const claimed = await tx.invitation.updateMany({ where: { id: inv.id, centerId: inv.centerId, status: 'PENDING', expiresAt: { gt: now } }, data: { status: 'ACCEPTED', acceptedAt: now, acceptedUserId: userId } });
     if (claimed.count !== 1) throw new GoneException(UNUSABLE);
     const profile = { title: inv.title, specialties: inv.specialties, responsibilities: inv.responsibilities };
     const m = await tx.membership.findUnique({ where: { userId_centerId: { userId, centerId: inv.centerId } }, include: { roles: true } });
@@ -225,7 +225,7 @@ export class InvitationsService {
       membershipId = m.id;
     }
     if (inv.guardianLinkId) {
-      const linked = await tx.guardianLink.updateMany({ where: { id: inv.guardianLinkId, removedAt: null }, data: { userId } });
+      const linked = await tx.guardianLink.updateMany({ where: { id: inv.guardianLinkId, centerId: inv.centerId, removedAt: null }, data: { userId } });
       if (linked.count !== 1) throw new GoneException(UNUSABLE);
     }
     await logCenterEvent(tx, inv.centerId, 'invitation.accepted', now, { actorUserId: userId, subjectUserId: userId, membershipId, invitationId: inv.id, meta: { kind: inv.kind, roles: inv.roles } });

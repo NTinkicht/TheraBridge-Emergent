@@ -83,7 +83,7 @@ export class ClinicalService {
     return db.careAssignment.findMany({
       where: { centerId, membershipId: v.membershipId, endedAt: null,
         service: { in: member.specialties }, ...(childId ? { childId } : {}) },
-      select: { childId: true, service: true },
+      select: { childId: true, service: true, membershipId: true },
     });
   }
 
