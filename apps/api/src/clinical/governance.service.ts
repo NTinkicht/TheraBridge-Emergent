@@ -72,7 +72,7 @@ export class GovernanceService {
       await this.trial.assertWritable(tx, centerId, now);
       await assertActor(tx, centerId, v, ['THERAPIST','CLINICAL_SUPERVISOR']);
       const d = await this.document(tx, centerId, v, kind, id);
-      if (d.sourceVersion !== dto.version) throw new ConflictException('This document changed. Reload before continuing.');
+      if (d.sourceVersion !== dto.version) throw new ConflictException({ code: 'VERSION_CONFLICT', message: 'Document version conflict. Reload before continuing.' });
       const review = ['RETURN','COMMENT'].includes(dto.action);
       if (review ? v.role !== 'CLINICAL_SUPERVISOR' : v.role !== 'THERAPIST' || d.authorId !== v.userId) throw new ForbiddenException('Only the author or an explicitly authorized reviewer can perform this action.');
       let to = d.status;
@@ -82,10 +82,34 @@ export class GovernanceService {
       else if (dto.action === 'WITHDRAW' && d.status === 'IN_REVIEW') to = 'WITHDRAWN';
       else if (dto.action === 'FREEZE' && EDITABLE.includes(d.status)) to = 'FROZEN_INTERNAL';
       else if (dto.action === 'REOPEN' && d.status === 'WITHDRAWN' && d.kind === 'REPORT') to = 'DRAFT';
-      else throw new ConflictException('This transition is not available from the current state.');
+      else throw new ConflictException({
+        code: d.kind === 'REPORT' ? 'INVALID_REPORT_STATUS' : 'INVALID_PLAN_STATUS',
+        message: dto.action === 'SUBMIT'
+          ? 'Only DRAFT or RETURNED_FOR_REVISION documents can be submitted for review.'
+          : 'This transition is not available from the current document status.',
+      });
       if (dto.action === 'SUBMIT') {
         if (d.kind === 'PLAN' && !(d.content.goals as unknown[]).length) throw new UnprocessableEntityException('Add at least one goal before review.');
         if (d.kind === 'REPORT' && !((d.content.sections as Record<string,string>).summary ?? '').trim()) throw new UnprocessableEntityException('Write the clinician summary before review.');
+        if (d.kind === 'REPORT') {
+          // The last SAVED/CREATED evidence snapshot represents what the author
+          // reviewed. A plan withdrawn since that snapshot must not silently
+          // disappear when we rebuild evidence at submit time. Require the
+          // clinician to save a new snapshot and explicitly review the change.
+          const last = await tx.reportVersion.findFirst({
+            where: { centerId, reportId: id }, orderBy: { number: 'desc' }, select: { evidence: true },
+          });
+          const saved = last?.evidence as { plan?: { versionId?: unknown } | null;
+            plans?: { versionId?: unknown }[] } | undefined;
+          const ids = [saved?.plan?.versionId, ...(Array.isArray(saved?.plans) ? saved.plans.map(p => p?.versionId) : [])]
+            .filter((value): value is string => typeof value === 'string' &&
+              /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value));
+          if (ids.length && await tx.planVersion.count({
+            where: { id: { in: [...new Set(ids)] }, centerId, status: 'WITHDRAWN',
+              plan: { centerId, childId: d.childId, service: d.service } },
+          })) throw new ConflictException({ code: 'PLAN_VERSION_WITHDRAWN',
+            message: 'A source plan version was withdrawn after this report evidence was saved. Review and save a new report version before submission.' });
+        }
       }
       // Preserve the exact content and evidence BEFORE changing its state.
       const s = await this.freeze(tx, centerId, v, d, now);
@@ -93,7 +117,7 @@ export class GovernanceService {
       const notes = review ? json([...(d.notes as object[]), { by: v.userId, byName: actor.displayName, at: now.toISOString(), comment: dto.reason.trim(), kind: dto.action === 'RETURN' ? 'returned' : 'comment' }]) : undefined;
       const data = { status: to, version: { increment: 1 }, updatedAt: now, ...(notes ? { reviewNotes: notes } : {}) };
       const n = d.kind === 'PLAN' ? await tx.planVersion.updateMany({ where: { id, centerId, version: dto.version, status: d.status }, data }) : await tx.progressReport.updateMany({ where: { id, centerId, version: dto.version, status: d.status }, data });
-      if (n.count !== 1) throw new ConflictException('This document changed. Reload before continuing.');
+      if (n.count !== 1) throw new ConflictException({ code: 'VERSION_CONFLICT', message: 'Document version conflict. Reload before continuing.' });
       await transitionHistory(tx, s, d.status, to, dto.reason.trim(), v.userId, now);
       const event = dto.action === 'SUBMIT' ? 'submitted' : dto.action === 'RETURN' ? 'returned' : dto.action === 'COMMENT' ? 'commented' : dto.action.toLowerCase();
       await logCenterEvent(tx, centerId, `clinical.${d.kind.toLowerCase()}_${event}`, now, { actorUserId: v.userId, meta: { childId: d.childId, documentId: id, snapshotId: s.id, from: d.status, to } });

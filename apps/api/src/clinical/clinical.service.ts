@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { Tx, logCenterEvent, uniq } from '../centers/history';
 import { PrismaService } from '../prisma/prisma.service';
@@ -232,6 +232,15 @@ export class ClinicalService {
       assessments: assessments.map((a) => ({ id: a.id, service: a.service, assessedOn: day(a.assessedOn), summary: a.summary, areas: a.areas, status: a.status, version: a.version, author: who(a.membershipId), mine: a.membershipId === v.membershipId, updatedAt: a.updatedAt })),
       hasMorePlans,
       hasMoreAssessments,
+      // This synthetic environment has no clinical approval gate enabled.
+      // Never treat the latest WITHDRAWN version as the active plan. A future
+      // signed approval policy may populate active versions; for now the
+      // explicit active list remains empty rather than inventing approval.
+      activePlanVersions: plans.flatMap(p => p.versions.filter(x => x.status === 'APPROVED')
+        .slice(0, 1).map(x => ({ planId: p.id, planVersionId: x.id, service: p.service, number: x.number }))),
+      currentDraftPlanVersions: plans.flatMap(p => p.versions.filter(x =>
+        ['DRAFT', 'RETURNED_FOR_REVISION', 'IN_REVIEW', 'FROZEN_INTERNAL'].includes(x.status))
+        .slice(0, 1).map(x => ({ planId: p.id, planVersionId: x.id, service: p.service, number: x.number, status: x.status }))),
       plans: plans.map((p) => ({ id: p.id, service: p.service, title: p.title, source: planSource(p), versions: p.versions.map((x) => ({ id: x.id, number: x.number, status: x.status, summary: x.summary, goals: x.goals, homeActivities: x.homeActivities, reviewNotes: (Array.isArray(x.reviewNotes) ? x.reviewNotes : []).filter((n: any) => n?.kind !== 'GOAL_CHECKPOINT'),
         goalCheckpoints: (Array.isArray(x.reviewNotes) ? x.reviewNotes : []).filter((n: any) =>
           n?.kind === 'GOAL_CHECKPOINT' && typeof n.goalKey === 'string' &&
@@ -344,9 +353,34 @@ export class ClinicalService {
       });
       if (fresh.authorId !== v.userId) throw new ForbiddenException('Only the author can edit this plan version.');
       const observed = await tx.observation.findMany({ where: { planVersionId: id }, select: { goalKey: true } });
+      // Old drafts may contain whitespace in titles saved before strict DTO
+      // trimming. Preserve exact title bytes only for a wholly unchanged
+      // definition; measured/checkpointed goals retain strict immutability.
+      const priorGoals = fresh.goals as Goal[];
+      // M2-H05's new 200-character cap applies to authored/redefined goals.
+      // Historical versions accepted up to 300; reject actual edits but permit
+      // unchanged legacy definitions to round-trip through a summary-only save.
+      for (const goal of dto.goals) {
+        if (goal.title.length <= 200) continue;
+        const oldGoal = priorGoals.find(prior => prior.key === goal.key);
+        const unchangedLegacy = oldGoal &&
+          fingerprint(goalDefinition({ ...oldGoal, title: oldGoal.title.trim() })) ===
+          fingerprint(goalDefinition(goal));
+        if (!unchangedLegacy) throw new BadRequestException('A new or changed goal title must be at most 200 characters.');
+      }
+      const goalsToSave = dto.goals.map(g => {
+        const oldGoal = priorGoals.find(old => old.key === g.key);
+        // Preserve bytes for any truly unchanged legacy definition, even
+        // without a measurement yet. A redefinition of an unlocked goal
+        // still receives the new trimmed title.
+        const unchanged = oldGoal &&
+          fingerprint(goalDefinition({ ...oldGoal, title: oldGoal.title.trim() })) ===
+          fingerprint(goalDefinition(g));
+        return unchanged ? { ...g, title: oldGoal!.title } : g;
+      });
       for (const o of observed) {
         const oldGoal = (fresh.goals as Goal[]).find(g => g.key === o.goalKey);
-        if (fingerprint(goalDefinition(oldGoal)) !== fingerprint(goalDefinition(dto.goals.find(g => g.key === o.goalKey)))) throw new ConflictException('A goal with observations cannot be redefined. Start a new plan version.');
+        if (fingerprint(goalDefinition(oldGoal)) !== fingerprint(goalDefinition(goalsToSave.find(g => g.key === o.goalKey)))) throw new ConflictException('A goal with observations cannot be redefined. Start a new plan version.');
       }
       // A recorded checkpoint freezes the goal's definition in THIS plan
       // version, even when the therapist linked zero measured observations.
@@ -354,11 +388,11 @@ export class ClinicalService {
         if (!n || typeof n !== 'object' || Array.isArray(n) ||
             n.kind !== 'GOAL_CHECKPOINT' || typeof n.goalKey !== 'string') continue;
         const priorGoal = (fresh.goals as Goal[]).find(g => g.key === n.goalKey);
-        const proposed = dto.goals.find(g => g.key === n.goalKey);
+        const proposed = goalsToSave.find(g => g.key === n.goalKey);
         if (fingerprint(goalDefinition(priorGoal)) !== fingerprint(goalDefinition(proposed)))
           throw new ConflictException('A goal with recorded review checkpoints cannot be redefined. Start a new plan version.');
       }
-      const r = await tx.planVersion.updateMany({ where: { id, centerId, authorId: v.userId, status: { in: EDITABLE }, version: dto.version }, data: { summary: dto.summary, goals: dto.goals as unknown as Prisma.InputJsonValue, homeActivities: homeActivities as unknown as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
+      const r = await tx.planVersion.updateMany({ where: { id, centerId, authorId: v.userId, status: { in: EDITABLE }, version: dto.version }, data: { summary: dto.summary, goals: goalsToSave as unknown as Prisma.InputJsonValue, homeActivities: homeActivities as unknown as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
       if (r.count !== 1) throw new ConflictException(x.status !== 'DRAFT' ? 'Only a draft can be edited. Start a new version to make changes.' : 'This draft changed since you opened it. Reload to see the latest version.');
       await logCenterEvent(tx, centerId, 'clinical.plan_draft_saved', now, { actorUserId: v.userId, meta: { childId: x.plan.childId, planId: x.planId, planVersionId: id, goals: dto.goals.length, activityTemplates: ids.length } });
       return { ok: true };
@@ -478,14 +512,21 @@ export class ClinicalService {
   }
 
   async addObservation(centerId: string, v: Viewer, childId: string, dto: ObservationDto) {
-    const x = await this.prisma.planVersion.findFirst({ where: { id: dto.planVersionId, centerId, plan: { childId } }, include: { plan: true } });
-    if (!x || !(x.goals as Goal[]).some((g) => g.key === dto.goalKey)) throw new UnprocessableEntityException('Choose a goal from this child’s plan.');
-    if (asDate(dto.observedOn) > this.trial.now()) throw new UnprocessableEntityException('Observations cannot be dated in the future.');
-    return this.write(centerId, v, childId, x.plan.service, async (tx, now) => {
-      const fresh = await tx.planVersion.findFirst({ where: { id: dto.planVersionId, centerId, plan: { centerId, childId, service: x.plan.service } } });
-      if (!fresh || !(fresh.goals as Goal[]).some(g => g.key === dto.goalKey)) throw new UnprocessableEntityException('Choose a goal from this child’s plan.');
-      if (dto.sessionNoteId && !await tx.sessionNote.findFirst({ where: { id: dto.sessionNoteId, centerId, childId, service: x.plan.service, membershipId: v.membershipId } })) throw new UnprocessableEntityException('Choose your own session note for this child and service.');
-      const o = await tx.observation.create({ data: { centerId, childId, planVersionId: x.id, goalKey: dto.goalKey, membershipId: v.membershipId, sessionNoteId: dto.sessionNoteId ?? null, value: dto.value, observedOn: asDate(dto.observedOn), note: dto.note || null, createdAt: now } });
+    // Scope authorization must precede every document-specific error, even a
+    // withdrawal conflict. A former therapist with a known plan ID must get
+    // the same 404 as any other caller without an active care assignment.
+    return this.write(centerId, v, childId, undefined, async (tx, now) => {
+      const fresh = await tx.planVersion.findFirst({
+        where: { id: dto.planVersionId, centerId, plan: { centerId, childId } },
+        include: { plan: true },
+      });
+      if (!fresh) throw new UnprocessableEntityException('Choose a goal from this child’s plan.');
+      await this.child(tx, centerId, v, childId, fresh.plan.service);
+      if (fresh.status === 'WITHDRAWN') throw new ConflictException({ code: 'PLAN_VERSION_WITHDRAWN', message: 'Withdrawn plan versions cannot receive active observations.' });
+      if (!(fresh.goals as Goal[]).some(g => g.key === dto.goalKey)) throw new UnprocessableEntityException('Choose a goal from this child’s plan.');
+      if (asDate(dto.observedOn) > now) throw new UnprocessableEntityException('Observations cannot be dated in the future.');
+      if (dto.sessionNoteId && !await tx.sessionNote.findFirst({ where: { id: dto.sessionNoteId, centerId, childId, service: fresh.plan.service, membershipId: v.membershipId } })) throw new UnprocessableEntityException('Choose your own session note for this child and service.');
+      const o = await tx.observation.create({ data: { centerId, childId, planVersionId: fresh.id, goalKey: dto.goalKey, membershipId: v.membershipId, sessionNoteId: dto.sessionNoteId ?? null, value: dto.value, observedOn: asDate(dto.observedOn), note: dto.note || null, createdAt: now } });
       await logCenterEvent(tx, centerId, 'clinical.observation_recorded', now, { actorUserId: v.userId, meta: { childId, observationId: o.id, goalKey: dto.goalKey } });
       return { id: o.id };
     });

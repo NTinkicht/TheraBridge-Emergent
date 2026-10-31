@@ -1,3 +1,47 @@
+## 2026-10-31 — CURRENT: security P1 requalification before M2-H05 merge
+
+1. Codex's withdrawal side-channel P1 at `7a75667` addressed by `bc70c5f` and `e6b9f88`: revoked therapist receives no clinical status feedback. All prior P2 and P3 fixes remain on branch; no deferrals.
+2. Re-run six exact-final-head CI jobs and request fresh Codex code review. Only if all pass, resolve comments and squash merge #143 under Rule 16. Never activate consent/signing/releases, real patient data or production.
+3. Immediately after qualified #143 merge open M2-H06 #127/#128/#129/#130 and request Codex opening review.
+
+## 2026-10-31 — CURRENT: M2-H05 final review-driven regression gate
+
+1. Source and tests now cover three Codex P2 fixes plus two Mistral P3 compatibility/boundary suggestions (latest: `ff05058`, `9f3b979`, `7871202`). All FIX_NOW; no deferrals.
+2. Wait for 6/6 exact-final-HEAD CI and new Codex code review. Disposition and resolve inline threads before merge under Rule 16. Clinical signing, consent, releases, real data, production NO-GO.
+3. Upon qualified merge, immediately open M2-H06 #127/#128/#129/#130 draft and request opening Codex review.
+
+## 2026-10-31 — CURRENT next step: M2-H05 third P2 and final HEAD gate
+
+1. Addressed Codex long-title P2 in `a79735c`/`276a7e7`/`ca001a7` (legacy 250-character measured goal round-trips; new 250-character goal rejected). All three Codex P2s FIX_NOW; no deferrals.
+2. Re-run six CI jobs on final docs+test HEAD and get new Codex review. Resolve all reviewer threads and merge only when Rule 16 is satisfied; clinical releases and production remain NO-GO.
+3. Immediately open frozen M2-H06 #127/#128/#129/#130 draft, request opening @codex review, synchronize handover.
+
+## 2026-10-31 — CURRENT: M2-H05 Codex P2 repairs awaiting final-head qualification
+
+1. Two Codex P2 findings reviewed on #143 exact HEAD `7f77d66`: **FIX_NOW** for unchanged-wall-time recurring bookings shifting during DST fold (`02a0485`, regression `57651b9`), and for legacy immutable goal-title formatting breaking summary-only edits (`51c672d`, regression `ca12b89`). Both fixes are pushed.
+2. **Gate still pending at this checkpoint:** six jobs and new Codex review on final updated head, plus reviewer disposition/threads. Merge only after Rule 16. Never activate signing, consent, clinical release or real data.
+3. After qualified merge open draft M2-H06 #127/#128/#129/#130 and request opening `@codex review`.
+
+## 2026-10-31 — M2-H05 code CI green: remaining exact-final-HEAD review gates
+
+1. Implementation HEAD `55163d5fe7d1d567d8ec66f1499bc9d745c459f0` is **6/6 CI PASS** ([run 41233257189](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41233257189)), **611/611 API tests PASS** across 23 suites. All frozen #122/#123/#125 features are implemented and regression-tested on this code HEAD; no clinical activation.
+2. **Final gate:** run six CI jobs again on the documentation-updated exact current HEAD. Mark PR #143 ready, obtain fresh independent Codex review of the same HEAD (planning-only `5f17f99` review insufficient), read all reviewer comments and disposition every P0–P3 as FIX_NOW/DEFER_ISSUE/DECLINE_WITH_REASON. Merge without additional owner prompt only if Rule 16 fully satisfied; otherwise keep open.
+3. Immediately after qualified #143 merge open **M2-H06 (#127/#128/#129/#130)** as next frozen Milestone 2 draft and request opening Codex review. Governance-gated signing/consent/safeguarding/release/deployment remain **NO-GO**.
+
+## 2026-10-31 — CURRENT: qualify implemented M2-H05 #143 (#122, #123, #125)
+
+0. In last API run [41232523644](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41232523644), five legacy test expectations failed after deliberate stricter DTO 400, earlier DST fold choice and conflict wording. These are corrected in subsequent code/test commits; also added before-submit withdrawal guard and PostgreSQL regression. **Do not reuse that red run or earlier green subjobs for final qualification.**
+1. [PR #143](https://github.com/NTinkicht/TheraBridge-Emergent/pull/143) now contains implementation for **all three frozen M2-H05 issues**, plus synthetic calendar/timezone/DTO and real-PostgreSQL report/governance regressions. Earlier planning-only status below is superseded. The first TS narrowing CI failure was fixed; review latest CI and any newly raised findings before claiming completion.
+2. Obtain **6/6 checks on the exact final HEAD**, including test, secret-scan, live-session, preview-container, demo-journey and compose. Confirm new PostgreSQL tests and all old API/web checks. Mark ready for review, request a distinct final-head Codex review, disposition all reviewer comments (FIX_NOW/DEFER_ISSUE/DECLINE_WITH_REASON), and apply Rule 16 merge only when qualified. Otherwise keep draft.
+3. Preserve synthetic-only and unsigned clinical consent/safeguarding/signing/release/deployment **NO-GO**. After eligible #143 merge open **M2-H06 — Frontend Reliability and Architecture (#127, #128, #129, #130)** immediately in frozen order with automatic initial Codex review request under Rules 17/18.
+
+## 2026-10-31 — CURRENT: implement M2-H05 (#122, #123, #125)
+
+1. [PR #142](https://github.com/NTinkicht/TheraBridge-Emergent/pull/142) **merged** as `b95a0ce6e5504c7660bdc265ea08ba3f9a754e23`, finishing original M2-H04 #120/#119/#126 and approved H03 carryover #124/#121 with six exact-HEAD CI green and Codex final-head review clean.
+2. Current new draft **M2-H05 (6/12): #122 timezone/DST/date windows, #123 RETURNED_FOR_REVISION diagnostics + WITHDRAWN evidence exclusion, #125 calendar/IANA/numeric/trim validation.** Read the exact criteria and plan in `docs/emergent/workunits/M2-H05.md`. Planning checkpoint is **NOT IMPLEMENTED / NOT TESTED**.
+3. Implement and regress each of the three issues using synthetic fixtures and real PostgreSQL where needed; retain clinical signing/release/consent/safeguarding NO-GO. After 6/6 exact final-head CI green, get independent Codex review, disposition all comments and qualify Rule 16 merge.
+4. Upon eligible merge, continue only to next frozen item **M2-H06 (#127/#128/#129/#130)**. Historical instructions below are superseded.
+
 ## 2026-10-31 — CURRENT: M2-H04 PR #142, five required issues
 
 1. **Complete both owner-approved carried-over P1 issues in PR #142: #124 HTTP security and #121 therapist revocation.** PR #141 merged documents only; its feature scope is not complete and must not be treated as fixed.

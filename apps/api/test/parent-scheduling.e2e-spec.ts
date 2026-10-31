@@ -55,11 +55,19 @@ describe('TB-EM-007 parent experience round 2 + scheduling enhancements (real Po
     admin = await accept('lead@ops.test', 'Lead Admin');
   });
 
+  it('rejects a syntactically plausible but nonexistent IANA center timezone at the HTTP boundary', async () => {
+    await post(h, '/api/platform/centers', ops, {
+      name: 'Rejected timezone center', timezone: 'Mars/Phobos', country: 'Germany', city: 'Berlin',
+      specialties: ['speech'], firstAdmin: { email: 'invalidzone@ops.test', displayName: 'Synthetic Admin' },
+    }).expect(400);
+  });
+
   it('center time zone conversion handles daylight-saving transitions and recurrence expansion', () => {
     expect(zonedToUtc('2026-10-20', '09:00', 'Europe/Berlin').toISOString()).toBe('2026-10-20T07:00:00.000Z');
     expect(zonedToUtc('2026-10-27', '09:00', 'Europe/Berlin').toISOString()).toBe('2026-10-27T08:00:00.000Z');
-    expect(zonedToUtc('2027-03-28', '02:30', 'Europe/Berlin').toISOString()).toBe('2027-03-28T01:30:00.000Z');
-    expect(zonedToUtc('2026-10-25', '02:30', 'Europe/Berlin').toISOString()).toBe('2026-10-25T01:30:00.000Z');
+    expect(() => zonedToUtc('2027-03-28', '02:30', 'Europe/Berlin')).toThrow(/does not exist/);
+    // Fall-back fold policy now chooses the earlier of two valid instants.
+    expect(zonedToUtc('2026-10-25', '02:30', 'Europe/Berlin').toISOString()).toBe('2026-10-25T00:30:00.000Z');
     expect(zonedToUtc('2026-11-01', '09:00', 'America/New_York').toISOString()).toBe('2026-11-01T14:00:00.000Z');
     expect(expand('2026-10-20', '2026-11-30', [2, 4], 2)).toEqual(['2026-10-20', '2026-10-22', '2026-11-03', '2026-11-05', '2026-11-17', '2026-11-19']);
     expect(expand('2026-10-20', '2027-04-20', [1, 2, 3, 4, 5], 1, 4)).toEqual(['2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23']);

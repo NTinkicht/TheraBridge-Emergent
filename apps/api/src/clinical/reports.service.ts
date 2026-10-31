@@ -62,12 +62,14 @@ export class ReportsService {
   async evidence(db: Tx | PrismaService, centerId: string, childId: string, service: string, from: Date, to: Date) {
     const [assessments, plans, drafts, completedVisits] = await Promise.all([
       db.assessment.findMany({ where: { centerId, childId, service, assessedOn: { lte: to } }, orderBy: { assessedOn: 'asc' } }),
-      db.therapyPlan.findMany({ where: { centerId, childId, service }, include: { versions: { orderBy: { number: 'desc' } } }, orderBy: { createdAt: 'asc' } }),
+      db.therapyPlan.findMany({ where: { centerId, childId, service }, include: { versions: { where: { status: { notIn: ['WITHDRAWN', 'SUPERSEDED'] } }, orderBy: { number: 'desc' } } }, orderBy: { createdAt: 'asc' } }),
       db.sessionNote.count({ where: { centerId, childId, service, sessionDate: { gte: from, lte: to } } }),
       db.appointment.count({ where: { centerId, childId, service, status: 'COMPLETED', startsAt: { gte: from, lt: new Date(to.getTime() + DAY) } } }),
     ]);
     const selected = plans.flatMap(plan => {
-      const current = plan.versions.find(v => v.status !== 'SUPERSEDED') ?? plan.versions[0];
+      // Withdrawn and superseded versions are preserved in history but cannot be
+      // selected as active evidence for a new report or goal summary.
+      const current = plan.versions.find(v => v.status !== 'SUPERSEDED' && v.status !== 'WITHDRAWN');
       return current ? [{ plan, current }] : [];
     });
     const obs = selected.length ? await db.observation.findMany({ where: { centerId, childId, planVersionId: { in: selected.map(p => p.current.id) }, observedOn: { lte: to } }, orderBy: [{ observedOn: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }] }) : [];
@@ -118,12 +120,13 @@ export class ReportsService {
     const kids = await this.prisma.child.findMany({ where: { centerId, status: 'ACTIVE', ...(pairs ? { id: { in: uniq(pairs.map((p) => p.childId)) } } : {}) }, orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }] });
     const name = (id: string) => { const k = kids.find((x) => x.id === id)!; return `${k.preferredName ?? k.firstName} ${k.lastName}`; };
     const scope = q.childId ? kids.filter((k) => k.id === q.childId) : kids;
-    const plans = (await this.prisma.therapyPlan.findMany({ where: { centerId, childId: { in: scope.map((k) => k.id) }, ...(q.service ? { service: q.service } : {}) }, include: { versions: { orderBy: { number: 'desc' } } }, orderBy: { createdAt: 'asc' } }))
+    const plans = (await this.prisma.therapyPlan.findMany({ where: { centerId, childId: { in: scope.map((k) => k.id) }, ...(q.service ? { service: q.service } : {}) }, include: { versions: { where: { status: { notIn: ['WITHDRAWN', 'SUPERSEDED'] } }, orderBy: { number: 'desc' } } }, orderBy: { createdAt: 'asc' } }))
       .filter((p) => !pairs || pairs.some((x) => x.childId === p.childId && x.service === p.service));
     const obs = await this.prisma.observation.findMany({ where: { centerId, planVersionId: { in: plans.flatMap((p) => p.versions.map((x) => x.id)) }, observedOn: { lte: to } }, orderBy: [{ observedOn: 'asc' }, { createdAt: 'asc' }] });
     const goals = plans.flatMap((p) => {
-      const cur = p.versions.find((x) => x.status !== 'SUPERSEDED') ?? p.versions[0];
-      const ids = new Set([cur?.id]);
+      const cur = p.versions.find((x) => x.status !== 'SUPERSEDED' && x.status !== 'WITHDRAWN');
+      if (!cur) return [];
+      const ids = new Set([cur.id]);
       return ((cur?.goals ?? []) as Goal[]).filter((g) => !q.goalKey || g.key === q.goalKey)
         .map((g) => ({ childId: p.childId, childName: name(p.childId), service: p.service, planId: p.id, planVersionId: cur.id, planTitle: p.title, ...goalEvidence(g, obs.filter((o) => o.goalKey === g.key && ids.has(o.planVersionId)), from) }));
     });
@@ -314,7 +317,7 @@ export class ReportsService {
         const matches = candidates.filter(g => g && g.planVersionId === ref.planVersionId && g.key === ref.goalKey);
         if (matches.length !== 1) throw new UnprocessableEntityException('Selected goal is not in this saved report snapshot.');
         const g = matches[0];
-        if (typeof g.title !== 'string' || g.title.length < 3 || g.title.length > 300 ||
+        if (typeof g.title !== 'string' || g.title.length < 3 || g.title.length > 200 ||
             !['percent','count','level'].includes(String(g.measure)) ||
             typeof g.baseline !== 'number' || !Number.isFinite(g.baseline) ||
             typeof g.target !== 'number' || !Number.isFinite(g.target))
@@ -322,6 +325,18 @@ export class ReportsService {
         // New keys intentionally have no cross-version measurement continuity.
         return { key: 'g' + (index + 1), title: g.title, measure: g.measure as string, baseline: g.baseline, target: g.target };
       });
+
+      // Validate the immutable snapshot before querying live plan status so
+      // guessed UUIDs cannot disclose whether another version exists.
+      const sourceIds = uniq(dto.selectedGoals.map(g => g.planVersionId));
+      const eligibleVersions = await tx.planVersion.findMany({
+        where: { centerId, id: { in: sourceIds }, status: { not: 'WITHDRAWN' },
+          plan: { centerId, childId: current.childId, service: current.service } },
+        select: { id: true },
+      });
+      if (eligibleVersions.length !== sourceIds.length)
+        throw new ConflictException({ code: 'PLAN_VERSION_WITHDRAWN',
+          message: 'Cannot use withdrawn or unavailable plan versions as sources for a new clinical draft.' });
 
       const plan = await tx.therapyPlan.create({ data: {
         id: dto.requestId, centerId, childId: current.childId, service: current.service,
@@ -367,14 +382,23 @@ export class ReportsService {
 
   private why(r: ProgressReport, v: Viewer) {
     if (r.membershipId !== v.membershipId) return new ForbiddenException('Only the author can edit this report.');
-    if (r.status !== 'DRAFT') return new ConflictException('This report is with the supervisor for review. You can edit it again once it is returned.');
-    return new ConflictException('This report changed in another window or tab. Reload to see the latest text before you keep editing.');
+    if (!EDITABLE.includes(r.status)) return new ConflictException({
+      code: 'INVALID_REPORT_STATUS', message: r.status === 'IN_REVIEW'
+        ? 'This report is with the supervisor. Only DRAFT or RETURNED_FOR_REVISION reports can be edited.'
+        : 'Only DRAFT or RETURNED_FOR_REVISION reports can be edited.',
+    });
+    return new ConflictException({ code: 'VERSION_CONFLICT', message: 'Report version conflict. The report changed in another window; reload before editing.' });
   }
 
   // Lock the draft at the version the author is looking at; every write bumps the version.
   private async bump(tx: Tx, r: ProgressReport, v: Viewer, version: number, now: Date, data: Prisma.ProgressReportUpdateManyMutationInput = {}) {
     const n = await tx.progressReport.updateMany({ where: { id: r.id, centerId: r.centerId, childId: r.childId, service: r.service, membershipId: v.membershipId, status: { in: EDITABLE }, version }, data: { ...data, updatedAt: now, version: { increment: 1 } } });
-    if (n.count !== 1) throw this.why(r, v);
+    if (n.count !== 1) {
+      // The caller's pre-transaction snapshot may be stale; diagnose the
+      // authoritative row rather than mislabel a returned report as uneditable.
+      const latest = await tx.progressReport.findUniqueOrThrow({ where: { id: r.id } });
+      throw this.why(latest, v);
+    }
     return tx.progressReport.findUniqueOrThrow({ where: { id: r.id } });
   }
 

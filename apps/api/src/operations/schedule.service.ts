@@ -1,6 +1,7 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
+import { addDays, localDate, zonedDayStart } from '../common/zoned';
 import { Tx, logCenterEvent, uniq } from '../centers/history';
 import { PrismaService } from '../prisma/prisma.service';
 import { Viewer, childScope } from './children.service';
@@ -9,11 +10,9 @@ import type { AppointmentDto, AppointmentStatusDto, FamilyPreferenceDto, RangeQu
 import { TrialService } from './trial.service';
 
 const DAY = 86_400_000;
-const offset = (d: Date, tz: string) => new Date(d.toLocaleString('en-US', { timeZone: tz })).getTime() - new Date(d.toLocaleString('en-US', { timeZone: 'UTC' })).getTime();
+// Center-local day boundaries are independent of the server's TZ and DST length.
 export function dayStart(now: Date, tz: string): Date {
-  const local = new Date(now.getTime() + offset(now, tz));
-  const midnight = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate());
-  return new Date(midnight - offset(new Date(midnight), tz));
+  return zonedDayStart(localDate(now, tz), tz);
 }
 const isManager = (v: Viewer) => v.role === 'CENTER_ADMIN' || v.role === 'COORDINATOR';
 
@@ -162,13 +161,15 @@ export class ScheduleService {
   async dashboard(centerId: string, v: Viewer) {
     const now = this.trial.now();
     const center = await this.prisma.center.findUniqueOrThrow({ where: { id: centerId } });
-    const start = dayStart(now, center.timezone);
-    const end = new Date(start.getTime() + DAY);
+    const todayLocal = localDate(now, center.timezone);
+    const start = zonedDayStart(todayLocal, center.timezone);
+    const end = zonedDayStart(addDays(todayLocal, 1), center.timezone);
+    const weekEnd = zonedDayStart(addDays(todayLocal, 7), center.timezone);
     const mine = v.role === 'THERAPIST' ? { membershipId: v.membershipId } : {};
     const children: Prisma.ChildWhereInput = { centerId, status: 'ACTIVE', ...childScope(v) };
     const [today, week, activeChildren, unassigned, noGuardian, therapists, pendingInvites, trial] = await Promise.all([
       this.prisma.appointment.findMany({ where: { centerId, ...mine, startsAt: { gte: start, lt: end } }, include: { child: true, notices: true }, orderBy: { startsAt: 'asc' }, take: 500 }),
-      this.prisma.appointment.count({ where: { centerId, ...mine, status: 'SCHEDULED', startsAt: { gte: now, lt: new Date(start.getTime() + 7 * DAY) } } }),
+      this.prisma.appointment.count({ where: { centerId, ...mine, status: 'SCHEDULED', startsAt: { gte: now, lt: weekEnd } } }),
       this.prisma.child.count({ where: children }),
       this.prisma.child.count({ where: { ...children, assignments: { none: { endedAt: null } } } }),
       this.prisma.child.count({ where: { ...children, guardians: { none: { removedAt: null } } } }),

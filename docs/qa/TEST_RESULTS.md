@@ -1,3 +1,75 @@
+## 2026-10-31 — M2-H05 Codex security P1 remediation pending final qualification
+
+| Finding | Fix and test | Status |
+| --- | --- | --- |
+| Pre-authorization WITHDRAWN status leak to revoked therapist | `bc70c5f` enforces transactional active child + matching specialty before withdrawal/goal checks; `e6b9f88` real HTTP/DB verifies authorized 409, revoked known/unknown both 404 | **P1 FIX_NOW; fresh six-job CI + final-head Codex review pending** |
+| Prior 3 P2 + 2 P3 | DST/legacy-title preservation and new boundaries, unchanged | **FIX_NOW; must requalify combined final HEAD** |
+| Clinical release, real records, production | No change to clinical approval gates | **NO-GO** |
+
+## 2026-10-31 — M2-H05 extra review boundary tests pending final qualification
+
+| Finding | Fix/test | Status |
+| --- | --- | --- |
+| Mistral P3 unmeasured legacy long/whitespace title round-trip | `ff05058` stores original title for wholly unchanged definition; `9f3b979` real PostgreSQL and HTTP test | **FIX_NOW — final CI pending** |
+| Mistral P3 explicit fold-time change | `7871202` checks earlier-fold 00:45Z after changing 02:30→02:45, distinct from room-only 01:30Z preservation | **FIX_NOW — final CI pending** |
+| Codex three P2s | DST preserve, measured/checkpointed title bytes, 201–300-char legacy and new-200 cap | **FIX_NOW — final CI pending** |
+| Clinical gates | No policy activation or real records | **NO-GO** |
+
+## 2026-10-31 — M2-H05 long legacy goal title regression pending final qualification
+
+| Finding | Remediation | Status |
+| --- | --- | --- |
+| Codex P2 unchanged legacy measured titles 201–300 chars blocked by newly strict 200 DTO | `a79735c` restores historic DTO cap 300; `276a7e7` enforces new/redefined max 200 in service; `ca001a7` tests measured 250-char round-trip and new 250-char HTTP 400 | **FIX_NOW; fresh six-job CI and final-HEAD independent review pending** |
+| Earlier red test 612/613 | `6ea9fc4` seeds imported whitespace before observation to obey immutable Postgres trigger | **FIX_NOW; verify fresh CI** |
+| All owner-gated clinical release and real records | No change | **NO-GO** |
+
+## 2026-10-31 — M2-H05 review-driven regression coverage (pending final CI)
+
+| Area | Change | Gate |
+| --- | --- | --- |
+| Existing recurring fold bookings | `02a0485` maintains existing appointment UTC instants for room/clinician/duration-only changes; new HTTP/DB regression `57651b9` covers 2027 Paris later fold | **PENDING final-head 6/6 CI + review** |
+| Legacy immutable goal titles | `51c672d` retains exact stored title for measured/checkpointed goal round-trips; `ca12b89` tests real DB and 409 on actual rename | **PENDING final-head 6/6 CI + review** |
+| Prior implementation head | `7f77d66` exact code review found two P2s; earlier 611/611 + 6/6 green is historical and not merge evidence for the new head | **SUPERSEDED** |
+| Clinical release / real children | Unchanged unsigned governance gates | **NO-GO** |
+
+## 2026-10-31 — M2-H05 implementation validation: 611/611 and six CI jobs PASS
+
+| Gate | Result | Evidence |
+| --- | --- | --- |
+| Implementation head | `55163d5fe7d1d567d8ec66f1499bc9d745c459f0` | M2-H05 PR #143, all frozen #122/#123/#125 code and regression tests |
+| API/PostgreSQL | **PASS — 23/23 suites; 611/611 tests** | [Test job on run 41233257189](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41233257189); positive/negative DST, HTTP IANA/percentage/calendar/trim, report RETURN, withdrawal/stale evidence, historical snapshots |
+| API typecheck, API/web build, browser journeys, synthetic seven-role demo | **PASS** | Same exact implementation HEAD run |
+| Secret scan, preview container, portable Docker Compose | **PASS** | Same run |
+| Required six checks (test, secret-scan, live-session, preview-container, demo-journey, compose) | **6/6 PASS on implementation HEAD** | [GitHub Actions 41233257189](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41233257189) |
+| After final docs-update HEAD and exact implementation Codex review | **PENDING AT THIS CHECKPOINT** | Must requalify on final PR HEAD. Prior planning-only Codex review at `5f17f99` is not sufficient. |
+| Signed clinical approval, real patient data and family release/deployment | **NO-GO** | No approval policy activated. |
+
+## 2026-10-31 — M2-H05 #143 implementation verification (ongoing)
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| Frozen issue implementation #122/#123/#125 | **CODE + NEW TESTS PRESENT / DRAFT** | `apps/api/src/common/zoned.ts`, `operations/schedule.service.ts`, `clinical/{clinical,reports,governance}.service.ts`, current DTOs and `common/validators.ts` |
+| DST fold/gap, host-TZ, 23/25h day, leap/month-end tests | **ADDED; full-suite result pending** | `apps/api/test/timezone-validation.e2e-spec.ts` |
+| Impossible dates, IANA, percent bounds, trim tests | **ADDED; full-suite result pending** | `apps/api/test/validators.e2e-spec.ts` |
+| Returned report conflict and withdrawn evidence/workspace/observation | **ADDED; PostgreSQL result pending** | `apps/api/test/governance.e2e-spec.ts` |
+| Initial CI [41232387309](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41232387309) | **FAILED (fixed)** | TS18048 report progress `cur` possibly undefined; fixed `e469b7c`. Do not use initial run for merge. |
+| Second code CI [41232523644](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41232523644) | **605/610 PASS; 5 FAIL (corrected on later HEAD)** | Three existing suites expected 422 instead of new DTO 400, former DST fold/gap behavior, or stale-tab message regex. Tests updated `f9f5e8f`/`30d3f05`; message `65e1b39`. |
+| WITHDRAWN saved report evidence at SUBMIT | **ADDED; latest PostgreSQL result pending** | Reject stale source `PLAN_VERSION_WITHDRAWN` in `b7c1b15`; e2e `4077393`. |
+| Six-job exact-final-HEAD CI, independent implementation Codex review and P0–P3 dispositions | **PENDING** | Previous `5f17f99` Codex reviewed only planning files, not feature code. |
+| Clinical approval, release, real records, production | **NO-GO** | Existing unsigned governance policy unchanged; synthetic fixtures only. |
+
+## 2026-10-31 — M2-H04 completion evidence and M2-H05 draft baseline
+
+| Gate | Result | Evidence |
+| --- | --- | --- |
+| M2-H04 PR #142 implementation (#124/#121 carryover + #120/#119/#126) | **MERGED** | `b95a0ce6e5504c7660bdc265ea08ba3f9a754e23` |
+| PR #142 exact final HEAD | **VERIFIED** | `58c0c40989d289cab838953a2403af706e300f41` |
+| PR #142 test / secret-scan / live-session / preview-container / demo-journey / compose | **6/6 PASS** | [run 41227497493](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41227497493) |
+| PR #142 independent Codex final-head review | **PASS — no major issues** | Exact `58c0c40` receipt; all 17 distinct findings FIX_NOW and review threads resolved |
+| M2-H05 (#122/#123/#125) implementation / tests / final review | **NOT STARTED / NOT RUN / NOT QUALIFIED** | Planning-only draft checkpoint in `docs/emergent/workunits/M2-H05.md`; no claims of code remediation |
+
+Synthetic data only; clinical signing, release and production approval still NO-GO. Historical QA entries below record their original state and are not current M2-H05 results.
+
 ## 2026-10-31 — M2-H04 #142 combined five-issue checkpoint (test status NOT VERIFIED)
 
 | Gate | Current status | Evidence / limitation |

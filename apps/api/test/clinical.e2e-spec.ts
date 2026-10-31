@@ -153,6 +153,90 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.plan_draft_saved' } })).toBe(0);
   });
 
+  it('M2-H05 Mistral P3: unchanged unmeasured legacy title retains exact bytes', async () => {
+    const { therapist, kid } = await setup();
+    const versionId = (await post(h, c(`clinical/children/${kid}/plans`), therapist, {
+      service: 'speech', title: 'Historical unmeasured goal formatting',
+    }).expect(201)).body.versionId as string;
+    const goal = { key: 'legacy-unmeasured', title: 'Valid initial goal', measure: 'count', baseline: 0, target: 2 };
+    const planPath = c(`clinical/plan-versions/${versionId}`);
+    await patch(therapist, planPath, {
+      summary: 'Original draft', goals: [goal], homeActivities: [], version: 1,
+    }).expect(200);
+    const historicTitle = ' ' + 'Z'.repeat(248) + ' ';
+    await h.prisma.planVersion.update({ where: { id: versionId }, data: {
+      goals: [{ ...goal, title: historicTitle }],
+    } });
+    await patch(therapist, planPath, {
+      summary: 'A summary-only change', goals: [{ ...goal, title: historicTitle.trim() }],
+      homeActivities: [], version: 2,
+    }).expect(200);
+    const saved = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: versionId } });
+    expect((saved.goals as Array<{ title: string }>)[0].title).toBe(historicTitle);
+  });
+
+  it('M2-H05 Codex P2: measured 250-character legacy title can round-trip; new long titles fail', async () => {
+    const { therapist, kid } = await setup();
+    const versionId = (await post(h, c(`clinical/children/${kid}/plans`), therapist, {
+      service: 'speech', title: 'Long legacy goal title compatibility',
+    }).expect(201)).body.versionId as string;
+    const goal = { key: 'legacy-long', title: 'Original synthetic title', measure: 'count', baseline: 0, target: 8 };
+    const planPath = c(`clinical/plan-versions/${versionId}`);
+    await patch(therapist, planPath, {
+      summary: 'Initial draft', goals: [goal], homeActivities: [], version: 1,
+    }).expect(200);
+    const legacyTitle = 'L'.repeat(250); // Accepted by the former 300-character DTO.
+    // Materialize a historical import before it becomes immutable.
+    await h.prisma.planVersion.update({ where: { id: versionId }, data: {
+      goals: [{ ...goal, title: legacyTitle }],
+    } });
+    await post(h, c(`clinical/children/${kid}/observations`), therapist, {
+      planVersionId: versionId, goalKey: goal.key, value: 2, observedOn: '2026-10-18',
+    }).expect(201);
+    await patch(therapist, planPath, {
+      summary: 'Clinician summary revised without goal change',
+      goals: [{ ...goal, title: legacyTitle }], homeActivities: [], version: 2,
+    }).expect(200);
+    const saved = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: versionId } });
+    expect((saved.goals as Array<{ title: string }>)[0].title).toBe(legacyTitle);
+    await patch(therapist, planPath, {
+      summary: 'Cannot add a new long goal', goals: [
+        { ...goal, title: legacyTitle },
+        { key: 'new-long', title: 'N'.repeat(250), measure: 'count', baseline: 0, target: 1 },
+      ], homeActivities: [], version: 3,
+    }).expect(400);
+  });
+
+  it('M2-H05 Codex P2: a measured legacy goal with whitespace title can round-trip without redefinition', async () => {
+    const { therapist, kid } = await setup();
+    const versionId = (await post(h, c(`clinical/children/${kid}/plans`), therapist, {
+      service: 'speech', title: 'Legacy draft goal compatibility',
+    }).expect(201)).body.versionId as string;
+    const goal = { key: 'legacy', title: 'Names familiar objects', measure: 'count', baseline: 0, target: 8 };
+    const planPath = c(`clinical/plan-versions/${versionId}`);
+    await patch(therapist, planPath, {
+      summary: 'Original synthetic draft', goals: [goal], homeActivities: [], version: 1,
+    }).expect(200);
+    // Model a legacy import BEFORE the first measurement: the database
+    // correctly forbids rewriting a goal definition after observation.
+    await h.prisma.planVersion.update({ where: { id: versionId }, data: {
+      goals: [{ ...goal, title: '  Names familiar objects  ' }],
+    } });
+    await post(h, c(`clinical/children/${kid}/observations`), therapist, {
+      planVersionId: versionId, goalKey: 'legacy', value: 2, observedOn: '2026-10-18',
+    }).expect(201);
+    await patch(therapist, planPath, {
+      summary: 'Summary-only revision after import', goals: [goal], homeActivities: [], version: 2,
+    }).expect(200);
+    const saved = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: versionId } });
+    expect((saved.goals as Array<{ title: string }>)[0].title).toBe('  Names familiar objects  ');
+    expect(saved.summary).toBe('Summary-only revision after import');
+    await patch(therapist, planPath, {
+      summary: 'Must not redefine measured goal',
+      goals: [{ ...goal, title: 'Renamed goal should fail' }], homeActivities: [], version: 3,
+    }).expect(409);
+  });
+
   it('records non-authorizing therapist goal checkpoints with exact saved observation sources', async () => {
     const { therapist, other, sup, kid, rosa } = await setup();
     const created = (await post(h, c(`clinical/children/${kid}/plans`), therapist, {
@@ -183,7 +267,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     await post(h, path, therapist, { ...body, goalKey: 'not-in-plan' }).expect(422);
     await post(h, path, therapist, { ...body, observationIds: [unrelatedSource] }).expect(422);
     await post(h, path, therapist, { ...body, observationIds: [exactSource, exactSource] }).expect(422);
-    await post(h, path, therapist, { ...body, reviewedOn: '2026-02-30' }).expect(422);
+    await post(h, path, therapist, { ...body, reviewedOn: '2026-02-30' }).expect(400);
     await post(h, path, therapist, { ...body, reviewedOn: '2026-11-02' }).expect(422);
     await post(h, path, therapist, { ...body, summary: 'short' }).expect(400);
     const receipt = (await post(h, path, therapist, body).expect(200)).body;
@@ -323,8 +407,10 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
       schedule: { cadence: 'WEEKLY', startsOn: '2026-10-19', endsOn: '2026-12-16', weekdays: [1, 3] },
     };
     const update = { summary: 'Synthetic, unapproved draft with dated objectives', goals: [goal], homeActivities: [activity], version: 1 };
-    await patch(therapist, url, { ...update, goals: [{ ...goal, targetOn: '2027-02-30' }] }).expect(422);
-    await patch(therapist, url, { ...update, goals: [{ ...goal, reviewOn: '2027-02-29' }] }).expect(422);
+    await patch(therapist, url, { ...update, goals: [{ ...goal, measure: 'percent', target: 101 }] }).expect(400);
+    await patch(therapist, url, { ...update, goals: [{ ...goal, measure: 'percent', baseline: -1 }] }).expect(400);
+    await patch(therapist, url, { ...update, goals: [{ ...goal, targetOn: '2027-02-30' }] }).expect(400);
+    await patch(therapist, url, { ...update, goals: [{ ...goal, reviewOn: '2027-02-29' }] }).expect(400);
     await patch(therapist, url, { ...update, goals: [{ ...goal, horizon: 'VERY_LONG' }] }).expect(400);
     await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
       schedule: { ...activity.schedule, weekdays: [1, 1] } }] }).expect(422);
@@ -392,14 +478,14 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     };
     // A therapist may only author an activity in an active declared specialty.
     await post(h, c('activities'), ot, data).expect(403);
-    await post(h, c('activities'), therapist, { ...data, title: '    ' }).expect(422);
+    await post(h, c('activities'), therapist, { ...data, title: '    ' }).expect(400);
     await post(h, c('activities'), admin, data).expect(403);
     const originalId = (await post(h, c('activities'), therapist, data).expect(201)).body.id;
     const original = await h.prisma.activityTemplate.findUniqueOrThrow({ where: { id: originalId } });
     expect(original).toMatchObject({ title: data.title, service: 'speech', version: 1, centerId });
 
     // A different therapist can copy but cannot overwrite the original author.
-    await post(h, c(`activities/${originalId}/duplicate`), other, { title: '    ' }).expect(422);
+    await post(h, c(`activities/${originalId}/duplicate`), other, { title: '    ' }).expect(400);
     const copy = (await post(h, c(`activities/${originalId}/duplicate`), other, {
       title: 'Personalized speech copy',
     }).expect(201)).body;
@@ -415,7 +501,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     const { service, ...editable } = data;
     const update = { ...editable, title: 'Author edited speech activity', version: 1 };
     await patch(other, c(`activities/${originalId}`), update).expect(403);
-    await patch(therapist, c(`activities/${originalId}`), { ...update, title: '    ' }).expect(422);
+    await patch(therapist, c(`activities/${originalId}`), { ...update, title: '    ' }).expect(400);
     const saved = await patch(therapist, c(`activities/${originalId}`), update).expect(200);
     expect(saved.body).toMatchObject({ id: originalId, version: 2 });
     await patch(therapist, c(`activities/${originalId}`), update).expect(409);

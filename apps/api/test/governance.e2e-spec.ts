@@ -28,6 +28,67 @@ describe('TB-EM-011 non-authorizing governance (real PostgreSQL)', () => {
   plan=(await h.prisma.planVersion.create({data:{centerId:c,planId:p.id,number:1,authorId,summary:'Immutable synthetic content',goals:[goal],createdAt:h.clock.now(),updatedAt:h.clock.now()}})).id;
   report=(await post(h,path(`clinical/children/${kid}/reports`),therapist,{service:'speech',title:'Synthetic report',periodStart:'2026-01-01',periodEnd:'2026-01-02'}).expect(201)).body.id;
  });
+ it('M2-H05 reports distinguish stale RETURNED_FOR_REVISION resubmission from invalid status', async () => {
+  await h.prisma.progressReport.update({ where: { id: report }, data: { sections: {
+    summary: 'Synthetic report summary for internal reviewer', assessment: '', goals: '', sessions: '', recommendations: '', familySummary: '',
+  } } });
+  const first = await transition(therapist, 'SUBMIT', 1, 'REPORT', report).expect(201);
+  expect(first.body.status).toBe('IN_REVIEW');
+  const returned = await transition(supervisor, 'RETURN', 2, 'REPORT', report).expect(201);
+  expect(returned.body.status).toBe('RETURNED_FOR_REVISION');
+  const stale = await transition(therapist, 'SUBMIT', 2, 'REPORT', report).expect(409);
+  expect(stale.body.code).toBe('VERSION_CONFLICT');
+  const submitted = await transition(therapist, 'SUBMIT', 3, 'REPORT', report).expect(201);
+  expect(submitted.body.status).toBe('IN_REVIEW');
+  const wrong = await transition(therapist, 'SUBMIT', 4, 'REPORT', report).expect(409);
+  expect(wrong.body.code).toBe('INVALID_REPORT_STATUS');
+ });
+
+ it('M2-H05 Codex P1: revoked assignment cannot learn withdrawn status from observations', async () => {
+  await transition(therapist, 'SUBMIT', 1).expect(201);
+  await transition(therapist, 'WITHDRAW', 2).expect(201);
+  const pathToObservation = path(`clinical/children/${kid}/observations`);
+  const body = { planVersionId: plan, goalKey: 'phrases', value: 40, observedOn: '2026-01-01' };
+  const permitted = await post(h, pathToObservation, therapist, body).expect(409);
+  expect(permitted.body.code).toBe('PLAN_VERSION_WITHDRAWN');
+  await h.prisma.careAssignment.updateMany({
+    where: { centerId: c, childId: kid, membershipId: memberId },
+    data: { endedAt: h.clock.now() },
+  });
+  const withdrawn = await post(h, pathToObservation, therapist, body).expect(404);
+  const unknown = await post(h, pathToObservation, therapist, { ...body, planVersionId: randomUUID() }).expect(404);
+  expect(withdrawn.body).toEqual(unknown.body);
+ });
+
+ it('M2-H05 excludes WITHDRAWN versions from current report evidence but retains history', async () => {
+  const first = await transition(therapist, 'SUBMIT', 1).expect(201);
+  await transition(therapist, 'WITHDRAW', 2).expect(201);
+  expect((await h.prisma.planVersion.findUniqueOrThrow({ where: { id: plan } })).status).toBe('WITHDRAWN');
+  const next = await post(h, path(`clinical/children/${kid}/reports`), therapist, {
+    service: 'speech', title: 'After withdrawal synthetic report', periodStart: '2026-01-01', periodEnd: '2026-01-02',
+  }).expect(201);
+  const detail = await get(therapist, `clinical/reports/${next.body.id}`).expect(200);
+  expect(detail.body.evidence.plans).toEqual([]);
+  expect(detail.body.evidence.goals).toEqual([]);
+  // The withdrawn version remains in the historical workspace, but cannot be
+  // advertised as a current draft or used for a new goal observation.
+  const workspace = (await get(therapist, `clinical/children/${kid}`).expect(200)).body;
+  expect(workspace.activePlanVersions).toEqual([]);
+  expect(workspace.currentDraftPlanVersions).toEqual([]);
+  expect(workspace.plans[0].versions[0].status).toBe('WITHDRAWN');
+  // Existing draft report still has a frozen CREATED evidence version that
+  // referenced this plan. It must not silently rebind to an empty evidence set.
+  await h.prisma.progressReport.update({ where: { id: report }, data: { sections: {
+    summary: 'Synthetic report written against the earlier plan', assessment: '', goals: '', sessions: '', recommendations: '', familySummary: '',
+  } } });
+  const rejected = await transition(therapist, 'SUBMIT', 1, 'REPORT', report).expect(409);
+  expect(rejected.body.code).toBe('PLAN_VERSION_WITHDRAWN');
+  await post(h, path(`clinical/children/${kid}/observations`), therapist, {
+    planVersionId: plan, goalKey: goal.key, value: 25, observedOn: '2026-01-01',
+  }).expect(409);
+  expect((await get(supervisor, `governance/previews/${first.body.snapshotId}`).expect(200)).body.content).toBeDefined();
+ });
+
  it('withdraws explicitly, preserves reviewed content and requires withdrawal before a new version',async()=>{
   const submitted=await transition(therapist,'SUBMIT',1).expect(201);
   const p=await h.prisma.planVersion.findUniqueOrThrow({where:{id:plan}});

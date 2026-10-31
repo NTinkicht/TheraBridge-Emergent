@@ -1,3 +1,39 @@
+## 2026-10-31 — CURRENT: M2-H05 Codex P1 security leak fixed; review gate pending
+
+- Codex exact `7a75667` found pre-auth withdrawal-status response after clinician assignment revocation. **P1 FIX_NOW** `bc70c5f` now authorizes active child and matching plan specialty before any status/goal diagnostics inside the transaction; `e6b9f88` tests revoked withdrawn/unknown plan requests return identical 404 while authorized withdrawal returns 409. No deferral; all clinical release/real record gates remain NO-GO. Requalify latest HEAD with six CI jobs and new Codex review before merge.
+
+## 2026-10-31 — CURRENT: M2-H05 review P3 compatibility + DST boundary fixes
+
+- Small Mistral suggestions **FIX_NOW**: `ff05058` + `9f3b979` preserve unmeasured legacy 250-char whitespace title on unchanged save; `7871202` asserts explicit DST-fold time edits intentionally choose earlier instant while room-only edits preserve a prior booking. Three Codex P2s and both P3 suggestions handled, no deferred findings. Final exact-HEAD 6/6 CI + independent Codex review remain pending; no clinical activation or production.
+
+## 2026-10-31 — CURRENT: M2-H05 third Codex P2 compatibility fix; final gates pending
+
+- New Codex exact-head P2: existing measured/checkpointed goals with 201–300-character titles must remain saveable. `a79735c` accepts historic 300-char DTO and `276a7e7` limits new/redefined goals to 200 via fingerprint-equivalent legacy exception. `ca001a7` adds measured 250-char round-trip/400-on-new regression. Reviewer disposition **FIX_NOW**, no deferral. Prior two P2s and Postgres fixture ordering fixed; exact final-head CI + fresh Codex review still required. Governance NO-GO unchanged.
+
+## 2026-10-31 — M2-H05 Codex code review: two P2 fixes implemented; requalification pending
+
+- [PR #143](https://github.com/NTinkicht/TheraBridge-Emergent/pull/143) moved to ready-for-review at final docs HEAD `7f77d66`. Codex's exact-HEAD review identified two **P2** regressions, both **FIX_NOW**: room-only recurring-series updates could shift a legacy DST-fold booking; globally trimmed goal titles could block summary-only saves of observed/checkpointed legacy drafts.
+- Remediations on branch: `02a0485` preserves booked occurrence instants unless the series' wall time actually changes; `51c672d` restores the exact stored immutable goal title when its trimmed equivalent round-trips. PostgreSQL/HTTP regressions: `57651b9` (Paris fold room-only update) and `ca12b89` (legacy measured title byte-faithful save plus real redefinition still rejected).
+- **At this checkpoint** fresh exact-HEAD 6/6 CI and new independent Codex review remain PENDING; do not merge based on older six-job green run 41233986911 or Codex review of `7f77d66`. All clinical activation, consent/release, live records and production remain NO-GO. Next after qualified merge: M2-H06 #127/#128/#129/#130.
+
+## 2026-10-31 — M2-H05 implementation HEAD CI qualified; final review/handover HEAD gate separate
+
+- [PR #143](https://github.com/NTinkicht/TheraBridge-Emergent/pull/143) implements frozen #122, #123 and #125. Its implementation HEAD `55163d5fe7d1d567d8ec66f1499bc9d745c459f0` completed **23/23 suites, 611/611 API tests** and **6/6 exact-HEAD CI PASS** ([run 41233257189](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41233257189)). Includes new HTTP-invalid-zone/percentage tests, 23/25-hour DST days, fold/gap policies, withdrawn-plan evidence and stale report submission guard, historical snapshot preservation, and tenant-scoped SQL status selection. Previously recorded red runs were resolved by later commits.
+- **At this checkpoint:** after documentation commits, reverify all six checks on the new HEAD, then mark ready for review and obtain a new independent Codex review of *that same final HEAD*. Disposition any new comments before Rule 16 merge. Canonical PR body holds live gate status. Clinical/real data/signing/safeguarding/consent/release/production remain NO-GO. Next frozen item after eligible merge: **M2-H06 #127/#128/#129/#130**.
+
+## 2026-10-31 — CURRENT: M2-H05 #143 implementation in review qualification
+
+- [PR #143](https://github.com/NTinkicht/TheraBridge-Emergent/pull/143) remains **OPEN DRAFT**, now contains application and regression-test changes for frozen **#122, #123, #125** (item 6/12). DST folds select the earlier instant; gaps explicitly reject. Current center-local day boundaries and date validation no longer use host-timezone assumptions or regex-only checks. Reports/governance distinguish stale versions and invalid states; WITHDRAWN plans stay historical and cannot enter new active evidence/observations.
+- Subsequent API test [41232523644](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41232523644): **605 PASS, 5 FAIL** (old HTTP 422 assertions now correctly HTTP 400 for DTO-invalid inputs; fold first occurrence; stale-tab message). Compatibility assertions updated; stale-tab wording preserved. Report SUBMIT also now fails closed with `PLAN_VERSION_WITHDRAWN` if its saved source evidence was withdrawn before submission; covered by new PostgreSQL regression. Latest CI still pending.
+- New synthetic regression tests: `timezone-validation.e2e-spec.ts`, `validators.e2e-spec.ts` and real-PostgreSQL `governance.e2e-spec.ts` additions. First code CI [41232387309](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41232387309) failed a TS narrowing assertion, fixed at `e469b7c`. **Exact final-HEAD 6/6 CI, implementation Codex review and all finding dispositions are PENDING; NO MERGE yet.**
+- The pinned audit references obsolete monolithic paths/models; the implementation maps to current split NestJS/Prisma services, described in `docs/emergent/workunits/M2-H05.md`. No owner approval for clinical signing, consent, safeguarding, family release or real data: all **NO-GO**. After qualified merge, open M2-H06 (#127–#130) immediately. Historical checkpoints follow.
+
+## 2026-10-31 — CURRENT: M2-H05 planning-only draft (after M2-H04 merge)
+
+- **Latest verified merge:** [M2-H04 PR #142](https://github.com/NTinkicht/TheraBridge-Emergent/pull/142) merged as `b95a0ce6e5504c7660bdc265ea08ba3f9a754e23`; #124/#121 H03 carryover plus #120/#119/#126 H04 fixes, six exact-HEAD CI PASS ([run 41227497493](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41227497493)), final-head Codex no major issues and 17 review findings fixed/dispositioned.
+- **Current frozen item 6/12:** M2-H05 — Clinical, Scheduling and Validation Correctness: **#122, #123, #125**. Draft planning checkpoint only: **implementation NOT STARTED; tests NOT RUN; final independent implementation review NOT DONE**. See `docs/emergent/workunits/M2-H05.md`.
+- Synthetic-only and clinical sign-off/release/consent/safeguarding/production **NO-GO** unchanged. Earlier dated sections below are historical checkpoints and superseded for current next action.
+
 ## 2026-10-31 — LATEST: M2-H04 combined implementation checkpoint on PR #142 (draft, unqualified)
 
 - Five-issue code changes are now in PR #142: #124 HTTP hardening, #121 transactionally-ended therapist assignments/series/visits and guardian notices, #120 current-schema FK/index/audit-trigger and transfer-version migration, #119 center-lock downgrade and batched conflict reads, #126 list bounds/reminder dedupe/expired rate-limit pruning. Tests include real-PostgreSQL suspension/referent/series and audit-trigger regressions, reminder idempotency, shared password-change rate limiting and migration-history guard.
