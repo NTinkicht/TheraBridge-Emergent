@@ -1,3 +1,26 @@
+## 2026-10-31 — PR #137 follow-up review P3 dispositions implemented
+
+- FIX_NOW (review 5717799244 P3-1): after an interactive transaction rejects, query committed demo local identities before deleting newly staged credentials; retain on visible identities or failed verification, with explicit operator recovery message.
+- FIX_NOW (P3-2): reject missing `local` identity on a preexisting demo user if no externally managed passwords were supplied; no unexported random password.
+- FIX_NOW (P3-3): explain interrupted staging vs wrong-database file and require database verification before removing protected credentials.
+- Added three PostgreSQL regression tests to `seed-transactions.e2e-spec.ts`. Implementation commits `05d7f7a`, `5daa691`; exact final-HEAD CI and Codex review PENDING. GH-18 historical migration chronology OPEN; no merge.
+
+## 2026-10-30 — PR #137 independent review corrections
+
+- P2 FIX_NOW: credential material for new local demo identities is created securely via exclusive file open, written and fsynced before the corresponding DB mutations; failure rolls back and deletes this run's file. Avoid post-commit unexported password scenario and preserve collision-denial behavior.
+- P3 FIX_NOW: moved Argon2 hash work outside both interactive transactions, sequentially to bound memory; added a real PostgreSQL rollback/credential cleanup regression, a TOCTOU EEXIST race fixture, far-future migration and migration-lock metadata rejection, and direct-main-push guard in CI.
+- P3 recommendations not requiring code: exact rationale and disposition documented at PR #137 issue comment #6531973532.
+- Historical Prisma migrations unchanged. Final changed HEAD requires fresh 6/6 CI and independent review; no automatic merge.
+
+## 2026-10-30 — M2-H01 / GH-18 first implementation checkpoint
+
+- Created `feature/m2-h01-migration-ci-seed-integrity` from current `main` after PR #116 merge.
+- Implemented transaction-enclosed synthetic and Children's Home demo DB seeds; wrote credential files only following a completed transaction. Preserved existing explicit synthetic environment and tenant-collision checks.
+- Added migration blob-history validator to detect published file modification/deletion, backdated migrations and appended files in historical folders; added seven negative/positive unit fixtures.
+- Added fault-injection Jest fixtures for both seed functions and wired migration validator into PR CI. Existing additive DB upgrade job remains intact.
+- Audit recommendation to *rename* `049` is intentionally not performed pending actual deployed `_prisma_migrations` evidence; rewriting historical migration identity can break existing databases. Verify ledger and plan a forward-only fix if warranted.
+- Execution state: edits committed to feature branch; exact-head six-job CI and independent reviews **NOT YET VERIFIED**. No merge.
+
 ## 2026-10-29 — TB-EM-051 design-only authorization gate
 
 - Verified prior work TB-EM-049/#111 and TB-EM-050/#113 merged, using main merge commit `05cec48b929206cb14371cc36805aa3b0ee4f9fc` for new branch. New owner instruction interpreted as authorization to prepare *design/decision artifacts only*, not clinical policy signature.

@@ -1,3 +1,59 @@
+## 2026-10-31 — PR #137 first corrected-head CI failure and fixture repair
+
+CI run [41182535567](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41182535567) on HEAD `94ba59f`: `secret-scan`, `live-session`, `preview-container`, `demo-journey` **PASS**; `test` **FAIL** (569 pass, 1 fail across 18 suites); `compose` SKIPPED. The sole failure was the pre-existing real-PostgreSQL rollback fixture `rolls back demo DB and removes pre-staged credentials on mid-seed failure`: its `failAt` mock exposed `$transaction` but not the newly required post-failure `authIdentity.count` query, so recovery correctly retained credentials for an uncheckable outcome. Commit `5efcb49` exposes the real committed read in that wrapper; code behavior and other tests unchanged. **New final HEAD six-job CI NOT YET VERIFIED.**
+
+## 2026-10-31 — PR #137 follow-up P3 regression ledger (NOT RUN at documentation checkpoint)
+
+| Regression | State | Expected invariant |
+| --- | --- | --- |
+| PostgreSQL committed then the client loses COMMIT acknowledgement | ADDED, NOT YET VERIFIED | Seven local identities are committed and the protected credential file remains available |
+| Existing demo user missing a local authentication identity | ADDED, NOT YET VERIFIED | Seed refuses an unexported random password; DB remains at six identities; prior credentials preserved |
+| Interrupted pre-COMMIT credential staging | ADDED, NOT YET VERIFIED | No demo users + preexisting file gives actionable, fail-closed recovery message; after verified test-file removal rerun creates seven identities |
+| Previously covered mid-transaction PostgreSQL rollback | CODE UPDATED, RE-RUN PENDING | Zero committed identities after rollback; newly staged file removed only when zero demo identities are independently confirmed |
+| Exact corrected-HEAD six CI jobs | NOT VERIFIED | Must qualify final HEAD, not prior `49c99db` or `5daa691` |
+| Independent Codex review of final HEAD | NOT VERIFIED | Prior reviews do not qualify the new code |
+| Migration chronology, production and clinical use | OPEN / NO-GO | No historical rewrite, no real clinical activation |
+
+Review source: PR #137 review 5717799244, follow-up 5717859375. Code commits: `05d7f7a`, `5daa691`.
+
+## 2026-10-30 — PR #137 independent review remediation evidence
+
+| Check | State | Evidence |
+| --- | --- | --- |
+| P2 protected demo credentials fail before DB commit | IMPLEMENTED; NEW HEAD CI PENDING | Exclusive file create, write, fsync before DB mutates; rollback cleanup |
+| Filesystem TOCTOU collision | NEW HEAD CI PENDING | Mock write of rival credentials file between checks; assert no account insert |
+| Real PostgreSQL rollback | NEW HEAD CI PENDING | Fault injection after initial DB writes for both synthetic and demo seeds |
+| Argon2 CPU work outside transaction | IMPLEMENTED; NEW HEAD CI PENDING | Sequential password pre-hash before interactive DB transaction |
+| Migration new-folder future skew and direct-main-push guard | NEW HEAD CI PENDING | Added negative fixtures and GitHub main-push comparison |
+| Exact corrected-HEAD six CI jobs | NOT VERIFIED | Previous `06b2f21` success applies only to older commit |
+| Independent final-head review | NOT VERIFIED | Prior Codex no-findings receipt is outdated after fixes |
+| Migration chronology rename | OPEN / NOT DONE | Historic migration identity left unchanged pending applied-DB ledger |
+| Clinical/real-data deployment | BLOCKED / NO-GO | Signed owner policies absent |
+
+Review disposition: PR #137 conversation comment #6531973532.
+
+## 2026-10-30 — M2-H01 first exact-HEAD CI receipt
+
+Commit `b1155a1673a5efe2cf67765188cb9211ac884568`; [GitHub Actions CI run 41056461993](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41056461993): **6/6 SUCCESS** on this recorded commit. Required jobs `test`, `secret-scan`, `live-session`, `preview-container`, `demo-journey`, and `compose` all concluded successfully. The `test` job included migration guard negative fixtures, exact base-HEAD migration immutability, Prisma additive upgrade, API fault-injection seed tests, TS check, API build and real browser regression. The demo and preview jobs exercised the existing hosted-synthetic demo startup behavior.
+
+**Scope caveat:** This receipt applies exclusively to the cited SHA. Subsequent documentation/implementation commits require a fresh six-job qualification. The migration identifier rename suggested in #134 remains intentionally excluded pending existing-deployment migration ledger review; therefore GH-18 is not declared fully closed. Independent review and merge approval remain pending.
+
+## 2026-10-30 — M2-H01 / GH-18 provisional verification ledger
+
+| Acceptance item | Result | Evidence / limitation |
+|---|---|---|
+| Published Prisma migrations are immutable | NOT RUN | New guard compares base and HEAD blob SHAs on PR |
+| Migration guard negative-path fixtures (7) | NOT RUN | `node --test scripts/qa/check-migration-history.test.mjs` in `test` CI |
+| Synthetic account DB seed fault injection | NOT RUN | Jest `seed-transactions.e2e-spec.ts` |
+| Children's Home demo DB seed fault injection | NOT RUN | Same Jest suite; protected credentials exported only after transaction |
+| Fresh DB + migration continuity | NOT RUN | Existing CI Prisma migrate deploy/status test preserved |
+| Hosted demo seven-role idempotent seed | NOT RUN | Existing `demo-journey`/preview CI |
+| Six exact-HEAD CI jobs | NOT RUN | Qualification required before merge |
+| Independent review | NOT RUN | Required after code stabilization |
+| Clinical authorization and real-data deployment | BLOCKED / NO-GO | Unchanged signed-policy gates |
+
+Historical migration folder rename from GH-18 is not applied: no evidence yet that rewriting a published Prisma migration identifier can safely preserve existing deployments. Must inspect deployed migration ledgers and validate a forward-compatible plan if needed; never imply this audit subitem has passed.
+
 ## 2026-10-29 — TB-EM-051 unsigned transfer policy check (NOT RUN at initial design commit)
 
 Created `docs/policy/TB-EM-051-AUTHORIZATION-GATES.json` with nine unsigned owner gates, zero signatures, blocked activation in development/CI/preview/staging/production and explicit denial scenarios. Created `scripts/qa/verify-tb-em-051-gates.mjs`: validates decision uniqueness/completeness, fails on any unexpectedly enabled/approved state; seven policy negative fixture mutations must be rejected (plus an assignment-mutation sentinel), and the current governance controller/service must still expose only non-authorizing simulation/operational proposal/readiness with hardcoded no-access/transfer markers. Wired into `.github/workflows/ci.yml` required test job. **NOT EXECUTED** at this checkpoint; exact new SHA six CI jobs and independent P0–P2 review pending. The script is a source/contract guard, not a proof of real clinical permissions or transfer readiness. No patient, consent, safeguarding, clinician signature, family release, external AI or hosted acceptance undertaken. Clinical NO-GO / external QA #81 unchanged.

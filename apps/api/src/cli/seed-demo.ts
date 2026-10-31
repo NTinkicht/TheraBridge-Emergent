@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { createHash } from 'node:crypto';
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { PrismaClient, Role } from '@prisma/client';
 import { hashPassword, passwordPolicyError, verifyPassword } from '../auth/password';
@@ -90,19 +90,33 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
   const passwords = parseHostedDemoPasswords(process.env);
   const now = new Date();
   const cid = id('center');
+  // Prepare all passwords/hashes before locking a database connection.
+  // For local demo bootstrap, write the exclusively created, fsynced credential
+  // file BEFORE account mutations, so filesystem failure cannot strand identities.
+  const prepared: { email: string; password: string; passwordHash: string; role: string }[] = [];
+  for (const a of roster) {
+    const email = DEMO_EMAILS[a.key];
+    const password = passwords?.[email] ?? ('tb-' + randomToken(20));
+    prepared.push({ email, password, passwordHash: await hashPassword(password), role: a.role ?? 'PLATFORM_ADMIN' });
+  }
+  const byEmail = new Map(prepared.map(p => [p.email, p]));
+  let createdCredentialFile = false;
+  try {
+    // All database writes and tenant/collision checks share one transaction.
+    const result = await db.$transaction(async (tx) => {
   // Fail closed: a dedicated preview database may contain only this demo tenant and its users.
   const demoIds = roster.map(a => id('user:' + a.key));
   const [unrelatedCenters, unrelatedUsers] = await Promise.all([
-    db.center.count({ where: { id: { not: cid } } }),
-    db.user.count({ where: { id: { notIn: demoIds } } }),
+    tx.center.count({ where: { id: { not: cid } } }),
+    tx.user.count({ where: { id: { notIn: demoIds } } }),
   ]);
   if (unrelatedCenters || unrelatedUsers) throw new Error('Preview database contains unrelated users/centres. Refusing to mix synthetic data.');
-  const existingSlug = await db.center.findUnique({ where: { slug: DEMO_SLUG } });
+  const existingSlug = await tx.center.findUnique({ where: { slug: DEMO_SLUG } });
   if (existingSlug && existingSlug.id !== cid) throw new Error('Demo slug already belongs to another centre; refusing to overwrite it.');
   const preexistingUsers: string[] = [];
   for (const a of roster) {
     const email = DEMO_EMAILS[a.key];
-    const user = await db.user.findUnique({ where: { emailNormalized: email } });
+    const user = await tx.user.findUnique({ where: { emailNormalized: email } });
     if (user && user.id !== id('user:' + a.key)) throw new Error('Email collision: ' + email);
     if (user) {
       if (user.status !== 'ACTIVE') throw new Error('Existing demo account is disabled: ' + email);
@@ -117,18 +131,36 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     throw new Error('Demo accounts exist but secure credential file is missing. Restore it or use an explicitly disposable fresh demo database.');
   }
   if (!passwords && !preexistingUsers.length && existsSync(credentialFile)) {
-    throw new Error('Credential file belongs to a different database. Refusing to overwrite; use a clean protected credential location.');
+    throw new Error('Protected demo credential file exists but no demo users were found. A previous seed may have been interrupted before commit, or the file may belong to another database. Refusing to overwrite; verify the database has no demo users before removing the orphan file and retrying.');
   }
   if (!passwords && existsSync(credentialFile)) {
     const stored = JSON.parse(readFileSync(credentialFile, 'utf8')) as { accounts?: { email: string }[] };
     if (roster.some(a => !stored.accounts?.some(x => x.email === DEMO_EMAILS[a.key]))) throw new Error('Stored demo credentials are incomplete; refusing silent rotation.');
   }
-  if (await db.center.findUnique({ where: { id: cid } })) {
-    const c = await db.center.findUniqueOrThrow({ where: { id: cid } });
+  if (await tx.center.findUnique({ where: { id: cid } })) {
+    const c = await tx.center.findUniqueOrThrow({ where: { id: cid } });
     if (c.slug !== DEMO_SLUG || c.name !== "Children's Home Centre") throw new Error('Demo centre ID collision.');
   }
 
-  const center = await db.center.upsert({
+  if (!passwords && !preexistingUsers.length) {
+    // No database mutation has yet occurred. Fail immediately for EEXIST,
+    // EACCES, ENOSPC, or a read-only credential directory.
+    mkdirSync(dirname(credentialFile), { recursive: true, mode: 0o700 });
+    const fd = openSync(credentialFile, 'wx', 0o600);
+    createdCredentialFile = true;
+    try {
+      writeFileSync(fd, JSON.stringify({
+        synthetic: true, center: DEMO_SLUG, createdAt: now.toISOString(),
+        accounts: prepared.map(({ email, password, role }) => ({ email, password, role })),
+      }, null, 2));
+      fsyncSync(fd);
+    } finally {
+      closeSync(fd);
+    }
+    chmodSync(credentialFile, 0o600);
+  }
+
+  const center = await tx.center.upsert({
     where: { id: cid },
     create: {
       id: cid, name: "Children's Home Centre", slug: DEMO_SLUG, timezone: 'Asia/Dubai',
@@ -137,38 +169,42 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     },
     update: {},
   });
-  const credentials: { email: string; password: string; role: string }[] = [];
   const users: Record<string, string> = {}, members: Record<string, string> = {};
   for (const a of roster) {
     const email = DEMO_EMAILS[a.key];
     const uid = id('user:' + a.key);
-    const existing = await db.user.findUnique({ where: { id: uid } });
-    const user = existing ?? await db.user.create({ data: { id: uid, email, emailNormalized: email, displayName: a.name } });
+    const existing = await tx.user.findUnique({ where: { id: uid } });
+    const user = existing ?? await tx.user.create({ data: { id: uid, email, emailNormalized: email, displayName: a.name } });
     users[a.key] = user.id;
-    const identity = await db.authIdentity.findUnique({ where: { userId_provider: { userId: user.id, provider: 'local' } } });
+    const identity = await tx.authIdentity.findUnique({ where: { userId_provider: { userId: user.id, provider: 'local' } } });
     if (identity && passwords && !(await verifyPassword(identity.passwordHash ?? '', passwords[email]))) {
       throw new Error('Hosted demo password no longer matches existing account; refusing silent rotation for ' + email);
     }
     if (!identity) {
-      const password = passwords?.[email] ?? ('tb-' + randomToken(20));
-      await db.authIdentity.create({ data: { userId: user.id, provider: 'local', subject: email, passwordHash: await hashPassword(password) } });
-      if (!passwords) credentials.push({ email, password, role: a.role ?? 'PLATFORM_ADMIN' });
+      // An existing account cannot receive a new random password whose
+      // plaintext was never exported or deliberately supplied by the operator.
+      if (existing && !passwords) {
+        throw new Error('Demo identity missing for existing account; refusing unexported password for ' + email);
+      }
+      const selected = byEmail.get(email);
+      if (!selected) throw new Error('Missing prepared demo identity: ' + email);
+      await tx.authIdentity.create({ data: { userId: user.id, provider: 'local', subject: email, passwordHash: selected.passwordHash } });
     }
     if (a.key === 'platform') {
-      if (!await db.platformRoleAssignment.count({ where: { userId: user.id, role: 'PLATFORM_ADMIN', revokedAt: null } })) {
-        await db.platformRoleAssignment.create({ data: { userId: user.id, source: 'synthetic_seed', reason: 'Synthetic demonstration only' } });
+      if (!await tx.platformRoleAssignment.count({ where: { userId: user.id, role: 'PLATFORM_ADMIN', revokedAt: null } })) {
+        await tx.platformRoleAssignment.create({ data: { userId: user.id, source: 'synthetic_seed', reason: 'Synthetic demonstration only' } });
       }
       continue;
     }
     const mid = id('member:' + a.key);
-    const membership = await db.membership.upsert({
+    const membership = await tx.membership.upsert({
       where: { id: mid },
       create: { id: mid, userId: user.id, centerId: center.id, status: 'ACTIVE', title: a.title, specialties: a.specialties, responsibilities: [] },
       update: {},
     });
     if (membership.centerId !== cid || membership.userId !== uid || membership.status !== 'ACTIVE') throw new Error('Demo membership changed unexpectedly.');
     members[a.key] = membership.id;
-    await db.roleAssignment.upsert({
+    await tx.roleAssignment.upsert({
       where: { membershipId_role: { membershipId: membership.id, role: a.role! } },
       create: { membershipId: membership.id, role: a.role! },
       update: {},
@@ -176,7 +212,7 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
   }
 
   const childId = id('child:yusuf');
-  const child = await db.child.upsert({
+  const child = await tx.child.upsert({
     where: { id: childId },
     create: {
       id: childId, centerId: center.id, firstName: 'Yusuf', lastName: 'Ahmed', preferredName: 'Yusuf',
@@ -186,7 +222,7 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     update: {},
   });
   if (child.centerId !== center.id || child.firstName !== 'Yusuf' || child.lastName !== 'Ahmed') throw new Error('Child identity collision.');
-  const guardian = await db.guardianLink.upsert({
+  const guardian = await tx.guardianLink.upsert({
     where: { id: id('guardian:mariam') },
     create: {
       id: id('guardian:mariam'), centerId: center.id, childId: child.id, userId: users.parent,
@@ -197,7 +233,7 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
   });
   if (guardian.childId !== childId || guardian.userId !== users.parent || guardian.removedAt) throw new Error('Guardian link not active or does not belong to demo family.');
   for (const [key, service] of [['speech', 'speech'], ['ot', 'occupational']] as const) {
-    const assignment = await db.careAssignment.upsert({
+    const assignment = await tx.careAssignment.upsert({
       where: { id: id('assignment:' + service) },
       create: {
         id: id('assignment:' + service), centerId: cid, childId, membershipId: members[key],
@@ -216,7 +252,7 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
   ];
   const templates: Record<string, { id: string; version: number; title: string; service: string; ageBand: string; minutes: number; materials: string[]; steps: string[]; safety: string[]; centerId: string | null }> = {};
   for (const a of activityDefinitions) {
-    const template = await db.activityTemplate.upsert({
+    const template = await tx.activityTemplate.upsert({
       where: { id: id('template:' + a.key) },
       create: {
         id: id('template:' + a.key), centerId: cid, title: a.title, service: a.service,
@@ -232,7 +268,7 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
   // These two are explicitly labeled synthetic and globally visible as samples.
   for (const key of ['speech-turns', 'ot-grip'] as const) {
     const source = templates[key];
-    await db.activityTemplate.upsert({
+    await tx.activityTemplate.upsert({
       where: { id: id('family-sample:' + key) },
       create: {
         id: id('family-sample:' + key), centerId: null,
@@ -258,7 +294,7 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
   for (const service of ['speech', 'occupational'] as const) {
     const key = service === 'speech' ? 'speech' : 'ot';
     const assessmentDate = localDate(-35, now);
-    const assessment = await db.assessment.upsert({
+    const assessment = await tx.assessment.upsert({
       where: { id: id('assessment:' + service) },
       create: {
         id: id('assessment:' + service), centerId: cid, childId,
@@ -270,14 +306,14 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
       update: {},
     });
     if (assessment.childId !== childId || assessment.service !== service) throw new Error('Assessment collision.');
-    const plan = await db.therapyPlan.upsert({
+    const plan = await tx.therapyPlan.upsert({
       where: { id: id('plan:' + service) },
       create: { id: id('plan:' + service), centerId: cid, childId, service, title: 'Yusuf Ahmed - ' + (service === 'speech' ? 'Speech' : 'OT') + ' synthetic draft plan', createdById: users[key], createdAt: now },
       update: {},
     });
     if (plan.childId !== childId || plan.service !== service) throw new Error('Plan collision.');
     const home = service === 'speech' ? templates['speech-turns'] : templates['ot-grip'];
-    const version = await db.planVersion.upsert({
+    const version = await tx.planVersion.upsert({
       where: { id: id('plan-version:' + service) },
       create: {
         id: id('plan-version:' + service), planId: plan.id, centerId: cid, number: 1,
@@ -304,7 +340,7 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
       const date = localDate(offset, now);
       const startsAt = at(date, hour), endsAt = new Date(startsAt.getTime() + 45 * 60000);
       const appointmentId = id('appointment:' + service + ':' + index);
-      const appt = await db.appointment.upsert({
+      const appt = await tx.appointment.upsert({
         where: { id: appointmentId },
         create: {
           id: appointmentId, centerId: cid, childId, membershipId: members[key],
@@ -332,7 +368,7 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
         authorId: users[key], createdAt: endsAt.toISOString(), updatedAt: endsAt.toISOString(),
         position: 0, evidenceKind: 'UNVALIDATED_SESSION_ACTIVITY',
       };
-      const n = await db.sessionNote.upsert({
+      const n = await tx.sessionNote.upsert({
         where: { id: noteId },
         create: {
           id: noteId, centerId: cid, childId, membershipId: members[key], appointmentId,
@@ -353,7 +389,7 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
       // Two measurements per goal, intentionally non-linear and clearly invented.
       for (let g = 0; g < 2; g++) {
         const goalRow = planGoals[service][g];
-        const observed = await db.observation.upsert({
+        const observed = await tx.observation.upsert({
           where: { id: id('observation:' + service + ':' + index + ':' + g) },
           create: {
             id: id('observation:' + service + ':' + index + ':' + g),
@@ -368,7 +404,7 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
         if (observed.childId !== childId || observed.planVersionId !== plans[service]) throw new Error('Observation scope collision.');
       }
     }
-    await db.progressReport.upsert({
+    await tx.progressReport.upsert({
       where: { id: id('report:' + service) },
       create: {
         id: id('report:' + service), centerId: cid, childId, membershipId: members[key],
@@ -384,13 +420,40 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     });
   }
 
-  if (!passwords && !preexistingUsers.length) {
-    if (credentials.length !== roster.length) throw new Error('Partial demo identities detected; secure credential export not safe.');
-    mkdirSync(dirname(credentialFile), { recursive: true, mode: 0o700 });
-    writeFileSync(credentialFile, JSON.stringify({ synthetic: true, center: DEMO_SLUG, createdAt: now.toISOString(), accounts: credentials }, null, 2), { flag: 'wx', mode: 0o600 });
-    chmodSync(credentialFile, 0o600);
+    return { center: center.slug, family: 'Ahmed', child: 'Yusuf Ahmed', accounts: roster.length, appointments: 10, historicalSessions: 8, observations: 16, assessments: 2, plans: 2, reportDrafts: 2, credentials: passwords ? 'EXTERNAL HOST SECRETS' : credentialFile };
+    }, { timeout: 180_000 });
+    return result;
+  } catch (error) {
+    if (createdCredentialFile) {
+      // A connection can drop during COMMIT after PostgreSQL commits. Never
+      // delete the only passwords unless rollback is confirmed by a new read.
+      let visibleIdentities: number;
+      try {
+        visibleIdentities = await db.authIdentity.count({
+          where: { provider: 'local', userId: { in: roster.map(a => id('user:' + a.key)) } },
+        });
+      } catch (verificationError) {
+        throw new AggregateError(
+          [error, verificationError],
+          'Demo seed outcome unknown; credential file retained at ' + credentialFile +
+            '. Verify database state before retrying or removing the protected file.',
+        );
+      }
+      if (visibleIdentities > 0) {
+        throw new AggregateError(
+          [error],
+          'Demo seed outcome unknown (' + visibleIdentities +
+            ' demo identities visible); credentials retained at ' + credentialFile +
+            '. Verify database state before retrying.',
+        );
+      }
+      try { unlinkSync(credentialFile); }
+      catch (cleanupError) {
+        throw new AggregateError([error, cleanupError], 'Demo seed failed and credential cleanup also failed');
+      }
+    }
+    throw error;
   }
-  return { center: center.slug, family: 'Ahmed', child: 'Yusuf Ahmed', accounts: roster.length, appointments: 10, historicalSessions: 8, observations: 16, assessments: 2, plans: 2, reportDrafts: 2, credentials: passwords ? 'EXTERNAL HOST SECRETS' : credentialFile };
 }
 
 if (require.main === module) {

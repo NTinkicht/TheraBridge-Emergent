@@ -1,3 +1,24 @@
+## 2026-10-31 — PR #137 final P3 qualification
+
+1. Verify six required CI jobs on the FINAL documentation/code HEAD: `test`, `secret-scan`, `live-session`, `preview-container`, `demo-journey`, `compose`. The `test` job must pass the new real-PostgreSQL COMMIT-acknowledgement, missing-identity, and interrupted-seed fixtures.
+2. Record explicit PR discussion FIX_NOW dispositions for all three P3 follow-ups from independent review 5717799244, including commit references and final CI status.
+3. Request only one stabilized Codex exact-HEAD review after CI green (PR #137 is already ready; check if automation dispatched first). Re-dispose any new findings.
+4. Do not merge until owner decision. No clinical activation or historic Prisma migration rename; GH-18 chronological question remains OPEN.
+
+## 2026-10-30 — M2-H01 reviewer remediation qualification
+
+1. Re-run six exact-HEAD jobs after all P2/P3 fixes, especially the real PostgreSQL rollback tests and the seven-role demo. Do not reuse `06b2f21` green CI as new-head qualification.
+2. Once code is stable and CI green, mark PR #137 ready and use the existing automated single Codex review; do not manually duplicate paid review. Check new comments and disposition every finding.
+3. Preserve all published migration identities; retain GH-18 chronology issue OPEN until the actual applied `_prisma_migrations` ledger can justify any forward-compatible repair.
+4. Require explicit owner merge decision. Do not activate real transfer, real health data, or family clinical release.
+
+## 2026-10-30 — M2-H01 exact-HEAD qualification and migration-identity decision
+
+1. Run required PR CI including seven migration-guard cases, both seed fault-injection tests, clean DB migrations, existing through-012 upgrade simulation, demo seven-role browser and preview deployment checks. Resolve type/build/runtime regressions and repeat all six jobs on corrected exact HEAD.
+2. Obtain the `_prisma_migrations` ledger from a disposable/synthetic representative upgraded database, identify actual published 049 folder and checksums, then determine whether any chronology correction is *needed*. Never rewrite historical applied migration names or checksums. If a remediation is required, develop a forward-only, upgrade-tested plan first.
+3. Ensure the deferred credential-file write behavior is documented for filesystem write failure recovery; never export a credential file on a failed transaction.
+4. Review all independent PR feedback and disposition with FIX_NOW / DEFER_ISSUE / DECLINE_WITH_REASON, with 6/6 exact-head CI and explicit owner merge approval. Keep clinical transfer and family release disabled.
+
 ## 2026-10-29 — TB-EM-051 policy/technical-design draft qualification
 
 1. Verify `scripts/qa/verify-tb-em-051-gates.mjs` executes in required `test` CI on exact final PR head. Its positive pass means only **unsigned/blocked** state and unchanged runtime invariants. Fix any test errors; rerun all six jobs at changed HEAD; do not confuse green CI with policy approval.
