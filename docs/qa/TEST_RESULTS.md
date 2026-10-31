@@ -1,3 +1,12 @@
+# Latest QA checkpoint — 2026-10-31 — M2-H06 #144 in progress
+
+| Work item | Status | Evidence / blockers |
+| --- | --- | --- |
+| M2-H05 #143 | **MERGED** `f30a659` | exact-head `05c781e`, 616/616 tests, 6/6 CI jobs green, final Codex no major issues; four findings resolved; zero deferrals |
+| M2-H06 #144 (#127–#130) | **IMPLEMENTED IN DRAFT; CI/REVIEW PENDING** | `scripts/qa/m2-h06-frontend.test.mjs` added to CI test job (cross-zone, repeated DST, second-precision, CSRF 401/relogin, ApiError.code, provider/messages, headers/dev gate). Existing API/web and live-session/demo/container/compose checks still required. No claim of passing until observed on exact head. |
+
+Do not merge M2-H06 on documentation-only or earlier-head checks. Synthetic-only, signing/consent/safeguarding/protected release/production NO-GO.
+
 # Latest QA checkpoint — 2026-10-31
 
 | Work item | Exact HEAD | Outcome | CI/review |
