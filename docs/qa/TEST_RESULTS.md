@@ -1,3 +1,12 @@
+## 2026-10-31 — M2-H05 review-driven regression coverage (pending final CI)
+
+| Area | Change | Gate |
+| --- | --- | --- |
+| Existing recurring fold bookings | `02a0485` maintains existing appointment UTC instants for room/clinician/duration-only changes; new HTTP/DB regression `57651b9` covers 2027 Paris later fold | **PENDING final-head 6/6 CI + review** |
+| Legacy immutable goal titles | `51c672d` retains exact stored title for measured/checkpointed goal round-trips; `ca12b89` tests real DB and 409 on actual rename | **PENDING final-head 6/6 CI + review** |
+| Prior implementation head | `7f77d66` exact code review found two P2s; earlier 611/611 + 6/6 green is historical and not merge evidence for the new head | **SUPERSEDED** |
+| Clinical release / real children | Unchanged unsigned governance gates | **NO-GO** |
+
 ## 2026-10-31 — M2-H05 implementation validation: 611/611 and six CI jobs PASS
 
 | Gate | Result | Evidence |
