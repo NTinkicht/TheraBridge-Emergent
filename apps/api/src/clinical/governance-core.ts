@@ -1,19 +1,14 @@
-import { createHash } from 'node:crypto';
 import { ForbiddenException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { Tx } from '../centers/history';
-import type { Viewer } from '../operations/children.service';
+import type { Viewer } from '../common/viewer';
+import { canonicalJson, canonicalFingerprint } from '../common/fingerprints';
 
 export const INTERNAL_NOTICE = 'Internal preview — not approved, signed or released.';
 export const EDITABLE = ['DRAFT', 'RETURNED_FOR_REVISION'];
-// Canonical JSON makes hashing independent of JSONB key ordering and round trips.
-export function canonical(value: unknown): string {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value);
-  if (value instanceof Date) return JSON.stringify(value.toISOString());
-  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
-  return `{${Object.keys(value).sort().map(k => `${JSON.stringify(k)}:${canonical((value as Record<string, unknown>)[k])}`).join(',')}}`;
-}
-export const fingerprint = (value: unknown) => createHash('sha256').update(canonical(value)).digest('hex');
+// Backwards-compatible exports for existing clinical consumers.
+export const canonical = canonicalJson;
+export const fingerprint = canonicalFingerprint;
 export const json = (value: unknown) => JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 
 // Shared by existing and governance entry points. Locks prevent role/assignment revocation racing a write.
