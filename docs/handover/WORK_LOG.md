@@ -1,3 +1,7 @@
+## 2026-10-31 — M2-H05 Codex third P2: long legacy goal title compatibility
+
+- `a79735c` + `276a7e7` preserve unchanged measured goal titles in historical 201–300 range while enforcing a new title max of 200 for newly authored/redefined definitions; PostgreSQL/HTTP test `ca001a7`. Corrected test fixture ordering `6ea9fc4` following 612/613 red run. Three Codex P2 findings total: all **FIX_NOW**, none deferred. Requalify on newest HEAD before Rule 16 merge.
+
 ## 2026-10-31 — M2-H05 exact-head Codex P2 remediation
 
 - First code review at `7f77d66` yielded two P2s. FIX_NOW `02a0485` + `57651b9` prevent room-only edits from shifting a legacy later-fold instant. FIX_NOW `51c672d` + `ca12b89` preserve observed/checkpointed legacy goal-title bytes on round-trip while rejecting substantive edits.
