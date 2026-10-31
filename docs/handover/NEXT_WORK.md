@@ -1,3 +1,9 @@
+## 2026-10-31 — CURRENT: qualify implemented M2-H05 #143 (#122, #123, #125)
+
+1. [PR #143](https://github.com/NTinkicht/TheraBridge-Emergent/pull/143) now contains implementation for **all three frozen M2-H05 issues**, plus synthetic calendar/timezone/DTO and real-PostgreSQL report/governance regressions. Earlier planning-only status below is superseded. The first TS narrowing CI failure was fixed; review latest CI and any newly raised findings before claiming completion.
+2. Obtain **6/6 checks on the exact final HEAD**, including test, secret-scan, live-session, preview-container, demo-journey and compose. Confirm new PostgreSQL tests and all old API/web checks. Mark ready for review, request a distinct final-head Codex review, disposition all reviewer comments (FIX_NOW/DEFER_ISSUE/DECLINE_WITH_REASON), and apply Rule 16 merge only when qualified. Otherwise keep draft.
+3. Preserve synthetic-only and unsigned clinical consent/safeguarding/signing/release/deployment **NO-GO**. After eligible #143 merge open **M2-H06 — Frontend Reliability and Architecture (#127, #128, #129, #130)** immediately in frozen order with automatic initial Codex review request under Rules 17/18.
+
 ## 2026-10-31 — CURRENT: implement M2-H05 (#122, #123, #125)
 
 1. [PR #142](https://github.com/NTinkicht/TheraBridge-Emergent/pull/142) **merged** as `b95a0ce6e5504c7660bdc265ea08ba3f9a754e23`, finishing original M2-H04 #120/#119/#126 and approved H03 carryover #124/#121 with six exact-HEAD CI green and Codex final-head review clean.
