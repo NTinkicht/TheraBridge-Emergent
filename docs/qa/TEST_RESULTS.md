@@ -1,3 +1,12 @@
+# Latest QA checkpoint — 2026-10-31 — M2-H06 review remediation
+
+| Work unit | Current qualification | Review/QA evidence |
+| --- | --- | --- |
+| M2-H05 #143 | **MERGED** | `f30a659`, 616/616 tests, six jobs green, Codex no major issues |
+| M2-H06 #144 | **PENDING exact-head CI and final Codex review; DO NOT MERGE** | Codex previous-head `1c0c4b3` two P2 findings **FIX_NOW**: preserve unchanged first-overlap end ISO and reject nonexistent spring-gap time. Fix commits `42719a5` / `b3eaae8`; new tests `1a9e6e0`. Both review threads resolved, zero deferrals. Current #128 source `components/clinical/ReportToPlanHandoff.tsx` with idempotent server transaction, not old child360 path. |
+
+Synthetic-only, all clinical activation/release/production NO-GO.
+
 # Latest QA checkpoint — 2026-10-31 — M2-H06 #144 in progress
 
 | Work item | Status | Evidence / blockers |
