@@ -254,6 +254,10 @@ export class ClinicalService {
       if (r.count !== 1) throw new ConflictException(a.membershipId !== v.membershipId ? 'Only the author can edit this draft.' : 'This draft changed since you opened it. Reload to see the latest version.');
       await logCenterEvent(tx, centerId, 'clinical.assessment_updated', now, { actorUserId: v.userId, meta: { childId: a.childId, assessmentId: id } });
       return { ok: true };
+    }).catch((error: unknown) => {
+      // Do not disclose that an assessment ID exists for a different child or specialty.
+      if (error instanceof NotFoundException) throw new NotFoundException('Assessment not found');
+      throw error;
     });
   }
 
@@ -274,6 +278,14 @@ export class ClinicalService {
 
   async updateVersion(centerId: string, v: Viewer, id: string, dto: PlanVersionUpdateDto) {
     const x = await this.version(centerId, id);
+    // Check the persisted child's specialty BEFORE validating or revealing
+    // anything about a guessed plan-version ID.
+    try {
+      await this.child(this.prisma, centerId, v, x.plan.childId, x.plan.service);
+    } catch (error) {
+      if (error instanceof NotFoundException) throw new NotFoundException('Plan version not found');
+      throw error;
+    }
     if (new Set(dto.goals.map((g) => g.key)).size !== dto.goals.length) throw new UnprocessableEntityException('Each goal needs its own key.');
     // homeActivities are contained by THIS PlanVersion. Verify that every
     // explicit goal association targets a goal saved in that same version;
@@ -342,6 +354,9 @@ export class ClinicalService {
       if (r.count !== 1) throw new ConflictException(x.status !== 'DRAFT' ? 'Only a draft can be edited. Start a new version to make changes.' : 'This draft changed since you opened it. Reload to see the latest version.');
       await logCenterEvent(tx, centerId, 'clinical.plan_draft_saved', now, { actorUserId: v.userId, meta: { childId: x.plan.childId, planId: x.planId, planVersionId: id, goals: dto.goals.length, activityTemplates: ids.length } });
       return { ok: true };
+    }).catch((error: unknown) => {
+      if (error instanceof NotFoundException) throw new NotFoundException('Plan version not found');
+      throw error;
     });
   }
 

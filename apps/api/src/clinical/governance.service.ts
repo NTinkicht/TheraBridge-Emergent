@@ -23,13 +23,23 @@ export class GovernanceService {
       const x = await tx.planVersion.findFirst({ where: { id, centerId, plan: { centerId } }, include: { plan: true } });
       if (!x) throw new NotFoundException();
       await this.lockChildScope(tx, centerId, v, x.plan.childId);
-      await this.clinical.child(tx, centerId, v, x.plan.childId, x.plan.service);
+      try {
+        await this.clinical.child(tx, centerId, v, x.plan.childId, x.plan.service);
+      } catch (error) {
+        if (error instanceof NotFoundException) throw new NotFoundException();
+        throw error;
+      }
       return { kind: 'PLAN' as const, documentId: x.id, childId: x.plan.childId, service: x.plan.service, sourceVersion: x.version, status: x.status, authorId: x.authorId, title: x.plan.title, content: { title: x.plan.title, number: x.number, summary: x.summary, goals: x.goals, homeActivities: x.homeActivities }, notes: x.reviewNotes };
     }
     const r = await tx.progressReport.findFirst({ where: { id, centerId } });
     if (!r) throw new NotFoundException();
     await this.lockChildScope(tx, centerId, v, r.childId);
-    await this.clinical.child(tx, centerId, v, r.childId, r.service);
+    try {
+      await this.clinical.child(tx, centerId, v, r.childId, r.service);
+    } catch (error) {
+      if (error instanceof NotFoundException) throw new NotFoundException();
+      throw error;
+    }
     const owner = await tx.membership.findUniqueOrThrow({ where: { id: r.membershipId } });
     return { kind: 'REPORT' as const, documentId: r.id, childId: r.childId, service: r.service, sourceVersion: r.version, status: r.status, authorId: owner.userId, title: r.title, content: { title: r.title, sections: r.sections, periodStart: r.periodStart, periodEnd: r.periodEnd }, notes: r.reviewNotes };
   }

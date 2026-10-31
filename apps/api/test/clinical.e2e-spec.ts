@@ -64,6 +64,14 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     expect(wrongChild.body).toEqual(unknown.body);
     expect((await h.prisma.assessment.findUniqueOrThrow({ where: { id: assessment.id } })).summary).toBe('Restricted speech assessment');
     expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.assessment_updated' } })).toBe(0);
+    const foreignPlan = (await post(h, c(`clinical/children/${childB}/plans`), other,
+      { service: 'speech', title: 'Restricted child plan' }).expect(201)).body;
+    const goal = { key: 'dup', title: 'A synthetic goal', measure: 'count', baseline: 0, target: 1 };
+    const invalid = { summary: 'Do not reveal validation for a hidden plan', goals: [goal, goal], homeActivities: [], version: 1 };
+    const wrongPlan = await patch(therapist, c(`clinical/plan-versions/${foreignPlan.versionId}`), invalid).expect(404);
+    const unknownPlan = await patch(therapist, c('clinical/plan-versions/00000000-0000-0000-0000-000000000000'), invalid).expect(404);
+    expect(wrongPlan.body).toEqual(unknownPlan.body);
+    expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.plan_draft_saved' } })).toBe(0);
   });
 
   it('records non-authorizing therapist goal checkpoints with exact saved observation sources', async () => {

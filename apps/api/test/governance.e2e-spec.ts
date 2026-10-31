@@ -83,7 +83,9 @@ describe('TB-EM-011 non-authorizing governance (real PostgreSQL)', () => {
   await h.prisma.membership.update({where:{id:memberId},data:{specialties:[]}});
   await get(therapist,`clinical/children/${kid}`).expect(404);
   await get(therapist,`clinical/children/${kid}/reports`).expect(404);
-  await get(therapist,`clinical/reports/${report}`).expect(404);
+  const revokedReport = await get(therapist,`clinical/reports/${report}`).expect(404);
+  const unknownReport = await get(therapist,'clinical/reports/00000000-0000-0000-0000-000000000000').expect(404);
+  expect(revokedReport.body).toEqual(unknownReport.body);
   await get(therapist,`governance/documents/PLAN/${plan}/history`).expect(404);
   await transition(therapist,'FREEZE',1).expect(404);
   expect((await get(therapist,'governance/documents').expect(200)).body.items).toEqual([]);

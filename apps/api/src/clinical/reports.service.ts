@@ -143,7 +143,12 @@ export class ReportsService {
   private async report(centerId: string, v: Viewer, id: string) {
     const r = await this.prisma.progressReport.findFirst({ where: { id, centerId } });
     if (!r) throw new NotFoundException('Report not found');
-    await this.clinical.child(this.prisma, centerId, v, r.childId, v.role === 'THERAPIST' ? r.service : undefined);
+    try {
+      await this.clinical.child(this.prisma, centerId, v, r.childId, v.role === 'THERAPIST' ? r.service : undefined);
+    } catch (error) {
+      if (error instanceof NotFoundException) throw new NotFoundException('Report not found');
+      throw error;
+    }
     return r;
   }
 
@@ -412,7 +417,12 @@ export class ReportsService {
   async versionDetail(centerId: string, v: Viewer, versionId: string) {
     const x = await this.prisma.reportVersion.findFirst({ where: { id: versionId, centerId } });
     if (!x) throw new NotFoundException('Report version not found');
-    await this.report(centerId, v, x.reportId);
+    try {
+      await this.report(centerId, v, x.reportId);
+    } catch (error) {
+      if (error instanceof NotFoundException) throw new NotFoundException('Report version not found');
+      throw error;
+    }
     const frozen = x.evidence as { statementDecisionIds?: unknown };
     const eligible = Array.isArray(frozen?.statementDecisionIds) &&
       frozen.statementDecisionIds.length <= 1000 &&
