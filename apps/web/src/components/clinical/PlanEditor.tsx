@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Field, FormAlert } from '@/components/auth/Field';
 import { ReasonField, SelectField } from '@/components/centers/kit';
@@ -189,6 +189,31 @@ function VersionEditor({ centerId, ws, planId, planTitle, service, v, source, ru
 
 export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Workspace; run: Run }) {
   const [f, setF] = useState({ service: ws.child.services[0] ?? '', title: '' });
+  const [olderPlans, setOlderPlans] = useState<Workspace['plans']>([]);
+  const [olderObservations, setOlderObservations] = useState<Workspace['observations']>([]);
+  const [planOffset, setPlanOffset] = useState(ws.plans.length);
+  const [hasMorePlans, setHasMorePlans] = useState(ws.hasMorePlans);
+  const [loadingPlans, setLoadingPlans] = useState(false);
+  const [planLoadError, setPlanLoadError] = useState('');
+  useEffect(() => {
+    setOlderPlans([]); setOlderObservations([]); setPlanOffset(ws.plans.length);
+    setHasMorePlans(ws.hasMorePlans); setPlanLoadError('');
+  }, [ws]);
+  const activeWs = useMemo<Workspace>(() => ({ ...ws,
+    plans: [...ws.plans, ...olderPlans.filter(p => !ws.plans.some(x => x.id === p.id))],
+    observations: [...ws.observations, ...olderObservations.filter(o => !ws.observations.some(x => x.id === o.id))],
+  }), [ws, olderPlans, olderObservations]);
+  const loadOlderPlans = async () => {
+    if (loadingPlans || !hasMorePlans) return;
+    setLoadingPlans(true); setPlanLoadError('');
+    try {
+      const page = await clinicalApi.workspace(centerId, ws.child.id, planOffset);
+      setOlderPlans(p => [...p, ...page.plans.filter(x => !p.some(y => y.id === x.id))]);
+      setOlderObservations(p => [...p, ...page.observations.filter(x => !p.some(y => y.id === x.id))]);
+      setPlanOffset(n => n + page.plans.length); setHasMorePlans(page.hasMorePlans);
+    } catch { setPlanLoadError('Older plans could not be loaded. Retry to view the full history.'); }
+    finally { setLoadingPlans(false); }
+  };
   const [linkedEvidenceNote, setLinkedEvidenceNote] = useState('');
   const [historicGoal, setHistoricGoal] = useState<{ planId: string; versionId: string; goalKey: string } | null>(null);
   const [dirtyVersions, setDirtyVersions] = useState<Record<string, boolean>>({});
@@ -204,7 +229,7 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
     const params = new URLSearchParams(hash.slice('#plan?'.length));
     const versionId = params.get('version'), goalKey = params.get('goal');
     if (!versionId || !goalKey) return;
-    const plan = ws.plans.find(p => p.versions.some(v => v.id === versionId &&
+    const plan = activeWs.plans.find(p => p.versions.some(v => v.id === versionId &&
       v.goals.some(g => g.key === goalKey)));
     if (!plan) {
       setLinkedEvidenceNote('This saved report goal refers to a plan version not visible in this workspace.');
@@ -221,18 +246,18 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
     inspectHashTarget();
     window.addEventListener('hashchange', inspectHashTarget);
     return () => window.removeEventListener('hashchange', inspectHashTarget);
-  }, [ws]);
+  }, [activeWs]);
   return (
     <div className="space-y-5" data-testid="plans-panel">
       {linkedEvidenceNote && <p role="status" className="rounded-control border border-border-light bg-surface-subtle p-3 text-[13px]" data-testid="report-goal-navigation-note">{linkedEvidenceNote}</p>}
-      <GoalReviewWorklist ws={ws} />
-      {ws.plans.map((p) => {
+      <GoalReviewWorklist ws={activeWs} />
+      {activeWs.plans.map((p) => {
         const current = p.versions[0];
         return (
           <Card key={p.id} className="p-5 md:p-6" testId={`plan-${p.id}`}>
             <h2 className="text-[18px] font-semibold">{p.title}</h2>
             <p className="mb-4 text-[13px] text-brand-inkMuted">{serviceLabel(p.service)} · {p.versions.length} version{p.versions.length > 1 ? 's' : ''}</p>
-            <VersionEditor centerId={centerId} ws={ws} planId={p.id} planTitle={p.title} service={p.service}
+            <VersionEditor centerId={centerId} ws={activeWs} planId={p.id} planTitle={p.title} service={p.service}
               v={current} source={p.source} run={run} onDirtyChange={onDirtyChange}
               otherPlanDirty={Object.entries(dirtyVersions).some(([id, dirty]) => id !== current.id && dirty)} />
             <PlanVersionHistory key={p.id} plan={p} templates={ws.templates} timezone={ws.timezone}
@@ -240,7 +265,9 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
           </Card>
         );
       })}
-      {!ws.plans.length && <p className="text-[14px] text-brand-inkMuted" data-testid="plans-empty">No therapy plan yet.</p>}
+      {hasMorePlans && <Button variant="secondary" disabled={loadingPlans} onClick={() => void loadOlderPlans()} data-testid="plans-load-more">{loadingPlans ? 'Loading earlier plans…' : 'Load earlier plans'}</Button>}
+      {planLoadError && <p role="alert" className="text-[13px] text-status-caution" data-testid="plans-load-error">{planLoadError}</p>}
+      {!activeWs.plans.length && <p className="text-[14px] text-brand-inkMuted" data-testid="plans-empty">No therapy plan yet.</p>}
       {ws.canEdit && (
         <Card className="grid grid-cols-1 items-end gap-3 p-5 sm:grid-cols-[180px_1fr_auto]" testId="plan-create">
           <SelectField label="Service" value={f.service} onChange={(service) => setF({ ...f, service })} testId="plan-service" options={ws.child.services.map((s) => ({ value: s, label: serviceLabel(s) }))} />

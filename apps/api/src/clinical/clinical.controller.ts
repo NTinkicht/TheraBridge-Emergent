@@ -1,6 +1,6 @@
 import { SessionExecutionService } from './session.service';
 import { SessionStartDto, SessionSaveDto } from './session.dto';
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
 import { RequirePermission, TbRequest } from '../auth/access';
 import type { Viewer } from '../operations/children.service';
 import { AssessmentDto, AssessmentUpdateDto, ObservationDto, PlanDto, PlanVersionUpdateDto, ReviewDto, SessionNoteDto, SessionNoteUpdateDto, TemplateDto, TemplateUpdateDto, TemplateCopyDto, GoalReviewCheckpointDto } from './clinical.dto';
@@ -17,8 +17,12 @@ export class ClinicalController {
 
   @Get('clinical/children/:childId')
   @RequirePermission('center.clinical.read')
-  workspace(@Param('centerId', uuid()) c: string, @Param('childId', uuid()) id: string, @Req() req: TbRequest) {
-    return this.clinical.workspace(c, viewer(req), id);
+  workspace(@Param('centerId', uuid()) c: string, @Param('childId', uuid()) id: string, @Req() req: TbRequest, @Query('planOffset') rawOffset?: string) {
+    const offset = rawOffset === undefined ? 0 : Number(rawOffset);
+    if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100_000 || (rawOffset !== undefined && !/^\d+$/.test(rawOffset))) {
+      throw new BadRequestException('Invalid plan pagination offset.');
+    }
+    return this.clinical.workspace(c, viewer(req), id, offset);
   }
 
   @Post('clinical/children/:childId/assessments')

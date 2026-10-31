@@ -455,3 +455,8 @@ See [implementation evidence](../emergent/workunits/TB-EM-015.md) for exact comm
 | DB integrity and reminder sweep regressions | New real DB fixtures added, run PENDING |
 | Final-head six required CI jobs + independent Codex | PENDING; PR #142 DRAFT, NO MERGE |
 | Protected clinical/real-data release | NO-GO; unchanged |
+
+### M2-H04 `61d8068` full-implementation CI and Codex P2 disposition (2026-10-31)
+
+- GitHub Actions run `41213918173` on exact HEAD `61d806864021ca2606f15597d5e68fff5006effd`: **six of six required jobs PASS** (`test`, `secret-scan`, `live-session`, `preview-container`, `demo-journey`, `compose`); API PostgreSQL Jest **592/592 PASS across 21 suites**. The forward-only migration applied and API/web built.
+- Codex on that head flagged two **P2** issues, neither waived: an oldest-first 200-plan cap making new drafts inaccessible, and synthetic outbox failure stranding reminder reservations. Fixes and focused regressions are being added in the same PR. **No final-head PASS claimed until these fixes run again**. A second Codex review must inspect that amended HEAD.

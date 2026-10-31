@@ -48,6 +48,29 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     return { therapist, other, sup, kid, link, rosa };
   }
 
+  it('M2-H04 Codex P2: newest plan stays reachable above 200 and older plans are paged with tenant scope', async () => {
+    const { therapist, kid } = await setup();
+    const base = Date.parse('2026-10-18T00:00:00Z');
+    const created = await h.prisma.therapyPlan.createManyAndReturn({ data: Array.from({ length: 205 }, (_, i) => ({
+      centerId, childId: kid, service: 'speech', title: `Plan ${i}`, createdById: therapist.body.user.id,
+      createdAt: new Date(base + i * 1000),
+    })) });
+    await h.prisma.planVersion.createMany({ data: created.map(p => ({ centerId, planId: p.id, number: 1,
+      authorId: therapist.body.user.id, createdAt: h.clock.now(), updatedAt: h.clock.now(),
+    })) });
+    const first = (await get(therapist, c(`clinical/children/${kid}`)).expect(200)).body;
+    expect(first.plans).toHaveLength(200);
+    expect(first.hasMorePlans).toBe(true);
+    expect(first.plans[0].title).toBe('Plan 204');
+    expect(first.plans.some((p: { title: string }) => p.title === 'Plan 0')).toBe(false);
+    const next = (await get(therapist, c(`clinical/children/${kid}?planOffset=200`)).expect(200)).body;
+    expect(next.plans).toHaveLength(5);
+    expect(next.hasMorePlans).toBe(false);
+    expect(next.plans.some((p: { title: string }) => p.title === 'Plan 0')).toBe(true);
+    expect(new Set([...first.plans, ...next.plans].map((p: { id: string }) => p.id)).size).toBe(205);
+    await get(therapist, c(`clinical/children/${kid}?planOffset=-1`)).expect(400);
+  });
+
 
   it('hides a same-center different-child assessment ID just like an unknown ID', async () => {
     const { therapist, other } = await setup();

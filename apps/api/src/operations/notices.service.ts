@@ -44,23 +44,33 @@ export class NoticesService implements OnModuleInit, OnModuleDestroy {
         centerId: a.centerId, appointmentId: a.id, guardianLinkId: g.id, kind, startsAt: a.startsAt, sentAt: now,
       }))),
       skipDuplicates: true,
-      select: { appointmentId: true, guardianLinkId: true, startsAt: true },
+      select: { id: true, appointmentId: true, guardianLinkId: true, startsAt: true },
     });
-    const allowed = new Set(reservations.map((r) => `${r.appointmentId}:${r.guardianLinkId}:${r.startsAt.toISOString()}`));
+    const allowed = new Map(reservations.map((r) => [`${r.appointmentId}:${r.guardianLinkId}:${r.startsAt.toISOString()}`, r.id]));
+    // A filesystem/outbox failure must not strand unsent reservations. Keep
+    // successfully delivered rows, and release only our unattempted/failed
+    // reservations so a later sweep can safely retry them.
+    const pending = new Set(reservations.map((r) => r.id));
     let sent = 0;
-    for (const a of appts) {
-      for (const g of a.child.guardians) {
-        const to = users.find((u) => u.id === g.userId)?.email;
-        if (!to || !allowed.has(`${a.id}:${g.id}:${a.startsAt.toISOString()}`)) continue;
-        const who = `${a.child.preferredName ?? a.child.firstName}’s ${SERVICE_LABEL[a.service] ?? a.service} with ${team.find((t) => t.id === a.membershipId)?.user.displayName ?? 'the care team'}`;
-        const when = `${describeLocal(a.startsAt, a.center.timezone)} (${a.center.timezone.replace('_', ' ')} time)`;
-        const lead = kind === 'reminder_24h' ? `This is a reminder of ${who} on ${when}.` : kind === 'rescheduled' ? `${who} has moved to ${when}.` : `${who} on ${when} has been cancelled.`;
-        this.mail.send({
-          to, subject: `${SUBJECT[kind]} · ${a.center.name}`,
-          body: `Hello ${g.displayName},\n\n${lead}${a.room && kind !== 'cancelled' ? ` Room: ${a.room}.` : ''}\n\nYou can see your family’s schedule and message the center in TheraBridge. You can turn these emails off on your family home page.\n\n${a.center.name}`,
-        });
-        sent++;
+    try {
+      for (const a of appts) {
+        for (const g of a.child.guardians) {
+          const to = users.find((u) => u.id === g.userId)?.email;
+          const id = allowed.get(`${a.id}:${g.id}:${a.startsAt.toISOString()}`);
+          if (!to || !id) continue;
+          const who = `${a.child.preferredName ?? a.child.firstName}’s ${SERVICE_LABEL[a.service] ?? a.service} with ${team.find((t) => t.id === a.membershipId)?.user.displayName ?? 'the care team'}`;
+          const when = `${describeLocal(a.startsAt, a.center.timezone)} (${a.center.timezone.replace('_', ' ')} time)`;
+          const lead = kind === 'reminder_24h' ? `This is a reminder of ${who} on ${when}.` : kind === 'rescheduled' ? `${who} has moved to ${when}.` : `${who} on ${when} has been cancelled.`;
+          this.mail.send({
+            to, subject: `${SUBJECT[kind]} · ${a.center.name}`,
+            body: `Hello ${g.displayName},\n\n${lead}${a.room && kind !== 'cancelled' ? ` Room: ${a.room}.` : ''}\n\nYou can see your family’s schedule and message the center in TheraBridge. You can turn these emails off on your family home page.\n\n${a.center.name}`,
+          });
+          pending.delete(id);
+          sent++;
+        }
       }
+    } finally {
+      if (pending.size) await this.prisma.appointmentNotice.deleteMany({ where: { id: { in: [...pending] } } });
     }
     return sent;
   }

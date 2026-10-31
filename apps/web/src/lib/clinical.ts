@@ -25,6 +25,7 @@ export interface Workspace {
   childWideReferentStatus?: 'NOT_DESIGNATED' | 'VISIBLE' | 'UNAVAILABLE';
   child: { id: string; name: string; services: string[]; dateOfBirth: string };
   assessments: { id: string; service: string; assessedOn: string; summary: string; areas: { area: string; finding: string }[]; version: number; author: string; mine: boolean; updatedAt: string }[];
+  hasMorePlans: boolean;
   plans: { id: string; service: string; title: string; source?: PlanOrigin | null; versions: PlanVersion[] }[];
   notes: { executionStatus: 'IN_PROGRESS' | 'COMPLETED'; actualStart: string | null; actualEnd: string | null; attendance: 'PRESENT' | 'NO_SHOW'; activities: SessionActivity[]; id: string; service: string; sessionDate: string; appointmentId: string | null; sections: Record<string, string>; version: number; author: string; mine: boolean; updatedAt: string }[];
   observations: { id: string; planVersionId: string; goalKey: string; value: number; observedOn: string; note: string | null; sessionNoteId?: string | null; author: string }[];
@@ -41,7 +42,7 @@ export interface FamilyActivities { sample: true; released: false; children: { i
 
 const c = (centerId: string, p: string) => `/api/centers/${centerId}/${p}`;
 export const clinicalApi = {
-  workspace: (centerId: string, childId: string) => rest.get<Workspace>(c(centerId, `clinical/children/${childId}`)),
+  workspace: (centerId: string, childId: string, planOffset = 0) => rest.get<Workspace>(c(centerId, `clinical/children/${childId}?planOffset=${planOffset}`)),
   assess: (centerId: string, childId: string, body: { service: string; assessedOn: string; summary: string; areas: { area: string; finding: string }[] }) => rest.send('POST', c(centerId, `clinical/children/${childId}/assessments`), body),
   plan: (centerId: string, childId: string, body: { service: string; title: string }) => rest.send('POST', c(centerId, `clinical/children/${childId}/plans`), body),
   saveVersion: (centerId: string, id: string, body: { summary: string; goals: Goal[]; homeActivities: HomeActivity[]; version: number }) => rest.send('PATCH', c(centerId, `clinical/plan-versions/${id}`), body),

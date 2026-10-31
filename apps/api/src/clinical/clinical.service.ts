@@ -111,16 +111,16 @@ export class ClinicalService {
     });
   }
 
-  async workspace(centerId: string, v: Viewer, childId: string) {
+  async workspace(centerId: string, v: Viewer, childId: string, planOffset = 0) {
     const c = await this.child(this.prisma, centerId, v, childId);
     // A therapist may see only the services assigned to that therapist for this child.
     const assignedServices = v.role === 'THERAPIST'
       ? (await this.therapistAssignments(this.prisma, centerId, v, childId)).map(a => a.service)
       : null;
     const serviceScope = assignedServices ? { service: { in: assignedServices } } : {};
-    const [assessments, plans, notes, appointments, templates, assignments] = await Promise.all([
+    const [assessments, planBatch, notes, appointments, templates, assignments] = await Promise.all([
       this.prisma.assessment.findMany({ where: { centerId, childId, ...serviceScope }, orderBy: { assessedOn: 'desc' }, take: 200 }),
-      this.prisma.therapyPlan.findMany({ where: { centerId, childId, ...serviceScope }, include: { versions: { orderBy: { number: 'desc' } } }, orderBy: { createdAt: 'asc' }, take: 200 }),
+      this.prisma.therapyPlan.findMany({ where: { centerId, childId, ...serviceScope }, include: { versions: { orderBy: { number: 'desc' } } }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], skip: planOffset, take: 201 }),
       this.prisma.sessionNote.findMany({ where: { centerId, childId, ...serviceScope }, orderBy: { sessionDate: 'desc' }, take: 50 }),
       this.prisma.appointment.findMany({ where: { centerId, childId, ...serviceScope, status: { in: ['SCHEDULED', 'COMPLETED'] }, startsAt: { gte: new Date(this.trial.now().getTime() - 30 * 86_400_000), lte: new Date(this.trial.now().getTime() + 42 * 86_400_000) }, ...(v.role === 'THERAPIST' ? { membershipId: v.membershipId } : {}) }, orderBy: { startsAt: 'desc' }, take: 500 }),
       this.templates(centerId).then(rows => assignedServices ? rows.filter(t => assignedServices.includes(t.service)) : rows),
@@ -131,6 +131,8 @@ export class ClinicalService {
         select: { id: true, membershipId: true, service: true, isLead: true },
       }),
     ]);
+    const hasMorePlans = planBatch.length > 200;
+    const plans = planBatch.slice(0, 200);
     // Observations must be bound to the exact plan versions that survived the service filter.
     const observations = await this.prisma.observation.findMany({
       where: { centerId, childId, planVersionId: { in: plans.flatMap(p => p.versions.map(ver => ver.id)) } },
@@ -224,6 +226,7 @@ export class ClinicalService {
       childWideReferentStatus: !c.referentMembershipId ? 'NOT_DESIGNATED'
         : visibleReferent ? 'VISIBLE' : 'UNAVAILABLE',
       assessments: assessments.map((a) => ({ id: a.id, service: a.service, assessedOn: day(a.assessedOn), summary: a.summary, areas: a.areas, status: a.status, version: a.version, author: who(a.membershipId), mine: a.membershipId === v.membershipId, updatedAt: a.updatedAt })),
+      hasMorePlans,
       plans: plans.map((p) => ({ id: p.id, service: p.service, title: p.title, source: planSource(p), versions: p.versions.map((x) => ({ id: x.id, number: x.number, status: x.status, summary: x.summary, goals: x.goals, homeActivities: x.homeActivities, reviewNotes: (Array.isArray(x.reviewNotes) ? x.reviewNotes : []).filter((n: any) => n?.kind !== 'GOAL_CHECKPOINT'),
         goalCheckpoints: (Array.isArray(x.reviewNotes) ? x.reviewNotes : []).filter((n: any) =>
           n?.kind === 'GOAL_CHECKPOINT' && typeof n.goalKey === 'string' &&

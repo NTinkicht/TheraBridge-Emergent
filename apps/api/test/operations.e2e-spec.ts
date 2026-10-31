@@ -371,6 +371,30 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     expect(h.app.get(DevMailboxService).list().filter((m) => m.to === 'sweep-parent@ops.test' && m.subject.includes('Reminder:')).length).toBe(1);
   });
 
+  it('M2-H04 review P2: transient outbox failure releases all undelivered reminder reservations for retry', async () => {
+    const therapist = await staff('retry-therapist@ops.test', ['THERAPIST']);
+    const kid = (await post(h, c('children'), admin, child()).expect(201)).body.id as string;
+    await post(h, c(`children/${kid}/assignments`), admin, { membershipId: therapist.body.activeContext.membershipId, service: 'speech' }).expect(201);
+    await post(h, c(`children/${kid}/guardians`), admin, { displayName: 'Retry Recipient', email: 'retry-parent@ops.test', relationship: 'parent', invite: true }).expect(201);
+    await accept('retry-parent@ops.test', 'Retry Recipient');
+    for (const hours of [12, 15]) {
+      const start = new Date(h.clock.now().getTime() + hours * 3_600_000);
+      await post(h, c('appointments'), admin, { childId: kid, membershipId: therapist.body.activeContext.membershipId,
+        service: 'speech', startsAt: start.toISOString(), endsAt: new Date(start.getTime() + 3_600_000).toISOString() }).expect(201);
+    }
+    const mail = h.app.get(DevMailboxService);
+    const failure = jest.spyOn(mail, 'send').mockImplementationOnce(() => { throw new Error('Synthetic outbox temporarily unavailable'); });
+    const notices = h.app.get(NoticesService);
+    try {
+      await expect(notices.runDue(h.clock.now())).rejects.toThrow(/outbox temporarily unavailable/);
+      expect(await h.prisma.appointmentNotice.count({ where: { kind: 'reminder_24h' } })).toBe(0);
+      expect((await notices.runDue(h.clock.now())).sent).toBe(2);
+      expect((await notices.runDue(h.clock.now())).sent).toBe(0);
+      expect(await h.prisma.appointmentNotice.count({ where: { kind: 'reminder_24h' } })).toBe(2);
+      expect(mail.list().filter(m => m.to === 'retry-parent@ops.test' && m.subject.includes('Reminder:'))).toHaveLength(2);
+    } finally { failure.mockRestore(); }
+  });
+
   it('M2-H04: removing one therapist specialty preserves unrelated assignments and referent', async () => {
     const therapist = await staff('specialty-therapist@ops.test', ['THERAPIST']);
     const memberId = therapist.body.activeContext.membershipId as string;
