@@ -1,3 +1,9 @@
+## 2026-10-31 — M2-H05 code CI green: remaining exact-final-HEAD review gates
+
+1. Implementation HEAD `55163d5fe7d1d567d8ec66f1499bc9d745c459f0` is **6/6 CI PASS** ([run 41233257189](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41233257189)), **611/611 API tests PASS** across 23 suites. All frozen #122/#123/#125 features are implemented and regression-tested on this code HEAD; no clinical activation.
+2. **Final gate:** run six CI jobs again on the documentation-updated exact current HEAD. Mark PR #143 ready, obtain fresh independent Codex review of the same HEAD (planning-only `5f17f99` review insufficient), read all reviewer comments and disposition every P0–P3 as FIX_NOW/DEFER_ISSUE/DECLINE_WITH_REASON. Merge without additional owner prompt only if Rule 16 fully satisfied; otherwise keep open.
+3. Immediately after qualified #143 merge open **M2-H06 (#127/#128/#129/#130)** as next frozen Milestone 2 draft and request opening Codex review. Governance-gated signing/consent/safeguarding/release/deployment remain **NO-GO**.
+
 ## 2026-10-31 — CURRENT: qualify implemented M2-H05 #143 (#122, #123, #125)
 
 0. In last API run [41232523644](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41232523644), five legacy test expectations failed after deliberate stricter DTO 400, earlier DST fold choice and conflict wording. These are corrected in subsequent code/test commits; also added before-submit withdrawal guard and PostgreSQL regression. **Do not reuse that red run or earlier green subjobs for final qualification.**
