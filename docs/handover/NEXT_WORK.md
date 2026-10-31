@@ -1,3 +1,10 @@
+## 2026-10-31 — PR #137 final P3 qualification
+
+1. Verify six required CI jobs on the FINAL documentation/code HEAD: `test`, `secret-scan`, `live-session`, `preview-container`, `demo-journey`, `compose`. The `test` job must pass the new real-PostgreSQL COMMIT-acknowledgement, missing-identity, and interrupted-seed fixtures.
+2. Record explicit PR discussion FIX_NOW dispositions for all three P3 follow-ups from independent review 5717799244, including commit references and final CI status.
+3. Request only one stabilized Codex exact-HEAD review after CI green (PR #137 is already ready; check if automation dispatched first). Re-dispose any new findings.
+4. Do not merge until owner decision. No clinical activation or historic Prisma migration rename; GH-18 chronological question remains OPEN.
+
 ## 2026-10-30 — M2-H01 reviewer remediation qualification
 
 1. Re-run six exact-HEAD jobs after all P2/P3 fixes, especially the real PostgreSQL rollback tests and the seven-role demo. Do not reuse `06b2f21` green CI as new-head qualification.
