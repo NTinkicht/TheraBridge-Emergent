@@ -20,16 +20,30 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
   const [readiness, setReadiness] = useState<HandoverReadiness | null>(null);
   const reload = useCallback(async () => {
     try {
-      const d = await opsApi.handovers(centerId);
+      const d = await opsApi.handovers(centerId, { childId: child.id });
       setData(d);
       // Proposal status refreshes (including cancellation) must not discard the
       // still-valid incoming therapist search and its loaded pagination cursor.
       // Center/service/search changes are handled by the staff-fetch effect.
       setError('');
     } catch { setError('Could not load synthetic handover proposals.'); }
-  }, [centerId]);
+  }, [centerId, child.id]);
   useEffect(() => { void reload(); }, [reload]);
   const own = (data?.items ?? []).filter(p => p.childId === child.id);
+  const loadMoreHistory = async () => {
+    if (busy || !data?.enabled || data.nextCancelledOffset == null) return;
+    setBusy(true); setError('');
+    try {
+      const page = await opsApi.handovers(centerId, { childId: child.id, cancelledOffset: data.nextCancelledOffset });
+      setData(prev => prev ? {
+        ...prev,
+        items: [...prev.items, ...page.items.filter(item => item.status === 'CANCELLED' &&
+          !prev.items.some(existing => existing.id === item.id))],
+        nextCancelledOffset: page.nextCancelledOffset,
+      } : page);
+    } catch { setError('Could not load more cancelled handover history.'); }
+    finally { setBusy(false); }
+  };
   const active = child.assignments.filter(a => a.endedAt === null);
   const source = active.find(a => a.id === from);
   useEffect(() => {
@@ -157,6 +171,10 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
           </div>}
         </li>)}
       </ul>
+      {data.nextCancelledOffset != null && <Button size="sm" variant="secondary"
+        disabled={busy} onClick={() => void loadMoreHistory()} data-testid="handover-history-more">
+        Load older cancelled proposals
+      </Button>}
     </>}
   </Card>;
 }
