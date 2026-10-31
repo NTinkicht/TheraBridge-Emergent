@@ -1,6 +1,7 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
+import { syntheticMessagesTestFixtureOnly } from '../auth/policy';
 import { logCenterEvent, uniq } from '../centers/history';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Viewer } from './children.service';
@@ -32,8 +33,9 @@ export const threadScope = (
   return isManager(v) ? { centerId, audience: { in: ['CARE_TEAM', 'SPECIALTY'] } } : { centerId, id: { in: [] } };
 };
 
-// Family free-text messaging is a synthetic-only demonstration until safeguarding decision D-NEW-5 (issue #35).
-export const familyMessagingEnabled = () => process.env.FAMILY_MESSAGING_DEMO === 'true' && !['production', 'staging'].includes(process.env.DEPLOYMENT_ENV ?? '');
+// D-NEW-5 is unsigned. Only isolated Jest/CI fixtures may exercise these APIs;
+// neither hosted synthetic previews nor a deployment environment variable can open them.
+export const familyMessagingEnabled = syntheticMessagesTestFixtureOnly;
 const DEMO_OFF = 'Family messaging is a synthetic demonstration and is switched off here until the safeguarding and consent decisions are approved.';
 
 @Injectable()

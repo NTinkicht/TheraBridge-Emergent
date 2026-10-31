@@ -6,8 +6,9 @@ import { Workspace } from '@/components/centers/kit';
 import { Card } from '@/components/design/ui';
 
 export default function MessagesPage() {
-  return <Workspace active="messages" permission="center.messages.use"
-    deniedText="This workspace is not authorized to access messages.">
+  // Display the locked notice to authenticated families and centre staff; this is never a messaging grant.
+  return <Workspace active="messages" permission="family.portal.read|center.summary.read"
+    deniedText="This workspace is not authorized to access the informational notice.">
     {() => <Card className="max-w-2xl space-y-3 p-6" testId="messages-demo-disabled">
       <MessageSquareOff size={25} className="text-brand-inkMuted" aria-hidden="true" />
       <h1 className="text-[22px] font-bold">Family messaging is unavailable in this demo</h1>

@@ -1,3 +1,9 @@
+## 2026-10-31 — Frozen Milestone 2 next actions after M2-H02 merge
+
+1. **M2-S01 (#35) family messaging:** finish server deny-by-default on every free-text route and deployed permission disclosure; test synthetic fixture-only behavior, all-denied deployment modes, historical read denial after revoked guardian link and independent household privacy. Run six exact-head jobs and obtain independent Codex review before merge.
+2. After M2-S01 qualifies and merges, immediately **open M2-H03 (#124 + #121)** — HTTP Security and Therapist Revocation — per the owner's new automatic same-milestone handoff instruction. Do not reorder the frozen 12-item plan.
+3. Retain separately signed D-NEW-5 safeguarding, D4 custody and D7 consent decisions as NO-GO; the fail-closed implementation does not resolve or pre-approve clinical policy.
+
 ## 2026-10-31 — Frozen Milestone 2 queue after M2-H02 work
 
 1. **Complete PR #139 (M2-H02, #117 and #118):** run all exact-final-head CI jobs (test, secret-scan, live-session, preview-container, demo-journey, compose), obtain independent current-head review, disposition every P0–P3 finding, and merge automatically only if Rule 16 is satisfied. Preserve documented test evidence and handover checkpoint.

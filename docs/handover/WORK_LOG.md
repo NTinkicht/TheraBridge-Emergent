@@ -1,3 +1,10 @@
+## 2026-10-31 — M2-S01 begins immediately after verified M2-H02 merge
+
+- Merged [#139](https://github.com/NTinkicht/TheraBridge-Emergent/pull/139), M2-H02 (#117 + #118), into main at `dafe526b` after six green exact-head CI jobs in two runs, 574/574 PostgreSQL API tests, independent Codex no findings and full review dispositions.
+- Selected next frozen-roadmap unit **M2-S01 (#35)** without expanding into unrelated HTTP/database work or owner-gated transfer/release. The prior `FAMILY_MESSAGING_DEMO=true` switch could unlock messaging in non-staging/non-production deployments.
+- Hardened permissions and message service methods to grant messaging **only inside Jest CI**, preserving isolated synthetic fixtures; added denial tests for local/preview/development/staging/production and historical guardian-link revocation. Clinical message policy remains unsigned D-NEW-5.
+- Initial checkpoint only: CI and independent exact-head review NOT RUN on this new branch. Follow Rule 16 before merging.
+
 ## 2026-10-31 — M2-H02 implementation, negative tests and owner-approved merge policy
 
 - Merged policy PR [#138](https://github.com/NTinkicht/TheraBridge-Emergent/pull/138) into main, commit `39c9888`, after six green jobs and an independent Codex no-findings review. Future qualifying ordinary PRs may auto-merge under Rule 16 only after full review/test/deferral gating.

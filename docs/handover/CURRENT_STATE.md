@@ -1,3 +1,9 @@
+## 2026-10-31 — M2-S01 (#35) safeguarding D-NEW-5 fail-closed implementation (DRAFT)
+
+- The preceding [M2-H02 PR #139](https://github.com/NTinkicht/TheraBridge-Emergent/pull/139) merged to main at `dafe526b2565cf31aa749af71db0eed7f67bfe13` after **574/574 API tests, 6/6 CI jobs and exact-HEAD Codex no findings**. This supersedes the older "#139 open" checkpoint below.
+- The next frozen-roadmap unit is **M2-S01: Family Messaging Security and Fail-Closed Enforcement (#35)**. Free-text messaging is disabled in all deployments even if a demo flag is set. Only isolated Jest/CI fixtures can exercise old synthetic threads. No safeguarding, D4 custody, D7 consent or production policy is invented.
+- New code is **DRAFT / NOT MERGED**; all six CI checks, exact-head independent review and P0–P3 dispositions must pass before Rule 16 merge. No deployment or clinical activation.
+
 ## 2026-10-31 — M2-H02 (#117 + #118), current hardening; PR #138 policy MERGED
 
 - The owner's **frozen 12-PR Milestone 2 order** remains binding. M2-H02 is PR [#139](https://github.com/NTinkicht/TheraBridge-Emergent/pull/139) and covers both issue #117 (specialty/caseload authorization) and #118 (tenant-pinned compare-and-swap mutations). M2-S01 (#35) is next, **only after** #139 qualifies and merges.

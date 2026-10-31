@@ -1,3 +1,20 @@
+## 2026-10-31 — M2-S01 first CI diagnostic and UI notice repair
+
+- Initial head `4b4bc1c` passed API typecheck, API tests and API build, but both demo-browser journeys failed while waiting for `messages-demo-disabled`: deployed permission withholding also hid the informational locked-message page.
+- Corrected the page to use existing harmless, read-only session permissions (`family.portal.read|center.summary.read`) so the **disabled notice is visible**, without reinstating `center.messages.use` or any messaging API capability.
+- This repair must be requalified on its own exact-head test, secret scan, preview, browser, demo journey and compose checks. No merge/activation is claimed here.
+
+## 2026-10-31 — M2-S01 family messaging fail-closed checkpoint
+
+| Gate | State | Evidence/limitation |
+| --- | --- | --- |
+| Prior M2-H02 PR #139 | PASS / MERGED | `dafe526b`; 574/574 tests, six green exact-head CI jobs twice, Codex no findings |
+| New M2-S01 (#35) code | IMPLEMENTED IN DRAFT, NOT QUALIFIED | Server free-text list/read/create/reply/status and deployed permission claims deny by default; only isolated Jest/CI synthetic fixtures remain enabled |
+| Deployment-negative security matrix | ADDED, NOT RUN | Local, preview, development, staging and production with demo flag set; `NODE_ENV` and missing Jest worker gates; revocation of historical guardian thread |
+| Six current-head CI jobs | NOT RUN | test, secret-scan, live-session, preview-container, demo-journey, compose required |
+| Independent current-head review | NOT RUN | Required under Rule 16 before merge |
+| D-NEW-5 safeguarding / D4 custody / D7 consent | NO-GO | Unsigned policies; no real family messaging or activation |
+
 ## 2026-10-31 — M2-H02 CI/security verification checkpoint
 
 | Evidence | State | Exact result / limitation |
