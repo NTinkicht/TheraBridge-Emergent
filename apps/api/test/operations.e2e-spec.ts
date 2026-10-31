@@ -352,6 +352,39 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     await post(h, `/api/centers/${otherCenter}/appointments`, other, { childId: kid, membershipId: admin.body.activeContext.membershipId, service: 'speech', startsAt: at(1, 9), endsAt: at(1, 10) }).expect(404);
   });
 
+  it('M2-H05 Codex P2: room-only series update preserves a legacy later-fold booked instant', async () => {
+    await h.prisma.center.update({ where: { id: centerId }, data: { timezone: 'Europe/Paris' } });
+    const therapist = await staff('fold-therapist@ops.test', ['THERAPIST']);
+    const membershipId = therapist.body.activeContext.membershipId as string;
+    const kid = (await post(h, c('children'), admin, child()).expect(201)).body.id as string;
+    await post(h, c(`children/${kid}/assignments`), admin, { membershipId, service: 'speech' }).expect(201);
+    // Create a valid series, then model an already-booked fall-back occurrence
+    // from the legacy later-fold conversion policy (01:30Z, not 00:30Z).
+    const d = new Date(h.clock.now().getTime() + 2 * DAY).toISOString().slice(0, 10);
+    const weekday = ((new Date(`${d}T12:00:00Z`).getUTCDay() + 6) % 7) + 1;
+    const seriesId = (await post(h, c('series'), admin, {
+      childId: kid, membershipId, service: 'speech', startDate: d,
+      startTime: '10:00', durationMinutes: 60, weekdays: [weekday], intervalWeeks: 1, count: 1,
+    }).expect(201)).body.id as string;
+    const existing = await h.prisma.appointment.findFirstOrThrow({ where: { seriesId } });
+    const occurrenceDate = new Date('2027-10-31T00:00:00Z');
+    const laterFoldInstant = new Date('2027-10-31T01:30:00Z');
+    await h.prisma.appointmentSeries.update({ where: { id: seriesId }, data: {
+      startTime: '02:30', startDate: occurrenceDate, untilDate: occurrenceDate,
+    } });
+    await h.prisma.appointment.update({ where: { id: existing.id }, data: {
+      startsAt: laterFoldInstant, endsAt: new Date('2027-10-31T02:30:00Z'), occurrenceDate,
+    } });
+    await patch(admin, c(`series/${seriesId}`), {
+      fromDate: '2027-10-31', room: 'Updated room only', version: 1,
+    }).expect(200);
+    const saved = await h.prisma.appointment.findUniqueOrThrow({ where: { id: existing.id } });
+    expect(saved.startsAt.toISOString()).toBe('2027-10-31T01:30:00.000Z');
+    expect(saved.endsAt.toISOString()).toBe('2027-10-31T02:30:00.000Z');
+    expect(saved.room).toBe('Updated room only');
+    expect(saved.version).toBe(2);
+  });
+
   it('M2-H04: therapist suspension atomically ends assigned series, visits and referent; notifies a connected guardian', async () => {
     const therapist = await staff('cascade-therapist@ops.test', ['THERAPIST']);
     const memberId = therapist.body.activeContext.membershipId as string;
