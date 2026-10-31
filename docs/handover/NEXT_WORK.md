@@ -1,3 +1,9 @@
+## 2026-10-31 — CURRENT: security P1 requalification before M2-H05 merge
+
+1. Codex's withdrawal side-channel P1 at `7a75667` addressed by `bc70c5f` and `e6b9f88`: revoked therapist receives no clinical status feedback. All prior P2 and P3 fixes remain on branch; no deferrals.
+2. Re-run six exact-final-head CI jobs and request fresh Codex code review. Only if all pass, resolve comments and squash merge #143 under Rule 16. Never activate consent/signing/releases, real patient data or production.
+3. Immediately after qualified #143 merge open M2-H06 #127/#128/#129/#130 and request Codex opening review.
+
 ## 2026-10-31 — CURRENT: M2-H05 final review-driven regression gate
 
 1. Source and tests now cover three Codex P2 fixes plus two Mistral P3 compatibility/boundary suggestions (latest: `ff05058`, `9f3b979`, `7871202`). All FIX_NOW; no deferrals.
