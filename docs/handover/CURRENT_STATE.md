@@ -1,3 +1,7 @@
+## 2026-10-31 — CURRENT: M2-H05 review P3 compatibility + DST boundary fixes
+
+- Small Mistral suggestions **FIX_NOW**: `ff05058` + `9f3b979` preserve unmeasured legacy 250-char whitespace title on unchanged save; `7871202` asserts explicit DST-fold time edits intentionally choose earlier instant while room-only edits preserve a prior booking. Three Codex P2s and both P3 suggestions handled, no deferred findings. Final exact-HEAD 6/6 CI + independent Codex review remain pending; no clinical activation or production.
+
 ## 2026-10-31 — CURRENT: M2-H05 third Codex P2 compatibility fix; final gates pending
 
 - New Codex exact-head P2: existing measured/checkpointed goals with 201–300-character titles must remain saveable. `a79735c` accepts historic 300-char DTO and `276a7e7` limits new/redefined goals to 200 via fingerprint-equivalent legacy exception. `ca001a7` adds measured 250-char round-trip/400-on-new regression. Reviewer disposition **FIX_NOW**, no deferral. Prior two P2s and Postgres fixture ordering fixed; exact final-head CI + fresh Codex review still required. Governance NO-GO unchanged.
