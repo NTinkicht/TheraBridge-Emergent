@@ -82,7 +82,7 @@ export function CalendarGrid({ days, items, onOpen, onSlot }: { days: string[]; 
                 {d === today && nowMin >= first * 60 && nowMin <= last * 60 && <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 z-10 h-0.5 bg-status-danger" style={{ top: ((nowMin - first * 60) / 60) * HOUR_PX }} data-testid="calendar-now" />}
                 {placed.map(({ a, lane }) => {
                   const top = ((minutesOfDay(a.startsAt) - first * 60) / 60) * HOUR_PX;
-                  const height = Math.max(24, ((Date.parse(a.endsAt) - Date.parse(a.startsAt)) / 3_600_000) * HOUR_PX - 2);
+                  const height = Math.max(44, ((Date.parse(a.endsAt) - Date.parse(a.startsAt)) / 3_600_000) * HOUR_PX - 2);
                   return (
                     <button key={a.id} type="button" onClick={() => onOpen(a)} data-testid={`calendar-appt-${a.id}`}
                       aria-label={`${a.childFull}, ${serviceLabel(a.service)} with ${a.therapist}, ${timeRange(a.startsAt, a.endsAt)}, ${a.status.toLowerCase().replace('_', '-')}`}
