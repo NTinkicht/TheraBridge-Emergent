@@ -67,7 +67,9 @@ export class ReportsService {
       db.appointment.count({ where: { centerId, childId, service, status: 'COMPLETED', startsAt: { gte: from, lt: new Date(to.getTime() + DAY) } } }),
     ]);
     const selected = plans.flatMap(plan => {
-      const current = plan.versions.find(v => v.status !== 'SUPERSEDED') ?? plan.versions[0];
+      // Withdrawn and superseded versions are preserved in history but cannot be
+      // selected as active evidence for a new report or goal summary.
+      const current = plan.versions.find(v => v.status !== 'SUPERSEDED' && v.status !== 'WITHDRAWN');
       return current ? [{ plan, current }] : [];
     });
     const obs = selected.length ? await db.observation.findMany({ where: { centerId, childId, planVersionId: { in: selected.map(p => p.current.id) }, observedOn: { lte: to } }, orderBy: [{ observedOn: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }] }) : [];
@@ -122,7 +124,7 @@ export class ReportsService {
       .filter((p) => !pairs || pairs.some((x) => x.childId === p.childId && x.service === p.service));
     const obs = await this.prisma.observation.findMany({ where: { centerId, planVersionId: { in: plans.flatMap((p) => p.versions.map((x) => x.id)) }, observedOn: { lte: to } }, orderBy: [{ observedOn: 'asc' }, { createdAt: 'asc' }] });
     const goals = plans.flatMap((p) => {
-      const cur = p.versions.find((x) => x.status !== 'SUPERSEDED') ?? p.versions[0];
+      const cur = p.versions.find((x) => x.status !== 'SUPERSEDED' && x.status !== 'WITHDRAWN');
       const ids = new Set([cur?.id]);
       return ((cur?.goals ?? []) as Goal[]).filter((g) => !q.goalKey || g.key === q.goalKey)
         .map((g) => ({ childId: p.childId, childName: name(p.childId), service: p.service, planId: p.id, planVersionId: cur.id, planTitle: p.title, ...goalEvidence(g, obs.filter((o) => o.goalKey === g.key && ids.has(o.planVersionId)), from) }));
@@ -367,14 +369,21 @@ export class ReportsService {
 
   private why(r: ProgressReport, v: Viewer) {
     if (r.membershipId !== v.membershipId) return new ForbiddenException('Only the author can edit this report.');
-    if (r.status !== 'DRAFT') return new ConflictException('This report is with the supervisor for review. You can edit it again once it is returned.');
-    return new ConflictException('This report changed in another window or tab. Reload to see the latest text before you keep editing.');
+    if (!EDITABLE.includes(r.status)) return new ConflictException({
+      code: 'INVALID_REPORT_STATUS', message: 'Only DRAFT or RETURNED_FOR_REVISION reports can be edited.',
+    });
+    return new ConflictException({ code: 'VERSION_CONFLICT', message: 'Report version conflict. Reload before editing.' });
   }
 
   // Lock the draft at the version the author is looking at; every write bumps the version.
   private async bump(tx: Tx, r: ProgressReport, v: Viewer, version: number, now: Date, data: Prisma.ProgressReportUpdateManyMutationInput = {}) {
     const n = await tx.progressReport.updateMany({ where: { id: r.id, centerId: r.centerId, childId: r.childId, service: r.service, membershipId: v.membershipId, status: { in: EDITABLE }, version }, data: { ...data, updatedAt: now, version: { increment: 1 } } });
-    if (n.count !== 1) throw this.why(r, v);
+    if (n.count !== 1) {
+      // The caller's pre-transaction snapshot may be stale; diagnose the
+      // authoritative row rather than mislabel a returned report as uneditable.
+      const latest = await tx.progressReport.findUniqueOrThrow({ where: { id: r.id } });
+      throw this.why(latest, v);
+    }
     return tx.progressReport.findUniqueOrThrow({ where: { id: r.id } });
   }
 
