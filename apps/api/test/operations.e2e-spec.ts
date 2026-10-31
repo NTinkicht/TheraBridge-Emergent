@@ -1,4 +1,5 @@
 import { DevMailboxService } from '../src/dev-mailbox/dev-mailbox.service';
+import { NoticesService } from '../src/operations/notices.service';
 import { Harness, ORIGIN, PASSWORD, Signed, cookieFrom, createUser, makeApp, post, preAuth, resetDb, signIn } from './helpers';
 
 const DAY = 86_400_000;
@@ -347,5 +348,20 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     const row = await h.prisma.auditEvent.findFirstOrThrow({ where: { type: 'child.registered' } });
     await expect(h.prisma.$executeRaw`UPDATE audit_event SET type = 'tampered' WHERE id = ${row.id}`).rejects.toThrow(/append-only/);
     await expect(h.prisma.$executeRaw`DELETE FROM audit_event WHERE id = ${row.id}`).rejects.toThrow(/append-only/);
+  });
+
+  it('M2-H04: a repeated 24-hour reminder sweep sends only one message and records one row', async () => {
+    const therapist = await staff('sweep-therapist@ops.test', ['THERAPIST']);
+    const kid = (await post(h, c('children'), admin, child()).expect(201)).body.id as string;
+    await post(h, c(`children/${kid}/assignments`), admin, { membershipId: therapist.body.activeContext.membershipId, service: 'speech' }).expect(201);
+    await post(h, c(`children/${kid}/guardians`), admin, { displayName: 'Reminder Recipient', email: 'sweep-parent@ops.test', relationship: 'parent', invite: true }).expect(201);
+    await accept('sweep-parent@ops.test', 'Reminder Recipient');
+    const appointmentId = (await post(h, c('appointments'), admin, { childId: kid,
+      membershipId: therapist.body.activeContext.membershipId, service: 'speech', startsAt: at(1, 9), endsAt: at(1, 10) }).expect(201)).body.id as string;
+    const notices = h.app.get(NoticesService);
+    expect((await notices.runDue(h.clock.now())).sent).toBe(1);
+    expect((await notices.runDue(h.clock.now())).sent).toBe(0);
+    expect(await h.prisma.appointmentNotice.count({ where: { appointmentId, kind: 'reminder_24h' } })).toBe(1);
+    expect(h.app.get(DevMailboxService).list().filter((m) => m.to === 'sweep-parent@ops.test' && m.subject.includes('Reminder:')).length).toBe(1);
   });
 });

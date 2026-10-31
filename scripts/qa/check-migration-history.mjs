@@ -14,7 +14,13 @@ export function validateMigrationHistory(before, after, now = new Date()) {
   const oldFolders = new Set([...before.keys()].map(folder).filter(isMigration));
   const newFolders = new Set([...after.keys()].map(folder).filter(isMigration));
   const highestExisting = [...oldFolders].sort().at(-1) ?? '';
-  const latestAllowed = new Date(now.getTime() + 2 * 86_400_000).toISOString().replace(/\D/g, '').slice(0, 14);
+  // Some migrations already published on main have timestamps beyond the
+  // rolling two-day guard. Do not rewrite/backdate them: allow only the first
+  // hour after the published head as a bounded escape hatch. Far-future new
+  // migrations remain forbidden; published blobs remain byte-identical.
+  const stamp = highestExisting.slice(0, 14);
+  const highestDate = stamp ? Date.UTC(Number(stamp.slice(0, 4)), Number(stamp.slice(4, 6)) - 1, Number(stamp.slice(6, 8)), Number(stamp.slice(8, 10)), Number(stamp.slice(10, 12)), Number(stamp.slice(12, 14))) : 0;
+  const latestAllowed = new Date(Math.max(now.getTime() + 2 * 86_400_000, highestDate + 3_600_000)).toISOString().replace(/\D/g, '').slice(0, 14);
 
   // All published SQL and migration metadata must remain byte-identical.
   for (const [path, sha] of before) {

@@ -57,7 +57,7 @@ export class SeriesService {
         const startsAt = zonedToUtc(date, dto.startTime, tz);
         return { date, startsAt, endsAt: new Date(startsAt.getTime() + dto.durationMinutes * 60_000) };
       });
-      const reasons = await this.schedule.clashesForSlots(tx, slots.map((s) => ({ childId: dto.childId, membershipId: dto.membershipId, startsAt: s.startsAt, endsAt: s.endsAt })));
+      const reasons = await this.schedule.clashesForSlots(tx, centerId, slots.map((s) => ({ childId: dto.childId, membershipId: dto.membershipId, startsAt: s.startsAt, endsAt: s.endsAt })));
       const conflicts: { date: string; reason: string }[] = slots.flatMap((s, i) => reasons[i] ? [{ date: s.date, reason: reasons[i]! }] : []);
       if (conflicts.length && (!dto.skipConflicts || conflicts.length === slots.length)) {
         throw clashError(`${conflicts.length} of ${slots.length} visits clash with existing appointments.`, conflicts);
@@ -108,7 +108,7 @@ export class SeriesService {
         return { o, startsAt, endsAt: new Date(startsAt.getTime() + next.durationMin * 60_000) };
       });
       if (plan.some((p) => p.startsAt < now)) throw new UnprocessableEntityException('Visits cannot be moved into the past.');
-      const reasons = await this.schedule.clashesForSlots(tx, plan.map((p) => ({ childId: s.childId, membershipId: next.membershipId, startsAt: p.startsAt, endsAt: p.endsAt })), plan.map((x) => x.o.id));
+      const reasons = await this.schedule.clashesForSlots(tx, centerId, plan.map((p) => ({ childId: s.childId, membershipId: next.membershipId, startsAt: p.startsAt, endsAt: p.endsAt })), plan.map((x) => x.o.id));
       const conflicts: { date: string; reason: string }[] = plan.flatMap((p, i) => reasons[i] ? [{ date: fromDate(p.o.occurrenceDate!), reason: reasons[i]! }] : []);
       if (conflicts.length) throw clashError(`${conflicts.length} of ${plan.length} visits would clash. Nothing was changed.`, conflicts);
       for (const p of plan) {

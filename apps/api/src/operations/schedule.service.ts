@@ -62,13 +62,13 @@ export class ScheduleService {
 
   // Batch the read for up to 60 repeating visits instead of making two
   // database round-trips for every occurrence under the center lock.
-  async clashesForSlots(tx: Tx, slots: { childId: string; membershipId: string; startsAt: Date; endsAt: Date }[], excludeIds: string[] = []): Promise<(string | null)[]> {
+  async clashesForSlots(tx: Tx, centerId: string, slots: { childId: string; membershipId: string; startsAt: Date; endsAt: Date }[], excludeIds: string[] = []): Promise<(string | null)[]> {
     if (!slots.length) return [];
     const earliest = new Date(Math.min(...slots.map((s) => s.startsAt.getTime())));
     const latest = new Date(Math.max(...slots.map((s) => s.endsAt.getTime())));
     const existing = await tx.appointment.findMany({
       where: {
-        status: 'SCHEDULED', startsAt: { lt: latest }, endsAt: { gt: earliest },
+        centerId, status: 'SCHEDULED', startsAt: { lt: latest }, endsAt: { gt: earliest },
         OR: [
           { membershipId: { in: [...new Set(slots.map((s) => s.membershipId))] } },
           { childId: { in: [...new Set(slots.map((s) => s.childId))] } },

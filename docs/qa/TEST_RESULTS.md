@@ -445,3 +445,14 @@ Base main: f49ade4125cdb26e11fd7eb2cc80c292a48f00a9. Branch: freebuff/tb-em-015-
 - NOT VERIFIED: actual STT recognition/device capture (disabled), Safari/Firefox/device tests, Figma frame access, GitHub exact-head CI, Mistral independent findings.
 
 See [implementation evidence](../emergent/workunits/TB-EM-015.md) for exact commands, initial failures repaired and boundaries. No production deployment or clinical activation.
+## 2026-10-31 — M2-H04 #142 new-code CI checkpoint (NOT QUALIFIED)
+
+| Check / exact HEAD | Evidence |
+| --- | --- |
+| `e71ad7d` first implementation CI | `secret-scan`, `preview-container`, `live-session` PASS; `test` FAIL at migration chronology guard (published Nov 3 future-dated baseline), `compose` SKIPPED. No pass claimed. |
+| Chronology guard local negative/positive tests after fix | `node --test scripts/qa/check-migration-history.test.mjs`: **11/11 PASS**. New migration at published-head+1h; no published SQL touched. |
+| HTTP and therapist revocation tests | New e2e fixtures added, real DB run PENDING |
+| DB integrity and reminder sweep regressions | New real DB fixtures added, run PENDING |
+| Final-head six required CI jobs + independent Codex | PENDING; PR #142 DRAFT, NO MERGE |
+| Protected clinical/real-data release | NO-GO; unchanged |
+

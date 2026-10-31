@@ -1,3 +1,10 @@
+## 2026-10-31 — LATEST: M2-H04 combined implementation checkpoint on PR #142 (draft, unqualified)
+
+- Five-issue code changes are now in PR #142: #124 HTTP hardening, #121 transactionally-ended therapist assignments/series/visits and guardian notices, #120 current-schema FK/index/audit-trigger and transfer-version migration, #119 center-lock downgrade and batched conflict reads, #126 list bounds/reminder dedupe/expired rate-limit pruning. Tests include real-PostgreSQL suspension/referent/series and audit-trigger regressions, reminder idempotency, shared password-change rate limiting and migration-history guard.
+- **NOT DONE:** final real-PostgreSQL API suite and six exact-HEAD CI jobs, independent final Codex code review, any newly raised P0–P3 dispositions, migration upgrade validation and further review of N+1/CAS/actor FK coverage. PR must remain **DRAFT / NO MERGE** until those checks pass. #141 previously merged docs-only; this PR remains the explicit home of both carried issues.
+- The published baseline has a Nov 3 future-dated migration that makes the old `now+2d` guard unsatisfiable on Oct 31. A narrowly bounded +1 hour append allowance and negative test were added without touching prior migration SQL. This must be independently reviewed.
+- Clinical policies/real data/release/production **NO-GO**. Once M2-H04 qualifies and merges, immediately start M2-H05 (#122, #123, #125).
+
 ## 2026-10-31 — CURRENT: M2-H04 PR #142 with explicit unfinished M2-H03 carryover
 
 - M2-H03 [PR #141](https://github.com/NTinkicht/TheraBridge-Emergent/pull/141) **merged at `232c73c` with documentation/workflow only**; its #124 HTTP-security and #121 therapist-revocation feature fixes remain **UNIMPLEMENTED**. The owner's specific 2026-10-31 instruction places both in current [M2-H04 PR #142](https://github.com/NTinkicht/TheraBridge-Emergent/pull/142), alongside original #120, #119 and #126. All five must be implemented and tested **inside #142** before it qualifies.

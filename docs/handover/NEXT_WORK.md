@@ -408,3 +408,11 @@ Phase: 1 — Foundation + center onboarding
 - After approval, first implementation checkpoint must include reproducible cold-clone instructions and actual test results.
 
 Blocked until owner's Emergent plan is returned and accepted. No code implemented.
+## 2026-10-31 — CURRENT: qualify combined M2-H04 #142 before any merge
+
+1. Run migration chronology guard and Prisma deploy/generate on a fresh and pre-migrated isolated PostgreSQL database; inspect all new center/child FK validation and transfer CAS SQL. Never rewrite published migrations.
+2. Run the entire API suite and all six exact-HEAD GitHub checks, including the new therapist revocation, reminder idempotence, audit immutability, HTTP security and migration-guard tests. Fix any regressions in the same draft.
+3. Audit coverage of legacy #124/#121/#120/#119/#126 against actual split models. Flag any missing actor FK, direct user-disable lifecycle, per-row series update, pagination/clinical evidence retention or residual P3 as actionable before merge; do not silently defer it.
+4. Mark ready, request a new final-implementation `@codex review`, disposition every comment and link any owner-approved deferrals, then Rule16-qualify and auto-merge. Open M2-H05 (#122, #123, #125) immediately after a qualified merge.
+5. Clinical consent, signing, family release, real data and deployment remain NO-GO.
+

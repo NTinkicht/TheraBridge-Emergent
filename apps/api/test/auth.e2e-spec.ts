@@ -6,6 +6,7 @@ import { RouteAccessVerifier } from '../src/auth/route-access.verifier';
 import { ipPrefix, parseTrustedProxiesForTest, resolveClientIp, sha256 } from './unit-helpers';
 import { loadAuthConfig } from '../src/config/env';
 import { passwordPolicyError } from '../src/auth/password';
+import { RateLimitStore } from '../src/auth/rate-limit.store';
 import {
   FakeClock, Harness, ORIGIN, PASSWORD, cookieFrom, createUser, freshPassword, login, makeApp, post, preAuth, rawCookie, resetDb, signIn,
 } from './helpers';
@@ -79,6 +80,17 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
   });
 
   describe('AC-2/3 generic errors, lockout, IP limit', () => {
+    it('M2-H04: prunes expired buckets across keys without removing active windows', async () => {
+      const old = new Date(h.clock.now().getTime() - 2 * 86_400_000);
+      const recent = h.clock.now();
+      await h.prisma.rateLimitCounter.createMany({ data: [
+        { key: 'old-other-account', windowStart: old, count: 7 },
+        { key: 'recent-account', windowStart: recent, count: 1 },
+      ] });
+      await h.app.get(RateLimitStore).pruneExpired(recent);
+      expect(await h.prisma.rateLimitCounter.count({ where: { key: 'old-other-account' } })).toBe(0);
+      expect(await h.prisma.rateLimitCounter.count({ where: { key: 'recent-account' } })).toBe(1);
+    });
     it('wrong password, unknown email and locked account return the same 401 body', async () => {
       const u = await createUser(h.prisma);
       const wrong = await login(h, u.email, 'not-the-password-123');
