@@ -1,3 +1,15 @@
+## 2026-10-31 — M2-H05 #143 implementation verification (ongoing)
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| Frozen issue implementation #122/#123/#125 | **CODE + NEW TESTS PRESENT / DRAFT** | `apps/api/src/common/zoned.ts`, `operations/schedule.service.ts`, `clinical/{clinical,reports,governance}.service.ts`, current DTOs and `common/validators.ts` |
+| DST fold/gap, host-TZ, 23/25h day, leap/month-end tests | **ADDED; full-suite result pending** | `apps/api/test/timezone-validation.e2e-spec.ts` |
+| Impossible dates, IANA, percent bounds, trim tests | **ADDED; full-suite result pending** | `apps/api/test/validators.e2e-spec.ts` |
+| Returned report conflict and withdrawn evidence/workspace/observation | **ADDED; PostgreSQL result pending** | `apps/api/test/governance.e2e-spec.ts` |
+| Initial CI [41232387309](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41232387309) | **FAILED (fixed)** | TS18048 report progress `cur` possibly undefined; fixed `e469b7c`. Do not use initial run for merge. |
+| Six-job exact-final-HEAD CI, independent implementation Codex review and P0–P3 dispositions | **PENDING** | Previous `5f17f99` Codex reviewed only planning files, not feature code. |
+| Clinical approval, release, real records, production | **NO-GO** | Existing unsigned governance policy unchanged; synthetic fixtures only. |
+
 ## 2026-10-31 — M2-H04 completion evidence and M2-H05 draft baseline
 
 | Gate | Result | Evidence |
