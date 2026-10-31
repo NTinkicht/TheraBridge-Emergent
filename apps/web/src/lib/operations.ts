@@ -151,7 +151,19 @@ export function zonedDateTimeInputToIso(value: string, tz: string): string {
   const instant = zonedToUtc(value.slice(0, 10), value.slice(11, 16), tz);
   if (!Number.isFinite(instant.valueOf())) throw new Error('Enter a valid date and time for this center.');
   instant.setUTCSeconds(seconds);
+  // The calendar may omit a spring-forward hour. Never silently normalize
+  // a clinician-entered local time to a different wall-clock value.
+  if (formatZonedDateTimeInput(instant.toISOString(), tz, value.length === 19) !== value) {
+    throw new Error('This local time does not exist in the center time zone. Select a valid time.');
+  }
   return instant.toISOString();
+}
+
+/** An unchanged ambiguous fall-back hour must retain its originally recorded offset. */
+export function preservedZonedInstant(value: string, originalIso: string | null, tz: string): string | undefined {
+  if (!value) return undefined;
+  if (originalIso && formatZonedDateTimeInput(originalIso, tz, true) === value) return originalIso;
+  return zonedDateTimeInputToIso(value, tz);
 }
 
 export const addDays = (day: string, n: number) => {
