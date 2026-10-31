@@ -1,3 +1,12 @@
+# Latest QA checkpoint — 2026-10-31
+
+| Work item | Exact HEAD | Outcome | CI/review |
+| --- | --- | --- | --- |
+| M2-H05 PR #143, merged | `05c781edca0b70da72a3c360e7c8d44eabe09258` → main `f30a659` | **PASS: 616/616 tests** | 6/6 jobs green, run 41236118987; Codex final no major issues; four inline threads resolved; no deferrals |
+| M2-H06 (#127,#128,#129,#130), planning-only branch | initial draft checkpoint | **NOT IMPLEMENTED / NOT TESTED** | CI and independent review of implementation pending; DO NOT MERGE |
+
+Clinical gates continue to fail closed; synthetic-only scope, protected release and deployment NO-GO.
+
 ## 2026-10-31 — M2-H05 Codex security P1 remediation pending final qualification
 
 | Finding | Fix and test | Status |
