@@ -447,6 +447,37 @@ try {
     await page.unroute(twoPlanRoute);
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
+    // M2-H04 P2: simulate creating plan #201 while the first 200-item page
+    // remains mounted. The real API's 205-plan pagination test covers server
+    // boundaries; here a read-only overlay verifies that the UI updates its
+    // hasMorePlans flag after an action-triggered same-child reload.
+    const boundaryPlanRoute = '**/api/centers/*/clinical/children/*';
+    const boundaryCreateRoute = '**/api/centers/*/clinical/children/*/plans';
+    let boundaryCrossed = false;
+    await page.route(boundaryPlanRoute, async route => {
+      if (route.request().method() !== 'GET') return route.continue();
+      const response = await route.fetch();
+      const data = await response.json();
+      return route.fulfill({ response, json: { ...data, hasMorePlans: boundaryCrossed } });
+    });
+    await page.route(boundaryCreateRoute, route => {
+      if (route.request().method() !== 'POST') return route.continue();
+      boundaryCrossed = true;
+      return route.fulfill({ status: 201, contentType: 'application/json',
+        body: '{"id":"00000000-0000-4000-8000-000000000098","versionId":"00000000-0000-4000-8000-000000000099"}' });
+    });
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+    assert.equal(await page.getByTestId('plans-load-more').count(), 0,
+      'An exactly-full first page should not claim older pages without server metadata');
+    await page.getByTestId('plan-title').fill('Synthetic boundary plan');
+    await page.getByTestId('plan-create-button').click();
+    await page.getByTestId('plans-load-more').waitFor();
+    assert(boundaryCrossed, 'A synthetic plan creation must update pagination metadata');
+    await page.unroute(boundaryCreateRoute);
+    await page.unroute(boundaryPlanRoute);
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
     // M2-H04 Codex P2: after loading an older plan, the family-preview action
     // refreshes the same-child workspace. It must not unmount the older plan
     // and lose the local preview. Exercise that exact sequence through the UI
@@ -479,8 +510,10 @@ try {
     // reload, not merely for a preview rendered before the reload completed.
     const refreshedOlderPage = page.waitForResponse(response => response.request().method() === 'GET' &&
       response.url().includes('/clinical/children/') && new URL(response.url()).searchParams.get('planOffset') === '1');
+    const beforeRefresh = Number(await page.getByTestId('plans-panel').getAttribute('data-refresh-revision'));
     await olderPanel.getByTestId('plan-family-preview').click();
     await refreshedOlderPage;
+    await page.waitForFunction(before => Number(document.querySelector('[data-testid="plans-panel"]')?.getAttribute('data-refresh-revision')) > before, beforeRefresh);
     await olderPanel.getByTestId('family-preview').waitFor();
     assert(await olderPanel.getByTestId('family-preview').isVisible(),
       'An older plan preview must remain mounted after its same-child workspace refresh');

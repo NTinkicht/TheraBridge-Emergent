@@ -195,6 +195,7 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
   const [hasMorePlans, setHasMorePlans] = useState(ws.hasMorePlans);
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [planLoadError, setPlanLoadError] = useState('');
+  const [refreshRevision, setRefreshRevision] = useState(0);
   // A save or family-preview action refreshes `ws` for this same child. Keep
   // already loaded older pages mounted so their local preview/editor state is
   // not lost; only a child/centre switch should reset page navigation.
@@ -203,6 +204,15 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
     setHasMorePlans(ws.hasMorePlans); setPlanLoadError('');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [centerId, ws.child.id]);
+  // Even when the identity is unchanged, the first-page metadata may have
+  // changed (e.g. creating plan #201). Synchronize it only when no older page
+  // has been loaded; otherwise preserve the existing pagination cursor.
+  useEffect(() => {
+    if (!olderPlans.length) {
+      setPlanOffset(ws.plans.length);
+      setHasMorePlans(ws.hasMorePlans);
+    }
+  }, [ws, olderPlans.length]);
   const activeWs = useMemo<Workspace>(() => ({ ...ws,
     plans: [...ws.plans, ...olderPlans.filter(p => !ws.plans.some(x => x.id === p.id))],
     observations: [...ws.observations, ...olderObservations.filter(o => !ws.observations.some(x => x.id === o.id))],
@@ -238,6 +248,9 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
         setPlanOffset(offset); setHasMorePlans(more);
       } catch { setPlanLoadError('Older plans could not be refreshed. Reload this child to retry.'); }
     }
+    // Browser-visible completion marker: emitted only AFTER the parent
+    // workspace reload and all previously loaded older-page re-fetches.
+    if (success) setRefreshRevision(n => n + 1);
     return success;
   };
   const [linkedEvidenceNote, setLinkedEvidenceNote] = useState('');
@@ -274,7 +287,7 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
     return () => window.removeEventListener('hashchange', inspectHashTarget);
   }, [activeWs]);
   return (
-    <div className="space-y-5" data-testid="plans-panel">
+    <div className="space-y-5" data-testid="plans-panel" data-refresh-revision={refreshRevision}>
       {linkedEvidenceNote && <p role="status" className="rounded-control border border-border-light bg-surface-subtle p-3 text-[13px]" data-testid="report-goal-navigation-note">{linkedEvidenceNote}</p>}
       <GoalReviewWorklist ws={activeWs} />
       {activeWs.plans.map((p) => {

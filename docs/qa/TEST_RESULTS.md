@@ -465,3 +465,8 @@ See [implementation evidence](../emergent/workunits/TB-EM-015.md) for exact comm
 
 - Run `41215010673` on `6c8e87b7414650beaa3b5ae28cd6a202fe963bb8`: all 21 PostgreSQL test suites, **594/594 API tests PASS**; remaining Compose verification was still in progress at this checkpoint.
 - Codex's second implementation review found one further **P2** in `PlanEditor`: a same-child workspace refresh after a family preview unmounted already-loaded older plan pages. Revised UI code preserves and refreshes prior pages, with a read-only synthetic Playwright overlay exercising an older-plan preview through a workspace reload. **Third exact-head CI and Codex review pending; do not merge yet.**
+
+### M2-H04 `5c733f5` third review and amended acceptance (2026-10-31)
+
+- `5c733f5` completed the amended synthetic demo-journey browser check; Codex independently raised two new P2 boundary cases: first-page `hasMorePlans` metadata stale after a 200-to-201 plan creation, and an older-plan preview UI assertion racing the workspace refresh.
+- The next amendment synchronizes metadata when no older page is loaded, records a refresh completion revision only after parent and older-page reloads, and tests both a simulated 200-to-201 UI boundary and preview persistence after that completion signal. **Current amended HEAD still requires 6/6 CI and fresh Codex verification.**
