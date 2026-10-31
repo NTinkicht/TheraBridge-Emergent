@@ -198,7 +198,7 @@ export function Messages({ centerId, family, kids, therapistMembershipId, onErro
           <div role="tablist" aria-label="Conversation status" className="flex gap-1 border-b border-border-light p-2">
             {(['OPEN', 'CLOSED'] as const).map((s) => (
               <button key={s} role="tab" type="button" aria-selected={status === s} onClick={() => { setStatus(s); setActive(null); }} data-testid={`threads-tab-${s.toLowerCase()}`}
-                className={`min-h-[38px] flex-1 rounded-[8px] text-[14px] font-semibold transition-colors ${status === s ? 'bg-surface-subtle' : 'text-brand-inkMuted hover:bg-surface-subtle'}`}>{s === 'OPEN' ? 'Open' : 'Closed'}</button>
+                className={`min-h-[44px] flex-1 rounded-[8px] text-[14px] font-semibold transition-colors ${status === s ? 'bg-surface-subtle' : 'text-brand-inkMuted hover:bg-surface-subtle'}`}>{s === 'OPEN' ? 'Open' : 'Closed'}</button>
             ))}
           </div>
           {failed && <div className="p-4"><ErrorState tone={tone} onRetry={() => void reload()} testId="threads-error" /></div>}
