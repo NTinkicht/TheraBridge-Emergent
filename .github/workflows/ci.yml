@@ -5,11 +5,17 @@ on:
     branches: ["**"]
   pull_request:
 
+# Superseded pushes to the same ref should not consume two costly Docker jobs.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
   secret-scan:
+    timeout-minutes: 10
     runs-on: ubuntu-24.04
     env:
       GITLEAKS_VERSION: 8.30.1
@@ -30,6 +36,7 @@ jobs:
         run: /tmp/gitleaks dir . --config .gitleaks.toml --redact=100 --no-banner --exit-code 1
 
   test:
+    timeout-minutes: 30
     runs-on: ubuntu-24.04
     services:
       postgres:
@@ -86,6 +93,10 @@ jobs:
           yarn workspace @therabridge/api prisma migrate status
       - run: yarn workspace @therabridge/api typecheck
       - run: yarn workspace @therabridge/api test
+      - name: Gate measured API fingerprint-core coverage (95/90/95/95)
+        run: yarn workspace @therabridge/api test:coverage:core
+      - name: Web configuration unit tests
+        run: yarn workspace @therabridge/web test
       - run: yarn workspace @therabridge/api build
       - run: yarn workspace @therabridge/web build
       - name: M2-H06 frontend timezone, CSRF, shared session and response-header regression
@@ -189,6 +200,7 @@ jobs:
         run: rm -f .workspace/local-credentials/childrens-home-demo.json
 
   compose:
+    timeout-minutes: 25
     runs-on: ubuntu-24.04
     needs: test
     steps:
@@ -196,6 +208,10 @@ jobs:
       - run: cp .env.example .env
       - run: docker compose build
       - run: docker compose up -d --wait
+      - name: Verify API and web runtime identities are non-root
+        run: |
+          test "$(docker compose exec -T api id -u)" = 1000
+          test "$(docker compose exec -T web id -u)" = 1000
       - name: Smoke test through the running containers
         run: |
           curl -fsS http://localhost:8001/api/health | python3 -c 'import json,sys; h=json.load(sys.stdin); assert h["status"] == "ok" and h["service"] == "therabridge-api" and h["database"]["status"] == "up" and h["migrations"]["applied"] >= 1'
@@ -258,6 +274,7 @@ jobs:
           printf 'DEMO_PASSWORDS_JSON=%s\n' "$(tr -d '\n' < .workspace/local-credentials/render-demo-passwords.json)" >> /tmp/therabridge-preview-ci.env
           printf 'AUTH_SECRET=%s\n' "$(openssl rand -hex 32)" >> /tmp/therabridge-preview-ci.env
           docker run -d --name tb-preview-ci --network host --env-file /tmp/therabridge-preview-ci.env tb-synthetic-preview:ci
+          test "$(docker exec tb-preview-ci id -u)" = 1000
           for attempt in $(seq 1 120); do
             if curl -fsS http://127.0.0.1:10000/login >/dev/null 2>&1; then break; fi
             sleep 2

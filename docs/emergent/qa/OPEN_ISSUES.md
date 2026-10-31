@@ -1,3 +1,7 @@
+## M2-H08 scope and policy notes — 2026-10-31
+
+#133 current-code import/hash cleanup and regression tests; #135 non-root Docker/preview and bounded resources; #136 executed API-core coverage and web unit tests are implemented for PR #146 review. Coverage applies to a defined fingerprint core, **not the overall API or Web app**; raising whole-app coverage remains ongoing quality work and is not represented as complete. No policy approval for transfer, family plan/report release, signing, consent or real-data activation is inferred.
+
 # Non-blocking issues to file on GitHub (TB-EM-001)
 
 Emergent cannot create GitHub issues. Please file each one, or let a reviewer do it. GitHub #3 and #4 already exist and were deliberately not addressed.

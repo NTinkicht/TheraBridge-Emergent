@@ -1,11 +1,10 @@
-import { createHash } from 'node:crypto';
+import { orderedJsonFingerprint as hash } from '../common/fingerprints';
 import type { Evidence } from './reports.service';
 
 // Clinical evidence identity is shared between the write gate and the
 // immutable saved-version trace. Neither caller may claim semantic accuracy.
 export type Section = 'assessment' | 'goals' | 'sessions';
 export type Source = { ref: string; label: string; fingerprint: string; observed?: { value: number; measure: string }; goalNumbers?: number[] };
-const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 
 export function suggestionSources(e: Evidence, reportId: string, section: Section): Source[] {
   const sources: Source[] = [];
