@@ -1,3 +1,7 @@
+## 2026-10-31 — CURRENT: M2-H05 third Codex P2 compatibility fix; final gates pending
+
+- New Codex exact-head P2: existing measured/checkpointed goals with 201–300-character titles must remain saveable. `a79735c` accepts historic 300-char DTO and `276a7e7` limits new/redefined goals to 200 via fingerprint-equivalent legacy exception. `ca001a7` adds measured 250-char round-trip/400-on-new regression. Reviewer disposition **FIX_NOW**, no deferral. Prior two P2s and Postgres fixture ordering fixed; exact final-head CI + fresh Codex review still required. Governance NO-GO unchanged.
+
 ## 2026-10-31 — M2-H05 Codex code review: two P2 fixes implemented; requalification pending
 
 - [PR #143](https://github.com/NTinkicht/TheraBridge-Emergent/pull/143) moved to ready-for-review at final docs HEAD `7f77d66`. Codex's exact-HEAD review identified two **P2** regressions, both **FIX_NOW**: room-only recurring-series updates could shift a legacy DST-fold booking; globally trimmed goal titles could block summary-only saves of observed/checkpointed legacy drafts.
