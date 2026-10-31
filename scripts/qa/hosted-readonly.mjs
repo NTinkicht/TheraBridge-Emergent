@@ -93,6 +93,14 @@ export async function logout(context){
   {headers:{Origin:BASE,'X-CSRF-Token':d.csrfToken}});
  return x.status()===204;
 }
+export async function settleLoginPage(page){
+ // Next.js can render server HTML before React attaches the submit handler.
+ // Wait for network quiet and a short hydration buffer before interacting.
+ if(typeof page.waitForLoadState!=='function')return;
+ try{await page.waitForLoadState('networkidle',{timeout:12000});}
+ catch{await page.waitForTimeout?.(1000);}
+ await page.waitForTimeout?.(350);
+}
 async function assess(browser,role,user,directory){
  const c=ROLES[role],rows=[];
  const context=await browser.newContext({viewport:{width:1440,height:900},acceptDownloads:false,deviceScaleFactor:1});
@@ -115,13 +123,7 @@ async function assess(browser,role,user,directory){
   let loginResponse,headerInspection=null;
   try{
    await page.goto(BASE+'/login',{waitUntil:'domcontentloaded',timeout:25000});
-   // Next.js can render server HTML before React attaches the submit handler.
-   // Wait for network quiet and a short hydration buffer before interacting.
-   if(page.waitForLoadState){
-    try{await page.waitForLoadState('networkidle',{timeout:12000});}
-    catch{await page.waitForTimeout?.(1000);}
-    await page.waitForTimeout?.(350);
-   }
+   await settleLoginPage(page);
    await page.getByTestId('login-email-input').fill(user.email);
    await page.getByTestId('login-password-input').fill(user.password);
    // Attach handlers to both operations immediately; preserve a successful
