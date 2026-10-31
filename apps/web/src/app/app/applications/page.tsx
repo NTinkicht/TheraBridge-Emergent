@@ -82,7 +82,7 @@ function ApplicationsList({ onError }: { onError: (e: unknown) => void }) {
         <div role="tablist" onKeyDown={navigateTabs} aria-label="Filter by status" className="flex gap-1 overflow-x-auto rounded-control bg-surface-white p-1 shadow-sm" data-testid="applications-tabs">
           {TABS.map((t) => (
             <button key={t.key || 'all'} role="tab" aria-selected={status === t.key} tabIndex={status === t.key ? 0 : -1} id={`applications-tab-${t.key || "all"}`} onClick={() => { setStatus(t.key); setPage(1); }} data-testid={`applications-tab-${t.key || 'all'}`}
-              className={`inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-[8px] px-3 text-[14px] font-medium transition-colors ${status === t.key ? 'bg-brand-action text-white' : 'text-brand-inkMuted hover:bg-surface-subtle'}`}>
+              className={`inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-[8px] px-3 text-[14px] font-medium transition-colors ${status === t.key ? 'bg-brand-action text-white' : 'text-brand-inkMuted hover:bg-surface-subtle'}`}>
               {t.label}
               {data && <span className={`tnum rounded-full px-1.5 text-[12px] ${status === t.key ? 'bg-white/20' : 'bg-surface-subtle'}`}>{countFor(t.key, data.counts)}</span>}
             </button>
@@ -123,9 +123,9 @@ function ApplicationsList({ onError }: { onError: (e: unknown) => void }) {
           </ul>
           {pages > 1 && (
             <div className="flex items-center justify-between border-t border-border-light px-5 py-3 text-[14px]">
-              <button type="button" disabled={page <= 1} onClick={() => setPage(page - 1)} className="inline-flex min-h-[40px] items-center gap-1 rounded-control px-2 disabled:opacity-40" data-testid="applications-prev"><ChevronLeft size={16} aria-hidden="true" /> Previous</button>
+              <button type="button" disabled={page <= 1} onClick={() => setPage(page - 1)} className="inline-flex min-h-[44px] items-center gap-1 rounded-control px-2 disabled:opacity-40" data-testid="applications-prev"><ChevronLeft size={16} aria-hidden="true" /> Previous</button>
               <span className="tnum text-brand-inkMuted">Page {page} of {pages}</span>
-              <button type="button" disabled={page >= pages} onClick={() => setPage(page + 1)} className="inline-flex min-h-[40px] items-center gap-1 rounded-control px-2 disabled:opacity-40" data-testid="applications-next">Next <ChevronRight size={16} aria-hidden="true" /></button>
+              <button type="button" disabled={page >= pages} onClick={() => setPage(page + 1)} className="inline-flex min-h-[44px] items-center gap-1 rounded-control px-2 disabled:opacity-40" data-testid="applications-next">Next <ChevronRight size={16} aria-hidden="true" /></button>
             </div>
           )}
         </Card>
