@@ -62,7 +62,7 @@ export class ReportsService {
   async evidence(db: Tx | PrismaService, centerId: string, childId: string, service: string, from: Date, to: Date) {
     const [assessments, plans, drafts, completedVisits] = await Promise.all([
       db.assessment.findMany({ where: { centerId, childId, service, assessedOn: { lte: to } }, orderBy: { assessedOn: 'asc' } }),
-      db.therapyPlan.findMany({ where: { centerId, childId, service }, include: { versions: { orderBy: { number: 'desc' } } }, orderBy: { createdAt: 'asc' } }),
+      db.therapyPlan.findMany({ where: { centerId, childId, service }, include: { versions: { where: { status: { notIn: ['WITHDRAWN', 'SUPERSEDED'] } }, orderBy: { number: 'desc' } } }, orderBy: { createdAt: 'asc' } }),
       db.sessionNote.count({ where: { centerId, childId, service, sessionDate: { gte: from, lte: to } } }),
       db.appointment.count({ where: { centerId, childId, service, status: 'COMPLETED', startsAt: { gte: from, lt: new Date(to.getTime() + DAY) } } }),
     ]);
@@ -120,7 +120,7 @@ export class ReportsService {
     const kids = await this.prisma.child.findMany({ where: { centerId, status: 'ACTIVE', ...(pairs ? { id: { in: uniq(pairs.map((p) => p.childId)) } } : {}) }, orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }] });
     const name = (id: string) => { const k = kids.find((x) => x.id === id)!; return `${k.preferredName ?? k.firstName} ${k.lastName}`; };
     const scope = q.childId ? kids.filter((k) => k.id === q.childId) : kids;
-    const plans = (await this.prisma.therapyPlan.findMany({ where: { centerId, childId: { in: scope.map((k) => k.id) }, ...(q.service ? { service: q.service } : {}) }, include: { versions: { orderBy: { number: 'desc' } } }, orderBy: { createdAt: 'asc' } }))
+    const plans = (await this.prisma.therapyPlan.findMany({ where: { centerId, childId: { in: scope.map((k) => k.id) }, ...(q.service ? { service: q.service } : {}) }, include: { versions: { where: { status: { notIn: ['WITHDRAWN', 'SUPERSEDED'] } }, orderBy: { number: 'desc' } } }, orderBy: { createdAt: 'asc' } }))
       .filter((p) => !pairs || pairs.some((x) => x.childId === p.childId && x.service === p.service));
     const obs = await this.prisma.observation.findMany({ where: { centerId, planVersionId: { in: plans.flatMap((p) => p.versions.map((x) => x.id)) }, observedOn: { lte: to } }, orderBy: [{ observedOn: 'asc' }, { createdAt: 'asc' }] });
     const goals = plans.flatMap((p) => {
