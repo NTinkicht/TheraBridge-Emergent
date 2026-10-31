@@ -125,7 +125,8 @@ export class ReportsService {
     const obs = await this.prisma.observation.findMany({ where: { centerId, planVersionId: { in: plans.flatMap((p) => p.versions.map((x) => x.id)) }, observedOn: { lte: to } }, orderBy: [{ observedOn: 'asc' }, { createdAt: 'asc' }] });
     const goals = plans.flatMap((p) => {
       const cur = p.versions.find((x) => x.status !== 'SUPERSEDED' && x.status !== 'WITHDRAWN');
-      const ids = new Set([cur?.id]);
+      if (!cur) return [];
+      const ids = new Set([cur.id]);
       return ((cur?.goals ?? []) as Goal[]).filter((g) => !q.goalKey || g.key === q.goalKey)
         .map((g) => ({ childId: p.childId, childName: name(p.childId), service: p.service, planId: p.id, planVersionId: cur.id, planTitle: p.title, ...goalEvidence(g, obs.filter((o) => o.goalKey === g.key && ids.has(o.planVersionId)), from) }));
     });
