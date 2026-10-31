@@ -399,7 +399,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     expect(original).toMatchObject({ title: data.title, service: 'speech', version: 1, centerId });
 
     // A different therapist can copy but cannot overwrite the original author.
-    await post(h, c(`activities/${originalId}/duplicate`), other, { title: '    ' }).expect(422);
+    await post(h, c(`activities/${originalId}/duplicate`), other, { title: '    ' }).expect(400);
     const copy = (await post(h, c(`activities/${originalId}/duplicate`), other, {
       title: 'Personalized speech copy',
     }).expect(201)).body;
@@ -415,7 +415,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     const { service, ...editable } = data;
     const update = { ...editable, title: 'Author edited speech activity', version: 1 };
     await patch(other, c(`activities/${originalId}`), update).expect(403);
-    await patch(therapist, c(`activities/${originalId}`), { ...update, title: '    ' }).expect(422);
+    await patch(therapist, c(`activities/${originalId}`), { ...update, title: '    ' }).expect(400);
     const saved = await patch(therapist, c(`activities/${originalId}`), update).expect(200);
     expect(saved.body).toMatchObject({ id: originalId, version: 2 });
     await patch(therapist, c(`activities/${originalId}`), update).expect(409);
