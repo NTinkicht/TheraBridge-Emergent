@@ -54,6 +54,15 @@ describe('TB-EM-011 non-authorizing governance (real PostgreSQL)', () => {
   const detail = await get(therapist, `clinical/reports/${next.body.id}`).expect(200);
   expect(detail.body.evidence.plans).toEqual([]);
   expect(detail.body.evidence.goals).toEqual([]);
+  // The withdrawn version remains in the historical workspace, but cannot be
+  // advertised as a current draft or used for a new goal observation.
+  const workspace = (await get(therapist, `clinical/children/${kid}`).expect(200)).body;
+  expect(workspace.activePlanVersions).toEqual([]);
+  expect(workspace.currentDraftPlanVersions).toEqual([]);
+  expect(workspace.plans[0].versions[0].status).toBe('WITHDRAWN');
+  await post(h, path(`clinical/children/${kid}/observations`), therapist, {
+    planVersionId: plan, goalKey: goal.key, value: 25, observedOn: '2026-01-01',
+  }).expect(409);
   expect((await get(supervisor, `governance/previews/${first.body.snapshotId}`).expect(200)).body.content).toBeDefined();
  });
 
