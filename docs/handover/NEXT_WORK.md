@@ -1,3 +1,10 @@
+## 2026-10-31 — Frozen Milestone 2 queue after M2-H02 work
+
+1. **Complete PR #139 (M2-H02, #117 and #118):** run all exact-final-head CI jobs (test, secret-scan, live-session, preview-container, demo-journey, compose), obtain independent current-head review, disposition every P0–P3 finding, and merge automatically only if Rule 16 is satisfied. Preserve documented test evidence and handover checkpoint.
+2. **Next ordered PR M2-S01: Family Messaging Security and Fail-Closed Enforcement (#35)** only after M2-H02 is merged; then M2-H03 (#124, #121), M2-H04 (#120, #119, #126), M2-H05 (#122, #123, #125), M2-H06 (#127–#130), M2-H07 (#131, #132, #112, #114), M2-H08 (#133, #135, #136), M2-QA01 (#81, #61).
+3. **Owner approval gates remain:** TB-EM-052 (#115) requires explicit transfer/handover approval; TB-EM-053 protected family-plan/report release requires signed consent, privacy and safeguarding approvals. Neither is authorized by ordinary auto-merge policy.
+4. **Do not replan** the frozen 12-item order; follow the next specified work unit rather than opportunistic scope changes.
+
 ## 2026-10-31 — M2-H02 / GH-01 specialty isolation implementation queue
 
 1. Implement GH-01 (#117) in this draft PR: audit current code/fixtures first, then enforce child + required specialty authorization for therapist clinical/report/governance/practice reads and mutations, including cross-caseload denials and linked goal/session specialty consistency.

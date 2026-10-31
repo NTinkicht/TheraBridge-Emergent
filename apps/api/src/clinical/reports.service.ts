@@ -114,7 +114,7 @@ export class ReportsService {
 
   async dashboard(centerId: string, v: Viewer, q: ProgressQueryDto) {
     const { from, to } = this.period(q.from, q.to, 90);
-    const pairs = v.role === 'THERAPIST' ? await this.prisma.careAssignment.findMany({ where: { centerId, membershipId: v.membershipId, endedAt: null }, select: { childId: true, service: true } }) : null;
+    const pairs = v.role === 'THERAPIST' ? await this.clinical.therapistAssignments(this.prisma, centerId, v) : null;
     const kids = await this.prisma.child.findMany({ where: { centerId, status: 'ACTIVE', ...(pairs ? { id: { in: uniq(pairs.map((p) => p.childId)) } } : {}) }, orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }] });
     const name = (id: string) => { const k = kids.find((x) => x.id === id)!; return `${k.preferredName ?? k.firstName} ${k.lastName}`; };
     const scope = q.childId ? kids.filter((k) => k.id === q.childId) : kids;
@@ -143,7 +143,12 @@ export class ReportsService {
   private async report(centerId: string, v: Viewer, id: string) {
     const r = await this.prisma.progressReport.findFirst({ where: { id, centerId } });
     if (!r) throw new NotFoundException('Report not found');
-    await this.clinical.child(this.prisma, centerId, v, r.childId, v.role === 'THERAPIST' ? r.service : undefined);
+    try {
+      await this.clinical.child(this.prisma, centerId, v, r.childId, v.role === 'THERAPIST' ? r.service : undefined);
+    } catch (error) {
+      if (error instanceof NotFoundException) throw new NotFoundException('Report not found');
+      throw error;
+    }
     return r;
   }
 
@@ -212,7 +217,7 @@ export class ReportsService {
 
   async list(centerId: string, v: Viewer, childId: string) {
     await this.clinical.child(this.prisma, centerId, v, childId);
-    const services = v.role === 'THERAPIST' ? (await this.prisma.careAssignment.findMany({ where: { centerId, childId, membershipId: v.membershipId, endedAt: null } })).map((a) => a.service) : null;
+    const services = v.role === 'THERAPIST' ? (await this.clinical.therapistAssignments(this.prisma, centerId, v, childId)).map((a) => a.service) : null;
     const rows = await this.prisma.progressReport.findMany({ where: { centerId, childId, ...(services ? { service: { in: services } } : {}) }, include: { _count: { select: { versions: true } } }, orderBy: { updatedAt: 'desc' } });
     const team = await this.prisma.membership.findMany({ where: { id: { in: uniq(rows.map((r) => r.membershipId)) } }, select: { id: true, user: { select: { displayName: true } } } });
     return { items: rows.map((r) => ({ id: r.id, title: r.title, service: r.service, periodStart: day(r.periodStart), periodEnd: day(r.periodEnd), status: r.status, versions: r._count.versions, author: team.find((t) => t.id === r.membershipId)?.user.displayName ?? '', mine: r.membershipId === v.membershipId, updatedAt: r.updatedAt })) };
@@ -365,7 +370,7 @@ export class ReportsService {
 
   // Lock the draft at the version the author is looking at; every write bumps the version.
   private async bump(tx: Tx, r: ProgressReport, v: Viewer, version: number, now: Date, data: Prisma.ProgressReportUpdateManyMutationInput = {}) {
-    const n = await tx.progressReport.updateMany({ where: { id: r.id, membershipId: v.membershipId, status: { in: EDITABLE }, version }, data: { ...data, updatedAt: now, version: { increment: 1 } } });
+    const n = await tx.progressReport.updateMany({ where: { id: r.id, centerId: r.centerId, childId: r.childId, service: r.service, membershipId: v.membershipId, status: { in: EDITABLE }, version }, data: { ...data, updatedAt: now, version: { increment: 1 } } });
     if (n.count !== 1) throw this.why(r, v);
     return tx.progressReport.findUniqueOrThrow({ where: { id: r.id } });
   }
@@ -412,7 +417,12 @@ export class ReportsService {
   async versionDetail(centerId: string, v: Viewer, versionId: string) {
     const x = await this.prisma.reportVersion.findFirst({ where: { id: versionId, centerId } });
     if (!x) throw new NotFoundException('Report version not found');
-    await this.report(centerId, v, x.reportId);
+    try {
+      await this.report(centerId, v, x.reportId);
+    } catch (error) {
+      if (error instanceof NotFoundException) throw new NotFoundException('Report version not found');
+      throw error;
+    }
     const frozen = x.evidence as { statementDecisionIds?: unknown };
     const eligible = Array.isArray(frozen?.statementDecisionIds) &&
       frozen.statementDecisionIds.length <= 1000 &&

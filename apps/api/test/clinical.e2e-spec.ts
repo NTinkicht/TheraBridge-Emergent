@@ -49,6 +49,36 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
   }
 
 
+  it('hides a same-center different-child assessment ID just like an unknown ID', async () => {
+    const { therapist, other } = await setup();
+    // Direct synthetic fixture avoids the centre's single-child onboarding
+    // capacity limit; this test exercises authorization, not provisioning.
+    const childB = (await h.prisma.child.create({ data: {
+      centerId, firstName: 'Other', lastName: 'Child',
+      dateOfBirth: new Date('2020-01-02'), services: ['speech'],
+      createdById: admin.body.user.id, createdAt: h.clock.now(),
+    } })).id;
+    await post(h, c(`children/${childB}/assignments`), admin,
+      { membershipId: other.body.activeContext.membershipId, service: 'speech' }).expect(201);
+    const assessment = (await post(h, c(`clinical/children/${childB}/assessments`), other,
+      { service: 'speech', assessedOn: '2026-10-18', summary: 'Restricted speech assessment', areas: [] }).expect(201)).body;
+    const body = { service: 'speech', assessedOn: '2026-10-18',
+      summary: 'Attempted overwrite of another child', areas: [], version: 1 };
+    const wrongChild = await patch(therapist, c(`clinical/assessments/${assessment.id}`), body).expect(404);
+    const unknown = await patch(therapist, c('clinical/assessments/00000000-0000-0000-0000-000000000000'), body).expect(404);
+    expect(wrongChild.body).toEqual(unknown.body);
+    expect((await h.prisma.assessment.findUniqueOrThrow({ where: { id: assessment.id } })).summary).toBe('Restricted speech assessment');
+    expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.assessment_updated' } })).toBe(0);
+    const foreignPlan = (await post(h, c(`clinical/children/${childB}/plans`), other,
+      { service: 'speech', title: 'Restricted child plan' }).expect(201)).body;
+    const goal = { key: 'dup', title: 'A synthetic goal', measure: 'count', baseline: 0, target: 1 };
+    const invalid = { summary: 'Do not reveal validation for a hidden plan', goals: [goal, goal], homeActivities: [], version: 1 };
+    const wrongPlan = await patch(therapist, c(`clinical/plan-versions/${foreignPlan.versionId}`), invalid).expect(404);
+    const unknownPlan = await patch(therapist, c('clinical/plan-versions/00000000-0000-0000-0000-000000000000'), invalid).expect(404);
+    expect(wrongPlan.body).toEqual(unknownPlan.body);
+    expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.plan_draft_saved' } })).toBe(0);
+  });
+
   it('records non-authorizing therapist goal checkpoints with exact saved observation sources', async () => {
     const { therapist, other, sup, kid, rosa } = await setup();
     const created = (await post(h, c(`clinical/children/${kid}/plans`), therapist, {
@@ -134,7 +164,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
       where: { id: therapist.body.activeContext.membershipId },
       data: { specialties: [] },
     });
-    await post(h, path, midnightTherapist, { ...body, version: 4 }).expect(403);
+    await post(h, path, midnightTherapist, { ...body, version: 4 }).expect(404);
 
   });
 

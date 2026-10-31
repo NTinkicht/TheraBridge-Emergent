@@ -23,13 +23,23 @@ export class GovernanceService {
       const x = await tx.planVersion.findFirst({ where: { id, centerId, plan: { centerId } }, include: { plan: true } });
       if (!x) throw new NotFoundException();
       await this.lockChildScope(tx, centerId, v, x.plan.childId);
-      await this.clinical.child(tx, centerId, v, x.plan.childId, x.plan.service);
+      try {
+        await this.clinical.child(tx, centerId, v, x.plan.childId, x.plan.service);
+      } catch (error) {
+        if (error instanceof NotFoundException) throw new NotFoundException();
+        throw error;
+      }
       return { kind: 'PLAN' as const, documentId: x.id, childId: x.plan.childId, service: x.plan.service, sourceVersion: x.version, status: x.status, authorId: x.authorId, title: x.plan.title, content: { title: x.plan.title, number: x.number, summary: x.summary, goals: x.goals, homeActivities: x.homeActivities }, notes: x.reviewNotes };
     }
     const r = await tx.progressReport.findFirst({ where: { id, centerId } });
     if (!r) throw new NotFoundException();
     await this.lockChildScope(tx, centerId, v, r.childId);
-    await this.clinical.child(tx, centerId, v, r.childId, r.service);
+    try {
+      await this.clinical.child(tx, centerId, v, r.childId, r.service);
+    } catch (error) {
+      if (error instanceof NotFoundException) throw new NotFoundException();
+      throw error;
+    }
     const owner = await tx.membership.findUniqueOrThrow({ where: { id: r.membershipId } });
     return { kind: 'REPORT' as const, documentId: r.id, childId: r.childId, service: r.service, sourceVersion: r.version, status: r.status, authorId: owner.userId, title: r.title, content: { title: r.title, sections: r.sections, periodStart: r.periodStart, periodEnd: r.periodEnd }, notes: r.reviewNotes };
   }
@@ -112,8 +122,10 @@ export class GovernanceService {
   async documents(centerId: string, v: Viewer) {
     return this.prisma.$transaction(async tx => {
       await assertActor(tx, centerId, v, ['THERAPIST','CLINICAL_SUPERVISOR']);
-      const assignments = v.role === 'THERAPIST' ? await tx.careAssignment.findMany({ where: { centerId, membershipId: v.membershipId, endedAt: null } }) : null;
-      const scope = assignments ? { OR: assignments.map(a => ({ childId: a.childId, service: a.service })) } : {};
+      const assignments = v.role === 'THERAPIST' ? await this.clinical.therapistAssignments(tx, centerId, v) : null;
+      const scope = assignments ? { OR: assignments.length
+        ? assignments.map(a => ({ childId: a.childId, service: a.service }))
+        : [{ childId: '00000000-0000-0000-0000-000000000000' }] } : {};
       const plans = await tx.planVersion.findMany({ where: { centerId, plan: { centerId, ...scope } }, include: { plan: true }, orderBy: { updatedAt: 'desc' } });
       const reports = await tx.progressReport.findMany({ where: { centerId, ...scope }, orderBy: { updatedAt: 'desc' } });
       const authors = await tx.user.findMany({ where: { OR: [{ id: { in: plans.map(p => p.authorId) } }, { memberships: { some: { id: { in: reports.map(r => r.membershipId) } } } }] }, select: { id: true, displayName: true, memberships: { where: { centerId }, select: { id: true } } } });

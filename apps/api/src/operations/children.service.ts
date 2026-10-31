@@ -165,8 +165,8 @@ export class ChildrenService {
             nextMembershipId: null, reason: 'Child archived', revision: c.referentRevision + 1, createdAt: now,
           } });
         }
-        await tx.appointment.updateMany({ where: { childId: id, status: 'SCHEDULED', startsAt: { gte: now } }, data: { status: 'CANCELLED', statusReason: 'Child record archived', version: { increment: 1 } } });
-        await tx.careAssignment.updateMany({ where: { childId: id, endedAt: null }, data: { endedAt: now } });
+        await tx.appointment.updateMany({ where: { centerId, childId: id, status: 'SCHEDULED', startsAt: { gte: now } }, data: { status: 'CANCELLED', statusReason: 'Child record archived', version: { increment: 1 } } });
+        await tx.careAssignment.updateMany({ where: { centerId, childId: id, endedAt: null }, data: { endedAt: now } });
       }
       await logCenterEvent(tx, centerId, status === 'ACTIVE' ? 'child.restored' : 'child.archived', now, { actorUserId, meta: { childId: id, ...(reason ? { reason } : {}) } });
     });
@@ -183,7 +183,7 @@ export class ChildrenService {
       const center = await this.trial.assertWritable(tx, centerId, now);
       const child = await tx.child.findFirst({ where: { id: childId, centerId, status: 'ACTIVE' } });
       if (!child) throw new NotFoundException('Child not found');
-      if (dto.isPrimary) await tx.guardianLink.updateMany({ where: { childId, removedAt: null, isPrimary: true }, data: { isPrimary: false } });
+      if (dto.isPrimary) await tx.guardianLink.updateMany({ where: { centerId, childId, removedAt: null, isPrimary: true }, data: { isPrimary: false } });
       // Every guardian, even one already connected at this center, must accept an invitation before seeing this child.
       const link = await tx.guardianLink.create({
         data: { centerId, childId, displayName: clean(dto.displayName), email: dto.email.trim(), emailNorm, relationship: dto.relationship, isPrimary: !!dto.isPrimary, userId: null, createdAt: now },
@@ -279,7 +279,7 @@ export class ChildrenService {
       if (!m) throw new UnprocessableEntityException('Choose an active therapist from this center.');
       if (!m.specialties.includes(dto.service)) throw new UnprocessableEntityException('This therapist’s profile does not list that specialty. Update their specialties in Team first.');
       if (!child.services.includes(dto.service)) throw new UnprocessableEntityException('Add this service to the child’s profile before assigning a therapist for it.');
-      if (dto.isLead) await tx.careAssignment.updateMany({ where: { childId, service: dto.service, endedAt: null, isLead: true }, data: { isLead: false } });
+      if (dto.isLead) await tx.careAssignment.updateMany({ where: { centerId, childId, service: dto.service, endedAt: null, isLead: true }, data: { isLead: false } });
       const a = await tx.careAssignment.create({ data: { centerId, childId, membershipId: m.id, service: dto.service, isLead: !!dto.isLead, startedAt: now } });
       await logCenterEvent(tx, centerId, 'assignment.started', now, { actorUserId, subjectUserId: m.userId, membershipId: m.id, meta: { childId, service: dto.service } });
       return { id: a.id };
@@ -313,7 +313,7 @@ export class ChildrenService {
           } });
         }
       }
-      const cancelled = await tx.appointment.updateMany({ where: { childId, membershipId: a.membershipId, service: a.service, status: 'SCHEDULED', startsAt: { gte: now } }, data: { status: 'CANCELLED', statusReason: 'Therapist assignment ended', version: { increment: 1 } } });
+      const cancelled = await tx.appointment.updateMany({ where: { centerId, childId, membershipId: a.membershipId, service: a.service, status: 'SCHEDULED', startsAt: { gte: now } }, data: { status: 'CANCELLED', statusReason: 'Therapist assignment ended', version: { increment: 1 } } });
       await logCenterEvent(tx, centerId, 'assignment.ended', now, { actorUserId, membershipId: a.membershipId, meta: { childId, service: a.service, cancelledAppointments: cancelled.count } });
     });
   }

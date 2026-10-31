@@ -1,3 +1,10 @@
+## 2026-10-31 — M2-H02 implementation, negative tests and owner-approved merge policy
+
+- Merged policy PR [#138](https://github.com/NTinkicht/TheraBridge-Emergent/pull/138) into main, commit `39c9888`, after six green jobs and an independent Codex no-findings review. Future qualifying ordinary PRs may auto-merge under Rule 16 only after full review/test/deferral gating.
+- Continued implementation PR [#139](https://github.com/NTinkicht/TheraBridge-Emergent/pull/139), **M2-H02 (#117 and #118)**, without modifying the agreed roadmap. Added therapist specialty and active-assignment authorization, tenant-pinned CAS, cross-child/center negative tests, two-therapist acknowledgement and plan/report version race tests, revoked-specialty denial tests, 404 normalization, AST CAS verification and transaction row locks.
+- On `d02820b`, 3 tests failed: an extra child hit onboarding quota; two pre-existing tests still expected 403 after specialty revocation. Updated fixture setup to direct synthetic Prisma insertion and corrected privacy-preserving expected status to 404 in `f6a6d2b`. Its API tests passed **574/574** over 19 suites; logs identify no API failures. Pending final-head qualification and review; do **not** merge unless all gates green.
+- Review findings: previous Mistral current-model P2/P3 suggestions addressed or explicitly declined with rationale in PR disposition ledger; no unlinked deferral. The old audit names obsolete models and paths; replacement guards target actual Prisma models, preserving clinical NO-GO.
+
 ## 2026-10-31 — Owner changes future merge protocol (new draft PR checkpoint)
 
 - PR #137 merged after exact-HEAD 6/6 CI and Codex no findings: `3d133c278f0b1fad3ba84b0e8e2ce70db1443ee8`.

@@ -70,10 +70,30 @@ function validateSchedule(schedule: ActivitySchedule) {
 export class ClinicalService {
   constructor(private readonly prisma: PrismaService, private readonly trial: TrialService) {}
 
+  // Authoritative child + specialty pairs. A care assignment alone is insufficient:
+  // a suspended membership or removed membership specialty must revoke access.
+  async therapistAssignments(db: Tx | PrismaService, centerId: string, v: Viewer, childId?: string) {
+    if (v.role !== 'THERAPIST') return [];
+    const member = await db.membership.findFirst({
+      where: { id: v.membershipId, centerId, userId: v.userId, status: 'ACTIVE',
+        user: { status: 'ACTIVE' }, roles: { some: { role: 'THERAPIST' } } },
+      select: { specialties: true },
+    });
+    if (!member?.specialties.length) return [];
+    return db.careAssignment.findMany({
+      where: { centerId, membershipId: v.membershipId, endedAt: null,
+        service: { in: member.specialties }, ...(childId ? { childId } : {}) },
+      select: { childId: true, service: true, membershipId: true },
+    });
+  }
+
   async child(db: Tx | PrismaService, centerId: string, v: Viewer, childId: string, service?: string) {
     if (!['THERAPIST', 'CLINICAL_SUPERVISOR'].includes(v.role)) throw new ForbiddenException('Clinical records are restricted.');
-    const where: Prisma.ChildWhereInput = v.role === 'THERAPIST' ? { assignments: { some: { membershipId: v.membershipId, endedAt: null, ...(service ? { service } : {}) } } } : {};
-    const c = await db.child.findFirst({ where: { id: childId, centerId, status: 'ACTIVE', ...where } });
+    if (v.role === 'THERAPIST') {
+      const assigned = await this.therapistAssignments(db, centerId, v, childId);
+      if (!assigned.some(a => !service || a.service === service)) throw new NotFoundException('Child not found');
+    }
+    const c = await db.child.findFirst({ where: { id: childId, centerId, status: 'ACTIVE' } });
     if (!c || (service && !c.services.includes(service))) throw new NotFoundException('Child not found');
     return c;
   }
@@ -84,7 +104,7 @@ export class ClinicalService {
     return this.prisma.$transaction(async (tx) => {
       await this.trial.assertWritable(tx, centerId, now);
       await assertActor(tx, centerId, v, ['THERAPIST']);
-      await tx.$queryRaw`SELECT id FROM child WHERE id=${childId}::uuid FOR SHARE`;
+      await tx.$queryRaw`SELECT id FROM child WHERE id=${childId}::uuid AND center_id=${centerId}::uuid FOR SHARE`;
       await tx.$queryRaw`SELECT id FROM care_assignment WHERE center_id=${centerId}::uuid AND child_id=${childId}::uuid AND membership_id=${v.membershipId}::uuid FOR SHARE`;
       await this.child(tx, centerId, v, childId, service);
       return fn(tx, now);
@@ -95,10 +115,7 @@ export class ClinicalService {
     const c = await this.child(this.prisma, centerId, v, childId);
     // A therapist may see only the services assigned to that therapist for this child.
     const assignedServices = v.role === 'THERAPIST'
-      ? (await this.prisma.careAssignment.findMany({
-          where: { centerId, childId, membershipId: v.membershipId, endedAt: null },
-          select: { service: true },
-        })).map(a => a.service)
+      ? (await this.therapistAssignments(this.prisma, centerId, v, childId)).map(a => a.service)
       : null;
     const serviceScope = assignedServices ? { service: { in: assignedServices } } : {};
     const [assessments, plans, notes, appointments, templates, assignments] = await Promise.all([
@@ -233,10 +250,14 @@ export class ClinicalService {
     return this.write(centerId, v, a.childId, a.service, async (tx, now) => {
       // Authorize against the persisted specialty before exposing any validation detail.
       if (dto.service !== a.service) throw new UnprocessableEntityException('Assessment specialty cannot be changed.');
-      const r = await tx.assessment.updateMany({ where: { id, membershipId: v.membershipId, service: a.service, version: dto.version }, data: { assessedOn: asDate(dto.assessedOn), summary: dto.summary, areas: dto.areas as unknown as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
+      const r = await tx.assessment.updateMany({ where: { id, centerId, childId: a.childId, membershipId: v.membershipId, service: a.service, version: dto.version }, data: { assessedOn: asDate(dto.assessedOn), summary: dto.summary, areas: dto.areas as unknown as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
       if (r.count !== 1) throw new ConflictException(a.membershipId !== v.membershipId ? 'Only the author can edit this draft.' : 'This draft changed since you opened it. Reload to see the latest version.');
       await logCenterEvent(tx, centerId, 'clinical.assessment_updated', now, { actorUserId: v.userId, meta: { childId: a.childId, assessmentId: id } });
       return { ok: true };
+    }).catch((error: unknown) => {
+      // Do not disclose that an assessment ID exists for a different child or specialty.
+      if (error instanceof NotFoundException) throw new NotFoundException('Assessment not found');
+      throw error;
     });
   }
 
@@ -257,6 +278,14 @@ export class ClinicalService {
 
   async updateVersion(centerId: string, v: Viewer, id: string, dto: PlanVersionUpdateDto) {
     const x = await this.version(centerId, id);
+    // Check the persisted child's specialty BEFORE validating or revealing
+    // anything about a guessed plan-version ID.
+    try {
+      await this.child(this.prisma, centerId, v, x.plan.childId, x.plan.service);
+    } catch (error) {
+      if (error instanceof NotFoundException) throw new NotFoundException('Plan version not found');
+      throw error;
+    }
     if (new Set(dto.goals.map((g) => g.key)).size !== dto.goals.length) throw new UnprocessableEntityException('Each goal needs its own key.');
     // homeActivities are contained by THIS PlanVersion. Verify that every
     // explicit goal association targets a goal saved in that same version;
@@ -325,6 +354,9 @@ export class ClinicalService {
       if (r.count !== 1) throw new ConflictException(x.status !== 'DRAFT' ? 'Only a draft can be edited. Start a new version to make changes.' : 'This draft changed since you opened it. Reload to see the latest version.');
       await logCenterEvent(tx, centerId, 'clinical.plan_draft_saved', now, { actorUserId: v.userId, meta: { childId: x.plan.childId, planId: x.planId, planVersionId: id, goals: dto.goals.length, activityTemplates: ids.length } });
       return { ok: true };
+    }).catch((error: unknown) => {
+      if (error instanceof NotFoundException) throw new NotFoundException('Plan version not found');
+      throw error;
     });
   }
 
@@ -430,7 +462,7 @@ export class ClinicalService {
       const member = await tx.membership.findUniqueOrThrow({ where: { id: v.membershipId } });
       if (!member.specialties.includes(n.service)) throw new NotFoundException('Specialty not assigned');
       // Compatibility endpoint only edits pre-execution drafts. Established sessions use saveSession.
-      const r = await tx.sessionNote.updateMany({ where: { id, membershipId: v.membershipId, version: dto.version, executionStatus: 'IN_PROGRESS', actualStart: null }, data: { sections: { ...dto.sections } as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
+      const r = await tx.sessionNote.updateMany({ where: { id, centerId, childId: n.childId, service: n.service, membershipId: v.membershipId, version: dto.version, executionStatus: 'IN_PROGRESS', actualStart: null }, data: { sections: { ...dto.sections } as Prisma.InputJsonValue, updatedAt: now, version: { increment: 1 } } });
       if (r.count !== 1) throw new ConflictException(n.membershipId !== v.membershipId ? 'Only the author can edit this draft.' : 'This draft changed since you opened it. Reload to see the latest version.');
       await logCenterEvent(tx, centerId, 'clinical.session_saved', now, { actorUserId: v.userId, meta: { childId: n.childId, sessionNoteId: id } });
       return { ok: true };

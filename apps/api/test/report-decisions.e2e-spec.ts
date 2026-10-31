@@ -244,7 +244,7 @@ describe('TB-EM-021 non-authorizing report suggestion decision ledger (real Post
       where: { id: therapist.body.activeContext.membershipId },
       data: { specialties: [] },
     });
-    await post(h, D, therapist, base).expect(403);
+    await post(h, D, therapist, base).expect(404);
   });
 
   it('serializes simultaneous suggestion decisions and rejects stale tabs', async () => {

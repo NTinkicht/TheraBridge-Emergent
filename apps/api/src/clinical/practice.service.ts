@@ -4,7 +4,7 @@ import { Tx, logCenterEvent, uniq } from '../centers/history';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Viewer } from '../operations/children.service';
 import { TrialService } from '../operations/trial.service';
-import { asDate, day } from './clinical.service';
+import { ClinicalService, asDate, day } from './clinical.service';
 import type { FeedbackQueryDto, OutcomeDto } from './clinical.dto';
 
 const DAY = 86_400_000;
@@ -19,7 +19,7 @@ const addDays = (d: string, n: number) => day(new Date(asDate(d).getTime() + n *
 
 @Injectable()
 export class PracticeService {
-  constructor(private readonly prisma: PrismaService, private readonly trial: TrialService) {}
+  constructor(private readonly prisma: PrismaService, private readonly trial: TrialService, private readonly clinical: ClinicalService) {}
 
   private async today(centerId: string) {
     const c = await this.prisma.center.findUniqueOrThrow({ where: { id: centerId }, select: { timezone: true } });
@@ -127,7 +127,7 @@ export class PracticeService {
   }
 
   private async pairs(centerId: string, v: Viewer) {
-    return v.role === 'THERAPIST' ? this.prisma.careAssignment.findMany({ where: { centerId, membershipId: v.membershipId, endedAt: null }, select: { childId: true, service: true } }) : null;
+    return v.role === 'THERAPIST' ? this.clinical.therapistAssignments(this.prisma, centerId, v) : null;
   }
 
   async inbox(centerId: string, v: Viewer, q: FeedbackQueryDto) {
@@ -164,7 +164,12 @@ export class PracticeService {
     if (o.acknowledgedAt) return { id, acknowledgedAt: o.acknowledgedAt, already: true };
     return this.prisma.$transaction(async (tx) => {
       await this.trial.assertWritable(tx, centerId, now);
-      const n = await tx.practiceOutcome.updateMany({ where: { id, acknowledgedAt: null }, data: { acknowledgedAt: now, acknowledgedById: v.membershipId } });
+      // Keep the verified assignment valid through the CAS commit. A concurrent
+      // revocation must serialize with acknowledgement, not race the pre-read.
+      await tx.$queryRaw`SELECT id FROM child WHERE id=${o.childId}::uuid AND center_id=${centerId}::uuid FOR SHARE`;
+      await tx.$queryRaw`SELECT id FROM care_assignment WHERE center_id=${centerId}::uuid AND child_id=${o.childId}::uuid AND membership_id=${v.membershipId}::uuid AND service=${o.service} AND ended_at IS NULL FOR SHARE`;
+      await this.clinical.child(tx, centerId, v, o.childId, o.service);
+      const n = await tx.practiceOutcome.updateMany({ where: { id, centerId, childId: o.childId, service: o.service, acknowledgedAt: null }, data: { acknowledgedAt: now, acknowledgedById: v.membershipId } });
       if (n.count === 1) await logCenterEvent(tx, centerId, 'clinical.practice_acknowledged', now, { actorUserId: v.userId, meta: { childId: o.childId, outcomeId: id, synthetic: true } });
       const x = await tx.practiceOutcome.findUniqueOrThrow({ where: { id } });
       return { id, acknowledgedAt: x.acknowledgedAt, already: n.count !== 1 };

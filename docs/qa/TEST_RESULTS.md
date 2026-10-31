@@ -1,3 +1,16 @@
+## 2026-10-31 — M2-H02 CI/security verification checkpoint
+
+| Evidence | State | Exact result / limitation |
+| --- | --- | --- |
+| Policy PR #138 / Rule 16 | PASS, MERGED | Main merge `39c9888`; six required green jobs and Codex no findings on reviewed head |
+| M2-H02 code PR | OPEN | [#139](https://github.com/NTinkicht/TheraBridge-Emergent/pull/139), both #117 and #118, no deployment |
+| API typecheck, API/web build on `f6a6d2b` | PASS | GitHub Actions PR `test` job `124506918245` |
+| Real-PostgreSQL e2e and static CAS tests on `f6a6d2b` | PASS | **19/19 suites, 574/574 tests**, including revocation, isolation, two-actor CAS and same-center cross-child ID checks |
+| Browser live-session, synthetic journey, preview, secrets at `f6a6d2b` | PASS | Individual run checks were green on this pre-final commit; full six-job gate and fresh exact-final-head review still required |
+| Two source lock refinements and this handover update | PENDING FINAL CI | Must rerun all mandatory checks on resulting head, not inherit `f6a6d2b` PASS |
+| Independent final-HEAD review | PENDING | Earlier reviews cover older commits only; no final approval inferred |
+| Clinical release, real patient data, signed governance | NO-GO | Fail-closed clinical gates unchanged |
+
 ## 2026-10-31 — M2-H02 GH-01 policy-only draft checkpoint (NOT RUN)
 
 | Item | State | Evidence / limitation |
