@@ -1,3 +1,7 @@
+## Milestone 2 current engineering checkpoint (2026-10-31)
+
+M2-H07 (#131, #132, #112, #114) was merged as PR #145. M2-H08 (#133, #135, #136) is active PR #146. Runtime hardening and measurable core coverage tests are being qualified in GitHub CI. Existing clinical authorization, consent, safeguarding, signature, and release decisions remain NO-GO and no real patient data is authorized.
+
 # CURRENT_STATE
 
 Updated: 2026-10-20 (UTC)
