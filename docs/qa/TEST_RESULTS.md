@@ -1,3 +1,7 @@
+## 2026-10-31 — PR #137 first corrected-head CI failure and fixture repair
+
+CI run [41182535567](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41182535567) on HEAD `94ba59f`: `secret-scan`, `live-session`, `preview-container`, `demo-journey` **PASS**; `test` **FAIL** (569 pass, 1 fail across 18 suites); `compose` SKIPPED. The sole failure was the pre-existing real-PostgreSQL rollback fixture `rolls back demo DB and removes pre-staged credentials on mid-seed failure`: its `failAt` mock exposed `$transaction` but not the newly required post-failure `authIdentity.count` query, so recovery correctly retained credentials for an uncheckable outcome. Commit `5efcb49` exposes the real committed read in that wrapper; code behavior and other tests unchanged. **New final HEAD six-job CI NOT YET VERIFIED.**
+
 ## 2026-10-31 — PR #137 follow-up P3 regression ledger (NOT RUN at documentation checkpoint)
 
 | Regression | State | Expected invariant |
