@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Card } from '@/components/design/ui';
 import { SelectField } from '@/components/centers/kit';
 import { serviceLabel } from './BookDialog';
@@ -11,6 +11,7 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
   const [staffSearch, setStaffSearch] = useState('');
   const [nextStaffOffset, setNextStaffOffset] = useState<number | null>(null);
   const [loadingStaff, setLoadingStaff] = useState(false);
+  const staffRequest = useRef(0);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [reasonCode, setReasonCode] = useState<'STAFF_CHANGE'|'AVAILABILITY'|'FAMILY_REQUEST'>('STAFF_CHANGE');
@@ -32,23 +33,29 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
   const active = child.assignments.filter(a => a.endedAt === null);
   const source = active.find(a => a.id === from);
   useEffect(() => {
-    if (!data?.enabled || !source) { setStaff([]); setNextStaffOffset(null); return; }
-    let live = true;
+    const revision = ++staffRequest.current;
+    if (!data?.enabled || !source) {
+      setStaff([]); setNextStaffOffset(null); setLoadingStaff(false);
+      return () => { staffRequest.current++; };
+    }
     setLoadingStaff(true);
     void opsApi.therapists(centerId, { service: source.service, search: staffSearch.trim(), limit: 100 })
-      .then(page => { if (live) { setStaff(page.items); setNextStaffOffset(page.nextOffset); } })
-      .catch(() => { if (live) { setStaff([]); setError('Could not search eligible incoming therapists.'); } })
-      .finally(() => { if (live) setLoadingStaff(false); });
-    return () => { live = false; };
+      .then(page => { if (revision === staffRequest.current) { setStaff(page.items); setNextStaffOffset(page.nextOffset); } })
+      .catch(() => { if (revision === staffRequest.current) { setStaff([]); setError('Could not search eligible incoming therapists.'); } })
+      .finally(() => { if (revision === staffRequest.current) setLoadingStaff(false); });
+    return () => { staffRequest.current++; };
   }, [centerId, data?.enabled, source?.service, staffSearch]);
   const loadMoreStaff = async () => {
     if (!source || loadingStaff || nextStaffOffset === null) return;
+    const revision = staffRequest.current;
     setLoadingStaff(true);
     try {
       const page = await opsApi.therapists(centerId, { service: source.service, search: staffSearch.trim(), offset: nextStaffOffset, limit: 100 });
-      setStaff(prev => [...prev, ...page.items]); setNextStaffOffset(page.nextOffset);
-    } catch { setError('Could not load more eligible incoming therapists.'); }
-    finally { setLoadingStaff(false); }
+      if (revision === staffRequest.current) {
+        setStaff(prev => [...prev, ...page.items]); setNextStaffOffset(page.nextOffset);
+      }
+    } catch { if (revision === staffRequest.current) setError('Could not load more eligible incoming therapists.'); }
+    finally { if (revision === staffRequest.current) setLoadingStaff(false); }
   };
   const eligible = staff.filter(t => t.membershipId !== source?.membershipId && source &&
     t.specialties.includes(source.service));
@@ -97,11 +104,14 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
     {data && !data.enabled && <p data-testid="handover-disabled">Handover preparation is disabled in this environment.</p>}
     {data?.enabled && <>
       <SelectField label="Current assignment" value={from} testId="handover-current"
-        onChange={value => { setFrom(value); setTo(''); }}
+        onChange={value => {
+          if (active.find(a => a.id === value)?.service !== source?.service) staffRequest.current++;
+          setFrom(value); setTo('');
+        }}
         options={[{value:'',label:'Select an active assignment'}, ...active.map(a => ({
           value:a.id,label:`${a.therapist} · ${serviceLabel(a.service)}`}))]} />
       <label className="block text-[13px] font-medium">Search incoming therapists
-        <input type="search" value={staffSearch} onChange={e => setStaffSearch(e.target.value)}
+        <input type="search" value={staffSearch} onChange={e => { staffRequest.current++; setStaffSearch(e.target.value); setTo(''); }}
           className="mt-1 w-full rounded-control border border-border-light px-3 py-2 text-[14px]" data-testid="handover-staff-search" placeholder="Name" />
       </label>
       <SelectField label="Proposed incoming therapist" value={to} testId="handover-incoming"

@@ -89,6 +89,11 @@ try {
     const handoverPath = centerBase + '/governance/handover-proposals';
     const proposalId = 'synthetic-handover-cancellation-regression';
     const candidateId = 'synthetic-qualified-incoming-therapist';
+    const newCandidateId = 'synthetic-fresh-search-therapist';
+    const staleCandidateId = 'synthetic-stale-old-page-therapist';
+    let heldOldPage;
+    let notifyOldPageRequested;
+    const oldPageRequested = new Promise(resolve => { notifyOldPageRequested = resolve; });
     let cancelled = false;
     let proposalReloads = 0;
     await page.route('**' + handoverPath, async route => {
@@ -108,8 +113,17 @@ try {
       }) });
     });
     await page.route('**' + centerBase + '/therapists?*', async route => {
+      const query = new URL(route.request().url()).searchParams;
+      if (query.get('offset') === '100' && !query.get('search')) {
+        // Deliberately finish the obsolete load-more request after a new
+        // search's first page to reproduce the cross-query response race.
+        heldOldPage = route;
+        notifyOldPageRequested();
+        return;
+      }
+      const fresh = query.get('search') === 'fresh';
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
-        items: [{ membershipId: candidateId, displayName: 'Synthetic Incoming Therapist',
+        items: [{ membershipId: fresh ? newCandidateId : candidateId, displayName: 'Synthetic Incoming Therapist',
           specialties: [sourceAssignment.service] }], hasMore: true, nextOffset: 100,
       }) });
     });
@@ -129,6 +143,28 @@ try {
       'Cancellation must preserve the incoming therapist pagination cursor');
     assert.equal(await page.getByTestId('handover-incoming').inputValue(), candidateId,
       'Cancellation must preserve the selected incoming therapist');
+
+    // A pending page from the old search must never append to or exhaust the
+    // current search, even if it finishes after the fresh first page.
+    await page.getByTestId('handover-staff-more').click();
+    await oldPageRequested;
+    await page.getByTestId('handover-staff-search').fill('fresh');
+    const freshOption = page.getByTestId('handover-incoming').locator(`option[value="${newCandidateId}"]`);
+    await freshOption.waitFor({ state: 'attached' });
+    const lateResponse = page.waitForResponse(response =>
+      new URL(response.url()).searchParams.get('offset') === '100' &&
+      response.url().includes(centerBase + '/therapists'));
+    await heldOldPage.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+      items: [{ membershipId: staleCandidateId, displayName: 'Obsolete Search Result',
+        specialties: [sourceAssignment.service] }], hasMore: false, nextOffset: null,
+    }) });
+    await lateResponse;
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    assert.equal(await freshOption.count(), 1, 'A late old page must not remove fresh search candidates');
+    assert.equal(await page.getByTestId('handover-incoming').locator(`option[value="${staleCandidateId}"]`).count(), 0,
+      'An obsolete page must not append its therapists to the current search');
+    assert.equal(await page.getByTestId('handover-staff-more').count(), 1,
+      'An obsolete exhausted page must not overwrite the new search pagination cursor');
 
   });
   await role('speech@childrens-home.therabridge.test', 'THERAPIST', async page => {
