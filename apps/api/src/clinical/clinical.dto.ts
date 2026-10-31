@@ -41,7 +41,10 @@ export class PlanDto {
 }
 export class GoalDto {
   @Matches(/^[a-z0-9-]{1,40}$/) key!: string;
-  @TrimmedString() @IsString() @MinLength(3) @MaxLength(200) title!: string;
+  // Legacy persisted goal titles were permitted up to 300 characters.
+  // The service enforces 200 on newly authored/redefined titles while allowing
+  // byte-identical round trips of earlier measured/checkpointed goals.
+  @TrimmedString() @IsString() @MinLength(3) @MaxLength(300) title!: string;
   @IsIn(MEASURES) measure!: string;
   @IsNumber() @IsGoalMeasureValue() baseline!: number;
   @IsNumber() @IsGoalMeasureValue() target!: number;
