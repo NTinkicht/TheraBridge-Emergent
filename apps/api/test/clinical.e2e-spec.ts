@@ -153,6 +153,38 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.plan_draft_saved' } })).toBe(0);
   });
 
+  it('M2-H05 Codex P2: measured 250-character legacy title can round-trip; new long titles fail', async () => {
+    const { therapist, kid } = await setup();
+    const versionId = (await post(h, c(`clinical/children/${kid}/plans`), therapist, {
+      service: 'speech', title: 'Long legacy goal title compatibility',
+    }).expect(201)).body.versionId as string;
+    const goal = { key: 'legacy-long', title: 'Original synthetic title', measure: 'count', baseline: 0, target: 8 };
+    const planPath = c(`clinical/plan-versions/${versionId}`);
+    await patch(therapist, planPath, {
+      summary: 'Initial draft', goals: [goal], homeActivities: [], version: 1,
+    }).expect(200);
+    const legacyTitle = 'L'.repeat(250); // Accepted by the former 300-character DTO.
+    // Materialize a historical import before it becomes immutable.
+    await h.prisma.planVersion.update({ where: { id: versionId }, data: {
+      goals: [{ ...goal, title: legacyTitle }],
+    } });
+    await post(h, c(`clinical/children/${kid}/observations`), therapist, {
+      planVersionId: versionId, goalKey: goal.key, value: 2, observedOn: '2026-10-18',
+    }).expect(201);
+    await patch(therapist, planPath, {
+      summary: 'Clinician summary revised without goal change',
+      goals: [{ ...goal, title: legacyTitle }], homeActivities: [], version: 2,
+    }).expect(200);
+    const saved = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: versionId } });
+    expect((saved.goals as Array<{ title: string }>)[0].title).toBe(legacyTitle);
+    await patch(therapist, planPath, {
+      summary: 'Cannot add a new long goal', goals: [
+        { ...goal, title: legacyTitle },
+        { key: 'new-long', title: 'N'.repeat(250), measure: 'count', baseline: 0, target: 1 },
+      ], homeActivities: [], version: 3,
+    }).expect(400);
+  });
+
   it('M2-H05 Codex P2: a measured legacy goal with whitespace title can round-trip without redefinition', async () => {
     const { therapist, kid } = await setup();
     const versionId = (await post(h, c(`clinical/children/${kid}/plans`), therapist, {
