@@ -385,7 +385,7 @@ export class ReportsService {
     if (!EDITABLE.includes(r.status)) return new ConflictException({
       code: 'INVALID_REPORT_STATUS', message: 'Only DRAFT or RETURNED_FOR_REVISION reports can be edited.',
     });
-    return new ConflictException({ code: 'VERSION_CONFLICT', message: 'Report version conflict. Reload before editing.' });
+    return new ConflictException({ code: 'VERSION_CONFLICT', message: 'Report version conflict. The report changed in another window; reload before editing.' });
   }
 
   // Lock the draft at the version the author is looking at; every write bumps the version.
