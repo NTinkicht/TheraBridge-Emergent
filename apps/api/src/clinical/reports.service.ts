@@ -309,6 +309,24 @@ export class ReportsService {
       if (!Array.isArray(evidence?.goals)) throw new UnprocessableEntityException('Saved report evidence does not contain selectable goals.');
       const refs = dto.selectedGoals.map(g => g.planVersionId + ':' + g.goalKey);
       if (new Set(refs).size !== refs.length) throw new UnprocessableEntityException('Select each recorded goal only once.');
+      // Exact version+key is essential: a goal key alone can be reused in
+      // unrelated plans/versions with incompatible units or definitions.
+      const candidates = evidence.goals as Array<Record<string, unknown>>;
+      const goals = dto.selectedGoals.map((ref, index) => {
+        const matches = candidates.filter(g => g && g.planVersionId === ref.planVersionId && g.key === ref.goalKey);
+        if (matches.length !== 1) throw new UnprocessableEntityException('Selected goal is not in this saved report snapshot.');
+        const g = matches[0];
+        if (typeof g.title !== 'string' || g.title.length < 3 || g.title.length > 200 ||
+            !['percent','count','level'].includes(String(g.measure)) ||
+            typeof g.baseline !== 'number' || !Number.isFinite(g.baseline) ||
+            typeof g.target !== 'number' || !Number.isFinite(g.target))
+          throw new UnprocessableEntityException('A saved goal definition is incomplete or invalid.');
+        // New keys intentionally have no cross-version measurement continuity.
+        return { key: 'g' + (index + 1), title: g.title, measure: g.measure as string, baseline: g.baseline, target: g.target };
+      });
+
+      // Validate the immutable snapshot before querying live plan status so
+      // guessed UUIDs cannot disclose whether another version exists.
       const sourceIds = uniq(dto.selectedGoals.map(g => g.planVersionId));
       const eligibleVersions = await tx.planVersion.findMany({
         where: { centerId, id: { in: sourceIds }, status: { not: 'WITHDRAWN' },
@@ -318,21 +336,6 @@ export class ReportsService {
       if (eligibleVersions.length !== sourceIds.length)
         throw new ConflictException({ code: 'PLAN_VERSION_WITHDRAWN',
           message: 'Cannot use withdrawn or unavailable plan versions as sources for a new clinical draft.' });
-      // Exact version+key is essential: a goal key alone can be reused in
-      // unrelated plans/versions with incompatible units or definitions.
-      const candidates = evidence.goals as Array<Record<string, unknown>>;
-      const goals = dto.selectedGoals.map((ref, index) => {
-        const matches = candidates.filter(g => g && g.planVersionId === ref.planVersionId && g.key === ref.goalKey);
-        if (matches.length !== 1) throw new UnprocessableEntityException('Selected goal is not in this saved report snapshot.');
-        const g = matches[0];
-        if (typeof g.title !== 'string' || g.title.length < 3 || g.title.length > 300 ||
-            !['percent','count','level'].includes(String(g.measure)) ||
-            typeof g.baseline !== 'number' || !Number.isFinite(g.baseline) ||
-            typeof g.target !== 'number' || !Number.isFinite(g.target))
-          throw new UnprocessableEntityException('A saved goal definition is incomplete or invalid.');
-        // New keys intentionally have no cross-version measurement continuity.
-        return { key: 'g' + (index + 1), title: g.title, measure: g.measure as string, baseline: g.baseline, target: g.target };
-      });
 
       const plan = await tx.therapyPlan.create({ data: {
         id: dto.requestId, centerId, childId: current.childId, service: current.service,
