@@ -1,3 +1,17 @@
+## 2026-10-31 — M2-H02 implementation, negative tests and owner-approved merge policy
+
+- Merged policy PR [#138](https://github.com/NTinkicht/TheraBridge-Emergent/pull/138) into main, commit `39c9888`, after six green jobs and an independent Codex no-findings review. Future qualifying ordinary PRs may auto-merge under Rule 16 only after full review/test/deferral gating.
+- Continued implementation PR [#139](https://github.com/NTinkicht/TheraBridge-Emergent/pull/139), **M2-H02 (#117 and #118)**, without modifying the agreed roadmap. Added therapist specialty and active-assignment authorization, tenant-pinned CAS, cross-child/center negative tests, two-therapist acknowledgement and plan/report version race tests, revoked-specialty denial tests, 404 normalization, AST CAS verification and transaction row locks.
+- On `d02820b`, 3 tests failed: an extra child hit onboarding quota; two pre-existing tests still expected 403 after specialty revocation. Updated fixture setup to direct synthetic Prisma insertion and corrected privacy-preserving expected status to 404 in `f6a6d2b`. Its API tests passed **574/574** over 19 suites; logs identify no API failures. Pending final-head qualification and review; do **not** merge unless all gates green.
+- Review findings: previous Mistral current-model P2/P3 suggestions addressed or explicitly declined with rationale in PR disposition ledger; no unlinked deferral. The old audit names obsolete models and paths; replacement guards target actual Prisma models, preserving clinical NO-GO.
+
+## 2026-10-31 — Owner changes future merge protocol (new draft PR checkpoint)
+
+- PR #137 merged after exact-HEAD 6/6 CI and Codex no findings: `3d133c278f0b1fad3ba84b0e8e2ce70db1443ee8`.
+- Drafted AGENTS.md Rule 16, REVIEW_DISPOSITION_RULE.md and PR template: autonomous merge for qualified ordinary synthetic-only PRs, only after every review comment is dispositioned and all permitted deferrals have linked issues with owner/criteria/priority/safety rationale.
+- No waiver of clinical or production approvals; no bypass of CI, branch protection, P0–P2 remediation, independent final-head review. Policy effective after merge to main, not at draft creation.
+- Next security work unit GH-01 (#117) is the intended substantive scope; implementation NOT STARTED at this checkpoint.
+
 ## 2026-10-31 — PR #137 follow-up review P3 dispositions implemented
 
 - FIX_NOW (review 5717799244 P3-1): after an interactive transaction rejects, query committed demo local identities before deleting newly staged credentials; retain on visible identities or failed verification, with explicit operator recovery message.

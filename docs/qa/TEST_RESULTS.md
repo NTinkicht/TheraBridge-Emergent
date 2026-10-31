@@ -1,3 +1,27 @@
+## 2026-10-31 — M2-H02 CI/security verification checkpoint
+
+| Evidence | State | Exact result / limitation |
+| --- | --- | --- |
+| Policy PR #138 / Rule 16 | PASS, MERGED | Main merge `39c9888`; six required green jobs and Codex no findings on reviewed head |
+| M2-H02 code PR | OPEN | [#139](https://github.com/NTinkicht/TheraBridge-Emergent/pull/139), both #117 and #118, no deployment |
+| API typecheck, API/web build on `f6a6d2b` | PASS | GitHub Actions PR `test` job `124506918245` |
+| Real-PostgreSQL e2e and static CAS tests on `f6a6d2b` | PASS | **19/19 suites, 574/574 tests**, including revocation, isolation, two-actor CAS and same-center cross-child ID checks |
+| Browser live-session, synthetic journey, preview, secrets at `f6a6d2b` | PASS | Individual run checks were green on this pre-final commit; full six-job gate and fresh exact-final-head review still required |
+| Two source lock refinements and this handover update | PENDING FINAL CI | Must rerun all mandatory checks on resulting head, not inherit `f6a6d2b` PASS |
+| Independent final-HEAD review | PENDING | Earlier reviews cover older commits only; no final approval inferred |
+| Clinical release, real patient data, signed governance | NO-GO | Fail-closed clinical gates unchanged |
+
+## 2026-10-31 — M2-H02 GH-01 policy-only draft checkpoint (NOT RUN)
+
+| Item | State | Evidence / limitation |
+| --- | --- | --- |
+| PR #137 exact-head qualification and merge | PASS (previous PR) | 6/6 CI, 570/570 tests, Codex no findings, merged main `3d133c2` |
+| Proposed AGENTS.md Rule 16 autonomous-merge condition | PROPOSED, NOT YET IN MAIN | Requires exact-head CI/review and every finding disposition; deferred non-blocking items linked to GitHub issues |
+| GH-01 specialty-authz implementation and real DB negative matrix | NOT STARTED | Current draft changes are only policy and checkpoint docs |
+| New PR exact-HEAD 6 CI jobs | NOT RUN | A new PR / new HEAD requires new evidence |
+| Independent current-HEAD review | NOT RUN | No conclusion claimed |
+| Clinical activation, real data or published migration rename | NO-GO / OPEN | No change to signed owner gates |
+
 ## 2026-10-31 — PR #137 first corrected-head CI failure and fixture repair
 
 CI run [41182535567](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41182535567) on HEAD `94ba59f`: `secret-scan`, `live-session`, `preview-container`, `demo-journey` **PASS**; `test` **FAIL** (569 pass, 1 fail across 18 suites); `compose` SKIPPED. The sole failure was the pre-existing real-PostgreSQL rollback fixture `rolls back demo DB and removes pre-staged credentials on mid-seed failure`: its `failAt` mock exposed `$transaction` but not the newly required post-failure `authIdentity.count` query, so recovery correctly retained credentials for an uncheckable outcome. Commit `5efcb49` exposes the real committed read in that wrapper; code behavior and other tests unchanged. **New final HEAD six-job CI NOT YET VERIFIED.**

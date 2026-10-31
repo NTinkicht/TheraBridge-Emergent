@@ -104,7 +104,7 @@ export class ClinicalService {
     return this.prisma.$transaction(async (tx) => {
       await this.trial.assertWritable(tx, centerId, now);
       await assertActor(tx, centerId, v, ['THERAPIST']);
-      await tx.$queryRaw`SELECT id FROM child WHERE id=${childId}::uuid FOR SHARE`;
+      await tx.$queryRaw`SELECT id FROM child WHERE id=${childId}::uuid AND center_id=${centerId}::uuid FOR SHARE`;
       await tx.$queryRaw`SELECT id FROM care_assignment WHERE center_id=${centerId}::uuid AND child_id=${childId}::uuid AND membership_id=${v.membershipId}::uuid FOR SHARE`;
       await this.child(tx, centerId, v, childId, service);
       return fn(tx, now);

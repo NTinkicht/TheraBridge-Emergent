@@ -1,3 +1,15 @@
+## 2026-10-31 — M2-H02 (#117 + #118), current hardening; PR #138 policy MERGED
+
+- The owner's **frozen 12-PR Milestone 2 order** remains binding. M2-H02 is PR [#139](https://github.com/NTinkicht/TheraBridge-Emergent/pull/139) and covers both issue #117 (specialty/caseload authorization) and #118 (tenant-pinned compare-and-swap mutations). M2-S01 (#35) is next, **only after** #139 qualifies and merges.
+- PR #138 merged to main at `39c9888ff3ea96971da9c28f338a52d7d8c6dce1`; AGENTS.md Rule 16 is now effective for *eligible* synthetic-only work, with exact-final-head CI, independent review, P0–P3 dispositions and linked deferrals mandatory.
+- PR #139 adds live-schema therapist assignment + membership-specialty checks; revocation-aware clinical, report, governance and practice read/write scoping; non-confirming 404 behavior; center/child/service/actor CAS binding; and deterministic real-PostgreSQL regression cases and AST safeguards. Row locks serialize clinical edits and practice acknowledgement with assignment changes.
+- Evidence at pre-handover HEAD `f6a6d2b`: 19/19 API test suites, **574/574 tests PASS**, typecheck/API build and web build PASS in the PR test job; other exact-head checks and final-head review are separately required. Current PR is **OPEN, not merged**. This checkpoint is not a claim of final qualification.
+- All work remains **synthetic-only**; clinical signing, releases, real audio, real health records and production activation stay NO-GO pending distinct owner/governance approval.
+
+## 2026-10-31 — M2-H02 / GH-01 draft foundation: autonomous merge rule proposed
+
+After owner-authorized PR #137 merge (main `3d133c278f0b1fad3ba84b0e8e2ce70db1443ee8`), initiated next Wave 1 security work unit GH-01 (#117) as a draft PR. This first checkpoint proposes owner-authorized autonomous merges only after exact-HEAD 6/6 CI, independent current-head review, complete all-severity review disposition and linked, bounded deferrals. Clinical activation, real data and separately signed governance remain explicit owner gates. **Policy is proposed, not effective until its PR merges.** GH-01 specialty-access code/tests NOT STARTED; no security remediation claim, no merge or deployment.
+
 ## 2026-10-31 — PR #137 three follow-up P3 fixes (code committed; qualification pending)
 
 At implementation HEAD `5daa691`, the local Children's Home synthetic seed preserves its exclusively staged credential file if a transaction rejection has an uncertain COMMIT outcome (committed identities visible or verification unavailable); it deletes the file only after confirming zero demo identities. A rerun with an existing user lacking a local identity now fails closed instead of assigning a random password that was never exported. An orphan credential-file error explicitly explains a possible interrupted run and requires verifying that no demo users exist before removal. Three real-PostgreSQL regression scenarios were added for unknown COMMIT acknowledgement, missing identity, and interrupted-run recovery. Exact final-HEAD six-job CI and independent re-review remain NOT VERIFIED. No clinical activation, migration rewrite, deploy or merge.
