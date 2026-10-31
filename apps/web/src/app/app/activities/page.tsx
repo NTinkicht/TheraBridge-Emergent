@@ -9,7 +9,7 @@ import { TemplateActions } from '@/components/clinical/TemplateActions';
 import { Button, Card } from '@/components/design/ui';
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
 import { SPECIALTY_OPTIONS, type SessionInfo } from '@/lib/auth';
-import { clinicalApi } from '@/lib/clinical';
+import { clinicalApi, type Template } from '@/lib/clinical';
 
 const lines = (s: string) => s.split('\n').map((x) => x.trim()).filter(Boolean);
 const area = 'mt-1 w-full rounded-control border border-border-light bg-transparent px-3 py-2 text-[14px]';
@@ -45,29 +45,38 @@ function NewTemplate({ centerId, onDone, onError }: { centerId: string; onDone: 
 
 function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e: unknown) => void }) {
   const centerId = session.activeContext?.type === 'center' ? session.activeContext.centerId : '';
-  const fetcher = useCallback(() => clinicalApi.templates(centerId), [centerId]);
-  const { data, failed, reload } = useLoad(fetcher, onError);
   const [notice, setNotice] = useState('');
   const [creating, setCreating] = useState(false);
   const [search, setSearch] = useState('');
   const [specialty, setSpecialty] = useState('all');
   const [ownership, setOwnership] = useState('all');
-  const templates = data?.items ?? [];
-  const services = [...new Set(templates.map(t => t.service))].sort();
-  // Match the names therapists actually see; do not depend on browser locale.
-  const fold = (value: string) => value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  const q = fold(search.trim());
-  const filtering = !!q || specialty !== 'all' || ownership !== 'all';
-  const visible = templates.filter(t => {
-    if (specialty !== 'all' && t.service !== specialty) return false;
-    if (ownership === 'mine' && t.mine !== true) return false;
-    if (ownership === 'samples' && t.library !== 'synthetic') return false;
-    if (ownership === 'center' && t.library !== 'center') return false;
-    if (!q) return true;
-    const displayedSpecialty = SPECIALTY_OPTIONS.find(option => option.value === t.service)?.label ?? t.service;
-    return [t.title, t.ageBand, t.service, displayedSpecialty, ...t.materials, ...t.steps, ...t.safety]
-      .some(value => fold(value).includes(q));
-  });
+  const queryKey = JSON.stringify([centerId, search.trim(), specialty, ownership]);
+  const fetcher = useCallback(async () => ({ ...await clinicalApi.templates(centerId, {
+    search: search.trim(), service: specialty === 'all' ? undefined : specialty,
+    ownership, limit: 100,
+  }), queryKey }), [centerId, search, specialty, ownership, queryKey]);
+  const { data, failed, reload } = useLoad(fetcher, onError);
+  const first = data?.queryKey === queryKey ? data : null;
+  const [additional, setAdditional] = useState<{ key: string; items: Template[]; hasMore: boolean; nextOffset: number | null } | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const validMore = additional?.key === queryKey ? additional : null;
+  const templates = [...(first?.items ?? []), ...(validMore?.items ?? []).filter(t => !first?.items.some(x => x.id === t.id))];
+  const hasMore = validMore?.hasMore ?? first?.hasMore ?? false;
+  const nextOffset = validMore?.nextOffset ?? first?.nextOffset;
+  const filtering = !!search.trim() || specialty !== 'all' || ownership !== 'all';
+  const loadMore = async () => {
+    if (loadingMore || !hasMore || nextOffset === null || nextOffset === undefined) return;
+    setLoadingMore(true); setLoadError('');
+    try {
+      const next = await clinicalApi.templates(centerId, { offset: nextOffset, limit: 100,
+        search: search.trim(), service: specialty === 'all' ? undefined : specialty, ownership });
+      setAdditional(prev => ({ key: queryKey,
+        items: [...(prev?.key === queryKey ? prev.items : []), ...next.items],
+        hasMore: next.hasMore, nextOffset: next.nextOffset }));
+    } catch { setLoadError('More activities could not be loaded. Please retry.'); }
+    finally { setLoadingMore(false); }
+  };
   return (
     <div className="space-y-5">
       <PageTitle title="Activity library" body="Step-by-step home activities with safety guidance, ready to add to therapy plan drafts." testId="activities-title" />
@@ -77,19 +86,21 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
           <Button variant="secondary" onClick={() => setCreating(value => !value)} data-testid="template-form-toggle" aria-expanded={creating}>
             <Plus size={16} aria-hidden="true" />{creating ? 'Close activity form' : 'Create activity'}
           </Button>
-          {creating && <NewTemplate centerId={centerId} onError={onError} onDone={() => { setCreating(false); setNotice('Activity created.'); void reload(); }} />}
+          {creating && <NewTemplate centerId={centerId} onError={onError} onDone={() => { setCreating(false); setNotice('Activity created.'); setAdditional(null); void reload(); }} />}
         </div>
       )}
       {failed && <ErrorState onRetry={() => void reload()} testId="activities-error" />}
       {!failed && !data && <Card className="p-5"><SkeletonRows rows={4} testId="activities-loading" /></Card>}
-      {data && templates.length > 0 && <Card className="space-y-3 p-4" testId="activities-discovery">
+      {/* Keep the search input mounted while fetching a new query, otherwise
+          typing the first character removes its focused DOM node. */}
+      {data && <Card className="space-y-3 p-4" testId="activities-discovery">
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,180px)_minmax(0,180px)]">
           <label className="block text-[13px] font-medium">Search activities
             <span className="relative mt-1 block">
               <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-inkMuted" />
               <input type="search" value={search} onChange={e => setSearch(e.target.value)}
                 className="w-full rounded-control border border-border-strong bg-surface-white py-2 pl-10 pr-3 text-[14px]"
-                placeholder="Name, specialty, materials or steps" data-testid="activities-search" />
+                placeholder="Title, specialty or age band" data-testid="activities-search" />
             </span>
           </label>
           <label className="block text-[13px] font-medium">Specialty
@@ -97,7 +108,7 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
               className="mt-1 w-full rounded-control border border-border-strong bg-surface-white p-2 text-[14px]"
               data-testid="activities-specialty-filter">
               <option value="all">All specialties</option>
-              {services.map(service => <option key={service} value={service}>{SPECIALTY_OPTIONS.find(o => o.value === service)?.label ?? service}</option>)}
+              {SPECIALTY_OPTIONS.map(service => <option key={service.value} value={service.value}>{service.label}</option>)}
             </select>
           </label>
           <label className="block text-[13px] font-medium">Library
@@ -113,7 +124,7 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[13px] text-brand-inkMuted" role="status" data-testid="activities-result-count">
-            Showing {visible.length} of {templates.length} activities
+            {first ? `Showing ${templates.length}${hasMore ? '+' : ''} matching activities` : 'Searching activities…'}
           </p>
           {filtering && <Button size="sm" variant="ghost"
             onClick={() => { setSearch(''); setSpecialty('all'); setOwnership('all'); }} data-testid="activities-clear-filters">
@@ -121,18 +132,23 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
           </Button>}
         </div>
       </Card>}
-      {data && !templates.length && <EmptyState icon={Sparkles} title="No activities yet" body="Add the first template above." testId="activities-empty" />}
-      {data && templates.length > 0 && visible.length === 0 &&
+      {first && !templates.length && !filtering && <EmptyState icon={Sparkles} title="No activities yet" body="Add the first template above." testId="activities-empty" />}
+      {first && !templates.length && filtering &&
         <div data-testid="activities-no-results"><EmptyState icon={Search} title="No matching activities"
           body="Try another keyword or clear your filters. Your saved activities are unchanged." /></div>}
-      {data && visible.length > 0 && <div className="grid grid-cols-1 gap-4 lg:grid-cols-2" data-testid="activities-list">{visible.map(t => (
+      {first && templates.length > 0 && <div className="grid grid-cols-1 gap-4 lg:grid-cols-2" data-testid="activities-list">{templates.map(t => (
         <div key={t.id} className="min-w-0 space-y-2">
           <ActivityCard t={t} />
-          {session.permissions.includes('center.activities.manage') &&
+          {session.permissions.includes('center.activities.manage') && (
             <TemplateActions centerId={centerId} template={t} onError={onError}
-              onChanged={message => { setNotice(message); void reload(); }}/>}
+              onChanged={message => { setNotice(message); setAdditional(null); void reload(); }} />
+          )}
         </div>
       ))}</div>}
+      {first && hasMore && <Button variant="secondary" disabled={loadingMore} onClick={() => void loadMore()} data-testid="activities-load-more">
+        {loadingMore ? 'Loading more activities…' : 'Load more activities'}
+      </Button>}
+      {loadError && <p role="alert" className="text-[13px] text-status-caution">{loadError}</p>}
     </div>
   );
 }

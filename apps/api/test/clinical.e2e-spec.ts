@@ -48,6 +48,80 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     return { therapist, other, sup, kid, link, rosa };
   }
 
+  it('M2-H04 Codex P2: newest plan stays reachable above 200 and older plans are paged with tenant scope', async () => {
+    const { therapist, kid } = await setup();
+    const base = Date.parse('2026-10-18T00:00:00Z');
+    const created = await h.prisma.therapyPlan.createManyAndReturn({ data: Array.from({ length: 205 }, (_, i) => ({
+      centerId, childId: kid, service: 'speech', title: `Plan ${i}`, createdById: therapist.body.user.id,
+      createdAt: new Date(base + i * 1000),
+    })) });
+    await h.prisma.planVersion.createMany({ data: created.map(p => ({ centerId, planId: p.id, number: 1,
+      authorId: therapist.body.user.id, createdAt: h.clock.now(), updatedAt: h.clock.now(),
+    })) });
+    const first = (await get(therapist, c(`clinical/children/${kid}`)).expect(200)).body;
+    expect(first.plans).toHaveLength(200);
+    expect(first.hasMorePlans).toBe(true);
+    expect(first.plans[0].title).toBe('Plan 204');
+    expect(first.plans.some((p: { title: string }) => p.title === 'Plan 0')).toBe(false);
+    const next = (await get(therapist, c(`clinical/children/${kid}?planOffset=200`)).expect(200)).body;
+    expect(next.plans).toHaveLength(5);
+    expect(next.hasMorePlans).toBe(false);
+    expect(next.plans.some((p: { title: string }) => p.title === 'Plan 0')).toBe(true);
+    expect(new Set([...first.plans, ...next.plans].map((p: { id: string }) => p.id)).size).toBe(205);
+    await get(therapist, c(`clinical/children/${kid}?planOffset=-1`)).expect(400);
+  });
+
+  it('M2-H04 Codex P2: activity pagination and search reach beyond 200; therapist templates are service-filtered before cap', async () => {
+    const { therapist, kid } = await setup();
+    await h.prisma.activityTemplate.createMany({ data: [
+      ...Array.from({ length: 205 }, (_, i) => ({ centerId, service: 'occupational',
+        title: `Occupational sample ${String(i).padStart(3, '0')}`, ageBand: '5-8', minutes: 10,
+        materials: ['cards'], steps: ['Synthetic steps'], safety: ['Adult supports'], createdAt: h.clock.now() })),
+      ...Array.from({ length: 5 }, (_, i) => ({ centerId, service: 'speech',
+        title: `Speech needle ${i}`, ageBand: '5-8', minutes: 8,
+        materials: ['cards'], steps: ['Synthetic steps'], safety: ['Adult supports'], createdAt: h.clock.now() })),
+    ] });
+    const first = (await get(therapist, c('activities?limit=100')).expect(200)).body;
+    expect(first.items).toHaveLength(100);
+    expect(first.hasMore).toBe(true);
+    expect(first.nextOffset).toBe(100);
+    const last = (await get(therapist, c('activities?limit=100&offset=200')).expect(200)).body;
+    expect(last.items).toHaveLength(10);
+    expect(last.hasMore).toBe(false);
+    expect(last.items.some((t: { title: string }) => t.title === 'Speech needle 4')).toBe(true);
+    const searched = (await get(therapist, c('activities?search=Speech%20needle%204')).expect(200)).body;
+    expect(searched.items.map((t: { title: string }) => t.title)).toEqual(['Speech needle 4']);
+    const language = (await get(therapist, c('activities?search=LANGUAGE&service=speech')).expect(200)).body;
+    expect(language.items).toHaveLength(5);
+    const scoped = (await get(therapist, c(`clinical/children/${kid}`)).expect(200)).body;
+    expect(scoped.templates).toHaveLength(5);
+    expect(scoped.templates.every((t: { service: string }) => t.service === 'speech')).toBe(true);
+    await get(therapist, c('activities?limit=201')).expect(400);
+    await get(therapist, c('activities?offset=-1')).expect(400);
+  });
+
+  it('M2-H04 Codex P2: older/backdated assessments are reachable in stable authorized pages', async () => {
+    const { therapist, kid } = await setup();
+    const base = Date.parse('2026-01-01T00:00:00Z');
+    await h.prisma.assessment.createMany({ data: Array.from({ length: 205 }, (_, i) => ({
+      centerId, childId: kid, membershipId: therapist.body.activeContext.membershipId,
+      service: 'speech', assessedOn: new Date(base + i * DAY), summary: `Historical assessment ${i}`,
+      areas: [], createdAt: h.clock.now(), updatedAt: h.clock.now(),
+    })) });
+    const backdated = (await post(h, c(`clinical/children/${kid}/assessments`), therapist,
+      { service: 'speech', assessedOn: '2025-10-01', summary: 'Late-entered older assessment', areas: [] }).expect(201)).body.id;
+    const first = (await get(therapist, c(`clinical/children/${kid}`)).expect(200)).body;
+    expect(first.assessments).toHaveLength(200);
+    expect(first.hasMoreAssessments).toBe(true);
+    expect(first.assessments.some((a: { id: string }) => a.id === backdated)).toBe(false);
+    const older = (await get(therapist, c(`clinical/children/${kid}?assessmentOffset=200`)).expect(200)).body;
+    expect(older.assessments).toHaveLength(6);
+    expect(older.hasMoreAssessments).toBe(false);
+    expect(older.assessments.some((a: { id: string }) => a.id === backdated)).toBe(true);
+    expect(new Set([...first.assessments, ...older.assessments].map((a: { id: string }) => a.id)).size).toBe(206);
+    await get(therapist, c(`clinical/children/${kid}?assessmentOffset=-1`)).expect(400);
+  });
+
 
   it('hides a same-center different-child assessment ID just like an unknown ID', async () => {
     const { therapist, other } = await setup();

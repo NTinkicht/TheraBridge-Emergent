@@ -1,6 +1,6 @@
 import { SessionExecutionService } from './session.service';
 import { SessionStartDto, SessionSaveDto } from './session.dto';
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
 import { RequirePermission, TbRequest } from '../auth/access';
 import type { Viewer } from '../operations/children.service';
 import { AssessmentDto, AssessmentUpdateDto, ObservationDto, PlanDto, PlanVersionUpdateDto, ReviewDto, SessionNoteDto, SessionNoteUpdateDto, TemplateDto, TemplateUpdateDto, TemplateCopyDto, GoalReviewCheckpointDto } from './clinical.dto';
@@ -17,8 +17,18 @@ export class ClinicalController {
 
   @Get('clinical/children/:childId')
   @RequirePermission('center.clinical.read')
-  workspace(@Param('centerId', uuid()) c: string, @Param('childId', uuid()) id: string, @Req() req: TbRequest) {
-    return this.clinical.workspace(c, viewer(req), id);
+  workspace(@Param('centerId', uuid()) c: string, @Param('childId', uuid()) id: string, @Req() req: TbRequest,
+    @Query('planOffset') rawOffset?: string, @Query('assessmentOffset') rawAssessmentOffset?: string) {
+    const offset = rawOffset === undefined ? 0 : Number(rawOffset);
+    const assessmentOffset = rawAssessmentOffset === undefined ? 0 : Number(rawAssessmentOffset);
+    if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100_000 || (rawOffset !== undefined && !/^\d+$/.test(rawOffset))) {
+      throw new BadRequestException('Invalid plan pagination offset.');
+    }
+    if (!Number.isSafeInteger(assessmentOffset) || assessmentOffset < 0 || assessmentOffset > 100_000 ||
+        (rawAssessmentOffset !== undefined && !/^\d+$/.test(rawAssessmentOffset))) {
+      throw new BadRequestException('Invalid assessment pagination offset.');
+    }
+    return this.clinical.workspace(c, viewer(req), id, offset, assessmentOffset);
   }
 
   @Post('clinical/children/:childId/assessments')
@@ -127,8 +137,22 @@ export class ClinicalController {
 
   @Get('activities')
   @RequirePermission('center.activities.read')
-  templates(@Param('centerId', uuid()) c: string, @Req() req: TbRequest) {
-    return this.clinical.templates(c, viewer(req)).then((items) => ({ items }));
+  templates(@Param('centerId', uuid()) c: string, @Req() req: TbRequest,
+    @Query('offset') rawOffset?: string, @Query('limit') rawLimit?: string,
+    @Query('search') rawSearch?: string, @Query('service') rawService?: string,
+    @Query('ownership') rawOwnership?: string) {
+    const offset = rawOffset === undefined ? 0 : Number(rawOffset);
+    const limit = rawLimit === undefined ? 100 : Number(rawLimit);
+    if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100_000 || (rawOffset !== undefined && !/^\d+$/.test(rawOffset)) ||
+        !Number.isSafeInteger(limit) || limit < 1 || limit > 200 || (rawLimit !== undefined && !/^\d+$/.test(rawLimit))) {
+      throw new BadRequestException('Invalid activity pagination.');
+    }
+    if ((rawSearch?.length ?? 0) > 100 || (rawService?.length ?? 0) > 80 ||
+        (rawOwnership !== undefined && !['all', 'mine', 'center', 'samples'].includes(rawOwnership))) {
+      throw new BadRequestException('Invalid activity search filters.');
+    }
+    return this.clinical.templatePage(c, viewer(req), { offset, limit, search: rawSearch?.trim(),
+      service: rawService || undefined, ownership: rawOwnership as 'all' | 'mine' | 'center' | 'samples' | undefined });
   }
 
   @Post('activities')

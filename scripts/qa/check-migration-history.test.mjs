@@ -41,6 +41,17 @@ test('far-future migration timestamp is rejected even if lexically appended', ()
   const next = after(); next.set(root + '20991231235959_future/migration.sql', 'blob-new');
   assert.match(validateMigrationHistory(before(), next, new Date('2026-10-30T00:00:00Z')).join(' '), /too far in the future/);
 });
+
+test('future-dated published main permits only a one-hour append window without rewriting history', () => {
+  const published = root + '20261103090000_tb_em_023_child_referent/migration.sql';
+  const baseline = new Map([[published, 'published-blob']]);
+  const next = new Map(baseline);
+  next.set(root + '20261103100000_m2_h04_integrity_indexes/migration.sql', 'new-blob');
+  assert.deepEqual(validateMigrationHistory(baseline, next, new Date('2026-10-31T15:00:00Z')), []);
+  const tooFar = new Map(baseline);
+  tooFar.set(root + '20261103100100_skipped_guard/migration.sql', 'new-blob');
+  assert.match(validateMigrationHistory(baseline, tooFar, new Date('2026-10-31T15:00:00Z')).join(' '), /too far in the future/);
+});
 test('published migration_lock.toml cannot be modified', () => {
   const prior = before(); prior.set(root + 'migration_lock.toml', 'lock-old');
   const next = after(); next.set(root + 'migration_lock.toml', 'lock-new');

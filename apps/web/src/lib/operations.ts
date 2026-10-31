@@ -66,7 +66,11 @@ export const opsApi = {
   extendTrial: (centerId: string, days: number, reason: string) => rest.send<Trial>('POST', `/api/platform/centers/${centerId}/trial/extend`, { days, reason }),
   dashboard: (centerId: string) => rest.get<Dashboard>(c(centerId, 'dashboard')).then((r) => { setCenterTz(r.timezone); return r; }),
   family: (centerId: string) => rest.get<FamilyOverview>(c(centerId, 'family')).then((r) => { setCenterTz(r.center.timezone); return r; }),
-  therapists: (centerId: string) => rest.get<{ items: Therapist[] }>(c(centerId, 'therapists')),
+  therapists: (centerId: string, options: { offset?: number; limit?: number; service?: string; search?: string; ids?: string } = {}) => {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(options)) if (value !== undefined && value !== '') query.set(key, String(value));
+    return rest.get<{ items: Therapist[]; hasMore: boolean; nextOffset: number | null }>(c(centerId, 'therapists' + (query.size ? '?' + query.toString() : '')));
+  },
   children: (centerId: string, q: { q?: string; status?: string }) => rest.get<{ items: ChildRow[] }>(`${c(centerId, 'children')}?${qs(q)}`),
   createChild: (centerId: string, body: ChildInput) => rest.send<{ id: string }>('POST', c(centerId, 'children'), body),
   child: (centerId: string, id: string) => rest.get<ChildDetail & { timezone: string }>(c(centerId, `children/${id}`)).then((r) => { setCenterTz(r.timezone); return r; }),

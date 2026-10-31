@@ -1,3 +1,14 @@
+## 2026-10-31 — M2-H04 #142 combined five-issue checkpoint (test status NOT VERIFIED)
+
+| Gate | Current status | Evidence / limitation |
+| --- | --- | --- |
+| #141 M2-H03 | MERGED DOCUMENTATION ONLY | `232c73c`; #124/#121 fixes did not exist in the merged diff |
+| #142 M2-H04 scope | OPEN DRAFT / 5 ISSUES | #124, #121 carried into original #120, #119, #126 under explicit owner approval |
+| #124 first HTTP hardening slice | SOURCE/TEST EDITS IN PROGRESS — NOT VERIFIED | Cache headers, account-wide PostgreSQL password-change limit, Prisma error sanitization, Fastify body cap and new tests; CI/test results not yet claimed |
+| #121, #120, #119, #126 | NOT IMPLEMENTED / NOT TESTED | Must be completed in this PR; see five-issue acceptance matrix |
+| Six CI jobs and final independent code review | NOT RUN on completed implementation | Opening draft/plan review never qualifies a merge |
+| Clinical/production governance | NO-GO | Unsigned approvals unchanged; synthetic only |
+
 ## 2026-10-31 — Current M2-H03 #141: planning-only review, NOT functional qualification
 
 | Check | Result | Evidence / remaining limitation |
@@ -434,3 +445,44 @@ Base main: f49ade4125cdb26e11fd7eb2cc80c292a48f00a9. Branch: freebuff/tb-em-015-
 - NOT VERIFIED: actual STT recognition/device capture (disabled), Safari/Firefox/device tests, Figma frame access, GitHub exact-head CI, Mistral independent findings.
 
 See [implementation evidence](../emergent/workunits/TB-EM-015.md) for exact commands, initial failures repaired and boundaries. No production deployment or clinical activation.
+## 2026-10-31 — M2-H04 #142 new-code CI checkpoint (NOT QUALIFIED)
+
+| Check / exact HEAD | Evidence |
+| --- | --- |
+| `e71ad7d` first implementation CI | `secret-scan`, `preview-container`, `live-session` PASS; `test` FAIL at migration chronology guard (published Nov 3 future-dated baseline), `compose` SKIPPED. No pass claimed. |
+| Chronology guard local negative/positive tests after fix | `node --test scripts/qa/check-migration-history.test.mjs`: **11/11 PASS**. New migration at published-head+1h; no published SQL touched. |
+| HTTP and therapist revocation tests | New e2e fixtures added, real DB run PENDING |
+| DB integrity and reminder sweep regressions | New real DB fixtures added, run PENDING |
+| Final-head six required CI jobs + independent Codex | PENDING; PR #142 DRAFT, NO MERGE |
+| Protected clinical/real-data release | NO-GO; unchanged |
+
+### M2-H04 `61d8068` full-implementation CI and Codex P2 disposition (2026-10-31)
+
+- GitHub Actions run `41213918173` on exact HEAD `61d806864021ca2606f15597d5e68fff5006effd`: **six of six required jobs PASS** (`test`, `secret-scan`, `live-session`, `preview-container`, `demo-journey`, `compose`); API PostgreSQL Jest **592/592 PASS across 21 suites**. The forward-only migration applied and API/web built.
+- Codex on that head flagged two **P2** issues, neither waived: an oldest-first 200-plan cap making new drafts inaccessible, and synthetic outbox failure stranding reminder reservations. Fixes and focused regressions are being added in the same PR. **No final-head PASS claimed until these fixes run again**. A second Codex review must inspect that amended HEAD.
+
+### M2-H04 `6c8e87b` second review checkpoint (2026-10-31)
+
+- Run `41215010673` on `6c8e87b7414650beaa3b5ae28cd6a202fe963bb8`: all 21 PostgreSQL test suites, **594/594 API tests PASS**; remaining Compose verification was still in progress at this checkpoint.
+- Codex's second implementation review found one further **P2** in `PlanEditor`: a same-child workspace refresh after a family preview unmounted already-loaded older plan pages. Revised UI code preserves and refreshes prior pages, with a read-only synthetic Playwright overlay exercising an older-plan preview through a workspace reload. **Third exact-head CI and Codex review pending; do not merge yet.**
+
+### M2-H04 `5c733f5` third review and amended acceptance (2026-10-31)
+
+- `5c733f5` completed the amended synthetic demo-journey browser check; Codex independently raised two new P2 boundary cases: first-page `hasMorePlans` metadata stale after a 200-to-201 plan creation, and an older-plan preview UI assertion racing the workspace refresh.
+- The next amendment synchronizes metadata when no older page is loaded, records a refresh completion revision only after parent and older-page reloads, and tests both a simulated 200-to-201 UI boundary and preview persistence after that completion signal. **Current amended HEAD still requires 6/6 CI and fresh Codex verification.**
+
+### M2-H04 `5a703d5` fourth review — further P2 remediation pending verification (2026-10-31)
+
+- Codex identified that older plans loaded in the Therapy Plan tab vanished from Progress and Sessions on tab switch, and that a bounded template library had no server-side search/pagination path. Both are treated as **blocking P2** findings.
+- Pending next-head CI: share older plan/evidence pages in the parent child workspace; expose bounded searchable/paged activity templates including specialty-before-cap filtering and plan-editor search; regression-test 210 library entries, plan-tab to Progress-tab persistence, and selection beyond the initial library page. **All six CI jobs and new Codex review are required; not yet qualified.**
+
+### M2-H04 `21b5f5d`/`b0dce10` CI and Codex follow-ups (2026-10-31)
+
+- `21b5f5d` demo-journey failed because its old result-count expectation assumed client-only filtering; the updated exact-head run on `b0dce10` passed API/web build, PostgreSQL test job, secret scan, live-session and preview-container but failed a synthetic-browser assertion that tried to wait for a native `<option>` to be *visible* (the option existed but HTML option nodes are not visible to that wait). The browser regression now checks option existence before selecting it.
+- Codex also found a real assessment-history retrieval gap after the 200-assessment cap and a search-input focus loss during server-side refresh. Corrections add shared 200-record assessment pages, a visible retrieval button, 206-assessment PostgreSQL coverage, and persistent search controls. **Pending new exact-HEAD six-job CI and Codex verification; no merge qualified yet.**
+
+### M2-H04 `7d58c9c`/`ab494609` further qualification and discovery fixes (2026-10-31)
+
+- Run on `7d58c9c`: 21/21 PostgreSQL API suites PASS, browser `demo-journey` PASS, secret-scan, live-session and preview-container PASS; Compose was still running at this checkpoint. This is **not** final HEAD.
+- Run on `ab494609`: 595/596 API tests PASS; one concurrency test was overly strict about the audit reason when two correctly serialized referent-clearing paths race. The assertion now accepts the two explicit reasons while still requiring null final referent and monotonic history. Demo-journey failed due to use of an unsupported Playwright Locator focus helper; repaired using `document.activeElement`. These test corrections reached subsequent heads.
+- Codex on `ab494609` flagged two more blocking P2 discovery gaps: older reports and late-sorting active therapists hidden by 200-entry caps. Added stable bounded report paging and staff specialty/search/offset paging, exact-ID referent lookup, load-more controls and 205-record real-PostgreSQL regressions. **Exact final-head six-job CI and independent review remain mandatory.**

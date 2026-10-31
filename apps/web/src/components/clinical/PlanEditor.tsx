@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Field, FormAlert } from '@/components/auth/Field';
 import { ReasonField, SelectField } from '@/components/centers/kit';
 import { Button, Card, LockedAction, Pill } from '@/components/design/ui';
 import { serviceLabel } from '@/components/operations/BookDialog';
-import { LOCKED_REASON, clinicalApi, type Goal, type HomeActivity, type PlanVersion, type Workspace } from '@/lib/clinical';
+import { LOCKED_REASON, clinicalApi, type Goal, type HomeActivity, type PlanVersion, type Workspace, type Template } from '@/lib/clinical';
 import { ActivityCard } from './ActivityCard';
 import { HomeScheduleFields } from './HomeScheduleFields';
 import { HomeActivityDetails } from './HomeActivityDetails';
@@ -77,6 +77,27 @@ function VersionEditor({ centerId, ws, planId, planTitle, service, v, source, ru
   const [comment, setComment] = useState('');
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [preview, setPreview] = useState<Awaited<ReturnType<typeof clinicalApi.familyPreview>> | null>(null);
+  const [templateSearch, setTemplateSearch] = useState('');
+  const [searchedTemplates, setSearchedTemplates] = useState<Template[] | null>(null);
+  const [templateCache, setTemplateCache] = useState<Template[]>([]);
+  const [templateNextOffset, setTemplateNextOffset] = useState<number | null>(null);
+  const [templateLoading, setTemplateLoading] = useState(false);
+  const [templateError, setTemplateError] = useState('');
+  const templateWs = useMemo<Workspace>(() => ({ ...ws, templates: [
+    ...ws.templates, ...templateCache.filter(t => !ws.templates.some(x => x.id === t.id)),
+  ] }), [ws, templateCache]);
+  const findTemplates = async (more = false) => {
+    if (templateLoading || (more && templateNextOffset === null)) return;
+    setTemplateLoading(true); setTemplateError('');
+    try {
+      const page = await clinicalApi.templates(centerId, { service, search: templateSearch.trim(),
+        offset: more ? templateNextOffset! : 0, limit: 50 });
+      setSearchedTemplates(prev => more ? [...(prev ?? []), ...page.items] : page.items);
+      setTemplateCache(prev => [...prev, ...page.items.filter(x => !prev.some(t => t.id === x.id))]);
+      setTemplateNextOffset(page.nextOffset);
+    } catch { setTemplateError('Could not search the activity library. Please retry.'); }
+    finally { setTemplateLoading(false); }
+  };
   useEffect(() => { setSummary(v.summary); setGoals(v.goals); setActs(v.homeActivities); }, [v]);
   const edit = ws.canEdit && v.mine && ['DRAFT','RETURNED_FOR_REVISION'].includes(v.status);
   // Preserve legacy unlinked drafts; every NEW activity added in this editor
@@ -88,7 +109,7 @@ function VersionEditor({ centerId, ws, planId, planTitle, service, v, source, ru
   const unsavedPlanEdits = summary !== v.summary ||
     JSON.stringify(goals) !== JSON.stringify(v.goals) ||
     JSON.stringify(acts) !== JSON.stringify(v.homeActivities);
-  const handoff = homePlanHandoff({ summary, goals, activities: acts, templates: ws.templates,
+  const handoff = homePlanHandoff({ summary, goals, activities: acts, templates: templateWs.templates,
     hasUnsavedEdits: unsavedPlanEdits, hasOtherPlanEdits: otherPlanDirty,
     newlyAddedUnlinked: unlinkedNew }, scheduleProblem);
   // Any checkpoint's shared run() reloads ALL mounted plan editors.
@@ -102,7 +123,7 @@ function VersionEditor({ centerId, ws, planId, planTitle, service, v, source, ru
       <div className="flex flex-wrap items-center gap-2"><Pill tone={STATUS[v.status][1]} testId="plan-version-status">{`Version ${v.number} · ${STATUS[v.status][0]}`}</Pill><span className="text-[13px] text-brand-inkMuted">by {v.author}</span></div>
       {v.reviewNotes.map((n, i) => <FormAlert key={i} tone="info" testId={`review-note-${i}`}>Supervisor review: {n.comment}</FormAlert>)}
       <PlanEvidenceTrail version={v} origin={source} observations={ws.observations} />
-      <SavedHomePlanPreview key={v.id} version={v} templates={ws.templates}
+      <SavedHomePlanPreview key={v.id} version={v} templates={templateWs.templates}
         title={planTitle} service={service} origin={source} unsaved={unsavedPlanEdits} />
       <GoalCheckpointPanel centerId={centerId} version={v} ws={ws} editable={edit}
         unsavedPlanEdits={unsavedPlanEdits || otherPlanDirty} run={run} />
@@ -118,7 +139,7 @@ function VersionEditor({ centerId, ws, planId, planTitle, service, v, source, ru
         <ul className="mt-2 space-y-2">
           {acts.map((a, i) => (
             <li key={i} className="flex flex-wrap items-center gap-2 rounded-control border border-border-light p-2 text-[14px]" data-testid={`home-activity-${i}`}>
-              <span className="min-w-0 flex-1 font-semibold">{a.snapshot?.title ?? ws.templates.find((t) => t.id === a.templateId)?.title ?? 'Activity (library entry unavailable)'}</span>
+              <span className="min-w-0 flex-1 font-semibold">{a.snapshot?.title ?? templateWs.templates.find((t) => t.id === a.templateId)?.title ?? 'Activity (library entry unavailable)'}</span>
               <label className="min-w-[170px] flex-1 text-[12px] text-brand-inkMuted">Linked goal (plan v{v.number})
                 <select aria-label={`Linked goal for activity ${i + 1}`} data-testid={`home-activity-goal-${i}`} className={`mt-1 ${input}`} value={a.goalKey ?? ''} disabled={!edit} onChange={(e) => setActs(prev => prev.map((x, j) => j === i ? { ...x, goalKey: e.target.value || undefined } : x))}>
                   <option value="">Not linked{legacyTemplateIds.has(a.templateId) ? ' (existing draft)' : ' — select before saving'}</option>
@@ -129,7 +150,7 @@ function VersionEditor({ centerId, ws, planId, planTitle, service, v, source, ru
               <HomeScheduleFields schedule={a.schedule} disabled={!edit} index={i}
                 onChange={schedule => setActs(prev => prev.map((x, j) =>
                   j === i ? { ...x, schedule, frequency: schedule ? (schedule.cadence === 'WEEKLY' ? 'Weekly calendar draft' : 'Monthly calendar draft') : 'As directed (undated)' } : x))} />
-              <HomeActivityDetails activity={a} templates={ws.templates} editable={edit} index={i}
+              <HomeActivityDetails activity={a} templates={templateWs.templates} editable={edit} index={i}
                 onDurationChange={durationMinutes => setActs(prev => prev.map((x, j) => j === i ? { ...x, durationMinutes } : x))}
                 onInstructionsChange={note => setActs(prev => prev.map((x, j) =>
                   j === i ? { ...x, note } : x))} />
@@ -137,10 +158,19 @@ function VersionEditor({ centerId, ws, planId, planTitle, service, v, source, ru
             </li>
           ))}
         </ul>
-        {edit && <div className="mt-2 max-w-sm"><SelectField label="Add from the activity library" value="" testId="home-activity-add" onChange={(id) => id && setActs([...acts, { templateId: id, frequency: '3 times a week' }])}
-          options={[{ value: '', label: 'Choose an activity' }, ...ws.templates.filter((t) => !acts.some((a) => a.templateId === t.id)).map((t) => ({ value: t.id, label: `${t.title} · ${serviceLabel(t.service)}` }))]} /></div>}
+        {edit && <div className="mt-2 max-w-sm space-y-2">
+          <SelectField label="Add from the activity library" value="" testId="home-activity-add" onChange={(id) => id && setActs([...acts, { templateId: id, frequency: '3 times a week' }])}
+            options={[{ value: '', label: 'Choose an activity' }, ...(searchedTemplates ?? templateWs.templates).filter(t => t.service === service && !acts.some(a => a.templateId === t.id)).map(t => ({ value: t.id, label: `${t.title} · ${serviceLabel(t.service)}` }))]} />
+          <label className="block text-[12px] font-medium">Find an activity beyond the first library page
+            <input className={`mt-1 ${input}`} value={templateSearch} onChange={e => { setTemplateSearch(e.target.value); setSearchedTemplates(null); setTemplateNextOffset(null); }} placeholder="Search title or age band" data-testid="plan-template-search" />
+          </label>
+          <Button size="sm" variant="secondary" disabled={templateLoading} onClick={() => void findTemplates()} data-testid="plan-template-find">{templateLoading ? 'Searching…' : 'Search full activity library'}</Button>
+          {templateNextOffset !== null && <Button size="sm" variant="secondary" disabled={templateLoading} onClick={() => void findTemplates(true)} data-testid="plan-template-more">Load more matching activities</Button>}
+          {templateError && <p role="alert" className="text-[12px] text-status-caution">{templateError}</p>}
+          {searchedTemplates?.length === 0 && <p role="status" className="text-[12px]">No matching activities for this plan specialty.</p>}
+        </div>}
       </div>
-      <HomePracticeCalendar key={v.id} activities={acts} goals={goals} templates={ws.templates}
+      <HomePracticeCalendar key={v.id} activities={acts} goals={goals} templates={templateWs.templates}
         versionNumber={v.number} timezone={ws.timezone} unsaved={unsavedPlanEdits} />
       {edit && <div className="space-y-2 rounded-card border border-border-light bg-surface-subtle p-4" data-testid="home-plan-evidence-assist">
         <h3 className="text-[16px] font-semibold">Draft activity shortlist</h3>
@@ -187,8 +217,17 @@ function VersionEditor({ centerId, ws, planId, planTitle, service, v, source, ru
   );
 }
 
-export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Workspace; run: Run }) {
+export function PlansPanel({ centerId, ws, run, pagination }: { centerId: string; ws: Workspace; run: Run;
+  pagination: { hasMore: boolean; loading: boolean; error: string; load: () => Promise<void> } }) {
   const [f, setF] = useState({ service: ws.child.services[0] ?? '', title: '' });
+  const [refreshRevision, setRefreshRevision] = useState(0);
+  // Parent keeps older pages and their evidence across clinical tabs. Its run
+  // handler refreshes those pages after writes without unmounting this editor.
+  const runPlanAction: Run = async (fn, ok) => {
+    const success = await run(fn, ok);
+    if (success) setRefreshRevision(n => n + 1);
+    return success;
+  };
   const [linkedEvidenceNote, setLinkedEvidenceNote] = useState('');
   const [historicGoal, setHistoricGoal] = useState<{ planId: string; versionId: string; goalKey: string } | null>(null);
   const [dirtyVersions, setDirtyVersions] = useState<Record<string, boolean>>({});
@@ -223,7 +262,7 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
     return () => window.removeEventListener('hashchange', inspectHashTarget);
   }, [ws]);
   return (
-    <div className="space-y-5" data-testid="plans-panel">
+    <div className="space-y-5" data-testid="plans-panel" data-refresh-revision={refreshRevision}>
       {linkedEvidenceNote && <p role="status" className="rounded-control border border-border-light bg-surface-subtle p-3 text-[13px]" data-testid="report-goal-navigation-note">{linkedEvidenceNote}</p>}
       <GoalReviewWorklist ws={ws} />
       {ws.plans.map((p) => {
@@ -233,19 +272,21 @@ export function PlansPanel({ centerId, ws, run }: { centerId: string; ws: Worksp
             <h2 className="text-[18px] font-semibold">{p.title}</h2>
             <p className="mb-4 text-[13px] text-brand-inkMuted">{serviceLabel(p.service)} · {p.versions.length} version{p.versions.length > 1 ? 's' : ''}</p>
             <VersionEditor centerId={centerId} ws={ws} planId={p.id} planTitle={p.title} service={p.service}
-              v={current} source={p.source} run={run} onDirtyChange={onDirtyChange}
+              v={current} source={p.source} run={runPlanAction} onDirtyChange={onDirtyChange}
               otherPlanDirty={Object.entries(dirtyVersions).some(([id, dirty]) => id !== current.id && dirty)} />
             <PlanVersionHistory key={p.id} plan={p} templates={ws.templates} timezone={ws.timezone}
               target={historicGoal?.planId === p.id ? { versionId: historicGoal.versionId, goalKey: historicGoal.goalKey } : undefined} />
           </Card>
         );
       })}
+      {pagination.hasMore && <Button variant="secondary" disabled={pagination.loading} onClick={() => void pagination.load()} data-testid="plans-load-more">{pagination.loading ? 'Loading earlier plans…' : 'Load earlier plans'}</Button>}
+      {pagination.error && <p role="alert" className="text-[13px] text-status-caution" data-testid="plans-load-error">{pagination.error}</p>}
       {!ws.plans.length && <p className="text-[14px] text-brand-inkMuted" data-testid="plans-empty">No therapy plan yet.</p>}
       {ws.canEdit && (
         <Card className="grid grid-cols-1 items-end gap-3 p-5 sm:grid-cols-[180px_1fr_auto]" testId="plan-create">
           <SelectField label="Service" value={f.service} onChange={(service) => setF({ ...f, service })} testId="plan-service" options={ws.child.services.map((s) => ({ value: s, label: serviceLabel(s) }))} />
           <Field label="New plan title" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} testId="plan-title" />
-          <Button onClick={() => void (async () => { if (await run(() => clinicalApi.plan(centerId, ws.child.id, f), 'Plan created with a first draft.')) setF({ ...f, title: '' }); })()} data-testid="plan-create-button">Create plan</Button>
+          <Button onClick={() => void (async () => { if (await runPlanAction(() => clinicalApi.plan(centerId, ws.child.id, f), 'Plan created with a first draft.')) setF({ ...f, title: '' }); })()} data-testid="plan-create-button">Create plan</Button>
         </Card>
       )}
     </div>

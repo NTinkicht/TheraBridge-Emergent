@@ -1,3 +1,10 @@
+## 2026-10-31 — CURRENT: M2-H04 PR #142, five required issues
+
+1. **Complete both owner-approved carried-over P1 issues in PR #142: #124 HTTP security and #121 therapist revocation.** PR #141 merged documents only; its feature scope is not complete and must not be treated as fixed.
+2. **Complete all three original M2-H04 issues in that same PR:** #120 safe additive foreign keys/indexes and transfer/audit integrity, #119 N+1/center-lock performance and concurrency, #126 bounded queries/reminder idempotency/rate-limit pruning. Read current models instead of blindly applying obsolete audit examples.
+3. Run real-PostgreSQL regression and lock-wait tests, verify six exact-final-head CI jobs, request a new independent Codex review on the final implementation code, disposition every reviewer finding and merge only if Rule 16 qualifies. Keep draft during work. No clinical/production approval is implied.
+4. **Only after all five issues actually qualify and #142 merges**, open next frozen item **M2-H05 (#122, #123, #125)**. Historical instructions below have been superseded by explicit owner-approved carryover.
+
 ## 2026-10-31 — CURRENT ordered next work: M2-H03 PR #141 (#124, #121)
 
 1. **Work on [PR #141](https://github.com/NTinkicht/TheraBridge-Emergent/pull/141), item 4/12 (M2-H03).** Its opening HEAD `bbc85cdb174be6b1f43726e161b54cfd8a82cbb3` only planned the work; **implementation is NOT STARTED**, so do not merge or mark work complete based on its documentation-only CI/reviews.
@@ -401,3 +408,10 @@ Phase: 1 — Foundation + center onboarding
 - After approval, first implementation checkpoint must include reproducible cold-clone instructions and actual test results.
 
 Blocked until owner's Emergent plan is returned and accepted. No code implemented.
+## 2026-10-31 — CURRENT: qualify combined M2-H04 #142 before any merge
+
+1. Run migration chronology guard and Prisma deploy/generate on a fresh and pre-migrated isolated PostgreSQL database; inspect all new center/child FK validation and transfer CAS SQL. Never rewrite published migrations.
+2. Run the entire API suite and all six exact-HEAD GitHub checks, including the new therapist revocation, reminder idempotence, audit immutability, HTTP security and migration-guard tests. Fix any regressions in the same draft.
+3. Audit coverage of legacy #124/#121/#120/#119/#126 against actual split models. Flag any missing actor FK, direct user-disable lifecycle, per-row series update, pagination/clinical evidence retention or residual P3 as actionable before merge; do not silently defer it.
+4. Mark ready, request a new final-implementation `@codex review`, disposition every comment and link any owner-approved deferrals, then Rule16-qualify and auto-merge. Open M2-H05 (#122, #123, #125) immediately after a qualified merge.
+5. Clinical consent, signing, family release, real data and deployment remain NO-GO.

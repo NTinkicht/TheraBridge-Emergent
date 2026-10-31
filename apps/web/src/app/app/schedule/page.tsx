@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, CalendarPlus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FormAlert } from '@/components/auth/Field';
 import { PageTitle, SelectField, Workspace, useLoad } from '@/components/centers/kit';
@@ -69,6 +69,11 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
   const [therapist, setTherapist] = useState('');
   const [child, setChild] = useState('');
   const [therapists, setTherapists] = useState<Therapist[]>([]);
+  const [therapistSearch, setTherapistSearch] = useState('');
+  const [therapistNext, setTherapistNext] = useState<number | null>(null);
+  const [therapistLoading, setTherapistLoading] = useState(false);
+  const therapistRequest = useRef(0);
+  const [chosenTherapistName, setChosenTherapistName] = useState('');
   const [children, setChildren] = useState<ChildRow[]>([]);
   const [booking, setBooking] = useState<{ date: string; start: string } | null | false>(false);
   const [editing, setEditing] = useState<Appointment | null>(null);
@@ -86,9 +91,30 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
     }
   }, [data, tz]);
   useEffect(() => {
-    if (!isTherapist) void opsApi.therapists(centerId).then((r) => setTherapists(r.items)).catch(() => setTherapists([]));
     void opsApi.children(centerId, {}).then((r) => setChildren(r.items)).catch(() => setChildren([]));
-  }, [centerId, isTherapist]);
+  }, [centerId]);
+  useEffect(() => {
+    const revision = ++therapistRequest.current;
+    if (isTherapist) return () => { therapistRequest.current++; };
+    setTherapistLoading(true); setTherapists([]); setTherapistNext(null);
+    void opsApi.therapists(centerId, { search: therapistSearch.trim(), limit: 100 })
+      .then(page => { if (revision === therapistRequest.current) { setTherapists(page.items); setTherapistNext(page.nextOffset); } })
+      .catch(() => { if (revision === therapistRequest.current) setTherapists([]); })
+      .finally(() => { if (revision === therapistRequest.current) setTherapistLoading(false); });
+    return () => { therapistRequest.current++; };
+  }, [centerId, isTherapist, therapistSearch]);
+  const loadMoreTherapists = async () => {
+    if (therapistLoading || therapistNext === null) return;
+    const revision = therapistRequest.current;
+    setTherapistLoading(true);
+    try {
+      const page = await opsApi.therapists(centerId, { search: therapistSearch.trim(), offset: therapistNext, limit: 100 });
+      if (revision === therapistRequest.current) {
+        setTherapists(prev => [...prev, ...page.items]); setTherapistNext(page.nextOffset);
+      }
+    } catch { /* The existing directory remains available; retry via Load more. */ }
+    finally { if (revision === therapistRequest.current) setTherapistLoading(false); }
+  };
 
   const shown = data ? data.items.filter((a) => days.includes(dayKey(a.startsAt))) : [];
   const step = view === 'day' ? 1 : 7;
@@ -115,7 +141,19 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
           <Button size="sm" variant="ghost" onClick={() => setAnchor(dayKey(new Date()))} data-testid="week-today">Today</Button>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:w-[480px]">
-          {!isTherapist && <SelectField label="Therapist" value={therapist} onChange={setTherapist} testId="schedule-therapist-filter" options={[{ value: '', label: 'All therapists' }, ...therapists.map((t) => ({ value: t.membershipId, label: t.displayName }))]} />}
+          {!isTherapist && <div className="space-y-2">
+            <label className="block text-[12px] font-medium">Find therapist
+              <input type="search" className="mt-1 w-full rounded-control border border-border-light px-3 py-2 text-[14px]" value={therapistSearch}
+                onChange={e => { therapistRequest.current++; setTherapistSearch(e.target.value); }} data-testid="schedule-therapist-search" placeholder="Search name" />
+            </label>
+            <SelectField label="Therapist" value={therapist} onChange={value => { setTherapist(value); setChosenTherapistName(therapists.find(t => t.membershipId === value)?.displayName ?? 'Selected therapist'); }} testId="schedule-therapist-filter" options={[
+              { value: '', label: 'All therapists' },
+              ...(therapist && !therapists.some(t => t.membershipId === therapist) ? [{ value: therapist, label: chosenTherapistName }] : []),
+              ...therapists.map(t => ({ value: t.membershipId, label: t.displayName })),
+            ]} />
+            {therapistNext !== null && <Button size="sm" variant="secondary" disabled={therapistLoading}
+              onClick={() => void loadMoreTherapists()} data-testid="schedule-therapist-more">Load more therapists</Button>}
+          </div>}
           <SelectField label="Child" value={child} onChange={setChild} testId="schedule-child-filter" options={[{ value: '', label: 'All children' }, ...children.map((c) => ({ value: c.id, label: `${c.preferredName ?? c.firstName} ${c.lastName}` }))]} />
         </div>
       </div>

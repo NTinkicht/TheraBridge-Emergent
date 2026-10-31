@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Card } from '@/components/design/ui';
 import { SelectField } from '@/components/centers/kit';
 import { serviceLabel } from './BookDialog';
@@ -8,6 +8,10 @@ import { opsApi, HANDOVER_LABELS, type ChildDetail, type Therapist, type Handove
 export function HandoverProposalPanel({ centerId, child }: { centerId: string; child: ChildDetail }) {
   const [data, setData] = useState<HandoverInbox | null>(null);
   const [staff, setStaff] = useState<Therapist[]>([]);
+  const [staffSearch, setStaffSearch] = useState('');
+  const [nextStaffOffset, setNextStaffOffset] = useState<number | null>(null);
+  const [loadingStaff, setLoadingStaff] = useState(false);
+  const staffRequest = useRef(0);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [reasonCode, setReasonCode] = useState<'STAFF_CHANGE'|'AVAILABILITY'|'FAMILY_REQUEST'>('STAFF_CHANGE');
@@ -18,8 +22,9 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
     try {
       const d = await opsApi.handovers(centerId);
       setData(d);
-      if (d.enabled) setStaff((await opsApi.therapists(centerId)).items);
-      else setStaff([]);
+      // Proposal status refreshes (including cancellation) must not discard the
+      // still-valid incoming therapist search and its loaded pagination cursor.
+      // Center/service/search changes are handled by the staff-fetch effect.
       setError('');
     } catch { setError('Could not load synthetic handover proposals.'); }
   }, [centerId]);
@@ -27,6 +32,31 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
   const own = (data?.items ?? []).filter(p => p.childId === child.id);
   const active = child.assignments.filter(a => a.endedAt === null);
   const source = active.find(a => a.id === from);
+  useEffect(() => {
+    const revision = ++staffRequest.current;
+    if (!data?.enabled || !source) {
+      setStaff([]); setNextStaffOffset(null); setLoadingStaff(false);
+      return () => { staffRequest.current++; };
+    }
+    setLoadingStaff(true);
+    void opsApi.therapists(centerId, { service: source.service, search: staffSearch.trim(), limit: 100 })
+      .then(page => { if (revision === staffRequest.current) { setStaff(page.items); setNextStaffOffset(page.nextOffset); } })
+      .catch(() => { if (revision === staffRequest.current) { setStaff([]); setError('Could not search eligible incoming therapists.'); } })
+      .finally(() => { if (revision === staffRequest.current) setLoadingStaff(false); });
+    return () => { staffRequest.current++; };
+  }, [centerId, data?.enabled, source?.service, staffSearch]);
+  const loadMoreStaff = async () => {
+    if (!source || loadingStaff || nextStaffOffset === null) return;
+    const revision = staffRequest.current;
+    setLoadingStaff(true);
+    try {
+      const page = await opsApi.therapists(centerId, { service: source.service, search: staffSearch.trim(), offset: nextStaffOffset, limit: 100 });
+      if (revision === staffRequest.current) {
+        setStaff(prev => [...prev, ...page.items]); setNextStaffOffset(page.nextOffset);
+      }
+    } catch { if (revision === staffRequest.current) setError('Could not load more eligible incoming therapists.'); }
+    finally { if (revision === staffRequest.current) setLoadingStaff(false); }
+  };
   const eligible = staff.filter(t => t.membershipId !== source?.membershipId && source &&
     t.specialties.includes(source.service));
   // Client-side prevention is advisory: the API/DB still enforce one open proposal.
@@ -74,12 +104,21 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
     {data && !data.enabled && <p data-testid="handover-disabled">Handover preparation is disabled in this environment.</p>}
     {data?.enabled && <>
       <SelectField label="Current assignment" value={from} testId="handover-current"
-        onChange={value => { setFrom(value); setTo(''); }}
+        onChange={value => {
+          if (active.find(a => a.id === value)?.service !== source?.service) staffRequest.current++;
+          setFrom(value); setTo('');
+        }}
         options={[{value:'',label:'Select an active assignment'}, ...active.map(a => ({
           value:a.id,label:`${a.therapist} · ${serviceLabel(a.service)}`}))]} />
+      <label className="block text-[13px] font-medium">Search incoming therapists
+        <input type="search" value={staffSearch} onChange={e => { staffRequest.current++; setStaffSearch(e.target.value); setTo(''); }}
+          className="mt-1 w-full rounded-control border border-border-light px-3 py-2 text-[14px]" data-testid="handover-staff-search" placeholder="Name" />
+      </label>
       <SelectField label="Proposed incoming therapist" value={to} testId="handover-incoming"
         onChange={setTo} options={[{value:'',label:source ? 'Select a qualified therapist' : 'Choose current assignment first'},
           ...eligible.map(t=>({value:t.membershipId,label:t.displayName}))]} />
+      {nextStaffOffset !== null && <Button size="sm" variant="secondary" disabled={loadingStaff} onClick={() => void loadMoreStaff()}
+        data-testid="handover-staff-more">Load more qualified therapists</Button>}
       <SelectField label="Operational reason" value={reasonCode} onChange={v => setReasonCode(v as typeof reasonCode)}
         testId="handover-reason" options={[{value:'STAFF_CHANGE',label:'Staff change'},
         {value:'AVAILABILITY',label:'Availability'}, {value:'FAMILY_REQUEST',label:'Family request'}]} />

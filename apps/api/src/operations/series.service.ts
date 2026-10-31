@@ -1,4 +1,5 @@
 import { ConflictException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { Tx, logCenterEvent } from '../centers/history';
 import { addDays, asDate, daysBetween, fromDate, isoWeekday, localDate, zonedToUtc } from '../common/zoned';
@@ -57,11 +58,8 @@ export class SeriesService {
         const startsAt = zonedToUtc(date, dto.startTime, tz);
         return { date, startsAt, endsAt: new Date(startsAt.getTime() + dto.durationMinutes * 60_000) };
       });
-      const conflicts: { date: string; reason: string }[] = [];
-      for (const s of slots) {
-        const reason = await this.schedule.clash(tx, { childId: dto.childId, membershipId: dto.membershipId, startsAt: s.startsAt, endsAt: s.endsAt });
-        if (reason) conflicts.push({ date: s.date, reason });
-      }
+      const reasons = await this.schedule.clashesForSlots(tx, centerId, slots.map((s) => ({ childId: dto.childId, membershipId: dto.membershipId, startsAt: s.startsAt, endsAt: s.endsAt })));
+      const conflicts: { date: string; reason: string }[] = slots.flatMap((s, i) => reasons[i] ? [{ date: s.date, reason: reasons[i]! }] : []);
       if (conflicts.length && (!dto.skipConflicts || conflicts.length === slots.length)) {
         throw clashError(`${conflicts.length} of ${slots.length} visits clash with existing appointments.`, conflicts);
       }
@@ -111,15 +109,23 @@ export class SeriesService {
         return { o, startsAt, endsAt: new Date(startsAt.getTime() + next.durationMin * 60_000) };
       });
       if (plan.some((p) => p.startsAt < now)) throw new UnprocessableEntityException('Visits cannot be moved into the past.');
-      const conflicts: { date: string; reason: string }[] = [];
-      for (const p of plan) {
-        const reason = await this.schedule.clash(tx, { childId: s.childId, membershipId: next.membershipId, startsAt: p.startsAt, endsAt: p.endsAt }, plan.map((x) => x.o.id));
-        if (reason) conflicts.push({ date: fromDate(p.o.occurrenceDate!), reason });
-      }
+      const reasons = await this.schedule.clashesForSlots(tx, centerId, plan.map((p) => ({ childId: s.childId, membershipId: next.membershipId, startsAt: p.startsAt, endsAt: p.endsAt })), plan.map((x) => x.o.id));
+      const conflicts: { date: string; reason: string }[] = plan.flatMap((p, i) => reasons[i] ? [{ date: fromDate(p.o.occurrenceDate!), reason: reasons[i]! }] : []);
       if (conflicts.length) throw clashError(`${conflicts.length} of ${plan.length} visits would clash. Nothing was changed.`, conflicts);
-      for (const p of plan) {
-        await tx.appointment.update({ where: { id: p.o.id }, data: { membershipId: next.membershipId, startsAt: p.startsAt, endsAt: p.endsAt, ...(dto.room !== undefined ? { room: dto.room || null } : {}), version: { increment: 1 } } });
-      }
+      // One transactional UPDATE for the entire series (max 60 visits),
+      // preserving the center-scoped row set and one version bump per visit.
+      const values = Prisma.join(plan.map((p) => Prisma.sql`(${p.o.id}::uuid, ${p.startsAt}::timestamptz, ${p.endsAt}::timestamptz)`));
+      const roomUpdate = dto.room !== undefined ? Prisma.sql`, room = ${dto.room || null}` : Prisma.empty;
+      const updated = await tx.$executeRaw(Prisma.sql`
+        UPDATE appointment AS a
+        SET membership_id = ${next.membershipId}::uuid, starts_at = planned.starts_at,
+            ends_at = planned.ends_at, version = a.version + 1 ${roomUpdate}
+        FROM (VALUES ${values}) AS planned (id, starts_at, ends_at)
+        WHERE a.id = planned.id AND a.center_id = ${centerId}::uuid
+          AND a.series_id = ${id}::uuid AND a.status = 'SCHEDULED'
+          AND a.is_exception = false
+      `);
+      if (updated !== plan.length) throw new ConflictException('Appointments changed while updating the series. Reload and retry.');
       await tx.appointmentSeries.update({ where: { id }, data: { ...next, ...(dto.room !== undefined ? { room: dto.room || null } : {}), version: { increment: 1 } } });
       await logCenterEvent(tx, centerId, 'series.updated', now, { actorUserId, membershipId: next.membershipId, meta: { childId: s.childId, seriesId: id, fromDate: dto.fromDate, visits: plan.length } });
       return plan.map((p) => ({ id: p.o.id, before: p.o.startsAt }));

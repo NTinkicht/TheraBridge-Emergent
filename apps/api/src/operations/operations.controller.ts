@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
 import { RequirePermission, TbRequest } from '../auth/access';
 import {
   AppointmentDto, AppointmentStatusDto, AssignmentDto, ChildDto, ExtendTrialDto, FamilyPreferenceDto, GuardianDto, ListChildrenQuery, MessageDto, RangeQuery, ReasonDto, RescheduleDto,
@@ -67,8 +67,26 @@ export class OperationsController {
 
   @Get('therapists')
   @RequirePermission('center.children.read')
-  therapists(@Param('centerId', uuid()) centerId: string) {
-    return this.children.therapists(centerId);
+  therapists(@Param('centerId', uuid()) centerId: string,
+    @Query('offset') rawOffset?: string, @Query('limit') rawLimit?: string,
+    @Query('service') rawService?: string, @Query('search') rawSearch?: string,
+    @Query('ids') rawIds?: string) {
+    if ([rawOffset, rawLimit, rawService, rawSearch, rawIds].some(value => value !== undefined && typeof value !== 'string')) {
+      throw new BadRequestException('Invalid therapist filters.');
+    }
+    const offset = rawOffset === undefined ? 0 : Number(rawOffset);
+    const limit = rawLimit === undefined ? 100 : Number(rawLimit);
+    if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100_000 || (rawOffset !== undefined && !/^\d+$/.test(rawOffset)) ||
+        !Number.isSafeInteger(limit) || limit < 1 || limit > 200 || (rawLimit !== undefined && !/^\d+$/.test(rawLimit))) {
+      throw new BadRequestException('Invalid therapist pagination.');
+    }
+    const ids = rawIds ? rawIds.split(',') : undefined;
+    if ((rawService?.length ?? 0) > 80 || (rawSearch?.length ?? 0) > 100 ||
+        (ids && (ids.length > 100 || ids.some(id => !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))))) {
+      throw new BadRequestException('Invalid therapist filters.');
+    }
+    return this.children.therapists(centerId, { offset, limit, service: rawService || undefined,
+      search: rawSearch?.trim(), ids });
   }
 
   @Get('children')

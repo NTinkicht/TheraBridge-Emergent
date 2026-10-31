@@ -97,7 +97,7 @@ export const reportsApi = {
     rest.get<ReviewQueue>(c(centerId, `clinical/reports/review-queue?${qs({
       childId: q.childId, service: q.service, search: q.search, page: String(q.page ?? 1),
     })}`)),
-  list: (centerId: string, childId: string) => rest.get<{ items: ReportRow[] }>(c(centerId, `clinical/children/${childId}/reports`)),
+  list: (centerId: string, childId: string, offset = 0) => rest.get<{ items: ReportRow[]; hasMore: boolean; nextOffset: number | null }>(c(centerId, `clinical/children/${childId}/reports?offset=${offset}`)),
   create: (centerId: string, childId: string, body: { service: string; title: string; periodStart: string; periodEnd: string }) => rest.send<{ id: string }>('POST', c(centerId, `clinical/children/${childId}/reports`), body),
   detail: (centerId: string, id: string) => rest.get<ReportDetail>(c(centerId, `clinical/reports/${id}`)),
   createPlanDraft: (centerId: string, reportId: string, body: {

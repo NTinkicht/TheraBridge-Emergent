@@ -35,6 +35,32 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     admin = await accept('lead@prog.test', 'Lead Admin');
   });
 
+  it('M2-H04 Codex P2: older unfinished reports remain retrievable past the bounded first page', async () => {
+    const therapist = await staff('report-page@prog.test', ['THERAPIST']);
+    const kid = (await post(h, c('children'), admin, { firstName: 'Report', lastName: 'History',
+      dateOfBirth: '2019-04-02', services: ['speech'] }).expect(201)).body.id;
+    await post(h, c(`children/${kid}/assignments`), admin,
+      { membershipId: therapist.body.activeContext.membershipId, service: 'speech', isLead: true }).expect(201);
+    const base = Date.parse('2026-09-01T00:00:00Z');
+    await h.prisma.progressReport.createMany({ data: Array.from({ length: 205 }, (_, i) => ({
+      centerId, childId: kid, membershipId: therapist.body.activeContext.membershipId,
+      service: 'speech', title: `Older draft ${i}`, periodStart: new Date('2026-08-01T00:00:00Z'),
+      periodEnd: new Date('2026-08-31T00:00:00Z'), status: 'DRAFT',
+      createdAt: new Date(base + i * 1000), updatedAt: new Date(base + i * 1000),
+    })) });
+    const endpoint = c(`clinical/children/${kid}/reports`);
+    const first = (await get(therapist, endpoint).expect(200)).body;
+    expect(first.items).toHaveLength(200);
+    expect(first.hasMore).toBe(true);
+    expect(first.items[0].title).toBe('Older draft 204');
+    const later = (await get(therapist, endpoint + '?offset=200').expect(200)).body;
+    expect(later.items).toHaveLength(5);
+    expect(later.hasMore).toBe(false);
+    expect(later.items.some((r: { title: string }) => r.title === 'Older draft 0')).toBe(true);
+    expect(new Set([...first.items, ...later.items].map((r: { id: string }) => r.id)).size).toBe(205);
+    await get(therapist, endpoint + '?offset=-1').expect(400);
+  });
+
   it('charts, dashboards and report drafts use only recorded observations; review, history, conflicts and release lock', async () => {
     const therapist = await staff('thera@prog.test', ['THERAPIST']);
     const other = await staff('other@prog.test', ['THERAPIST']);

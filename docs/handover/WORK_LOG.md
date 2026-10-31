@@ -1,3 +1,9 @@
+## 2026-10-31 — M2-H04 five-issue composite implementation starts (#142)
+
+- Owner expressly directed carryover of **unimplemented #124/#121** from merged documentation-only #141 into **M2-H04 PR #142**, together with original #120/#119/#126. Opened draft at `aa83a6f`; review body and work-unit document explicitly list the five obligations, audit severities and safety gates.
+- Inspected current split NestJS/Fastify architecture (which differs from audit pin `05cec48b`): `bootstrap.ts`, `auth.service.ts`, PostgreSQL `RateLimitStore`, session semantics and actual operations services. Initial #124 HTTP hardening and adversarial tests are being prepared. Do not claim successful execution before CI evidence; all five issue-completion gates remain open.
+- Planning-only Codex on #141 does not qualify this PR. Real test/database evidence and independent review of the final implementation HEAD remain mandatory; no owner-gated clinical activation or deployment.
+
 ## 2026-10-31 — M2-H03 PR #141 opened; planning-review findings disposition
 
 - M2-S01 [PR #140](https://github.com/NTinkicht/TheraBridge-Emergent/pull/140) **MERGED** at `803ad48343f4881045622853c04c7eafefea6380` with 580/580 tests, six passing exact-head CI jobs and independent reviews. Opened ordered item 4/12, M2-H03 [PR #141](https://github.com/NTinkicht/TheraBridge-Emergent/pull/141), for #124 (HTTP hardening) and #121 (therapist revocation).
@@ -369,3 +375,6 @@ Started dedicated `freebuff/tb-em-015-session-workflow` from verified fetched ma
 Extended SessionNote with unsigned operational lifecycle, bounded structured activity snapshots/results and retry tokens. Added authorized start/save endpoints and PostgreSQL tests; extended existing clinical sessions UI with specialty choice, timing, activities/results, autosave/resume/complete and clearly labelled synthetic dictation review. Real audio, AI, signing and release remain disabled.
 
 Verification: 453/453 PostgreSQL API tests, API/web typechecks/builds, additive legacy-note migration upgrade, responsive fixture DOM and real browser/API/PostgreSQL journey passed. Docker blocked by socket permissions; Figma frames unavailable; gh unauthenticated. Detailed commands/limits: docs/emergent/workunits/TB-EM-015.md. Exact delivery status: artifacts/tb-em-015/VALIDATION.md. Independent reviewer remains Mistral; developer does not self-approve or merge.
+## 2026-10-31 — M2-H04 #142 full-code draft checkpoint (not yet CI-qualified)
+
+Implemented the #124 first slice and the #121/#120/#119/#126 current-schema equivalents in the same draft as explicitly directed by the owner. Added a forward-only validated FK/index/audit-trigger migration, transfer CAS version, shared therapist revocation/series cancellation/referent-history transaction, guardian notice reservations, batched schedule conflict scan, NO KEY UPDATE center locking, rate-limit global expiry cleanup and new PostgreSQL regression tests. First code CI `e71ad7d` identified the date-guard contradiction caused by already-published Nov 3 SQL; no published migration changed. Corrected guard only for an append within one hour of the pinned published head; checked its 11 Node unit cases locally. Actual final-head CI, migration apply, real PostgreSQL tests and independent code review are still pending. No clinical activation or deployment.

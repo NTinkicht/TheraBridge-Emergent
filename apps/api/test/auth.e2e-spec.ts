@@ -6,6 +6,7 @@ import { RouteAccessVerifier } from '../src/auth/route-access.verifier';
 import { ipPrefix, parseTrustedProxiesForTest, resolveClientIp, sha256 } from './unit-helpers';
 import { loadAuthConfig } from '../src/config/env';
 import { passwordPolicyError } from '../src/auth/password';
+import { RateLimitStore } from '../src/auth/rate-limit.store';
 import {
   FakeClock, Harness, ORIGIN, PASSWORD, cookieFrom, createUser, freshPassword, login, makeApp, post, preAuth, rawCookie, resetDb, signIn,
 } from './helpers';
@@ -44,7 +45,8 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
       expect(rows[0].tokenHash).toBe(sha256(token));
       expect(JSON.stringify(rows)).not.toContain(token);
       expect(dumpJson(await h.prisma.auditEvent.findMany())).not.toContain(token);
-      expect(res.headers['cache-control']).toBe('no-store');
+      expect(res.headers['cache-control']).toBe('no-store, no-cache, must-revalidate, private');
+      expect(res.headers.pragma).toBe('no-cache');
       expect(res.body.user.email).toBe(u.email);
       expect(res.body.csrfToken).toEqual(expect.any(String));
     });
@@ -65,9 +67,30 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
       await h.http().post('/api/auth/login').set('Origin', ORIGIN).set('Cookie', p.cookie).set('X-CSRF-Token', p.token)
         .send({ email: 'a@b.test', password: 'x', role: 'PLATFORM_ADMIN' }).expect(400);
     });
+
+    it('sets private no-store headers outside auth and rejects oversized JSON at the Fastify boundary', async () => {
+      const health = await h.http().get('/api/health').expect(200);
+      expect(health.headers['cache-control']).toBe('no-store, no-cache, must-revalidate, private');
+      expect(health.headers.pragma).toBe('no-cache');
+      const tooLarge = await h.http().post('/api/auth/login').set('Origin', ORIGIN).set('Content-Type', 'application/json')
+        .send({ email: 'oversized@test.therabridge.test', password: 'a'.repeat(1024 * 1024) });
+      expect(tooLarge.status).toBe(413);
+      expect(tooLarge.headers['cache-control']).toContain('no-store');
+    });
   });
 
   describe('AC-2/3 generic errors, lockout, IP limit', () => {
+    it('M2-H04: prunes expired buckets across keys without removing active windows', async () => {
+      const old = new Date(h.clock.now().getTime() - 2 * 86_400_000);
+      const recent = h.clock.now();
+      await h.prisma.rateLimitCounter.createMany({ data: [
+        { key: 'old-other-account', windowStart: old, count: 7 },
+        { key: 'recent-account', windowStart: recent, count: 1 },
+      ] });
+      await h.app.get(RateLimitStore).pruneExpired(recent);
+      expect(await h.prisma.rateLimitCounter.count({ where: { key: 'old-other-account' } })).toBe(0);
+      expect(await h.prisma.rateLimitCounter.count({ where: { key: 'recent-account' } })).toBe(1);
+    });
     it('wrong password, unknown email and locked account return the same 401 body', async () => {
       const u = await createUser(h.prisma);
       const wrong = await login(h, u.email, 'not-the-password-123');
@@ -214,6 +237,21 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
       const s = await signIn(h, u.email);
       const res = await post(h, '/api/auth/password/change', s, { currentPassword: PASSWORD, newPassword: 'short' }).expect(422);
       expect(res.body.message).toMatch(/12 characters/);
+    });
+
+    it('shares a per-account password-change budget across sessions and restores it after the window', async () => {
+      const u = await createUser(h.prisma);
+      const first = await signIn(h, u.email);
+      const second = await signIn(h, u.email);
+      const wrong = { currentPassword: 'not-the-current-password', newPassword: freshPassword() };
+      for (let i = 0; i < 5; i++) {
+        await post(h, '/api/auth/password/change', i % 2 ? first : second, wrong).expect(422);
+      }
+      const limited = await post(h, '/api/auth/password/change', first, wrong).expect(429);
+      expect(limited.body.message).toMatch(/too many password-change attempts/i);
+      expect(await h.prisma.auditEvent.count({ where: { type: 'auth.password.change_rate_limited' } })).toBe(1);
+      h.clock.advance(16 * MIN);
+      await post(h, '/api/auth/password/change', second, wrong).expect(422);
     });
   });
 

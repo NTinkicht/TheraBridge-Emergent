@@ -215,12 +215,15 @@ export class ReportsService {
     };
   }
 
-  async list(centerId: string, v: Viewer, childId: string) {
+  async list(centerId: string, v: Viewer, childId: string, offset = 0) {
     await this.clinical.child(this.prisma, centerId, v, childId);
     const services = v.role === 'THERAPIST' ? (await this.clinical.therapistAssignments(this.prisma, centerId, v, childId)).map((a) => a.service) : null;
-    const rows = await this.prisma.progressReport.findMany({ where: { centerId, childId, ...(services ? { service: { in: services } } : {}) }, include: { _count: { select: { versions: true } } }, orderBy: { updatedAt: 'desc' } });
+    const batch = await this.prisma.progressReport.findMany({ where: { centerId, childId, ...(services ? { service: { in: services } } : {}) }, include: { _count: { select: { versions: true } } }, orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }], skip: offset, take: 201 });
+    const hasMore = batch.length > 200;
+    const rows = batch.slice(0, 200);
     const team = await this.prisma.membership.findMany({ where: { id: { in: uniq(rows.map((r) => r.membershipId)) } }, select: { id: true, user: { select: { displayName: true } } } });
-    return { items: rows.map((r) => ({ id: r.id, title: r.title, service: r.service, periodStart: day(r.periodStart), periodEnd: day(r.periodEnd), status: r.status, versions: r._count.versions, author: team.find((t) => t.id === r.membershipId)?.user.displayName ?? '', mine: r.membershipId === v.membershipId, updatedAt: r.updatedAt })) };
+    return { items: rows.map((r) => ({ id: r.id, title: r.title, service: r.service, periodStart: day(r.periodStart), periodEnd: day(r.periodEnd), status: r.status, versions: r._count.versions, author: team.find((t) => t.id === r.membershipId)?.user.displayName ?? '', mine: r.membershipId === v.membershipId, updatedAt: r.updatedAt })),
+      hasMore, nextOffset: hasMore ? offset + rows.length : null };
   }
 
   async create(centerId: string, v: Viewer, childId: string, dto: ReportCreateDto) {

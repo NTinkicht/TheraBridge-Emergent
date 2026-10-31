@@ -111,19 +111,21 @@ export class ClinicalService {
     });
   }
 
-  async workspace(centerId: string, v: Viewer, childId: string) {
+  async workspace(centerId: string, v: Viewer, childId: string, planOffset = 0, assessmentOffset = 0) {
     const c = await this.child(this.prisma, centerId, v, childId);
     // A therapist may see only the services assigned to that therapist for this child.
     const assignedServices = v.role === 'THERAPIST'
       ? (await this.therapistAssignments(this.prisma, centerId, v, childId)).map(a => a.service)
       : null;
     const serviceScope = assignedServices ? { service: { in: assignedServices } } : {};
-    const [assessments, plans, notes, appointments, templates, assignments] = await Promise.all([
-      this.prisma.assessment.findMany({ where: { centerId, childId, ...serviceScope }, orderBy: { assessedOn: 'desc' } }),
-      this.prisma.therapyPlan.findMany({ where: { centerId, childId, ...serviceScope }, include: { versions: { orderBy: { number: 'desc' } } }, orderBy: { createdAt: 'asc' } }),
+    const [assessmentBatch, planBatch, notes, appointments, templates, assignments] = await Promise.all([
+      this.prisma.assessment.findMany({ where: { centerId, childId, ...serviceScope }, orderBy: [{ assessedOn: 'desc' }, { id: 'desc' }], skip: assessmentOffset, take: 201 }),
+      this.prisma.therapyPlan.findMany({ where: { centerId, childId, ...serviceScope }, include: { versions: { orderBy: { number: 'desc' } } }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], skip: planOffset, take: 201 }),
       this.prisma.sessionNote.findMany({ where: { centerId, childId, ...serviceScope }, orderBy: { sessionDate: 'desc' }, take: 50 }),
-      this.prisma.appointment.findMany({ where: { centerId, childId, ...serviceScope, status: { in: ['SCHEDULED', 'COMPLETED'] }, startsAt: { gte: new Date(this.trial.now().getTime() - 30 * 86_400_000), lte: new Date(this.trial.now().getTime() + 42 * 86_400_000) }, ...(v.role === 'THERAPIST' ? { membershipId: v.membershipId } : {}) }, orderBy: { startsAt: 'desc' } }),
-      this.templates(centerId).then(rows => assignedServices ? rows.filter(t => assignedServices.includes(t.service)) : rows),
+      this.prisma.appointment.findMany({ where: { centerId, childId, ...serviceScope, status: { in: ['SCHEDULED', 'COMPLETED'] }, startsAt: { gte: new Date(this.trial.now().getTime() - 30 * 86_400_000), lte: new Date(this.trial.now().getTime() + 42 * 86_400_000) }, ...(v.role === 'THERAPIST' ? { membershipId: v.membershipId } : {}) }, orderBy: { startsAt: 'desc' }, take: 500 }),
+      // Filter by the therapist's authorized services in SQL BEFORE the cap:
+      // a library with 200 other-specialty templates must not mask theirs.
+      this.templates(centerId, undefined, assignedServices ?? undefined),
       // Never disclose names for another specialty to a therapist. A supervisor
       // may view centre-scoped assignment names, but not family discussions.
       this.prisma.careAssignment.findMany({
@@ -131,6 +133,10 @@ export class ClinicalService {
         select: { id: true, membershipId: true, service: true, isLead: true },
       }),
     ]);
+    const hasMoreAssessments = assessmentBatch.length > 200;
+    const assessments = assessmentBatch.slice(0, 200);
+    const hasMorePlans = planBatch.length > 200;
+    const plans = planBatch.slice(0, 200);
     // Observations must be bound to the exact plan versions that survived the service filter.
     const observations = await this.prisma.observation.findMany({
       where: { centerId, childId, planVersionId: { in: plans.flatMap(p => p.versions.map(ver => ver.id)) } },
@@ -224,6 +230,8 @@ export class ClinicalService {
       childWideReferentStatus: !c.referentMembershipId ? 'NOT_DESIGNATED'
         : visibleReferent ? 'VISIBLE' : 'UNAVAILABLE',
       assessments: assessments.map((a) => ({ id: a.id, service: a.service, assessedOn: day(a.assessedOn), summary: a.summary, areas: a.areas, status: a.status, version: a.version, author: who(a.membershipId), mine: a.membershipId === v.membershipId, updatedAt: a.updatedAt })),
+      hasMorePlans,
+      hasMoreAssessments,
       plans: plans.map((p) => ({ id: p.id, service: p.service, title: p.title, source: planSource(p), versions: p.versions.map((x) => ({ id: x.id, number: x.number, status: x.status, summary: x.summary, goals: x.goals, homeActivities: x.homeActivities, reviewNotes: (Array.isArray(x.reviewNotes) ? x.reviewNotes : []).filter((n: any) => n?.kind !== 'GOAL_CHECKPOINT'),
         goalCheckpoints: (Array.isArray(x.reviewNotes) ? x.reviewNotes : []).filter((n: any) =>
           n?.kind === 'GOAL_CHECKPOINT' && typeof n.goalKey === 'string' &&
@@ -505,9 +513,50 @@ export class ClinicalService {
     return title;
   }
 
-  templates(centerId: string, v?: Viewer) {
-    return this.prisma.activityTemplate.findMany({ where: { OR: [{ centerId }, { centerId: null }] }, orderBy: [{ service: 'asc' }, { title: 'asc' }] })
-      .then((rows) => rows.map((t) => ({ id: t.id, title: t.title, service: t.service, ageBand: t.ageBand, minutes: t.minutes, materials: t.materials, steps: t.steps, safety: t.safety, library: t.centerId ? 'center' : 'synthetic', version: t.version, mine: !!v && t.centerId === centerId && t.createdById === v.userId })));
+  async templatePage(centerId: string, v?: Viewer, options: {
+    offset?: number; limit?: number; search?: string; service?: string;
+    services?: string[]; ownership?: 'all' | 'mine' | 'center' | 'samples';
+  } = {}) {
+    const offset = options.offset ?? 0, limit = options.limit ?? 100;
+    const conditions: Prisma.ActivityTemplateWhereInput[] = [
+      { OR: [{ centerId }, { centerId: null }] },
+    ];
+    if (options.services) conditions.push({ service: { in: options.services } });
+    if (options.service) conditions.push({ service: options.service });
+    if (options.ownership === 'mine') conditions.push({ centerId, createdById: v?.userId ?? '__none__' });
+    if (options.ownership === 'center') conditions.push({ centerId });
+    if (options.ownership === 'samples') conditions.push({ centerId: null });
+    if (options.search) {
+      // Keep displayed specialty names searchable after moving discovery to
+      // SQL; e.g. "language" must also match the stored `speech` service.
+      const labels = { speech: 'speech language', occupational: 'occupational therapy',
+        physical: 'physical therapy', behavioral: 'behavioral therapy',
+        feeding: 'feeding therapy', developmental: 'developmental therapy' };
+      const serviceMatches = Object.entries(labels).filter(([service, label]) =>
+        label.includes(options.search!.toLowerCase()) || service.includes(options.search!.toLowerCase())).map(([service]) => service);
+      conditions.push({ OR: [
+        { title: { contains: options.search, mode: 'insensitive' } },
+        { ageBand: { contains: options.search, mode: 'insensitive' } },
+        { service: { contains: options.search, mode: 'insensitive' } },
+        ...(serviceMatches.length ? [{ service: { in: serviceMatches } }] : []),
+      ] });
+    }
+    const rows = await this.prisma.activityTemplate.findMany({
+      where: { AND: conditions },
+      orderBy: [{ service: 'asc' }, { title: 'asc' }, { id: 'asc' }],
+      skip: offset, take: limit + 1,
+    });
+    const hasMore = rows.length > limit;
+    return { items: rows.slice(0, limit).map((t) => ({
+      id: t.id, title: t.title, service: t.service, ageBand: t.ageBand,
+      minutes: t.minutes, materials: t.materials, steps: t.steps, safety: t.safety,
+      library: t.centerId ? 'center' : 'synthetic', version: t.version,
+      mine: !!v && t.centerId === centerId && t.createdById === v.userId,
+    })), hasMore, nextOffset: hasMore ? offset + limit : null };
+  }
+
+  templates(centerId: string, v?: Viewer, services?: string[]) {
+    return this.templatePage(centerId, v, { services, limit: 200 }).then(page => page.items);
   }
 
   async createTemplate(centerId: string, v: Viewer, dto: TemplateDto) {

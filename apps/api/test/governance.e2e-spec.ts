@@ -145,7 +145,8 @@ describe('TB-EM-011 non-authorizing governance (real PostgreSQL)', () => {
   const after=(await get(supervisor,`governance/previews/${r.body.snapshotId}`).expect(200)).body;expect(after.fingerprint).toBe(before.fingerprint);expect(after.evidence).toEqual(before.evidence);
  });
  it('rejects cross-child observation note associations',async()=>{
-  const n=await h.prisma.sessionNote.create({data:{centerId:c,childId:randomUUID(),membershipId:memberId,service:'speech',sessionDate:new Date(),createdAt:new Date(),updatedAt:new Date()}});
+  const otherChild=await h.prisma.child.create({data:{centerId:c,firstName:'Unrelated',lastName:'Child',dateOfBirth:new Date('2020-01-01'),services:['speech'],createdById:authorId,createdAt:h.clock.now()}});
+  const n=await h.prisma.sessionNote.create({data:{centerId:c,childId:otherChild.id,membershipId:memberId,service:'speech',sessionDate:new Date(),createdAt:new Date(),updatedAt:new Date()}});
   await post(h,path(`clinical/children/${kid}/observations`),therapist,{planVersionId:plan,goalKey:goal.key,value:3,observedOn:'2026-01-01',sessionNoteId:n.id}).expect(422);
  });
  it('consent policy/record revisions remain immutable and cannot authorize grants',async()=>{
@@ -204,7 +205,9 @@ describe('TB-EM-011 non-authorizing governance (real PostgreSQL)', () => {
   expect(original.content.sections.familySummary).toBe('');expect(original.fingerprint).toBe(a.fingerprint);
  });
  it.each(['child','center','therapist','service'])('rejects linked session-note %s mismatch at API and database',async mismatch=>{
-  const n=await h.prisma.sessionNote.create({data:{centerId:mismatch==='center'?randomUUID():c,childId:mismatch==='child'?randomUUID():kid,membershipId:mismatch==='therapist'?otherId:memberId,service:mismatch==='service'?'physical':'speech',sessionDate:new Date(),createdAt:new Date(),updatedAt:new Date()}});
+  const otherChild=mismatch==='child'?await h.prisma.child.create({data:{centerId:c,firstName:'Unrelated',lastName:'Child',dateOfBirth:new Date('2020-01-01'),services:['speech'],createdById:authorId,createdAt:h.clock.now()}}):null;
+  const foreignCenter=mismatch==='center'?await h.prisma.center.findUniqueOrThrow({where:{slug:'foreign'}}):null;
+  const n=await h.prisma.sessionNote.create({data:{centerId:foreignCenter?.id??c,childId:otherChild?.id??kid,membershipId:mismatch==='therapist'?otherId:memberId,service:mismatch==='service'?'physical':'speech',sessionDate:new Date(),createdAt:new Date(),updatedAt:new Date()}});
   await post(h,path(`clinical/children/${kid}/observations`),therapist,{planVersionId:plan,goalKey:goal.key,value:3,observedOn:'2026-01-01',sessionNoteId:n.id}).expect(422);
   await expect(h.prisma.observation.create({data:{centerId:c,childId:kid,planVersionId:plan,goalKey:goal.key,membershipId:memberId,sessionNoteId:n.id,value:3,observedOn:new Date('2026-01-01'),createdAt:new Date()}})).rejects.toThrow(/note scope/);
  });

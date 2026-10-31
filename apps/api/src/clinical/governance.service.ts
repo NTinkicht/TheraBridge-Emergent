@@ -204,9 +204,9 @@ export class GovernanceService {
     if (!this.handoverEnabled()) throw new ForbiddenException('Synthetic operational handover is disabled.');
   }
   private handoverView(d: { id: string; centerId: string; childId: string; fromMembershipId: string;
-    toMembershipId: string; service: string; reason: string; status: string; createdAt: Date },
+    toMembershipId: string; service: string; reason: string; status: string; createdAt: Date; version: number },
     manager: boolean) {
-    return { id: d.id, service: d.service, reasonCode: d.reason, status: d.status,
+    return { id: d.id, service: d.service, reasonCode: d.reason, status: d.status, version: d.version,
       createdAt: d.createdAt, ...(manager ? { childId: d.childId,
         fromMembershipId: d.fromMembershipId, toMembershipId: d.toMembershipId } : {}),
       synthetic: true, accessGranted: false, assignmentChanged: false,
@@ -371,13 +371,13 @@ export class GovernanceService {
       } });
       if (!target || !from) throw new ConflictException('Therapist or source assignment changed; ask the care coordinator.');
       const updated = await tx.caseloadTransferDraft.updateMany({
-        where: { id, centerId, toMembershipId: v.membershipId, status: 'PENDING_ACK' },
-        data: { status: 'ACKNOWLEDGED' },
+        where: { id, centerId, toMembershipId: v.membershipId, status: 'PENDING_ACK', version: draft.version },
+        data: { status: 'ACKNOWLEDGED', version: { increment: 1 } },
       });
       if (updated.count !== 1) throw new ConflictException('Handover changed; refresh.');
       await logCenterEvent(tx, centerId, 'handover.operational_acknowledged', now, {
         actorUserId: v.userId, meta: { handoverId: id, service: draft.service, synthetic: true } });
-      return this.handoverView({ ...draft, status: 'ACKNOWLEDGED' }, false);
+      return this.handoverView({ ...draft, status: 'ACKNOWLEDGED', version: draft.version + 1 }, false);
     });
   }
 
@@ -393,13 +393,13 @@ export class GovernanceService {
       } });
       if (!draft) throw new NotFoundException('Open handover not found.');
       const cancelled = await tx.caseloadTransferDraft.updateMany({
-        where: { id, centerId, status: { in: ['PENDING_ACK','ACKNOWLEDGED'] } },
-        data: { status: 'CANCELLED' },
+        where: { id, centerId, status: { in: ['PENDING_ACK','ACKNOWLEDGED'] }, version: draft.version },
+        data: { status: 'CANCELLED', version: { increment: 1 } },
       });
       if (cancelled.count !== 1) throw new ConflictException('Handover changed; refresh.');
       await logCenterEvent(tx, centerId, 'handover.cancelled', now, { actorUserId: v.userId,
         meta: { handoverId: id, childId: draft.childId, synthetic: true } });
-      return this.handoverView({ ...draft, status: 'CANCELLED' }, true);
+      return this.handoverView({ ...draft, status: 'CANCELLED', version: draft.version + 1 }, true);
     });
   }
 

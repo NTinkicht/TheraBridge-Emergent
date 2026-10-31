@@ -4,10 +4,12 @@ import { AuditService } from '../audit/audit.service';
 import { assertActor } from '../clinical/governance-core';
 import { describeEvents, invitationView, logCenterEvent, uniq, withUniqueGuard } from '../centers/history';
 import { InvitationsService } from '../centers/invitations.service';
+import { terminateTherapistCare } from '../centers/therapist-lifecycle';
 import { normalizeEmail } from '../common/security';
 import { PrismaService } from '../prisma/prisma.service';
 import type { AssignmentDto, ChildDto, GuardianDto, ListChildrenQuery, UpdateChildDto, ReferentDto } from './operations.dto';
 import { lockCenter, TrialService } from './trial.service';
+import { NoticesService } from './notices.service';
 
 export interface Viewer { userId: string; membershipId: string; role: Role }
 const clean = (s: string) => s.trim().replace(/\s+/g, ' ');
@@ -23,6 +25,7 @@ export class ChildrenService {
     private readonly trial: TrialService,
     private readonly invitations: InvitationsService,
     private readonly audit: AuditService,
+    private readonly notices: NoticesService,
   ) {}
 
   private checkDob(s: string, now: Date) {
@@ -144,7 +147,7 @@ export class ChildrenService {
 
   async setStatus(centerId: string, actorUserId: string, id: string, status: 'ACTIVE' | 'ARCHIVED', reason?: string) {
     const now = this.trial.now();
-    await this.prisma.$transaction(async (tx) => {
+    const affected = await this.prisma.$transaction(async (tx) => {
       // Global lock order: centre (trial/capacity) -> child -> assignment -> history.
       // Reading referent/revision before the child lock can orphan a new
       // concurrent designation when this transaction archives the child.
@@ -155,6 +158,7 @@ export class ChildrenService {
       if (!c) throw new NotFoundException('Child not found');
       if (c.status === status) throw new ConflictException(status === 'ACTIVE' ? 'This child is already active.' : 'This child is already archived.');
       await tx.child.update({ where: { id }, data: { status, version: { increment: 1 } } });
+      let near: { id: string; before: Date }[] = [];
       if (status === 'ARCHIVED') {
         if (c.referentMembershipId) {
           await tx.child.update({ where: { id }, data: {
@@ -165,11 +169,15 @@ export class ChildrenService {
             nextMembershipId: null, reason: 'Child archived', revision: c.referentRevision + 1, createdAt: now,
           } });
         }
+        near = (await tx.appointment.findMany({ where: { centerId, childId: id, status: 'SCHEDULED', startsAt: { gte: now, lte: new Date(now.getTime() + 14 * 86_400_000) } }, select: { id: true, startsAt: true } })).map((a) => ({ id: a.id, before: a.startsAt }));
         await tx.appointment.updateMany({ where: { centerId, childId: id, status: 'SCHEDULED', startsAt: { gte: now } }, data: { status: 'CANCELLED', statusReason: 'Child record archived', version: { increment: 1 } } });
-        await tx.careAssignment.updateMany({ where: { centerId, childId: id, endedAt: null }, data: { endedAt: now } });
+        await tx.appointmentSeries.updateMany({ where: { centerId, childId: id, status: 'ACTIVE' }, data: { status: 'ENDED', version: { increment: 1 } } });
+        await tx.careAssignment.updateMany({ where: { centerId, childId: id, endedAt: null }, data: { endedAt: now, isLead: false } });
       }
       await logCenterEvent(tx, centerId, status === 'ACTIVE' ? 'child.restored' : 'child.archived', now, { actorUserId, meta: { childId: id, ...(reason ? { reason } : {}) } });
+      return near;
     });
+    await this.notices.changed(affected, 'cancelled');
   }
 
   private async invite(tx: Prisma.TransactionClient, centerId: string, link: { id: string; email: string; displayName: string }, actorUserId: string, now: Date) {
@@ -288,7 +296,7 @@ export class ChildrenService {
 
   async endAssignment(centerId: string, actorUserId: string, childId: string, assignmentId: string) {
     const now = this.trial.now();
-    await this.prisma.$transaction(async (tx) => {
+    const cascade = await this.prisma.$transaction(async (tx) => {
       // Match clinical.write/setReferent: the centre must be locked first.
       // Do not add a new trial-expiry permission gate to assignment ending.
       await lockCenter(tx, centerId);
@@ -297,29 +305,24 @@ export class ChildrenService {
       if (!child) throw new NotFoundException('Child not found');
       const a = await tx.careAssignment.findFirst({ where: { id: assignmentId, childId, centerId, endedAt: null } });
       if (!a) throw new NotFoundException('Active assignment not found');
-      await tx.careAssignment.update({ where: { id: a.id }, data: { endedAt: now } });
-      if (child.referentMembershipId === a.membershipId) {
-        const remaining = await tx.careAssignment.findFirst({
-          where: { centerId, childId, membershipId: a.membershipId, endedAt: null },
-        });
-        if (!remaining) {
-          await tx.child.update({ where: { id: childId }, data: {
-            referentMembershipId: null, referentRevision: { increment: 1 }, version: { increment: 1 },
-          } });
-          await tx.childReferentHistory.create({ data: {
-            centerId, childId, actorUserId, previousMembershipId: a.membershipId,
-            nextMembershipId: null, reason: 'Last active care assignment ended',
-            revision: child.referentRevision + 1, createdAt: now,
-          } });
-        }
-      }
-      const cancelled = await tx.appointment.updateMany({ where: { centerId, childId, membershipId: a.membershipId, service: a.service, status: 'SCHEDULED', startsAt: { gte: now } }, data: { status: 'CANCELLED', statusReason: 'Therapist assignment ended', version: { increment: 1 } } });
-      await logCenterEvent(tx, centerId, 'assignment.ended', now, { actorUserId, membershipId: a.membershipId, meta: { childId, service: a.service, cancelledAppointments: cancelled.count } });
+      const result = await terminateTherapistCare(tx, centerId, a.membershipId, actorUserId, now, 'Therapist assignment ended', { childId, service: a.service });
+      await logCenterEvent(tx, centerId, 'assignment.ended', now, { actorUserId, membershipId: a.membershipId, meta: { childId, service: a.service, cancelledAppointments: result.cancelledAppointments, endedSeries: result.endedSeries } });
+      return result;
     });
+    await this.notices.changed(cascade.noticeAppointments, 'cancelled');
   }
 
-  async therapists(centerId: string) {
-    const rows = await this.prisma.membership.findMany({ where: { centerId, status: 'ACTIVE', roles: { some: { role: 'THERAPIST' } } }, include: { user: { select: { displayName: true } } }, orderBy: { user: { displayName: 'asc' } } });
-    return { items: rows.map((m) => ({ membershipId: m.id, displayName: m.user.displayName, title: m.title, specialties: m.specialties })) };
+  async therapists(centerId: string, options: { offset?: number; limit?: number; service?: string; search?: string; ids?: string[] } = {}) {
+    const offset = options.offset ?? 0, limit = options.limit ?? 100;
+    const batch = await this.prisma.membership.findMany({ where: {
+      centerId, status: 'ACTIVE', roles: { some: { role: 'THERAPIST' } },
+      ...(options.service ? { specialties: { has: options.service } } : {}),
+      ...(options.search ? { user: { displayName: { contains: options.search, mode: 'insensitive' } } } : {}),
+      ...(options.ids ? { id: { in: options.ids } } : {}),
+    }, include: { user: { select: { displayName: true } } },
+    orderBy: [{ user: { displayName: 'asc' } }, { id: 'asc' }], skip: offset, take: limit + 1 });
+    const hasMore = batch.length > limit;
+    return { items: batch.slice(0, limit).map((m) => ({ membershipId: m.id, displayName: m.user.displayName,
+      title: m.title, specialties: m.specialties })), hasMore, nextOffset: hasMore ? offset + limit : null };
   }
 }

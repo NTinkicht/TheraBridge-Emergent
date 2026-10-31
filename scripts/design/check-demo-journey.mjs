@@ -79,6 +79,139 @@ try {
     assert.equal(await page.getByTestId('activities-ownership-filter').locator('option[value="mine"]').count(), 0,
       'Read-only staff must not see Created by me');
 
+    // M2-H04 reviewer regression: refreshing the synthetic handover proposal
+    // list after cancellation must retain the current qualified-staff options.
+    // Route overlays are browser-only: no real proposal or cancellation occurs.
+    const childDetail = await read(page, centerBase + '/children/' + child.id);
+    assert.equal(childDetail.status, 200);
+    const sourceAssignment = childDetail.body.assignments.find(a => a.endedAt === null);
+    assert(sourceAssignment, 'Synthetic handover regression requires an active assignment');
+    const handoverPath = centerBase + '/governance/handover-proposals';
+    const proposalId = 'synthetic-handover-cancellation-regression';
+    const candidateId = 'synthetic-qualified-incoming-therapist';
+    const newCandidateId = 'synthetic-fresh-search-therapist';
+    const staleCandidateId = 'synthetic-stale-old-page-therapist';
+    let heldOldPage;
+    let notifyOldPageRequested;
+    const oldPageRequested = new Promise(resolve => { notifyOldPageRequested = resolve; });
+    let cancelled = false;
+    let proposalReloads = 0;
+    await page.route('**' + handoverPath, async route => {
+      if (route.request().method() !== 'GET') return route.continue();
+      proposalReloads++;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+        enabled: true, items: [{ id: proposalId, childId: child.id,
+          fromMembershipId: sourceAssignment.membershipId, service: sourceAssignment.service,
+          status: cancelled ? 'CANCELLED' : 'PENDING_ACK' }],
+      }) });
+    });
+    await page.route('**' + handoverPath + '/' + proposalId + '/cancel', async route => {
+      assert.equal(route.request().method(), 'POST');
+      cancelled = true;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+        id: proposalId, status: 'CANCELLED',
+      }) });
+    });
+    await page.route('**' + centerBase + '/therapists?*', async route => {
+      const query = new URL(route.request().url()).searchParams;
+      if (query.get('offset') === '100' && !query.get('search')) {
+        // Deliberately finish the obsolete load-more request after a new
+        // search's first page to reproduce the cross-query response race.
+        heldOldPage = route;
+        notifyOldPageRequested();
+        return;
+      }
+      const fresh = query.get('search') === 'fresh';
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+        items: [{ membershipId: fresh ? newCandidateId : candidateId, displayName: 'Synthetic Incoming Therapist',
+          specialties: [sourceAssignment.service] }], hasMore: true, nextOffset: 100,
+      }) });
+    });
+    await page.goto(base + '/app/children/' + child.id);
+    const handoverPanel = page.getByTestId('handover-manager');
+    await handoverPanel.waitFor();
+    await page.getByTestId('handover-current').selectOption(sourceAssignment.id);
+    const incomingOption = page.getByTestId('handover-incoming').locator(`option[value="${candidateId}"]`);
+    await incomingOption.waitFor({ state: 'attached' });
+    await page.getByTestId('handover-incoming').selectOption(candidateId);
+    await handoverPanel.getByRole('button', { name: 'Cancel proposal' }).click();
+    await handoverPanel.getByRole('button', { name: 'Cancel proposal' }).waitFor({ state: 'hidden' });
+    assert(cancelled && proposalReloads >= 2, 'Cancellation must fetch fresh proposal status');
+    assert.equal(await incomingOption.count(), 1,
+      'Cancellation must preserve qualified incoming therapist choices without changing search/source');
+    assert.equal(await page.getByTestId('handover-staff-more').count(), 1,
+      'Cancellation must preserve the incoming therapist pagination cursor');
+    assert.equal(await page.getByTestId('handover-incoming').inputValue(), candidateId,
+      'Cancellation must preserve the selected incoming therapist');
+
+    // A pending page from the old search must never append to or exhaust the
+    // current search, even if it finishes after the fresh first page.
+    await page.getByTestId('handover-staff-more').click();
+    await oldPageRequested;
+    await page.getByTestId('handover-staff-search').fill('fresh');
+    const freshOption = page.getByTestId('handover-incoming').locator(`option[value="${newCandidateId}"]`);
+    await freshOption.waitFor({ state: 'attached' });
+    const lateResponse = page.waitForResponse(response =>
+      new URL(response.url()).searchParams.get('offset') === '100' &&
+      response.url().includes(centerBase + '/therapists'));
+    await heldOldPage.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+      items: [{ membershipId: staleCandidateId, displayName: 'Obsolete Search Result',
+        specialties: [sourceAssignment.service] }], hasMore: false, nextOffset: null,
+    }) });
+    await lateResponse;
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    assert.equal(await freshOption.count(), 1, 'A late old page must not remove fresh search candidates');
+    assert.equal(await page.getByTestId('handover-incoming').locator(`option[value="${staleCandidateId}"]`).count(), 0,
+      'An obsolete page must not append its therapists to the current search');
+    assert.equal(await page.getByTestId('handover-staff-more').count(), 1,
+      'An obsolete exhausted page must not overwrite the new search pagination cursor');
+
+    // The scheduler has a separate therapist picker. Its older page must be
+    // isolated from a newer search by the same request-revision rule.
+    await page.unroute('**' + centerBase + '/therapists?*');
+    const scheduleOldId = 'synthetic-schedule-old-therapist';
+    const scheduleNewId = 'synthetic-schedule-fresh-therapist';
+    const scheduleStaleId = 'synthetic-schedule-stale-page';
+    let scheduleHeldPage;
+    let notifySchedulePage;
+    const schedulePageRequested = new Promise(resolve => { notifySchedulePage = resolve; });
+    await page.route('**' + centerBase + '/therapists?*', async route => {
+      const query = new URL(route.request().url()).searchParams;
+      if (query.get('offset') === '100' && !query.get('search')) {
+        scheduleHeldPage = route;
+        notifySchedulePage();
+        return;
+      }
+      const fresh = query.get('search') === 'fresh';
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+        items: [{ membershipId: fresh ? scheduleNewId : scheduleOldId,
+          displayName: fresh ? 'Fresh Therapist' : 'Original Therapist', specialties: [sourceAssignment.service] }],
+        hasMore: true, nextOffset: 100,
+      }) });
+    });
+    await page.goto(base + '/app/schedule');
+    const scheduleFilter = page.getByTestId('schedule-therapist-filter');
+    await scheduleFilter.locator(`option[value="${scheduleOldId}"]`).waitFor({ state: 'attached' });
+    await page.getByTestId('schedule-therapist-more').click();
+    await schedulePageRequested;
+    await page.getByTestId('schedule-therapist-search').fill('fresh');
+    const scheduleFresh = scheduleFilter.locator(`option[value="${scheduleNewId}"]`);
+    await scheduleFresh.waitFor({ state: 'attached' });
+    const scheduleLateResponse = page.waitForResponse(response =>
+      new URL(response.url()).searchParams.get('offset') === '100' &&
+      response.url().includes(centerBase + '/therapists'));
+    await scheduleHeldPage.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+      items: [{ membershipId: scheduleStaleId, displayName: 'Stale Scheduler Page',
+        specialties: [sourceAssignment.service] }], hasMore: false, nextOffset: null,
+    }) });
+    await scheduleLateResponse;
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    assert.equal(await scheduleFresh.count(), 1, 'Schedule must retain the newest therapist search result');
+    assert.equal(await scheduleFilter.locator(`option[value="${scheduleStaleId}"]`).count(), 0,
+      'Schedule must discard a delayed page from an earlier search');
+    assert.equal(await page.getByTestId('schedule-therapist-more').count(), 1,
+      'Schedule must preserve the fresh search cursor after an obsolete page completes');
+
   });
   await role('speech@childrens-home.therabridge.test', 'THERAPIST', async page => {
     // TB-EM-024: test the actual staff library, not the guardian sample page.
@@ -92,15 +225,18 @@ try {
     const ownership = page.getByTestId('activities-ownership-filter');
     const specialty = page.getByTestId('activities-specialty-filter');
     const list = page.getByTestId('activities-list');
-    const count = async expected => assert.equal(
-      await page.getByTestId('activities-result-count').innerText(),
-      'Showing ' + expected + ' of ' + items.length + ' activities'
-    );
+    const count = async expected => {
+      // Search and filters are now server-side; wait for the corresponding
+      // bounded response instead of checking a stale previous query frame.
+      await page.waitForFunction(n => document.querySelector('[data-testid="activities-result-count"]')?.textContent?.trim() ===
+        `Showing ${n} matching activities`, expected);
+    };
     const cardCount = () => list.locator(':scope > div').count();
     await count(items.length);
     const speechTemplates = items.filter(t => t.service === 'speech');
     assert(speechTemplates.length > 0, 'Seed requires Speech activity examples');
     await search.fill('  LANGUAGE  ');
+    assert(await search.evaluate(el => document.activeElement === el), 'Activity search field must stay mounted and focused while results reload');
     await count(speechTemplates.length);
     assert.equal(await cardCount(), speechTemplates.length, 'Displayed specialty label must be searchable');
     await search.fill('unlikely-synthetic-library-result-4c7fbb');
@@ -445,6 +581,135 @@ try {
     assert(await shadowPanel.getByTestId('plan-submit').isEnabled(),
       'Clean draft B regains supervisor submit eligibility after draft A is restored');
     await page.unroute(twoPlanRoute);
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+    // M2-H04 P2: simulate creating plan #201 while the first 200-item page
+    // remains mounted. The real API's 205-plan pagination test covers server
+    // boundaries; here a read-only overlay verifies that the UI updates its
+    // hasMorePlans flag after an action-triggered same-child reload.
+    const boundaryPlanRoute = '**/api/centers/*/clinical/children/*';
+    const boundaryCreateRoute = '**/api/centers/*/clinical/children/*/plans';
+    let boundaryCrossed = false;
+    await page.route(boundaryPlanRoute, async route => {
+      if (route.request().method() !== 'GET') return route.continue();
+      const response = await route.fetch();
+      const data = await response.json();
+      return route.fulfill({ response, json: { ...data, hasMorePlans: boundaryCrossed } });
+    });
+    await page.route(boundaryCreateRoute, route => {
+      if (route.request().method() !== 'POST') return route.continue();
+      boundaryCrossed = true;
+      return route.fulfill({ status: 201, contentType: 'application/json',
+        body: '{"id":"00000000-0000-4000-8000-000000000098","versionId":"00000000-0000-4000-8000-000000000099"}' });
+    });
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+    assert.equal(await page.getByTestId('plans-load-more').count(), 0,
+      'An exactly-full first page should not claim older pages without server metadata');
+    await page.getByTestId('plan-title').fill('Synthetic boundary plan');
+    await page.getByTestId('plan-create-button').click();
+    await page.getByTestId('plans-load-more').waitFor();
+    assert(boundaryCrossed, 'A synthetic plan creation must update pagination metadata');
+    await page.unroute(boundaryCreateRoute);
+    await page.unroute(boundaryPlanRoute);
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+    // M2-H04 Codex P2: after loading an older plan, the family-preview action
+    // refreshes the same-child workspace. It must not unmount the older plan
+    // and lose the local preview. Exercise that exact sequence through the UI
+    // using a read-only, scoped workspace response overlay.
+    const pagedPlanRoute = '**/api/centers/*/clinical/children/*';
+    const pagedShadowId = '00000000-0000-4000-8000-000000000097';
+    let originalPlan, originalWorkspace;
+    await page.route(pagedPlanRoute, async route => {
+      if (route.request().method() !== 'GET') return route.continue();
+      const response = await route.fetch();
+      const data = await response.json();
+      if (!originalWorkspace) {
+        originalWorkspace = data;
+        originalPlan = data.plans.find(p => p.versions?.length);
+        assert(originalPlan, 'The synthetic clinic must contain an authorized saved plan');
+      }
+      const offset = Number(new URL(route.request().url()).searchParams.get('planOffset') || '0');
+      if (offset > 0) return route.fulfill({ response, json: { ...originalWorkspace, plans: [originalPlan], hasMorePlans: false } });
+      const shadow = { ...originalPlan, id: pagedShadowId, title: 'Recent plan — pagination fixture',
+        versions: originalPlan.versions.map((v, i) => ({ ...v,
+          id: '00000000-0000-4000-8000-' + String(9700 + i).padStart(12, '0'),
+        })) };
+      return route.fulfill({ response, json: { ...data, plans: [shadow], hasMorePlans: true } });
+    });
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('plans-load-more').click();
+    const olderPanel = page.getByTestId('plan-' + originalPlan.id);
+    // Wait for the older page to be re-fetched AFTER the shared workspace
+    // reload, not merely for a preview rendered before the reload completed.
+    const refreshedOlderPage = page.waitForResponse(response => response.request().method() === 'GET' &&
+      response.url().includes('/clinical/children/') && new URL(response.url()).searchParams.get('planOffset') === '1');
+    const beforeRefresh = Number(await page.getByTestId('plans-panel').getAttribute('data-refresh-revision'));
+    await olderPanel.getByTestId('plan-family-preview').click();
+    await refreshedOlderPage;
+    await page.waitForFunction(before => Number(document.querySelector('[data-testid="plans-panel"]')?.getAttribute('data-refresh-revision')) > before, beforeRefresh);
+    await olderPanel.getByTestId('family-preview').waitFor();
+    assert(await olderPanel.getByTestId('family-preview').isVisible(),
+      'An older plan preview must remain mounted after its same-child workspace refresh');
+    // The same older-page goal must be available after the Plan tab unmounts;
+    // Progress and Sessions consume the shared child workspace, not page one.
+    await page.getByTestId('clinical-tab-progress').click();
+    assert((await page.getByTestId('progress-panel').innerText()).includes(originalPlan.title),
+      'Progress must include goal evidence from an older plan loaded in the Plan tab');
+    await page.getByTestId('clinical-tab-sessions').click();
+    assert(await page.getByTestId('sessions-panel').isVisible(),
+      'Sessions must retain the shared child workspace after the Plan tab unmounts');
+    await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('plan-' + originalPlan.id).waitFor();
+    await page.unroute(pagedPlanRoute);
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+    // A template hidden beyond the bounded workspace list must still be
+    // discoverable and selectable through the plan editor's scoped search.
+    const extraTemplateId = '00000000-0000-4000-8000-000000000096';
+    const templateFixture = originalWorkspace.templates.find(t => t.service === originalPlan.service);
+    assert(templateFixture, 'A synthetic template must match the seeded plan specialty');
+    const planLibraryRoute = '**/api/centers/*/activities*';
+    await page.route(planLibraryRoute, async route => {
+      if (route.request().method() !== 'GET') return route.continue();
+      const response = await route.fetch();
+      if (!new URL(route.request().url()).searchParams.get('search')?.includes('Beyond cap')) return route.fulfill({ response });
+      return route.fulfill({ response, json: { items: [{ ...templateFixture, id: extraTemplateId,
+        title: 'Beyond cap synthetic practice' }], hasMore: false, nextOffset: null } });
+    });
+    await page.getByTestId('plan-template-search').first().fill('Beyond cap');
+    await page.getByTestId('plan-template-find').first().click();
+    await page.waitForFunction(id => !!document.querySelector(`[data-testid="home-activity-add"] option[value="${id}"]`), extraTemplateId);
+    await page.getByTestId('home-activity-add').first().selectOption(extraTemplateId);
+    assert((await page.locator('[data-testid^="home-activity-"]').allInnerTexts()).some(text => text.includes('Beyond cap synthetic practice')),
+      'The plan editor must retain a template retrieved beyond the initial library cap');
+    await page.unroute(planLibraryRoute);
+    await page.reload();
+    // Bounded assessments also need a clinician-visible route to old,
+    // backdated records. Keep them in the shared workspace across tabs.
+    const pagedAssessmentRoute = '**/api/centers/*/clinical/children/*';
+    const oldAssessmentId = '00000000-0000-4000-8000-000000000095';
+    await page.route(pagedAssessmentRoute, async route => {
+      if (route.request().method() !== 'GET') return route.continue();
+      const response = await route.fetch();
+      const data = await response.json();
+      const offset = Number(new URL(route.request().url()).searchParams.get('assessmentOffset') || '0');
+      return route.fulfill({ response, json: offset > 0 ? { ...data, assessments: [{
+        id: oldAssessmentId, service: 'speech', assessedOn: '2025-01-01',
+        summary: 'Earlier assessment pagination fixture', areas: [], version: 1,
+        author: 'Synthetic Therapist', mine: true, updatedAt: '2025-01-02T00:00:00Z',
+      }], hasMoreAssessments: false } : { ...data, hasMoreAssessments: true } });
+    });
+    await page.reload();
+    await page.getByTestId('clinical-tab-assessments').click();
+    await page.getByTestId('assessments-load-more').click();
+    await page.getByTestId('assessment-' + oldAssessmentId).waitFor();
+    await page.getByTestId('clinical-tab-overview').click();
+    await page.getByTestId('clinical-tab-assessments').click();
+    await page.getByTestId('assessment-' + oldAssessmentId).waitFor();
+    await page.unroute(pagedAssessmentRoute);
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
     // Reload clears the checkpoint form's local goal/narrative selection.

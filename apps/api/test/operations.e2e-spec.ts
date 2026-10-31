@@ -1,4 +1,5 @@
 import { DevMailboxService } from '../src/dev-mailbox/dev-mailbox.service';
+import { NoticesService } from '../src/operations/notices.service';
 import { Harness, ORIGIN, PASSWORD, Signed, cookieFrom, createUser, makeApp, post, preAuth, resetDb, signIn } from './helpers';
 
 const DAY = 86_400_000;
@@ -296,13 +297,48 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     expect(history.map(x => x.revision)).toEqual(
       designated.status === 200 ? [1, 2] : [],
     );
-    if (history.length) expect(history[1]).toMatchObject({
-      previousMembershipId: membershipId, nextMembershipId: null,
-      reason: 'Last active care assignment ended',
-    });
+    if (history.length) {
+      expect(history[1]).toMatchObject({
+        previousMembershipId: membershipId, nextMembershipId: null,
+      });
+      // Either serialized path may clear the same referent: the original
+      // last-assignment ending path or the shared therapist lifecycle path.
+      // Both require a versioned history entry and a null final referent.
+      expect(['Last active care assignment ended', 'Therapist assignment ended']).toContain(history[1].reason);
+    }
     expect(await h.prisma.careAssignment.count({
       where: { centerId, childId: kid, endedAt: null },
     })).toBe(0);
+  });
+
+  it('M2-H04 Codex P2: therapist discovery pages beyond 200, filters specialty before the cap and resolves exact assigned IDs', async () => {
+    // Direct synthetic fixtures bypass the three-seat trial onboarding limit:
+    // this tests directory scalability and tenant/specialty query behavior.
+    const users = await h.prisma.user.createManyAndReturn({ data: Array.from({ length: 205 }, (_, i) => ({
+      email: `directory-${i}@ops.test`, emailNormalized: `directory-${i}@ops.test`,
+      displayName: `${i < 200 ? 'Alpha Occupational' : 'Zulu Speech'} ${String(i).padStart(3, '0')}`,
+    })) });
+    const memberships = await h.prisma.membership.createManyAndReturn({ data: users.map((u) => ({
+      userId: u.id, centerId, status: 'ACTIVE' as const,
+      specialties: [u.displayName.startsWith('Zulu') ? 'speech' : 'occupational'], responsibilities: [],
+    })) });
+    await h.prisma.roleAssignment.createMany({ data: memberships.map(m => ({ membershipId: m.id, role: 'THERAPIST' as const })) });
+    const first = (await get(admin, c('therapists?limit=100')).expect(200)).body;
+    expect(first.items).toHaveLength(100);
+    expect(first.hasMore).toBe(true);
+    expect(first.nextOffset).toBe(100);
+    const last = (await get(admin, c('therapists?offset=200&limit=100')).expect(200)).body;
+    expect(last.items).toHaveLength(5);
+    expect(last.hasMore).toBe(false);
+    const speech = (await get(admin, c('therapists?service=speech')).expect(200)).body;
+    expect(speech.items).toHaveLength(5);
+    expect(speech.items.every((t: { specialties: string[] }) => t.specialties.includes('speech'))).toBe(true);
+    const target = speech.items[4].membershipId;
+    const exact = (await get(admin, c(`therapists?ids=${target}`)).expect(200)).body;
+    expect(exact.items.map((t: { membershipId: string }) => t.membershipId)).toEqual([target]);
+    const searched = (await get(admin, c('therapists?service=speech&search=Zulu%20Speech%20204')).expect(200)).body;
+    expect(searched.items).toHaveLength(1);
+    await get(admin, c('therapists?offset=-1')).expect(400);
   });
 
   it('isolates centers and hides other families', async () => {
@@ -314,5 +350,101 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     const otherCenter = other.body.activeContext.centerId;
     await post(h, `/api/centers/${otherCenter}/children/${kid}/assignments`, other, { membershipId: admin.body.activeContext.membershipId, service: 'speech' }).expect(404);
     await post(h, `/api/centers/${otherCenter}/appointments`, other, { childId: kid, membershipId: admin.body.activeContext.membershipId, service: 'speech', startsAt: at(1, 9), endsAt: at(1, 10) }).expect(404);
+  });
+
+  it('M2-H04: therapist suspension atomically ends assigned series, visits and referent; notifies a connected guardian', async () => {
+    const therapist = await staff('cascade-therapist@ops.test', ['THERAPIST']);
+    const memberId = therapist.body.activeContext.membershipId as string;
+    const kid = (await post(h, c('children'), admin, child()).expect(201)).body.id as string;
+    await post(h, c(`children/${kid}/assignments`), admin, { membershipId: memberId, service: 'speech', isLead: true }).expect(201);
+    const detail = (await get(admin, c(`children/${kid}`)).expect(200)).body;
+    await patch(admin, c(`children/${kid}/referent`), { membershipId: memberId, version: detail.version, reason: 'Current care contact' }).expect(200);
+    await post(h, c(`children/${kid}/guardians`), admin, { displayName: 'Guardian Notice', email: 'cascade-parent@ops.test', relationship: 'parent', invite: true }).expect(201);
+    await accept('cascade-parent@ops.test', 'Guardian Notice');
+    const d = new Date(h.clock.now().getTime() + 2 * DAY).toISOString().slice(0, 10);
+    const weekday = ((new Date(`${d}T12:00:00Z`).getUTCDay() + 6) % 7) + 1;
+    const seriesId = (await post(h, c('series'), admin, { childId: kid, membershipId: memberId, service: 'speech', startDate: d, startTime: '10:00', durationMinutes: 60, weekdays: [weekday], intervalWeeks: 1, count: 3 }).expect(201)).body.id as string;
+    expect(await h.prisma.appointment.count({ where: { seriesId, status: 'SCHEDULED' } })).toBe(3);
+    const original = await h.prisma.appointment.findMany({ where: { seriesId }, orderBy: { startsAt: 'asc' } });
+    await patch(admin, c(`series/${seriesId}`), { fromDate: d, startTime: '11:00', version: 1 }).expect(200);
+    const shifted = await h.prisma.appointment.findMany({ where: { seriesId }, orderBy: { startsAt: 'asc' } });
+    expect(shifted.map((a) => a.startsAt.getTime() - original.find((o) => o.id === a.id)!.startsAt.getTime())).toEqual([3_600_000, 3_600_000, 3_600_000]);
+    expect(shifted.map((a) => a.version)).toEqual([2, 2, 2]);
+    await post(h, c(`staff/${memberId}/suspend`), admin, { reason: 'Safety access suspension' }).expect(200);
+    expect(await h.prisma.careAssignment.count({ where: { centerId, childId: kid, membershipId: memberId, endedAt: null } })).toBe(0);
+    expect((await h.prisma.appointmentSeries.findUniqueOrThrow({ where: { id: seriesId } })).status).toBe('ENDED');
+    expect(await h.prisma.appointment.count({ where: { seriesId, status: 'SCHEDULED' } })).toBe(0);
+    expect((await h.prisma.child.findUniqueOrThrow({ where: { id: kid } })).referentMembershipId).toBeNull();
+    expect(await h.prisma.childReferentHistory.count({ where: { childId: kid } })).toBe(2);
+    expect(h.app.get(DevMailboxService).list().filter((m) => m.to === 'cascade-parent@ops.test' && m.subject.includes('Appointment cancelled')).length).toBeGreaterThan(0);
+    // Active-only uniqueness: the same clinician may be assigned historically
+    // again after administrator reactivation, but old series stay ended.
+    await post(h, c(`staff/${memberId}/reactivate`), admin).expect(200);
+    await post(h, c(`children/${kid}/assignments`), admin, { membershipId: memberId, service: 'speech' }).expect(201);
+  });
+
+  it('M2-H04: audit entries are immutable in PostgreSQL, not merely via API conventions', async () => {
+    await post(h, c('children'), admin, child()).expect(201);
+    const row = await h.prisma.auditEvent.findFirstOrThrow({ where: { type: 'child.registered' } });
+    await expect(h.prisma.$executeRaw`UPDATE audit_event SET type = 'tampered' WHERE id = ${row.id}`).rejects.toThrow(/append-only/);
+    await expect(h.prisma.$executeRaw`DELETE FROM audit_event WHERE id = ${row.id}`).rejects.toThrow(/append-only/);
+  });
+
+  it('M2-H04: a repeated 24-hour reminder sweep sends only one message and records one row', async () => {
+    const therapist = await staff('sweep-therapist@ops.test', ['THERAPIST']);
+    const kid = (await post(h, c('children'), admin, child()).expect(201)).body.id as string;
+    await post(h, c(`children/${kid}/assignments`), admin, { membershipId: therapist.body.activeContext.membershipId, service: 'speech' }).expect(201);
+    await post(h, c(`children/${kid}/guardians`), admin, { displayName: 'Reminder Recipient', email: 'sweep-parent@ops.test', relationship: 'parent', invite: true }).expect(201);
+    await accept('sweep-parent@ops.test', 'Reminder Recipient');
+    const reminderStart = new Date(h.clock.now().getTime() + 12 * 3_600_000);
+    const appointmentId = (await post(h, c('appointments'), admin, { childId: kid,
+      membershipId: therapist.body.activeContext.membershipId, service: 'speech', startsAt: reminderStart.toISOString(), endsAt: new Date(reminderStart.getTime() + 3_600_000).toISOString() }).expect(201)).body.id as string;
+    const notices = h.app.get(NoticesService);
+    expect((await notices.runDue(h.clock.now())).sent).toBe(1);
+    expect((await notices.runDue(h.clock.now())).sent).toBe(0);
+    expect(await h.prisma.appointmentNotice.count({ where: { appointmentId, kind: 'reminder_24h' } })).toBe(1);
+    expect(h.app.get(DevMailboxService).list().filter((m) => m.to === 'sweep-parent@ops.test' && m.subject.includes('Reminder:')).length).toBe(1);
+  });
+
+  it('M2-H04 review P2: transient outbox failure releases all undelivered reminder reservations for retry', async () => {
+    const therapist = await staff('retry-therapist@ops.test', ['THERAPIST']);
+    const kid = (await post(h, c('children'), admin, child()).expect(201)).body.id as string;
+    await post(h, c(`children/${kid}/assignments`), admin, { membershipId: therapist.body.activeContext.membershipId, service: 'speech' }).expect(201);
+    await post(h, c(`children/${kid}/guardians`), admin, { displayName: 'Retry Recipient', email: 'retry-parent@ops.test', relationship: 'parent', invite: true }).expect(201);
+    await accept('retry-parent@ops.test', 'Retry Recipient');
+    for (const hours of [12, 15]) {
+      const start = new Date(h.clock.now().getTime() + hours * 3_600_000);
+      await post(h, c('appointments'), admin, { childId: kid, membershipId: therapist.body.activeContext.membershipId,
+        service: 'speech', startsAt: start.toISOString(), endsAt: new Date(start.getTime() + 3_600_000).toISOString() }).expect(201);
+    }
+    const mail = h.app.get(DevMailboxService);
+    const failure = jest.spyOn(mail, 'send').mockImplementationOnce(() => { throw new Error('Synthetic outbox temporarily unavailable'); });
+    const notices = h.app.get(NoticesService);
+    try {
+      await expect(notices.runDue(h.clock.now())).rejects.toThrow(/outbox temporarily unavailable/);
+      expect(await h.prisma.appointmentNotice.count({ where: { kind: 'reminder_24h' } })).toBe(0);
+      expect((await notices.runDue(h.clock.now())).sent).toBe(2);
+      expect((await notices.runDue(h.clock.now())).sent).toBe(0);
+      expect(await h.prisma.appointmentNotice.count({ where: { kind: 'reminder_24h' } })).toBe(2);
+      expect(mail.list().filter(m => m.to === 'retry-parent@ops.test' && m.subject.includes('Reminder:'))).toHaveLength(2);
+    } finally { failure.mockRestore(); }
+  });
+
+  it('M2-H04: removing one therapist specialty preserves unrelated assignments and referent', async () => {
+    const therapist = await staff('specialty-therapist@ops.test', ['THERAPIST']);
+    const memberId = therapist.body.activeContext.membershipId as string;
+    await patch(admin, c(`staff/${memberId}`), { specialties: ['speech', 'physical'] }).expect(200);
+    const kid = (await post(h, c('children'), admin, child({ services: ['speech', 'physical'] })).expect(201)).body.id as string;
+    await post(h, c(`children/${kid}/assignments`), admin, { membershipId: memberId, service: 'speech' }).expect(201);
+    await post(h, c(`children/${kid}/assignments`), admin, { membershipId: memberId, service: 'physical' }).expect(201);
+    const before = (await get(admin, c(`children/${kid}`)).expect(200)).body;
+    await patch(admin, c(`children/${kid}/referent`), { membershipId: memberId, version: before.version, reason: 'Assigned coordinator' }).expect(200);
+    const speechId = (await post(h, c('appointments'), admin, { childId: kid, membershipId: memberId, service: 'speech', startsAt: at(1, 9), endsAt: at(1, 10) }).expect(201)).body.id;
+    const physicalId = (await post(h, c('appointments'), admin, { childId: kid, membershipId: memberId, service: 'physical', startsAt: at(1, 10), endsAt: at(1, 11) }).expect(201)).body.id;
+    await patch(admin, c(`staff/${memberId}`), { specialties: ['speech'] }).expect(200);
+    expect((await h.prisma.appointment.findUniqueOrThrow({ where: { id: speechId } })).status).toBe('SCHEDULED');
+    expect((await h.prisma.appointment.findUniqueOrThrow({ where: { id: physicalId } })).status).toBe('CANCELLED');
+    expect(await h.prisma.careAssignment.count({ where: { centerId, childId: kid, membershipId: memberId, endedAt: null } })).toBe(1);
+    expect((await h.prisma.child.findUniqueOrThrow({ where: { id: kid } })).referentMembershipId).toBe(memberId);
   });
 });
