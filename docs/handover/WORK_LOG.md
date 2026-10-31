@@ -1,3 +1,10 @@
+## 2026-10-31 — PR #137 follow-up review P3 dispositions implemented
+
+- FIX_NOW (review 5717799244 P3-1): after an interactive transaction rejects, query committed demo local identities before deleting newly staged credentials; retain on visible identities or failed verification, with explicit operator recovery message.
+- FIX_NOW (P3-2): reject missing `local` identity on a preexisting demo user if no externally managed passwords were supplied; no unexported random password.
+- FIX_NOW (P3-3): explain interrupted staging vs wrong-database file and require database verification before removing protected credentials.
+- Added three PostgreSQL regression tests to `seed-transactions.e2e-spec.ts`. Implementation commits `05d7f7a`, `5daa691`; exact final-HEAD CI and Codex review PENDING. GH-18 historical migration chronology OPEN; no merge.
+
 ## 2026-10-30 — PR #137 independent review corrections
 
 - P2 FIX_NOW: credential material for new local demo identities is created securely via exclusive file open, written and fsynced before the corresponding DB mutations; failure rolls back and deletes this run's file. Avoid post-commit unexported password scenario and preserve collision-denial behavior.
