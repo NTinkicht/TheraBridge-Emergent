@@ -131,7 +131,7 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     throw new Error('Demo accounts exist but secure credential file is missing. Restore it or use an explicitly disposable fresh demo database.');
   }
   if (!passwords && !preexistingUsers.length && existsSync(credentialFile)) {
-    throw new Error('Credential file belongs to a different database. Refusing to overwrite; use a clean protected credential location.');
+    throw new Error('Protected demo credential file exists but no demo users were found. A previous seed may have been interrupted before commit, or the file may belong to another database. Refusing to overwrite; verify the database has no demo users before removing the orphan file and retrying.');
   }
   if (!passwords && existsSync(credentialFile)) {
     const stored = JSON.parse(readFileSync(credentialFile, 'utf8')) as { accounts?: { email: string }[] };
@@ -181,6 +181,11 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
       throw new Error('Hosted demo password no longer matches existing account; refusing silent rotation for ' + email);
     }
     if (!identity) {
+      // An existing account cannot receive a new random password whose
+      // plaintext was never exported or deliberately supplied by the operator.
+      if (existing && !passwords) {
+        throw new Error('Demo identity missing for existing account; refusing unexported password for ' + email);
+      }
       const selected = byEmail.get(email);
       if (!selected) throw new Error('Missing prepared demo identity: ' + email);
       await tx.authIdentity.create({ data: { userId: user.id, provider: 'local', subject: email, passwordHash: selected.passwordHash } });
@@ -419,9 +424,29 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     }, { timeout: 180_000 });
     return result;
   } catch (error) {
-    // The database transaction has failed/rolled back. The file was only
-    // created by this run (wx) and must not publish unusable credentials.
     if (createdCredentialFile) {
+      // A connection can drop during COMMIT after PostgreSQL commits. Never
+      // delete the only passwords unless rollback is confirmed by a new read.
+      let visibleIdentities: number;
+      try {
+        visibleIdentities = await db.authIdentity.count({
+          where: { provider: 'local', userId: { in: roster.map(a => id('user:' + a.key)) } },
+        });
+      } catch (verificationError) {
+        throw new AggregateError(
+          [error, verificationError],
+          'Demo seed outcome unknown; credential file retained at ' + credentialFile +
+            '. Verify database state before retrying or removing the protected file.',
+        );
+      }
+      if (visibleIdentities > 0) {
+        throw new AggregateError(
+          [error],
+          'Demo seed outcome unknown (' + visibleIdentities +
+            ' demo identities visible); credentials retained at ' + credentialFile +
+            '. Verify database state before retrying.',
+        );
+      }
       try { unlinkSync(credentialFile); }
       catch (cleanupError) {
         throw new AggregateError([error, cleanupError], 'Demo seed failed and credential cleanup also failed');
