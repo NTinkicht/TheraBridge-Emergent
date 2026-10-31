@@ -7,6 +7,8 @@
 | Impossible dates, IANA, percent bounds, trim tests | **ADDED; full-suite result pending** | `apps/api/test/validators.e2e-spec.ts` |
 | Returned report conflict and withdrawn evidence/workspace/observation | **ADDED; PostgreSQL result pending** | `apps/api/test/governance.e2e-spec.ts` |
 | Initial CI [41232387309](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41232387309) | **FAILED (fixed)** | TS18048 report progress `cur` possibly undefined; fixed `e469b7c`. Do not use initial run for merge. |
+| Second code CI [41232523644](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41232523644) | **605/610 PASS; 5 FAIL (corrected on later HEAD)** | Three existing suites expected 422 instead of new DTO 400, former DST fold/gap behavior, or stale-tab message regex. Tests updated `f9f5e8f`/`30d3f05`; message `65e1b39`. |
+| WITHDRAWN saved report evidence at SUBMIT | **ADDED; latest PostgreSQL result pending** | Reject stale source `PLAN_VERSION_WITHDRAWN` in `b7c1b15`; e2e `4077393`. |
 | Six-job exact-final-HEAD CI, independent implementation Codex review and P0–P3 dispositions | **PENDING** | Previous `5f17f99` Codex reviewed only planning files, not feature code. |
 | Clinical approval, release, real records, production | **NO-GO** | Existing unsigned governance policy unchanged; synthetic fixtures only. |
 
