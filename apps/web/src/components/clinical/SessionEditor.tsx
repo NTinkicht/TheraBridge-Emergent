@@ -7,11 +7,12 @@ import { serviceLabel } from '@/components/operations/BookDialog';
 import { clinicalApi, LOCKED_REASON, type SessionActivity, type Workspace } from '@/lib/clinical';
 import { Dictation } from './Dictation';
 import { ApiError } from '@/lib/api';
+import { formatZonedDateTimeInput, zonedDateTimeInputToIso } from '@/lib/operations';
 const input = 'mt-1 w-full rounded-control border border-border-light bg-transparent px-3 py-2 text-[14px]';
 const options = (items: string[]) => items.map(value => ({ value, label: value.replaceAll('_', ' ').toLowerCase() }));
-const localTime = (iso: string | null) => iso ? new Date(Date.parse(iso) - new Date(iso).getTimezoneOffset() * 60000).toISOString().slice(0,16) : '';
+const localTime = (iso: string | null, tz: string) => formatZonedDateTimeInput(iso, tz);
 export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string; n: Workspace['notes'][number]; ws: Workspace; onPending: (id: string, pending: boolean) => void }) {
-  const [sections, setSections] = useState(n.sections), [activities, setActivities] = useState(n.activities), [start, setStart] = useState(localTime(n.actualStart)), [end, setEnd] = useState(localTime(n.actualEnd)), [attendance, setAttendance] = useState(n.attendance);
+  const [sections, setSections] = useState(n.sections), [activities, setActivities] = useState(n.activities), [start, setStart] = useState(localTime(n.actualStart, ws.timezone)), [end, setEnd] = useState(localTime(n.actualEnd, ws.timezone)), [attendance, setAttendance] = useState(n.attendance);
   const [unresolved, setUnresolved] = useState(false), [saving, setSaving] = useState(false), [startError, setStartError] = useState<string>(), [pinnedStart, setPinnedStart] = useState(n.actualStart), [completed, setCompleted] = useState(n.executionStatus === 'COMPLETED'), [dirty, setDirty] = useState(false), [transcriptPending, setTranscriptPending] = useState(false), [status, setStatus] = useState('Saved on server'), [error, setError] = useState(false), [query, setQuery] = useState('');
   type Note = Workspace['notes'][number];
   const [conflicted, setConflicted] = useState(false), [server, setServer] = useState<Note | null>(null), [reconciling, setReconciling] = useState(false);
@@ -40,7 +41,7 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
       if (current.version !== server.version || current.executionStatus === 'COMPLETED') { await recoverConflict(); return; }
       if (keepServer) {
         setRetainedLocal(previous => [previous, JSON.stringify(localEvidence(), null, 2)].filter(Boolean).join('\n\n--- Retained local version ---\n\n'));
-        setSections(current.sections); setActivities(current.activities); setStart(localTime(current.actualStart)); setEnd(localTime(current.actualEnd)); setAttendance(current.attendance); setPinnedStart(current.actualStart);
+        setSections(current.sections); setActivities(current.activities); setStart(localTime(current.actualStart, ws.timezone)); setEnd(localTime(current.actualEnd, ws.timezone)); setAttendance(current.attendance); setPinnedStart(current.actualStart);
         version.current = current.version; retry.current = null; setUnresolved(false); setConflicted(false); setReconciling(false); setDirty(false); setStatus('Server version retained. Previous local evidence is available below.');
       } else {
         // GET revalidates access/version; PATCH still enforces authorization and optimistic locking atomically.
@@ -52,6 +53,17 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
   }
   const version = useRef(n.version), busy = useRef(false), revision = useRef(0), retry = useRef<Parameters<typeof clinicalApi.saveSession>[2] | null>(null);
   const edit = ws.canEdit && n.mine && !completed;
+  // Apply an incoming server revision only when the clinician has no unsaved evidence.
+  // Updating n.version must never silently overwrite in-progress local edits.
+  useEffect(() => {
+    if (dirty || busy.current || conflicted || unresolved) return;
+    version.current = n.version;
+    setSections(n.sections); setActivities(n.activities);
+    setStart(localTime(n.actualStart, ws.timezone)); setEnd(localTime(n.actualEnd, ws.timezone));
+    setPinnedStart(n.actualStart); setAttendance(n.attendance);
+    setCompleted(n.executionStatus === 'COMPLETED');
+  }, [n.id, n.version, ws.timezone]); // Prop identity/version is authoritative; dirty state is a guard, not a reset trigger.
+
   const changed = () => { revision.current++; setDirty(true); setError(false); setStatus('Unsaved changes'); };
   useEffect(() => { onPending(n.id, dirty || transcriptPending || unresolved || conflicted || !!retainedLocal); return () => onPending(n.id, false); }, [dirty, transcriptPending, unresolved, conflicted, retainedLocal, n.id, onPending]);
   const update = (id: string, patch: Partial<SessionActivity>) => { changed(); setActivities(a => a.map(x => x.id === id ? { ...x, ...patch } : x)); };
@@ -62,12 +74,14 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
       setError(true); setStatus(`The previous ${retry.current.executionStatus === 'COMPLETED' ? 'completion' : 'draft save'} has an unknown outcome. Resolve that exact operation before choosing another action. Your text remains here.`); return;
     }
     if (finish && (transcriptPending || !window.confirm('Complete this session as read-only? This does not sign or release a clinical document.'))) return;
-    const parsedStart = pinnedStart ?? (start && Number.isFinite(Date.parse(start)) ? new Date(start).toISOString() : null);
+    let parsedStart: string | null = pinnedStart;
+    try { if (!parsedStart && start) parsedStart = zonedDateTimeInputToIso(start, ws.timezone); }
+    catch { setStartError('Enter an actual start in the center time zone.'); setError(true); setStatus('Actual start is invalid. Your evidence is retained.'); return; }
     if (!parsedStart || !Number.isFinite(Date.parse(parsedStart))) { setStartError('Enter the actual start on the recorded session date before saving.'); setError(true); setStatus('Actual start is required. Your original note is preserved.'); return; }
     setStartError(undefined);
     busy.current = true; setSaving(true); setStatus('Saving…'); setError(false); const rev = revision.current;
     try {
-      const body = retry.current ?? { version: reconciledVersion ?? version.current, mutationKey: crypto.randomUUID(), sections, activities: activities.map(({ id, templateId, minutes, objective, planVersionId, goalKey, completion, outcome, assistance, observation }) => ({ id, templateId, minutes, objective, planVersionId, goalKey, completion, outcome, assistance, observation })), actualStart: parsedStart, actualEnd: end ? new Date(end).toISOString() : undefined, attendance, executionStatus: finish ? 'COMPLETED' : 'IN_PROGRESS' };
+      const body = retry.current ?? { version: reconciledVersion ?? version.current, mutationKey: crypto.randomUUID(), sections, activities: activities.map(({ id, templateId, minutes, objective, planVersionId, goalKey, completion, outcome, assistance, observation }) => ({ id, templateId, minutes, objective, planVersionId, goalKey, completion, outcome, assistance, observation })), actualStart: parsedStart, actualEnd: end ? zonedDateTimeInputToIso(end, ws.timezone) : undefined, attendance, executionStatus: finish ? 'COMPLETED' : 'IN_PROGRESS' };
       retry.current = body; setUnresolved(true);
       const result = await clinicalApi.saveSession(centerId, n.id, body); version.current = result.version; retry.current = null; setUnresolved(false); setPinnedStart(body.actualStart); setConflicted(false); setReconciling(false); setServer(null);
       if (rev === revision.current) { setDirty(false); setStatus(`Saved on server · ${new Date(result.updatedAt).toLocaleTimeString()}`); } else setStatus('Newer edits are not saved yet');
@@ -99,7 +113,7 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
   return <Card className="space-y-4 p-4 md:p-5" testId={`note-${n.id}`}>
     <div className="flex flex-wrap gap-2"><h3 className="font-semibold">{serviceLabel(n.service)} session · {n.sessionDate}</h3><Pill>{completed ? 'Completed · unsigned' : 'In progress · unsigned'}</Pill><span className="text-[13px]">by {n.author}</span></div>
     <fieldset disabled={!edit || saving || unresolved || (conflicted && !reconciling)} className="space-y-4">
-      <div className="grid gap-3 md:grid-cols-3"><Field label="Actual start" type="datetime-local" disabled={!!pinnedStart} error={startError} hint={pinnedStart ? 'Pinned actual start; corrections require an authorized amendment (not enabled).' : `Legacy draft: enter actual start in your browser’s local time. It must fall on ${n.sessionDate} in center time zone ${ws.timezone}. No time has been inferred.`} value={start} onChange={e => { changed(); setStart(e.target.value); }} testId={`session-start-time-${n.id}`} /><Field label="Actual end" type="datetime-local" step={1} value={end} onChange={e => { changed(); setEnd(e.target.value); }} testId={`session-end-time-${n.id}`} /><SelectField label="Attendance review" value={attendance} onChange={s => { changed(); setAttendance(s as typeof attendance); }} options={options(['PRESENT', 'NO_SHOW'])} testId={`session-attendance-${n.id}`} /></div>
+      <div className="grid gap-3 md:grid-cols-3"><Field label="Actual start" type="datetime-local" disabled={!!pinnedStart} error={startError} hint={pinnedStart ? 'Pinned actual start; corrections require an authorized amendment (not enabled).' : `Legacy draft: enter actual start in the center’s local time. It must fall on ${n.sessionDate} in center time zone ${ws.timezone}. No time has been inferred.`} value={start} onChange={e => { changed(); setStart(e.target.value); }} testId={`session-start-time-${n.id}`} /><Field label="Actual end" type="datetime-local" step={1} value={end} onChange={e => { changed(); setEnd(e.target.value); }} testId={`session-end-time-${n.id}`} /><SelectField label="Attendance review" value={attendance} onChange={s => { changed(); setAttendance(s as typeof attendance); }} options={options(['PRESENT', 'NO_SHOW'])} testId={`session-attendance-${n.id}`} /></div>
       <p className="text-[13px] text-brand-inkMuted">Activity results are factual, unvalidated session evidence—not approved progress measurements. Goals retain their exact version and measurement semantics.</p>
       {activities.map((a, index) => <section key={a.id} className="space-y-3 rounded-control border border-border-light p-3" aria-label={`Activity ${index + 1}`}>
         <h4 className="font-semibold">{index + 1}. {a.snapshot?.title ?? ws.templates.find(t => t.id === a.templateId)?.title}</h4>
@@ -124,7 +138,7 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
       <p className="text-[14px]">No automatic merge or overwrite. Review notes, activities, observations, timing and attendance. Copy any evidence you need before leaving this page.</p>
       <div className="grid min-w-0 gap-3 md:grid-cols-2">
         <div className="min-w-0"><h5 className="font-semibold">Local evidence</h5><pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words text-[13px]">{conflicted ? JSON.stringify(localEvidence(), null, 2) : retainedLocal}</pre></div>
-        <div className="min-w-0"><h5 className="font-semibold">Server evidence{server ? ` · version ${server.version}` : ''}</h5><pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words text-[13px]">{server ? JSON.stringify({ sections: server.sections, activities: server.activities, actualStart: localTime(server.actualStart), actualEnd: localTime(server.actualEnd), attendance: server.attendance, executionStatus: server.executionStatus }, null, 2) : 'Server recovery unavailable. Local evidence is unchanged.'}</pre></div>
+        <div className="min-w-0"><h5 className="font-semibold">Server evidence{server ? ` · version ${server.version}` : ''}</h5><pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words text-[13px]">{server ? JSON.stringify({ sections: server.sections, activities: server.activities, actualStart: localTime(server.actualStart, ws.timezone), actualEnd: localTime(server.actualEnd, ws.timezone), attendance: server.attendance, executionStatus: server.executionStatus }, null, 2) : 'Server recovery unavailable. Local evidence is unchanged.'}</pre></div>
       </div>
       {conflicted && <div className="flex flex-wrap gap-2">
         <Button variant="secondary" disabled={saving || (unresolved && !!server)} onClick={() => void (async () => { busy.current = true; setSaving(true); try { await recoverConflict(); } catch (e) { setError(true); setStatus((e as Error).message + ' Recovery failed. Local evidence is retained; retry recovery.'); } finally { busy.current = false; setSaving(false); } })()}>Retry server recovery</Button>
