@@ -1,3 +1,11 @@
+## 2026-10-31 — M2-H05 long legacy goal title regression pending final qualification
+
+| Finding | Remediation | Status |
+| --- | --- | --- |
+| Codex P2 unchanged legacy measured titles 201–300 chars blocked by newly strict 200 DTO | `a79735c` restores historic DTO cap 300; `276a7e7` enforces new/redefined max 200 in service; `ca001a7` tests measured 250-char round-trip and new 250-char HTTP 400 | **FIX_NOW; fresh six-job CI and final-HEAD independent review pending** |
+| Earlier red test 612/613 | `6ea9fc4` seeds imported whitespace before observation to obey immutable Postgres trigger | **FIX_NOW; verify fresh CI** |
+| All owner-gated clinical release and real records | No change | **NO-GO** |
+
 ## 2026-10-31 — M2-H05 review-driven regression coverage (pending final CI)
 
 | Area | Change | Gate |
