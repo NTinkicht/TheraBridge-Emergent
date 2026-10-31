@@ -603,7 +603,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     });
   });
 
-  it.each(['staging', 'production'])('denies all existing synthetic message routes in %s with demo flag enabled', async (environment) => {
+  it.each(['local', 'preview', 'development', 'staging', 'production'])('denies all existing synthetic message routes in %s with demo flag enabled', async (environment) => {
     const { therapist, kid, link, rosa } = await setup();
     const threadId = (await post(h, c('threads'), therapist, {
       childId: kid, guardianLinkId: link, category: 'scheduling',
@@ -627,7 +627,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
       ];
       for (const attempt of attempts) {
         const response = await attempt().expect(403);
-        expect(response.body.message).toMatch(/synthetic demonstration/);
+        expect(response.body.message).toMatch(/synthetic demonstration|role does not include/);
       }
     } finally {
       if (oldEnvironment === undefined) delete process.env.DEPLOYMENT_ENV;
@@ -747,6 +747,21 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     }
   });
 
+  it('revokes guardian access to pre-existing message history without touching archived content', async () => {
+    const { therapist, kid, link, rosa } = await setup();
+    const threadId = (await post(h, c('threads'), therapist, {
+      childId: kid, guardianLinkId: link, category: 'scheduling',
+      subject: 'Historical synthetic coordination', body: 'Original non-clinical message',
+    }).expect(201)).body.id;
+    expect((await get(rosa, c('threads')).expect(200)).body.items.map((t: { id: string }) => t.id)).toContain(threadId);
+    const before = await h.prisma.message.count({ where: { threadId } });
+    await post(h, c(`children/${kid}/guardians/${link}/remove`), admin, { reason: 'Synthetic custody boundary test' }).expect(200);
+    expect((await get(rosa, c('threads')).expect(200)).body.items).toHaveLength(0);
+    await get(rosa, c(`threads/${threadId}`)).expect(404);
+    await post(h, c(`threads/${threadId}/messages`), rosa, { body: 'Revoked access attempt' }).expect(404);
+    expect(await h.prisma.message.count({ where: { threadId } })).toBe(before);
+  });
+
   it('messages are recipient-specific, demo-gated, and blocked after trial expiry while consented reminders continue', async () => {
     const { therapist, kid, link, rosa } = await setup();
     await post(h, c(`children/${kid}/guardians`), admin, { displayName: 'Dan Stone', email: 'dan@family.test', relationship: 'father', invite: true }).expect(201);
@@ -757,7 +772,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     expect((await get(dan, c('threads')).expect(200)).body.items).toHaveLength(0);
     await get(dan, c(`threads/${t}`)).expect(404);
     process.env.FAMILY_MESSAGING_DEMO = 'false';
-    expect((await post(h, c(`threads/${t}/messages`), rosa, { body: 'hi' }).expect(403)).body.message).toMatch(/synthetic demonstration/);
+    expect((await post(h, c(`threads/${t}/messages`), rosa, { body: 'hi' }).expect(403)).body.message).toMatch(/synthetic demonstration|role does not include/);
     for (const viewer of [rosa, therapist, admin]) {
       await get(viewer, c('threads')).expect(403);
       await get(viewer, c(`threads/${t}`)).expect(403);

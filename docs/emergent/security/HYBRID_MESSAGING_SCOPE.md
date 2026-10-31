@@ -14,7 +14,7 @@ A therapist who loses one specialty but retains another immediately loses that s
 
 **Operational content only.** Messages are not the place for assessments, diagnoses, clinical observations, safeguarding reports or other protected clinical notes. Those remain in separately authorized clinical resources.
 
-**Fail-closed deployment boundary:** all free-text messaging depends on `FAMILY_MESSAGING_DEMO=true` in a synthetic local/CI environment; staging/production always deny it, including historical reads. This feature flag is NOT approval for real-family messaging.
+**Fail-closed D-NEW-5 boundary (M2-S01):** all server routes for free-text conversation listing, detail/history, thread creation, replies, and status changes are **DENY in every deployment**, including local development and hosted synthetic previews. `center.messages.use` and `.manage` are not granted in deployed permission responses. Only isolated Jest tests may exercise legacy synthetic fixtures when **all** of `NODE_ENV=test`, `DEPLOYMENT_ENV=ci`, a Jest worker, and `FAMILY_MESSAGING_DEMO=true` are present. The flag alone can never activate messaging; enabling real/pilot use requires separately signed safeguarding, custody, consent, emergency escalation and privacy policy decisions plus a future reviewed implementation. The UI remains disabled. No real child or family data is permitted.
 
 The owner has resolved the **synthetic message-participant scope** only; safeguarding issue #35 / D-NEW-5, formal informed permissions/privacy review for actual deployments, and recipient-release decisions remain unresolved. Retain NO-GO for clinical/pilot/production use.
 
