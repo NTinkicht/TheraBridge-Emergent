@@ -470,3 +470,8 @@ See [implementation evidence](../emergent/workunits/TB-EM-015.md) for exact comm
 
 - `5c733f5` completed the amended synthetic demo-journey browser check; Codex independently raised two new P2 boundary cases: first-page `hasMorePlans` metadata stale after a 200-to-201 plan creation, and an older-plan preview UI assertion racing the workspace refresh.
 - The next amendment synchronizes metadata when no older page is loaded, records a refresh completion revision only after parent and older-page reloads, and tests both a simulated 200-to-201 UI boundary and preview persistence after that completion signal. **Current amended HEAD still requires 6/6 CI and fresh Codex verification.**
+
+### M2-H04 `5a703d5` fourth review — further P2 remediation pending verification (2026-10-31)
+
+- Codex identified that older plans loaded in the Therapy Plan tab vanished from Progress and Sessions on tab switch, and that a bounded template library had no server-side search/pagination path. Both are treated as **blocking P2** findings.
+- Pending next-head CI: share older plan/evidence pages in the parent child workspace; expose bounded searchable/paged activity templates including specialty-before-cap filtering and plan-editor search; regression-test 210 library entries, plan-tab to Progress-tab persistence, and selection beyond the initial library page. **All six CI jobs and new Codex review are required; not yet qualified.**

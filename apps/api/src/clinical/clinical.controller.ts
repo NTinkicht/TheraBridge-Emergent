@@ -131,8 +131,22 @@ export class ClinicalController {
 
   @Get('activities')
   @RequirePermission('center.activities.read')
-  templates(@Param('centerId', uuid()) c: string, @Req() req: TbRequest) {
-    return this.clinical.templates(c, viewer(req)).then((items) => ({ items }));
+  templates(@Param('centerId', uuid()) c: string, @Req() req: TbRequest,
+    @Query('offset') rawOffset?: string, @Query('limit') rawLimit?: string,
+    @Query('search') rawSearch?: string, @Query('service') rawService?: string,
+    @Query('ownership') rawOwnership?: string) {
+    const offset = rawOffset === undefined ? 0 : Number(rawOffset);
+    const limit = rawLimit === undefined ? 100 : Number(rawLimit);
+    if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100_000 || (rawOffset !== undefined && !/^\d+$/.test(rawOffset)) ||
+        !Number.isSafeInteger(limit) || limit < 1 || limit > 200 || (rawLimit !== undefined && !/^\d+$/.test(rawLimit))) {
+      throw new BadRequestException('Invalid activity pagination.');
+    }
+    if ((rawSearch?.length ?? 0) > 100 || (rawService?.length ?? 0) > 80 ||
+        (rawOwnership !== undefined && !['all', 'mine', 'center', 'samples'].includes(rawOwnership))) {
+      throw new BadRequestException('Invalid activity search filters.');
+    }
+    return this.clinical.templatePage(c, viewer(req), { offset, limit, search: rawSearch?.trim(),
+      service: rawService || undefined, ownership: rawOwnership as 'all' | 'mine' | 'center' | 'samples' | undefined });
   }
 
   @Post('activities')

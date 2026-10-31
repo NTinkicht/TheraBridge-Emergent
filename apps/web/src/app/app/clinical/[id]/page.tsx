@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, FlaskConical } from 'lucide-react';
@@ -14,14 +14,44 @@ import { Card } from '@/components/design/ui';
 import { ErrorState, SkeletonRows } from '@/components/design/states';
 import type { SessionInfo } from '@/lib/auth';
 import { clinicalApi } from '@/lib/clinical';
+import type { Workspace as ClinicalWorkspace } from '@/lib/clinical';
 
 const TABS = [['overview', 'Child 360°'], ['plan', 'Therapy plan'], ['assessments', 'Assessments'], ['sessions', 'Sessions'], ['progress', 'Progress'], ['reports', 'Reports']] as const;
+type OlderPages = { key: string; plans: ClinicalWorkspace['plans']; observations: ClinicalWorkspace['observations']; offset: number; hasMore: boolean };
 
 function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e: unknown) => void }) {
   const { id } = useParams<{ id: string }>();
   const centerId = session.activeContext?.type === 'center' ? session.activeContext.centerId : '';
   const fetcher = useCallback(() => clinicalApi.workspace(centerId, id), [centerId, id]);
   const { data, failed, reload } = useLoad(fetcher, onError);
+  // Older plan versions and their evidence belong to the child workspace,
+  // not to the Plan tab. Keep them available to Progress and Sessions after
+  // the Plan tab unmounts, and never reuse pages for another child/centre.
+  const pageKey = `${centerId}:${id}`;
+  const [olderPages, setOlderPages] = useState<OlderPages | null>(null);
+  const [pageLoading, setPageLoading] = useState(false);
+  const [pageError, setPageError] = useState('');
+  const currentPages = olderPages?.key === pageKey ? olderPages : null;
+  const sharedData = useMemo(() => data ? { ...data,
+    plans: [...data.plans, ...(currentPages?.plans ?? []).filter(p => !data.plans.some(x => x.id === p.id))],
+    observations: [...data.observations, ...(currentPages?.observations ?? []).filter(o => !data.observations.some(x => x.id === o.id))],
+  } : null, [data, currentPages]);
+  const loadOlderPlans = async () => {
+    if (!data || pageLoading || !(currentPages?.hasMore ?? data.hasMorePlans)) return;
+    const offset = currentPages?.offset ?? data.plans.length;
+    setPageLoading(true); setPageError('');
+    try {
+      const page = await clinicalApi.workspace(centerId, id, offset);
+      setOlderPages(prev => {
+        const old = prev?.key === pageKey ? prev : null;
+        return { key: pageKey,
+          plans: [...(old?.plans ?? []), ...page.plans.filter(x => !old?.plans.some(y => y.id === x.id))],
+          observations: [...(old?.observations ?? []), ...page.observations.filter(x => !old?.observations.some(y => y.id === x.id))],
+          offset: offset + page.plans.length, hasMore: page.hasMorePlans };
+      });
+    } catch { setPageError('Older plans could not be loaded. Retry to view the full history.'); }
+    finally { setPageLoading(false); }
+  };
   const pending = useRef(new Set<string>());
   const onPending = useCallback((id: string, value: boolean) => { if (value) pending.current.add(id); else pending.current.delete(id); }, []);
   useEffect(() => {
@@ -40,7 +70,25 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
 
   const [notice, setNotice] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
   const run = async (fn: () => Promise<unknown>, ok: string) => {
-    try { await fn(); setNotice({ tone: 'success', text: ok }); await reload(); return true; } catch (e) { const t = errorText(e, onError); if (t) setNotice({ tone: 'danger', text: t }); return false; }
+    try {
+      await fn(); setNotice({ tone: 'success', text: ok }); await reload();
+      if (currentPages && data) {
+        try {
+          let offset = data.plans.length;
+          const plans: ClinicalWorkspace['plans'] = [], observations: ClinicalWorkspace['observations'] = [];
+          let more = true;
+          while (offset < currentPages.offset && more) {
+            const page = await clinicalApi.workspace(centerId, id, offset);
+            plans.push(...page.plans); observations.push(...page.observations);
+            offset += page.plans.length; more = page.hasMorePlans;
+            if (!page.plans.length) break;
+          }
+          setOlderPages({ key: pageKey, plans, observations, offset, hasMore: more });
+          setPageError('');
+        } catch { setPageError('Older plans could not be refreshed. Reload this child to retry.'); }
+      }
+      return true;
+    } catch (e) { const t = errorText(e, onError); if (t) setNotice({ tone: 'danger', text: t }); return false; }
   };
   if (failed) return <ErrorState onRetry={() => void reload()} testId="clinical-error" />;
   if (!data) return <Card className="p-5"><SkeletonRows rows={5} testId="clinical-loading" /></Card>;
@@ -60,12 +108,13 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
       </div>
       {notice && <FormAlert tone={notice.tone} testId={`clinical-notice-${notice.tone}`}>{notice.text}</FormAlert>}
       <div role="tabpanel">
-        {tab === 'overview' && <Child360 ws={data} centerId={centerId} onNavigate={setTab} />}
-        {tab === 'plan' && <PlansPanel centerId={centerId} ws={data} run={run} />}
-        {tab === 'assessments' && <AssessmentsPanel centerId={centerId} ws={data} run={run} />}
-        {tab === 'sessions' && <SessionsPanel centerId={centerId} ws={data} run={run} onPending={onPending} />}
-        {tab === 'progress' && <ProgressPanel centerId={centerId} ws={data} run={run} onNavigate={() => setTab('plan')} />}
-        {tab === 'reports' && <ReportsPanel centerId={centerId} ws={data} run={run} onError={onError} />}
+        {tab === 'overview' && <Child360 ws={sharedData!} centerId={centerId} onNavigate={setTab} />}
+        {tab === 'plan' && <PlansPanel centerId={centerId} ws={sharedData!} run={run}
+          pagination={{ hasMore: currentPages?.hasMore ?? data.hasMorePlans, loading: pageLoading, error: pageError, load: loadOlderPlans }} />}
+        {tab === 'assessments' && <AssessmentsPanel centerId={centerId} ws={sharedData!} run={run} />}
+        {tab === 'sessions' && <SessionsPanel centerId={centerId} ws={sharedData!} run={run} onPending={onPending} />}
+        {tab === 'progress' && <ProgressPanel centerId={centerId} ws={sharedData!} run={run} onNavigate={() => setTab('plan')} />}
+        {tab === 'reports' && <ReportsPanel centerId={centerId} ws={sharedData!} run={run} onError={onError} />}
       </div>
     </div>
   );

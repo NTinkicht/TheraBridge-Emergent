@@ -58,7 +58,11 @@ export const clinicalApi = {
   saveSession: (centerId: string, id: string, body: { version: number; mutationKey: string; sections: Record<string, string>; activities: SessionActivity[]; actualStart: string; actualEnd?: string; attendance: string; executionStatus: string }) => rest.send<{ version: number; updatedAt: string }>('PATCH', c(centerId, `clinical/sessions/${id}`), body),
   saveNote: (centerId: string, id: string, sections: Record<string, string>, version: number) => rest.send('PATCH', c(centerId, `clinical/notes/${id}`), { sections, version }),
   observe: (centerId: string, childId: string, body: { planVersionId: string; goalKey: string; value: number; observedOn: string; note?: string }) => rest.send('POST', c(centerId, `clinical/children/${childId}/observations`), body),
-  templates: (centerId: string) => rest.get<{ items: Template[] }>(c(centerId, 'activities')),
+  templates: (centerId: string, options: { offset?: number; limit?: number; search?: string; service?: string; ownership?: string } = {}) => {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(options)) if (value !== undefined && value !== '') query.set(key, String(value));
+    return rest.get<{ items: Template[]; hasMore: boolean; nextOffset: number | null }>(c(centerId, 'activities' + (query.size ? '?' + query.toString() : '')));
+  },
   createTemplate: (centerId: string, body: Omit<Template, 'id' | 'library'>) => rest.send('POST', c(centerId, 'activities'), body),
   duplicateTemplate: (centerId: string, id: string, title: string) => rest.send<{ id: string; version: number }>('POST', c(centerId, `activities/${id}/duplicate`), { title }),
   editTemplate: (centerId: string, id: string, body: { version: number; title: string; ageBand: string; minutes: number; materials: string[]; steps: string[]; safety: string[] }) =>

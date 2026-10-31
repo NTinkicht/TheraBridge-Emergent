@@ -517,7 +517,39 @@ try {
     await olderPanel.getByTestId('family-preview').waitFor();
     assert(await olderPanel.getByTestId('family-preview').isVisible(),
       'An older plan preview must remain mounted after its same-child workspace refresh');
+    // The same older-page goal must be available after the Plan tab unmounts;
+    // Progress and Sessions consume the shared child workspace, not page one.
+    await page.getByTestId('clinical-tab-progress').click();
+    assert((await page.getByTestId('progress-panel').innerText()).includes(originalPlan.title),
+      'Progress must include goal evidence from an older plan loaded in the Plan tab');
+    await page.getByTestId('clinical-tab-sessions').click();
+    assert(await page.getByTestId('sessions-panel').isVisible(),
+      'Sessions must retain the shared child workspace after the Plan tab unmounts');
+    await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('plan-' + originalPlan.id).waitFor();
     await page.unroute(pagedPlanRoute);
+    await page.reload();
+    await page.getByTestId('clinical-tab-plan').click();
+    // A template hidden beyond the bounded workspace list must still be
+    // discoverable and selectable through the plan editor's scoped search.
+    const extraTemplateId = '00000000-0000-4000-8000-000000000096';
+    const templateFixture = originalWorkspace.templates.find(t => t.service === originalPlan.service);
+    assert(templateFixture, 'A synthetic template must match the seeded plan specialty');
+    const planLibraryRoute = '**/api/centers/*/activities*';
+    await page.route(planLibraryRoute, async route => {
+      if (route.request().method() !== 'GET') return route.continue();
+      const response = await route.fetch();
+      if (!new URL(route.request().url()).searchParams.get('search')?.includes('Beyond cap')) return route.fulfill({ response });
+      return route.fulfill({ response, json: { items: [{ ...templateFixture, id: extraTemplateId,
+        title: 'Beyond cap synthetic practice' }], hasMore: false, nextOffset: null } });
+    });
+    await page.getByTestId('plan-template-search').first().fill('Beyond cap');
+    await page.getByTestId('plan-template-find').first().click();
+    await page.getByTestId('home-activity-add').first().locator(`option[value="${extraTemplateId}"]`).waitFor();
+    await page.getByTestId('home-activity-add').first().selectOption(extraTemplateId);
+    assert((await page.locator('[data-testid^="home-activity-"]').allInnerTexts()).some(text => text.includes('Beyond cap synthetic practice')),
+      'The plan editor must retain a template retrieved beyond the initial library cap');
+    await page.unroute(planLibraryRoute);
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
     // Reload clears the checkpoint form's local goal/narrative selection.
