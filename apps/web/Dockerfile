@@ -9,6 +9,9 @@ ARG API_UPSTREAM_ORIGIN=http://api:8001
 ENV API_UPSTREAM_ORIGIN=${API_UPSTREAM_ORIGIN}
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN yarn workspace @therabridge/web build
+RUN mkdir -p /repo/apps/web/.next/cache && chown -R node:node /repo
+USER node
 ENV NODE_ENV=production
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 CMD node -e "fetch('http://127.0.0.1:3000/login').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
 EXPOSE 3000
 CMD ["yarn", "workspace", "@therabridge/web", "start"]
