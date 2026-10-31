@@ -1,3 +1,7 @@
+## 2026-10-31 — M2-H05 security P1 review disposition
+
+- Independent Codex review at `7a75667` caught a clinical status side channel when a revoked therapist could submit a known WITHDRAWN plan ID. **FIX_NOW** `bc70c5f` moves checks past transactional child and specialty scope; `e6b9f88` validates authorized 409 vs revoked 404 indistinguishable from unknown ID in PostgreSQL/HTTP. Previous qualified heads superseded; final exact-head CI/re-review pending. No deferrals, no clinical activation.
+
 ## 2026-10-31 — M2-H05 review P3 fixes before final qualification
 
 - `ff05058`, `9f3b979`: extend exact immutable legacy title preservation for genuinely unchanged unmeasured goals; real DB/HTTP regression. `7871202`: explicit Europe/Paris fall-back start-time edit picks earlier occurrence; separate room-only booking preservation remains. All three Codex P2s + both small Mistral P3 suggestions FIX_NOW; no deferrals. Requalify latest HEAD before merge.
