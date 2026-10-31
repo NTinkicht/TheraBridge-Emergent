@@ -52,6 +52,16 @@ export function blocked(role,reason){
  return [...WIDTHS.map((width,i)=>({id:caseId(c.start+i),role,width,status:'BLOCKED',reason})),
   {id:caseId(c.cookie),role,status:'BLOCKED',reason}];
 }
+// Stable, secret-free authentication diagnostics. Never serialize responses,
+// cookies, email addresses, URLs, tokens or error messages from the page.
+export function authFailureCode(stage,loginStatus){
+ if(stage==='submit'&&loginStatus===401)return 'login_http_401';
+ if(stage==='submit'&&loginStatus===429)return 'login_http_429';
+ if(stage==='submit'&&typeof loginStatus==='number')return 'login_http_other';
+ return ({form:'login_form_unavailable',submit:'login_response_unverified',
+  redirect:'login_redirect_unverified',context:'authorized_context_unverified',
+  shell:'authenticated_shell_unavailable',identity:'session_identity_unverified'})[stage]??'authentication_unverified';
+}
 export function missingBlockedRows(role,completed,reason){
  const seen=new Set(completed.map(r=>r.id));
  return blocked(role,reason).filter(r=>!seen.has(r.id));
@@ -82,6 +92,7 @@ async function assess(browser,role,user,directory){
  const context=await browser.newContext({viewport:{width:1440,height:900},acceptDownloads:false,deviceScaleFactor:1});
  const page=await context.newPage();
  let loggedIn=false,loginAttempted=false;
+ let authStage='form',loginHttpStatus=null;
  try{
   let loginResponse,headerInspection=null;
   try{
@@ -91,12 +102,14 @@ async function assess(browser,role,user,directory){
    // Attach handlers to both operations immediately; preserve a successful
    // login response even if the button click later rejects.
    loginAttempted=true;
+   authStage='submit';
    const [reply,clicked]=await Promise.allSettled([
     page.waitForResponse(r=>new URL(r.url()).pathname==='/api/auth/login'&&r.request().method()==='POST',{timeout:20000}),
     page.getByTestId('login-submit-button').click()
    ]);
    if(reply.status==='fulfilled'){
     loginResponse=reply.value;
+    loginHttpStatus=loginResponse.status();
     if(loginResponse.status()===200){
      loggedIn=true;
      // A bad __Host- cookie may be rejected by Chromium, so inspect its
@@ -111,10 +124,12 @@ async function assess(browser,role,user,directory){
    if(clicked.status==='rejected'||reply.status==='rejected'||!loggedIn)
     throw Error('login_not_confirmed');
    // Wait for client-side Next.js redirect before deciding whether context selection is needed.
+   authStage='redirect';
    await page.waitForURL(u=>u.pathname==='/select-context'||u.pathname==='/app'||u.pathname.startsWith('/app/'),{timeout:20000});
    // Accounts with multiple authorized contexts legitimately land on /select-context.
    // Select only an unambiguous, already-authorized role; never bypass permissions.
    if(page.url?.().includes('/select-context')){
+    authStage='context';
     const selected=await page.evaluate(async ([email,expected])=>{
      const response=await fetch('/api/auth/session',{credentials:'include'});
      if(!response.ok)return false;
@@ -133,7 +148,9 @@ async function assess(browser,role,user,directory){
     await page.goto(BASE+'/app',{waitUntil:'domcontentloaded',timeout:25000});
    }
    await page.waitForURL(u=>u.pathname==='/app'||u.pathname.startsWith('/app/'),{timeout:20000});
+   authStage='shell';
    await page.getByTestId('product-shell').waitFor({timeout:15000});
+   authStage='identity';
    const valid=await page.evaluate(async ([email,expected])=>{
      const r=await fetch('/api/auth/session',{credentials:'include'});if(!r.ok)return false;
      const s=await r.json();return s.activeContext?.role===expected&&s.user?.email?.toLowerCase()===email.toLowerCase();
@@ -141,7 +158,9 @@ async function assess(browser,role,user,directory){
    if(!valid)throw Error('identity_mismatch');
   }catch{
    // Cookie FAIL survives invalid browser session and navigation failure.
-   rows.push(...missingBlockedRows(role,rows,'authentication_or_identity_unverified'));
+   const code=authFailureCode(authStage,loginHttpStatus);
+   rows.push(...missingBlockedRows(role,rows,'authentication_or_identity_unverified')
+    .map(row=>({...row,diagnostic:code})));
    return rows;
   }
   if(!rows.some(r=>r.id===caseId(c.cookie))){
@@ -258,7 +277,10 @@ export async function run({credentialsFile=process.env.QA_USERS_FILE,output=proc
  const path=join(out,'hosted-readonly-results.json');
  await writeFile(path,JSON.stringify(report,null,2)+'\n',{mode:0o600});
  // Non-sensitive one-line summary. Detailed screenshots stay encrypted.
- console.log('QA_PUBLIC_SUMMARY '+JSON.stringify({counts,blockedReasons:Object.fromEntries(
+ console.log('QA_PUBLIC_SUMMARY '+JSON.stringify({counts,
+  roleDiagnostics:Object.fromEntries(Object.keys(ROLES).map(role=>[role,
+   [...new Set(rows.filter(r=>r.role===role&&r.diagnostic).map(r=>r.diagnostic))]])),
+  blockedReasons:Object.fromEntries(
   [...new Set(rows.filter(r=>r.status==='BLOCKED').map(r=>r.reason))].map(reason=>
    [reason,rows.filter(r=>r.status==='BLOCKED'&&r.reason===reason).length]))}));
 
