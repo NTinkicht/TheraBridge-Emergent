@@ -1,3 +1,9 @@
+## 2026-10-31 — CURRENT next step: M2-H05 third P2 and final HEAD gate
+
+1. Addressed Codex long-title P2 in `a79735c`/`276a7e7`/`ca001a7` (legacy 250-character measured goal round-trips; new 250-character goal rejected). All three Codex P2s FIX_NOW; no deferrals.
+2. Re-run six CI jobs on final docs+test HEAD and get new Codex review. Resolve all reviewer threads and merge only when Rule 16 is satisfied; clinical releases and production remain NO-GO.
+3. Immediately open frozen M2-H06 #127/#128/#129/#130 draft, request opening @codex review, synchronize handover.
+
 ## 2026-10-31 — CURRENT: M2-H05 Codex P2 repairs awaiting final-head qualification
 
 1. Two Codex P2 findings reviewed on #143 exact HEAD `7f77d66`: **FIX_NOW** for unchanged-wall-time recurring bookings shifting during DST fold (`02a0485`, regression `57651b9`), and for legacy immutable goal-title formatting breaking summary-only edits (`51c672d`, regression `ca12b89`). Both fixes are pushed.
