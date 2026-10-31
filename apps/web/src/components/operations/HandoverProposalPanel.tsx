@@ -21,7 +21,9 @@ export function HandoverProposalPanel({ centerId, child }: { centerId: string; c
     try {
       const d = await opsApi.handovers(centerId);
       setData(d);
-      setStaff([]); setNextStaffOffset(null);
+      // Proposal status refreshes (including cancellation) must not discard the
+      // still-valid incoming therapist search and its loaded pagination cursor.
+      // Center/service/search changes are handled by the staff-fetch effect.
       setError('');
     } catch { setError('Could not load synthetic handover proposals.'); }
   }, [centerId]);

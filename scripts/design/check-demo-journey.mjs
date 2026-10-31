@@ -79,6 +79,57 @@ try {
     assert.equal(await page.getByTestId('activities-ownership-filter').locator('option[value="mine"]').count(), 0,
       'Read-only staff must not see Created by me');
 
+    // M2-H04 reviewer regression: refreshing the synthetic handover proposal
+    // list after cancellation must retain the current qualified-staff options.
+    // Route overlays are browser-only: no real proposal or cancellation occurs.
+    const childDetail = await read(page, centerBase + '/children/' + child.id);
+    assert.equal(childDetail.status, 200);
+    const sourceAssignment = childDetail.body.assignments.find(a => a.endedAt === null);
+    assert(sourceAssignment, 'Synthetic handover regression requires an active assignment');
+    const handoverPath = centerBase + '/governance/handover-proposals';
+    const proposalId = 'synthetic-handover-cancellation-regression';
+    const candidateId = 'synthetic-qualified-incoming-therapist';
+    let cancelled = false;
+    let proposalReloads = 0;
+    await page.route('**' + handoverPath, async route => {
+      if (route.request().method() !== 'GET') return route.continue();
+      proposalReloads++;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+        enabled: true, items: [{ id: proposalId, childId: child.id,
+          fromMembershipId: sourceAssignment.membershipId, service: sourceAssignment.service,
+          status: cancelled ? 'CANCELLED' : 'PENDING_ACK' }],
+      }) });
+    });
+    await page.route('**' + handoverPath + '/' + proposalId + '/cancel', async route => {
+      assert.equal(route.request().method(), 'POST');
+      cancelled = true;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+        id: proposalId, status: 'CANCELLED',
+      }) });
+    });
+    await page.route('**' + centerBase + '/therapists?*', async route => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+        items: [{ membershipId: candidateId, displayName: 'Synthetic Incoming Therapist',
+          specialties: [sourceAssignment.service] }], hasMore: true, nextOffset: 100,
+      }) });
+    });
+    await page.goto(base + '/app/children/' + child.id);
+    const handoverPanel = page.getByTestId('handover-manager');
+    await handoverPanel.waitFor();
+    await page.getByTestId('handover-current').selectOption(sourceAssignment.id);
+    const incomingOption = page.getByTestId('handover-incoming').locator(`option[value="${candidateId}"]`);
+    await incomingOption.waitFor({ state: 'attached' });
+    await page.getByTestId('handover-incoming').selectOption(candidateId);
+    await handoverPanel.getByRole('button', { name: 'Cancel proposal' }).click();
+    await handoverPanel.getByRole('button', { name: 'Cancel proposal' }).waitFor({ state: 'hidden' });
+    assert(cancelled && proposalReloads >= 2, 'Cancellation must fetch fresh proposal status');
+    assert.equal(await incomingOption.count(), 1,
+      'Cancellation must preserve qualified incoming therapist choices without changing search/source');
+    assert.equal(await page.getByTestId('handover-staff-more').count(), 1,
+      'Cancellation must preserve the incoming therapist pagination cursor');
+    assert.equal(await page.getByTestId('handover-incoming').inputValue(), candidateId,
+      'Cancellation must preserve the selected incoming therapist');
+
   });
   await role('speech@childrens-home.therabridge.test', 'THERAPIST', async page => {
     // TB-EM-024: test the actual staff library, not the guardian sample page.
