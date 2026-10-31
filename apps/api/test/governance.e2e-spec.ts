@@ -28,6 +28,35 @@ describe('TB-EM-011 non-authorizing governance (real PostgreSQL)', () => {
   plan=(await h.prisma.planVersion.create({data:{centerId:c,planId:p.id,number:1,authorId,summary:'Immutable synthetic content',goals:[goal],createdAt:h.clock.now(),updatedAt:h.clock.now()}})).id;
   report=(await post(h,path(`clinical/children/${kid}/reports`),therapist,{service:'speech',title:'Synthetic report',periodStart:'2026-01-01',periodEnd:'2026-01-02'}).expect(201)).body.id;
  });
+ it('M2-H05 reports distinguish stale RETURNED_FOR_REVISION resubmission from invalid status', async () => {
+  await h.prisma.progressReport.update({ where: { id: report }, data: { sections: {
+    summary: 'Synthetic report summary for internal reviewer', assessment: '', goals: '', sessions: '', recommendations: '', familySummary: '',
+  } } });
+  const first = await transition(therapist, 'SUBMIT', 1, 'REPORT', report).expect(201);
+  expect(first.body.status).toBe('IN_REVIEW');
+  const returned = await transition(supervisor, 'RETURN', 2, 'REPORT', report).expect(201);
+  expect(returned.body.status).toBe('RETURNED_FOR_REVISION');
+  const stale = await transition(therapist, 'SUBMIT', 2, 'REPORT', report).expect(409);
+  expect(stale.body.code).toBe('VERSION_CONFLICT');
+  const submitted = await transition(therapist, 'SUBMIT', 3, 'REPORT', report).expect(201);
+  expect(submitted.body.status).toBe('IN_REVIEW');
+  const wrong = await transition(therapist, 'SUBMIT', 4, 'REPORT', report).expect(409);
+  expect(wrong.body.code).toBe('INVALID_REPORT_STATUS');
+ });
+
+ it('M2-H05 excludes WITHDRAWN versions from current report evidence but retains history', async () => {
+  const first = await transition(therapist, 'SUBMIT', 1).expect(201);
+  await transition(therapist, 'WITHDRAW', 2).expect(201);
+  expect((await h.prisma.planVersion.findUniqueOrThrow({ where: { id: plan } })).status).toBe('WITHDRAWN');
+  const next = await post(h, path(`clinical/children/${kid}/reports`), therapist, {
+    service: 'speech', title: 'After withdrawal synthetic report', periodStart: '2026-01-01', periodEnd: '2026-01-02',
+  }).expect(201);
+  const detail = await get(therapist, `clinical/reports/${next.body.id}`).expect(200);
+  expect(detail.body.evidence.plans).toEqual([]);
+  expect(detail.body.evidence.goals).toEqual([]);
+  expect((await get(supervisor, `governance/previews/${first.body.snapshotId}`).expect(200)).body.content).toBeDefined();
+ });
+
  it('withdraws explicitly, preserves reviewed content and requires withdrawal before a new version',async()=>{
   const submitted=await transition(therapist,'SUBMIT',1).expect(201);
   const p=await h.prisma.planVersion.findUniqueOrThrow({where:{id:plan}});
