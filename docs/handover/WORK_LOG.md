@@ -1,3 +1,11 @@
+## 2026-10-31 — M2-H03 PR #141 opened; planning-review findings disposition
+
+- M2-S01 [PR #140](https://github.com/NTinkicht/TheraBridge-Emergent/pull/140) **MERGED** at `803ad48343f4881045622853c04c7eafefea6380` with 580/580 tests, six passing exact-head CI jobs and independent reviews. Opened ordered item 4/12, M2-H03 [PR #141](https://github.com/NTinkicht/TheraBridge-Emergent/pull/141), for #124 (HTTP hardening) and #121 (therapist revocation).
+- Opening HEAD `bbc85cdb174be6b1f43726e161b54cfd8a82cbb3` was documentation-only. Its CI passed, but **no M2-H03 application code or functional regression tests have been implemented/run**. Never treat this planning review as final-code qualification.
+- **Codex P2 `docs/emergent/workunits/M2-H03.md:20` → FIX_NOW:** the previous top-level CURRENT_STATE/WORK_LOG/NEXT_WORK/TEST_RESULTS entries still described M2-S01 as unfinished. Corrected all four canonical handover records together in this PR.
+- **Gemini, Grok and Mistral suggestions → TRACK IN CURRENT ISSUES (#121, #124) / PLAN NOW:** tenant-scoped transactional revocation, center→membership→assignment→guardian lock order, child-referent cleanup, exactly-one-winner concurrent series changes, distributed per-account password rate limiting, global Fastify body limits and safe Prisma errors were added to the M2-H03 acceptance checklist. They are within current issue scope, **not deferred past M2-H03**.
+- CodeRabbit reported no automatic review due to repository star threshold; it supplied no executable finding. Existing signed clinical governance remains NO-GO; no release/deploy/merge is claimed.
+
 ## 2026-10-31 — M2-S01 begins immediately after verified M2-H02 merge
 
 - Merged [#139](https://github.com/NTinkicht/TheraBridge-Emergent/pull/139), M2-H02 (#117 + #118), into main at `dafe526b` after six green exact-head CI jobs in two runs, 574/574 PostgreSQL API tests, independent Codex no findings and full review dispositions.

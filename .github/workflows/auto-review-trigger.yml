@@ -35,12 +35,14 @@ jobs:
           fs.appendFileSync(process.env.GITHUB_OUTPUT, "eligible=" + eligible + "\n");'
   dispatch:
     needs: qualify
+    # At PR opening, request Codex even for a draft. Later draft updates remain
+    # excluded; final ready-for-review HEADs still receive their own review.
     # Only qualified commands or eligible PR events enter concurrency.
     # Skipped comment events cannot cancel or replace pending paid requests.
     concurrency:
       group: independent-review-${{ github.event.pull_request.number || github.event.issue.number }}
       cancel-in-progress: false
-    if: always() && ((github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name == 'issue_comment' && github.event.issue.pull_request && needs.qualify.result == 'success' && needs.qualify.outputs.eligible == 'true'))
+    if: always() && ((github.event_name == 'pull_request' && (github.event.action == 'opened' || github.event.pull_request.draft == false) && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name == 'issue_comment' && github.event.issue.pull_request && needs.qualify.result == 'success' && needs.qualify.outputs.eligible == 'true'))
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -62,7 +64,7 @@ jobs:
             const number = manual ? context.issue.number : context.payload.pull_request.number;
             const current = (await github.rest.pulls.get({ ...repo, pull_number:number })).data;
             const pr = manual ? current : context.payload.pull_request;
-            if (current.state !== 'open' || (current.draft && !manual) ||
+            if (current.state !== 'open' || (current.draft && !manual && context.payload.action !== 'opened') ||
                 current.head.sha !== pr.head.sha || current.base.sha !== pr.base.sha ||
                 current.head.repo.full_name !== repo.owner + '/' + repo.repo ||
                 (manual && command[2] !== current.head.sha)) {
@@ -73,7 +75,7 @@ jobs:
             const [owner, repoName] = [repo.owner, repo.repo];
             const comments = await github.paginate(github.rest.issues.listComments,
               {owner, repo:repoName, issue_number:number, per_page:100});
-            const marker = '<!-- therabridge-review-request:' + sha + ':' + current.base.sha + ' -->';
+            const marker = '<!-- therabridge-review-request:' + sha + ':' + current.base.sha + (current.draft ? ':draft-open' : '') + ' -->';
             const existing = comments.some(c => c.user?.login === 'github-actions[bot]' && c.body?.includes(marker));
             if (!manual && !existing) {
               const enabled = process.env.TB_PAID_REVIEW_OPT_IN === 'true';
@@ -81,11 +83,16 @@ jobs:
                 marker, '### Independent AI review dispatch — exact HEAD',
                 'HEAD: \`' + sha + '\` · BASE: \`' + current.base.sha + '\`',
                 '@codex review',
+                current.draft ? 'Initial draft-opening request only. A ready-for-review exact-HEAD review is still required before merge.' : 'Final review evidence must cover the ready-for-review exact HEAD.',
                 'Mistral API: ' + (enabled && process.env.MISTRAL_API_KEY ? 'CONFIGURED' : 'NOT_ACTIVE'),
                 'Grok API: ' + (enabled && process.env.XAI_API_KEY ? 'CONFIGURED' : 'NOT_ACTIVE'),
                 'CONFIGURED means enabled, **not** reviewed. Only an API result below is review evidence.',
                 'No model can approve, merge, release clinical information, or replace six-job CI.'
               ].join('\n')});
+            }
+            if (current.draft && !manual) {
+              core.notice('Draft opened: initial Codex request posted; no metered provider calls for drafts.');
+              return;
             }
             if (process.env.TB_PAID_REVIEW_OPT_IN !== 'true') {
               core.notice('Provider API reviews disabled (zero-extra-spend default).');
