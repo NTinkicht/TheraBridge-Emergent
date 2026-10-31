@@ -369,3 +369,11 @@ The original bootstrap record below is historical. The application exists on mai
 - Owner must approve the plan before the first code build.
 
 Once the first verified GitHub export exists, replace these statements with actual branch/SHA, test commands, PASS/FAIL/NOT RUN, source paths, working links and blockers.
+
+
+## M2-H07 implementation checkpoint — 2026-11-01
+PR #145 on `feature/m2-h07-accessibility-performance-handover` addresses #131/#132/#112/#114 on the merged M2-H06 baseline. Current-code mapping: shared UI controls in `centers/kit.tsx` and `design/*`, scheduling in `operations/Calendar.tsx`, recurrence in `clinical/HomePracticeCalendar.tsx`, operational handover in split `clinical/governance.*` and `operations/HandoverProposalPanel.tsx`. Unique IDs, touch targets, keyboard tab navigation, modal focus; memoized projection/calendar layout; manager-only scoped paginated history and PostgreSQL regression; and genuine cross-role Chromium synthetic handover journey are committed. **Not qualified**: final exact-head six CI jobs and independent review pending. This checkpoint does not assert passing tests, release permissions, or clinical approval. G2/G2b and all signing/consent/transfer/release gates remain NO-GO.
+
+
+## M2-H07 CI qualification checkpoint — 2026-11-01
+GitHub Actions [run 41242446451](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41242446451) completed **SUCCESS, 6/6 jobs** at implementation HEAD `0955bb3e66033a5099a46506990ffa1b6bdadda9`: test (23/23 suites, 617/617 API tests, web build + frontend regression), secret-scan, live-session, preview-container, demo-journey (including three-browser handover synchronization), compose. The initial earlier SHA typecheck failure was fixed by adding the required `createdAt` to a synthetic child fixture. **This documentation update creates a new HEAD**; latest exact-head CI and final Codex review must still be rechecked before merge. No governance release approvals changed.

@@ -471,3 +471,14 @@ Blocked until owner's Emergent plan is returned and accepted. No code implemente
 3. Audit coverage of legacy #124/#121/#120/#119/#126 against actual split models. Flag any missing actor FK, direct user-disable lifecycle, per-row series update, pagination/clinical evidence retention or residual P3 as actionable before merge; do not silently defer it.
 4. Mark ready, request a new final-implementation `@codex review`, disposition every comment and link any owner-approved deferrals, then Rule16-qualify and auto-merge. Open M2-H05 (#122, #123, #125) immediately after a qualified merge.
 5. Clinical consent, signing, family release, real data and deployment remain NO-GO.
+
+
+## Active M2-H07 — do not skip qualification
+1. Await exact final HEAD GitHub Actions six jobs; investigate and fix every failing job (including new Playwright cross-session fixture, live a11y and PostgreSQL history regression). Run fresh CI after any change.
+2. Inspect all PR #145 top-level and inline reviewer findings. Disposition FIX_NOW / DEFER_ISSUE / DECLINE_WITH_REASON with regression/linked issue and update these ledgers.
+3. Request or verify single final exact-head Codex review once implementation and CI are stable. No merge without all six passing jobs and no unresolved blocking findings.
+4. Once Rule 16 qualified, merge M2-H07 and open M2-H08 (#133/#135/#136) under Rule 17. Do not activate TB-EM-052/053 absent signed owner approvals.
+
+
+## M2-H07 CI qualification checkpoint — 2026-11-01
+GitHub Actions [run 41242446451](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41242446451) completed **SUCCESS, 6/6 jobs** at implementation HEAD `0955bb3e66033a5099a46506990ffa1b6bdadda9`: test (23/23 suites, 617/617 API tests, web build + frontend regression), secret-scan, live-session, preview-container, demo-journey (including three-browser handover synchronization), compose. The initial earlier SHA typecheck failure was fixed by adding the required `createdAt` to a synthetic child fixture. **This documentation update creates a new HEAD**; latest exact-head CI and final Codex review must still be rechecked before merge. No governance release approvals changed.

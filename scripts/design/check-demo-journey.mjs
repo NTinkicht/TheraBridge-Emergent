@@ -96,7 +96,7 @@ try {
     const oldPageRequested = new Promise(resolve => { notifyOldPageRequested = resolve; });
     let cancelled = false;
     let proposalReloads = 0;
-    await page.route('**' + handoverPath, async route => {
+    await page.route('**' + handoverPath + '?*', async route => {
       if (route.request().method() !== 'GET') return route.continue();
       proposalReloads++;
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({

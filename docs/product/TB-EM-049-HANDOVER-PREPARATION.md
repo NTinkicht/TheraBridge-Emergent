@@ -18,3 +18,10 @@ Center manager child Care Team card -> Therapist replacement preparation panel. 
 
 ### Qualification
 `apps/api/test/handover.e2e-spec.ts` covers lifecycle, roles, tenant scope via actor context, duplicate proposals, inactive/unqualified recipients, changed specialties, forbidden clinical text, feature flag OFF and overlapping proposals. Existing authz inventory and permission-matrix snapshots extended. Initial CI at 0d170d3 FAILED due to CHECK constraint 23514 and related test failures. The migration, scoped service changes and concurrency tests are committed. Corrected-head six-job CI and independent review **NOT VERIFIED** at this checkpoint; never merge without qualification. Hosted #81 remains INCOMPLETE and clinical/production signing/release NO-GO.
+
+
+## M2-H07 #112 — bounded child-scoped cancelled history (synthetic-only)
+
+The existing `GET /api/centers/:centerId/governance/handover-proposals` additionally accepts manager-only optional `childId=<UUID>` and `cancelledOffset=<nonnegative integer>`. The manager receives all actionable `PENDING_ACK/ACKNOWLEDGED` proposals in the selected scope plus at most 100 recent `CANCELLED` records; `nextCancelledOffset` indicates older records (or `null` when exhausted). The UI requests only its selected child's scope and offers Load older cancelled proposals. Paging uses a deterministic createdAt/id descending order. Offset pagination is bounded and navigable for the synthetic POC; pagination under simultaneous cancellation can shift, so a stable cursor is a future improvement if live workflows require snapshot isolation.
+
+Incoming therapists may **not** supply `childId` or `cancelledOffset`; the API returns a non-disclosing denial before querying records. Their default inbox remains recipient-scoped with no child identity. Cross-center scope and active manager role are enforced server-side. No assignment/clinical records/consent/signing/release capability is created. Real PostgreSQL regression checks 101 unrelated cancellations, older child history and denial cases. Production/clinical use stays NO-GO.

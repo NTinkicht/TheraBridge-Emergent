@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Req } from '@nestjs/common';
 import { RequirePermission, TbRequest } from '../auth/access';
 import { GovernanceService } from './governance.service';
 import { TransferDraftDto, TransitionDto, HandoverProposalDto } from './governance.dto';
@@ -18,8 +18,9 @@ export class GovernanceController {
   @Get('access') @RequirePermission('center.governance.read')
   access(@Param('centerId', uuid()) c: string, @Req() r: TbRequest) { return this.service.access(c, viewer(r)); }
   @Get('handover-proposals') @RequirePermission('center.handover.read')
-  handovers(@Param('centerId', uuid()) c: string, @Req() r: TbRequest) {
-    return this.service.handovers(c, viewer(r));
+  handovers(@Param('centerId', uuid()) c: string, @Req() r: TbRequest,
+    @Query('childId') childId?: string, @Query('cancelledOffset') cancelledOffset?: string) {
+    return this.service.handovers(c, viewer(r), { childId, cancelledOffset });
   }
   @Get('handover-proposals/:id/readiness') @RequirePermission('center.governance.read')
   handoverReadiness(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Req() r: TbRequest) {
