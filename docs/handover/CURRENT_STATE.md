@@ -369,3 +369,7 @@ The original bootstrap record below is historical. The application exists on mai
 - Owner must approve the plan before the first code build.
 
 Once the first verified GitHub export exists, replace these statements with actual branch/SHA, test commands, PASS/FAIL/NOT RUN, source paths, working links and blockers.
+
+
+## M2-H07 implementation checkpoint — 2026-11-01
+PR #145 on `feature/m2-h07-accessibility-performance-handover` addresses #131/#132/#112/#114 on the merged M2-H06 baseline. Current-code mapping: shared UI controls in `centers/kit.tsx` and `design/*`, scheduling in `operations/Calendar.tsx`, recurrence in `clinical/HomePracticeCalendar.tsx`, operational handover in split `clinical/governance.*` and `operations/HandoverProposalPanel.tsx`. Unique IDs, touch targets, keyboard tab navigation, modal focus; memoized projection/calendar layout; manager-only scoped paginated history and PostgreSQL regression; and genuine cross-role Chromium synthetic handover journey are committed. **Not qualified**: final exact-head six CI jobs and independent review pending. This checkpoint does not assert passing tests, release permissions, or clinical approval. G2/G2b and all signing/consent/transfer/release gates remain NO-GO.
