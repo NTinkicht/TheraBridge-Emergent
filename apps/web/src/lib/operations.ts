@@ -132,20 +132,25 @@ export function zonedToUtc(date: string, time: string, tz = centerTz): Date {
   return new Date(offset(t2, tz) === o2 ? t2 : Math.max(t1, t2));
 }
 /** Format a server timestamp as HTML datetime-local in the specified care center time zone. */
-export function formatZonedDateTimeInput(iso: string | null, tz: string): string {
+export function formatZonedDateTimeInput(iso: string | null, tz: string, seconds = false): string {
   if (!iso) return '';
   const fields = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
     timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
   }).formatToParts(new Date(iso)).map(part => [part.type, part.value]));
-  return `${fields.year}-${fields.month}-${fields.day}T${fields.hour}:${fields.minute}`;
+  return fields.year + '-' + fields.month + '-' + fields.day + 'T' + fields.hour + ':' + fields.minute + (seconds ? ':' + fields.second : '');
 }
 
-/** Convert a center wall-clock datetime to the corresponding UTC instant; never use the browser OS timezone. */
+/** Convert center wall-clock time to UTC; never use the browser OS timezone. */
 export function zonedDateTimeInputToIso(value: string, tz: string): string {
-  if (!/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}$/.test(value)) throw new Error('Enter a valid date and time for this center.');
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/.test(value)) {
+    throw new Error('Enter a valid date and time for this center.');
+  }
+  const seconds = value.length === 19 ? Number(value.slice(17, 19)) : 0;
+  if (seconds > 59) throw new Error('Enter a valid time with seconds below 60.');
   const instant = zonedToUtc(value.slice(0, 10), value.slice(11, 16), tz);
   if (!Number.isFinite(instant.valueOf())) throw new Error('Enter a valid date and time for this center.');
+  instant.setUTCSeconds(seconds);
   return instant.toISOString();
 }
 
