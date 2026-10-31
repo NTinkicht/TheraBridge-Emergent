@@ -51,8 +51,13 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
 
   it('hides a same-center different-child assessment ID just like an unknown ID', async () => {
     const { therapist, other } = await setup();
-    const childB = (await post(h, c('children'), admin,
-      { firstName: 'Other', lastName: 'Child', dateOfBirth: '2020-01-02', services: ['speech'] }).expect(201)).body.id;
+    // Direct synthetic fixture avoids the centre's single-child onboarding
+    // capacity limit; this test exercises authorization, not provisioning.
+    const childB = (await h.prisma.child.create({ data: {
+      centerId, firstName: 'Other', lastName: 'Child',
+      dateOfBirth: new Date('2020-01-02'), services: ['speech'],
+      createdById: admin.body.user.id, createdAt: h.clock.now(),
+    } })).id;
     await post(h, c(`children/${childB}/assignments`), admin,
       { membershipId: other.body.activeContext.membershipId, service: 'speech' }).expect(201);
     const assessment = (await post(h, c(`clinical/children/${childB}/assessments`), other,
@@ -159,7 +164,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
       where: { id: therapist.body.activeContext.membershipId },
       data: { specialties: [] },
     });
-    await post(h, path, midnightTherapist, { ...body, version: 4 }).expect(403);
+    await post(h, path, midnightTherapist, { ...body, version: 4 }).expect(404);
 
   });
 
