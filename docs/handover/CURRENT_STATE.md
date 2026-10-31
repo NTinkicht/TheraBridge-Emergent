@@ -1,3 +1,9 @@
+## 2026-10-31 — CURRENT: M2-H05 #143 implementation in review qualification
+
+- [PR #143](https://github.com/NTinkicht/TheraBridge-Emergent/pull/143) remains **OPEN DRAFT**, now contains application and regression-test changes for frozen **#122, #123, #125** (item 6/12). DST folds select the earlier instant; gaps explicitly reject. Current center-local day boundaries and date validation no longer use host-timezone assumptions or regex-only checks. Reports/governance distinguish stale versions and invalid states; WITHDRAWN plans stay historical and cannot enter new active evidence/observations.
+- New synthetic regression tests: `timezone-validation.e2e-spec.ts`, `validators.e2e-spec.ts` and real-PostgreSQL `governance.e2e-spec.ts` additions. First code CI [41232387309](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41232387309) failed a TS narrowing assertion, fixed at `e469b7c`. **Exact final-HEAD 6/6 CI, implementation Codex review and all finding dispositions are PENDING; NO MERGE yet.**
+- The pinned audit references obsolete monolithic paths/models; the implementation maps to current split NestJS/Prisma services, described in `docs/emergent/workunits/M2-H05.md`. No owner approval for clinical signing, consent, safeguarding, family release or real data: all **NO-GO**. After qualified merge, open M2-H06 (#127–#130) immediately. Historical checkpoints follow.
+
 ## 2026-10-31 — CURRENT: M2-H05 planning-only draft (after M2-H04 merge)
 
 - **Latest verified merge:** [M2-H04 PR #142](https://github.com/NTinkicht/TheraBridge-Emergent/pull/142) merged as `b95a0ce6e5504c7660bdc265ea08ba3f9a754e23`; #124/#121 H03 carryover plus #120/#119/#126 H04 fixes, six exact-HEAD CI PASS ([run 41227497493](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41227497493)), final-head Codex no major issues and 17 review findings fixed/dispositioned.
