@@ -40,6 +40,19 @@ test('M2-H06 #127: repeated Paris DST hour picks later offset', () => {
   assert.equal(ops.zonedDateTimeInputToIso('2026-10-25T02:30', 'Europe/Paris'), '2026-10-25T01:30:00.000Z');
 });
 
+test('M2-H06 Codex P2: an unchanged end keeps its first DST-overlap offset', () => {
+  const original = '2026-10-25T00:30:37.000Z';
+  const visible = ops.formatZonedDateTimeInput(original, 'Europe/Paris', true);
+  assert.equal(visible, '2026-10-25T02:30:37');
+  assert.equal(ops.preservedZonedInstant(visible, original, 'Europe/Paris'), original);
+  assert.equal(ops.preservedZonedInstant('2026-10-25T03:30:37', original, 'Europe/Paris'), '2026-10-25T02:30:37.000Z');
+});
+
+test('M2-H06 Codex P2: spring-forward nonexistent center time is rejected', () => {
+  assert.throws(() => ops.zonedDateTimeInputToIso('2026-03-29T02:30', 'Europe/Paris'), /does not exist/);
+  assert.throws(() => ops.preservedZonedInstant('2026-03-29T02:30:00', null, 'Europe/Paris'), /does not exist/);
+});
+
 test('M2-H06 #128: machine-readable code does not obscure existing API error details', () => {
   const error = new api.ApiError(409, 'Conflicting version', { code: 'HANDOVER_VERSION_CONFLICT', details: { currentVersion: 3 } });
   assert.equal(error.code, 'HANDOVER_VERSION_CONFLICT');
