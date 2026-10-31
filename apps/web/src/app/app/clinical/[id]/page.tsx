@@ -1,5 +1,5 @@
-import { navigateTabs } from '@/lib/a11y-tabs';
 'use client';
+import { navigateTabs } from '@/lib/a11y-tabs';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
