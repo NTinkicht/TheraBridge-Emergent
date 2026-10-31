@@ -383,7 +383,9 @@ export class ReportsService {
   private why(r: ProgressReport, v: Viewer) {
     if (r.membershipId !== v.membershipId) return new ForbiddenException('Only the author can edit this report.');
     if (!EDITABLE.includes(r.status)) return new ConflictException({
-      code: 'INVALID_REPORT_STATUS', message: 'Only DRAFT or RETURNED_FOR_REVISION reports can be edited.',
+      code: 'INVALID_REPORT_STATUS', message: r.status === 'IN_REVIEW'
+        ? 'This report is with the supervisor. Only DRAFT or RETURNED_FOR_REVISION reports can be edited.'
+        : 'Only DRAFT or RETURNED_FOR_REVISION reports can be edited.',
     });
     return new ConflictException({ code: 'VERSION_CONFLICT', message: 'Report version conflict. The report changed in another window; reload before editing.' });
   }
