@@ -145,7 +145,7 @@ describe('TB-EM-049 synthetic operational handover proposal (PostgreSQL)', () =>
     const pending = (await start(admin, body()).expect(201)).body;
     const unrelatedId = (await h.prisma.child.create({ data: {
       centerId, firstName: 'Unrelated', lastName: 'Synthetic', dateOfBirth: new Date('2020-01-01'),
-      services: ['speech'], createdById: admin.body.user.id,
+      services: ['speech'], createdById: admin.body.user.id, createdAt: h.clock.now(),
     } })).id;
     const user = admin.body.user.id as string;
     const old = await h.prisma.caseloadTransferDraft.create({ data: {
