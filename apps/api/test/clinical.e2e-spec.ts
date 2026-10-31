@@ -153,6 +153,37 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.plan_draft_saved' } })).toBe(0);
   });
 
+  it('M2-H05 Codex P2: a measured legacy goal with whitespace title can round-trip without redefinition', async () => {
+    const { therapist, kid } = await setup();
+    const versionId = (await post(h, c(`clinical/children/${kid}/plans`), therapist, {
+      service: 'speech', title: 'Legacy draft goal compatibility',
+    }).expect(201)).body.versionId as string;
+    const goal = { key: 'legacy', title: 'Names familiar objects', measure: 'count', baseline: 0, target: 8 };
+    const planPath = c(`clinical/plan-versions/${versionId}`);
+    await patch(therapist, planPath, {
+      summary: 'Original synthetic draft', goals: [goal], homeActivities: [], version: 1,
+    }).expect(200);
+    await post(h, c(`clinical/children/${kid}/observations`), therapist, {
+      planVersionId: versionId, goalKey: 'legacy', value: 2, observedOn: '2026-10-18',
+    }).expect(201);
+    // Imported drafts persisted before M2-H05 could have leading/trailing
+    // whitespace. The new pipe trims client input, but immutable stored
+    // definitions cannot be silently rewritten.
+    await h.prisma.planVersion.update({ where: { id: versionId }, data: {
+      goals: [{ ...goal, title: '  Names familiar objects  ' }],
+    } });
+    await patch(therapist, planPath, {
+      summary: 'Summary-only revision after import', goals: [goal], homeActivities: [], version: 2,
+    }).expect(200);
+    const saved = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: versionId } });
+    expect((saved.goals as Array<{ title: string }>)[0].title).toBe('  Names familiar objects  ');
+    expect(saved.summary).toBe('Summary-only revision after import');
+    await patch(therapist, planPath, {
+      summary: 'Must not redefine measured goal',
+      goals: [{ ...goal, title: 'Renamed goal should fail' }], homeActivities: [], version: 3,
+    }).expect(409);
+  });
+
   it('records non-authorizing therapist goal checkpoints with exact saved observation sources', async () => {
     const { therapist, other, sup, kid, rosa } = await setup();
     const created = (await post(h, c(`clinical/children/${kid}/plans`), therapist, {
