@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { Tx, logCenterEvent, uniq } from '../centers/history';
 import { PrismaService } from '../prisma/prisma.service';
@@ -363,6 +363,17 @@ export class ClinicalService {
             n.kind === 'GOAL_CHECKPOINT' && typeof n.goalKey === 'string') lockedKeys.add(n.goalKey);
       }
       const priorGoals = fresh.goals as Goal[];
+      // M2-H05's new 200-character cap applies to authored/redefined goals.
+      // Historical versions accepted up to 300; reject actual edits but permit
+      // unchanged legacy definitions to round-trip through a summary-only save.
+      for (const goal of dto.goals) {
+        if (goal.title.length <= 200) continue;
+        const oldGoal = priorGoals.find(prior => prior.key === goal.key);
+        const unchangedLegacy = oldGoal &&
+          fingerprint(goalDefinition({ ...oldGoal, title: oldGoal.title.trim() })) ===
+          fingerprint(goalDefinition(goal));
+        if (!unchangedLegacy) throw new BadRequestException('A new or changed goal title must be at most 200 characters.');
+      }
       const goalsToSave = dto.goals.map(g => {
         const oldGoal = lockedKeys.has(g.key) ? priorGoals.find(old => old.key === g.key) : undefined;
         return oldGoal && oldGoal.title.trim() === g.title ? { ...g, title: oldGoal.title } : g;
