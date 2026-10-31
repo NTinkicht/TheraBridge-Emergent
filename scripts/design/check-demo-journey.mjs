@@ -103,7 +103,7 @@ try {
     const speechTemplates = items.filter(t => t.service === 'speech');
     assert(speechTemplates.length > 0, 'Seed requires Speech activity examples');
     await search.fill('  LANGUAGE  ');
-    assert(await search.isFocused(), 'Activity search field must stay mounted and focused while results reload');
+    assert(await search.evaluate(el => document.activeElement === el), 'Activity search field must stay mounted and focused while results reload');
     await count(speechTemplates.length);
     assert.equal(await cardCount(), speechTemplates.length, 'Displayed specialty label must be searchable');
     await search.fill('unlikely-synthetic-library-result-4c7fbb');
