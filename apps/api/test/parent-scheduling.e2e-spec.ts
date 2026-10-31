@@ -55,6 +55,13 @@ describe('TB-EM-007 parent experience round 2 + scheduling enhancements (real Po
     admin = await accept('lead@ops.test', 'Lead Admin');
   });
 
+  it('rejects a syntactically plausible but nonexistent IANA center timezone at the HTTP boundary', async () => {
+    await post(h, '/api/platform/centers', ops, {
+      name: 'Rejected timezone center', timezone: 'Mars/Phobos', country: 'Germany', city: 'Berlin',
+      specialties: ['speech'], firstAdmin: { email: 'invalidzone@ops.test', displayName: 'Synthetic Admin' },
+    }).expect(400);
+  });
+
   it('center time zone conversion handles daylight-saving transitions and recurrence expansion', () => {
     expect(zonedToUtc('2026-10-20', '09:00', 'Europe/Berlin').toISOString()).toBe('2026-10-20T07:00:00.000Z');
     expect(zonedToUtc('2026-10-27', '09:00', 'Europe/Berlin').toISOString()).toBe('2026-10-27T08:00:00.000Z');
