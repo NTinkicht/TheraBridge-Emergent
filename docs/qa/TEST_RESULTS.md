@@ -1,3 +1,12 @@
+## 2026-10-31 — M2-H05 extra review boundary tests pending final qualification
+
+| Finding | Fix/test | Status |
+| --- | --- | --- |
+| Mistral P3 unmeasured legacy long/whitespace title round-trip | `ff05058` stores original title for wholly unchanged definition; `9f3b979` real PostgreSQL and HTTP test | **FIX_NOW — final CI pending** |
+| Mistral P3 explicit fold-time change | `7871202` checks earlier-fold 00:45Z after changing 02:30→02:45, distinct from room-only 01:30Z preservation | **FIX_NOW — final CI pending** |
+| Codex three P2s | DST preserve, measured/checkpointed title bytes, 201–300-char legacy and new-200 cap | **FIX_NOW — final CI pending** |
+| Clinical gates | No policy activation or real records | **NO-GO** |
+
 ## 2026-10-31 — M2-H05 long legacy goal title regression pending final qualification
 
 | Finding | Remediation | Status |
