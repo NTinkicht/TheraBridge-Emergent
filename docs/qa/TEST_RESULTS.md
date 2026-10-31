@@ -1,3 +1,14 @@
+## 2026-10-31 — M2-H04 #142 combined five-issue checkpoint (test status NOT VERIFIED)
+
+| Gate | Current status | Evidence / limitation |
+| --- | --- | --- |
+| #141 M2-H03 | MERGED DOCUMENTATION ONLY | `232c73c`; #124/#121 fixes did not exist in the merged diff |
+| #142 M2-H04 scope | OPEN DRAFT / 5 ISSUES | #124, #121 carried into original #120, #119, #126 under explicit owner approval |
+| #124 first HTTP hardening slice | SOURCE/TEST EDITS IN PROGRESS — NOT VERIFIED | Cache headers, account-wide PostgreSQL password-change limit, Prisma error sanitization, Fastify body cap and new tests; CI/test results not yet claimed |
+| #121, #120, #119, #126 | NOT IMPLEMENTED / NOT TESTED | Must be completed in this PR; see five-issue acceptance matrix |
+| Six CI jobs and final independent code review | NOT RUN on completed implementation | Opening draft/plan review never qualifies a merge |
+| Clinical/production governance | NO-GO | Unsigned approvals unchanged; synthetic only |
+
 ## 2026-10-31 — Current M2-H03 #141: planning-only review, NOT functional qualification
 
 | Check | Result | Evidence / remaining limitation |

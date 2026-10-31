@@ -5,7 +5,7 @@ import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { hashPassword } from '../src/auth/password';
-import { configureApp } from '../src/bootstrap';
+import { API_BODY_LIMIT_BYTES, configureApp } from '../src/bootstrap';
 import { CLOCK } from '../src/common/clock';
 import { AUTH_CONFIG, loadAuthConfig } from '../src/config/env';
 import { PrismaService } from '../src/prisma/prisma.service';
@@ -44,7 +44,7 @@ export async function makeApp(env: Record<string, string> = {}, clock = new Fake
     .overrideProvider(CLOCK).useValue(clock)
     .overrideProvider(AUTH_CONFIG).useValue(loadAuthConfig({ ...process.env, ...env }))
     .compile();
-  const app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+  const app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter({ bodyLimit: API_BODY_LIMIT_BYTES }));
   configureApp(app);
   await app.init();
   await app.getHttpAdapter().getInstance().ready();

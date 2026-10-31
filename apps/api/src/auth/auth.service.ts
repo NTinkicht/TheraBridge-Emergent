@@ -14,6 +14,7 @@ import { ClientMeta, IDLE_MS, SessionService } from './session.service';
 const WINDOW_MS = 15 * 60_000;
 export const ACCOUNT_LIMIT = 5;
 export const IP_LIMIT = 30;
+export const PASSWORD_CHANGE_LIMIT = 5;
 const LOCK_MS = 15 * 60_000;
 const RESET_TTL_MS = 30 * 60_000;
 const GENERIC_LOGIN_ERROR = 'Email or password is incorrect.';
@@ -133,6 +134,13 @@ export class AuthService {
   }
 
   async change(auth: AuthState, current: string, next: string, meta: ClientMeta): Promise<string> {
+    // Shared PostgreSQL counter: all sessions and API instances for this account
+    // consume one budget before the expensive Argon2 current-password check.
+    const rateKey = `password-change:${hmac(this.cfg.secret, auth.session.userId)}`;
+    if ((await this.limits.hit(rateKey, WINDOW_MS, this.clock.now())) > PASSWORD_CHANGE_LIMIT) {
+      await this.audit.record('auth.password.change_rate_limited', { actorUserId: auth.session.userId, ip: meta.ip });
+      throw new HttpException('Too many password-change attempts. Please try again later.', HttpStatus.TOO_MANY_REQUESTS);
+    }
     const identity = await this.prisma.authIdentity.findUnique({ where: { userId_provider: { userId: auth.session.userId, provider: 'local' } } });
     if (!identity?.passwordHash || !(await verifyPassword(identity.passwordHash, current))) {
       throw new UnprocessableEntityException('Your current password is incorrect.');

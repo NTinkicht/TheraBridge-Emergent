@@ -1,3 +1,9 @@
+## 2026-10-31 — M2-H04 five-issue composite implementation starts (#142)
+
+- Owner expressly directed carryover of **unimplemented #124/#121** from merged documentation-only #141 into **M2-H04 PR #142**, together with original #120/#119/#126. Opened draft at `aa83a6f`; review body and work-unit document explicitly list the five obligations, audit severities and safety gates.
+- Inspected current split NestJS/Fastify architecture (which differs from audit pin `05cec48b`): `bootstrap.ts`, `auth.service.ts`, PostgreSQL `RateLimitStore`, session semantics and actual operations services. Initial #124 HTTP hardening and adversarial tests are being prepared. Do not claim successful execution before CI evidence; all five issue-completion gates remain open.
+- Planning-only Codex on #141 does not qualify this PR. Real test/database evidence and independent review of the final implementation HEAD remain mandatory; no owner-gated clinical activation or deployment.
+
 ## 2026-10-31 — M2-H03 PR #141 opened; planning-review findings disposition
 
 - M2-S01 [PR #140](https://github.com/NTinkicht/TheraBridge-Emergent/pull/140) **MERGED** at `803ad48343f4881045622853c04c7eafefea6380` with 580/580 tests, six passing exact-head CI jobs and independent reviews. Opened ordered item 4/12, M2-H03 [PR #141](https://github.com/NTinkicht/TheraBridge-Emergent/pull/141), for #124 (HTTP hardening) and #121 (therapist revocation).

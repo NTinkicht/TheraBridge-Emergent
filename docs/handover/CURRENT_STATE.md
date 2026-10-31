@@ -1,3 +1,9 @@
+## 2026-10-31 — CURRENT: M2-H04 PR #142 with explicit unfinished M2-H03 carryover
+
+- M2-H03 [PR #141](https://github.com/NTinkicht/TheraBridge-Emergent/pull/141) **merged at `232c73c` with documentation/workflow only**; its #124 HTTP-security and #121 therapist-revocation feature fixes remain **UNIMPLEMENTED**. The owner's specific 2026-10-31 instruction places both in current [M2-H04 PR #142](https://github.com/NTinkicht/TheraBridge-Emergent/pull/142), alongside original #120, #119 and #126. All five must be implemented and tested **inside #142** before it qualifies.
+- Current #142 work is **IN PROGRESS**, with initial #124 HTTP cache/privacy, shared password-change rate-limit, safe Prisma mapping and request-size work being prepared. **Feature tests/CI: NOT YET VERIFIED.** No #121/#120/#119/#126 fixes are claimed. This supersedes the older M2-H03-next instructions below.
+- Reviewers must use the five-issue matrix in `docs/emergent/workunits/M2-H04.md`. Keep PR #142 draft until actual code, real-PostgreSQL tests, all six final-head CI checks, and a fresh independent review pass. Clinical signing, safeguarding, consent/release and real-data deployment remain NO-GO. Next after qualified merge: **M2-H05 (#122, #123, #125)**.
+
 ## 2026-10-31 — CURRENT: M2-H03 (#124, #121) planning checkpoint; M2-S01 merged
 
 - **Latest predecessor:** M2-S01 [PR #140](https://github.com/NTinkicht/TheraBridge-Emergent/pull/140) merged to `main` at `803ad48343f4881045622853c04c7eafefea6380` after 580/580 API tests, six green required CI jobs and no-blocking independent reviews. Its fail-closed family messaging remains synthetic-only; safeguarding approval is still NO-GO.

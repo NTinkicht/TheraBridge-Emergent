@@ -1,3 +1,10 @@
+## 2026-10-31 — CURRENT: M2-H04 PR #142, five required issues
+
+1. **Complete both owner-approved carried-over P1 issues in PR #142: #124 HTTP security and #121 therapist revocation.** PR #141 merged documents only; its feature scope is not complete and must not be treated as fixed.
+2. **Complete all three original M2-H04 issues in that same PR:** #120 safe additive foreign keys/indexes and transfer/audit integrity, #119 N+1/center-lock performance and concurrency, #126 bounded queries/reminder idempotency/rate-limit pruning. Read current models instead of blindly applying obsolete audit examples.
+3. Run real-PostgreSQL regression and lock-wait tests, verify six exact-final-head CI jobs, request a new independent Codex review on the final implementation code, disposition every reviewer finding and merge only if Rule 16 qualifies. Keep draft during work. No clinical/production approval is implied.
+4. **Only after all five issues actually qualify and #142 merges**, open next frozen item **M2-H05 (#122, #123, #125)**. Historical instructions below have been superseded by explicit owner-approved carryover.
+
 ## 2026-10-31 — CURRENT ordered next work: M2-H03 PR #141 (#124, #121)
 
 1. **Work on [PR #141](https://github.com/NTinkicht/TheraBridge-Emergent/pull/141), item 4/12 (M2-H03).** Its opening HEAD `bbc85cdb174be6b1f43726e161b54cfd8a82cbb3` only planned the work; **implementation is NOT STARTED**, so do not merge or mark work complete based on its documentation-only CI/reviews.
