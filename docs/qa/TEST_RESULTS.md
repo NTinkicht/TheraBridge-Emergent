@@ -1,3 +1,11 @@
+## 2026-10-31 — M2-H05 Codex security P1 remediation pending final qualification
+
+| Finding | Fix and test | Status |
+| --- | --- | --- |
+| Pre-authorization WITHDRAWN status leak to revoked therapist | `bc70c5f` enforces transactional active child + matching specialty before withdrawal/goal checks; `e6b9f88` real HTTP/DB verifies authorized 409, revoked known/unknown both 404 | **P1 FIX_NOW; fresh six-job CI + final-head Codex review pending** |
+| Prior 3 P2 + 2 P3 | DST/legacy-title preservation and new boundaries, unchanged | **FIX_NOW; must requalify combined final HEAD** |
+| Clinical release, real records, production | No change to clinical approval gates | **NO-GO** |
+
 ## 2026-10-31 — M2-H05 extra review boundary tests pending final qualification
 
 | Finding | Fix/test | Status |
