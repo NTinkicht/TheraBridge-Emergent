@@ -383,6 +383,13 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     expect(saved.endsAt.toISOString()).toBe('2027-10-31T02:30:00.000Z');
     expect(saved.room).toBe('Updated room only');
     expect(saved.version).toBe(2);
+    // An explicitly changed wall time DOES use the new earlier-fold policy.
+    await patch(admin, c(`series/${seriesId}`), {
+      fromDate: '2027-10-31', startTime: '02:45', version: 2,
+    }).expect(200);
+    const retimed = await h.prisma.appointment.findUniqueOrThrow({ where: { id: existing.id } });
+    expect(retimed.startsAt.toISOString()).toBe('2027-10-31T00:45:00.000Z');
+    expect(retimed.endsAt.toISOString()).toBe('2027-10-31T01:45:00.000Z');
   });
 
   it('M2-H04: therapist suspension atomically ends assigned series, visits and referent; notifies a connected guardian', async () => {
