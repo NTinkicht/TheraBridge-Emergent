@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TrialService } from '../operations/trial.service';
 import type { Viewer } from '../operations/children.service';
@@ -237,10 +237,18 @@ export class GovernanceService {
       clinicalHandover: false, released: false };
   }
 
-  async handovers(centerId: string, v: Viewer) {
+  async handovers(centerId: string, v: Viewer, query: { childId?: string; cancelledOffset?: string } = {}) {
     const manager = ['CENTER_ADMIN','COORDINATOR'].includes(v.role);
     if (!manager && v.role !== 'THERAPIST') throw new ForbiddenException();
-    if (!this.handoverEnabled()) return { enabled: false, synthetic: true, items: [] };
+    // Child-scoped history is manager-only. In particular, never let the incoming
+    // therapist supply or infer a child identifier through this route.
+    if (!manager && (query.childId !== undefined || query.cancelledOffset !== undefined)) throw new ForbiddenException();
+    if (query.childId !== undefined && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(query.childId))
+      throw new BadRequestException('Invalid child identifier.');
+    if (query.cancelledOffset !== undefined && !/^(0|[1-9][0-9]{0,6})$/.test(query.cancelledOffset))
+      throw new BadRequestException('Invalid history offset.');
+    const cancelledOffset = Number(query.cancelledOffset ?? 0);
+    if (!this.handoverEnabled()) return { enabled: false, synthetic: true, items: [], nextCancelledOffset: null };
     const actor = await this.prisma.membership.findFirst({
       where: { id: v.membershipId, centerId, userId: v.userId, status: 'ACTIVE',
         user: { status: 'ACTIVE' }, center: { status: 'ACTIVE' },
@@ -248,7 +256,8 @@ export class GovernanceService {
     });
     if (!actor) throw new ForbiddenException('Active membership required.');
     // All actionable proposals must remain accessible, even after >100 cancellations.
-    const scope = { centerId, ...(!manager ? { toMembershipId: v.membershipId } : {}) };
+    const scope = { centerId, ...(!manager ? { toMembershipId: v.membershipId } : {}),
+      ...(manager && query.childId ? { childId: query.childId } : {}) };
     const [active, cancelled] = await Promise.all([
       this.prisma.caseloadTransferDraft.findMany({
         where: { ...scope, status: { in: ['PENDING_ACK','ACKNOWLEDGED'] } },
@@ -256,11 +265,12 @@ export class GovernanceService {
       }),
       this.prisma.caseloadTransferDraft.findMany({
         where: { ...scope, status: 'CANCELLED' },
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 100,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], skip: cancelledOffset, take: 101,
       }),
     ]);
-    const rows = [...active, ...cancelled];
-    return { enabled: true, synthetic: true, items: rows.map(row => this.handoverView(row, manager)) };
+    const rows = [...active, ...cancelled.slice(0, 100)];
+    return { enabled: true, synthetic: true, items: rows.map(row => this.handoverView(row, manager)),
+      nextCancelledOffset: cancelled.length > 100 ? cancelledOffset + 100 : null };
   }
 
   // TB-EM-050: manager-only, read-only operational snapshot. It is NEVER an
