@@ -1,10 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {BASE,WIDTHS,ROLES,caseId,validateTarget,inspectCookieJar,inspectSetCookie,
- inspectGeometry,statusForPages,blocked,run} from './hosted-readonly.mjs';
+ inspectGeometry,statusForPages,blocked,authFailureCode,run} from './hosted-readonly.mjs';
 const jar={name:'__Host-tb_session',value:'SECRET_NEVER_EXPORT',secure:true,httpOnly:true,
  sameSite:'Lax',path:'/',domain:'therabridge-ahmed-synthetic-demo.onrender.com'};
 const header='__Host-tb_session=SECRET_NEVER_EXPORT; Path=/; HttpOnly; SameSite=Lax; Secure';
+test('auth diagnostics classify stages without exposing identity or credentials',()=>{
+ const cases=[
+  ['submit',401,'login_http_401'],['submit',429,'login_http_429'],
+  ['submit',500,'login_http_other'],['submit',null,'login_response_unverified'],
+  ['form',null,'login_form_unavailable'],['redirect',200,'login_redirect_unverified'],
+  ['context',200,'authorized_context_unverified'],
+  ['shell',200,'authenticated_shell_unavailable'],
+  ['identity',200,'session_identity_unverified']
+ ];
+ for(const [stage,status,expected] of cases){
+  const code=authFailureCode(stage,status);
+  assert.equal(code,expected);
+  assert.equal(/[\\s@]/.test(code),false);
+ }
+});
 test('42 unique IDs N-052..N-093',()=>{
  const ids=Object.keys(ROLES).flatMap(r=>[...WIDTHS.map((_,i)=>caseId(ROLES[r].start+i)),caseId(ROLES[r].cookie)]);
  assert.equal(ids.length,42);assert.deepEqual(new Set(ids),new Set(Array.from({length:42},(_,i)=>caseId(i+52))));
