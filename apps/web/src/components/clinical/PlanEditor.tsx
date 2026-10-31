@@ -41,11 +41,11 @@ function GoalRow({ g, onChange, onRemove, disabled, i, planId }: { g: Goal; onCh
         <input aria-label="Target" type="number" className={input} value={g.target} disabled={disabled}
           onChange={e => onChange({ ...g, target: Number(e.target.value) })} data-testid={`goal-target-${i}`} />
         {!disabled && <button type="button" aria-label="Remove goal" onClick={onRemove}
-          className="grid h-10 w-10 place-items-center rounded-control hover:bg-surface-subtle" data-testid={`goal-remove-${i}`}><Trash2 size={16} aria-hidden="true" /></button>}
+          className="grid h-11 w-11 place-items-center rounded-control hover:bg-surface-subtle" data-testid={`goal-remove-${i}`}><Trash2 size={16} aria-hidden="true" /></button>}
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3" data-testid={`goal-planning-${i}`}>
         <label className="text-[12px] font-semibold">Objective horizon
-          <select className={`mt-1 min-h-[42px] ${input}`} value={g.horizon ?? ''} disabled={disabled}
+          <select className={`mt-1 min-h-[44px] ${input}`} value={g.horizon ?? ''} disabled={disabled}
             onChange={e => onChange({ ...g, horizon: e.target.value ? e.target.value as Goal['horizon'] : undefined })} data-testid={`goal-horizon-${i}`}>
             <option value="">Not categorized (legacy)</option>
             <option value="SHORT_TERM">Short-term</option>
@@ -53,11 +53,11 @@ function GoalRow({ g, onChange, onRemove, disabled, i, planId }: { g: Goal; onCh
           </select>
         </label>
         <label className="text-[12px] font-semibold">Target date
-          <input type="date" className={`mt-1 min-h-[42px] ${input}`} value={g.targetOn ?? ''} disabled={disabled}
+          <input type="date" className={`mt-1 min-h-[44px] ${input}`} value={g.targetOn ?? ''} disabled={disabled}
             onChange={e => onChange({ ...g, targetOn: e.target.value || undefined })} data-testid={`goal-target-date-${i}`} />
         </label>
         <label className="text-[12px] font-semibold">Next review date
-          <input type="date" className={`mt-1 min-h-[42px] ${input}`} value={g.reviewOn ?? ''} disabled={disabled}
+          <input type="date" className={`mt-1 min-h-[44px] ${input}`} value={g.reviewOn ?? ''} disabled={disabled}
             onChange={e => onChange({ ...g, reviewOn: e.target.value || undefined })} data-testid={`goal-review-date-${i}`} />
         </label>
       </div>
@@ -154,7 +154,7 @@ function VersionEditor({ centerId, ws, planId, planTitle, service, v, source, ru
                 onDurationChange={durationMinutes => setActs(prev => prev.map((x, j) => j === i ? { ...x, durationMinutes } : x))}
                 onInstructionsChange={note => setActs(prev => prev.map((x, j) =>
                   j === i ? { ...x, note } : x))} />
-              {edit && <button type="button" aria-label="Remove activity" onClick={() => setActs(acts.filter((_, j) => j !== i))} className="grid h-10 w-10 place-items-center rounded-control hover:bg-surface-subtle"><Trash2 size={16} aria-hidden="true" /></button>}
+              {edit && <button type="button" aria-label="Remove activity" onClick={() => setActs(acts.filter((_, j) => j !== i))} className="grid h-11 w-11 place-items-center rounded-control hover:bg-surface-subtle"><Trash2 size={16} aria-hidden="true" /></button>}
             </li>
           ))}
         </ul>
