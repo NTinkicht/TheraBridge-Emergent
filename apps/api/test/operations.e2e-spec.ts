@@ -297,10 +297,15 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     expect(history.map(x => x.revision)).toEqual(
       designated.status === 200 ? [1, 2] : [],
     );
-    if (history.length) expect(history[1]).toMatchObject({
-      previousMembershipId: membershipId, nextMembershipId: null,
-      reason: 'Last active care assignment ended',
-    });
+    if (history.length) {
+      expect(history[1]).toMatchObject({
+        previousMembershipId: membershipId, nextMembershipId: null,
+      });
+      // Either serialized path may clear the same referent: the original
+      // last-assignment ending path or the shared therapist lifecycle path.
+      // Both require a versioned history entry and a null final referent.
+      expect(['Last active care assignment ended', 'Therapist assignment ended']).toContain(history[1].reason);
+    }
     expect(await h.prisma.careAssignment.count({
       where: { centerId, childId: kid, endedAt: null },
     })).toBe(0);
