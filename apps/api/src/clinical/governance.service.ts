@@ -91,6 +91,25 @@ export class GovernanceService {
       if (dto.action === 'SUBMIT') {
         if (d.kind === 'PLAN' && !(d.content.goals as unknown[]).length) throw new UnprocessableEntityException('Add at least one goal before review.');
         if (d.kind === 'REPORT' && !((d.content.sections as Record<string,string>).summary ?? '').trim()) throw new UnprocessableEntityException('Write the clinician summary before review.');
+        if (d.kind === 'REPORT') {
+          // The last SAVED/CREATED evidence snapshot represents what the author
+          // reviewed. A plan withdrawn since that snapshot must not silently
+          // disappear when we rebuild evidence at submit time. Require the
+          // clinician to save a new snapshot and explicitly review the change.
+          const last = await tx.reportVersion.findFirst({
+            where: { centerId, reportId: id }, orderBy: { number: 'desc' }, select: { evidence: true },
+          });
+          const saved = last?.evidence as { plan?: { versionId?: unknown } | null;
+            plans?: { versionId?: unknown }[] } | undefined;
+          const ids = [saved?.plan?.versionId, ...(Array.isArray(saved?.plans) ? saved.plans.map(p => p?.versionId) : [])]
+            .filter((value): value is string => typeof value === 'string' &&
+              /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value));
+          if (ids.length && await tx.planVersion.count({
+            where: { id: { in: [...new Set(ids)] }, centerId, status: 'WITHDRAWN',
+              plan: { centerId, childId: d.childId, service: d.service } },
+          })) throw new ConflictException({ code: 'PLAN_VERSION_WITHDRAWN',
+            message: 'A source plan version was withdrawn after this report evidence was saved. Review and save a new report version before submission.' });
+        }
       }
       // Preserve the exact content and evidence BEFORE changing its state.
       const s = await this.freeze(tx, centerId, v, d, now);
