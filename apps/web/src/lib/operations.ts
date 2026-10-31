@@ -109,7 +109,8 @@ export const opsApi = {
 // All times are shown and entered in the center's time zone (set from API responses), not the browser's.
 let centerTz: string | undefined;
 export const setCenterTz = (tz: string | undefined) => {
-  if (tz) centerTz = tz;
+  // Clearing the previous center on context change must never leave a stale timezone.
+  centerTz = tz;
 };
 export const getCenterTz = () => centerTz;
 const wall = (ms: number, tz?: string) => {
@@ -118,17 +119,53 @@ const wall = (ms: number, tz?: string) => {
 };
 const offset = (ms: number, tz?: string) => wall(Math.floor(ms / 60000) * 60000, tz) - Math.floor(ms / 60000) * 60000;
 // Same rules as the API: repeated times resolve to the later instant, skipped times move forward.
-export function zonedToUtc(date: string, time: string): Date {
+export function zonedToUtc(date: string, time: string, tz = centerTz): Date {
+  if (!tz) throw new Error('Center timezone is unavailable. Refresh the workspace before entering appointment times.');
   const [y, m, d] = date.split('-').map(Number);
   const [h, mi] = time.split(':').map(Number);
   const guess = Date.UTC(y, m - 1, d, h, mi);
-  const o1 = offset(guess, centerTz);
+  const o1 = offset(guess, tz);
   const t1 = guess - o1;
-  const o2 = offset(t1, centerTz);
+  const o2 = offset(t1, tz);
   if (o1 === o2) return new Date(t1);
   const t2 = guess - o2;
-  return new Date(offset(t2, centerTz) === o2 ? t2 : Math.max(t1, t2));
+  return new Date(offset(t2, tz) === o2 ? t2 : Math.max(t1, t2));
 }
+/** Format a server timestamp as HTML datetime-local in the specified care center time zone. */
+export function formatZonedDateTimeInput(iso: string | null, tz: string, seconds = false): string {
+  if (!iso) return '';
+  const fields = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+    timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  }).formatToParts(new Date(iso)).map(part => [part.type, part.value]));
+  return fields.year + '-' + fields.month + '-' + fields.day + 'T' + fields.hour + ':' + fields.minute + (seconds ? ':' + fields.second : '');
+}
+
+/** Convert center wall-clock time to UTC; never use the browser OS timezone. */
+export function zonedDateTimeInputToIso(value: string, tz: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/.test(value)) {
+    throw new Error('Enter a valid date and time for this center.');
+  }
+  const seconds = value.length === 19 ? Number(value.slice(17, 19)) : 0;
+  if (seconds > 59) throw new Error('Enter a valid time with seconds below 60.');
+  const instant = zonedToUtc(value.slice(0, 10), value.slice(11, 16), tz);
+  if (!Number.isFinite(instant.valueOf())) throw new Error('Enter a valid date and time for this center.');
+  instant.setUTCSeconds(seconds);
+  // The calendar may omit a spring-forward hour. Never silently normalize
+  // a clinician-entered local time to a different wall-clock value.
+  if (formatZonedDateTimeInput(instant.toISOString(), tz, value.length === 19) !== value) {
+    throw new Error('This local time does not exist in the center time zone. Select a valid time.');
+  }
+  return instant.toISOString();
+}
+
+/** An unchanged ambiguous fall-back hour must retain its originally recorded offset. */
+export function preservedZonedInstant(value: string, originalIso: string | null, tz: string): string | undefined {
+  if (!value) return undefined;
+  if (originalIso && formatZonedDateTimeInput(originalIso, tz, true) === value) return originalIso;
+  return zonedDateTimeInputToIso(value, tz);
+}
+
 export const addDays = (day: string, n: number) => {
   const [y, m, d] = day.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);

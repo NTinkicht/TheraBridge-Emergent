@@ -93,6 +93,13 @@ export interface ApplicationDetail extends ApplicationSummary, Omit<ApplicationI
 }
 
 let csrf: string | null = null;
+let unauthorizedListener: (() => void) | null = null;
+/** The authenticated app installs one listener so all feature calls handle expired sessions. */
+export function onUnauthorized(listener: () => void): () => void {
+  unauthorizedListener = listener;
+  return () => { if (unauthorizedListener === listener) unauthorizedListener = null; };
+}
+
 
 async function call<T>(path: string, opts: { method?: string; body?: unknown; csrf?: string | null } = {}): Promise<T> {
   let res: Response;
@@ -106,6 +113,10 @@ async function call<T>(path: string, opts: { method?: string; body?: unknown; cs
     });
   } catch {
     throw new ApiError(0, 'We could not reach TheraBridge. Check your connection and try again.');
+  }
+  if (res.status === 401) {
+    csrf = null; // The previous session's token is invalid, even if no logout call was made.
+    if (path !== '/api/auth/login' && path !== '/api/auth/csrf') unauthorizedListener?.();
   }
   if (res.status === 204) return undefined as T;
   const body = await res.json().catch(() => null);
@@ -144,8 +155,8 @@ export const authApi = {
   session: async () => remember(await call<SessionInfo>('/api/auth/session')),
   selectContext: async (choice: { platform: true } | { membershipId: string; role: Role }) =>
     remember(await call<SessionInfo>('/api/auth/context', { method: 'POST', body: choice, csrf })),
-  logout: () => call<void>('/api/auth/logout', { method: 'POST', csrf }),
-  logoutAll: () => call<void>('/api/auth/logout-all', { method: 'POST', csrf }),
+  logout: async () => { await call<void>('/api/auth/logout', { method: 'POST', csrf }); csrf = null; },
+  logoutAll: async () => { await call<void>('/api/auth/logout-all', { method: 'POST', csrf }); csrf = null; },
   changePassword: async (currentPassword: string, newPassword: string) =>
     remember(await call<SessionInfo>('/api/auth/password/change', { method: 'POST', body: { currentPassword, newPassword }, csrf })),
   forgot: async (email: string) => call<{ message: string }>('/api/auth/password/forgot', { method: 'POST', body: { email }, csrf: await preToken() }),

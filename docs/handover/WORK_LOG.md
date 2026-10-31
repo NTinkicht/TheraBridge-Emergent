@@ -1,3 +1,15 @@
+# Latest work log — 2026-10-31 — M2-H06 reviewer corrections
+
+PR #144 current source clarification: `components/clinical/ReportToPlanHandoff.tsx` is present (historical child360 path removed), and its `createPlanDraftFromReport` API is transactional, stable request-ID idempotent and retry-safe. Codex reviewed prior head `1c0c4b3` and raised two P2 DST cases. Dispositions: **FIX_NOW** original end in ambiguous autumn hour (commit `42719a5`), **FIX_NOW** rejected spring DST gap (`b3eaae8`); coverage `1a9e6e0`. Replied inline, resolved both threads. **DEFER_ISSUE: none. DECLINE_WITH_REASON: none.** Waiting for latest exact-head CI and independent re-review; do not merge or release clinical gates.
+
+# Latest work log — 2026-10-31 — M2-H06 active draft #144
+
+After M2-H05 #143 merge (`f30a659`, 616/616 tests, six jobs green, Codex clean), opened [M2-H06 #144](https://github.com/NTinkicht/TheraBridge-Emergent/pull/144) and requested opening Codex review. Commits implement current-source mapping for frozen #127–#130: timezone-safe clinical session editor and revision guard; CSRF invalidation/global 401 handling and ApiError code; shared App Router session and center timezone preload; accessible error boundaries, hardened headers, protected diagnostics route verified; Node regression test added to CI. Obsolete audit paths documented explicitly; #128 original partial-create sequence replaced in current tree by atomic PlanEditor flow. **No claim of final qualification**: exact-head CI and independent review pending; no deferred review findings recorded so far. Clinical approval gates remain closed.
+
+# Latest work log — 2026-10-31 — M2-H05 merge and M2-H06 draft opening
+
+Merged [#143](https://github.com/NTinkicht/TheraBridge-Emergent/pull/143) at `f30a659` after final 616/616 tests, 6/6 CI successes and Codex no-major-findings on exact final HEAD; all four Codex review threads resolved; no deferred findings. Opened frozen item **M2-H06** (#127–#130) with an initial planning-only branch and workunit record. **No M2-H06 code or tests have been completed at this checkpoint**. Next: implementation, six exact-HEAD checks, explicit review disposition, independent Codex round. Clinical release gates remain closed.
+
 ## 2026-10-31 — M2-H05 security P1 review disposition
 
 - Independent Codex review at `7a75667` caught a clinical status side channel when a revoked therapist could submit a known WITHDRAWN plan ID. **FIX_NOW** `bc70c5f` moves checks past transactional child and specialty scope; `e6b9f88` validates authorized 409 vs revoked 404 indistinguishable from unknown ID in PostgreSQL/HTTP. Previous qualified heads superseded; final exact-head CI/re-review pending. No deferrals, no clinical activation.

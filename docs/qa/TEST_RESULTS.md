@@ -1,3 +1,30 @@
+# Latest QA checkpoint — 2026-10-31 — M2-H06 review remediation
+
+| Work unit | Current qualification | Review/QA evidence |
+| --- | --- | --- |
+| M2-H05 #143 | **MERGED** | `f30a659`, 616/616 tests, six jobs green, Codex no major issues |
+| M2-H06 #144 | **PENDING exact-head CI and final Codex review; DO NOT MERGE** | Codex previous-head `1c0c4b3` two P2 findings **FIX_NOW**: preserve unchanged first-overlap end ISO and reject nonexistent spring-gap time. Fix commits `42719a5` / `b3eaae8`; new tests `1a9e6e0`. Both review threads resolved, zero deferrals. Current #128 source `components/clinical/ReportToPlanHandoff.tsx` with idempotent server transaction, not old child360 path. |
+
+Synthetic-only, all clinical activation/release/production NO-GO.
+
+# Latest QA checkpoint — 2026-10-31 — M2-H06 #144 in progress
+
+| Work item | Status | Evidence / blockers |
+| --- | --- | --- |
+| M2-H05 #143 | **MERGED** `f30a659` | exact-head `05c781e`, 616/616 tests, 6/6 CI jobs green, final Codex no major issues; four findings resolved; zero deferrals |
+| M2-H06 #144 (#127–#130) | **IMPLEMENTED IN DRAFT; CI/REVIEW PENDING** | `scripts/qa/m2-h06-frontend.test.mjs` added to CI test job (cross-zone, repeated DST, second-precision, CSRF 401/relogin, ApiError.code, provider/messages, headers/dev gate). Existing API/web and live-session/demo/container/compose checks still required. No claim of passing until observed on exact head. |
+
+Do not merge M2-H06 on documentation-only or earlier-head checks. Synthetic-only, signing/consent/safeguarding/protected release/production NO-GO.
+
+# Latest QA checkpoint — 2026-10-31
+
+| Work item | Exact HEAD | Outcome | CI/review |
+| --- | --- | --- | --- |
+| M2-H05 PR #143, merged | `05c781edca0b70da72a3c360e7c8d44eabe09258` → main `f30a659` | **PASS: 616/616 tests** | 6/6 jobs green, run 41236118987; Codex final no major issues; four inline threads resolved; no deferrals |
+| M2-H06 (#127,#128,#129,#130), planning-only branch | initial draft checkpoint | **NOT IMPLEMENTED / NOT TESTED** | CI and independent review of implementation pending; DO NOT MERGE |
+
+Clinical gates continue to fail closed; synthetic-only scope, protected release and deployment NO-GO.
+
 ## 2026-10-31 — M2-H05 Codex security P1 remediation pending final qualification
 
 | Finding | Fix and test | Status |

@@ -1,3 +1,15 @@
+# Latest status — 2026-10-31 — M2-H06 PR #144 reviewer repairs, CI pending
+
+Correction: current `components/clinical/ReportToPlanHandoff.tsx` exists and makes a **single idempotent atomic** report-to-plan transaction; only historical child360 path is gone. The current `reports.service.ts` transaction creates plan/version/goals/audit together, with lock + retry fingerprint. #128 error handling now uses centralized 401 listener and exposed `ApiError.code`. Codex's two P2 DST findings at `1c0c4b3` both **FIX_NOW**, fixed via preserved unchanged end UTC instant and rejection of nonexistent spring-forward local times; regression tests added, both threads resolved, no deferrals. PR #144 still **NOT MERGE-QUALIFIED**; latest six CI and exact-head re-review pending, clinical NO-GO maintained.
+
+# Latest checkpoint — 2026-10-31 — M2-H06 implementation in progress (PR #144)
+
+Predecessor M2-H05 #143 merged as `f30a659`; 616/616 tests and 6/6 jobs green, Codex clean, no deferrals. Current [M2-H06 PR #144](https://github.com/NTinkicht/TheraBridge-Emergent/pull/144) has actual frontend code and test commits for #127–#130, adapted to the current code tree: center-zone SessionEditor + auth/CSRF lifecycle, shared /app session provider with center timezone preload, API codes, recovery boundaries, defensive headers, regression tests. Historical handoff split-create flow is absent; current `PlanEditor` uses an atomic plan API. **Draft / NOT MERGE-QUALIFIED**, six exact-HEAD checks and fresh Codex review pending, no approved clinical release or deployment. Supersedes earlier same-day planning-only entry.
+
+# Latest checkpoint — 2026-10-31 — Milestone 2 M2-H06 opening (planning-only)
+
+M2-H05 [PR #143](https://github.com/NTinkicht/TheraBridge-Emergent/pull/143) MERGED as `f30a65956f6f103c4dd5ec7403c98757f6364eee`. Final exact-head `05c781e`: 616/616 tests, all six CI jobs green (run 41236118987), independent Codex no-major-findings review; four inline findings fixed and resolved; zero deferrals. The next frozen work item is **M2-H06 (#127, #128, #129, #130)** on `feature/m2-h06-frontend-reliability-architecture`. This branch at opening documents scope ONLY; implementation **NOT STARTED** and M2-H06 tests **NOT RUN**. No clinical release or production authorization: signing, consent, safeguarding activation, protected releases, live audio, real patient data and production deployment remain **NO-GO**. See `docs/emergent/workunits/M2-H06.md`.
+
 ## 2026-10-31 — CURRENT: M2-H05 Codex P1 security leak fixed; review gate pending
 
 - Codex exact `7a75667` found pre-auth withdrawal-status response after clinician assignment revocation. **P1 FIX_NOW** `bc70c5f` now authorizes active child and matching plan specialty before any status/goal diagnostics inside the transaction; `e6b9f88` tests revoked withdrawn/unknown plan requests return identical 404 while authorized withdrawal returns 409. No deferral; all clinical release/real record gates remain NO-GO. Requalify latest HEAD with six CI jobs and new Codex review before merge.
