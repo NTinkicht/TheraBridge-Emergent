@@ -354,14 +354,8 @@ export class ClinicalService {
       if (fresh.authorId !== v.userId) throw new ForbiddenException('Only the author can edit this plan version.');
       const observed = await tx.observation.findMany({ where: { planVersionId: id }, select: { goalKey: true } });
       // Old drafts may contain whitespace in titles saved before strict DTO
-      // trimming. For measured/checkpointed goals, restore the exact stored
-      // title when the client round-trips its trimmed equivalent. This keeps
-      // immutable definitions byte-for-byte identical without allowing edits.
-      const lockedKeys = new Set(observed.map(o => o.goalKey));
-      for (const n of Array.isArray(fresh.reviewNotes) ? fresh.reviewNotes : []) {
-        if (n && typeof n === 'object' && !Array.isArray(n) &&
-            n.kind === 'GOAL_CHECKPOINT' && typeof n.goalKey === 'string') lockedKeys.add(n.goalKey);
-      }
+      // trimming. Preserve exact title bytes only for a wholly unchanged
+      // definition; measured/checkpointed goals retain strict immutability.
       const priorGoals = fresh.goals as Goal[];
       // M2-H05's new 200-character cap applies to authored/redefined goals.
       // Historical versions accepted up to 300; reject actual edits but permit
@@ -375,8 +369,14 @@ export class ClinicalService {
         if (!unchangedLegacy) throw new BadRequestException('A new or changed goal title must be at most 200 characters.');
       }
       const goalsToSave = dto.goals.map(g => {
-        const oldGoal = lockedKeys.has(g.key) ? priorGoals.find(old => old.key === g.key) : undefined;
-        return oldGoal && oldGoal.title.trim() === g.title ? { ...g, title: oldGoal.title } : g;
+        const oldGoal = priorGoals.find(old => old.key === g.key);
+        // Preserve bytes for any truly unchanged legacy definition, even
+        // without a measurement yet. A redefinition of an unlocked goal
+        // still receives the new trimmed title.
+        const unchanged = oldGoal &&
+          fingerprint(goalDefinition({ ...oldGoal, title: oldGoal.title.trim() })) ===
+          fingerprint(goalDefinition(g));
+        return unchanged ? { ...g, title: oldGoal!.title } : g;
       });
       for (const o of observed) {
         const oldGoal = (fresh.goals as Goal[]).find(g => g.key === o.goalKey);
