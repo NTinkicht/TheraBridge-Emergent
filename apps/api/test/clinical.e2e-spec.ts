@@ -323,6 +323,8 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
       schedule: { cadence: 'WEEKLY', startsOn: '2026-10-19', endsOn: '2026-12-16', weekdays: [1, 3] },
     };
     const update = { summary: 'Synthetic, unapproved draft with dated objectives', goals: [goal], homeActivities: [activity], version: 1 };
+    await patch(therapist, url, { ...update, goals: [{ ...goal, measure: 'percent', target: 101 }] }).expect(400);
+    await patch(therapist, url, { ...update, goals: [{ ...goal, measure: 'percent', baseline: -1 }] }).expect(400);
     await patch(therapist, url, { ...update, goals: [{ ...goal, targetOn: '2027-02-30' }] }).expect(400);
     await patch(therapist, url, { ...update, goals: [{ ...goal, reviewOn: '2027-02-29' }] }).expect(400);
     await patch(therapist, url, { ...update, goals: [{ ...goal, horizon: 'VERY_LONG' }] }).expect(400);
