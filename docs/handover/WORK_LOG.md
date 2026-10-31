@@ -1,3 +1,8 @@
+## 2026-10-31 — M2-H05 exact-head Codex P2 remediation
+
+- First code review at `7f77d66` yielded two P2s. FIX_NOW `02a0485` + `57651b9` prevent room-only edits from shifting a legacy later-fold instant. FIX_NOW `51c672d` + `ca12b89` preserve observed/checkpointed legacy goal-title bytes on round-trip while rejecting substantive edits.
+- Earlier 611/611 and six-job passing CI validated pre-review code, not these fixes. Requalify the final head with all six checks and new Codex review. No owner-gated activation permitted; next frozen item M2-H06.
+
 ## 2026-10-31 — M2-H05 implementation code CI success and final review preparation
 
 - Code HEAD `55163d5fe7d1d567d8ec66f1499bc9d745c459f0`: [GitHub Actions run 41233257189](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41233257189) all six jobs **PASS** (test, secret-scan, live-session, preview-container, demo-journey, compose), 23/23 real-PostgreSQL suites, **611/611 tests**. New HTTP boundary invalid-zone/percent/date/trim regressions, changed fold/gap contracts, full browser journeys and Docker Compose succeeded. Report-after-withdrawal saved-evidence guard covered. Earlier partial runs were red due TS narrowing and old test assertions; all were fixed before this run.
