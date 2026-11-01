@@ -497,3 +497,7 @@ GitHub Actions [run 41242446451](https://github.com/NTinkicht/TheraBridge-Emerge
 ## M2-QA01 next validation — 2026-11-01
 
 Qualify PR #147 on its final HEAD with all six CI jobs, QA-specific contracts, and exact-head independent review; resolve every finding before merge. After tooling-only merge, obtain separate protected-run authorization to exercise the one-day HTML/JSON/**layout-only redacted PNG** synthetic report. Public artifacts must not include readable personal or clinical content. The 35 pending full visual/dialog cases still require approved independent inspection; reconcile #61/#81 only with actual proof. Do not change the fixed 104-case ledger or activate clinical consent, transfer, signing, or release gates without owner approvals.
+# Next work — 2026-11-02 — M3-AI01
+
+Finish M3-AI01 first: validate offline fixture bounds and safety tests, complete all six required CI jobs on exact HEAD, obtain independent exact-head review and dispose every comment. Merge only under AGENTS.md Rule 16. Next approved ordered work item after qualified merge: **M3-STT01** (synthetic STT architecture and controlled transcription; no real audio processing without D2/PD approvals). Do not reopen Milestone 2; PR #152 merged.
+

@@ -390,3 +390,7 @@ GitHub Actions [run 41242446451](https://github.com/NTinkicht/TheraBridge-Emerge
 ## M2-QA01 synthetic report simplification — 2026-11-01
 
 PR #147 integrates `main` login-readiness fixes and implements short-lived, sanitized HTML/JSON and **layout-only redacted PNG** synthetic QA artifacts in place of mandatory ciphertext/decryption for subsequent hosted runs. The repository is public: do not claim artifacts are private or that redacted images prove dialog/text content. Historical run #5 returned 7 PASS / 0 FAIL / 35 BLOCKED; it used the old encrypted format. The fixed #61 104-case baseline is unchanged; visual acceptance remains open. This PR has not yet passed final CI/review and does not deploy or release clinical functionality.
+# Current state — 2026-11-02 — Milestone 3 M3-AI01
+
+Milestone 2's 12/12 ordered PRs are **merged**; final TB-EM-053 PR #152 merged as `17f8ed255c114c4912111e720a99592052aa03bc`. The owner approved Milestone 3's seven-item Intelligent Assistance roadmap, beginning with **M3-AI01 AI Foundation**. The isolated M3-AI01 branch introduces offline, bounded synthetic AI fixture infrastructure and versioned prompt/fingerprint contracts while the Nest runtime's actual `DisabledClinicalAiProvider` stays registered. New-branch exact-head CI and independent review are **PENDING**. Live clinical AI, real STT, production release/signing and patient processing remain **NOT AUTHORIZED**. Historical checkpoints below are superseded.
+

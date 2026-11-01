@@ -448,3 +448,7 @@ GitHub Actions [run 41242446451](https://github.com/NTinkicht/TheraBridge-Emerge
 ## 2026-11-01 — M2-QA01 simplified hosted synthetic evidence
 
 Owner directed a simpler QA loop. PR #147 now uses a one-day GitHub artifact with sanitized JSON, HTML summary, and referenced **layout-only privacy-masked PNG screenshots**, without a local key/decryption step. Repository is public; no private artifact access is assumed. Offline report/schema/security contract tests added. 104-case acceptance ledger unchanged; run #5 historical encrypted evidence stays archived. No hosted run of the new packaging or final PR review yet.
+# 2026-11-02 — Milestone 2 closeout / M3-AI01 opening
+
+Confirmed Emergent PR #152 merged into main at `17f8ed255c114c4912111e720a99592052aa03bc`, completing the frozen 12/12 Milestone 2 implementation order. Owner approved Milestone 3 Intelligent Assistance scope and M3-AI01 first. Created isolated worktree and first synthetic-only foundation: versioned report/home-plan prompt metadata, deterministic hashes, evidence limits and offline unregistered fixture adapter. CI/independent review pending; no clinical activation or external AI.
+
