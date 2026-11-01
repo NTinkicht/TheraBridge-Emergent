@@ -166,6 +166,8 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
       id: cid, name: "Children's Home Centre", slug: DEMO_SLUG, timezone: 'Asia/Dubai',
       country: 'United Arab Emirates', city: 'Sharjah', specialties: ['speech', 'occupational'],
       source: 'DIRECT', trialEndsAt: new Date(now.getTime() + 30 * DAY),
+      syntheticFamilyReleaseEnabled: process.env.TB_FAMILY_RELEASE_SYNTHETIC === 'true' &&
+        !['production', 'staging'].includes(process.env.DEPLOYMENT_ENV ?? ''),
     },
     update: {},
   });
@@ -228,6 +230,8 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
       id: id('guardian:mariam'), centerId: center.id, childId: child.id, userId: users.parent,
       email: DEMO_EMAILS.parent, emailNorm: DEMO_EMAILS.parent,
       displayName: 'Mariam Ahmed', relationship: 'mother', isPrimary: true, createdAt: now,
+      familyReleaseRestriction: process.env.TB_FAMILY_RELEASE_SYNTHETIC === 'true' &&
+        !['production', 'staging'].includes(process.env.DEPLOYMENT_ENV ?? '') ? 'CLEAR' : 'UNRESOLVED',
     },
     update: {},
   });

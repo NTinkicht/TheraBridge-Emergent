@@ -986,6 +986,56 @@ model RecipientReleaseHistory {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   @@map("recipient_release_history")
 }
+
+// TB-EM-053 owner-approved synthetic-only release workflow. The historical
+// ClinicalAuthorizationDecision/RecipientRelease/ConsentRecordDraft gates stay
+// locked; these explicitly separated records are NOT production attestations.
+model SyntheticFamilyApproval {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  childId String @map("child_id") @db.Uuid
+  snapshotId String @map("snapshot_id") @db.Uuid
+  kind String @db.VarChar(8)
+  purpose String @db.VarChar(32)
+  rendering Json
+  renderingHash String @map("rendering_hash") @db.Char(64)
+  approvedById String @map("approved_by_id") @db.Uuid
+  approvedAt DateTime @default(now()) @map("approved_at") @db.Timestamptz(3)
+  @@unique([centerId, snapshotId, renderingHash])
+  @@index([centerId, childId, snapshotId])
+  @@map("synthetic_family_approval")
+}
+
+model SyntheticFamilyConsent {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  childId String @map("child_id") @db.Uuid
+  guardianLinkId String @map("guardian_link_id") @db.Uuid
+  purpose String @db.VarChar(32)
+  status String @default("ACTIVE") @db.VarChar(12)
+  actorUserId String @map("actor_user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
+  @@index([centerId, childId, guardianLinkId, purpose, status])
+  @@map("synthetic_family_consent")
+}
+
+model SyntheticFamilyGrant {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  childId String @map("child_id") @db.Uuid
+  approvalId String @map("approval_id") @db.Uuid
+  guardianLinkId String @map("guardian_link_id") @db.Uuid
+  purpose String @db.VarChar(32)
+  status String @default("ACTIVE") @db.VarChar(16)
+  releasedById String @map("released_by_id") @db.Uuid
+  releasedAt DateTime @default(now()) @map("released_at") @db.Timestamptz(3)
+  changedById String? @map("changed_by_id") @db.Uuid
+  changedAt DateTime? @map("changed_at") @db.Timestamptz(3)
+  @@unique([centerId, approvalId, guardianLinkId])
+  @@index([centerId, childId, guardianLinkId, status])
+  @@map("synthetic_family_grant")
+}
 model CaseloadTransferDraft {
   id String @id @default(uuid()) @db.Uuid
   centerId String @map("center_id") @db.Uuid
