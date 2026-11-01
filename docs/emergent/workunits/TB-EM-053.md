@@ -2,9 +2,17 @@
 
 Milestone 2 ordered item 12/12. Predecessor: merged synthetic-only TB-EM-052 checkpoint [PR #151](https://github.com/NTinkicht/TheraBridge-Emergent/pull/151), squash commit `e5d9711af7cd7a5af05bbff7288297a212238229`.
 
-## Status: PLANNING-ONLY DRAFT — NOT IMPLEMENTED / NOT TESTED / NOT AUTHORIZED
+## Status: IMPLEMENTATION IN PROGRESS — SYNTHETIC-ONLY FOUNDATION; NO RELEASE PATH ENABLED
 
-This work unit is approval-gated. It must not infer clinical, privacy, consent, safeguarding, legal, or release authority from the owner product-policy baseline or from operational synthetic demos. Professional attestations in [private policy PR #47](https://github.com/NTinkicht/TheraBridge/pull/47) remain pending; G2/G2b NO-GO and G3–G7 activation constraints remain unchanged. TB-EM-052 full executable transfer remains separately blocked by #115. This checkpoint changes no runtime API, release/recipient grants, consent decisions, assignment access, clinical signatures, media, deployment, or real-patient processing.
+**Owner source of truth:** [TB-EM-053 v1.1, private policy PR #48](https://github.com/NTinkicht/TheraBridge/pull/48), merged and approved by the owner for development and synthetic testing on 1 November 2026, FR-1 through FR-9. Professional attestations remain pending and G2/G2b NO-GO, G3 NOT AUTHORIZED, G4–G7 NO-GO remain unchanged. TB-EM-052 full executable transfer remains independently blocked by #115.
+
+### Foundation implemented in this PR
+
+- `family-release-policy.ts` provides a pure, fail-closed decision model: independent synthetic environment and center flags, tenant/child scope, clinical authority, recipient identity, per-guardian restrictions, purpose consent, safeguarding, exact rendering fingerprint, grant version, revocation and withdrawal.
+- Additive Prisma migration defaults center synthetic release to **off**, guardian restriction to **UNRESOLVED**, and records release kind, purpose, approved rendering fingerprint, releaser and revocation metadata on `RecipientRelease`. Existing blocked grants remain blocked; no external release endpoint is introduced.
+- `family-release-policy.e2e-spec.ts` exercises policy denial and allowed synthetic decision scenarios.
+
+**Still to implement and independently verify before changing PR state:** authenticated clinician signature and immutable family rendering approval, transactional recipient-specific release/revocation/withdrawal/supersession, actual server-side synthetic-center assertions, guardian read endpoint with no-store headers, notification capture sink, audit and concurrent integration tests, seven-role journeys and six CI checks. Do not misrepresent this policy foundation as an operational clinical release.
 
 ## Proposed scope after accountable authorization
 
@@ -16,4 +24,4 @@ This work unit is approval-gated. It must not infer clinical, privacy, consent, 
 
 ## Acceptance / activation boundary
 
-**BLOCKED pending separately named clinical-governance, privacy/DPO, safeguarding, security, legal and consent/release owner signoffs.** No executable family clinical release or real-data activation may be merged from this draft without those approvals. Maintain TB-EM-052's outstanding full-transfer issue separately.
+**Development and synthetic testing are owner-approved under PR #48.** Production clinical activation remains disabled pending named clinical-governance, privacy/DPO, safeguarding, security and legal attestations and a separate owner activation decision. No real-patient release is authorized.

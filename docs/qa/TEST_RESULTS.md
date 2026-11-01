@@ -1,4 +1,8 @@
-# QA checkpoint — 2026-11-01 — TB-EM-052 PR #151
+# QA checkpoint — 2026-11-01 — TB-EM-053 PR #152
+
+Private policy v1.1 FR-1..FR-9 from merged PR #48. Added isolated policy decision tests and additive schema. **Local Jest, Prisma validate, full integration and six CI: NOT RUN / NOT VERIFIED** at this checkpoint; local dependency download unsuccessful. No operational family release or clinical activation. All demonstrations remain synthetic only.
+
+# Historical QA checkpoint — 2026-11-01 — TB-EM-052 PR #151
 
 | Evidence | Result |
 | --- | --- |

@@ -1,4 +1,8 @@
-# Current status — 2026-11-01 — TB-EM-052 PR #151 synthetic-only checkpoint
+# Current status — 2026-11-01 — TB-EM-053 PR #152 implementation in progress
+
+Private owner policy [PR #48](https://github.com/NTinkicht/TheraBridge/pull/48) **merged** as TB-EM-053 v1.1 (FR-1..FR-9), approved for synthetic development/testing only. [Emergent PR #152](https://github.com/NTinkicht/TheraBridge-Emergent/pull/152) now contains an additive default-deny schema foundation and a pure release eligibility decision/test module. This is **not** an operational release implementation: no clinical approval, guardian release/read endpoint, or production activation was enabled. Local dependency install/tests remain unverified at this checkpoint. Clinical governance, DPO, safeguarding, security, legal attestations and separate production owner activation still pending; clinical gates unchanged. Older historical handover text below is superseded.
+
+# Historical status — 2026-11-01 — TB-EM-052 PR #151 synthetic-only checkpoint
 
 Milestone 2 M2-H01 through M2-QA01 are merged (latest predecessor M2-QA01 #147). Current ordered item 11/12 is [TB-EM-052 PR #151](https://github.com/NTinkicht/TheraBridge-Emergent/pull/151), **OPEN / NOT MERGE-QUALIFIED**. Owner product-policy baseline v1.1 approved in [private PR #47](https://github.com/NTinkicht/TheraBridge/pull/47); OD-1..OD-8 accepted, provisional P-1..P-5 recorded. Clinical governance, DPO, safeguarding, security, legal attestations and formal PD-06 parameters remain pending. Clinical activation, real-patient transfers, consent/signing/release and deployment remain NO-GO.
 

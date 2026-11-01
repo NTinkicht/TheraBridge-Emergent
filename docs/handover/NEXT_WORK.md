@@ -1,4 +1,8 @@
-# Next work — 2026-11-01 — TB-EM-052 PR #151
+# Next work — 2026-11-01 — TB-EM-053 PR #152
+
+Complete the owner-approved [TB-EM-053 v1.1](https://github.com/NTinkicht/TheraBridge/pull/48) implementation. Currently only default-deny DB/pure-policy foundation is implemented. Next: exact family-rendering approval/signature; recipient/consent/safeguarding-bound atomic grants, withdrawal, supersession and revocation; guardian no-store view; capture-only notifications; seven-role integration journeys and six CI. Keep independent synthetic flags enforced server-side, no downloads or production activation. Retain old release tables as blocked until migration/adoption verified.
+
+# Historical next work — 2026-11-01 — TB-EM-052 PR #151
 
 1. Verify new-head six-job CI, including the synthetic lifecycle regression tests, and independent exact-head Codex review; disposition and resolve every current review finding. Do not merge with unresolved blocking findings.
 2. Keep the TB-EM-051 assignment-mutation tripwire unchanged. Owner policy v1.1 is approved, **but** professional clinical, DPO, safeguarding, security and legal attestations, formal PD-06 parameters and G2/G2b/G3-G7 activation gates are still pending.
