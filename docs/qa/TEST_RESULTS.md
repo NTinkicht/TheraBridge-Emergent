@@ -616,3 +616,7 @@ Offline QA contracts: **34/34 PASS** for `hosted-readonly`, preflight, workflow 
 
 New `apps/api/test/ai-foundation.e2e-spec.ts` covers default-disabled provider, deterministic offline fictional drafts, prompt/request fingerprint separation, staging/production refusal and malformed/duplicate/over-budget evidence. Tests **NOT YET RUN** in this environment. Exact-head CI and independent reviewer **PENDING**; do not count as PASS before GitHub Actions evidence. Prior M2 PR #152 merged; production clinical gates remain NO-GO.
 
+# M3-STT01 synthetic transcription QA — 2026-11-02
+
+Extended `scripts/design/check-session-workflow.mjs` with simulated capture start/pause/resume/stop, disabled transcription until stopped, French fictional transcript, unsaved-before-insert and explicit discard. Existing network/permission/provider/cancel/empty failure probes remain. **NOT YET RUN** on this implementation SHA; exact six-job CI and final independent review pending. No real audio/STT testing or clinical authorization implied.
+

@@ -1,6 +1,6 @@
 # M3-STT01 — Controlled speech-to-text architecture and workflow
 
-**Milestone 3 item 2/7. Planning-only opening checkpoint — NOT IMPLEMENTED / NOT TESTED.**
+**Milestone 3 item 2/7. Synthetic implementation in progress — CI / independent review PENDING.**
 
 Predecessor **M3-AI01** PR #153 merged into `main` as `a9202bdb323154810597ccfc4dd5fb031b685512` after exact-head six-job CI, P2 resolution, and Codex review of `dcc1d44`.
 
@@ -12,6 +12,16 @@ Predecessor **M3-AI01** PR #153 merged into `main` as `a9202bdb323154810597ccfc4
 4. Add tenant/child/specialty and active-assignment authorization tests for any eventual session integration; never authorize processing merely from a UI flag.
 5. Document audio lifecycle, minimum storage, privacy risk and API/processor contract as **PROPOSED**; no real-audio capture or external transcription before accountable owner D2/PD and provider authorization.
 6. Run six CI jobs, independent exact-head reviews, and disposition all comments before merge.
+
+## Implemented on this branch
+
+- Preserved the existing fail-closed `realMicrophone` and synthetic provider; no browser recorder, media permission, audio recording or upload.
+- Added a pure `IDLE → SIMULATING → PAUSED / SIMULATING → READY` transition contract, with explicit invalid-transition rejection, reset and separate UI state. These controls **simulate** capture; no bytes of sound exist.
+- Added English, Arabic and French fictional transcript fixtures, strictly validated optional language, input-length bounds, and correction/insertion safeguards using the existing authorized session editor.
+- Preserved the existing failure scenarios (permission, device unavailable, unsupported, interrupted, empty, provider error, network error), cancellation, locally retained unsaved text, and session-conflict behavior.
+- Extended the real-browser synthetic session regression to exercise pause/resume/stop, disabled transcription during simulated capture, French fixture and explicit discard before subsequent scenarios.
+
+**Verification:** tests/CI and independent review are pending; no claims of real STT are made.
 
 ## Safety boundary
 
