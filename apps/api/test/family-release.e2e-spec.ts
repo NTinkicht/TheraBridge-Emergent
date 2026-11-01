@@ -79,11 +79,15 @@ describe('TB-EM-053 synthetic-only family document release (PostgreSQL)', () => 
     const doc = await get(guardian, `mine/${releaseId}`).expect(200);
     expect(doc.headers['cache-control']).toContain('no-store');
     expect(doc.body.rendering.kind).toBe('PLAN');
+    expect(doc.body.childId).toBe(kid);
+    expect(doc.body.childName).toBe('Fictional Child');
     expect(doc.body.rendering.summary).toBe('Fictional family guidance');
     expect(JSON.stringify(doc.body)).not.toMatch(/evidence|reviewNotes|INTERNAL/);
     await get(otherGuardian, `mine/${releaseId}`).expect(404);
     await get(admin, `mine/${releaseId}`).expect(403);
-    expect((await get(guardian, 'mine').expect(200)).body.items).toHaveLength(1);
+    const mine = (await get(guardian, 'mine').expect(200)).body.items;
+    expect(mine).toHaveLength(1);
+    expect(mine[0]).toEqual(expect.objectContaining({ childId: kid, childName: 'Fictional Child' }));
     expect((await get(otherGuardian, 'mine').expect(200)).body.items).toHaveLength(0);
     for (const s of [coordinator, supervisor, otTherapist]) await get(s, `mine/${releaseId}`).expect(403);
     expect([403, 404]).toContain((await get(platform, `mine/${releaseId}`)).status);
