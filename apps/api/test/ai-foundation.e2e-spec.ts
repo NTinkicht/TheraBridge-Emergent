@@ -48,6 +48,8 @@ describe('M3-AI01 offline synthetic AI foundation', () => {
       { ...base, evidence: [{ sourceId: 'x', fact: 'x'.repeat(SYNTHETIC_AI_LIMITS.maxFactChars + 1) }] },
       { ...base, evidence: [] },
       { ...base, centerId: '' },
+      { ...base, planVersionId: 'v'.repeat(10_000_000) },
+      { ...base, planVersionId: '../not-a-version' },
     ];
     rejects.forEach(request => expect(() => prepareSyntheticAssist('REPORT_DRAFT', request)).toThrow(UnprocessableEntityException));
   });

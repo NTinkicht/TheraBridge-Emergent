@@ -31,6 +31,8 @@ export function prepareSyntheticAssist(task: AssistTask, request: SyntheticAssis
   }
   const ids = [request.centerId, request.childId, request.service];
   if (ids.some(id => typeof id !== 'string' || !id.trim() || id.length > 100) ||
+    (request.planVersionId !== undefined &&
+      (typeof request.planVersionId !== 'string' || !/^[a-zA-Z0-9:_-]{1,100}$/.test(request.planVersionId))) ||
     !Array.isArray(request.evidence) || request.evidence.length === 0 ||
     request.evidence.length > SYNTHETIC_AI_LIMITS.maxEvidence) {
     throw new UnprocessableEntityException('Invalid synthetic AI request scope or evidence count.');
