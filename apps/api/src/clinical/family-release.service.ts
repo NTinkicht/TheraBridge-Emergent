@@ -199,6 +199,22 @@ export class FamilyReleaseService {
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
 
+  async grantsForApproval(centerId: string, v: Viewer, approvalId: string) {
+    return this.prisma.$transaction(async tx => {
+      await this.synthetic(tx, centerId);
+      const approval = await tx.syntheticFamilyApproval.findFirst({ where: { id: approvalId, centerId } });
+      if (!approval) throw new NotFoundException();
+      const snapshot = await tx.governanceSnapshot.findFirst({ where: { id: approval.snapshotId, centerId } });
+      const service = snapshot && (snapshot.content as Record<string, unknown>).service;
+      if (typeof service !== 'string') throw new NotFoundException();
+      // Recovery of withdrawal controls must work even if the child service was removed.
+      await this.clinician(tx, centerId, v, approval.childId, service);
+      const items = await tx.syntheticFamilyGrant.findMany({ where: { centerId, approvalId },
+        select: { id: true, guardianLinkId: true, status: true }, orderBy: { releasedAt: 'desc' } });
+      return { synthetic: true, items };
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  }
+
   async change(centerId: string, v: Viewer, id: string, dto: FamilyGrantChangeDto) {
     if (!dto.reason?.trim()) throw new UnprocessableEntityException('Reason required.');
     return this.prisma.$transaction(async tx => {
