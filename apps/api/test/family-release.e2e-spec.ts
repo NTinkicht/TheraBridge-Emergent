@@ -167,6 +167,33 @@ describe('TB-EM-053 synthetic-only family document release (PostgreSQL)', () => 
     expect(await h.prisma.clinicalAuthorizationDecision.count()).toBe(0);
   });
 
+  it('rejects approval and new grants after child service removal without blocking withdrawal', async () => {
+    const submitted = await submit(therapist, 'SUBMIT', 1).expect(201);
+    await h.prisma.child.update({ where: { id: kid }, data: { services: [] } });
+    await post(h, path('approvals'), therapist, { snapshotId: submitted.body.snapshotId }).expect(403);
+    await h.prisma.child.update({ where: { id: kid }, data: { services: ['speech'] } });
+    const approvalId = (await post(h, path('approvals'), therapist,
+      { snapshotId: submitted.body.snapshotId }).expect(201)).body.id;
+    await consented();
+    const id = (await grant(therapist, approvalId).expect(201)).body.id;
+    await h.prisma.child.update({ where: { id: kid }, data: { services: [] } });
+    await grant(therapist, approvalId).expect(403);
+    await post(h, path(`grants/${id}/change`), therapist,
+      { status: 'REVOKED', reason: 'Service removed' }).expect(201);
+    await get(guardian, `mine/${id}`).expect(404);
+  });
+
+  it('lets a clinician revoke a readable superseded grant', async () => {
+    const approvalId = await approved(); await consented();
+    const id = (await grant(therapist, approvalId).expect(201)).body.id;
+    await post(h, path(`grants/${id}/change`), therapist,
+      { status: 'SUPERSEDED', reason: 'Fictional replacement' }).expect(201);
+    await get(guardian, `mine/${id}`).expect(200);
+    await post(h, path(`grants/${id}/change`), therapist,
+      { status: 'REVOKED', reason: 'Fictional safety correction' }).expect(201);
+    await get(guardian, `mine/${id}`).expect(404);
+  });
+
   it('denies release without consent and blocks revoked clinician assignment', async () => {
     const approvalId = await approved();
     await grant(therapist, approvalId).expect(403);
@@ -182,6 +209,8 @@ describe('TB-EM-053 synthetic-only family document release (PostgreSQL)', () => 
       { status: 'SUPERSEDED', reason: 'Replaced by a revised fictional plan' }).expect(201);
     expect((await get(guardian, `mine/${id}`).expect(200)).body.replaced).toBe(true);
     await post(h, path(`grants/${id}/change`), therapist,
-      { status: 'WITHDRAWN', reason: 'Synthetic withdrawal' }).expect(409);
+      { status: 'WITHDRAWN', reason: 'Synthetic withdrawal' }).expect(201);
+    await get(guardian, `mine/${id}`).expect(404);
+    expect((await h.prisma.syntheticFamilyGrant.findUniqueOrThrow({ where: { id } })).status).toBe('WITHDRAWN');
   });
 });
