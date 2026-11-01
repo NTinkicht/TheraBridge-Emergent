@@ -22,3 +22,8 @@ export class TransferDraftDto {
   @TrimmedString() @IsString() @MinLength(3) @MaxLength(1000) reason!: string;
   @TrimmedString() @IsString() @MinLength(2) @MaxLength(32) service!: string;
 }
+
+/** Explicit version for synthetic-only authorization steps. Never a clinical signature. */
+export class SyntheticHandoverTransitionDto {
+  @IsInt() @Min(1) version!: number;
+}
