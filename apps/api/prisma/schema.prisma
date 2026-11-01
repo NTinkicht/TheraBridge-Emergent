@@ -1014,9 +1014,11 @@ model SyntheticFamilyConsent {
   purpose String @db.VarChar(32)
   status String @default("ACTIVE") @db.VarChar(12)
   actorUserId String @map("actor_user_id") @db.Uuid
+  revision Int @default(0)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
   @@index([centerId, childId, guardianLinkId, purpose, status])
+  @@unique([centerId, childId, guardianLinkId, purpose, revision])
   @@map("synthetic_family_consent")
 }
 
