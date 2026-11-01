@@ -89,6 +89,23 @@ describe('TB-EM-053 synthetic-only family document release (PostgreSQL)', () => 
     await grant(therapist, approvalId).expect(409);
   });
 
+  it('two concurrent duplicate grants converge on one recipient-scoped record', async () => {
+    const approvalId = await approved(); await consented();
+    const [first, second] = await Promise.all([grant(therapist, approvalId), grant(therapist, approvalId)]);
+    expect(first.status).toBe(201); expect(second.status).toBe(201);
+    expect(first.body.id).toBe(second.body.id);
+    expect(await h.prisma.syntheticFamilyGrant.count({ where: { centerId: c, approvalId } })).toBe(1);
+  });
+
+  it('lets a newly restricted guardian withdraw consent, never regain document access', async () => {
+    const approvalId = await approved(); await consented();
+    const releaseId = (await grant(therapist, approvalId).expect(201)).body.id;
+    await h.prisma.guardianLink.update({ where: { id: link }, data: { familyReleaseRestriction: 'RESTRICTED' } });
+    await get(guardian, `mine/${releaseId}`).expect(404);
+    await post(h, path('consents/withdraw'), guardian, { childId: kid, purpose: 'FAMILY_PLAN' }).expect(201);
+    expect((await h.prisma.syntheticFamilyGrant.findUniqueOrThrow({ where: { id: releaseId } })).status).toBe('REVOKED');
+  });
+
   it('forbids access if synthetic center flag is off, and keeps old locked release tables locked', async () => {
     const approvalId = await approved(); await consented();
     const releaseId = (await grant(therapist, approvalId).expect(201)).body.id;

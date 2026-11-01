@@ -17,6 +17,17 @@ import { decideFamilyRelease, FAMILY_RELEASE_NOTICE } from './family-release-pol
 export class FamilyReleaseService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private async serialRetry<T>(run: () => Promise<T>): Promise<T> {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try { return await run(); }
+      catch (error) {
+        if (!(error instanceof Prisma.PrismaClientKnownRequestError) ||
+          !['P2034', 'P2002'].includes(error.code) || attempt === 2) throw error;
+      }
+    }
+    throw new ConflictException('Concurrent update; retry.');
+  }
+
   private async synthetic(tx: Tx, centerId: string) {
     const center = await tx.center.findFirst({ where: { id: centerId, status: 'ACTIVE' },
       select: { syntheticFamilyReleaseEnabled: true } });
@@ -38,11 +49,11 @@ export class FamilyReleaseService {
     }
   }
 
-  private async guardian(tx: Tx, centerId: string, v: Viewer, childId: string) {
+  private async guardian(tx: Tx, centerId: string, v: Viewer, childId: string, forWithdrawal = false) {
     await assertActor(tx, centerId, v, ['GUARDIAN']);
     const link = await tx.guardianLink.findFirst({ where: { centerId, childId, userId: v.userId,
       removedAt: null, child: { status: 'ACTIVE' } } });
-    if (!link || link.familyReleaseRestriction !== 'CLEAR') throw new NotFoundException();
+    if (!link || (!forWithdrawal && link.familyReleaseRestriction !== 'CLEAR')) throw new NotFoundException();
     return link;
   }
 
@@ -99,7 +110,7 @@ export class FamilyReleaseService {
   async consent(centerId: string, v: Viewer, dto: FamilyConsentDto, withdraw: boolean) {
     return this.prisma.$transaction(async tx => {
       await this.synthetic(tx, centerId);
-      const link = await this.guardian(tx, centerId, v, dto.childId);
+      const link = await this.guardian(tx, centerId, v, dto.childId, withdraw);
       // Serialise amendments on the guardian link. A new grant always sees the
       // latest consent state, including a withdrawal in a concurrent request.
       await tx.$queryRaw`SELECT id FROM guardian_link WHERE id=${link.id}::uuid FOR UPDATE`;
@@ -116,7 +127,7 @@ export class FamilyReleaseService {
   }
 
   async grant(centerId: string, v: Viewer, dto: FamilyGrantDto) {
-    return this.prisma.$transaction(async tx => {
+    return this.serialRetry(() => this.prisma.$transaction(async tx => {
       await this.synthetic(tx, centerId);
       const approval = await tx.syntheticFamilyApproval.findFirst({ where: { id: dto.approvalId, centerId } });
       if (!approval) throw new NotFoundException();
@@ -149,7 +160,7 @@ export class FamilyReleaseService {
       await logCenterEvent(tx, centerId, 'family.synthetic_notice_captured', new Date(), { actorUserId: v.userId,
         meta: { releaseId: release.id, kind: 'FAMILY_DOCUMENT_AVAILABLE' } });
       return { id: release.id, synthetic: true, status: release.status, noticeCaptured: FAMILY_RELEASE_NOTICE };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }));
   }
 
   async recipients(centerId: string, v: Viewer, approvalId: string) {

@@ -48,6 +48,9 @@ export function decideFamilyRelease(c: FamilyReleaseContext): FamilyReleaseDecis
   // particular guardian. Its later release and every read are independently gated.
   if (c.action === 'APPROVE') return c.documentFamilySafe && !c.documentWithdrawn
     ? { allowed: true } : deny('DOCUMENT_WITHHELD');
+  // Access-removing clinical actions must remain possible after the guardian's
+  // consent has been withdrawn, their link restricted, or safeguarding held.
+  if (c.action === 'WITHDRAW' || c.action === 'SUPERSEDE') return { allowed: true };
   if (!c.guardianActive || !c.guardianAuthenticated || !c.guardianMatchesRecipient) return deny('RECIPIENT_DENIED');
   if (c.guardianRestriction !== 'CLEAR' || c.safeguardingHold) return deny('RESTRICTED');
   if (!c.consentCurrent || !c.consentPurposeMatches) return deny('CONSENT_DENIED');

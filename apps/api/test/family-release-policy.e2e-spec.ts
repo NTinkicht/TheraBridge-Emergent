@@ -52,6 +52,13 @@ describe('TB-EM-053 v1.1 family release decision', () => {
       consentCurrent: false, grantActive: false })).toEqual({ allowed: true });
   });
 
+  it.each(['WITHDRAW', 'SUPERSEDE'] as const)('%s can remove access even after consent or safeguarding changes', action => {
+    expect(decideFamilyRelease({ ...eligible, action, actorClinician: true,
+      actorAssignedToSpecialty: true, guardianActive: false, guardianAuthenticated: false,
+      consentCurrent: false, guardianRestriction: 'RESTRICTED', safeguardingHold: true,
+      grantActive: false, documentWithdrawn: true })).toEqual({ allowed: true });
+  });
+
   it('has a neutral notice without child, specialty or clinical content', () => {
     expect(FAMILY_RELEASE_NOTICE).toBe('A new document is available in your secure TheraBridge account.');
   });
