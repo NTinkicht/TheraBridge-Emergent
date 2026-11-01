@@ -3,7 +3,6 @@ import {mkdir,writeFile,chmod} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {ROLES,BASE} from './hosted-readonly.mjs';
-import {keyBytes} from './evidence-crypto.mjs';
 
 export function verifySyntheticUsers(raw){
  let users;
@@ -35,9 +34,8 @@ export async function publicHealth({url=BASE,fetchImpl=fetch,attempts=3}={}){
  throw Error('hosted_public_health_unverified');
 }
 
-export async function prepare({directory,raw,secret,expectedSha}){
+export async function prepare({directory,raw,expectedSha}){
  if(!/^[a-f0-9]{40}$/.test(expectedSha??''))throw Error('deployment_sha_input_required');
- const key=keyBytes(secret);key.fill(0);
  const users=verifySyntheticUsers(raw);
  const dest=resolve(directory);
  await mkdir(dest,{recursive:true,mode:0o700});
@@ -47,7 +45,7 @@ export async function prepare({directory,raw,secret,expectedSha}){
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  prepare({directory:process.env.TB_QA_PRIVATE_DIR,raw:process.env.TB_QA_USERS_JSON,
-  secret:process.env.TB_QA_EVIDENCE_KEY_HEX,expectedSha:process.env.TB_QA_DEPLOY_SHA})
+  expectedSha:process.env.TB_QA_DEPLOY_SHA})
   .then(()=>publicHealth())
   .then(()=>console.log('Private role preflight and public health verified; operator-supplied deployment SHA is NOT independently verified.'))
   .catch(()=>{console.error('Hosted QA precondition unavailable. No secrets printed.');process.exitCode=2;});

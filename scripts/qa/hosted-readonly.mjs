@@ -54,11 +54,18 @@ export function blocked(role,reason){
 }
 // Stable, secret-free authentication diagnostics. Never serialize responses,
 // cookies, email addresses, URLs, tokens or error messages from the page.
-export function authFailureCode(stage,loginStatus){
+export function authFailureCode(stage,loginStatus,signals={}){
  if(stage==='submit'&&loginStatus===401)return 'login_http_401';
  if(stage==='submit'&&loginStatus===429)return 'login_http_429';
  if(stage==='submit'&&typeof loginStatus==='number')return 'login_http_other';
- return ({form:'login_form_unavailable',submit:'login_response_unverified',
+ if(stage==='submit'&&signals.csrfHttpStatus>=400)return 'csrf_http_error';
+ if(stage==='submit'&&signals.csrfRequestFailed)return 'csrf_network_error';
+ if(stage==='submit'&&signals.loginRequestFailed)return 'login_network_error';
+ if(stage==='submit'&&signals.loginRequestSeen)return 'login_response_timeout';
+ if(stage==='submit'&&signals.clientPageError)return 'client_runtime_error';
+ if(stage==='submit'&&signals.csrfHttpStatus===200)return 'login_not_dispatched_after_csrf';
+ if(stage==='submit'&&signals.loginRequestSeen===false)return 'login_request_not_dispatched';
+ return ({form:'login_form_unavailable',hydration:'login_hydration_unverified',submit:'login_response_unverified',
   redirect:'login_redirect_unverified',context:'authorized_context_unverified',
   shell:'authenticated_shell_unavailable',identity:'session_identity_unverified'})[stage]??'authentication_unverified';
 }
@@ -87,16 +94,44 @@ export async function logout(context){
   {headers:{Origin:BASE,'X-CSRF-Token':d.csrfToken}});
  return x.status()===204;
 }
+export async function settleLoginPage(page){
+ // Next.js server HTML may precede React hydration. Confirm the actual
+ // React onSubmit prop before filling any sensitive inputs; fail closed.
+ if(typeof page.waitForFunction!=='function'){
+  if(typeof page.waitForLoadState==='function')throw Error('hydration_probe_unavailable');
+  return; // Legacy offline fixtures without browser APIs.
+ }
+ await page.waitForFunction(()=>{
+  const form=document.querySelector('[data-testid="login-form"]');
+  if(!form)return false;
+  return Object.keys(form).some(key=>key.startsWith('__reactProps'+String.fromCharCode(36))&&
+   typeof form[key]?.onSubmit==='function');
+ },undefined,{timeout:20000});
+}
 async function assess(browser,role,user,directory){
  const c=ROLES[role],rows=[];
  const context=await browser.newContext({viewport:{width:1440,height:900},acceptDownloads:false,deviceScaleFactor:1});
  const page=await context.newPage();
  let loggedIn=false,loginAttempted=false;
  let authStage='form',loginHttpStatus=null;
+ // Fixed numeric statuses and booleans only; no raw URLs, bodies or errors.
+ const signals={csrfHttpStatus:null,csrfRequestFailed:false,loginRequestSeen:false,
+  loginRequestFailed:false,clientPageError:false};
+ const routeOf=r=>{try{return new URL(r.url()).pathname;}catch{return '';}};
+ page.on?.('request',r=>{if(r.method()==='POST'&&routeOf(r)==='/api/auth/login')signals.loginRequestSeen=true;});
+ page.on?.('requestfailed',r=>{
+  if(routeOf(r)==='/api/auth/csrf')signals.csrfRequestFailed=true;
+  if(r.method()==='POST'&&routeOf(r)==='/api/auth/login')signals.loginRequestFailed=true;
+ });
+ page.on?.('response',r=>{if(routeOf(r)==='/api/auth/csrf')signals.csrfHttpStatus=r.status();});
+ page.on?.('pageerror',()=>{signals.clientPageError=true;});
  try{
   let loginResponse,headerInspection=null;
   try{
    await page.goto(BASE+'/login',{waitUntil:'domcontentloaded',timeout:25000});
+   authStage='hydration';
+   await settleLoginPage(page);
+   authStage='form';
    await page.getByTestId('login-email-input').fill(user.email);
    await page.getByTestId('login-password-input').fill(user.password);
    // Attach handlers to both operations immediately; preserve a successful
@@ -158,7 +193,7 @@ async function assess(browser,role,user,directory){
    if(!valid)throw Error('identity_mismatch');
   }catch{
    // Cookie FAIL survives invalid browser session and navigation failure.
-   const code=authFailureCode(authStage,loginHttpStatus);
+   const code=authFailureCode(authStage,loginHttpStatus,signals);
    rows.push(...missingBlockedRows(role,rows,'authentication_or_identity_unverified')
     .map(row=>({...row,diagnostic:code})));
    return rows;
@@ -273,10 +308,10 @@ export async function run({credentialsFile=process.env.QA_USERS_FILE,output=proc
  const report={schema:1,target:BASE,scope:'N-052..N-093 only',baseline104Unchanged:true,
   generatedAt:new Date().toISOString(),claimedDeploymentSha:/^[a-f0-9]{40}$/.test(deploymentSha||'')?deploymentSha:null,
   deploymentIndependentlyVerified:false,counts,rows,
-  caution:'No automatic updates to issue #61; sensitive screenshots remain private. Manual dialog/visual checks required.'};
+  caution:'No automatic updates to issue #61. Only fictional hosted data is allowed. Manual dialog/visual checks required.'};
  const path=join(out,'hosted-readonly-results.json');
  await writeFile(path,JSON.stringify(report,null,2)+'\n',{mode:0o600});
- // Non-sensitive one-line summary. Detailed screenshots stay encrypted.
+ // Non-sensitive one-line summary. Only the restricted synthetic report artifact contains screenshots.
  console.log('QA_PUBLIC_SUMMARY '+JSON.stringify({counts,
   roleDiagnostics:Object.fromEntries(Object.keys(ROLES).map(role=>[role,
    [...new Set(rows.filter(r=>r.role===role&&r.diagnostic).map(r=>r.diagnostic))]])),

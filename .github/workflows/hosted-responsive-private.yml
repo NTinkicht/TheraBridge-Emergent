@@ -53,7 +53,6 @@ jobs:
       - name: Validate approved private credentials and live public health
         env:
           TB_QA_USERS_JSON: ${{ secrets.TB_HOSTED_QA_USERS_JSON }}
-          TB_QA_EVIDENCE_KEY_HEX: ${{ secrets.TB_HOSTED_QA_EVIDENCE_KEY_HEX }}
           TB_QA_DEPLOY_SHA: ${{ inputs.deployed_sha }}
           TB_QA_PRIVATE_DIR: /__w/_temp/tb-hosted-private
         run: |
@@ -76,39 +75,34 @@ jobs:
           # The collector's BLOCKED cases are expected until independent manual
           # screenshot, dialog, a11y and cookie review. Never imply acceptance.
           if [ "$exit_code" -eq 2 ]; then
-            echo 'QA runner precondition failed; check encrypted receipt if present.'
+            echo 'QA runner precondition failed; no acceptance inferred.'
           fi
-      - name: Encrypt evidence before upload
+      - name: Build sanitized synthetic-only HTML and JSON report
+        id: report
         if: ${{ always() && steps.collect.outcome == 'success' }}
-        env:
-          TB_QA_EVIDENCE_KEY_HEX: ${{ secrets.TB_HOSTED_QA_EVIDENCE_KEY_HEX }}
         run: |
           umask 077
-          tar -czf "/__w/_temp/tb-hosted-cleartext.tar.gz" \
-            -C "/__w/_temp/tb-hosted-private" evidence
-          node scripts/qa/evidence-crypto.mjs encrypt \
-            "/__w/_temp/tb-hosted-cleartext.tar.gz" \
-            "/__w/_temp/therabridge-hosted-evidence.tbqa"
-          rm -f "/__w/_temp/tb-hosted-cleartext.tar.gz"
-      - name: Upload ONLY AES-256-GCM ciphertext (no screenshots or tokens in the clear)
-        if: ${{ always() && steps.collect.outcome == 'success' }}
+          node scripts/qa/build-hosted-report.mjs \
+            "/__w/_temp/tb-hosted-private/evidence" \
+            "/__w/_temp/tb-hosted-private/report"
+      - name: Upload restricted synthetic QA report and screenshots
+        if: ${{ always() && steps.report.outcome == 'success' }}
         uses: actions/upload-artifact@v4
         with:
-          name: therabridge-hosted-encrypted-${{ github.run_id }}
-          path: /__w/_temp/therabridge-hosted-evidence.tbqa
+          name: therabridge-synthetic-qa-${{ github.run_id }}
+          path: /__w/_temp/tb-hosted-private/report/
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 1
       - name: Do not mark visual acceptance PASS automatically
         if: ${{ always() && steps.collect.outcome == 'success' }}
         run: |
+          test '${{ steps.report.outcome }}' = success || exit 2
           test -f "/__w/_temp/tb-hosted-private/collector-exit" || exit 2
           test "$(cat "/__w/_temp/tb-hosted-private/collector-exit")" = 0 || {
-            echo 'INCOMPLETE: evidence encrypted and uploaded; #61 baseline remains unchanged.'
+            echo 'INCOMPLETE: synthetic report uploaded; #61 baseline remains unchanged pending visual review.'
             exit 1
           }
-      - name: Delete private credentials, plaintext evidence and key-independent ciphertext
+      - name: Delete private credentials and temporary synthetic evidence
         if: always()
         run: |
           rm -rf "/__w/_temp/tb-hosted-private"
-          rm -f "/__w/_temp/tb-hosted-cleartext.tar.gz"
-          rm -f "/__w/_temp/therabridge-hosted-evidence.tbqa"

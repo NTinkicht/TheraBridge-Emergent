@@ -377,3 +377,6 @@ PR #145 on `feature/m2-h07-accessibility-performance-handover` addresses #131/#1
 
 ## M2-H07 CI qualification checkpoint — 2026-11-01
 GitHub Actions [run 41242446451](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41242446451) completed **SUCCESS, 6/6 jobs** at implementation HEAD `0955bb3e66033a5099a46506990ffa1b6bdadda9`: test (23/23 suites, 617/617 API tests, web build + frontend regression), secret-scan, live-session, preview-container, demo-journey (including three-browser handover synchronization), compose. The initial earlier SHA typecheck failure was fixed by adding the required `createdAt` to a synthetic child fixture. **This documentation update creates a new HEAD**; latest exact-head CI and final Codex review must still be rechecked before merge. No governance release approvals changed.
+## M2-QA01 synthetic report simplification — 2026-11-01
+
+PR #147 integrates `main` login-readiness fixes and implements short-lived, sanitized HTML/JSON/PNG synthetic QA artifacts in place of mandatory ciphertext/decryption for subsequent hosted runs. Historical run #5 returned 7 PASS / 0 FAIL / 35 BLOCKED; it used the old encrypted format. The fixed #61 104-case baseline is unchanged; visual acceptance remains open. This PR has not yet passed final CI/review and does not deploy or release clinical functionality.

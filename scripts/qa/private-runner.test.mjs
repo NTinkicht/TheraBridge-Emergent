@@ -11,7 +11,7 @@ const sample=Object.fromEntries(Object.keys(ROLES).map(r=>[r,{
  email:r+'@synthetic.example.invalid',password:'ci_only_test',
 }]));
 const key='a'.repeat(64);
-test('synthetic role preflight requires seven distinct records and valid encryption secret',async()=>{
+test('synthetic role preflight requires seven distinct records but no evidence key',async()=>{
  assert.equal(Object.keys(verifySyntheticUsers(JSON.stringify(sample))).length,7);
  assert.throws(()=>verifySyntheticUsers('{}'),/all_seven_role_keys_required/);
  assert.throws(()=>verifySyntheticUsers('{invalid'),/invalid_private_users_json/);
@@ -20,11 +20,11 @@ test('synthetic role preflight requires seven distinct records and valid encrypt
  const root=await mkdtemp(join(tmpdir(),'tb-qa-preflight-'));
  try{
   const f=await prepare({directory:join(root,'private'),raw:JSON.stringify(sample),
-   secret:key,expectedSha:'b'.repeat(40)});
+   expectedSha:'b'.repeat(40)});
   assert.equal((await stat(f)).mode&0o077,0,'credential file must not be group/world readable');
   assert.deepEqual(JSON.parse(await readFile(f,'utf8')),sample);
   await assert.rejects(prepare({directory:join(root,'wrong'),raw:JSON.stringify(sample),
-   secret:key,expectedSha:'unverified'}),/deployment_sha_input_required/);
+   expectedSha:'unverified'}),/deployment_sha_input_required/);
  }finally{await rm(root,{recursive:true,force:true});}
 });
 test('hosted public health accepts JSON 200 only, never interstitial HTML',async()=>{
