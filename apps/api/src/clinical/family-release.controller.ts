@@ -25,6 +25,11 @@ export class FamilyReleaseController {
     return this.service.recipients(centerId, viewer(req), id);
   }
 
+  @Get('approvals/:id/grants') @RequirePermission('center.clinical.read')
+  grantsForApproval(@Param('centerId', uuid()) centerId: string, @Param('id', uuid()) id: string, @Req() req: TbRequest) {
+    return this.service.grantsForApproval(centerId, viewer(req), id);
+  }
+
   @Post('grants/:id/change') @RequirePermission('center.clinical.read')
   change(@Param('centerId', uuid()) centerId: string, @Param('id', uuid()) id: string,
     @Body() dto: FamilyGrantChangeDto, @Req() req: TbRequest) {
