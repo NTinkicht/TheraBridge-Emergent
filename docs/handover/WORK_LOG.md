@@ -1,4 +1,8 @@
-# Work log — 2026-11-01 — TB-EM-052 #151 reviewer remediation
+# Work log — 2026-11-01 — TB-EM-053 policy implementation foundation
+
+Read merged private PR #48 v1.1. Implemented a complete **synthetic-only** family release workflow in PR #152: server-gated clinician approval of submitted exact family renderings, dedicated consent/release schema that does not unlock clinical legacy tables, guardian-specific grants, revocation, withdrawal, supersession, no-store read, capture-only notices, audit, and clinician/guardian web UI. Added denial, hash, revocation, concurrency and real PostgreSQL integration cases. Remote CI head `70c5a083` run #41331698946 passed 6/6, 672/672 API tests; resolved initial Codex P1 handover and P2 withdrawal findings with explicit FIX_NOW replies. Final code review and merge pending; production clinical gates unchanged.
+
+# Historical work log — 2026-11-01 — TB-EM-052 #151 reviewer remediation
 
 - Verified owner baseline in merged private PR #47; recorded provisional timing P-1=7d, P-2=7d/24h/1h, P-3=7d, P-4=7d, P-5=48h.
 - Implemented synthetic-only `transfer-development-policy.ts` and `transfer-synthetic-workflow.ts` with isolated Jest coverage; clinical activation is hard-disabled and all simulated commits are blocked.

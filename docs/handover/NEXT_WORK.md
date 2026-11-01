@@ -1,4 +1,8 @@
-# Next work — 2026-11-01 — TB-EM-052 PR #151
+# Next work — 2026-11-01 — TB-EM-053 PR #152
+
+The owner-approved [TB-EM-053 v1.1](https://github.com/NTinkicht/TheraBridge/pull/48) **synthetic-only API, persistence, UI and tests are implemented** in PR #152. CI on head `70c5a083` passed six jobs/672 API tests; older Codex P1/P2 are fixed and resolved. Next: requalify the final documentation SHA through all six CI jobs, obtain independent exact-head Codex review, disposition any new P0–P3 findings, merge only under Rule 16. Do not activate real-patient family release, D1 clinical signing, production consent or protected legacy release triggers. Full clinician transfer #115 is independent and still blocked.
+
+# Historical next work — 2026-11-01 — TB-EM-052 PR #151
 
 1. Verify new-head six-job CI, including the synthetic lifecycle regression tests, and independent exact-head Codex review; disposition and resolve every current review finding. Do not merge with unresolved blocking findings.
 2. Keep the TB-EM-051 assignment-mutation tripwire unchanged. Owner policy v1.1 is approved, **but** professional clinical, DPO, safeguarding, security and legal attestations, formal PD-06 parameters and G2/G2b/G3-G7 activation gates are still pending.

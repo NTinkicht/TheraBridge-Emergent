@@ -139,6 +139,13 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
     it('only the reviewed set of routes writes data, and none writes platform roles', () => {
       const unsafe = h.app.get(RouteAccessVerifier).routes().filter((r) => r.method !== 'GET').map((r) => `${r.method} ${r.route}`).sort();
       expect(unsafe).toEqual([
+        // TB-EM-053: explicit synthetic-only release writes, each separately scoped
+        // by the authenticated route policy and server-controlled dual flags.
+        'POST /centers/:centerId/family-releases/approvals',
+        'POST /centers/:centerId/family-releases/consents',
+        'POST /centers/:centerId/family-releases/consents/withdraw',
+        'POST /centers/:centerId/family-releases/grants',
+        'POST /centers/:centerId/family-releases/grants/:id/change',
         'PATCH /centers/:centerId/activities/:templateId', 'PATCH /centers/:centerId/appointments/:appointmentId', 'PATCH /centers/:centerId/children/:childId', 'PATCH /centers/:centerId/children/:childId/referent',
         'PATCH /centers/:centerId/clinical/assessments/:id', 'PATCH /centers/:centerId/clinical/notes/:id', 'PATCH /centers/:centerId/clinical/plan-versions/:id', 'PATCH /centers/:centerId/clinical/reports/:id', 'PATCH /centers/:centerId/clinical/sessions/:id',
         'PATCH /centers/:centerId/me', 'PATCH /centers/:centerId/series/:seriesId', 'PATCH /centers/:centerId/settings', 'PATCH /centers/:centerId/staff/:membershipId',
@@ -167,7 +174,7 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
         'POST /platform/centers/:centerId/admin-invitations/:invitationId/replace', 'POST /platform/centers/:centerId/admin-invitations/:invitationId/resend',
         'POST /platform/centers/:centerId/admin-invitations/:invitationId/revoke', 'POST /platform/centers/:centerId/trial/extend',
         'POST /platform/reminders/run',
-      ]);
+      ].sort());
     });
 
     it('the database rejects self-grants, a second bootstrap record and PLATFORM_ADMIN as a center role', async () => {
