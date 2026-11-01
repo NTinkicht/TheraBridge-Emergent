@@ -553,7 +553,7 @@ export class GovernanceService {
           service: draft.service, newAssignmentId: incomingAssignment.id, synthetic: true } });
       return { proposalId: id, version: version + 1, status: 'SYNTHETIC_COMPLETED',
         synthetic: true, clinicalApproval: false, assignmentChanged: true,
-        accessGranted: false, clinicalHandover: false, released: false };
+        syntheticAssignmentAccessChanged: true, clinicalHandover: false, released: false };
     });
   }
 
