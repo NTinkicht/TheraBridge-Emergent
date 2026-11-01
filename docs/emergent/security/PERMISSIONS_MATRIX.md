@@ -33,8 +33,6 @@ Source of truth: `apps/api/src/auth/policy.ts`. The test `authz.e2e-spec.ts` fai
 | center.handover.propose | CENTER_ADMIN, COORDINATOR |
 | center.handover.acknowledge | THERAPIST |
 | center.handover.cancel | CENTER_ADMIN, COORDINATOR |
-| center.handover.syntheticApprove | CLINICAL_SUPERVISOR |
-| center.handover.syntheticCommit | CENTER_ADMIN, COORDINATOR |
 | center.schedule.read | CENTER_ADMIN, COORDINATOR, THERAPIST, CLINICAL_SUPERVISOR |
 | center.schedule.manage | CENTER_ADMIN, COORDINATOR |
 | center.appointments.status | CENTER_ADMIN, COORDINATOR, THERAPIST |
