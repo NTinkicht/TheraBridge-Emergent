@@ -78,7 +78,7 @@ export class FamilyReleaseService {
     s: { id: string; childId: string; kind: string; documentId: string }) {
     const latest = await tx.governanceHistory.findFirst({ where: { centerId, childId: s.childId,
       kind: s.kind, documentId: s.documentId, fromStatus: { in: ['DRAFT', 'RETURNED_FOR_REVISION'] },
-      toStatus: 'IN_REVIEW' }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }] });
+      toStatus: 'IN_REVIEW' }, orderBy: [{ sourceVersion: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }] });
     return latest?.snapshotId === s.id;
   }
 
