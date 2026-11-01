@@ -52,11 +52,9 @@ export function decideFamilyRelease(c: FamilyReleaseContext): FamilyReleaseDecis
   if (c.guardianRestriction !== 'CLEAR' || c.safeguardingHold) return deny('RESTRICTED');
   if (!c.consentCurrent || !c.consentPurposeMatches) return deny('CONSENT_DENIED');
   if (!c.documentFamilySafe || c.documentWithdrawn) return deny('DOCUMENT_WITHHELD');
-  if (c.action !== 'APPROVE') {
-    if (!c.clinicalApprovalCurrent || !c.approvedRenderingHash ||
-        !/^[a-f0-9]{64}$/.test(c.approvedRenderingHash) ||
-        c.approvedRenderingHash !== c.servedRenderingHash) return deny('RENDERING_NOT_APPROVED');
-  }
+  if (!c.clinicalApprovalCurrent || !c.approvedRenderingHash ||
+      !/^[a-f0-9]{64}$/.test(c.approvedRenderingHash) ||
+      c.approvedRenderingHash !== c.servedRenderingHash) return deny('RENDERING_NOT_APPROVED');
   if (c.action === 'READ' && (!c.grantActive || !c.grantVersionMatches)) return deny('GRANT_DENIED');
   return { allowed: true };
 }
