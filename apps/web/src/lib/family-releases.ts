@@ -12,6 +12,8 @@ export const familyReleaseApi = {
     'POST', `${root(c)}/approvals`, { snapshotId }),
   recipients: (c: string, approvalId: string) => rest.get<{ items: { id: string; displayName: string; eligible: boolean }[] }>(
     `${root(c)}/approvals/${approvalId}/recipients`),
+  grantsForApproval: (c: string, approvalId: string) => rest.get<{ items: { id: string; guardianLinkId: string; status: string }[] }>(
+    `${root(c)}/approvals/${approvalId}/grants`),
   grant: (c: string, approvalId: string, guardianLinkId: string) => rest.send('POST', `${root(c)}/grants`,
     { approvalId, guardianLinkId }),
   change: (c: string, id: string, status: 'REVOKED' | 'WITHDRAWN' | 'SUPERSEDED', reason: string) =>
