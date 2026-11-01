@@ -1,7 +1,8 @@
 import {
   createSyntheticProposal, reviseSyntheticProposal, acceptSyntheticProposal,
   approveSyntheticProposal, assessSyntheticCommit, expireSyntheticProposal,
-  departureFallback, TransferActor, TransferContext,
+  departureFallback, emergencySessionReview, temporaryCoverageExpiry, assessSyntheticBatch,
+  TransferActor, TransferContext,
 } from '../src/clinical/transfer-synthetic-workflow';
 
 describe('TB-EM-052 fail-closed synthetic transfer lifecycle', () => {
@@ -86,5 +87,34 @@ describe('TB-EM-052 fail-closed synthetic transfer lifecycle', () => {
       emergencyReviewRequired:true});
     expect(fallback.approvedVersion).toBeUndefined();
     expect(departureFallback(make(),now).status).toBe('PROPOSED');
+  });
+  it('scopes emergency appointment review to the next seven calendar days', () => {
+    const sessions=[
+      {id:'before',startsAt:'2026-10-31T12:00:00.000Z'},
+      {id:'inside',startsAt:'2026-11-03T12:00:00.000Z'},
+      {id:'after',startsAt:'2026-11-09T12:00:00.000Z'},
+    ];
+    expect(emergencySessionReview(sessions,now).map(s=>s.id)).toEqual(['inside']);
+  });
+
+  it('never automatically restores access when temporary coverage expires', () => {
+    const covered={...make('TEMPORARY'),status:'COMMITTED' as const,
+      handbackAt:'2026-11-02T12:00:00.000Z'};
+    const expired=temporaryCoverageExpiry(covered,new Date('2026-11-03T12:00:00.000Z'),true);
+    expect(expired).toMatchObject({status:'UNASSIGNED_HOLD',version:2});
+    expect(expired.acceptedVersion).toBeUndefined();
+    expect(temporaryCoverageExpiry(covered,now,true).status).toBe('COMMITTED');
+  });
+
+  it('reports per-unit blocked batch outcomes without claiming partial transfer', () => {
+    const p=approveSyntheticProposal(acceptSyntheticProposal(make(),clinician,context,1),approver,context,1);
+    const second={...p,id:'different'};
+    const contexts=new Map([[p.id,context],[second.id,context]]);
+    expect(assessSyntheticBatch([p,second],proposer,contexts)).toEqual([
+      {proposalId:'proposal',childId:child,specialty:'speech',simulatedCommit:false,
+        result:'BLOCKED',reason:'CLINICAL_ACTIVATION_BLOCKED'},
+      {proposalId:'different',childId:child,specialty:'speech',simulatedCommit:false,
+        result:'BLOCKED',reason:'DUPLICATE_ASSIGNMENT_UNIT'},
+    ]);
   });
 });
