@@ -612,3 +612,7 @@ GitHub Actions [run 41242446451](https://github.com/NTinkicht/TheraBridge-Emerge
 ## M2-QA01 simplified synthetic evidence — 2026-11-01
 
 Offline QA contracts: **34/34 PASS** for `hosted-readonly`, preflight, workflow paths, report sanitization/HTML, privacy-redacted layout-only PNG references, hash verification, exclusive directory reservation and historical crypto compatibility, run locally with temporary fictional fixtures. The new HTML/JSON/PNG packaging is **NOT RUN** on live hosted environment; full repository CI and exact-head review pending. Public repository artifacts cannot be treated as private, and redacted images cannot prove text/dialog appearance. Previous protected hosted run #5: **7 PASS / 0 FAIL / 35 BLOCKED** on its 42-case subset, encrypted historical artifact; 35 visual/dialog reviews outstanding. Fixed 104-case baseline remains **53 PASS / 0 FAIL / 47 BLOCKED / 4 NOT TESTED**. No clinical authorization inferred.
+# M3-AI01 qualification — 2026-11-02
+
+New `apps/api/test/ai-foundation.e2e-spec.ts` covers default-disabled provider, deterministic offline fictional drafts, prompt/request fingerprint separation, staging/production refusal and malformed/duplicate/over-budget evidence. Tests **NOT YET RUN** in this environment. Exact-head CI and independent reviewer **PENDING**; do not count as PASS before GitHub Actions evidence. Prior M2 PR #152 merged; production clinical gates remain NO-GO.
+
