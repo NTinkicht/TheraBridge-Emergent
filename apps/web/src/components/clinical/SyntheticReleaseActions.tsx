@@ -70,9 +70,9 @@ export function SyntheticReleaseActions({ centerId, document, history }:
         const found = existingGrants.find(g => g.guardianLinkId === next && ['ACTIVE', 'SUPERSEDED'].includes(g.status));
         setReleaseId(found?.id ?? ''); setReleaseStatus(found?.status ?? ''); }}>
         <option value="">Select guardian</option>
-        {recipients.map(r => <option key={r.id} value={r.id} disabled={!r.eligible}>{r.displayName}{r.eligible ? '' : ' — restricted or consent pending'}</option>)}
+        {recipients.map(r => <option key={r.id} value={r.id} disabled={!r.eligible && !existingGrants.some(g => g.guardianLinkId === r.id && ['ACTIVE', 'SUPERSEDED'].includes(g.status))}>{r.displayName}{r.eligible ? '' : ' — restricted or consent pending (withdrawal only if granted)'}</option>)}
       </select>
-      <Button disabled={busy || !recipient || !!releaseId} onClick={() => void grant()}>Release approved version</Button>
+      <Button disabled={busy || !recipient || !!releaseId || !recipients.some(r => r.id === recipient && r.eligible)} onClick={() => void grant()}>Release approved version</Button>
       <Button variant="secondary" disabled={busy} onClick={() => void reloadGrants().catch(() => setMessage('Unable to reload grants.'))}>Reload existing grants</Button>
       {existingGrants.filter(g => g.guardianLinkId === recipient).map(g => <p key={g.id} className="text-sm">Existing grant: {g.status}</p>)}
     </div>}
