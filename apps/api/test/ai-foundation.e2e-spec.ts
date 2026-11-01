@@ -40,6 +40,28 @@ describe('M3-AI01 offline synthetic AI foundation', () => {
     expect(() => prepareSyntheticAssist('REPORT_DRAFT', base)).toThrow(ForbiddenException);
   });
 
+  it('denies production NODE_ENV even with an unset deployment selector', () => {
+    const previousNode = process.env.NODE_ENV;
+    try {
+      process.env.TB_AI_SYNTHETIC = 'true'; delete process.env.DEPLOYMENT_ENV;
+      process.env.NODE_ENV = 'production';
+      expect(() => prepareSyntheticAssist('REPORT_DRAFT', base)).toThrow(ForbiddenException);
+    } finally {
+      if (previousNode === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = previousNode;
+    }
+  });
+
+  it('supports maximum bounded evidence and source-ID overhead without output overflow', async () => {
+    process.env.TB_AI_SYNTHETIC = 'true'; process.env.DEPLOYMENT_ENV = 'ci';
+    const request = { ...base, evidence: Array.from({ length: 20 }, (_, i) => ({
+      sourceId: `fictional-${i}-${'x'.repeat(85)}`, fact: 'F'.repeat(200),
+    })) };
+    const draft = await new OfflineSyntheticClinicalAiProvider().suggestReport(request);
+    expect(draft.sourceIds).toHaveLength(20);
+    expect(draft.content.length).toBeLessThanOrEqual(SYNTHETIC_AI_LIMITS.maxOutputChars);
+  });
+
   it('rejects duplicate, unbounded and malformed evidence', () => {
     process.env.TB_AI_SYNTHETIC = 'true'; process.env.DEPLOYMENT_ENV = 'ci';
     const rejects = [

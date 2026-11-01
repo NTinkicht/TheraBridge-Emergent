@@ -11,7 +11,7 @@ export const SYNTHETIC_PROMPTS = Object.freeze({
     'Draft fictional home-plan activities only from supplied fictional facts. Cite each source. A clinician must review.' }),
 });
 export const SYNTHETIC_AI_LIMITS = Object.freeze({ maxEvidence: 20, maxFactChars: 500,
-  maxTotalChars: 4000, maxOutputChars: 3000 });
+  maxTotalChars: 4000, maxOutputChars: 7000 });
 
 export interface PreparedSyntheticAssist {
   readonly task: AssistTask;
@@ -26,6 +26,7 @@ const sha = (value: string) => createHash('sha256').update(value).digest('hex');
 /** Server-side entry gate; environment flags never enable external clinical AI. */
 export function prepareSyntheticAssist(task: AssistTask, request: SyntheticAssistRequest): PreparedSyntheticAssist {
   if (process.env.DEPLOYMENT_ENV === 'production' || process.env.DEPLOYMENT_ENV === 'staging' ||
+    process.env.NODE_ENV === 'production' ||
     process.env.TB_AI_SYNTHETIC !== 'true' || request?.synthetic !== true) {
     throw new ForbiddenException('Synthetic AI assistance is disabled.');
   }
