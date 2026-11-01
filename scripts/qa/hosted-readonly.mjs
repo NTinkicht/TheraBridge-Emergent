@@ -64,7 +64,8 @@ export function authFailureCode(stage,loginStatus,signals={}){
  if(stage==='submit'&&signals.loginRequestSeen)return 'login_response_timeout';
  if(stage==='submit'&&signals.clientPageError)return 'client_runtime_error';
  if(stage==='submit'&&signals.csrfHttpStatus===200)return 'login_not_dispatched_after_csrf';
- return ({form:'login_form_unavailable',submit:'login_response_unverified',
+ if(stage==='submit'&&signals.loginRequestSeen===false)return 'login_request_not_dispatched';
+ return ({form:'login_form_unavailable',hydration:'login_hydration_unverified',submit:'login_response_unverified',
   redirect:'login_redirect_unverified',context:'authorized_context_unverified',
   shell:'authenticated_shell_unavailable',identity:'session_identity_unverified'})[stage]??'authentication_unverified';
 }
@@ -94,12 +95,236 @@ export async function logout(context){
  return x.status()===204;
 }
 export async function settleLoginPage(page){
- // Next.js can render server HTML before React attaches the submit handler.
- // Wait for network quiet and a short hydration buffer before interacting.
- if(typeof page.waitForLoadState!=='function')return;
- try{await page.waitForLoadState('networkidle',{timeout:12000});}
- catch{await page.waitForTimeout?.(1000);}
- await page.waitForTimeout?.(350);
+ // Next.js server HTML may precede React hydration. The actual React form
+ // onSubmit prop is observable before sensitive fields are filled. When the
+ // probe is unavailable or times out in a real browser, fail closed.
+ if(typeof page.waitForFunction!=='function'){
+  if(typeof page.waitForLoadState==='function')throw Error('hydration_probe_unavailable');
+  return; // Old offline page fixtures have no browser wait API.
+ }
+ await page.waitForFunction(()=>{
+  const form=document.querySelector('[data-testid="login-form"]');
+  if(!form)return false;
+  return Object.keys(form).some(key=>key.startsWith('__reactProps
+async function assess(browser,role,user,directory){
+ const c=ROLES[role],rows=[];
+ const context=await browser.newContext({viewport:{width:1440,height:900},acceptDownloads:false,deviceScaleFactor:1});
+ const page=await context.newPage();
+ let loggedIn=false,loginAttempted=false;
+ let authStage='form',loginHttpStatus=null;
+ // Only fixed statuses and booleans are retained; never capture URLs, response
+ // bodies, request payloads, exceptions or credentials from the browser.
+ const signals={csrfHttpStatus:null,csrfRequestFailed:false,loginRequestSeen:false,
+  loginRequestFailed:false,clientPageError:false};
+ const routeOf=r=>{try{return new URL(r.url()).pathname;}catch{return '';}};
+ page.on?.('request',r=>{if(r.method()==='POST'&&routeOf(r)==='/api/auth/login')signals.loginRequestSeen=true;});
+ page.on?.('requestfailed',r=>{
+  if(routeOf(r)==='/api/auth/csrf')signals.csrfRequestFailed=true;
+  if(r.method()==='POST'&&routeOf(r)==='/api/auth/login')signals.loginRequestFailed=true;
+ });
+ page.on?.('response',r=>{if(routeOf(r)==='/api/auth/csrf')signals.csrfHttpStatus=r.status();});
+ page.on?.('pageerror',()=>{signals.clientPageError=true;});
+ try{
+  let loginResponse,headerInspection=null;
+  try{
+   await page.goto(BASE+'/login',{waitUntil:'domcontentloaded',timeout:25000});
+   authStage='hydration';
+   await settleLoginPage(page);
+   await page.getByTestId('login-email-input').fill(user.email);
+   await page.getByTestId('login-password-input').fill(user.password);
+   // Attach handlers to both operations immediately; preserve a successful
+   // login response even if the button click later rejects.
+   loginAttempted=true;
+   authStage='submit';
+   const [reply,clicked]=await Promise.allSettled([
+    page.waitForResponse(r=>new URL(r.url()).pathname==='/api/auth/login'&&r.request().method()==='POST',{timeout:20000}),
+    page.getByTestId('login-submit-button').click()
+   ]);
+   if(reply.status==='fulfilled'){
+    loginResponse=reply.value;
+    loginHttpStatus=loginResponse.status();
+    if(loginResponse.status()===200){
+     loggedIn=true;
+     // A bad __Host- cookie may be rejected by Chromium, so inspect its
+     // response attributes BEFORE requiring a functioning authenticated page.
+     try{headerInspection=inspectSetCookie(await loginResponse.headerValues('set-cookie'));}
+     catch{/* attributes unavailable: keep the cookie assertion BLOCKED */}
+     if(headerInspection&&!headerInspection.ok)rows.push({id:caseId(c.cookie),role,status:'FAIL',
+      reason:'session_cookie_header_attributes_mismatch',
+      checks:{header:headerInspection.checks}});
+    }
+   }
+   if(clicked.status==='rejected'||reply.status==='rejected'||!loggedIn)
+    throw Error('login_not_confirmed');
+   // Wait for client-side Next.js redirect before deciding whether context selection is needed.
+   authStage='redirect';
+   await page.waitForURL(u=>u.pathname==='/select-context'||u.pathname==='/app'||u.pathname.startsWith('/app/'),{timeout:20000});
+   // Accounts with multiple authorized contexts legitimately land on /select-context.
+   // Select only an unambiguous, already-authorized role; never bypass permissions.
+   if(page.url?.().includes('/select-context')){
+    authStage='context';
+    const selected=await page.evaluate(async ([email,expected])=>{
+     const response=await fetch('/api/auth/session',{credentials:'include'});
+     if(!response.ok)return false;
+     const session=await response.json();
+     if(session.user?.email?.toLowerCase()!==email.toLowerCase())return false;
+     const matches=(session.contexts??[]).filter(ctx=>ctx.role===expected);
+     if(matches.length!==1)return false;
+     const context=matches[0];
+     const choice=context.type==='platform'?{platform:true}:{membershipId:context.membershipId,role:expected};
+     const change=await fetch('/api/auth/context',{method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json','X-CSRF-Token':session.csrfToken},
+      body:JSON.stringify(choice)});
+     return change.ok;
+    },[user.email,c.role]);
+    if(!selected)throw Error('authorized_context_not_unique_or_unavailable');
+    await page.goto(BASE+'/app',{waitUntil:'domcontentloaded',timeout:25000});
+   }
+   await page.waitForURL(u=>u.pathname==='/app'||u.pathname.startsWith('/app/'),{timeout:20000});
+   authStage='shell';
+   await page.getByTestId('product-shell').waitFor({timeout:15000});
+   authStage='identity';
+   const valid=await page.evaluate(async ([email,expected])=>{
+     const r=await fetch('/api/auth/session',{credentials:'include'});if(!r.ok)return false;
+     const s=await r.json();return s.activeContext?.role===expected&&s.user?.email?.toLowerCase()===email.toLowerCase();
+   },[user.email,c.role]);
+   if(!valid)throw Error('identity_mismatch');
+  }catch{
+   // Cookie FAIL survives invalid browser session and navigation failure.
+   const code=authFailureCode(authStage,loginHttpStatus,signals);
+   rows.push(...missingBlockedRows(role,rows,'authentication_or_identity_unverified')
+    .map(row=>({...row,diagnostic:code})));
+   return rows;
+  }
+  if(!rows.some(r=>r.id===caseId(c.cookie))){
+   try{
+    const h=headerInspection??inspectSetCookie(await loginResponse.headerValues('set-cookie'));
+    const j=inspectCookieJar(await context.cookies(BASE));
+    rows.push({id:caseId(c.cookie),role,status:h.ok&&j.ok?'PASS':'FAIL',
+      reason:h.ok&&j.ok?'validated_header_and_browser_attributes':'session_cookie_attributes_mismatch',
+      checks:{header:h.checks,browser:j.checks}});
+   }catch{rows.push({id:caseId(c.cookie),role,status:'BLOCKED',reason:'cookie_api_unavailable'});}
+  }
+  for(const [i,width] of WIDTHS.entries()){
+   await page.setViewportSize({width,height:900});
+   const pages=[];
+   for(const route of c.routes){
+    const issues=[];
+    let g=null;
+    try{
+     const response=await page.goto(BASE+route,{waitUntil:'domcontentloaded',timeout:25000});
+     // Record transport failures BEFORE waiting for a shell that cannot exist on a 500/404.
+     // Keep the confirmed failure even when DOM checks and screenshots are unavailable.
+     if(response?.status()!==200)issues.push('http_error');
+     await page.getByTestId('product-shell').waitFor({timeout:15000});
+     await page.waitForTimeout(600);
+     g=await metrics(page);
+     issues.push(...inspectGeometry(g,width));
+     if(new URL(page.url()).pathname!==route)issues.push('unexpected_redirect');
+     await page.keyboard.press('Tab');
+     const focused=await page.evaluate(()=>document.activeElement!==document.body&&
+       !!document.activeElement?.matches(':focus-visible'));
+     if(!focused)issues.push('keyboard_focus_probe_failed');
+     const filename=caseId(c.start+i)+'-'+role+'-'+width+'-'+route.replaceAll('/','_')+'.png';
+     let pixels;
+     try{pixels=await page.screenshot({path:join(directory,filename),fullPage:true,timeout:20000});}
+     catch{
+      // Missing screenshot is BLOCKED only if no defect was independently detected.
+      pages.push({route,outcome:issues.length?'FAIL':'BLOCKED',
+       issues:[...issues,'screenshot_capture_unavailable'],geometry:g});
+      continue;
+     }
+     pages.push({route,outcome:issues.length?'FAIL':'PASS',issues,geometry:g,
+       screenshotPrivate:filename,screenshotHash:createHash('sha256').update(pixels).digest('hex')});
+    }catch{
+     pages.push({route,outcome:issues.length?'FAIL':'BLOCKED',
+       issues:issues.length?[...issues,'browser_operation_incomplete']:['browser_navigation_unavailable'],geometry:g});
+    }
+   }
+   const status=statusForPages(pages,false); // never claim full visual/dialog coverage automatically
+   rows.push({id:caseId(c.start+i),role,width,status,
+     reason:status==='BLOCKED'&&pages.every(p=>p.outcome==='PASS')?
+       'geometry_ok_dialog_and_visual_review_pending':
+       status==='BLOCKED'?'browser_navigation_incomplete':'confirmed_ui_or_navigation_problem',pages});
+  }
+ }catch{
+  // Never replace an earlier FAIL (e.g. bad cookie attributes) with BLOCKED.
+  rows.push(...missingBlockedRows(role,rows,'role_browser_execution_incomplete'));
+ }finally{
+  // Preserve an explicit cleanup receipt even when the final page crashed.
+  let cleanup='NOT_AUTHENTICATED';
+  // A click/response timing failure does not prove the server failed to
+  // create a session. Attempt revocation for every submitted login.
+  if(loggedIn||loginAttempted){
+   try{cleanup=await logout(context)?'CONFIRMED':'UNCONFIRMED';}
+   catch{cleanup='UNCONFIRMED';}
+   if(cleanup==='UNCONFIRMED')console.error('WARNING: session cleanup unavailable for '+role);
+  }
+  for(const row of rows)row.sessionCleanup=cleanup;
+  try{await context.close();}catch{/* keep completed evidence */}
+ }
+ return rows;
+}
+export async function run({credentialsFile=process.env.QA_USERS_FILE,output=process.env.QA_PRIVATE_OUTPUT,
+ deploymentSha=process.env.QA_DEPLOY_SHA,launchBrowser}={}){
+ if(!validateTarget(BASE))throw Error('unsafe_target');
+ const out=resolve(output||join(homedir(),'.local','share','therabridge-private-qa'));
+ await mkdir(out,{recursive:true,mode:0o700});
+ if(process.platform!=='win32')await chmod(out,0o700);
+ let users={};
+ if(credentialsFile){
+  const f=await stat(credentialsFile);
+  if(!f.isFile()||(process.platform!=='win32'&&(f.mode&0o077)!==0))throw Error('unsafe_credential_permissions');
+  users=JSON.parse(await readFile(credentialsFile,'utf8'));
+ }
+ const rows=[];
+ const ready=Object.keys(ROLES).filter(r=>users?.[r]?.email&&users?.[r]?.password);
+ if(ready.length){
+  let browser;
+  try{
+   if(launchBrowser)browser=await launchBrowser();
+   else{const {chromium}=await import('playwright');browser=await chromium.launch();}
+  }catch{ /* unavailable executable or module: record blocked, never fabricate PASS */ }
+  if(!browser){
+   for(const role of Object.keys(ROLES))rows.push(...blocked(role,
+     ready.includes(role)?'chromium_unavailable':'private_credentials_missing'));
+  }else{
+   try{
+    for(const role of Object.keys(ROLES)){
+     if(!ready.includes(role))rows.push(...blocked(role,'private_credentials_missing'));
+     else try{rows.push(...await assess(browser,role,users[role],out));}
+     catch{rows.push(...blocked(role,'role_browser_execution_incomplete'));}
+    }
+   }finally{
+    // Browser teardown may reject after a crash. Do not discard completed rows.
+    try{await browser.close();}catch{/* persist already collected evidence */}
+   }
+  }
+ }else for(const role of Object.keys(ROLES))rows.push(...blocked(role,'private_credentials_missing'));
+ rows.sort((a,b)=>Number(a.id.slice(2))-Number(b.id.slice(2)));
+ const counts=Object.fromEntries(['PASS','FAIL','BLOCKED'].map(k=>[k,rows.filter(x=>x.status===k).length]));
+ const report={schema:1,target:BASE,scope:'N-052..N-093 only',baseline104Unchanged:true,
+  generatedAt:new Date().toISOString(),claimedDeploymentSha:/^[a-f0-9]{40}$/.test(deploymentSha||'')?deploymentSha:null,
+  deploymentIndependentlyVerified:false,counts,rows,
+  caution:'No automatic updates to issue #61; sensitive screenshots remain private. Manual dialog/visual checks required.'};
+ const path=join(out,'hosted-readonly-results.json');
+ await writeFile(path,JSON.stringify(report,null,2)+'\n',{mode:0o600});
+ // Non-sensitive one-line summary. Detailed screenshots stay encrypted.
+ console.log('QA_PUBLIC_SUMMARY '+JSON.stringify({counts,
+  roleDiagnostics:Object.fromEntries(Object.keys(ROLES).map(role=>[role,
+   [...new Set(rows.filter(r=>r.role===role&&r.diagnostic).map(r=>r.diagnostic))]])),
+  blockedReasons:Object.fromEntries(
+  [...new Set(rows.filter(r=>r.status==='BLOCKED').map(r=>r.reason))].map(reason=>
+   [reason,rows.filter(r=>r.status==='BLOCKED'&&r.reason===reason).length]))}));
+
+ console.log(JSON.stringify({report:path,counts,total:rows.length}));
+ return counts.FAIL===0&&counts.BLOCKED===0?0:1;
+}
+if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
+ run().then(code=>process.exitCode=code).catch(()=>{console.error('QA precondition failed; no credentials printed');process.exitCode=2;});
+})&&
+   typeof form[key]?.onSubmit==='function');
+ },{timeout:20000});
 }
 async function assess(browser,role,user,directory){
  const c=ROLES[role],rows=[];
