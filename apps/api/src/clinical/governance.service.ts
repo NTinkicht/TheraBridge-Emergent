@@ -523,6 +523,11 @@ export class GovernanceService {
           AND membership_id=${draft.fromMembershipId}::uuid
           AND ended_at IS NULL FOR UPDATE`;
       if (assignmentRows.length !== 1) throw new ConflictException('Source assignment changed.');
+      const sourceRecord = await tx.careAssignment.findFirst({ where: {
+        id: assignmentRows[0].id, centerId, childId: draft.childId,
+        membershipId: draft.fromMembershipId, service: draft.service, endedAt: null,
+      }, select: { isLead: true } });
+      if (!sourceRecord) throw new ConflictException('Source assignment changed.');
       const [child, incoming, otherActive] = await Promise.all([
         tx.child.findFirst({ where: { id: draft.childId, centerId, status: 'ACTIVE',
           services: { has: draft.service } }, select: { id: true } }),
@@ -542,7 +547,7 @@ export class GovernanceService {
       if (ended.count !== 1) throw new ConflictException('Source assignment raced.');
       const incomingAssignment = await tx.careAssignment.create({ data: {
         centerId, childId: draft.childId, membershipId: draft.toMembershipId,
-        service: draft.service, startedAt: now,
+        service: draft.service, startedAt: now, isLead: sourceRecord.isLead,
       } });
       const updated = await tx.caseloadTransferDraft.updateMany({ where: {
         id, centerId, status: 'SYNTHETIC_APPROVED', version,
