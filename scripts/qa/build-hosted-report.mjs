@@ -1,13 +1,14 @@
 // Build a short-lived, restricted artifact from the fixed fictional hosted demo.
 // Copy only explicitly referenced PNGs and allowlisted, non-secret report fields.
-import {readFile,readdir,mkdir,writeFile,copyFile} from 'node:fs/promises';
+import {readFile,readdir,mkdir,writeFile,copyFile,rm} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {createHash} from 'node:crypto';
 import {BASE,ROLES,WIDTHS} from './hosted-readonly.mjs';
 
 const STATES=new Set(['PASS','FAIL','BLOCKED']);
 const CLEANUP=new Set(['CONFIRMED','UNCONFIRMED','NOT_AUTHENTICATED']);
-const SAFE_FILE=/^N-\d{3}-(platform|admin|coordinator|speech|ot|supervisor|guardian)-(320|390|768|1024|1440)-_[A-Za-z0-9_]+\.png$/;
+const SAFE_FILE=/^N-\d{3}-(platform|admin|coordinator|speech|ot|supervisor|guardian)-(320|390|768|1024|1440)-_[A-Za-z0-9_-]+\.png$/;
 const SAFE_CODE=/^[a-z][a-z0-9_]*$/;
 const escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -103,13 +104,19 @@ export async function buildReport(source,destination){
  for(const name of screenshots){
   if(!names.has(name))throw Error('missing_screenshot');
   const image=await readFile(join(input,name));
-  if(image.length<24||image.length>12*1024*1024||!image.subarray(0,8).equals(Buffer.from('89504e470d0a1a0a','hex')))
+  if(image.length<24||image.length>12*1024*1024||!image.subarray(0,8).equals(Buffer.from('89504e470d0a1a0a','hex'))||
+    !raw.rows.some(r=>r.pages?.some(p=>p.screenshotPrivate===name&&p.screenshotHash===createHash('sha256').update(image).digest('hex'))))
    throw Error('invalid_png_evidence');
  }
- await mkdir(join(output,'screenshots'),{recursive:true,mode:0o700});
- for(const name of screenshots)await copyFile(join(input,name),join(output,'screenshots',name));
- await writeFile(join(output,'hosted-readonly-results.json'),JSON.stringify(report,null,2)+'\n',{mode:0o600,flag:'wx'});
- await writeFile(join(output,'index.html'),renderHtml(report),{mode:0o600,flag:'wx'});
+ // The destination is reserved exclusively before writing any files. A retry
+ // cannot overwrite an established report's screenshots.
+ await mkdir(output,{mode:0o700});
+ try{
+  await mkdir(join(output,'screenshots'),{mode:0o700});
+  for(const name of screenshots)await copyFile(join(input,name),join(output,'screenshots',name));
+  await writeFile(join(output,'hosted-readonly-results.json'),JSON.stringify(report,null,2)+'\n',{mode:0o600,flag:'wx'});
+  await writeFile(join(output,'index.html'),renderHtml(report),{mode:0o600,flag:'wx'});
+ }catch(error){await rm(output,{recursive:true,force:true});throw error;}
  return {counts:report.counts,screenshots:screenshots.length};
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){

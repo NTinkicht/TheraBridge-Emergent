@@ -47,6 +47,15 @@ export function statusForPages(pages,visualAndDialogReview){
  if(pages.some(p=>p.outcome==='BLOCKED'))return 'BLOCKED';
  return visualAndDialogReview&&pages.length?'PASS':'BLOCKED';
 }
+// Screenshots in a public-repository artifact must never contain user-facing
+// text, images, icons, or browser-rendered personal data. The CSS is applied
+// by Playwright only during screenshot capture, preserving measured layout.
+export const LAYOUT_ONLY_SCREENSHOT_CSS=`
+ *,*::before,*::after{color:transparent!important;-webkit-text-fill-color:transparent!important;
+  text-shadow:none!important;text-decoration-color:transparent!important;
+  background-image:none!important;caret-color:transparent!important}
+ img,svg,canvas,video,iframe,object,embed{visibility:hidden!important}
+`;
 export function blocked(role,reason){
  const c=ROLES[role];
  return [...WIDTHS.map((width,i)=>({id:caseId(c.start+i),role,width,status:'BLOCKED',reason})),
@@ -229,7 +238,8 @@ async function assess(browser,role,user,directory){
      if(!focused)issues.push('keyboard_focus_probe_failed');
      const filename=caseId(c.start+i)+'-'+role+'-'+width+'-'+route.replaceAll('/','_')+'.png';
      let pixels;
-     try{pixels=await page.screenshot({path:join(directory,filename),fullPage:true,timeout:20000});}
+     try{pixels=await page.screenshot({path:join(directory,filename),fullPage:true,timeout:20000,
+       style:LAYOUT_ONLY_SCREENSHOT_CSS});}
      catch{
       // Missing screenshot is BLOCKED only if no defect was independently detected.
       pages.push({route,outcome:issues.length?'FAIL':'BLOCKED',

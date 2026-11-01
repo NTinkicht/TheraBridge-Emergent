@@ -40,6 +40,15 @@ test('malformed filenames, roles, routes, case totals and cookie flags fail clos
  ];
  for(const mutate of variants){const r=fixture();mutate(r);assert.throws(()=>sanitizeReport(r));}
 });
+test('approved hyphenated guardian family-progress screenshot is accepted',()=>{
+ const r=fixture();
+ const guardian=r.rows.find(row=>row.role==='guardian'&&row.width===320);
+ guardian.reason='geometry_ok_dialog_and_visual_review_pending';
+ guardian.pages=[{route:'/app/family-progress',outcome:'PASS',issues:[],
+  screenshotPrivate:'N-082-guardian-320-_app_family-progress.png',
+  screenshotHash:createHash('sha256').update(png).digest('hex')}];
+ assert.equal(sanitizeReport(r).screenshots.length,2);
+});
 test('artifact builder copies referenced PNGs only and writes HTML plus sanitized ledger',async()=>{
  const root=await mkdtemp(join(tmpdir(),'tb-qa-report-'));
  try{
@@ -52,6 +61,17 @@ test('artifact builder copies referenced PNGs only and writes HTML plus sanitize
   assert(!String(await readFile(join(output,'hosted-readonly-results.json'))).includes('NEVER_EXPORT'));
   await assert.rejects(readFile(join(output,'unreferenced-secret.txt')),{code:'ENOENT'});
   await assert.rejects(buildReport(source,output),{code:'EEXIST'});
+  assert.deepEqual(await readFile(join(output,'screenshots',filename)),png);
+ }finally{await rm(root,{recursive:true,force:true});}
+});
+test('tampered PNG with valid header but wrong SHA-256 is rejected',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'tb-qa-report-hash-'));
+ try{
+  const source=join(root,'source');await mkdir(source);
+  await writeFile(join(source,'hosted-readonly-results.json'),JSON.stringify(fixture()));
+  const tampered=Buffer.from(png);tampered[20]^=1;
+  await writeFile(join(source,filename),tampered);
+  await assert.rejects(buildReport(source,join(root,'output')),/invalid_png_evidence/);
  }finally{await rm(root,{recursive:true,force:true});}
 });
 test('builder rejects non-PNG content rather than publishing arbitrary files',async()=>{
