@@ -170,3 +170,66 @@ export function departureFallback(proposal: TransferProposal, now: Date): Transf
     acceptedVersion: undefined, approvedVersion: undefined, approvedBy: undefined,
     emergencyReviewRequired: true };
 }
+
+export interface SyntheticScheduledSession {
+  id: string;
+  startsAt: string;
+  disposition?: 'CANCELLED' | 'RESCHEDULED' | 'SESSION_TAKEOVER';
+}
+
+export function emergencySessionReview(sessions: readonly SyntheticScheduledSession[], startedAt: Date): SyntheticScheduledSession[] {
+  const from = startedAt.getTime();
+  requireThat(Number.isFinite(from), 'INVALID_TIME');
+  const to = from + TRANSFER_DEVELOPMENT_POLICY.p4EmergencySessionHorizonDays * 24 * 60 * 60 * 1000;
+  return sessions.filter(session => {
+    const when = new Date(session.startsAt).getTime();
+    requireThat(Number.isFinite(when), 'INVALID_TIME');
+    return when >= from && when < to;
+  }).map(session => ({ ...session }));
+}
+
+export function temporaryCoverageExpiry(
+  proposal: TransferProposal, now: Date, originalTherapistEligible: boolean,
+): TransferProposal {
+  requireThat(proposal.kind === 'TEMPORARY' && !!proposal.handbackAt, 'NOT_TEMPORARY_COVERAGE');
+  requireThat(Number.isFinite(now.getTime()), 'INVALID_TIME');
+  if (proposal.status !== 'COMMITTED' || now.getTime() < new Date(proposal.handbackAt).getTime())
+    return proposal;
+  // Never automatically restore the outgoing clinician's access.
+  return { ...proposal, status: 'UNASSIGNED_HOLD', version: proposal.version + 1,
+    acceptedVersion: undefined, approvedVersion: undefined, approvedBy: undefined,
+    emergencyReviewRequired: !originalTherapistEligible };
+}
+
+export interface SyntheticBatchResult {
+  proposalId: string;
+  childId: string;
+  specialty: string;
+  simulatedCommit: false;
+  result: 'BLOCKED';
+  reason: string;
+}
+
+/** Per-(child,specialty) results only. Never perform or claim a database commit. */
+export function assessSyntheticBatch(
+  proposals: readonly TransferProposal[], actor: TransferActor, contexts: ReadonlyMap<string, TransferContext>,
+): SyntheticBatchResult[] {
+  const seen = new Set<string>();
+  return proposals.map(p => {
+    const key = JSON.stringify([p.centerId, p.childId, p.specialty]);
+    if (seen.has(key)) return { proposalId:p.id, childId:p.childId, specialty:p.specialty,
+      simulatedCommit:false as const, result:'BLOCKED' as const, reason:'DUPLICATE_ASSIGNMENT_UNIT' };
+    seen.add(key);
+    try {
+      const context = contexts.get(p.id);
+      requireThat(!!context, 'MISSING_CONTEXT');
+      assessSyntheticCommit(p, actor, context!, p.version);
+      return { proposalId:p.id, childId:p.childId, specialty:p.specialty,
+        simulatedCommit:false as const, result:'BLOCKED' as const, reason:'CLINICAL_ACTIVATION_BLOCKED' };
+    } catch (error) {
+      return { proposalId:p.id, childId:p.childId, specialty:p.specialty,
+        simulatedCommit:false as const, result:'BLOCKED' as const,
+        reason:error instanceof TransferDenied ? error.code : 'UNEXPECTED_ERROR' };
+    }
+  });
+}
