@@ -128,6 +128,44 @@ describe('TB-EM-049 synthetic operational handover proposal (PostgreSQL)', () =>
     }
   });
 
+  it('rolls back a synthetic commit after recipient specialty revocation', async () => {
+    const saved=process.env.TB_TRANSFER_SYNTHETIC_EXECUTE;
+    process.env.TB_TRANSFER_SYNTHETIC_EXECUTE='true';
+    try {
+      const supervisor=(await member('revocation-supervisor','CLINICAL_SUPERVISOR')).who;
+      const p=(await start(admin,body()).expect(201)).body;
+      const a=(await ack(target,p.id).expect(201)).body;
+      const approved=(await post(h,c(`handover-proposals/${p.id}/synthetic-approve`),
+        supervisor,{version:a.version}).expect(201)).body;
+      await h.prisma.membership.update({where:{id:targetId},data:{specialties:[]}});
+      await post(h,c(`handover-proposals/${p.id}/synthetic-commit`),admin,
+        {version:approved.version}).expect(409);
+      expect(await h.prisma.careAssignment.count({where:{centerId,childId,endedAt:null}})).toBe(1);
+      expect(await h.prisma.careAssignment.count({where:{centerId,childId,membershipId:fromId,endedAt:null}})).toBe(1);
+      expect((await h.prisma.caseloadTransferDraft.findUniqueOrThrow({where:{id:p.id}})).status).toBe('SYNTHETIC_APPROVED');
+    } finally {
+      if(saved===undefined) delete process.env.TB_TRANSFER_SYNTHETIC_EXECUTE;
+      else process.env.TB_TRANSFER_SYNTHETIC_EXECUTE=saved;
+    }
+  });
+
+  it('rejects a non-synthetic center even with the synthetic execution flag', async () => {
+    const saved=process.env.TB_TRANSFER_SYNTHETIC_EXECUTE;
+    process.env.TB_TRANSFER_SYNTHETIC_EXECUTE='true';
+    try {
+      const supervisor=(await member('fixture-supervisor','CLINICAL_SUPERVISOR')).who;
+      const p=(await start(admin,body()).expect(201)).body;
+      const a=(await ack(target,p.id).expect(201)).body;
+      await h.prisma.center.update({where:{id:centerId},data:{slug:'ordinary-center'}});
+      await post(h,c(`handover-proposals/${p.id}/synthetic-approve`),
+        supervisor,{version:a.version}).expect(403);
+      expect(await h.prisma.careAssignment.count({where:{centerId,childId,endedAt:null}})).toBe(1);
+    } finally {
+      if(saved===undefined) delete process.env.TB_TRANSFER_SYNTHETIC_EXECUTE;
+      else process.env.TB_TRANSFER_SYNTHETIC_EXECUTE=saved;
+    }
+  });
+
   it('proposes, restricts recipient inbox, acknowledges without changing any assignment, and cancels', async () => {
     await start(therapist, body()).expect(403);
     await start(target, body()).expect(403);
