@@ -131,6 +131,7 @@ async function assess(browser,role,user,directory){
    await page.goto(BASE+'/login',{waitUntil:'domcontentloaded',timeout:25000});
    authStage='hydration';
    await settleLoginPage(page);
+   authStage='form';
    await page.getByTestId('login-email-input').fill(user.email);
    await page.getByTestId('login-password-input').fill(user.password);
    // Attach handlers to both operations immediately; preserve a successful
