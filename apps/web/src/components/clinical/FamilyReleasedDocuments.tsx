@@ -5,7 +5,7 @@ import { familyReleaseApi, type FamilyDocument } from '@/lib/family-releases';
 import { opsApi, type FamilyOverview } from '@/lib/operations';
 import { Button, Card } from '@/components/design/ui';
 
-type Item = { id: string; kind: string; status: string };
+type Item = { id: string; kind: string; status: string; childId: string; childName: string };
 export function FamilyReleasedDocuments({ centerId }: { centerId: string }) {
   const [enabled, setEnabled] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
@@ -55,10 +55,11 @@ export function FamilyReleasedDocuments({ centerId }: { centerId: string }) {
     </div>)}
     {items.length ? <ul className="space-y-2">{items.map(item => <li key={item.id}>
       <Button size="sm" variant="secondary" disabled={busy} onClick={() => void open(item.id)}>
-        View {item.kind.toLowerCase()} {item.status === 'SUPERSEDED' ? '(replaced)' : ''}
+        {item.childName} — View {item.kind.toLowerCase()} {item.status === 'SUPERSEDED' ? '(replaced)' : ''}
       </Button>
     </li>)}</ul> : <p className="text-sm">No documents have been released to you.</p>}
     {selected && <section aria-label="Family document" className="space-y-3 rounded-control border border-fam-border p-4" data-testid="family-released-rendering">
+      <p className="text-sm font-semibold">For: {selected.childName}</p>
       <h3 className="font-semibold">{String(selected.rendering.title ?? 'Family document')}{selected.replaced ? ' — replaced' : ''}</h3>
       <p className="whitespace-pre-wrap text-sm">{String(selected.rendering.summary ?? selected.rendering.familySummary ?? '')}</p>
       {selected.rendering.kind === 'PLAN' && Array.isArray(selected.rendering.goals) && <ul className="list-disc space-y-1 pl-6 text-sm">
