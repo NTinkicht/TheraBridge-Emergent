@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Harness, Signed, createUser, makeApp, post, resetDb, signIn } from './helpers';
+import { Harness, Signed, ORIGIN, createUser, makeApp, post, resetDb, signIn } from './helpers';
 
 describe('TB-EM-053 synthetic-only family document release (PostgreSQL)', () => {
   let h: Harness, c: string, kid: string, plan: string, link: string;
@@ -124,6 +124,37 @@ describe('TB-EM-053 synthetic-only family document release (PostgreSQL)', () => 
     await get(guardian, `mine/${releaseId}`).expect(404);
     await post(h, path('consents/withdraw'), guardian, { childId: kid, purpose: 'FAMILY_PLAN' }).expect(201);
     expect((await h.prisma.syntheticFamilyGrant.findUniqueOrThrow({ where: { id: releaseId } })).status).toBe('REVOKED');
+  });
+
+  it('never revives an old clinical approval after return, edit and resubmission', async () => {
+    const approvalId = await approved(); await consented();
+    const releaseId = (await grant(therapist, approvalId).expect(201)).body.id;
+    await submit(supervisor, 'RETURN', 2).expect(201);
+    await h.http().patch(`/api/centers/${c}/clinical/plan-versions/${plan}`)
+      .set('Origin', ORIGIN).set('Cookie', therapist.cookie).set('X-CSRF-Token', therapist.csrf)
+      .send({ version: 3, summary: 'Fictional revised family guidance', goals: [
+        { key: 'turns', title: 'Practice turn-taking again', measure: 'count', baseline: 1, target: 3 },
+      ], homeActivities: [] }).expect(200);
+    const resubmitted = await submit(therapist, 'SUBMIT', 4).expect(201);
+    expect(resubmitted.body.snapshotId).toBeDefined();
+    await grant(therapist, approvalId).expect(409);
+    await get(guardian, `mine/${releaseId}`).expect(404);
+    const newApproval = (await post(h, path('approvals'), therapist,
+      { snapshotId: resubmitted.body.snapshotId }).expect(201)).body.id;
+    expect(newApproval).not.toBe(approvalId);
+    await grant(therapist, newApproval).expect(201);
+  });
+
+  it('withdrawal permanently revokes superseded grants even after re-consent', async () => {
+    const approvalId = await approved(); await consented();
+    const releaseId = (await grant(therapist, approvalId).expect(201)).body.id;
+    await post(h, path(`grants/${releaseId}/change`), therapist,
+      { status: 'SUPERSEDED', reason: 'Fictional replacement' }).expect(201);
+    await post(h, path('consents/withdraw'), guardian, { childId: kid, purpose: 'FAMILY_PLAN' }).expect(201);
+    await consented();
+    await get(guardian, `mine/${releaseId}`).expect(404);
+    expect((await h.prisma.syntheticFamilyGrant.findUniqueOrThrow({ where: { id: releaseId } })).status).toBe('REVOKED');
+    await grant(therapist, approvalId).expect(409);
   });
 
   it('forbids access if synthetic center flag is off, and keeps old locked release tables locked', async () => {

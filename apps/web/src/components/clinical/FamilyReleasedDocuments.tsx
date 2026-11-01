@@ -64,6 +64,11 @@ export function FamilyReleasedDocuments({ centerId }: { centerId: string }) {
       {selected.rendering.kind === 'PLAN' && Array.isArray(selected.rendering.goals) && <ul className="list-disc space-y-1 pl-6 text-sm">
         {(selected.rendering.goals as { title: string }[]).map((goal, i) => <li key={i}>{goal.title}</li>)}
       </ul>}
+      {selected.rendering.kind === 'PLAN' && Array.isArray(selected.rendering.homeActivities) &&
+        <div className="space-y-2"><h4 className="font-semibold">Home activities</h4><ul className="list-disc space-y-2 pl-6 text-sm">
+          {(selected.rendering.homeActivities as { frequency: string; note: string }[]).map((activity, i) =>
+            <li key={i}><span className="font-semibold">{activity.frequency}</span>{activity.note && <p className="whitespace-pre-wrap">{activity.note}</p>}</li>)}
+        </ul></div>}
       <p className="text-xs text-fam-muted">This synthetic document is view-only and cannot be downloaded or exported.</p>
       <Button variant="ghost" size="sm" onClick={() => setSelected(null)}>Close document</Button>
     </section>}

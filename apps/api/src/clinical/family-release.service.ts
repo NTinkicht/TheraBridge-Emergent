@@ -74,6 +74,14 @@ export class FamilyReleaseService {
     return latest?.status === 'ACTIVE';
   }
 
+  private async isLatestSubmittedSnapshot(tx: Tx, centerId: string,
+    s: { id: string; childId: string; kind: string; documentId: string }) {
+    const latest = await tx.governanceHistory.findFirst({ where: { centerId, childId: s.childId,
+      kind: s.kind, documentId: s.documentId, fromStatus: { in: ['DRAFT', 'RETURNED_FOR_REVISION'] },
+      toStatus: 'IN_REVIEW' }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }] });
+    return latest?.snapshotId === s.id;
+  }
+
   async approve(centerId: string, v: Viewer, dto: FamilyApprovalDto) {
     return this.prisma.$transaction(async tx => {
       await this.synthetic(tx, centerId);
@@ -85,10 +93,7 @@ export class FamilyReleaseService {
       await this.clinician(tx, centerId, v, s.childId, service);
       // Only a clinician-submitted, immutable review snapshot can be approved;
       // a draft preview created without submission cannot be promoted.
-      const submitted = await tx.governanceHistory.findFirst({ where: { centerId, childId: s.childId,
-        kind: s.kind, documentId: s.documentId, fromStatus: { in: ['DRAFT', 'RETURNED_FOR_REVISION'] },
-        toStatus: 'IN_REVIEW' }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }] });
-      if (!submitted || submitted.snapshotId !== s.id)
+      if (!await this.isLatestSubmittedSnapshot(tx, centerId, s))
         throw new ConflictException('Only the latest submitted clinical version can be approved.');
       const latest = s.kind === 'PLAN'
         ? await tx.planVersion.findFirst({ where: { id: s.documentId, centerId, plan: { childId: s.childId } } })
@@ -118,7 +123,7 @@ export class FamilyReleaseService {
         guardianLinkId: link.id, purpose: dto.purpose, status: withdraw ? 'REVOKED' : 'ACTIVE',
         actorUserId: v.userId, revokedAt: withdraw ? new Date() : null } });
       if (withdraw) await tx.syntheticFamilyGrant.updateMany({ where: { centerId, childId: dto.childId,
-        guardianLinkId: link.id, purpose: dto.purpose, status: 'ACTIVE' },
+        guardianLinkId: link.id, purpose: dto.purpose, status: { in: ['ACTIVE', 'SUPERSEDED'] } },
         data: { status: 'REVOKED', changedById: v.userId, changedAt: new Date() } });
       await logCenterEvent(tx, centerId, withdraw ? 'family.synthetic_consent_withdrawn' : 'family.synthetic_consent_recorded',
         new Date(), { actorUserId: v.userId, meta: { childId: dto.childId, consentId: row.id } });
@@ -134,6 +139,8 @@ export class FamilyReleaseService {
       const snapshot = await tx.governanceSnapshot.findFirst({ where: { id: approval.snapshotId,
         centerId, childId: approval.childId } });
       if (!snapshot) throw new NotFoundException();
+      if (!await this.isLatestSubmittedSnapshot(tx, centerId, snapshot))
+        throw new ConflictException('A newer clinical submission requires a new family approval.');
       const source = snapshot.kind === 'PLAN'
         ? await tx.planVersion.findFirst({ where: { id: snapshot.documentId, centerId } })
         : await tx.progressReport.findFirst({ where: { id: snapshot.documentId, centerId } });
@@ -219,6 +226,7 @@ export class FamilyReleaseService {
     const snap = await tx.governanceSnapshot.findFirst({ where: { id: approval.snapshotId, centerId,
       childId: release.childId } });
     if (!snap) throw new NotFoundException();
+    if (!await this.isLatestSubmittedSnapshot(tx, centerId, snap)) throw new NotFoundException();
     const source = snap.kind === 'PLAN'
       ? await tx.planVersion.findFirst({ where: { id: snap.documentId, centerId } })
       : await tx.progressReport.findFirst({ where: { id: snap.documentId, centerId } });
