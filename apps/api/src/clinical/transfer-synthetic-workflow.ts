@@ -193,7 +193,7 @@ export function temporaryCoverageExpiry(
 ): TransferProposal {
   requireThat(proposal.kind === 'TEMPORARY' && !!proposal.handbackAt, 'NOT_TEMPORARY_COVERAGE');
   requireThat(Number.isFinite(now.getTime()), 'INVALID_TIME');
-  if (proposal.status !== 'COMMITTED' || now.getTime() < new Date(proposal.handbackAt).getTime())
+  if (proposal.status !== 'COMMITTED' || now.getTime() < new Date(proposal.handbackAt!).getTime())
     return proposal;
   // Never automatically restore the outgoing clinician's access.
   return { ...proposal, status: 'UNASSIGNED_HOLD', version: proposal.version + 1,
