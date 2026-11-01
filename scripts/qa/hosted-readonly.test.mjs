@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {BASE,WIDTHS,ROLES,caseId,validateTarget,inspectCookieJar,inspectSetCookie,
- inspectGeometry,statusForPages,blocked,authFailureCode,run} from './hosted-readonly.mjs';
+ inspectGeometry,statusForPages,blocked,authFailureCode,settleLoginPage,run} from './hosted-readonly.mjs';
 const jar={name:'__Host-tb_session',value:'SECRET_NEVER_EXPORT',secure:true,httpOnly:true,
  sameSite:'Lax',path:'/',domain:'therabridge-ahmed-synthetic-demo.onrender.com'};
 const header='__Host-tb_session=SECRET_NEVER_EXPORT; Path=/; HttpOnly; SameSite=Lax; Secure';
@@ -18,6 +18,71 @@ test('auth diagnostics classify stages without exposing identity or credentials'
   const code=authFailureCode(stage,status);
   assert.equal(code,expected);
   assert.equal(/[@ ]/.test(code),false);
+ }
+});
+test('secret-free request stage diagnostics distinguish pre-login and login failures',()=>{
+ const cases=[
+  [{csrfHttpStatus:503},'csrf_http_error'],
+  [{csrfRequestFailed:true},'csrf_network_error'],
+  [{loginRequestFailed:true},'login_network_error'],
+  [{loginRequestSeen:true},'login_response_timeout'],
+  [{clientPageError:true},'client_runtime_error'],
+  [{csrfHttpStatus:200},'login_not_dispatched_after_csrf'],
+  [{loginRequestSeen:false},'login_request_not_dispatched']
+ ];
+ for(const [signals,code] of cases){
+  assert.equal(authFailureCode('submit',null,signals),code);
+  assert.equal(/[@ ]/.test(code),false);
+ }
+ assert.equal(authFailureCode('submit',401,{csrfHttpStatus:200}),'login_http_401');
+});
+test('login readiness requires React submit handler observation, not a fixed sleep',async()=>{
+ let checked=false;
+ await settleLoginPage({waitForFunction:async (predicate,arg,options)=>{
+  assert.equal(typeof predicate,'function');assert.equal(arg,undefined);
+  assert.deepEqual(options,{timeout:20000});checked=true;
+ }});
+ assert.equal(checked,true);
+ await assert.rejects(settleLoginPage({waitForFunction:async()=>{throw Error('fixture_timeout');}}));
+ await assert.rejects(settleLoginPage({waitForLoadState:async()=>{}}));
+ await settleLoginPage({}); // legacy offline page fixture, no browser wait API
+});
+test('collector reports real browser-event signals without leaking error payloads',async()=>{
+ const {mkdtemp,rm,writeFile,readFile}=await import('node:fs/promises');
+ const {tmpdir}=await import('node:os');const {join}=await import('node:path');
+ const scenarios=[
+  ['csrf_failure','csrf_http_error'],['csrf_network','csrf_network_error'],
+  ['login_network','login_network_error'],['login_timeout','login_response_timeout'],
+  ['client_error','client_runtime_error'],['no_request','login_request_not_dispatched']
+ ];
+ for(const [scenario,expected] of scenarios){
+  const dir=await mkdtemp(join(tmpdir(),'tb-qa-events-'));
+  try{
+   const file=join(dir,'users.json');
+   await writeFile(file,JSON.stringify({platform:{email:'fixture@example.invalid',password:'ci_only_mock'}}),{mode:0o600});
+   const handlers={};
+   const request=(path,method='GET')=>({url:()=>BASE+path,method:()=>method});
+   const page={
+    on:(name,cb)=>{handlers[name]=cb;},
+    goto:async()=>({status:()=>200}),
+    waitForFunction:async()=>true,
+    getByTestId:()=>({fill:async()=>{},click:async()=>{
+     if(scenario==='csrf_failure')handlers.response?.({...request('/api/auth/csrf'),status:()=>503});
+     if(scenario==='csrf_network')handlers.requestfailed?.(request('/api/auth/csrf'));
+     if(scenario==='login_network')handlers.requestfailed?.(request('/api/auth/login','POST'));
+     if(scenario==='login_timeout')handlers.request?.(request('/api/auth/login','POST'));
+     if(scenario==='client_error')handlers.pageerror?.(Error('NEVER_EXPORT_CLIENT_ERROR'));
+    }}),
+    waitForResponse:async()=>{throw Error('NEVER_EXPORT_RESPONSE_ERROR');}
+   };
+   const context={newPage:async()=>page,close:async()=>{},
+    request:{get:async()=>({ok:()=>false}),post:async()=>({status:()=>204})}};
+   await run({credentialsFile:file,output:join(dir,'out'),
+    launchBrowser:async()=>({newContext:async()=>context,close:async()=>{}})});
+   const report=JSON.parse(await readFile(join(dir,'out','hosted-readonly-results.json'),'utf8'));
+   assert.equal(report.rows.find(row=>row.id==='N-052').diagnostic,expected);
+   assert.equal(JSON.stringify(report).includes('NEVER_EXPORT'),false);
+  }finally{await rm(dir,{recursive:true,force:true});}
  }
 });
 test('42 unique IDs N-052..N-093',()=>{
