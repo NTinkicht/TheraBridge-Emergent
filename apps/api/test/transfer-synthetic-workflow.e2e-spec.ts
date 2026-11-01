@@ -48,6 +48,31 @@ describe('TB-EM-052 fail-closed synthetic transfer lifecycle', () => {
     expect(() => approveSyntheticProposal(revised,approver,context,2)).toThrow('ACCEPTANCE_REQUIRED');
   });
 
+  it('revalidates revised recipient, dates and temporary coverage boundaries', () => {
+    const proposal=make();
+    expect(() => reviseSyntheticProposal(proposal,{toMembershipId:'old-member'})).toThrow('SAME_THERAPIST');
+    expect(() => reviseSyntheticProposal(proposal,{toMembershipId:''})).toThrow('INVALID_SCOPE');
+    expect(() => reviseSyntheticProposal(proposal,{effectiveAt:'not-a-date'})).toThrow('INVALID_TIME');
+    expect(() => reviseSyntheticProposal(make('TEMPORARY'),{handbackAt:undefined})).toThrow('COVERAGE_EXPIRY_REQUIRED');
+    expect(() => reviseSyntheticProposal(make('TEMPORARY'),{handbackAt:'not-a-date'})).toThrow('INVALID_TIME');
+    expect(() => reviseSyntheticProposal(make('TEMPORARY'),{
+      handbackAt:'2026-11-04T12:00:00.000Z',
+    })).toThrow('INVALID_COVERAGE_WINDOW');
+    const revised=reviseSyntheticProposal(proposal,{toMembershipId:'third-member'});
+    expect(revised.version).toBe(2);
+    expect(revised.status).toBe('PROPOSED');
+    expect(revised.acceptedVersion).toBeUndefined();
+    expect(() => acceptSyntheticProposal(revised,clinician,context,2)).toThrow('NOT_AUTHORIZED');
+  });
+
+  it('keeps cancelled or expired planned proposals terminal at departure', () => {
+    const effective=new Date('2026-11-06T12:00:00.000Z');
+    const cancelled={...make(),status:'CANCELLED' as const};
+    const expired={...make(),status:'EXPIRED' as const};
+    expect(departureFallback(cancelled,effective)).toEqual(cancelled);
+    expect(departureFallback(expired,effective)).toEqual(expired);
+  });
+
   it('denies cross-tenant, child-out-of-scope, revoked actors and stale assignments', () => {
     const proposal=make();
     expect(() => acceptSyntheticProposal(proposal,{...clinician,centerId:'other'},context,1)).toThrow('NOT_FOUND');
