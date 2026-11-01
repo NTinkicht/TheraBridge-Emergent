@@ -152,6 +152,27 @@ export class FamilyReleaseService {
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
 
+  async recipients(centerId: string, v: Viewer, approvalId: string) {
+    return this.prisma.$transaction(async tx => {
+      await this.synthetic(tx, centerId);
+      const approval = await tx.syntheticFamilyApproval.findFirst({ where: { id: approvalId, centerId } });
+      if (!approval) throw new NotFoundException();
+      const snapshot = await tx.governanceSnapshot.findFirst({ where: { id: approval.snapshotId,
+        centerId, childId: approval.childId } });
+      if (!snapshot) throw new NotFoundException();
+      const service = (snapshot.content as Record<string, unknown>).service;
+      if (typeof service !== 'string') throw new NotFoundException();
+      await this.clinician(tx, centerId, v, approval.childId, service);
+      const links = await tx.guardianLink.findMany({ where: { centerId, childId: approval.childId,
+        removedAt: null }, select: { id: true, displayName: true, familyReleaseRestriction: true } });
+      const items = [];
+      for (const g of links) items.push({ id: g.id, displayName: g.displayName,
+        eligible: g.familyReleaseRestriction === 'CLEAR' &&
+          await this.consentActive(tx, centerId, approval.childId, g.id, approval.purpose) });
+      return { synthetic: true, items };
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  }
+
   async change(centerId: string, v: Viewer, id: string, dto: FamilyGrantChangeDto) {
     if (!dto.reason?.trim()) throw new UnprocessableEntityException('Reason required.');
     return this.prisma.$transaction(async tx => {
@@ -176,8 +197,7 @@ export class FamilyReleaseService {
 
   private async eligibleRead(tx: Tx, centerId: string, v: Viewer, id: string) {
     await this.synthetic(tx, centerId);
-    const release = await tx.syntheticFamilyGrant.findFirst({ where: { id, centerId },
-      include: {} });
+    const release = await tx.syntheticFamilyGrant.findFirst({ where: { id, centerId } });
     if (!release || !['ACTIVE', 'SUPERSEDED'].includes(release.status)) throw new NotFoundException();
     const link = await this.guardian(tx, centerId, v, release.childId);
     if (release.guardianLinkId !== link.id) throw new NotFoundException();

@@ -7,6 +7,7 @@ import { Button, Card, Pill } from '@/components/design/ui';
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
 import { governanceApi, type DocumentItem, type Snapshot } from '@/lib/governance';
 import type { SessionInfo } from '@/lib/auth';
+import { SyntheticReleaseActions } from '@/components/clinical/SyntheticReleaseActions';
 
 function FrozenValue({ value }: { value: unknown }) {
   if (value === null || value === undefined) return <span className="text-brand-inkMuted">Not recorded</span>;
@@ -42,10 +43,11 @@ function DocumentReview({ c, d, supervisor, reload, onError }: {c:string; d:Docu
       <Link className="inline-block text-brand-action underline" href={d.kind==='PLAN'?`/app/clinical/${d.childId}`:`/app/reports/${d.id}`}>Open clinical workspace</Link>
       {actions.length>0&&<><ReasonField label="Reason or reviewer comment (required)" value={reason} onChange={setReason} testId="governance-reason"/><div className="flex flex-wrap gap-2">{actions.map(a=><Button key={a} variant="secondary" disabled={busy||reason.trim().length<3} onClick={()=>void action(a)} data-testid={`transition-${a.toLowerCase()}`}>{labels[a]}</Button>)}</div></>}
       {d.kind==='PLAN'&&['WITHDRAWN','FROZEN_INTERNAL'].includes(d.status)&&<p className="text-[14px]">The preserved version stays read-only. Its author can start the next version in the clinical workspace.</p>}
-      <p className="flex items-start gap-2 text-[13px] text-brand-inkMuted"><LockKeyhole className="shrink-0" size={16}/>Signing, approval and release are disabled. Freezing does not approve a document.</p>
+      <p className="flex items-start gap-2 text-[13px] text-brand-inkMuted"><LockKeyhole className="shrink-0" size={16}/>Production clinical signing and release are disabled. Synthetic family-release testing is separate and requires server-controlled flags.</p>
       {err&&<p role="alert" className="text-status-danger">{err}</p>}
     </Card>
     <Card className="space-y-3 p-5"><h2 className="text-[18px] font-semibold">Version and status history</h2>{failed?<ErrorState onRetry={()=>void reloadHistory()}/>:!data?<SkeletonRows rows={2}/>:!data.items.length?<p className="text-[14px] text-brand-inkMuted">No governance transitions yet. Earlier history remains in the clinical workspace.</p>:data.items.map(h=><div key={h.id} className="space-y-2 border-t border-border-light pt-3 text-[14px]"><p className="font-semibold">{h.fromStatus} → {h.toStatus} · revision {h.sourceVersion}</p><p className="break-words">{h.reason}</p><p className="break-words text-[12px] text-brand-inkMuted">{new Date(h.createdAt).toLocaleString()} · {h.actorName}</p><Button variant="ghost" size="sm" onClick={()=>void governanceApi.preview(c,h.snapshotId).then(setPreview).catch(e=>setErr(errorText(e,onError)||'The request could not be completed.'))} data-testid="view-frozen-preview">View immutable preview</Button></div>)}</Card>
+    {data&&<SyntheticReleaseActions centerId={c} document={d} history={data.items}/>}
     {preview&&<FrozenPreview snapshot={preview}/>}
   </div>;
 }
