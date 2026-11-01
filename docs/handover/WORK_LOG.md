@@ -1,3 +1,11 @@
+# Work log — 2026-11-01 — TB-EM-052 #151 reviewer remediation
+
+- Verified owner baseline in merged private PR #47; recorded provisional timing P-1=7d, P-2=7d/24h/1h, P-3=7d, P-4=7d, P-5=48h.
+- Implemented synthetic-only `transfer-development-policy.ts` and `transfer-synthetic-workflow.ts` with isolated Jest coverage; clinical activation is hard-disabled and all simulated commits are blocked.
+- A PostgreSQL-backed synthetic assignment-swap attempt was rejected by the mandatory TB-EM-051 safeguard in CI #41313442496. Restored non-mutating governance service/controller/authz routes and removed its unapproved migration. No published migration or policy gate was modified.
+- Latest Codex review head `48c457e`: **FIX_NOW P2** revalidate revised proposal invariants (commit `0ee93a6`); **FIX_NOW P2** preserve CANCELLED/EXPIRED in departure fallback (same commit), both with regression tests (`2f1816d`); **FIX_NOW P1** refresh four handover/QA evidence files (this update). No deferrals or severity downgrades.
+- PR remains OPEN / incomplete; exact-head six-job CI and independent re-review pending. No clinical, production or real-data authorization.
+
 # Latest work log — 2026-10-31 — M2-H06 reviewer corrections
 
 PR #144 current source clarification: `components/clinical/ReportToPlanHandoff.tsx` is present (historical child360 path removed), and its `createPlanDraftFromReport` API is transactional, stable request-ID idempotent and retry-safe. Codex reviewed prior head `1c0c4b3` and raised two P2 DST cases. Dispositions: **FIX_NOW** original end in ambiguous autumn hour (commit `42719a5`), **FIX_NOW** rejected spring DST gap (`b3eaae8`); coverage `1a9e6e0`. Replied inline, resolved both threads. **DEFER_ISSUE: none. DECLINE_WITH_REASON: none.** Waiting for latest exact-head CI and independent re-review; do not merge or release clinical gates.
