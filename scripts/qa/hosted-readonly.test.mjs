@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {BASE,WIDTHS,ROLES,caseId,validateTarget,inspectCookieJar,inspectSetCookie,
- inspectGeometry,statusForPages,blocked,authFailureCode,run} from './hosted-readonly.mjs';
+ inspectGeometry,statusForPages,blocked,authFailureCode,settleLoginPage,run} from './hosted-readonly.mjs';
 const jar={name:'__Host-tb_session',value:'SECRET_NEVER_EXPORT',secure:true,httpOnly:true,
  sameSite:'Lax',path:'/',domain:'therabridge-ahmed-synthetic-demo.onrender.com'};
 const header='__Host-tb_session=SECRET_NEVER_EXPORT; Path=/; HttpOnly; SameSite=Lax; Secure';
@@ -19,6 +19,36 @@ test('auth diagnostics classify stages without exposing identity or credentials'
   assert.equal(code,expected);
   assert.equal(/[@ ]/.test(code),false);
  }
+});
+test('secret-free request stage diagnostics distinguish pre-login and login failures',()=>{
+ const cases=[
+  [{csrfHttpStatus:503},'csrf_http_error'],
+  [{csrfRequestFailed:true},'csrf_network_error'],
+  [{loginRequestFailed:true},'login_network_error'],
+  [{loginRequestSeen:true},'login_response_timeout'],
+  [{clientPageError:true},'client_runtime_error'],
+  [{csrfHttpStatus:200},'login_not_dispatched_after_csrf']
+ ];
+ for(const [signals,code] of cases){
+  assert.equal(authFailureCode('submit',null,signals),code);
+  assert.equal(/[@ ]/.test(code),false);
+ }
+ assert.equal(authFailureCode('submit',401,{csrfHttpStatus:200}),'login_http_401');
+});
+test('login stabilization waits for network idle then hydration buffer',async()=>{
+ const order=[];
+ await settleLoginPage({
+  waitForLoadState:async (state,options)=>{order.push(['load',state,options.timeout]);},
+  waitForTimeout:async delay=>{order.push(['buffer',delay]);}
+ });
+ assert.deepEqual(order,[['load','networkidle',12000],['buffer',350]]);
+ const fallback=[];
+ await settleLoginPage({
+  waitForLoadState:async()=>{throw Error('fixture_timeout');},
+  waitForTimeout:async delay=>{fallback.push(delay);}
+ });
+ assert.deepEqual(fallback,[1000,350]);
+ await settleLoginPage({}); // older page fixture without Playwright load-state API
 });
 test('42 unique IDs N-052..N-093',()=>{
  const ids=Object.keys(ROLES).flatMap(r=>[...WIDTHS.map((_,i)=>caseId(ROLES[r].start+i)),caseId(ROLES[r].cookie)]);
