@@ -78,6 +78,8 @@ describe('TB-EM-049 synthetic operational handover proposal (PostgreSQL)', () =>
     process.env.TB_TRANSFER_SYNTHETIC_EXECUTE = 'true';
     try {
       const supervisor = (await member('supervisor','CLINICAL_SUPERVISOR')).who;
+      await h.prisma.careAssignment.updateMany({where:{centerId,childId,membershipId:fromId,endedAt:null},
+        data:{isLead:true}});
       const proposal=(await start(admin,body()).expect(201)).body;
       const acknowledged=(await ack(target,proposal.id).expect(201)).body;
       await post(h,c(`handover-proposals/${proposal.id}/synthetic-approve`),admin,{version:acknowledged.version}).expect(403);
@@ -94,7 +96,7 @@ describe('TB-EM-049 synthetic operational handover proposal (PostgreSQL)', () =>
         assignmentChanged:true,clinicalApproval:false,clinicalHandover:false,released:false});
       expect(await h.prisma.careAssignment.count({where:{centerId,childId,endedAt:null}})).toBe(1);
       expect(await h.prisma.careAssignment.count({where:{centerId,childId,
-        membershipId:targetId,endedAt:null}})).toBe(1);
+        membershipId:targetId,endedAt:null,isLead:true}})).toBe(1);
       await post(h,c(`handover-proposals/${proposal.id}/synthetic-commit`),admin,
         {version:approved.version}).expect(409);
       expect(await h.prisma.centerEvent.count({where:{centerId,type:'handover.synthetic_committed'}})).toBe(1);
