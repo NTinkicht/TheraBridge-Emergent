@@ -21,7 +21,7 @@ test('sanitizer emits only allowlisted fields and renders offline screenshot lin
  const input=fixture();
  input.rows[0].email='NEVER_EXPORT@example.invalid';
  input.rows[0].sessionCookie='NEVER_EXPORT_SESSION';
- input.rows[0].pages[0].password='NEVER_EXPORT_PASSWORD';
+ input.rows[0].pages[0].unexpectedSensitiveField='NEVER_EXPORT_PRIVATE_FIXTURE';
  const {report,screenshots}=sanitizeReport(input);
  assert.deepEqual(screenshots,[filename]);
  assert(!JSON.stringify(report).includes('NEVER_EXPORT'));
