@@ -36,16 +36,43 @@ test('secret-free request stage diagnostics distinguish pre-login and login fail
  }
  assert.equal(authFailureCode('submit',401,{csrfHttpStatus:200}),'login_http_401');
 });
-test('login readiness requires React submit handler observation, not a fixed sleep',async()=>{
- let checked=false;
- await settleLoginPage({waitForFunction:async (predicate,arg,options)=>{
-  assert.equal(typeof predicate,'function');assert.equal(arg,undefined);
-  assert.deepEqual(options,{timeout:20000});checked=true;
+test('login readiness observes a real React submit handler',async()=>{
+ const {runInNewContext}=await import('node:vm');
+ let predicate;
+ await settleLoginPage({waitForFunction:async (fn,arg,options)=>{
+  predicate=fn;assert.equal(arg,undefined);assert.deepEqual(options,{timeout:20000});
  }});
- assert.equal(checked,true);
+ const runProbe=form=>runInNewContext('('+predicate.toString()+')()',{
+  document:{querySelector:()=>form},String
+ });
+ assert.equal(runProbe(null),false);
+ assert.equal(runProbe({}),false);
+ const prop='__reactProps'+String.fromCharCode(36)+'fixture';
+ assert.equal(runProbe({[prop]:{onSubmit:null}}),false);
+ assert.equal(runProbe({[prop]:{onSubmit:()=>{}}}),true);
  await assert.rejects(settleLoginPage({waitForFunction:async()=>{throw Error('fixture_timeout');}}));
  await assert.rejects(settleLoginPage({waitForLoadState:async()=>{}}));
- await settleLoginPage({}); // legacy offline page fixture, no browser wait API
+ await settleLoginPage({}); // legacy offline fixture without browser wait API
+});
+test('hydration timeout blocks before credentials are entered or submitted',async()=>{
+ const {mkdtemp,rm,writeFile,readFile}=await import('node:fs/promises');
+ const {tmpdir}=await import('node:os');const {join}=await import('node:path');
+ const dir=await mkdtemp(join(tmpdir(),'tb-qa-hydration-'));
+ try{
+  const file=join(dir,'users.json');
+  await writeFile(file,JSON.stringify({platform:{email:'fixture@example.invalid',password:'ci_only_mock'}}),{mode:0o600});
+  let fills=0,clicks=0;
+  const page={goto:async()=>({status:()=>200}),
+   waitForFunction:async()=>{throw Error('fixture_hydration_timeout');},
+   getByTestId:()=>({fill:async()=>{fills++;},click:async()=>{clicks++;}})};
+  const context={newPage:async()=>page,close:async()=>{},
+   request:{get:async()=>({ok:()=>false}),post:async()=>({status:()=>204})}};
+  await run({credentialsFile:file,output:join(dir,'out'),
+   launchBrowser:async()=>({newContext:async()=>context,close:async()=>{}})});
+  const report=JSON.parse(await readFile(join(dir,'out','hosted-readonly-results.json'),'utf8'));
+  assert.equal(report.rows.find(row=>row.id==='N-052').diagnostic,'login_hydration_unverified');
+  assert.equal(fills,0);assert.equal(clicks,0);
+ }finally{await rm(dir,{recursive:true,force:true});}
 });
 test('collector reports real browser-event signals without leaking error payloads',async()=>{
  const {mkdtemp,rm,writeFile,readFile}=await import('node:fs/promises');
