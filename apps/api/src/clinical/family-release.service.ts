@@ -37,10 +37,15 @@ export class FamilyReleaseService {
     if (!enabled) throw new ForbiddenException('Synthetic family release is disabled.');
   }
 
-  private async clinician(tx: Tx, centerId: string, v: Viewer, childId: string, service: string) {
+  private async clinician(tx: Tx, centerId: string, v: Viewer, childId: string, service: string, requireActiveService = false) {
     await assertActor(tx, centerId, v, ['THERAPIST', 'CLINICAL_SUPERVISOR']);
     const child = await tx.child.findFirst({ where: { id: childId, centerId, status: 'ACTIVE' } });
     if (!child) throw new NotFoundException();
+    // Approval and new grants must respect the child's current specialty scope,
+    // even when an older care assignment remains active after service removal.
+    // Do not apply this gate to access-removing grant transitions.
+    if (requireActiveService && !child.services.includes(service))
+      throw new ForbiddenException('Child service is no longer active.');
     if (v.role === 'THERAPIST') {
       // Lock the actual assignment; a concurrent revocation must not win a release race.
       await tx.$queryRaw`SELECT id FROM care_assignment WHERE center_id=${centerId}::uuid AND child_id=${childId}::uuid AND membership_id=${v.membershipId}::uuid AND service=${service} AND ended_at IS NULL FOR SHARE`;
@@ -90,7 +95,7 @@ export class FamilyReleaseService {
       const content = s.content as Record<string, unknown>;
       const service = content.service;
       if (typeof service !== 'string') throw new UnprocessableEntityException('Specialty not recorded on snapshot.');
-      await this.clinician(tx, centerId, v, s.childId, service);
+      await this.clinician(tx, centerId, v, s.childId, service, true);
       // Only a clinician-submitted, immutable review snapshot can be approved;
       // a draft preview created without submission cannot be promoted.
       if (!await this.isLatestSubmittedSnapshot(tx, centerId, s))
@@ -147,7 +152,7 @@ export class FamilyReleaseService {
       if (!source || source.status !== 'IN_REVIEW') throw new ConflictException('Clinical source changed; release requires a current approval.');
       const service = (snapshot.content as Record<string, unknown>).service;
       if (typeof service !== 'string') throw new NotFoundException();
-      await this.clinician(tx, centerId, v, approval.childId, service);
+      await this.clinician(tx, centerId, v, approval.childId, service, true);
       const link = await this.recipient(tx, centerId, approval.childId, dto.guardianLinkId);
       if (!await this.consentActive(tx, centerId, approval.childId, link.id, approval.purpose))
         throw new ForbiddenException('Recipient-specific synthetic consent required.');
@@ -202,7 +207,10 @@ export class FamilyReleaseService {
       const service = s && (s.content as Record<string, unknown>).service;
       if (typeof service !== 'string') throw new NotFoundException();
       await this.clinician(tx, centerId, v, release.childId, service);
-      const n = await tx.syntheticFamilyGrant.updateMany({ where: { id, centerId, status: 'ACTIVE' },
+      // SUPERSEDED grants remain readable; a clinician must retain the ability
+      // to revoke or withdraw them, but must not supersede an already superseded grant.
+      const allowedStatuses = dto.status === 'SUPERSEDED' ? ['ACTIVE'] : ['ACTIVE', 'SUPERSEDED'];
+      const n = await tx.syntheticFamilyGrant.updateMany({ where: { id, centerId, status: { in: allowedStatuses } },
         data: { status: dto.status, changedById: v.userId, changedAt: new Date() } });
       if (n.count !== 1) throw new ConflictException('Release was already changed.');
       await logCenterEvent(tx, centerId, 'family.synthetic_release_changed', new Date(), { actorUserId: v.userId,
