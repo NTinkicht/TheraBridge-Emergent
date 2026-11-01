@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Req } from '@nestjs/common';
 import { RequirePermission, TbRequest } from '../auth/access';
 import { GovernanceService } from './governance.service';
-import { TransferDraftDto, TransitionDto, HandoverProposalDto } from './governance.dto';
+import { TransferDraftDto, TransitionDto, HandoverProposalDto, SyntheticHandoverTransitionDto } from './governance.dto';
 const uuid = () => new ParseUUIDPipe();
 const viewer = (r: TbRequest) => ({ userId: r.auth!.session.userId, membershipId: r.auth!.session.activeMembershipId!, role: r.auth!.session.activeRole! });
 @Controller('centers/:centerId/governance')
@@ -37,6 +37,16 @@ export class GovernanceController {
   @Post('handover-proposals/:id/cancel') @RequirePermission('center.handover.cancel')
   cancelHandover(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string, @Req() r: TbRequest) {
     return this.service.cancelHandover(c, viewer(r), id);
+  }
+  @Post('handover-proposals/:id/synthetic-approve') @RequirePermission('center.handover.syntheticApprove')
+  syntheticApprove(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string,
+    @Body() d: SyntheticHandoverTransitionDto, @Req() r: TbRequest) {
+    return this.service.approveSyntheticHandover(c, viewer(r), id, d.version);
+  }
+  @Post('handover-proposals/:id/synthetic-commit') @RequirePermission('center.handover.syntheticCommit')
+  syntheticCommit(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string,
+    @Body() d: SyntheticHandoverTransitionDto, @Req() r: TbRequest) {
+    return this.service.commitSyntheticHandover(c, viewer(r), id, d.version);
   }
   @Post('transfer-simulations') @RequirePermission('center.governance.read')
   transfer(@Param('centerId', uuid()) c: string, @Body() d: TransferDraftDto, @Req() r: TbRequest) { return this.service.transfer(c, viewer(r), d); }
