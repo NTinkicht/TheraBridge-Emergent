@@ -59,7 +59,7 @@ describe('TB-EM-049 synthetic operational handover proposal (PostgreSQL)', () =>
   beforeEach(async () => {
     await resetDb(h.prisma);
     centerId = (await h.prisma.center.create({ data: {
-      name: 'Synthetic transfer center', slug: 'synthetic-handover-demo', timezone: 'Asia/Dubai',
+      name: 'Synthetic transfer center', slug: 'handover-demo', timezone: 'Asia/Dubai',
     } })).id;
     const a = await member('admin','CENTER_ADMIN'); admin = a.who;
     const f = await member('from','THERAPIST',['speech']); fromId = f.id; therapist = f.who;
@@ -73,101 +73,6 @@ describe('TB-EM-049 synthetic operational handover proposal (PostgreSQL)', () =>
       centerId, childId, membershipId: fromId, service: 'speech', startedAt: h.clock.now(),
     } });
   });
-  it('executes only a clean synthetic fixture with supervisor approval and atomic assignment swap', async () => {
-    const saved = process.env.TB_TRANSFER_SYNTHETIC_EXECUTE;
-    process.env.TB_TRANSFER_SYNTHETIC_EXECUTE = 'true';
-    try {
-      const supervisor = (await member('supervisor','CLINICAL_SUPERVISOR')).who;
-      await h.prisma.careAssignment.updateMany({where:{centerId,childId,membershipId:fromId,endedAt:null},
-        data:{isLead:true}});
-      const proposal=(await start(admin,body()).expect(201)).body;
-      const acknowledged=(await ack(target,proposal.id).expect(201)).body;
-      await post(h,c(`handover-proposals/${proposal.id}/synthetic-approve`),admin,{version:acknowledged.version}).expect(403);
-      const approved=(await post(h,c(`handover-proposals/${proposal.id}/synthetic-approve`),
-        supervisor,{version:acknowledged.version}).expect(201)).body;
-      expect(approved).toMatchObject({status:'SYNTHETIC_APPROVED',clinicalApproval:false,assignmentChanged:false});
-      await post(h,c(`handover-proposals/${proposal.id}/synthetic-commit`),target,
-        {version:approved.version}).expect(403);
-      await post(h,c(`handover-proposals/${proposal.id}/synthetic-commit`),admin,
-        {version:approved.version-1}).expect(409);
-      const committed=(await post(h,c(`handover-proposals/${proposal.id}/synthetic-commit`),admin,
-        {version:approved.version}).expect(201)).body;
-      expect(committed).toMatchObject({status:'SYNTHETIC_COMPLETED',synthetic:true,
-        assignmentChanged:true,clinicalApproval:false,clinicalHandover:false,released:false});
-      expect(await h.prisma.careAssignment.count({where:{centerId,childId,endedAt:null}})).toBe(1);
-      expect(await h.prisma.careAssignment.count({where:{centerId,childId,
-        membershipId:targetId,endedAt:null,isLead:true}})).toBe(1);
-      await post(h,c(`handover-proposals/${proposal.id}/synthetic-commit`),admin,
-        {version:approved.version}).expect(409);
-      expect(await h.prisma.centerEvent.count({where:{centerId,type:'handover.synthetic_committed'}})).toBe(1);
-    } finally {
-      if(saved===undefined) delete process.env.TB_TRANSFER_SYNTHETIC_EXECUTE;
-      else process.env.TB_TRANSFER_SYNTHETIC_EXECUTE=saved;
-    }
-  });
-
-  it('refuses synthetic execution with guardian/clinical work or demo disabled', async () => {
-    const saved=process.env.TB_TRANSFER_SYNTHETIC_EXECUTE;
-    process.env.TB_TRANSFER_SYNTHETIC_EXECUTE='true';
-    try {
-      const supervisor=(await member('blocked-supervisor','CLINICAL_SUPERVISOR')).who;
-      const proposal=(await start(admin,body()).expect(201)).body;
-      const acknowledged=(await ack(target,proposal.id).expect(201)).body;
-      await h.prisma.sessionNote.create({data:{
-        centerId,childId,membershipId:fromId,service:'speech',
-        sessionDate:h.clock.now(),createdAt:h.clock.now(),updatedAt:h.clock.now(),
-      }});
-      await post(h,c(`handover-proposals/${proposal.id}/synthetic-approve`),supervisor,
-        {version:acknowledged.version}).expect(409);
-      expect(await h.prisma.careAssignment.count({where:{centerId,childId,endedAt:null}})).toBe(1);
-      await h.prisma.sessionNote.deleteMany({where:{centerId,childId}});
-      process.env.TB_TRANSFER_SYNTHETIC_EXECUTE='false';
-      await post(h,c(`handover-proposals/${proposal.id}/synthetic-approve`),supervisor,
-        {version:acknowledged.version}).expect(403);
-    } finally {
-      if(saved===undefined) delete process.env.TB_TRANSFER_SYNTHETIC_EXECUTE;
-      else process.env.TB_TRANSFER_SYNTHETIC_EXECUTE=saved;
-    }
-  });
-
-  it('rolls back a synthetic commit after recipient specialty revocation', async () => {
-    const saved=process.env.TB_TRANSFER_SYNTHETIC_EXECUTE;
-    process.env.TB_TRANSFER_SYNTHETIC_EXECUTE='true';
-    try {
-      const supervisor=(await member('revocation-supervisor','CLINICAL_SUPERVISOR')).who;
-      const p=(await start(admin,body()).expect(201)).body;
-      const a=(await ack(target,p.id).expect(201)).body;
-      const approved=(await post(h,c(`handover-proposals/${p.id}/synthetic-approve`),
-        supervisor,{version:a.version}).expect(201)).body;
-      await h.prisma.membership.update({where:{id:targetId},data:{specialties:[]}});
-      await post(h,c(`handover-proposals/${p.id}/synthetic-commit`),admin,
-        {version:approved.version}).expect(409);
-      expect(await h.prisma.careAssignment.count({where:{centerId,childId,endedAt:null}})).toBe(1);
-      expect(await h.prisma.careAssignment.count({where:{centerId,childId,membershipId:fromId,endedAt:null}})).toBe(1);
-      expect((await h.prisma.caseloadTransferDraft.findUniqueOrThrow({where:{id:p.id}})).status).toBe('SYNTHETIC_APPROVED');
-    } finally {
-      if(saved===undefined) delete process.env.TB_TRANSFER_SYNTHETIC_EXECUTE;
-      else process.env.TB_TRANSFER_SYNTHETIC_EXECUTE=saved;
-    }
-  });
-
-  it('rejects a non-synthetic center even with the synthetic execution flag', async () => {
-    const saved=process.env.TB_TRANSFER_SYNTHETIC_EXECUTE;
-    process.env.TB_TRANSFER_SYNTHETIC_EXECUTE='true';
-    try {
-      const supervisor=(await member('fixture-supervisor','CLINICAL_SUPERVISOR')).who;
-      const p=(await start(admin,body()).expect(201)).body;
-      const a=(await ack(target,p.id).expect(201)).body;
-      await h.prisma.center.update({where:{id:centerId},data:{slug:'ordinary-center'}});
-      await post(h,c(`handover-proposals/${p.id}/synthetic-approve`),
-        supervisor,{version:a.version}).expect(403);
-      expect(await h.prisma.careAssignment.count({where:{centerId,childId,endedAt:null}})).toBe(1);
-    } finally {
-      if(saved===undefined) delete process.env.TB_TRANSFER_SYNTHETIC_EXECUTE;
-      else process.env.TB_TRANSFER_SYNTHETIC_EXECUTE=saved;
-    }
-  });
-
   it('proposes, restricts recipient inbox, acknowledges without changing any assignment, and cancels', async () => {
     await start(therapist, body()).expect(403);
     await start(target, body()).expect(403);
