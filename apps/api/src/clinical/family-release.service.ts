@@ -75,7 +75,7 @@ export class FamilyReleaseService {
 
   private async consentActive(tx: Tx, centerId: string, childId: string, linkId: string, purpose: string) {
     const latest = await tx.syntheticFamilyConsent.findFirst({ where: { centerId, childId,
-      guardianLinkId: linkId, purpose }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }] });
+      guardianLinkId: linkId, purpose }, orderBy: { revision: 'desc' } });
     return latest?.status === 'ACTIVE';
   }
 
@@ -118,14 +118,17 @@ export class FamilyReleaseService {
   }
 
   async consent(centerId: string, v: Viewer, dto: FamilyConsentDto, withdraw: boolean) {
-    return this.prisma.$transaction(async tx => {
+    return this.serialRetry(() => this.prisma.$transaction(async tx => {
       await this.synthetic(tx, centerId);
       const link = await this.guardian(tx, centerId, v, dto.childId, withdraw);
       // Serialise amendments on the guardian link. A new grant always sees the
       // latest consent state, including a withdrawal in a concurrent request.
       await tx.$queryRaw`SELECT id FROM guardian_link WHERE id=${link.id}::uuid FOR UPDATE`;
+      const previous = await tx.syntheticFamilyConsent.findFirst({ where: { centerId, childId: dto.childId,
+        guardianLinkId: link.id, purpose: dto.purpose }, orderBy: { revision: 'desc' }, select: { revision: true } });
       const row = await tx.syntheticFamilyConsent.create({ data: { centerId, childId: dto.childId,
-        guardianLinkId: link.id, purpose: dto.purpose, status: withdraw ? 'REVOKED' : 'ACTIVE',
+        guardianLinkId: link.id, purpose: dto.purpose, revision: (previous?.revision ?? 0) + 1,
+        status: withdraw ? 'REVOKED' : 'ACTIVE',
         actorUserId: v.userId, revokedAt: withdraw ? new Date() : null } });
       if (withdraw) await tx.syntheticFamilyGrant.updateMany({ where: { centerId, childId: dto.childId,
         guardianLinkId: link.id, purpose: dto.purpose, status: { in: ['ACTIVE', 'SUPERSEDED'] } },
@@ -133,7 +136,7 @@ export class FamilyReleaseService {
       await logCenterEvent(tx, centerId, withdraw ? 'family.synthetic_consent_withdrawn' : 'family.synthetic_consent_recorded',
         new Date(), { actorUserId: v.userId, meta: { childId: dto.childId, consentId: row.id } });
       return { synthetic: true, purpose: dto.purpose, status: row.status };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }));
   }
 
   async grant(centerId: string, v: Viewer, dto: FamilyGrantDto) {
