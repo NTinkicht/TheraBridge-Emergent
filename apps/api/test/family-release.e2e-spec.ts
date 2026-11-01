@@ -109,6 +109,44 @@ describe('TB-EM-053 synthetic-only family document release (PostgreSQL)', () => 
     await grant(therapist, approvalId).expect(409);
   });
 
+  it('uses consent revision rather than transaction-start timestamps for latest consent', async () => {
+    const approvalId = await approved();
+    await consented();
+    // A later-written withdrawal may have an earlier transaction-start timestamp.
+    await h.prisma.syntheticFamilyConsent.updateMany({ where: { centerId: c, guardianLinkId: link },
+      data: { createdAt: new Date('2026-11-01T12:00:00Z') } });
+    await post(h, path('consents/withdraw'), guardian, { childId: kid, purpose: 'FAMILY_PLAN' }).expect(201);
+    const rows = await h.prisma.syntheticFamilyConsent.findMany({ where: { centerId: c, guardianLinkId: link },
+      orderBy: { revision: 'asc' } });
+    expect(rows.map(r => r.revision)).toEqual([1, 2]);
+    // Simulate reversed transaction-start ordering: the withdrawal has an older timestamp.
+    await h.prisma.syntheticFamilyConsent.update({ where: { id: rows[0].id },
+      data: { createdAt: new Date('2026-11-01T13:00:00Z') } });
+    await h.prisma.syntheticFamilyConsent.update({ where: { id: rows[1].id },
+      data: { createdAt: new Date('2026-11-01T11:00:00Z') } });
+    await grant(therapist, approvalId).expect(403);
+    await consented();
+    expect((await h.prisma.syntheticFamilyConsent.findFirstOrThrow({
+      where: { centerId: c, guardianLinkId: link }, orderBy: { revision: 'desc' } })).revision).toBe(3);
+    await grant(therapist, approvalId).expect(201);
+  });
+
+  it('lets an assigned clinician reload superseded grants and revoke them', async () => {
+    const approvalId = await approved(); await consented();
+    const id = (await grant(therapist, approvalId).expect(201)).body.id;
+    await post(h, path(`grants/${id}/change`), therapist,
+      { status: 'SUPERSEDED', reason: 'Fictional replacement' }).expect(201);
+    const listed = await get(therapist, `approvals/${approvalId}/grants`).expect(200);
+    expect(listed.body.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id, guardianLinkId: link, status: 'SUPERSEDED' }),
+    ]));
+    await get(admin, `approvals/${approvalId}/grants`).expect(403);
+    await get(otTherapist, `approvals/${approvalId}/grants`).expect(403);
+    await post(h, path(`grants/${id}/change`), therapist,
+      { status: 'REVOKED', reason: 'Fictional correction' }).expect(201);
+    await get(guardian, `mine/${id}`).expect(404);
+  });
+
   it('two concurrent duplicate grants converge on one recipient-scoped record', async () => {
     const approvalId = await approved(); await consented();
     const [first, second] = await Promise.all([grant(therapist, approvalId), grant(therapist, approvalId)]);
