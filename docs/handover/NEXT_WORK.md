@@ -501,3 +501,7 @@ Qualify PR #147 on its final HEAD with all six CI jobs, QA-specific contracts, a
 
 Finish M3-AI01 first: validate offline fixture bounds and safety tests, complete all six required CI jobs on exact HEAD, obtain independent exact-head review and dispose every comment. Merge only under AGENTS.md Rule 16. Next approved ordered work item after qualified merge: **M3-STT01** (synthetic STT architecture and controlled transcription; no real audio processing without D2/PD approvals). Do not reopen Milestone 2; PR #152 merged.
 
+# Next work — 2026-11-02 — M3-STT01 qualification
+
+Qualify PR #154 on exact implementation HEAD: six CI jobs, real-browser simulated capture/correction tests, independent review, explicit reviewer comment dispositions, resolve all P0–P2 before Rule 16 merge. Preserve `realMicrophone` rejection and synthetic-only activity; D2/PD data-processing approvals are not granted. After a qualified merge, next ordered milestone item is M3-AI02 (AI-assisted report drafting under synthetic-only policy).
+

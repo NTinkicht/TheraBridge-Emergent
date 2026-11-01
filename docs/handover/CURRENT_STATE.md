@@ -394,3 +394,7 @@ PR #147 integrates `main` login-readiness fixes and implements short-lived, sani
 
 Milestone 2's 12/12 ordered PRs are **merged**; final TB-EM-053 PR #152 merged as `17f8ed255c114c4912111e720a99592052aa03bc`. The owner approved Milestone 3's seven-item Intelligent Assistance roadmap, beginning with **M3-AI01 AI Foundation**. The isolated M3-AI01 branch introduces offline, bounded synthetic AI fixture infrastructure and versioned prompt/fingerprint contracts while the Nest runtime's actual `DisabledClinicalAiProvider` stays registered. New-branch exact-head CI and independent review are **PENDING**. Live clinical AI, real STT, production release/signing and patient processing remain **NOT AUTHORIZED**. Historical checkpoints below are superseded.
 
+# Current state — 2026-11-02 — M3-STT01 implementation in progress
+
+M3-AI01 PR #153 merged as `a9202bdb323154810597ccfc4dd5fb031b685512` after exact-head six-job CI and clean Codex review. M3-STT01 draft PR #154 is now being implemented: simulated, no-audio capture controls and EN/AR/FR fictional transcript fixtures extend the existing clinician-controlled editing and insertion workflow. New code-head CI/independent review **PENDING**; real microphone, storage, external STT, clinical AI, real-patient processing, signing and release remain disabled. Earlier checkpoints below are historical.
+

@@ -452,3 +452,7 @@ Owner directed a simpler QA loop. PR #147 now uses a one-day GitHub artifact wit
 
 Confirmed Emergent PR #152 merged into main at `17f8ed255c114c4912111e720a99592052aa03bc`, completing the frozen 12/12 Milestone 2 implementation order. Owner approved Milestone 3 Intelligent Assistance scope and M3-AI01 first. Created isolated worktree and first synthetic-only foundation: versioned report/home-plan prompt metadata, deterministic hashes, evidence limits and offline unregistered fixture adapter. CI/independent review pending; no clinical activation or external AI.
 
+# 2026-11-02 — M3-STT01 synthetic workflow implementation
+
+PR #154 started from merged M3-AI01 `a9202bd`. Added simulated capture state transitions, language-specific fictional EN/AR/FR transcription fixtures, strict invalid-language/fixture bounds, and browser regression covering capture controls and unsaved correction. Existing no-microphone/no-network/no-real-audio barriers retained. CI and independent final review not yet run.
+
