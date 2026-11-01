@@ -433,3 +433,6 @@ Reconciled obsolete GH-15/GH-16 audit paths with current Next/React code. Added 
 
 ## M2-H07 CI qualification checkpoint — 2026-11-01
 GitHub Actions [run 41242446451](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41242446451) completed **SUCCESS, 6/6 jobs** at implementation HEAD `0955bb3e66033a5099a46506990ffa1b6bdadda9`: test (23/23 suites, 617/617 API tests, web build + frontend regression), secret-scan, live-session, preview-container, demo-journey (including three-browser handover synchronization), compose. The initial earlier SHA typecheck failure was fixed by adding the required `createdAt` to a synthetic child fixture. **This documentation update creates a new HEAD**; latest exact-head CI and final Codex review must still be rechecked before merge. No governance release approvals changed.
+## 2026-11-01 — M2-QA01 simplified hosted synthetic evidence
+
+Owner directed a simpler QA loop. PR #147 now uses a one-day GitHub artifact with sanitized JSON, HTML summary, and referenced **layout-only privacy-masked PNG screenshots**, without a local key/decryption step. Repository is public; no private artifact access is assumed. Offline report/schema/security contract tests added. 104-case acceptance ledger unchanged; run #5 historical encrypted evidence stays archived. No hosted run of the new packaging or final PR review yet.

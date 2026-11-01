@@ -1,7 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {BASE,WIDTHS,ROLES,caseId,validateTarget,inspectCookieJar,inspectSetCookie,
- inspectGeometry,statusForPages,blocked,authFailureCode,settleLoginPage,run} from './hosted-readonly.mjs';
+ inspectGeometry,statusForPages,blocked,authFailureCode,settleLoginPage,LAYOUT_ONLY_SCREENSHOT_CSS,run} from './hosted-readonly.mjs';
+test('public artifact screenshots mask text, images, SVG and canvas without changing layout',()=>{
+ assert.match(LAYOUT_ONLY_SCREENSHOT_CSS,/color:transparent!important/);
+ assert.match(LAYOUT_ONLY_SCREENSHOT_CSS,/-webkit-text-fill-color:transparent!important/);
+ assert.match(LAYOUT_ONLY_SCREENSHOT_CSS,/background-image:none!important/);
+ assert.match(LAYOUT_ONLY_SCREENSHOT_CSS,/img,svg,canvas,video,iframe,object,embed\{visibility:hidden!important\}/);
+ assert(!/display:none|width:0|height:0/.test(LAYOUT_ONLY_SCREENSHOT_CSS));
+});
 const jar={name:'__Host-tb_session',value:'SECRET_NEVER_EXPORT',secure:true,httpOnly:true,
  sameSite:'Lax',path:'/',domain:'therabridge-ahmed-synthetic-demo.onrender.com'};
 const header='__Host-tb_session=SECRET_NEVER_EXPORT; Path=/; HttpOnly; SameSite=Lax; Secure';
