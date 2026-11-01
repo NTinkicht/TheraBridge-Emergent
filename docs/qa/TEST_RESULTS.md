@@ -1,3 +1,15 @@
+# QA checkpoint — 2026-11-01 — TB-EM-052 PR #151
+
+| Evidence | Result |
+| --- | --- |
+| Earlier pure-model head `03576c9`, CI #41310558590 | Six required jobs passed; does not qualify later heads |
+| Attempted database-assignment head, CI #41313442496 | PostgreSQL tests passed, but **required TB-EM-051 authorization check FAILED**; executable mutations removed, not bypassed |
+| Codex review head `48c457e` | P1 missing handover/QA updates and two P2 state-machine invariants; all designated FIX_NOW |
+| P2 fixes `0ee93a6`, tests `2f1816d` | Code committed; current exact-head CI #41315328179 queued at last check — **NOT VERIFIED** |
+| Clinical activation / protected release | **NO-GO**; five professional attestations, PD-06 and G2/G2b/G3-G7 remain pending |
+
+No real child/guardian data used. No transfer endpoint or assignment mutation remains in this PR.
+
 # Latest QA checkpoint — 2026-10-31 — M2-H06 review remediation
 
 | Work unit | Current qualification | Review/QA evidence |
