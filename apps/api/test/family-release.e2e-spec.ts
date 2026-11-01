@@ -135,6 +135,22 @@ describe('TB-EM-053 synthetic-only family document release (PostgreSQL)', () => 
     await grant(therapist, approvalId).expect(201);
   });
 
+  it('recovers grants without a new approval after the child service is removed', async () => {
+    const approvalId = await approved(); await consented();
+    const id = (await grant(therapist, approvalId).expect(201)).body.id;
+    await h.prisma.child.update({ where: { id: kid }, data: { services: [] } });
+    const recovered = await get(therapist, 'grants/recover').expect(200);
+    expect(recovered.body.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id, approvalId, childId: kid, guardianLinkId: link, status: 'ACTIVE' }),
+    ]));
+    await get(admin, 'grants/recover').expect(403);
+    expect((await get(otTherapist, 'grants/recover').expect(200)).body.items).toHaveLength(0);
+    await post(h, path(`grants/${id}/change`), therapist,
+      { status: 'REVOKED', reason: 'Service removed' }).expect(201);
+    await get(guardian, `mine/${id}`).expect(404);
+    expect((await get(therapist, 'grants/recover').expect(200)).body.items).toHaveLength(0);
+  });
+
   it('lets an assigned clinician reload superseded grants and revoke them', async () => {
     const approvalId = await approved(); await consented();
     const id = (await grant(therapist, approvalId).expect(201)).body.id;
