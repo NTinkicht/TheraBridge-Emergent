@@ -324,7 +324,7 @@ if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  run().then(code=>process.exitCode=code).catch(()=>{console.error('QA precondition failed; no credentials printed');process.exitCode=2;});
 })&&
    typeof form[key]?.onSubmit==='function');
- },{timeout:20000});
+ },undefined,{timeout:20000});
 }
 async function assess(browser,role,user,directory){
  const c=ROLES[role],rows=[];
