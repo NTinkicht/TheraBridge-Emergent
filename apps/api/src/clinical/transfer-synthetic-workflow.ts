@@ -82,14 +82,26 @@ function checkFresh(proposal: TransferProposal, context: TransferContext): void 
   requireThat(context.childActive && context.fromAssignmentActive && context.incomingActive, 'STALE_ASSIGNMENT');
 }
 
-export function createSyntheticProposal(input: Omit<TransferProposal,
-  'version' | 'status' | 'expiresAt' | 'acceptedVersion' | 'approvedVersion' | 'approvedBy'>): TransferProposal {
+function validateProposalInvariants(input: Pick<TransferProposal,
+  'centerId' | 'childId' | 'specialty' | 'fromMembershipId' | 'toMembershipId' |
+  'createdAt' | 'effectiveAt' | 'handbackAt' | 'kind' | 'emergencyReviewRequired'>): void {
   requireThat(input.fromMembershipId !== input.toMembershipId, 'SAME_THERAPIST');
-  requireThat(input.centerId.length > 0 && input.childId.length > 0 && input.specialty.length > 0, 'INVALID_SCOPE');
+  requireThat(!!input.toMembershipId && !!input.fromMembershipId &&
+    !!input.centerId && !!input.childId && !!input.specialty, 'INVALID_SCOPE');
   requireThat(Number.isFinite(new Date(input.createdAt).getTime()), 'INVALID_TIME');
   requireThat(Number.isFinite(new Date(input.effectiveAt).getTime()), 'INVALID_TIME');
   requireThat(input.kind !== 'TEMPORARY' || !!input.handbackAt, 'COVERAGE_EXPIRY_REQUIRED');
+  if (input.handbackAt !== undefined)
+    requireThat(Number.isFinite(new Date(input.handbackAt).getTime()), 'INVALID_TIME');
+  if (input.kind === 'TEMPORARY')
+    requireThat(new Date(input.handbackAt!).getTime() > new Date(input.effectiveAt).getTime(),
+      'INVALID_COVERAGE_WINDOW');
   requireThat(input.kind !== 'EMERGENCY' || input.emergencyReviewRequired, 'EMERGENCY_REVIEW_REQUIRED');
+}
+
+export function createSyntheticProposal(input: Omit<TransferProposal,
+  'version' | 'status' | 'expiresAt' | 'acceptedVersion' | 'approvedVersion' | 'approvedBy'>): TransferProposal {
+  validateProposalInvariants(input);
   return {
     ...input,
     version: 1,
@@ -103,12 +115,14 @@ export function reviseSyntheticProposal(proposal: TransferProposal, next: Partia
   Pick<TransferProposal, 'effectiveAt' | 'toMembershipId' | 'openItems' | 'handbackAt'>
 >): TransferProposal {
   requireThat(['PROPOSED', 'ACCEPTED', 'APPROVED'].includes(proposal.status), 'REVISION_CLOSED');
-  return {
+  const revised: TransferProposal = {
     ...proposal, ...next,
     openItems: next.openItems?.map(item => ({ ...item })) ?? proposal.openItems,
     version: proposal.version + 1, status: 'PROPOSED',
     acceptedVersion: undefined, approvedVersion: undefined, approvedBy: undefined,
   };
+  validateProposalInvariants(revised);
+  return revised;
 }
 
 export function acceptSyntheticProposal(
@@ -163,7 +177,7 @@ export function expireSyntheticProposal(proposal: TransferProposal, now: Date): 
 
 export function departureFallback(proposal: TransferProposal, now: Date): TransferProposal {
   requireThat(Number.isFinite(now.getTime()), 'INVALID_TIME');
-  if (proposal.kind !== 'PLANNED' || proposal.status === 'COMMITTED' ||
+  if (proposal.kind !== 'PLANNED' || ['COMMITTED', 'CANCELLED', 'EXPIRED'].includes(proposal.status) ||
       now.getTime() < new Date(proposal.effectiveAt).getTime()) return proposal;
   // OD-8: remaining uncommitted units enter emergency handling; never claim transfer success.
   return { ...proposal, kind: 'EMERGENCY', status: 'UNASSIGNED_HOLD',
