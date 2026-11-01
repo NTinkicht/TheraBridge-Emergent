@@ -199,6 +199,38 @@ export class FamilyReleaseService {
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
 
+  async recoverGrants(centerId: string, v: Viewer) {
+    return this.prisma.$transaction(async tx => {
+      await this.synthetic(tx, centerId);
+      await assertActor(tx, centerId, v, ['THERAPIST', 'CLINICAL_SUPERVISOR']);
+      const grants = await tx.syntheticFamilyGrant.findMany({ where: { centerId,
+        status: { in: ['ACTIVE', 'SUPERSEDED'] } }, orderBy: { releasedAt: 'desc' } });
+      const items: { id: string; approvalId: string; guardianLinkId: string; status: string;
+        childId: string; childName: string; guardianName: string }[] = [];
+      for (const grant of grants) {
+        const approval = await tx.syntheticFamilyApproval.findFirst({ where: {
+          id: grant.approvalId, centerId, childId: grant.childId } });
+        if (!approval) continue;
+        const snapshot = await tx.governanceSnapshot.findFirst({ where: {
+          id: approval.snapshotId, centerId, childId: grant.childId } });
+        const service = snapshot && (snapshot.content as Record<string, unknown>).service;
+        if (typeof service !== 'string') continue;
+        try { await this.clinician(tx, centerId, v, grant.childId, service); }
+        catch (e) { if (e instanceof ForbiddenException || e instanceof NotFoundException) continue; throw e; }
+        const child = await tx.child.findFirst({ where: { id: grant.childId, centerId },
+          select: { firstName: true, lastName: true } });
+        const guardian = await tx.guardianLink.findFirst({ where: { id: grant.guardianLinkId, centerId },
+          select: { displayName: true } });
+        if (!child || !guardian) continue;
+        items.push({ id: grant.id, approvalId: grant.approvalId, guardianLinkId: grant.guardianLinkId,
+          status: grant.status, childId: grant.childId,
+          childName: [child.firstName, child.lastName].filter(Boolean).join(' '),
+          guardianName: guardian.displayName });
+      }
+      return { synthetic: true, items };
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  }
+
   async grantsForApproval(centerId: string, v: Viewer, approvalId: string) {
     return this.prisma.$transaction(async tx => {
       await this.synthetic(tx, centerId);
