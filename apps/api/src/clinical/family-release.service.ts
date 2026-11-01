@@ -269,7 +269,11 @@ export class FamilyReleaseService {
       servedRenderingHash: familyRenderingHash(approval.rendering as Parameters<typeof familyRenderingHash>[0]),
       grantActive: true, grantVersionMatches: true, documentFamilySafe: true, documentWithdrawn: false });
     if (!d.allowed) throw new NotFoundException();
-    return { release, approval };
+    const child = await tx.child.findFirst({ where: { id: release.childId, centerId, status: 'ACTIVE' },
+      select: { firstName: true, lastName: true } });
+    if (!child) throw new NotFoundException();
+    const childName = [child.firstName, child.lastName].filter(Boolean).join(' ');
+    return { release, approval, childName };
   }
 
   async mine(centerId: string, v: Viewer) {
@@ -280,11 +284,12 @@ export class FamilyReleaseService {
         familyReleaseRestriction: 'CLEAR', child: { status: 'ACTIVE' } }, select: { id: true } });
       const grants = await tx.syntheticFamilyGrant.findMany({ where: { centerId, guardianLinkId: { in: links.map(x => x.id) },
         status: { in: ['ACTIVE', 'SUPERSEDED'] } }, select: { id: true }, orderBy: { releasedAt: 'desc' } });
-      const items: { id: string; kind: string; status: string }[] = [];
+      const items: { id: string; kind: string; status: string; childId: string; childName: string }[] = [];
       for (const grant of grants) {
         try {
-          const { release, approval } = await this.eligibleRead(tx, centerId, v, grant.id);
-          items.push({ id: release.id, kind: approval.kind, status: release.status });
+          const { release, approval, childName } = await this.eligibleRead(tx, centerId, v, grant.id);
+          items.push({ id: release.id, kind: approval.kind, status: release.status,
+            childId: release.childId, childName });
         } catch (e) { if (!(e instanceof NotFoundException)) throw e; }
       }
       return { synthetic: true, items };
@@ -293,10 +298,11 @@ export class FamilyReleaseService {
 
   async read(centerId: string, v: Viewer, id: string) {
     return this.prisma.$transaction(async tx => {
-      const { release, approval } = await this.eligibleRead(tx, centerId, v, id);
+      const { release, approval, childName } = await this.eligibleRead(tx, centerId, v, id);
       await logCenterEvent(tx, centerId, 'family.synthetic_document_read', new Date(), { actorUserId: v.userId,
         meta: { releaseId: id, childId: release.childId } });
       return { id, kind: approval.kind, status: release.status, replaced: release.status === 'SUPERSEDED',
+        childId: release.childId, childName,
         rendering: approval.rendering, renderingHash: approval.renderingHash, synthetic: true };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
