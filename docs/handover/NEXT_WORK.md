@@ -1,3 +1,11 @@
+# Next work — 2026-11-01 — TB-EM-052 PR #151
+
+1. Verify new-head six-job CI, including the synthetic lifecycle regression tests, and independent exact-head Codex review; disposition and resolve every current review finding. Do not merge with unresolved blocking findings.
+2. Keep the TB-EM-051 assignment-mutation tripwire unchanged. Owner policy v1.1 is approved, **but** professional clinical, DPO, safeguarding, security and legal attestations, formal PD-06 parameters and G2/G2b/G3-G7 activation gates are still pending.
+3. Until those accountable approvals explicitly authorize executable transfer development, the PR is a non-mutating synthetic decision-model checkpoint only. No endpoint, clinical access grant, assignment write, consent/signing or release.
+4. After authorization, implement full persisted therapist transfer/handover (dispositions, proposal versions, preview/consent, temporary/emergency, audit, rollback, tenant isolation), obtain independent review and tests, then merge if all Rule 16 requirements pass.
+5. Once TB-EM-052 is merge-qualified and merged, open the next frozen item TB-EM-053 as a separately gated draft.
+
 # Latest next work — 2026-10-31 — qualify PR #144 after Codex DST fixes
 
 Two Codex P2 findings addressed and threads resolved; re-review of latest head required. Verify test cases `2026-10-25T00:30:37.000Z` preserved through unchanged Paris fall-hour input and `2026-03-29T02:30` rejected as nonexistent Paris local time. Run six exact-head CI jobs; inspect CodeRabbit/Mistral/Grok/Codex comments, disposition all, then merge if qualified and immediately open M2-H07. Confirm #128 current `components/clinical/ReportToPlanHandoff.tsx` (not old child360 path) is single-transaction idempotent and clinical release stays disabled. No deferrals so far. Owner approvals for #115 / TB-EM-053 still REQUIRED.
