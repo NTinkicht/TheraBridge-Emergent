@@ -1,10 +1,10 @@
 import { rest } from './auth';
 
 const root = (centerId: string) => `/api/centers/${centerId}/family-releases`;
-export type FamilyDocument = { id: string; kind: 'PLAN' | 'REPORT'; status: string; replaced: boolean;
+export type FamilyDocument = { id: string; kind: 'PLAN' | 'REPORT'; status: string; replaced: boolean; childId: string; childName: string;
   rendering: Record<string, unknown>; renderingHash: string; synthetic: true };
 export const familyReleaseApi = {
-  mine: (c: string) => rest.get<{ synthetic: true; items: { id: string; kind: string; status: string }[] }>(`${root(c)}/mine`),
+  mine: (c: string) => rest.get<{ synthetic: true; items: { id: string; kind: string; status: string; childId: string; childName: string }[] }>(`${root(c)}/mine`),
   read: (c: string, id: string) => rest.get<FamilyDocument>(`${root(c)}/mine/${id}`),
   consent: (c: string, childId: string, purpose: 'FAMILY_PLAN' | 'FAMILY_REPORT', withdraw = false) =>
     rest.send('POST', `${root(c)}/consents${withdraw ? '/withdraw' : ''}`, { childId, purpose }),
