@@ -4,6 +4,7 @@ import { Harness, Signed, createUser, makeApp, post, resetDb, signIn } from './h
 describe('TB-EM-053 synthetic-only family document release (PostgreSQL)', () => {
   let h: Harness, c: string, kid: string, plan: string, link: string;
   let therapist: Signed, guardian: Signed, admin: Signed, otherGuardian: Signed;
+  let coordinator: Signed, otTherapist: Signed, supervisor: Signed, platform: Signed;
   const path = (p: string) => `/api/centers/${c}/family-releases/${p}`;
   const submit = (s: Signed, action: string, version: number) =>
     post(h, `/api/centers/${c}/governance/documents/PLAN/${plan}/transitions`, s,
@@ -27,16 +28,23 @@ describe('TB-EM-053 synthetic-only family document release (PostgreSQL)', () => 
     await resetDb(h.prisma);
     c = (await h.prisma.center.create({ data: { slug: 'family-synthetic', name: 'Synthetic family release',
       timezone: 'UTC', syntheticFamilyReleaseEnabled: true } })).id;
-    async function actor(role: 'THERAPIST' | 'GUARDIAN' | 'CENTER_ADMIN', name: string) {
+    async function actor(role: 'THERAPIST' | 'GUARDIAN' | 'CENTER_ADMIN' | 'COORDINATOR' | 'CLINICAL_SUPERVISOR', name: string) {
       const u = await createUser(h.prisma, `${name}@family-synthetic.test`);
       const m = await h.prisma.membership.create({ data: { centerId: c, userId: u.id,
-        specialties: role === 'THERAPIST' ? ['speech'] : [], roles: { create: { role } } } });
+        specialties: role === 'THERAPIST' ? [name === 'ot' ? 'occupational' : 'speech'] : [], roles: { create: { role } } } });
       return { signed: await signIn(h, u.email), user: u, member: m };
     }
     const t = await actor('THERAPIST', 'therapist'); therapist = t.signed;
     const g = await actor('GUARDIAN', 'guardian'); guardian = g.signed;
     const other = await actor('GUARDIAN', 'other'); otherGuardian = other.signed;
     admin = (await actor('CENTER_ADMIN', 'admin')).signed;
+    coordinator = (await actor('COORDINATOR', 'coordinator')).signed;
+    supervisor = (await actor('CLINICAL_SUPERVISOR', 'supervisor')).signed;
+    otTherapist = (await actor('THERAPIST', 'ot')).signed;
+    const platformUser = await createUser(h.prisma, 'platform@family-synthetic.test');
+    await h.prisma.platformRoleAssignment.create({ data: { userId: platformUser.id,
+      source: 'synthetic_seed', reason: 'Seven-role release isolation test' } });
+    platform = await signIn(h, platformUser.email);
     kid = (await h.prisma.child.create({ data: { centerId: c, firstName: 'Fictional',
       lastName: 'Child', dateOfBirth: new Date('2020-01-01'), services: ['speech'],
       createdById: t.user.id, createdAt: new Date() } })).id;
@@ -77,6 +85,18 @@ describe('TB-EM-053 synthetic-only family document release (PostgreSQL)', () => 
     await get(admin, `mine/${releaseId}`).expect(403);
     expect((await get(guardian, 'mine').expect(200)).body.items).toHaveLength(1);
     expect((await get(otherGuardian, 'mine').expect(200)).body.items).toHaveLength(0);
+    for (const s of [coordinator, supervisor, otTherapist]) await get(s, `mine/${releaseId}`).expect(403);
+    expect([403, 404]).toContain((await get(platform, `mine/${releaseId}`)).status);
+  });
+
+  it('uses the assigned specialty and clinician role rather than center administrative power', async () => {
+    const approvalId = await approved(); await consented();
+    await grant(admin, approvalId).expect(403);
+    await grant(coordinator, approvalId).expect(403);
+    await grant(otTherapist, approvalId).expect(403);
+    // A clinical supervisor may approve submitted content but cannot gain guardian read access.
+    await get(supervisor, 'mine').expect(403);
+    await grant(therapist, approvalId).expect(201);
   });
 
   it('withdrawal revokes the active grant and later re-consent cannot resurrect it', async () => {

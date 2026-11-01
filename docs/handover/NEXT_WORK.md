@@ -1,6 +1,6 @@
 # Next work — 2026-11-01 — TB-EM-053 PR #152
 
-Complete the owner-approved [TB-EM-053 v1.1](https://github.com/NTinkicht/TheraBridge/pull/48) implementation. Currently only default-deny DB/pure-policy foundation is implemented. Next: exact family-rendering approval/signature; recipient/consent/safeguarding-bound atomic grants, withdrawal, supersession and revocation; guardian no-store view; capture-only notifications; seven-role integration journeys and six CI. Keep independent synthetic flags enforced server-side, no downloads or production activation. Retain old release tables as blocked until migration/adoption verified.
+The owner-approved [TB-EM-053 v1.1](https://github.com/NTinkicht/TheraBridge/pull/48) **synthetic-only API, persistence, UI and tests are implemented** in PR #152. CI on head `70c5a083` passed six jobs/672 API tests; older Codex P1/P2 are fixed and resolved. Next: requalify the final documentation SHA through all six CI jobs, obtain independent exact-head Codex review, disposition any new P0–P3 findings, merge only under Rule 16. Do not activate real-patient family release, D1 clinical signing, production consent or protected legacy release triggers. Full clinician transfer #115 is independent and still blocked.
 
 # Historical next work — 2026-11-01 — TB-EM-052 PR #151
 

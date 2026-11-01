@@ -1,8 +1,6 @@
 # QA checkpoint — 2026-11-01 — TB-EM-053 PR #152
 
-Additional synthetic workflow and frontend integration landed after the prior green pure-policy run. **New full workflow CI pending**: tests, migration, frontend build, seven-role synthetic acceptance and code review are not yet qualified. No production clinical release enabled.
-
-Private policy v1.1 FR-1..FR-9 from merged PR #48. Added isolated policy decision tests and additive schema. **Local Jest, Prisma validate, full integration and six CI: NOT RUN / NOT VERIFIED** at this checkpoint; local dependency download unsuccessful. No operational family release or clinical activation. All demonstrations remain synthetic only.
+Private policy v1.1 FR-1..FR-9 from merged PR #48. **Synthetic-only release workflow implemented and CI-verified at code head `70c5a083`.** [Run 41331698946](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41331698946): **6/6 required jobs PASS** (`test`, `secret-scan`, `live-session`, `preview-container`, `demo-journey`, `compose`); API **672/672 tests PASS across 29 suites**, including TB-EM-053 isolated policy/rendering, real PostgreSQL grant, denial, withdrawal, revocation, supersession and concurrent duplicate cases. A subsequent extension explicitly covers the seven roles (platform admin, center admin, coordinator, speech therapist, OT therapist, supervisor and guardian) in the family-release endpoint integration test; **that extension is pending CI**. Demo-journey already contains the separate seven-role synthetic browser smoke but is not independent full family-release visual acceptance. Codex final-head review remains PENDING; no real-patient release or clinical signing authorized. Documentation/test extension requires a fresh final-head run.
 
 # Historical QA checkpoint — 2026-11-01 — TB-EM-052 PR #151
 
