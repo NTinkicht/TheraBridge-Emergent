@@ -105,7 +105,10 @@ export async function settleLoginPage(page){
  await page.waitForFunction(()=>{
   const form=document.querySelector('[data-testid="login-form"]');
   if(!form)return false;
-  return Object.keys(form).some(key=>key.startsWith('__reactProps
+  return Object.keys(form).some(key=>key.startsWith('__reactProps'+String.fromCharCode(36))&&
+   typeof form[key]?.onSubmit==='function');
+ },undefined,{timeout:20000});
+}
 async function assess(browser,role,user,directory){
  const c=ROLES[role],rows=[];
  const context=await browser.newContext({viewport:{width:1440,height:900},acceptDownloads:false,deviceScaleFactor:1});
