@@ -22,7 +22,7 @@ const ROUTE_EVIDENCE = {
  '/app/clinical':['clinical-title','clinical-list-loading','clinical-list-error'],
  '/app/progress':['progress-title','progress-loading','progress-error'],
  '/app/activities':['activities-title','activities-loading','activities-error'],
- '/app/governance':['governance-title',null,null],
+ '/app/governance':['governance-title','governance-loading','governance-error'],
  '/app/practice':['practice-page','practice-loading','practice-error'],
  '/app/family-progress':['family-progress-demo','family-progress-loading','family-progress-error']
 };
@@ -85,6 +85,10 @@ async function navigate(page, role, route, rows) {
     if (!success) throw Error('route_contract_missing');
     await page.getByTestId(success).waitFor({state:'visible',timeout:15000});
     if (loading) await page.getByTestId(loading).waitFor({state:'hidden',timeout:15000});
+    if (route === '/app/governance') {
+      await page.locator('[data-testid="governance-list"]:visible, [data-testid="governance-empty"]:visible')
+        .first().waitFor({state:'visible',timeout:15000});
+    }
     if (await page.getByTestId('page-forbidden').isVisible().catch(()=>false) ||
         await page.getByTestId('applications-forbidden').isVisible().catch(()=>false) ||
         (error && await page.getByTestId(error).isVisible().catch(()=>false)))
