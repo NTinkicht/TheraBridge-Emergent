@@ -1,3 +1,7 @@
+# M3-AI03 implementation checkpoint — 2026-11-02
+
+M3-AI02 PR #155 merged as 066f628. M3-AI03 PR #156 now has synthetic-only therapist home-plan proposal code and browser regression. Tests, CI and final review are PENDING; no live data, external AI, signing or family release.
+
 # Current status — 2026-11-02 — M3-AI02 PR #155 implementation and qualification pending
 
 M3-STT01 PR #154 merged at `d4fa4b5` (6/6 CI PASS, clean exact-head review). M3-AI02 PR #155 now implements offline, fictional-evidence clinician report proposal generation, review/edit/discard and explicit insertion. No external model, real data, clinical authorization, signing or release. The M3-AI02 exact-head CI and independent implementation review are PENDING; this is not merge-qualified. Historical checkpoints follow.
