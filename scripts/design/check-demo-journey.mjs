@@ -783,6 +783,7 @@ try {
       const beforeCount = await page.locator('li[data-testid^="home-activity-"]').count();
       await candidateReview.click();
       await page.getByTestId('home-ai-review').waitFor();
+      assert((await page.getByTestId('home-ai-source-open').getAttribute('href'))?.includes('/app/clinical/' + child.id));
       await page.getByTestId('home-ai-frequency').fill('Therapist review pending');
       await page.getByTestId('home-ai-discard').click();
       assert.equal(await page.locator('li[data-testid^="home-activity-"]').count(), beforeCount,
@@ -1017,6 +1018,7 @@ try {
     const beforeProposal = await page.getByTestId('report-section-assessment').inputValue();
     await page.getByTestId('synthetic-report-generate').click();
     assert((await page.getByTestId('synthetic-report-proposal').innerText()).includes('REFERENCED_NOT_VERIFIED'));
+    assert((await page.getByTestId('synthetic-report-source-open').getAttribute('href'))?.includes('/app/clinical/' + child.id));
     assert.equal(await page.getByTestId('report-section-assessment').inputValue(), beforeProposal);
     // M3-AI04: any acknowledged report revision invalidates a previously
     // prepared fictional-evidence proposal until it is regenerated.
