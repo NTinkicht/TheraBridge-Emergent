@@ -476,3 +476,7 @@ Confirmed Emergent PR #152 merged into main at `17f8ed255c114c4912111e720a995920
 
 PR #154 started from merged M3-AI01 `a9202bd`. Added simulated capture state transitions, language-specific fictional EN/AR/FR transcription fixtures, strict invalid-language/fixture bounds, and browser regression covering capture controls and unsaved correction. Existing no-microphone/no-network/no-real-audio barriers retained. CI and independent final review not yet run.
 
+
+## 2026-11-02 — Hosted synthetic presenter rehearsal
+
+Opened PR #162 with private-runner additions: resolve clinical list before selecting child; inspect six tabs; wait for reports list/empty and reject error; check synthetic/disabled-AI notice; verify guardian fictional progress sample banner. Added presenter runbook. Reuses existing GitHub synthetic secret and protected environment. **New assertions NOT RUN**; prior hosted run 41451350004 had 43 PASS / 0 FAIL / 14 BLOCKED. No app writes, new credentials, or Render service changes.

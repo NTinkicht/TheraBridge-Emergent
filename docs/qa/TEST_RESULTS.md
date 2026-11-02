@@ -640,3 +640,7 @@ New `apps/api/test/ai-foundation.e2e-spec.ts` covers default-disabled provider, 
 
 Extended `scripts/design/check-session-workflow.mjs` with simulated capture start/pause/resume/stop, disabled transcription until stopped, French fictional transcript, unsaved-before-insert and explicit discard. Existing network/permission/provider/cancel/empty failure probes remain. **NOT YET RUN** on this implementation SHA; exact six-job CI and final independent review pending. No real audio/STT testing or clinical authorization implied.
 
+
+## 2026-11-02 — Hosted stakeholder rehearsal checks (PR #162)
+
+Historical live protected run [41451350004](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41451350004) on merged PR #160 runner: **43 PASS, 0 FAIL, 14 BLOCKED**. The two BLOCKED per role are mutation/form validation and clinical/AI draft review; expected exit code 2, not a confirmed UI defect. PR #162 adds checks for a real assigned fictional child, all six interactive clinical tabs, loaded report list/empty (no error), disabled AI banner and clearly labeled guardian sample progress. These new checks are **NOT RUN / NOT ACCEPTED** pending merge and protected live dispatch. No clinical release permissions or 104-case baseline changes.
