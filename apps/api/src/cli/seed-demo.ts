@@ -174,7 +174,11 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
   }
   if (!passwords && existsSync(credentialFile)) {
     const stored = JSON.parse(readFileSync(credentialFile, 'utf8')) as { accounts?: { email: string }[] };
-    if (allRoster.some(a => !stored.accounts?.some(x => x.email === ALL_DEMO_EMAILS[a.key]))) throw new Error('Stored demo credentials are incomplete; refusing silent rotation.');
+    if (roster.some(a => !stored.accounts?.some(x => x.email === DEMO_EMAILS[a.key]))) throw new Error('Stored original seven demo credentials are incomplete; refusing silent rotation.');
+    // Existing local seven-account files may be upgraded only by supplying the
+    // three new passwords separately; no silent random identity creation.
+    if (extraRoster.some(a => !stored.accounts?.some(x => x.email === DEMO_EXTRA_EMAILS[a.key])) && !extraPasswords)
+      throw new Error('Upgrading seven-account local demo requires DEMO_EXTRA_PASSWORDS_JSON for three new therapist identities.');
   }
   if (await tx.center.findUnique({ where: { id: cid } })) {
     const c = await tx.center.findUniqueOrThrow({ where: { id: cid } });
@@ -225,7 +229,7 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     if (!identity) {
       // An existing account cannot receive a new random password whose
       // plaintext was never exported or deliberately supplied by the operator.
-      if (existing && !passwords) {
+      if (existing && !passwords && !extraPasswords?.[email]) {
         throw new Error('Demo identity missing for existing account; refusing unexported password for ' + email);
       }
       const selected = byEmail.get(email);
