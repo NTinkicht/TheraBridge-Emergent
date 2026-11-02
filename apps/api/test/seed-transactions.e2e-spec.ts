@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import type { PrismaClient } from '@prisma/client';
 import { runSeed } from '../src/cli/seed-synthetic';
 import { Harness, makeApp, resetDb } from './helpers';
-import { DEMO_EMAILS, seedChildrensHome } from '../src/cli/seed-demo';
+import { DEMO_EMAILS, DEMO_EXTRA_EMAILS, seedChildrensHome } from '../src/cli/seed-demo';
 
 describe('M2-H01 synthetic seed transaction boundaries (fault injection)', () => {
   it('does not export credentials if a synthetic user write fails after center insert', async () => {
@@ -23,12 +23,13 @@ describe('M2-H01 synthetic seed transaction boundaries (fault injection)', () =>
 
   it('never commits accounts when a rival claims the credential path after the preflight check', async () => {
     const destination = join(tmpdir(), 'tb-h01-file-race-' + randomUUID() + '.json');
-    const keys = ['DEPLOYMENT_ENV', 'DEMO_SEED_CONFIRM', 'DATABASE_URL', 'DEMO_PASSWORDS_JSON'] as const;
+    const keys = ['DEPLOYMENT_ENV', 'DEMO_SEED_CONFIRM', 'DATABASE_URL', 'DEMO_PASSWORDS_JSON', 'DEMO_EXTRA_PASSWORDS_JSON'] as const;
     const original = Object.fromEntries(keys.map(k => [k, process.env[k]]));
     process.env.DEPLOYMENT_ENV = 'ci';
     process.env.DEMO_SEED_CONFIRM = 'CHILDRENS_HOME_SYNTHETIC_ONLY';
     process.env.DATABASE_URL = 'postgresql://synthetic:synthetic@127.0.0.1:5432/synthetic_test';
     delete process.env.DEMO_PASSWORDS_JSON;
+    delete process.env.DEMO_EXTRA_PASSWORDS_JSON;
     const upsert = jest.fn();
     const tx = {
       center: {
@@ -60,12 +61,13 @@ describe('M2-H01 synthetic seed transaction boundaries (fault injection)', () =>
 
   it('does not export hosted demo credentials if a center write fails inside the transaction', async () => {
     const destination = join(tmpdir(), 'tb-h01-demo-' + randomUUID() + '.json');
-    const keys = ['DEPLOYMENT_ENV', 'DEMO_SEED_CONFIRM', 'DATABASE_URL', 'DEMO_PASSWORDS_JSON'] as const;
+    const keys = ['DEPLOYMENT_ENV', 'DEMO_SEED_CONFIRM', 'DATABASE_URL', 'DEMO_PASSWORDS_JSON', 'DEMO_EXTRA_PASSWORDS_JSON'] as const;
     const original = Object.fromEntries(keys.map(k => [k, process.env[k]]));
     process.env.DEPLOYMENT_ENV = 'ci';
     process.env.DEMO_SEED_CONFIRM = 'CHILDRENS_HOME_SYNTHETIC_ONLY';
     process.env.DATABASE_URL = 'postgresql://synthetic:synthetic@127.0.0.1:5432/therabridge_demo_test';
     delete process.env.DEMO_PASSWORDS_JSON;
+    delete process.env.DEMO_EXTRA_PASSWORDS_JSON;
     try {
       const tx = {
         center: {
@@ -101,12 +103,13 @@ describe('M2-H01 real PostgreSQL rollback and protected-file consistency', () =>
   beforeEach(async () => { await resetDb(h.prisma); });
 
   async function withLocalDemoEnv<T>(action: () => Promise<T>): Promise<T> {
-    const keys = ['DEPLOYMENT_ENV', 'DEMO_SEED_CONFIRM', 'DATABASE_URL', 'DEMO_PASSWORDS_JSON'] as const;
+    const keys = ['DEPLOYMENT_ENV', 'DEMO_SEED_CONFIRM', 'DATABASE_URL', 'DEMO_PASSWORDS_JSON', 'DEMO_EXTRA_PASSWORDS_JSON'] as const;
     const original = Object.fromEntries(keys.map(k => [k, process.env[k]]));
     process.env.DEPLOYMENT_ENV = 'ci';
     process.env.DEMO_SEED_CONFIRM = 'CHILDRENS_HOME_SYNTHETIC_ONLY';
     process.env.DATABASE_URL = 'postgresql://test:test@127.0.0.1:5432/synthetic_test';
     delete process.env.DEMO_PASSWORDS_JSON;
+    delete process.env.DEMO_EXTRA_PASSWORDS_JSON;
     try { return await action(); }
     finally {
       for (const key of keys) {
@@ -154,12 +157,13 @@ describe('M2-H01 real PostgreSQL rollback and protected-file consistency', () =>
 
   it('rolls back demo DB and removes pre-staged credentials on mid-seed failure', async () => {
     const destination = join(tmpdir(), 'tb-h01-real-demo-' + randomUUID() + '.json');
-    const keys = ['DEPLOYMENT_ENV', 'DEMO_SEED_CONFIRM', 'DATABASE_URL', 'DEMO_PASSWORDS_JSON'] as const;
+    const keys = ['DEPLOYMENT_ENV', 'DEMO_SEED_CONFIRM', 'DATABASE_URL', 'DEMO_PASSWORDS_JSON', 'DEMO_EXTRA_PASSWORDS_JSON'] as const;
     const original = Object.fromEntries(keys.map(k => [k, process.env[k]]));
     process.env.DEPLOYMENT_ENV = 'ci';
     process.env.DEMO_SEED_CONFIRM = 'CHILDRENS_HOME_SYNTHETIC_ONLY';
     process.env.DATABASE_URL = 'postgresql://test:test@127.0.0.1:5432/synthetic_test';
     delete process.env.DEMO_PASSWORDS_JSON;
+    delete process.env.DEMO_EXTRA_PASSWORDS_JSON;
     try {
       await expect(seedChildrensHome(failAt('child', 'upsert', 'fault: child upsert'), destination))
         .rejects.toThrow('fault: child upsert');
@@ -234,6 +238,29 @@ describe('M2-H01 real PostgreSQL rollback and protected-file consistency', () =>
       if (existsSync(destination)) unlinkSync(destination);
     }
   }, 60_000);
+
+  it('upgrades pre-existing seven-account local credentials only with three explicit passwords', async () => {
+    const destination = join(tmpdir(), 'tb-seven-to-ten-' + randomUUID() + '.json');
+    try {
+      await withLocalDemoEnv(async () => {
+        await seedChildrensHome(h.prisma, destination);
+        const stored = JSON.parse(readFileSync(destination,'utf8')) as {accounts:{email:string;password:string;role:string}[]};
+        const additional = Object.values(DEMO_EXTRA_EMAILS);
+        const credentials = Object.fromEntries(stored.accounts.filter(a=>additional.includes(a.email as typeof additional[number])).map(a=>[a.email,a.password]));
+        const seven = stored.accounts.filter(a=>!additional.includes(a.email as typeof additional[number]));
+        writeFileSync(destination,JSON.stringify({...stored,accounts:seven}),{mode:0o600});
+        await h.prisma.authIdentity.deleteMany({where:{subject:{in:additional}}});
+        expect(await h.prisma.authIdentity.count()).toBe(7);
+        await expect(seedChildrensHome(h.prisma,destination)).rejects.toThrow(/DEMO_EXTRA_PASSWORDS_JSON/);
+        expect(await h.prisma.authIdentity.count()).toBe(7);
+        process.env.DEMO_EXTRA_PASSWORDS_JSON=JSON.stringify(credentials);
+        await seedChildrensHome(h.prisma,destination);
+        await seedChildrensHome(h.prisma,destination);
+        expect(await h.prisma.authIdentity.count()).toBe(10);
+        expect(JSON.parse(readFileSync(destination,'utf8')).accounts).toHaveLength(7);
+      });
+    } finally { if (existsSync(destination)) unlinkSync(destination); }
+  }, 120_000);
 
   it('seeds six fictional children including siblings and independently authenticated ABA/OT/Speech staff idempotently', async () => {
     const destination = join(tmpdir(), 'tb-expanded-demo-' + randomUUID() + '.json');
