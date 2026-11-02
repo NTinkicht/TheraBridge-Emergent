@@ -40,6 +40,7 @@ jobs:
           corepack enable
           yarn install --frozen-lockfile
           node -e "if(require('playwright/package.json').version!=='1.48.2') process.exit(2)"
+          node --check scripts/qa/hosted-interactive.mjs
       - name: Private credential and live health preflight
         env:
           TB_QA_USERS_JSON: ${{ secrets.TB_HOSTED_QA_USERS_JSON }}
