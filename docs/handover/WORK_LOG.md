@@ -480,3 +480,7 @@ PR #154 started from merged M3-AI01 `a9202bd`. Added simulated capture state tra
 ## 2026-11-02 — Hosted synthetic presenter rehearsal
 
 Opened PR #162 with private-runner additions: resolve clinical list before selecting child; inspect six tabs; wait for reports list/empty and reject error; check synthetic/disabled-AI notice; verify guardian fictional progress sample banner. Added presenter runbook. Reuses existing GitHub synthetic secret and protected environment. **New assertions NOT RUN**; prior hosted run 41451350004 had 43 PASS / 0 FAIL / 14 BLOCKED. No app writes, new credentials, or Render service changes.
+
+## 2026-11-02 — 25-minute demo preparation
+
+Prepared additive guarded synthetic seed for five children, sibling guardian links, three uncredentialed display-only therapists and appointments. Added idempotence/secret invariants regression and presenter runbook. Work remains unreviewed/unmerged; no live DB mutation made yet. 
