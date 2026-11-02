@@ -790,6 +790,11 @@ try {
       assert.equal(await page.locator('li[data-testid^="home-activity-"]').count(), beforeCount,
         'Discarding an offline suggestion must leave the draft unchanged');
       await candidateReview.click();
+      await page.getByTestId('synthetic-review-examine').click();
+      await page.getByTestId('synthetic-review-reject').click();
+      assert.equal(await page.getByTestId('home-ai-review').count(), 0,
+        'Rejected fictional proposal must disappear without changing plan');
+      await candidateReview.click();
       // Switching the goal must preserve the *original* template provenance;
       // it must never silently repin a changed or deleted activity template.
       const originalSources = await page.getByTestId('home-ai-sources').innerText();
