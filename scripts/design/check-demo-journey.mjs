@@ -795,6 +795,7 @@ try {
       await firstGoalTitle.fill('');
       assert(await page.getByTestId('home-ai-insert').isDisabled(),
         'Unsaved goal removal must block insertion against stale goal references');
+      await page.getByTestId('home-ai-stale').waitFor();
       await firstGoalTitle.fill(savedGoalTitle);
       await page.getByTestId('home-ai-frequency').fill('Twice weekly — fictional');
       await page.getByTestId('home-ai-insert').click();
@@ -1017,6 +1018,16 @@ try {
     await page.getByTestId('synthetic-report-generate').click();
     assert((await page.getByTestId('synthetic-report-proposal').innerText()).includes('REFERENCED_NOT_VERIFIED'));
     assert.equal(await page.getByTestId('report-section-assessment').inputValue(), beforeProposal);
+    // M3-AI04: any acknowledged report revision invalidates a previously
+    // prepared fictional-evidence proposal until it is regenerated.
+    const summaryBeforeTrace = await page.getByTestId('report-section-summary').inputValue();
+    await page.getByTestId('report-section-summary').fill(summaryBeforeTrace + ' (synthetic trace check)');
+    await page.locator('[data-testid="report-save-state"][data-state="saved"]').waitFor({ timeout: 10000 });
+    await page.getByTestId('synthetic-report-stale').waitFor();
+    assert(await page.getByTestId('synthetic-report-insert').isDisabled(),
+      'Proposal from an earlier report revision must not be inserted');
+    await page.getByTestId('report-section-summary').fill(summaryBeforeTrace);
+    await page.locator('[data-testid="report-save-state"][data-state="saved"]').waitFor({ timeout: 10000 });
     await page.getByTestId('synthetic-report-discard').click();
     assert.equal(await page.getByTestId('report-section-assessment').inputValue(), beforeProposal);
     await page.getByTestId('synthetic-report-section').selectOption('sessions');
