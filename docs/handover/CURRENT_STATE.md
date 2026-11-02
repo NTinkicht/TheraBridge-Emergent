@@ -418,3 +418,7 @@ Milestone 2's 12/12 ordered PRs are **merged**; final TB-EM-053 PR #152 merged a
 
 M3-AI01 PR #153 merged as `a9202bdb323154810597ccfc4dd5fb031b685512` after exact-head six-job CI and clean Codex review. M3-STT01 draft PR #154 is now being implemented: simulated, no-audio capture controls and EN/AR/FR fictional transcript fixtures extend the existing clinician-controlled editing and insertion workflow. New code-head CI/independent review **PENDING**; real microphone, storage, external STT, clinical AI, real-patient processing, signing and release remain disabled. Earlier checkpoints below are historical.
 
+
+## 2026-11-02 — Hosted stakeholder rehearsal (PR #162)
+
+Reviewed PR #160 merged and live synthetic Render commit `f1216b1735d5c548424f4b5da3c1961793be0a4d` is healthy. Protected interactive run [41451350004](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41451350004): **43 PASS / 0 FAIL / 14 BLOCKED** (two intentionally excluded clinical/form cases per role); exit code 2 is deliberate and not a confirmed app defect. PR #162 adds **NOT YET RUN** hosted rehearsal assertions for assigned fictional child, six clinical tabs, unavailable-AI banner and guardian sample progress. CI/review pending. No clinical/AI activation or baseline promotion.
