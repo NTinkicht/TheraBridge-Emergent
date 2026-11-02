@@ -17,3 +17,11 @@ const file=join(directory,'render-demo-passwords.json');
 const passwords=Object.fromEntries(emails.map(email=>[email,'demo-'+randomBytes(24).toString('base64url')]));
 writeFileSync(file,JSON.stringify(passwords,null,2)+'\n',{encoding:'utf8',flag:'wx',mode:0o600});
 console.log('Protected fictional demo credentials created under .workspace/local-credentials/render-demo-passwords.json; never commit or post them.');
+
+const extraEmails=[
+  'dalia.mansour@childrens-home.therabridge.test',
+  'nour.haddad@childrens-home.therabridge.test',
+  'huda.rahim@childrens-home.therabridge.test',
+];
+const extra=Object.fromEntries(extraEmails.map(email=>[email,'demo-'+randomBytes(24).toString('base64url')]));
+writeFileSync(join(directory,'render-demo-extra-passwords.json'),JSON.stringify(extra)+'\n',{encoding:'utf8',flag:'wx',mode:0o600});

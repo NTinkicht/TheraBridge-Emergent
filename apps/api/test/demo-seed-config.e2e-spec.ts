@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { assertDemoAllowed, DEMO_EMAILS, parseHostedDemoPasswords } from '../src/cli/seed-demo';
+import { assertDemoAllowed, DEMO_EMAILS, DEMO_EXTRA_EMAILS, parseHostedDemoPasswords, parseExtraHostedDemoPasswords } from '../src/cli/seed-demo';
 
 const valid = () => Object.fromEntries(Object.values(DEMO_EMAILS).map(e=>[e,'demo-'+randomBytes(24).toString('base64url')]));
 const preview=(v: object): Record<string,string|undefined>=>({DEPLOYMENT_ENV:'preview',...v});
@@ -27,5 +27,18 @@ describe('synthetic hosted preview bootstrap policy',()=>{
     expect(()=>parseHostedDemoPasswords(preview({DEMO_PASSWORDS_JSON:JSON.stringify(reused)}))).toThrow();
     const weak={...correct,[DEMO_EMAILS.parent]:'password123'};
     expect(()=>parseHostedDemoPasswords(preview({DEMO_PASSWORDS_JSON:JSON.stringify(weak)}))).toThrow();
+  });
+  test('requires three independent high-entropy therapist passwords on hosted preview',()=>{
+    expect(()=>parseExtraHostedDemoPasswords(preview({}))).toThrow(/DEMO_EXTRA_PASSWORDS_JSON/);
+    expect(parseExtraHostedDemoPasswords({DEPLOYMENT_ENV:'ci'})).toBeNull();
+    const correct=Object.fromEntries(Object.values(DEMO_EXTRA_EMAILS).map(email=>[email,'demo-'+randomBytes(24).toString('base64url')]));
+    expect(parseExtraHostedDemoPasswords(preview({DEMO_EXTRA_PASSWORDS_JSON:JSON.stringify(correct)}))).toEqual(correct);
+    expect(()=>parseExtraHostedDemoPasswords(preview({DEMO_EXTRA_PASSWORDS_JSON:'not-json'}))).toThrow();
+    const missing={...correct};delete missing[DEMO_EXTRA_EMAILS.aba2];
+    expect(()=>parseExtraHostedDemoPasswords(preview({DEMO_EXTRA_PASSWORDS_JSON:JSON.stringify(missing)}))).toThrow();
+    const reused={...correct,[DEMO_EXTRA_EMAILS.ot2]:correct[DEMO_EXTRA_EMAILS.aba2]};
+    expect(()=>parseExtraHostedDemoPasswords(preview({DEMO_EXTRA_PASSWORDS_JSON:JSON.stringify(reused)}))).toThrow();
+    const weak={...correct,[DEMO_EXTRA_EMAILS.speech2]:'password123'};
+    expect(()=>parseExtraHostedDemoPasswords(preview({DEMO_EXTRA_PASSWORDS_JSON:JSON.stringify(weak)}))).toThrow();
   });
 });

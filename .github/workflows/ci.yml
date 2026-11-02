@@ -272,6 +272,7 @@ jobs:
           RENDER_EXTERNAL_HOSTNAME=therabridge-ahmed-synthetic-demo.onrender.com
           EOF
           printf 'DEMO_PASSWORDS_JSON=%s\n' "$(tr -d '\n' < .workspace/local-credentials/render-demo-passwords.json)" >> /tmp/therabridge-preview-ci.env
+          printf 'DEMO_EXTRA_PASSWORDS_JSON=%s\n' "$(tr -d '\n' < .workspace/local-credentials/render-demo-extra-passwords.json)" >> /tmp/therabridge-preview-ci.env
           printf 'AUTH_SECRET=%s\n' "$(openssl rand -hex 32)" >> /tmp/therabridge-preview-ci.env
           docker run -d --name tb-preview-ci --network host --env-file /tmp/therabridge-preview-ci.env tb-synthetic-preview:ci
           test "$(docker exec tb-preview-ci id -u)" = 1000
@@ -292,3 +293,4 @@ jobs:
           docker rm -f tb-preview-ci 2>/dev/null || true
           rm -f /tmp/therabridge-preview-ci.env
           rm -f .workspace/local-credentials/render-demo-passwords.json
+          rm -f .workspace/local-credentials/render-demo-extra-passwords.json
