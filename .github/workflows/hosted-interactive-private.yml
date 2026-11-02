@@ -1,0 +1,70 @@
+name: hosted-interactive-private
+on:
+  workflow_dispatch:
+    inputs:
+      deployed_sha:
+        description: 'Operator-verified live Render SHA, 40 hex chars'
+        required: true
+        type: string
+      synthetic_only_authorized:
+        description: 'Authorize seven synthetic logins, non-mutating interaction checks, logout'
+        required: true
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: tb-hosted-interactive-private
+  cancel-in-progress: false
+jobs:
+  interactive-private:
+    if: ${{ github.ref == 'refs/heads/main' && inputs.synthetic_only_authorized == true }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    container:
+      image: mcr.microsoft.com/playwright:v1.48.2-noble
+      options: --ipc=host
+    environment: hosted-responsive-private
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Install locked matching Chromium tools
+        run: |
+          corepack enable
+          yarn install --frozen-lockfile
+          node -e "if(require('playwright/package.json').version!=='1.48.2') process.exit(2)"
+      - name: Private credential and live health preflight
+        env:
+          TB_QA_USERS_JSON: ${{ secrets.TB_HOSTED_QA_USERS_JSON }}
+          TB_QA_DEPLOY_SHA: ${{ inputs.deployed_sha }}
+          TB_QA_PRIVATE_DIR: /__w/_temp/tb-interactive-private
+        run: |
+          umask 077
+          node scripts/qa/prepare-hosted-run.mjs
+      - name: Run seven-role non-mutating interactive checks
+        id: run
+        env:
+          QA_USERS_FILE: /__w/_temp/tb-interactive-private/users.json
+          QA_PRIVATE_OUTPUT: /__w/_temp/tb-interactive-private/report
+        run: |
+          umask 077
+          node scripts/qa/hosted-interactive.mjs
+      - name: Upload secret-free interaction results
+        if: ${{ always() && steps.run.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: therabridge-interactive-qa-${{ github.run_id }}
+          path: /__w/_temp/tb-interactive-private/report/hosted-interactive-results.json
+          if-no-files-found: warn
+          retention-days: 1
+      - name: Remove credentials and report
+        if: always()
+        run: |
+          rm -rf /__w/_temp/tb-interactive-private
