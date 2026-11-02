@@ -7,6 +7,7 @@ import { errorText } from '@/components/centers/kit';
 import { Button, Card, LockedAction } from '@/components/design/ui';
 import { LOCKED_REASON } from '@/lib/clinical';
 import { SECTIONS, reportsApi, type ReportDetail } from '@/lib/reports';
+import { proposeSyntheticReportSection, type DraftSection, type SyntheticReportProposal } from '@/lib/synthetic-report-draft';
 import { ReportDecisionAssist } from './ReportDecisionAssist';
 
 export type ReportHandoffLease = { revision: number; release: () => void };
@@ -31,6 +32,9 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
   const [state, setState] = useState<Save>('idle');
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
+  const [proposal, setProposal] = useState<SyntheticReportProposal | null>(null);
+  const [proposalText, setProposalText] = useState('');
+  const [proposalSection, setProposalSection] = useState<DraftSection>('assessment');
   const local = useRef(sections);
   const ver = useRef(d.report.version);
   const dirty = useRef(false);
@@ -180,6 +184,36 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
         </div>
       )}
       {notice && state !== 'conflict' && <FormAlert tone={notice.tone} testId={`report-notice-${notice.tone}`}>{notice.text}</FormAlert>}
+      {edit && <section className="space-y-3 rounded-card border border-border-light bg-surface-subtle p-4" data-testid="synthetic-report-assist">
+        <h3 className="text-[16px] font-semibold">Synthetic report drafting assistant</h3>
+        <p className="text-[13px] text-brand-inkMuted">Offline fictional-evidence template only. No model call, recording, clinical validation, signing, or family release. Nothing is saved unless you explicitly insert and save it.</p>
+        <label className="block text-[13px] font-semibold">Draft section
+          <select className={area} value={proposalSection} onChange={e => { setProposalSection(e.target.value as DraftSection); setProposal(null); setProposalText(''); }} data-testid="synthetic-report-section">
+            <option value="assessment">Assessment</option><option value="goals">Goals and progress</option><option value="sessions">Sessions</option>
+          </select>
+        </label>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="secondary" disabled={decisionLocked || handoffLocked || transitionLocked} onClick={() => {
+            const candidate = proposeSyntheticReportSection(d.evidence, proposalSection);
+            setProposal(candidate); setProposalText(candidate.text);
+          }} data-testid="synthetic-report-generate">Generate fictional draft</Button>
+          {proposal && <Button size="sm" variant="ghost" onClick={() => { setProposal(null); setProposalText(''); }} data-testid="synthetic-report-discard">Discard proposal</Button>}
+        </div>
+        {proposal && <div className="space-y-2" data-testid="synthetic-report-proposal">
+          <p className="text-[12px] text-brand-inkMuted">{proposal.promptVersion} · {proposal.validation} · {proposal.sourceRefs.length} source references · Not released</p>
+          {proposal.warnings.map((w, i) => <p key={i} className="text-[12px] text-status-danger">{w}</p>)}
+          <label className="block text-[13px] font-semibold">Review and edit this proposal before insertion
+            <textarea rows={7} className={area} maxLength={7000} value={proposalText} onChange={e => setProposalText(e.target.value)} data-testid="synthetic-report-text" />
+          </label>
+          <Button size="sm" disabled={decisionLocked || handoffLocked || transitionLocked || state === 'conflict' || !proposalText.trim() || proposal.sourceRefs.length === 0} onClick={() => {
+            if (proposal && proposal.section === proposalSection) {
+              change(proposal.section, proposalText);
+              setProposal(null); setProposalText('');
+              setNotice({ tone: 'success', text: 'Inserted into the editable draft. Review and save; the content is not clinically verified or released.' });
+            }
+          }} data-testid="synthetic-report-insert">Insert into report draft</Button>
+        </div>}
+      </section>}
       {edit && <div className="space-y-3 rounded-card border border-border-light bg-surface-subtle p-4" data-testid="report-evidence-assist">
         <h3 className="text-[16px] font-semibold">Evidence-assisted draft passages</h3>
         <p className="text-[13px] text-brand-inkMuted">Deterministic, source-referenced clinician draft decisions. No AI, publication, clinical verification, approval or release.</p>

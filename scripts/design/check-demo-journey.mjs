@@ -980,6 +980,21 @@ try {
     const speechReport = await db.progressReport.findFirstOrThrow({ where: { centerId: center.id, childId: child.id, service: 'speech' } });
     await page.goto(base + '/app/reports/' + speechReport.id);
     await page.getByTestId('report-evidence-assist').waitFor();
+    // M3-AI02: offline fictional report proposals never mutate clinical text
+    // until a therapist explicitly inserts an edited draft; discard is lossless.
+    await page.getByTestId('synthetic-report-assist').waitFor();
+    const beforeProposal = await page.getByTestId('report-section-assessment').inputValue();
+    await page.getByTestId('synthetic-report-generate').click();
+    assert((await page.getByTestId('synthetic-report-proposal').innerText()).includes('REFERENCED_NOT_VERIFIED'));
+    assert.equal(await page.getByTestId('report-section-assessment').inputValue(), beforeProposal);
+    await page.getByTestId('synthetic-report-discard').click();
+    assert.equal(await page.getByTestId('report-section-assessment').inputValue(), beforeProposal);
+    await page.getByTestId('synthetic-report-section').selectOption('sessions');
+    await page.getByTestId('synthetic-report-generate').click();
+    await page.getByTestId('synthetic-report-text').fill('SYNTHETIC DRAFT — clinician-edited fictional session count summary');
+    await page.getByTestId('synthetic-report-insert').click();
+    assert((await page.getByTestId('report-section-sessions').inputValue()).includes('clinician-edited'));
+    await page.locator('[data-testid="report-save-state"][data-state="saved"]').waitFor({ timeout: 10000 });
     await page.getByTestId('report-decisions-persistent').waitFor();
     // An evidence entry links to its exact source version and goal. The new
     // tab goes through the ordinary authorized child workspace route.
