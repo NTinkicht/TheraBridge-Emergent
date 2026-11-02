@@ -1,3 +1,7 @@
+# M3-AI03 implementation checkpoint — 2026-11-02
+
+M3-AI03 PR #156 browser regression added for offline shortlist, review, discard, edit, explicit insertion and undo. Exact-head CI NOT RUN/NOT VERIFIED yet. No claims of test PASS.
+
 # QA checkpoint — 2026-11-02 — M3-AI02 PR #155
 
 New browser regression covers synthetic proposal, no implicit insert, discard, explicit clinician edit/insert and autosave. M3-AI02 local execution NOT RUN; CI six-job qualification PENDING; independent implementation review PENDING. Predecessor M3-STT01 PR #154: 6/6 CI PASS. Historical results follow.
