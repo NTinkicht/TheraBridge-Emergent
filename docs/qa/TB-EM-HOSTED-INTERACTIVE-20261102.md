@@ -1,6 +1,6 @@
 # Hosted synthetic interactive QA — 2026-11-02
 
-Status: PLANNING CHECKPOINT — NOT IMPLEMENTED / NOT TESTED.
+Status: IMPLEMENTED IN DRAFT PR #160 — syntax parsed; hosted execution NOT RUN. Pending CI, independent review and manual protected workflow dispatch.
 
 ## Scope
 Extend the existing private seven-role Playwright QA runner to exercise **read-only interactions** on the fixed synthetic Render host. Reuse the protected `TB_HOSTED_QA_USERS_JSON` secret and preflight. Verify exact deployed SHA through the owner-verified Render deploy ledger, not from an untrusted input alone.
@@ -18,4 +18,4 @@ Extend the existing private seven-role Playwright QA runner to exercise **read-o
 No patient data, no appointment creation, no clinical draft submission, no signing/release/consent changes, no real audio or external AI. Never print tokens, passwords, cookies, URLs containing parameters, or sensitive page text. Restrict the browser runner to the exact fixed HTTPS Render origin. Manual-only GitHub Actions execution, protected environment, ephemeral credentials, and credential cleanup.
 
 ## Qualification
-Local syntax/unit checks, six exact-HEAD repository CI jobs, independent review, and an explicitly operator-dispatched hosted run are required before asserting any hosted PASS. Any finding must be fixed or separately tracked before merge per AGENTS.md Rules 13–18.
+JavaScript syntax parse passed on 2026-11-02. Six exact-HEAD repository CI jobs, independent review, and an explicitly operator-dispatched hosted run are required before asserting any hosted PASS. Any finding must be fixed or separately tracked before merge per AGENTS.md Rules 13–18.
