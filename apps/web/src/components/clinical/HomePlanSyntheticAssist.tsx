@@ -87,14 +87,14 @@ export function HomePlanSyntheticAssist({ ws, v, service, centerId, existing, ed
     {open && selected && <div className="space-y-2 rounded-control border border-border-light bg-white p-3" data-testid="home-ai-review">
       <p className="text-[13px] font-semibold">Clinician review: {selected.title}</p>
       {stale && <p role="alert" data-testid="home-ai-stale" className="text-[12px] text-status-danger">Sources changed or are unavailable. Discard and regenerate this candidate.</p>}
-      <a className="text-[12px] font-semibold text-brand-action underline" href={`/app/clinical/${ws.child.id}`} data-testid="home-ai-source-open">Inspect authorized plan and source evidence</a>
+      <a className="text-[12px] font-semibold text-brand-action underline" href={`/app/clinical/${ws.child.id}`} target="_blank" rel="noopener noreferrer" data-testid="home-ai-source-open">Inspect authorized plan and source evidence</a>
       <p className="break-all text-[12px] text-brand-inkMuted" data-testid="home-ai-sources">{selected.pinnedSources.map(ref => ref.kind + ':' + ref.id + ' (' + ref.revision + ')').join(' · ')}</p>
       {selected.warnings.map((w,i) => <p key={i} className="text-[12px] text-status-caution">{w}</p>)}
       <label className="block text-[13px] font-semibold">Linked goal
         <select className="mt-1 w-full rounded-control border border-border-light p-2" value={goalKey} onChange={e => {
           const next = e.target.value;
           setGoalKey(next);
-          setSelected(prev => prev ? { ...prev, goalKey: next, pinnedSources: currentSources.filter(ref => ref.kind === 'activity-template' && ref.id === prev.templateId || ref.kind === 'plan-goal' && ref.id === v.id + ':' + next) } : null);
+          setSelected(prev => prev ? { ...prev, goalKey: next, pinnedSources: [...prev.pinnedSources.filter(ref => ref.kind === 'activity-template'), ...currentSources.filter(ref => ref.kind === 'plan-goal' && ref.id === v.id + ':' + next)] } : null);
         }} data-testid="home-ai-goal">
           {goals.map(g => <option key={g.key} value={g.key}>{g.title}</option>)}
         </select>
