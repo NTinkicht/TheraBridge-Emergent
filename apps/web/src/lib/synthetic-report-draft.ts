@@ -19,7 +19,7 @@ export function proposeSyntheticReportSection(e: Evidence, section: DraftSection
   // Hard cap before insertion: API report sections reject text above 8,000 characters.
   const prefix = 'SYNTHETIC DRAFT — CLINICIAN REVIEW REQUIRED\\n';
   const limit = 7000;
-  let remaining = limit - (prefix.length - 1);
+  let remaining = limit - prefix.length;
   const append = (ref: string, line: string): boolean => {
     const cost = line.length + (lines.length ? 1 : 0);
     if (cost > remaining) {
