@@ -422,3 +422,7 @@ M3-AI01 PR #153 merged as `a9202bdb323154810597ccfc4dd5fb031b685512` after exact
 ## 2026-11-02 — Hosted stakeholder rehearsal (PR #162)
 
 Reviewed PR #160 merged and live synthetic Render commit `f1216b1735d5c548424f4b5da3c1961793be0a4d` is healthy. Protected interactive run [41451350004](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41451350004): **43 PASS / 0 FAIL / 14 BLOCKED** (two intentionally excluded clinical/form cases per role); exit code 2 is deliberate and not a confirmed app defect. PR #162 adds **NOT YET RUN** hosted rehearsal assertions for assigned fictional child, six clinical tabs, unavailable-AI banner and guardian sample progress. CI/review pending. No clinical/AI activation or baseline promotion.
+
+## 2026-11-02 — Expanded synthetic demo roster (implementation pending)
+
+New isolated branch adds five fictional children, including Amina and Zayd as Ahmed siblings, plus three **display-only** fictional therapists (ABA, OT, Speech), assignments and five future synthetic appointments. Existing seven hosted login accounts and secrets are unchanged; new staff have no authentication identities. A 25-minute stakeholder presenter script is included. **CI, independent review, Render deployment and hosted verification NOT RUN** for this branch. Clinical/AI gates NO-GO, 104-case acceptance baseline unchanged.
