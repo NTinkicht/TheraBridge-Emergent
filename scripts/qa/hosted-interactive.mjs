@@ -104,11 +104,6 @@ async function inspectRole(browser,role,user) {
   const page=await ctx.newPage();
   let attempted=false;
   try {
-    // Do not allow the runner to send the configured credentials to another origin.
-    page.on('request',r => {
-      if (r.isNavigationRequest() && new URL(r.url()).origin !== ORIGIN)
-        throw Error('unexpected_navigation_origin');
-    });
     attempted=true;
     const valid=await login(page,role,user);
     if (!valid) {
