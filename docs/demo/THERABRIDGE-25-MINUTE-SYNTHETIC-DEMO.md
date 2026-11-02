@@ -7,7 +7,7 @@
 - Centre: Children's Home Centre, Sharjah; Speech, Occupational Therapy and ABA.
 - Children (six total): Yusuf Ahmed (existing), Amina Ahmed, Zayd Ahmed, Leen Al Mansouri, Faris Khalil, Maya Saleh. **Amina and Zayd are siblings**, linked to the same synthetic guardian account as Yusuf. Family relationships here are fictional.
 - Original specialists: Layla Faris (Speech), Omar Nasser (OT); supervisor Dr. Hana Saleh.
-- New **display-only** team entries: Dalia Mansour (ABA), Nour Haddad (OT), Huda Rahim (Speech). They have assignments but no login identities or passwords; the existing seven protected test accounts are unchanged.
+- New individually authenticated synthetic team entries: Dalia Mansour (ABA), Nour Haddad (OT), Huda Rahim (Speech). Their separate high-entropy passwords are managed in `DEMO_EXTRA_PASSWORDS_JSON`; the original seven protected accounts and their passwords remain unchanged.
 - Five new upcoming synthetic appointments, one per added child; no historical therapy outcomes are inferred for them.
 
 ## Presenter sequence (25 min)
@@ -33,11 +33,11 @@
 ## Operator checklist
 
 1. Verify Render deploy is live, `/api/health` reports OK, and 24+ migrations apply.
-2. Verify seed counts: 6 children; 7 protected sign-ins + 3 display-only staff; 15 demo appointments; no unexpected external users. Repeat seed and verify no duplicate counts.
-3. Perform private hosted seven-role login/navigation smoke test; do not expose secret JSON or screenshots of private data.
+2. Verify seed counts: 6 children; 10 protected sign-ins, including 3 extra therapist accounts; 15 demo appointments; no unexpected external users. Repeat seed and verify no duplicate counts.
+3. Perform private hosted seven-role login/navigation smoke test plus three distinct therapist login/context/logout checks; do not expose secret JSON or screenshots of private data.
 4. Rehearse transitions between administrator, coordinator, therapist and guardian. Logout between roles.
 5. Never press Save, Submit, Sign, Publish, Release, Consent, Generate, or record real audio. Protected clinical and AI cases remain BLOCKED.
 
 ## Deployment and evidence
 
-The seed changes are guarded by `DEPLOYMENT_ENV`, `DEMO_SEED_CONFIRM`, synthetic database name, existing transaction/collision checks, and seven-hosted-account secret policy. New therapist records cannot sign in; adding their logins is a separate, deliberately managed credential operation. Only deploy after PR CI and independent review qualify. The 104-case acceptance baseline and clinical/AI NO-GO remain unchanged.
+The seed changes are guarded by `DEPLOYMENT_ENV`, `DEMO_SEED_CONFIRM`, synthetic database name, existing transaction/collision checks, and unchanged seven-hosted-account secret policy. The additional three logins use a separately provisioned `DEMO_EXTRA_PASSWORDS_JSON` secret on Render and `TB_HOSTED_QA_EXTRA_USERS_JSON` in protected GitHub Actions; never include actual credentials in this document. Only deploy after PR CI and independent review qualify. The 104-case acceptance baseline and clinical/AI NO-GO remain unchanged.
