@@ -1,3 +1,7 @@
+# M3-AI05 implementation checkpoint — 2026-11-02
+
+M3-AI05 PR #158 adds browser regressions for mandatory examine/acknowledge before report/home-plan insertion, invalidation after text edit, and rejection without draft mutation. All six current-head CI jobs NOT YET QUALIFIED; final independent review PENDING.
+
 # M3-AI04 implementation checkpoint — 2026-11-02
 
 M3-AI04 PR #157 browser coverage added for stale report autosave revision, changed goal provenance, and scoped source-inspection links. Exact-head six CI and independent review PENDING — no M3-AI04 PASS claim.
