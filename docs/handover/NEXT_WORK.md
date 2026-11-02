@@ -1,3 +1,7 @@
+# M3-AI05 implementation checkpoint — 2026-11-02
+
+M3-AI05 PR #158 implementation includes session-scoped clinician examination/acknowledgment/rejection for fictional proposals; qualify six exact-head CI jobs and independent review, dispose findings, then Rule 16 merge and open M3-AI06 draft. No clinical signing, release or real data.
+
 # M3-AI04 implementation checkpoint — 2026-11-02
 
 M3-AI04 PR #157 now has synthetic evidence-scoping/integrity implementation. Qualify the exact implementation HEAD with six CI jobs, independent review, and explicit comment dispositions. After Rule 16 merge, open M3-AI05 planning draft. No real data or clinical activation.
