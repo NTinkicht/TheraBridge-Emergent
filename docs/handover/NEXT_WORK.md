@@ -1,3 +1,7 @@
+# M3-AI06 implementation checkpoint — 2026-11-02
+
+M3-AI06 PR #159 synthetic safety implementation in progress: qualify six exact-head CI jobs and final independent code review, fix reviewer findings, merge under Rule 16. This is the last ordered Milestone 3 item; no next M3 PR. Keep clinical real-data/activation gates disabled.
+
 # M3-AI05 implementation checkpoint — 2026-11-02
 
 M3-AI05 PR #158 implementation includes session-scoped clinician examination/acknowledgment/rejection for fictional proposals; qualify six exact-head CI jobs and independent review, dispose findings, then Rule 16 merge and open M3-AI06 draft. No clinical signing, release or real data.

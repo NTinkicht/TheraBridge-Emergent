@@ -5,6 +5,7 @@ import { Button } from '@/components/design/ui';
 import { SyntheticHumanReviewControls } from './SyntheticHumanReviewControls';
 import { useSharedSession } from '@/lib/session-context';
 import type { SyntheticHumanReview } from '@/lib/synthetic-human-review';
+import { scanSyntheticDraft } from '@/lib/synthetic-ai-safety';
 import type { Goal, HomeActivity, PlanVersion, Template, Workspace } from '@/lib/clinical';
 import { inspectSyntheticSources, syntheticScope, type SyntheticSourceRef } from '@/lib/synthetic-source-integrity';
 
@@ -75,6 +76,8 @@ export function HomePlanSyntheticAssist({ ws, v, service, centerId, existing, ed
   const currentSources = homePlanSourceSnapshot(ws, v, service, centerId, editableGoals);
   const sourceCheck = selected ? inspectSyntheticSources(selected.pinnedSources, currentSources, scope) : null;
   const reviewRevision = JSON.stringify([selected?.sourceScope, selected?.pinnedSources, goalKey, frequency, note]);
+  const safety = scanSyntheticDraft(frequency + '\n' + note, selected?.pinnedSources ?? []);
+  const unsafeDraft = safety.status === 'BLOCKED';
   const reviewedDraft = !!humanReview && humanReview.phase === 'ACKNOWLEDGED' && humanReview.sourceRevision === reviewRevision && humanReview.actorMembershipId === actorMembershipId;
   const stale = !!selected && (selected.sourceScope !== scope || sourceCheck?.status !== 'CURRENT');
   const select = (candidate: SyntheticHomePlanCandidate) => {
@@ -94,6 +97,7 @@ export function HomePlanSyntheticAssist({ ws, v, service, centerId, existing, ed
     </div>)}
     {open && selected && <div className="space-y-2 rounded-control border border-border-light bg-white p-3" data-testid="home-ai-review">
       <p className="text-[13px] font-semibold">Clinician review: {selected.title}</p>
+      {unsafeDraft && <p role="alert" data-testid="home-ai-safety-block" className="text-[12px] text-status-danger">{safety.reasons.join(' ')}</p>}
       {stale && <p role="alert" data-testid="home-ai-stale" className="text-[12px] text-status-danger">Sources changed or are unavailable. Discard and regenerate this candidate.</p>}
       <a className="text-[12px] font-semibold text-brand-action underline" href={`/app/clinical/${ws.child.id}`} target="_blank" rel="noopener noreferrer" data-testid="home-ai-source-open">Inspect authorized plan and source evidence</a>
       <p className="break-all text-[12px] text-brand-inkMuted" data-testid="home-ai-sources">{selected.pinnedSources.map(ref => ref.kind + ':' + ref.id + ' (' + ref.revision + ')').join(' · ')}</p>
@@ -114,11 +118,11 @@ export function HomePlanSyntheticAssist({ ws, v, service, centerId, existing, ed
         <textarea className="mt-1 w-full rounded-control border border-border-light p-2" maxLength={1000} rows={3} value={note} onChange={e => setNote(e.target.value)} data-testid="home-ai-note" />
       </label>
       <SyntheticHumanReviewControls review={humanReview} onReview={setHumanReview} sourceRevision={reviewRevision} actorMembershipId={actorMembershipId}
-        authorized={ws.canEdit && v.mine && !stale && goals.some(g => g.key === goalKey)} onReject={discard} />
+        authorized={ws.canEdit && v.mine && !unsafeDraft && !stale && goals.some(g => g.key === goalKey)} onReject={discard} />
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" disabled={stale || !reviewedDraft || !goals.some(g => g.key === goalKey) || !frequency.trim() || existing.some(a => a.templateId === selected.templateId)}
+        <Button size="sm" disabled={stale || unsafeDraft || !reviewedDraft || !goals.some(g => g.key === goalKey) || !frequency.trim() || existing.some(a => a.templateId === selected.templateId)}
           onClick={() => {
-            if (stale || !reviewedDraft || inspectSyntheticSources(selected.pinnedSources, homePlanSourceSnapshot(ws, v, service, centerId, editableGoals), scope).status !== 'CURRENT' || !goals.some(g => g.key === goalKey) || !frequency.trim() || existing.some(a => a.templateId === selected.templateId)) return;
+            if (stale || unsafeDraft || !reviewedDraft || inspectSyntheticSources(selected.pinnedSources, homePlanSourceSnapshot(ws, v, service, centerId, editableGoals), scope).status !== 'CURRENT' || !goals.some(g => g.key === goalKey) || !frequency.trim() || existing.some(a => a.templateId === selected.templateId)) return;
             onInsert({ templateId: selected.templateId, goalKey, frequency: frequency.trim(), note: note.trim() });
             discard();
           }} data-testid="home-ai-insert">Insert into unsaved plan draft</Button>

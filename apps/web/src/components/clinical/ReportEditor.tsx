@@ -13,6 +13,7 @@ import { ReportDecisionAssist } from './ReportDecisionAssist';
 import { SyntheticHumanReviewControls } from './SyntheticHumanReviewControls';
 import { useSharedSession } from '@/lib/session-context';
 import type { SyntheticHumanReview } from '@/lib/synthetic-human-review';
+import { scanSyntheticDraft } from '@/lib/synthetic-ai-safety';
 
 export type ReportHandoffLease = { revision: number; release: () => void };
 export type ReportHandoffGate = () => Promise<ReportHandoffLease>;
@@ -72,6 +73,8 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
   const evidenceScope = syntheticScope(centerId, d.report.childId, d.report.service);
   const sourceCheck = proposal ? inspectSyntheticSources(proposal.pinnedSources, reportSourceSnapshot(d.evidence, proposal.section, evidenceScope), evidenceScope) : null;
   const reviewRevision = JSON.stringify([proposal?.sourceScope, proposal?.pinnedSources, proposalText, proposalRevision]);
+  const safety = scanSyntheticDraft(proposalText, proposal?.pinnedSources ?? []);
+  const unsafeDraft = safety.status === 'BLOCKED';
   const reviewedDraft = !!humanReview && humanReview.phase === 'ACKNOWLEDGED' && humanReview.sourceRevision === reviewRevision && humanReview.actorMembershipId === actorMembershipId;
   const proposalStale = !!proposal && (sourceCheck?.status !== 'CURRENT' || proposal.sourceScope !== evidenceScope || proposalRevision !== ver.current);
 
@@ -215,6 +218,7 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
         </div>
         {proposal && <div className="space-y-2" data-testid="synthetic-report-proposal">
           <p className="text-[12px] text-brand-inkMuted">{proposal.promptVersion} · {proposal.validation} · {proposal.sourceRefs.length} source references · Not released</p>
+          {unsafeDraft && <div role="alert" data-testid="synthetic-report-safety-block" className="text-[12px] text-status-danger">{safety.reasons.join(' ')}</div>}
           {proposalStale && <p role="alert" data-testid="synthetic-report-stale" className="text-[12px] text-status-danger">Evidence or report revision changed. Discard and regenerate this proposal.</p>}
           <a className="text-[12px] font-semibold text-brand-action underline" href={`/app/clinical/${d.report.childId}`} target="_blank" rel="noopener noreferrer" data-testid="synthetic-report-source-open">Inspect authorized child evidence</a>
           <p className="break-all text-[12px] text-brand-inkMuted" data-testid="synthetic-report-sources">{proposal.pinnedSources.map(ref => ref.kind + ':' + ref.id + ' (' + ref.revision + ')').join(' · ')}</p>
@@ -223,10 +227,10 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
             <textarea rows={7} className={area} maxLength={7000} value={proposalText} onChange={e => setProposalText(e.target.value)} data-testid="synthetic-report-text" />
           </label>
           <SyntheticHumanReviewControls review={humanReview} onReview={setHumanReview} sourceRevision={reviewRevision} actorMembershipId={actorMembershipId}
-            authorized={edit && !proposalStale && !decisionLocked && !handoffLocked && !transitionLocked && state !== 'conflict'}
+            authorized={edit && !unsafeDraft && !proposalStale && !decisionLocked && !handoffLocked && !transitionLocked && state !== 'conflict'}
             onReject={() => { setProposal(null); setProposalText(''); setHumanReview(null); }} />
-          <Button size="sm" disabled={decisionLocked || handoffLocked || transitionLocked || state === 'conflict' || !proposalText.trim() || proposal.sourceRefs.length === 0 || proposalStale || !reviewedDraft} onClick={() => {
-            if (proposal && proposal.section === proposalSection && !proposalStale && reviewedDraft && inspectSyntheticSources(proposal.pinnedSources, reportSourceSnapshot(d.evidence, proposal.section, evidenceScope), evidenceScope).status === 'CURRENT') {
+          <Button size="sm" disabled={decisionLocked || handoffLocked || transitionLocked || state === 'conflict' || !proposalText.trim() || proposal.sourceRefs.length === 0 || proposalStale || unsafeDraft || !reviewedDraft} onClick={() => {
+            if (proposal && proposal.section === proposalSection && !proposalStale && !unsafeDraft && reviewedDraft && inspectSyntheticSources(proposal.pinnedSources, reportSourceSnapshot(d.evidence, proposal.section, evidenceScope), evidenceScope).status === 'CURRENT') {
               change(proposal.section, proposalText);
               setProposal(null); setProposalText(''); setHumanReview(null);
               setNotice({ tone: 'success', text: 'Inserted into the editable draft. Review and save; the content is not clinically verified or released.' });

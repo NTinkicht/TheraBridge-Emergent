@@ -1,3 +1,7 @@
+# M3-AI06 implementation checkpoint — 2026-11-02
+
+M3-AI05 PR #158 merged at bfc2a9b. M3-AI06 PR #159 implementation adds deterministic safety verdicts for fictional report and home-plan suggestions and adversarial browser tests; exact-head CI/review pending. No external AI or clinical activation.
+
 # M3-AI05 implementation checkpoint — 2026-11-02
 
 M3-AI04 PR #157 merged at 47945ec. M3-AI05 PR #158 now implements a local explicit clinician review sequence for fictional suggestions, without granting clinical approval or release. Browser regressions added. CI/final review PENDING.

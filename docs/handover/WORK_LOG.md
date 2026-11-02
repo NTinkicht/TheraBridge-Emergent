@@ -1,3 +1,7 @@
+# M3-AI06 implementation checkpoint — 2026-11-02
+
+M3-AI05 PR #158 merged at bfc2a9b. M3-AI06 PR #159 now includes offline heuristic safety gates for fictional draft review and adversarial browser regression. CI and independent review pending.
+
 # M3-AI05 implementation checkpoint — 2026-11-02
 
 M3-AI04 PR #157 merged at 47945ec after six CI jobs and clean final review. M3-AI05 PR #158 adds session-scoped review state machine and UI to report/home-plan proposals with browser tests. Not an audit attestation or clinical approval; CI/review pending.

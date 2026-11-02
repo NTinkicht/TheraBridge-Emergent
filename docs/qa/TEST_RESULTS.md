@@ -1,3 +1,7 @@
+# M3-AI06 implementation checkpoint — 2026-11-02
+
+M3-AI06 PR #159 adds browser adversarial tests: malicious fictional instruction in report draft and role-spoofing home-plan instruction must block examination. Six exact-head CI and final review PENDING, no PASS claim.
+
 # M3-AI05 implementation checkpoint — 2026-11-02
 
 M3-AI05 PR #158 adds browser regressions for mandatory examine/acknowledge before report/home-plan insertion, invalidation after text edit, and rejection without draft mutation. All six current-head CI jobs NOT YET QUALIFIED; final independent review PENDING.
