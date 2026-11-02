@@ -484,3 +484,7 @@ Opened PR #162 with private-runner additions: resolve clinical list before selec
 ## 2026-11-02 — 25-minute demo preparation
 
 Prepared additive guarded synthetic seed for five children, sibling guardian links, three uncredentialed display-only therapists and appointments. Added idempotence/secret invariants regression and presenter runbook. Work remains unreviewed/unmerged; no live DB mutation made yet. 
+
+
+## 2026-11-02 — Three synthetic therapist identities (PR pending)
+Added separate secret validation, three therapist identity creation without legacy password rotation, ten-identity idempotence/hosted seed checks, and protected extra-login QA. Credentials remain outside source/logs. New exact-HEAD CI and independent review required before merge. A protected GitHub QA secret and Render environment secret must both be provisioned securely before hosted deployment.
