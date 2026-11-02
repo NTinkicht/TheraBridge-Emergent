@@ -1,4 +1,8 @@
-# Work log — 2026-11-01 — TB-EM-053 policy implementation foundation
+# Work log — 2026-11-02 — M3-AI02 synthetic report drafting
+
+PR #154 merged as `d4fa4b5` after 6/6 CI PASS. PR #155 implementation adds offline synthetic evidence proposals, therapist-controlled editable/explicit insertion and discard UI, and browser tests. Implementation CI/review still PENDING. Historical work log follows.
+
+# Historical work log — 2026-11-01 — TB-EM-053 policy implementation foundation
 
 Read merged private PR #48 v1.1. Implemented a complete **synthetic-only** family release workflow in PR #152: server-gated clinician approval of submitted exact family renderings, dedicated consent/release schema that does not unlock clinical legacy tables, guardian-specific grants, revocation, withdrawal, supersession, no-store read, capture-only notices, audit, and clinician/guardian web UI. Added denial, hash, revocation, concurrency and real PostgreSQL integration cases. Remote CI head `70c5a083` run #41331698946 passed 6/6, 672/672 API tests; resolved initial Codex P1 handover and P2 withdrawal findings with explicit FIX_NOW replies. Final code review and merge pending; production clinical gates unchanged.
 

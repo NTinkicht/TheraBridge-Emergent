@@ -1,4 +1,8 @@
-# Next work — 2026-11-01 — TB-EM-053 PR #152
+# Next work — 2026-11-02 — M3-AI02 PR #155
+
+Qualify synthetic report-drafting implementation on exact PR #155 HEAD: browser regression, six CI jobs, independent code review and explicit dispositions. Only merge once Rule 16 is met; then open M3-AI03 draft. No real clinical data, external AI provider, signing or release. Previous NEXT_WORK checkpoints below are historical.
+
+# Historical next work — 2026-11-01 — TB-EM-053 PR #152
 
 The owner-approved [TB-EM-053 v1.1](https://github.com/NTinkicht/TheraBridge/pull/48) **synthetic-only API, persistence, UI and tests are implemented** in PR #152. CI on head `70c5a083` passed six jobs/672 API tests; older Codex P1/P2 are fixed and resolved. Next: requalify the final documentation SHA through all six CI jobs, obtain independent exact-head Codex review, disposition any new P0–P3 findings, merge only under Rule 16. Do not activate real-patient family release, D1 clinical signing, production consent or protected legacy release triggers. Full clinician transfer #115 is independent and still blocked.
 
