@@ -784,6 +784,7 @@ try {
       await candidateReview.click();
       await page.getByTestId('home-ai-review').waitFor();
       assert((await page.getByTestId('home-ai-source-open').getAttribute('href'))?.includes('/app/clinical/' + child.id));
+      assert.equal(await page.getByTestId('home-ai-source-open').getAttribute('target'), '_blank', 'Plan source inspection must not navigate away from unsaved plan edits');
       await page.getByTestId('home-ai-frequency').fill('Therapist review pending');
       await page.getByTestId('home-ai-discard').click();
       assert.equal(await page.locator('li[data-testid^="home-activity-"]').count(), beforeCount,
@@ -1019,6 +1020,7 @@ try {
     await page.getByTestId('synthetic-report-generate').click();
     assert((await page.getByTestId('synthetic-report-proposal').innerText()).includes('REFERENCED_NOT_VERIFIED'));
     assert((await page.getByTestId('synthetic-report-source-open').getAttribute('href'))?.includes('/app/clinical/' + child.id));
+    assert.equal(await page.getByTestId('synthetic-report-source-open').getAttribute('target'), '_blank', 'Report source inspection must retain unsaved draft in the original tab');
     assert.equal(await page.getByTestId('report-section-assessment').inputValue(), beforeProposal);
     // M3-AI04: any acknowledged report revision invalidates a previously
     // prepared fictional-evidence proposal until it is regenerated.
