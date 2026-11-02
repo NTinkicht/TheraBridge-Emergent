@@ -1,3 +1,7 @@
+# M3-AI04 implementation checkpoint — 2026-11-02
+
+M3-AI03 PR #156 merged at 92709d5. M3-AI04 PR #157 implements deterministic scoped source snapshots and reject-on-stale insertion for synthetic report/home-plan proposals, with reviewer-visible source links and browser regression. CI/review not yet qualified.
+
 # M3-AI03 implementation checkpoint — 2026-11-02
 
 M3-AI02 PR #155 merged as 066f628. M3-AI03 PR #156 adds offline fictional home-plan activity proposal review/insert/discard, source version references and browser regression. CI/review pending.
