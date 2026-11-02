@@ -12,6 +12,20 @@ const result = (role, step, status, reason) => ({role, step, status, reason});
 const safePath = page => {
   try { return new URL(page.url()).pathname; } catch { return ''; }
 };
+const ROUTE_EVIDENCE = {
+ '/app/applications':['applications-title','applications-loading','applications-error'],
+ '/app/centers':['centers-title','centers-loading','centers-error'],
+ '/app/setup':['setup-title','setup-loading','setup-error'],
+ '/app/team':['team-title','staff-loading','staff-error'],
+ '/app/children':['children-title','children-loading','children-error'],
+ '/app/schedule':['schedule-title','schedule-loading','schedule-error'],
+ '/app/clinical':['clinical-title','clinical-list-loading','clinical-list-error'],
+ '/app/progress':['progress-title','progress-loading','progress-error'],
+ '/app/activities':['activities-title','activities-loading','activities-error'],
+ '/app/governance':['governance-title',null,null],
+ '/app/practice':['practice-page','practice-loading','practice-error'],
+ '/app/family-progress':['family-progress-demo','family-progress-loading','family-progress-error']
+};
 async function login(page, role, user) {
   await page.goto(BASE + '/login', {waitUntil:'domcontentloaded', timeout:30000});
   await settleLoginPage(page);
@@ -64,9 +78,13 @@ async function navigate(page, role, route, rows) {
     await page.waitForURL(u => u.pathname === route,{timeout:15000});
     await page.getByTestId('product-shell').waitFor({timeout:15000});
     await page.getByTestId('session-loading').waitFor({state:'hidden',timeout:15000});
+    const [success,loading,error]=ROUTE_EVIDENCE[route]??[];
+    if (!success) throw Error('route_contract_missing');
+    await page.getByTestId(success).waitFor({state:'visible',timeout:15000});
+    if (loading) await page.getByTestId(loading).waitFor({state:'hidden',timeout:15000});
     if (await page.getByTestId('page-forbidden').isVisible().catch(()=>false) ||
-        await page.getByTestId('schedule-error').isVisible().catch(()=>false) ||
-        await page.getByTestId('practice-error').isVisible().catch(()=>false))
+        await page.getByTestId('applications-forbidden').isVisible().catch(()=>false) ||
+        (error && await page.getByTestId(error).isVisible().catch(()=>false)))
       throw Error('route_error');
     rows.push(result(role,'link:'+route,'PASS','clicked_authorized_navigation'));
     return true;
