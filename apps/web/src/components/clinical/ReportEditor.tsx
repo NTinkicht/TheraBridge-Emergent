@@ -7,7 +7,8 @@ import { errorText } from '@/components/centers/kit';
 import { Button, Card, LockedAction } from '@/components/design/ui';
 import { LOCKED_REASON } from '@/lib/clinical';
 import { SECTIONS, reportsApi, type ReportDetail } from '@/lib/reports';
-import { proposeSyntheticReportSection, type DraftSection, type SyntheticReportProposal } from '@/lib/synthetic-report-draft';
+import { proposeSyntheticReportSection, reportSourceSnapshot, type DraftSection, type SyntheticReportProposal } from '@/lib/synthetic-report-draft';
+import { inspectSyntheticSources, syntheticScope } from '@/lib/synthetic-source-integrity';
 import { ReportDecisionAssist } from './ReportDecisionAssist';
 
 export type ReportHandoffLease = { revision: number; release: () => void };
@@ -35,6 +36,7 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
   const [proposal, setProposal] = useState<SyntheticReportProposal | null>(null);
   const [proposalText, setProposalText] = useState('');
   const [proposalSection, setProposalSection] = useState<DraftSection>('assessment');
+  const [proposalRevision, setProposalRevision] = useState<number | null>(null);
   const local = useRef(sections);
   const ver = useRef(d.report.version);
   const dirty = useRef(false);
@@ -61,6 +63,9 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
     setDecisionLocked(false);
   };
   const id = d.report.id;
+  const evidenceScope = syntheticScope(centerId, d.report.childId, d.report.service);
+  const sourceCheck = proposal ? inspectSyntheticSources(proposal.pinnedSources, reportSourceSnapshot(d.evidence, proposal.section, evidenceScope), evidenceScope) : null;
+  const proposalStale = !!proposal && (sourceCheck?.status !== 'CURRENT' || proposal.sourceScope !== evidenceScope || proposalRevision !== ver.current);
 
   const save = useCallback((): Promise<boolean> => {
     clearTimeout(timer.current);
@@ -194,19 +199,22 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
         </label>
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="secondary" disabled={decisionLocked || handoffLocked || transitionLocked} onClick={() => {
-            const candidate = proposeSyntheticReportSection(d.evidence, proposalSection);
+            const candidate = proposeSyntheticReportSection(d.evidence, proposalSection, evidenceScope);
+            setProposalRevision(ver.current);
             setProposal(candidate); setProposalText(candidate.text);
           }} data-testid="synthetic-report-generate">Generate fictional draft</Button>
           {proposal && <Button size="sm" variant="ghost" onClick={() => { setProposal(null); setProposalText(''); }} data-testid="synthetic-report-discard">Discard proposal</Button>}
         </div>
         {proposal && <div className="space-y-2" data-testid="synthetic-report-proposal">
           <p className="text-[12px] text-brand-inkMuted">{proposal.promptVersion} · {proposal.validation} · {proposal.sourceRefs.length} source references · Not released</p>
+          {proposalStale && <p role="alert" data-testid="synthetic-report-stale" className="text-[12px] text-status-danger">Evidence or report revision changed. Discard and regenerate this proposal.</p>}
+          <p className="break-all text-[12px] text-brand-inkMuted" data-testid="synthetic-report-sources">{proposal.pinnedSources.map(ref => ref.kind + ':' + ref.id + ' (' + ref.revision + ')').join(' · ')}</p>
           {proposal.warnings.map((w, i) => <p key={i} className="text-[12px] text-status-danger">{w}</p>)}
           <label className="block text-[13px] font-semibold">Review and edit this proposal before insertion
             <textarea rows={7} className={area} maxLength={7000} value={proposalText} onChange={e => setProposalText(e.target.value)} data-testid="synthetic-report-text" />
           </label>
-          <Button size="sm" disabled={decisionLocked || handoffLocked || transitionLocked || state === 'conflict' || !proposalText.trim() || proposal.sourceRefs.length === 0} onClick={() => {
-            if (proposal && proposal.section === proposalSection) {
+          <Button size="sm" disabled={decisionLocked || handoffLocked || transitionLocked || state === 'conflict' || !proposalText.trim() || proposal.sourceRefs.length === 0 || proposalStale} onClick={() => {
+            if (proposal && proposal.section === proposalSection && !proposalStale && inspectSyntheticSources(proposal.pinnedSources, reportSourceSnapshot(d.evidence, proposal.section, evidenceScope), evidenceScope).status === 'CURRENT') {
               change(proposal.section, proposalText);
               setProposal(null); setProposalText('');
               setNotice({ tone: 'success', text: 'Inserted into the editable draft. Review and save; the content is not clinically verified or released.' });
