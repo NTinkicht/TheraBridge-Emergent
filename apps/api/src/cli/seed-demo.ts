@@ -106,7 +106,7 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     const result = await db.$transaction(async (tx) => {
   // Fail closed: a dedicated preview database may contain only this demo tenant and its users.
   const displayStaff = [
-    { key: 'aba2', name: 'Dalia Mansour', email: 'dalia.mansour@childrens-home.therabridge.test', service: 'aba', title: 'ABA therapist' },
+    { key: 'aba2', name: 'Dalia Mansour', email: 'dalia.mansour@childrens-home.therabridge.test', service: 'behavioral', title: 'ABA therapist' },
     { key: 'ot2', name: 'Nour Haddad', email: 'nour.haddad@childrens-home.therabridge.test', service: 'occupational', title: 'Occupational therapist' },
     { key: 'speech2', name: 'Huda Rahim', email: 'huda.rahim@childrens-home.therabridge.test', service: 'speech', title: 'Speech and language therapist' },
   ] as const;
@@ -171,12 +171,12 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     where: { id: cid },
     create: {
       id: cid, name: "Children's Home Centre", slug: DEMO_SLUG, timezone: 'Asia/Dubai',
-      country: 'United Arab Emirates', city: 'Sharjah', specialties: ['speech', 'occupational', 'aba'],
+      country: 'United Arab Emirates', city: 'Sharjah', specialties: ['speech', 'occupational', 'behavioral'],
       source: 'DIRECT', trialEndsAt: new Date(now.getTime() + 30 * DAY),
       syntheticFamilyReleaseEnabled: process.env.TB_FAMILY_RELEASE_SYNTHETIC === 'true' &&
         !['production', 'staging'].includes(process.env.DEPLOYMENT_ENV ?? ''),
     },
-    update: { specialties: ['speech', 'occupational', 'aba'] },
+    update: { specialties: ['speech', 'occupational', 'behavioral'] },
   });
   const users: Record<string, string> = {}, members: Record<string, string> = {};
   for (const a of roster) {
@@ -286,11 +286,11 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
   // Five additional fictional children. Amina and Zayd share the Ahmed
   // guardian with Yusuf; all links stay within this single synthetic centre.
   const addedChildren = [
-    { key:'amina', first:'Amina', last:'Ahmed', birth:'2019-08-12', services:['speech','aba'], assignments:[['speech2','speech'],['aba2','aba']], family:true },
-    { key:'zayd', first:'Zayd', last:'Ahmed', birth:'2021-03-24', services:['occupational','aba'], assignments:[['ot2','occupational'],['aba2','aba']], family:true },
+    { key:'amina', first:'Amina', last:'Ahmed', birth:'2019-08-12', services:['speech','behavioral'], assignments:[['speech2','speech'],['aba2','behavioral']], family:true },
+    { key:'zayd', first:'Zayd', last:'Ahmed', birth:'2021-03-24', services:['occupational','behavioral'], assignments:[['ot2','occupational'],['aba2','behavioral']], family:true },
     { key:'leen', first:'Leen', last:'Al Mansouri', birth:'2020-11-06', services:['speech'], assignments:[['speech','speech']], family:false },
     { key:'faris', first:'Faris', last:'Khalil', birth:'2018-09-19', services:['occupational'], assignments:[['ot','occupational']], family:false },
-    { key:'maya', first:'Maya', last:'Saleh', birth:'2022-01-17', services:['aba','speech'], assignments:[['aba2','aba'],['speech2','speech']], family:false },
+    { key:'maya', first:'Maya', last:'Saleh', birth:'2022-01-17', services:['behavioral','speech'], assignments:[['aba2','behavioral'],['speech2','speech']], family:false },
   ] as const;
   for (const info of addedChildren) {
     const kid = id('child:' + info.key);
