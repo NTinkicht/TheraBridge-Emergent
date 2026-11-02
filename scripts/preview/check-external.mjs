@@ -117,7 +117,10 @@ try {
     const practice=await read(page,center+'/family/practice');
     assert.equal(practice.status,200);
     assert.equal(practice.body.released,false);
-    assert.equal(practice.body.children.length,1);
+    assert.equal(practice.body.children.length,3, 'Mariam must see the three Ahmed siblings');
+    for (const sibling of ['Yusuf', 'Amina', 'Zayd']) {
+      assert(practice.body.children.some(c => c.name?.includes(sibling)), 'Missing synthetic sibling: ' + sibling);
+    }
   });
   console.log(JSON.stringify({status:'PASS',origin:expectedOrigin,rolesChecked:checked,synthetic:true,clinicalSigning:'OFF',release:'OFF'}));
 } finally { await browser.close(); }
