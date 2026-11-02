@@ -775,7 +775,29 @@ try {
     }
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.getByTestId('home-assist-toggle').click();
-    await page.getByTestId('home-plan-evidence-assist').waitFor();
+    await page.getByTestId('home-plan-synthetic-assist').waitFor();
+    // M3-AI03: generated candidates do not auto-edit or persist. A therapist
+    // can review, discard and explicitly insert, then undo before saving.
+    const candidateReview = page.locator('[data-testid^="home-assist-review-"]').first();
+    if (await candidateReview.count()) {
+      const beforeCount = await page.locator('[data-testid^="home-activity-"]').count();
+      await candidateReview.click();
+      await page.getByTestId('home-ai-review').waitFor();
+      await page.getByTestId('home-ai-frequency').fill('Therapist review pending');
+      await page.getByTestId('home-ai-discard').click();
+      assert.equal(await page.locator('[data-testid^="home-activity-"]').count(), beforeCount,
+        'Discarding an offline suggestion must leave the draft unchanged');
+      await candidateReview.click();
+      await page.getByTestId('home-ai-frequency').fill('Twice weekly — fictional');
+      await page.getByTestId('home-ai-insert').click();
+      assert.equal(await page.locator('[data-testid^="home-activity-"]').count(), beforeCount + 1,
+        'Explicit therapist insertion must add exactly one unsaved activity');
+      await page.getByRole('button', { name: 'Remove activity' }).last().click();
+      assert.equal(await page.locator('[data-testid^="home-activity-"]').count(), beforeCount,
+        'Undoing the proposal before Save must restore the original draft');
+    } else {
+      await page.getByTestId('home-ai-no-candidates').waitFor();
+    }
     // TB-EM-029: browser-only, same-authorized-plan history fixture. No
     // database record or permissions are changed by this response overlay.
     const workspaceOverlay = '**/api/centers/*/clinical/children/*';
