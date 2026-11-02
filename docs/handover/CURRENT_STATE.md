@@ -426,3 +426,7 @@ Reviewed PR #160 merged and live synthetic Render commit `f1216b1735d5c548424f4b
 ## 2026-11-02 — Expanded synthetic demo roster (implementation pending)
 
 New isolated branch adds five fictional children, including Amina and Zayd as Ahmed siblings, plus three **display-only** fictional therapists (ABA, OT, Speech), assignments and five future synthetic appointments. Existing seven hosted login accounts and secrets are unchanged; new staff have no authentication identities. A 25-minute stakeholder presenter script is included. **CI, independent review, Render deployment and hosted verification NOT RUN** for this branch. Clinical/AI gates NO-GO, 104-case acceptance baseline unchanged.
+
+
+## 2026-11-02 — Three synthetic therapist identities (PR pending)
+The owner authorized individual demo logins for Dalia Mansour (behavioral/ABA), Nour Haddad (OT) and Huda Rahim (Speech). A separate three-password `DEMO_EXTRA_PASSWORDS_JSON` is required on Render; the original seven-password `DEMO_PASSWORDS_JSON` is preserved. Three display-only membership records are promoted into local therapist authentication identities idempotently. The private hosted runner adds `TB_HOSTED_QA_EXTRA_USERS_JSON` for targeted role/session/logout checks while retaining its seven baseline users. **NOT YET DEPLOYED OR HOSTED-VERIFIED.** No real clinical authorization, AI release or acceptance promotion.

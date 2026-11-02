@@ -533,3 +533,10 @@ Complete six CI checks and final independent Codex review of the exact head, res
 ## 2026-11-02 — Expanded synthetic demo next work
 
 Qualify roster-seed PR via six exact-head CI jobs and independent Codex review; fix all findings. Verify the additive seed on disposable synthetic DB, then merge. Sync manually controlled Render demo branch to reviewed main, deploy and check 6 children/3 extra staff/15 appointments and unchanged seven logins; run protected private QA again. Do not expose new credentials, activate clinical AI or change the acceptance baseline. Demo script target 25 minutes.
+
+
+## 2026-11-02 — Three synthetic therapist identities (PR pending) — next
+1. Verify six CI jobs and independent Codex exact-head review; resolve all reviewer comments.
+2. Provision three unique high-entropy passwords through approved secure channels as `DEMO_EXTRA_PASSWORDS_JSON` on the dedicated Render synthetic service and `TB_HOSTED_QA_EXTRA_USERS_JSON` in the protected GitHub environment. Do not alter the seven existing passwords.
+3. Merge reviewed PR, promote into the manually deployed synthetic branch, check readiness and seed count 10, then request protected ten-login QA approval.
+4. Keep clinical signing, release, consent and real AI/STT gates disabled; no baseline promotion from synthetic-only checks.

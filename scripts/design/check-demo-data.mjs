@@ -50,9 +50,9 @@ try {
   assert.equal(await db.guardianLink.count({where:{userId:guardianUser.id,removedAt:null}}),3);
   for (const member of twoTherapists.filter(m=>m.user.emailNormalized !== 'speech@childrens-home.therabridge.test' &&
       m.user.emailNormalized !== 'ot@childrens-home.therabridge.test')) {
-    assert.equal(await db.authIdentity.count({where:{userId:member.userId}}),0,'Extra staff must be display-only');
+    assert.equal(await db.authIdentity.count({where:{userId:member.userId}}),1,'Extra therapists must have exactly one local login identity');
   }
-  console.log('PASS: six fictional children, three Ahmed siblings, nine scoped memberships, five therapists, 15 appointments, eight unsigned historical sessions, 16 evidence points, two draft plans/reports, seven protected logins and zero authorizations/releases');
+  console.log('PASS: six fictional children, three Ahmed siblings, nine scoped memberships, five therapists, 15 appointments, eight unsigned historical sessions, 16 evidence points, two draft plans/reports, ten protected logins and zero authorizations/releases');
 } finally {
   await db.$disconnect();
 }

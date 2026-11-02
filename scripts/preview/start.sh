@@ -5,6 +5,7 @@ set -Eeo pipefail
 if [[ "$DEPLOYMENT_ENV" != "preview" ||
       "$DEMO_SEED_CONFIRM" != "CHILDRENS_HOME_SYNTHETIC_ONLY" ||
       -z "$DEMO_PASSWORDS_JSON" ||
+      -z "$DEMO_EXTRA_PASSWORDS_JSON" ||
       -z "$DATABASE_URL" ||
       -z "$AUTH_SECRET" ]]; then
   echo "ERROR: Missing explicit synthetic-preview configuration" >&2

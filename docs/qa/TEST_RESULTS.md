@@ -648,3 +648,7 @@ Historical live protected run [41451350004](https://github.com/NTinkicht/TheraBr
 ## 2026-11-02 — Additional fictional center roster, NOT RUN
 
 Seed regression added for idempotent 6 children, 3 display-only extra therapist memberships, guardian siblings, 15 demo appointments and unchanged 7 auth identities. **New tests NOT RUN; CI and hosted deployment PENDING.** Historical protected interactive run 41461657662 remains 47 PASS / 0 FAIL / 14 BLOCKED. Never infer clinical acceptance from synthetic demo fixture counts.
+
+
+## 2026-11-02 — Three synthetic therapist identities (PR pending)
+**PENDING CI/REVIEW/DEPLOYMENT:** New tests assert 10 local auth identities after repeat seed, three Ahmed sibling links, therapist behavioral specialty and 15 appointments; hosted preview rejects a missing/malformed three-password secret. Additional protected browser runner verifies three distinct synthetic therapist logins, therapist context and logout. Historical seven-role run 41489268355 was dispatched separately; its status does not prove new account access. No new clinical sign-offs or family releases.

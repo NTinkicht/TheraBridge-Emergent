@@ -7,7 +7,7 @@ on:
         required: true
         type: string
       synthetic_only_authorized:
-        description: 'Authorize seven synthetic logins, non-mutating interaction checks, logout'
+        description: 'Authorize ten synthetic logins, non-mutating interaction checks, logout'
         required: true
         type: boolean
         default: false
@@ -41,6 +41,7 @@ jobs:
           yarn install --frozen-lockfile
           node -e "if(require('playwright/package.json').version!=='1.48.2') process.exit(2)"
           node --check scripts/qa/hosted-interactive.mjs
+          node --check scripts/qa/hosted-extra-therapists.mjs
       - name: Private credential and live health preflight
         env:
           TB_QA_USERS_JSON: ${{ secrets.TB_HOSTED_QA_USERS_JSON }}
@@ -49,6 +50,12 @@ jobs:
         run: |
           umask 077
           node scripts/qa/prepare-hosted-run.mjs
+      - name: Verify three additional synthetic therapist logins privately
+        env:
+          TB_QA_EXTRA_USERS_JSON: ${{ secrets.TB_HOSTED_QA_EXTRA_USERS_JSON }}
+        run: |
+          umask 077
+          node scripts/qa/hosted-extra-therapists.mjs
       - name: Run seven-role non-mutating interactive checks
         id: run
         env:
