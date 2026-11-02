@@ -26,7 +26,20 @@ export function scanSyntheticDraft(text: string, sources: readonly SyntheticSour
     reasons.push('Empty or oversized fictional proposal.');
   if (!sources.length || sources.length > 20 || sources.some(s => !s.id || !s.scope || s.validation !== 'REFERENCED_NOT_VERIFIED'))
     reasons.push('Missing or malformed source references.');
-  const sourceText = sources.map(s => s.snapshot).join('\n');
+  // Snapshots remain serialized for equality, but safety scans must inspect
+  // decoded strings: JSON escapes multiline instructions as literal \\n.
+  const values = (value: unknown): string[] => {
+    if (typeof value === 'string') return [value];
+    if (Array.isArray(value)) return value.flatMap(values);
+    if (value && typeof value === 'object') return Object.values(value).flatMap(values);
+    return [];
+  };
+  let malformed = false;
+  const sourceText = sources.map(source => {
+    try { return values(JSON.parse(source.snapshot)).join('\n'); }
+    catch { malformed = true; return source.snapshot; }
+  }).join('\n');
+  if (malformed) reasons.push('Malformed fictional source snapshot.');
   if (sourceText.length > 30000) reasons.push('Fictional source budget exceeded.');
   if (hostile.some(pattern => pattern.test(text) || pattern.test(sourceText)))
     reasons.push('Instruction-spoofing or executable content detected in proposed text or evidence.');
