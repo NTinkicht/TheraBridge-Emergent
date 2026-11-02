@@ -187,10 +187,10 @@ describe('M2-H01 real PostgreSQL rollback and protected-file consistency', () =>
         } as unknown as PrismaClient;
         await expect(seedChildrensHome(uncertainDb, destination))
           .rejects.toThrow(/outcome unknown.*credentials retained/i);
-        expect(await h.prisma.authIdentity.count({ where: { provider: 'local' } })).toBe(7);
+        expect(await h.prisma.authIdentity.count({ where: { provider: 'local' } })).toBe(10);
         expect(existsSync(destination)).toBe(true);
         const stored = JSON.parse(readFileSync(destination, 'utf8')) as { accounts?: unknown[] };
-        expect(stored.accounts).toHaveLength(7);
+        expect(stored.accounts).toHaveLength(10);
       });
     } finally {
       if (existsSync(destination)) unlinkSync(destination);
@@ -207,7 +207,7 @@ describe('M2-H01 real PostgreSQL rollback and protected-file consistency', () =>
         })).toMatchObject({ count: 1 });
         await expect(seedChildrensHome(h.prisma, destination))
           .rejects.toThrow('Demo identity missing for existing account; refusing unexported password for ' + DEMO_EMAILS.parent);
-        expect(await h.prisma.authIdentity.count()).toBe(6);
+        expect(await h.prisma.authIdentity.count()).toBe(9);
         expect(existsSync(destination)).toBe(true);
       });
     } finally {
@@ -227,7 +227,7 @@ describe('M2-H01 real PostgreSQL rollback and protected-file consistency', () =>
         unlinkSync(destination);
         await seedChildrensHome(h.prisma, destination);
         expect(await h.prisma.user.count()).toBe(10);
-        expect(await h.prisma.authIdentity.count()).toBe(7);
+        expect(await h.prisma.authIdentity.count()).toBe(10);
         expect(existsSync(destination)).toBe(true);
       });
     } finally {
@@ -235,7 +235,7 @@ describe('M2-H01 real PostgreSQL rollback and protected-file consistency', () =>
     }
   }, 60_000);
 
-  it('seeds six fictional children including siblings and display-only ABA/OT/Speech staff idempotently', async () => {
+  it('seeds six fictional children including siblings and independently authenticated ABA/OT/Speech staff idempotently', async () => {
     const destination = join(tmpdir(), 'tb-expanded-demo-' + randomUUID() + '.json');
     try {
       await withLocalDemoEnv(async () => {
@@ -243,7 +243,7 @@ describe('M2-H01 real PostgreSQL rollback and protected-file consistency', () =>
         await seedChildrensHome(h.prisma, destination);
         expect(await h.prisma.child.count()).toBe(6);
         expect(await h.prisma.user.count()).toBe(10);
-        expect(await h.prisma.authIdentity.count()).toBe(7);
+        expect(await h.prisma.authIdentity.count()).toBe(10);
         expect(await h.prisma.appointment.count()).toBe(15);
         const siblings = await h.prisma.child.findMany({where:{lastName:'Ahmed'}});
         expect(siblings).toHaveLength(3);
@@ -257,7 +257,7 @@ describe('M2-H01 real PostgreSQL rollback and protected-file consistency', () =>
           'huda.rahim@childrens-home.therabridge.test'].includes(m.user.emailNormalized));
         expect(extraOnly).toHaveLength(3);
         for (const member of extraOnly) {
-          expect(await h.prisma.authIdentity.count({where:{userId:member.userId}})).toBe(0);
+          expect(await h.prisma.authIdentity.count({where:{userId:member.userId}})).toBe(1);
         }
         expect(extraOnly.find(m=>m.title==='ABA therapist')?.specialties).toContain('behavioral');
       });
