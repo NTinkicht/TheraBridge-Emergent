@@ -788,6 +788,14 @@ try {
       assert.equal(await page.locator('li[data-testid^="home-activity-"]').count(), beforeCount,
         'Discarding an offline suggestion must leave the draft unchanged');
       await candidateReview.click();
+      // A goal removed from the unsaved editor must immediately invalidate
+      // the previously selected activity-link target (no stale v.goals).
+      const firstGoalTitle = page.getByTestId('goal-title-0').first();
+      const savedGoalTitle = await firstGoalTitle.inputValue();
+      await firstGoalTitle.fill('');
+      assert(await page.getByTestId('home-ai-insert').isDisabled(),
+        'Unsaved goal removal must block insertion against stale goal references');
+      await firstGoalTitle.fill(savedGoalTitle);
       await page.getByTestId('home-ai-frequency').fill('Twice weekly — fictional');
       await page.getByTestId('home-ai-insert').click();
       assert.equal(await page.locator('li[data-testid^="home-activity-"]').count(), beforeCount + 1,
