@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { addDays, dayKey, minutesOfDay, timeRange, type Appointment } from '@/lib/operations';
 import { serviceLabel } from './BookDialog';
 
@@ -38,10 +38,23 @@ function useNow() {
 
 export function CalendarGrid({ days, items, onOpen, onSlot }: { days: string[]; items: Appointment[]; onOpen: (a: Appointment) => void; onSlot?: (day: string, time: string) => void }) {
   const now = useNow();
-  const mins = items.flatMap((a) => [minutesOfDay(a.startsAt), minutesOfDay(a.startsAt) + (Date.parse(a.endsAt) - Date.parse(a.startsAt)) / 60000]);
-  const first = Math.min(7, ...mins.map((m) => Math.floor(m / 60)));
-  const last = Math.min(24, Math.max(19, ...mins.map((m) => Math.ceil(m / 60))));
-  const hours = Array.from({ length: last - first }, (_, i) => first + i);
+  // Appointment grouping and overlap lanes depend on schedule data, not the
+  // once-per-minute clock tick or unrelated parent UI re-renders.
+  const layout = useMemo(() => {
+    const mins = items.flatMap((a) => [minutesOfDay(a.startsAt), minutesOfDay(a.startsAt) + (Date.parse(a.endsAt) - Date.parse(a.startsAt)) / 60000]);
+    const first = Math.min(7, ...mins.map((m) => Math.floor(m / 60)));
+    const last = Math.min(24, Math.max(19, ...mins.map((m) => Math.ceil(m / 60))));
+    const grouped = new Map<string, Appointment[]>();
+    for (const item of items) {
+      const key = dayKey(item.startsAt);
+      const group = grouped.get(key) ?? [];
+      group.push(item);
+      grouped.set(key, group);
+    }
+    return { first, last, hours: Array.from({ length: last - first }, (_, i) => first + i),
+      byDay: new Map(days.map((d) => [d, lanes(grouped.get(d) ?? [])])) };
+  }, [days, items]);
+  const { first, last, hours } = layout;
   const today = dayKey(new Date(now));
   const nowMin = minutesOfDay(new Date(now).toISOString());
   return (
@@ -58,7 +71,7 @@ export function CalendarGrid({ days, items, onOpen, onSlot }: { days: string[]; 
         <div className="relative grid" style={{ gridTemplateColumns: `56px repeat(${days.length}, minmax(0, 1fr))`, height: hours.length * HOUR_PX }}>
           <div>{hours.map((h) => <p key={h} className="tnum h-14 pr-2 pt-0.5 text-right text-[11px] text-brand-inkMuted">{hourLabel(h)}</p>)}</div>
           {days.map((d) => {
-            const { placed, count } = lanes(items.filter((a) => dayKey(a.startsAt) === d));
+            const { placed, count } = layout.byDay.get(d)!;
             return (
               <div key={d} className="relative border-l border-border-light" data-testid={`calendar-day-${d}`}>
                 {hours.map((h) => (
@@ -69,7 +82,7 @@ export function CalendarGrid({ days, items, onOpen, onSlot }: { days: string[]; 
                 {d === today && nowMin >= first * 60 && nowMin <= last * 60 && <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 z-10 h-0.5 bg-status-danger" style={{ top: ((nowMin - first * 60) / 60) * HOUR_PX }} data-testid="calendar-now" />}
                 {placed.map(({ a, lane }) => {
                   const top = ((minutesOfDay(a.startsAt) - first * 60) / 60) * HOUR_PX;
-                  const height = Math.max(24, ((Date.parse(a.endsAt) - Date.parse(a.startsAt)) / 3_600_000) * HOUR_PX - 2);
+                  const height = Math.max(44, ((Date.parse(a.endsAt) - Date.parse(a.startsAt)) / 3_600_000) * HOUR_PX - 2);
                   return (
                     <button key={a.id} type="button" onClick={() => onOpen(a)} data-testid={`calendar-appt-${a.id}`}
                       aria-label={`${a.childFull}, ${serviceLabel(a.service)} with ${a.therapist}, ${timeRange(a.startsAt, a.endsAt)}, ${a.status.toLowerCase().replace('_', '-')}`}

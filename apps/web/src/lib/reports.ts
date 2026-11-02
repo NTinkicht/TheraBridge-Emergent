@@ -9,6 +9,8 @@ export interface Evidence {
   plan: { id: string; title: string; versionNumber: number; status: string } | null;
   goals: GoalEvidence[];
   sessions: { drafts: number; completedVisits: number };
+  checkpoints?: { ref: string; planVersionId: string; goalKey: string;
+    reviewedOn: string; fingerprint: string }[];
 }
 export interface Dashboard {
   synthetic: true; period: { from: string; to: string };
@@ -18,12 +20,27 @@ export interface Dashboard {
 }
 export interface ReviewNote { byName: string; at: string; comment: string; kind: 'comment' | 'returned' }
 export interface ReportRow { id: string; title: string; service: string; periodStart: string; periodEnd: string; status: 'DRAFT' | 'IN_REVIEW' | 'RETURNED_FOR_REVISION' | 'WITHDRAWN' | 'FROZEN_INTERNAL'; versions: number; author: string; mine: boolean; updatedAt: string }
+export interface ReviewQueue {
+  synthetic: true; released: false; total: number; filteredTotal: number;
+  page: number; pageSize: number; hasMore: boolean;
+  items: { id: string; childId: string; childName: string; title: string; service: string;
+    status: 'IN_REVIEW'; author: string; periodStart: string; periodEnd: string; updatedAt: string }[];
+}
 export interface ReportDetail {
   synthetic: true; locked: string; released: false; canEdit: boolean; canReview: boolean; evidence: Evidence;
   report: { id: string; childId: string; childName: string; title: string; service: string; periodStart: string; periodEnd: string; status: 'DRAFT' | 'IN_REVIEW' | 'RETURNED_FOR_REVISION' | 'WITHDRAWN' | 'FROZEN_INTERNAL'; sections: Record<string, string>; reviewNotes: ReviewNote[]; version: number; author: string; mine: boolean; updatedAt: string };
   versions: { id: string; number: number; kind: 'CREATED' | 'SAVED' | 'SUBMITTED'; author: string; createdAt: string }[];
 }
-export interface ReportVersion { id: string; number: number; kind: string; sections: Record<string, string>; evidence: Evidence; author: string; createdAt: string }
+export interface StatementTrace {
+  section: 'assessment' | 'goals' | 'sessions';
+  status: 'LINKED_TO_SAVED_TEXT' | 'SECTION_EDITED' | 'SOURCE_MISMATCH' | 'PASSAGE_MISMATCH';
+  decisionId: string; passage: string | null;
+  claims: { index: number; text: string; sources: { ref: string; label: string }[] }[];
+  claimValidation: 'REFERENCED_NOT_VERIFIED';
+}
+export interface ReportVersion { id: string; number: number; kind: string;
+  sections: Record<string, string>; evidence: Evidence; author: string; createdAt: string;
+  statementTrace?: StatementTrace[]; claimValidation?: 'REFERENCED_NOT_VERIFIED'; released?: false }
 export interface FamilyProgress { snapshotId?: string; fingerprint?: string; notice?: string; childName: string; service: string; period: { from: string; to: string }; message: string; goals: { title: string; measure: string; baseline: number; target: number; status: GoalStatus; points: Point[] }[]; sample?: boolean; preview?: boolean; released: false }
 
 
@@ -76,9 +93,19 @@ export const reportsApi = {
   decisions: (centerId: string, id: string) => rest.get<EvidenceReview>(c(centerId, `clinical/reports/${id}/suggestion-decisions`)),
   recordDecision: (centerId: string, id: string, body: DecisionRequest) => rest.send<DecisionReceipt>('POST', c(centerId, `clinical/reports/${id}/suggestion-decisions`), body),
   dashboard: (centerId: string, q: { childId?: string; service?: string; from?: string; to?: string }) => rest.get<Dashboard>(c(centerId, `clinical/progress?${qs(q)}`)),
-  list: (centerId: string, childId: string) => rest.get<{ items: ReportRow[] }>(c(centerId, `clinical/children/${childId}/reports`)),
+  reviewQueue: (centerId: string, q: { childId?: string; service?: string; search?: string; page?: number } = {}) =>
+    rest.get<ReviewQueue>(c(centerId, `clinical/reports/review-queue?${qs({
+      childId: q.childId, service: q.service, search: q.search, page: String(q.page ?? 1),
+    })}`)),
+  list: (centerId: string, childId: string, offset = 0) => rest.get<{ items: ReportRow[]; hasMore: boolean; nextOffset: number | null }>(c(centerId, `clinical/children/${childId}/reports?offset=${offset}`)),
   create: (centerId: string, childId: string, body: { service: string; title: string; periodStart: string; periodEnd: string }) => rest.send<{ id: string }>('POST', c(centerId, `clinical/children/${childId}/reports`), body),
   detail: (centerId: string, id: string) => rest.get<ReportDetail>(c(centerId, `clinical/reports/${id}`)),
+  createPlanDraft: (centerId: string, reportId: string, body: {
+    requestId: string; sourceReportVersionId: string; reportRevision: number; title: string;
+    selectedGoals: { planVersionId: string; goalKey: string }[];
+  }) => rest.send<{ id: string; versionId: string; reused: boolean; released: false }>(
+    'POST', c(centerId, `clinical/reports/${reportId}/plan-drafts`), body),
+
   autosave: (centerId: string, id: string, sections: Record<string, string>, version: number) => rest.send<{ version: number; savedAt: string }>('PATCH', c(centerId, `clinical/reports/${id}`), { sections, version }),
   saveVersion: (centerId: string, id: string, version: number) => rest.send<{ number: number; version: number }>('POST', c(centerId, `clinical/reports/${id}/versions`), { version }),
   submit: (centerId: string, id: string, version: number) => rest.send<{ number: number; version: number }>('POST', c(centerId, `clinical/reports/${id}/submit`), { version }),

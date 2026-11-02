@@ -51,7 +51,7 @@ trap cleanup EXIT
 trap 'exit 143' TERM
 trap 'exit 130' INT
 
-PORT=8001 HOST=127.0.0.1 node apps/api/dist/main.js &
+PORT=8001 HOST=127.0.0.1 node --max-old-space-size=192 apps/api/dist/main.js &
 api_pid="$!"
 node - <<'NODE'
 async function ready() {
@@ -71,7 +71,7 @@ ready().catch(e => { console.error(e.message); process.exit(1); });
 NODE
 
 # Only Next.js receives public traffic. Nest is bound to 127.0.0.1:8001.
-node node_modules/next/dist/bin/next start apps/web -H 0.0.0.0 -p "$PORT" &
+node --max-old-space-size=192 node_modules/next/dist/bin/next start apps/web -H 0.0.0.0 -p "$PORT" &
 web_pid="$!"
 wait -n "$api_pid" "$web_pid"
 echo "ERROR: Synthetic preview process exited unexpectedly" >&2

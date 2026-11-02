@@ -10,7 +10,9 @@ export const TRIAL = { days: 30, therapistSeats: 3, children: 1 } as const;
 const DAY = 86_400_000;
 export const TRIAL_ENDED = 'This center’s 30-day trial has ended. Everything stays visible, but changes are paused until TheraBridge extends the trial.';
 
-export const lockCenter = (tx: Tx, centerId: string) => tx.$queryRaw`SELECT id FROM "center" WHERE id = ${centerId}::uuid FOR UPDATE`;
+// Center identifiers are immutable. This lock still serializes center-wide
+// operations but does not block FK KEY SHARE checks for unrelated inserts.
+export const lockCenter = (tx: Tx, centerId: string) => tx.$queryRaw`SELECT id FROM "center" WHERE id = ${centerId}::uuid FOR NO KEY UPDATE`;
 export const trialExpired = (c: Pick<Center, 'trialEndsAt'>, now: Date) => !!c.trialEndsAt && c.trialEndsAt <= now;
 
 @Injectable()

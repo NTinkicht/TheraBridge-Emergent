@@ -1,0 +1,180 @@
+'use client';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Button, Card } from '@/components/design/ui';
+import { SelectField } from '@/components/centers/kit';
+import { serviceLabel } from './BookDialog';
+import { opsApi, HANDOVER_LABELS, type ChildDetail, type Therapist, type HandoverInbox, type HandoverReadiness } from '@/lib/operations';
+
+export function HandoverProposalPanel({ centerId, child }: { centerId: string; child: ChildDetail }) {
+  const [data, setData] = useState<HandoverInbox | null>(null);
+  const [staff, setStaff] = useState<Therapist[]>([]);
+  const [staffSearch, setStaffSearch] = useState('');
+  const [nextStaffOffset, setNextStaffOffset] = useState<number | null>(null);
+  const [loadingStaff, setLoadingStaff] = useState(false);
+  const staffRequest = useRef(0);
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [reasonCode, setReasonCode] = useState<'STAFF_CHANGE'|'AVAILABILITY'|'FAMILY_REQUEST'>('STAFF_CHANGE');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [readiness, setReadiness] = useState<HandoverReadiness | null>(null);
+  const reload = useCallback(async () => {
+    try {
+      const d = await opsApi.handovers(centerId, { childId: child.id });
+      setData(d);
+      // Proposal status refreshes (including cancellation) must not discard the
+      // still-valid incoming therapist search and its loaded pagination cursor.
+      // Center/service/search changes are handled by the staff-fetch effect.
+      setError('');
+    } catch { setError('Could not load synthetic handover proposals.'); }
+  }, [centerId, child.id]);
+  useEffect(() => { void reload(); }, [reload]);
+  const own = (data?.items ?? []).filter(p => p.childId === child.id);
+  const loadMoreHistory = async () => {
+    if (busy || !data?.enabled || data.nextCancelledOffset == null) return;
+    setBusy(true); setError('');
+    try {
+      const page = await opsApi.handovers(centerId, { childId: child.id, cancelledOffset: data.nextCancelledOffset });
+      setData(prev => prev ? {
+        ...prev,
+        items: [...prev.items, ...page.items.filter(item => item.status === 'CANCELLED' &&
+          !prev.items.some(existing => existing.id === item.id))],
+        nextCancelledOffset: page.nextCancelledOffset,
+      } : page);
+    } catch { setError('Could not load more cancelled handover history.'); }
+    finally { setBusy(false); }
+  };
+  const active = child.assignments.filter(a => a.endedAt === null);
+  const source = active.find(a => a.id === from);
+  useEffect(() => {
+    const revision = ++staffRequest.current;
+    if (!data?.enabled || !source) {
+      setStaff([]); setNextStaffOffset(null); setLoadingStaff(false);
+      return () => { staffRequest.current++; };
+    }
+    setLoadingStaff(true);
+    void opsApi.therapists(centerId, { service: source.service, search: staffSearch.trim(), limit: 100 })
+      .then(page => { if (revision === staffRequest.current) { setStaff(page.items); setNextStaffOffset(page.nextOffset); } })
+      .catch(() => { if (revision === staffRequest.current) { setStaff([]); setError('Could not search eligible incoming therapists.'); } })
+      .finally(() => { if (revision === staffRequest.current) setLoadingStaff(false); });
+    return () => { staffRequest.current++; };
+  }, [centerId, data?.enabled, source?.service, staffSearch]);
+  const loadMoreStaff = async () => {
+    if (!source || loadingStaff || nextStaffOffset === null) return;
+    const revision = staffRequest.current;
+    setLoadingStaff(true);
+    try {
+      const page = await opsApi.therapists(centerId, { service: source.service, search: staffSearch.trim(), offset: nextStaffOffset, limit: 100 });
+      if (revision === staffRequest.current) {
+        setStaff(prev => [...prev, ...page.items]); setNextStaffOffset(page.nextOffset);
+      }
+    } catch { if (revision === staffRequest.current) setError('Could not load more eligible incoming therapists.'); }
+    finally { if (revision === staffRequest.current) setLoadingStaff(false); }
+  };
+  const eligible = staff.filter(t => t.membershipId !== source?.membershipId && source &&
+    t.specialties.includes(source.service));
+  // Client-side prevention is advisory: the API/DB still enforce one open proposal.
+  const hasOpenForSource = !!source && own.some(r =>
+    r.fromMembershipId === source.membershipId && r.service === source.service &&
+    (r.status === 'PENDING_ACK' || r.status === 'ACKNOWLEDGED'));
+  const submit = async () => {
+    if (!source || !to || busy || hasOpenForSource) return;
+    setBusy(true); setError('');
+    try {
+      setReadiness(null);
+      await opsApi.proposeHandover(centerId, { childId: child.id,
+        fromMembershipId: source.membershipId, toMembershipId: to, service: source.service, reasonCode });
+      setFrom(''); setTo(''); await reload();
+    } catch { setError('The handover proposal was not saved. Recheck the current assignment.'); }
+    finally { setBusy(false); }
+  };
+  const cancel = async (id: string) => {
+    if (busy) return; setBusy(true); setError('');
+    try { setReadiness(null); await opsApi.cancelHandover(centerId,id); await reload(); }
+    catch { setError('Could not cancel this proposal. Refresh its status.'); }
+    finally { setBusy(false); }
+  };
+  const assess = async (id: string) => {
+    if (busy) return;
+    setBusy(true); setError(''); setReadiness(null);
+    try {
+      const snap = await opsApi.handoverReadiness(centerId, id);
+      setReadiness(snap);
+      // Another session may have acknowledged or cancelled since the list loaded.
+      // Keep the visible row and action buttons consistent with this fresh snapshot.
+      setData(prev => prev ? { ...prev,
+        items: prev.items.map(item => item.id === id ? { ...item, status: snap.status } : item),
+      } : prev);
+    } catch { setError('Could not verify this operational readiness snapshot.'); }
+    finally { setBusy(false); }
+  };
+  return <Card className="space-y-3 p-5" testId="handover-manager">
+    <h2 className="text-[18px] font-semibold">Therapist replacement preparation</h2>
+    <p className="text-[13px] text-brand-inkMuted">
+      Synthetic operational acknowledgement only. No existing therapist assignment, clinical documents,
+      private reports or permissions will be transferred by this step.
+    </p>
+    {error && <p role="alert" className="text-[13px] text-status-danger">{error}</p>}
+    {data && !data.enabled && <p data-testid="handover-disabled">Handover preparation is disabled in this environment.</p>}
+    {data?.enabled && <>
+      <SelectField label="Current assignment" value={from} testId="handover-current"
+        onChange={value => {
+          if (active.find(a => a.id === value)?.service !== source?.service) staffRequest.current++;
+          setFrom(value); setTo('');
+        }}
+        options={[{value:'',label:'Select an active assignment'}, ...active.map(a => ({
+          value:a.id,label:`${a.therapist} · ${serviceLabel(a.service)}`}))]} />
+      <label className="block text-[13px] font-medium">Search incoming therapists
+        <input type="search" value={staffSearch} onChange={e => { staffRequest.current++; setStaffSearch(e.target.value); setTo(''); }}
+          className="mt-1 w-full rounded-control border border-border-light px-3 py-2 text-[14px]" data-testid="handover-staff-search" placeholder="Name" />
+      </label>
+      <SelectField label="Proposed incoming therapist" value={to} testId="handover-incoming"
+        onChange={setTo} options={[{value:'',label:source ? 'Select a qualified therapist' : 'Choose current assignment first'},
+          ...eligible.map(t=>({value:t.membershipId,label:t.displayName}))]} />
+      {nextStaffOffset !== null && <Button size="sm" variant="secondary" disabled={loadingStaff} onClick={() => void loadMoreStaff()}
+        data-testid="handover-staff-more">Load more qualified therapists</Button>}
+      <SelectField label="Operational reason" value={reasonCode} onChange={v => setReasonCode(v as typeof reasonCode)}
+        testId="handover-reason" options={[{value:'STAFF_CHANGE',label:'Staff change'},
+        {value:'AVAILABILITY',label:'Availability'}, {value:'FAMILY_REQUEST',label:'Family request'}]} />
+      {hasOpenForSource && <p className="text-[13px] text-brand-inkMuted" role="status"
+        data-testid="handover-open-source-notice">
+        This assignment already has an open handover proposal. Cancel it below before proposing another.
+      </p>}
+      <Button size="sm" disabled={!source || !to || busy || hasOpenForSource} onClick={() => void submit()}
+        data-testid="handover-propose">Propose operational handover</Button>
+      <ul className="space-y-2" data-testid="handover-manager-history">
+        {own.map(r => <li key={r.id} data-testid={`handover-row-${r.id}`} data-status={r.status} className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-border-light p-3">
+          <span className="text-[13px]">{serviceLabel(r.service)} · {HANDOVER_LABELS[r.status]}
+            <span className="block text-brand-inkMuted">No clinical information or assignment changed</span>
+          </span>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="secondary" disabled={busy}
+              onClick={() => void assess(r.id)}>Check readiness</Button>
+            {r.status !== 'CANCELLED' && <Button size="sm" variant="secondary" disabled={busy}
+              onClick={() => void cancel(r.id)}>Cancel proposal</Button>}
+          </div>
+          {readiness?.proposalId === r.id && <div className="w-full space-y-2 border-t border-border-light pt-3"
+            data-testid="handover-readiness">
+            <p className="text-[13px] font-semibold text-brand-ink">Transfer remains blocked — no authorization or access granted</p>
+            <p className="text-[12px] text-brand-inkMuted" data-testid="handover-readiness-checked">
+              Checked {new Date(readiness.checkedAt).toLocaleString()}. Recheck to see current operational status.
+            </p>
+            <ul className="space-y-1">
+              {readiness.checks.map(check => <li key={check.code} className="text-[13px] text-brand-inkMuted">
+                {check.met ? '✓' : '—'} {check.label}
+              </li>)}
+            </ul>
+            <p className="text-[12px] text-brand-inkMuted">
+              Operational snapshot only. The checklist cannot approve a clinical handover, change staff assignments,
+              authorize consent, or release records.
+            </p>
+          </div>}
+        </li>)}
+      </ul>
+      {data.nextCancelledOffset != null && <Button size="sm" variant="secondary"
+        disabled={busy} onClick={() => void loadMoreHistory()} data-testid="handover-history-more">
+        Load older cancelled proposals
+      </Button>}
+    </>}
+  </Card>;
+}

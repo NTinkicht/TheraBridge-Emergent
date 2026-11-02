@@ -48,6 +48,283 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     return { therapist, other, sup, kid, link, rosa };
   }
 
+  it('M2-H04 Codex P2: newest plan stays reachable above 200 and older plans are paged with tenant scope', async () => {
+    const { therapist, kid } = await setup();
+    const base = Date.parse('2026-10-18T00:00:00Z');
+    const created = await h.prisma.therapyPlan.createManyAndReturn({ data: Array.from({ length: 205 }, (_, i) => ({
+      centerId, childId: kid, service: 'speech', title: `Plan ${i}`, createdById: therapist.body.user.id,
+      createdAt: new Date(base + i * 1000),
+    })) });
+    await h.prisma.planVersion.createMany({ data: created.map(p => ({ centerId, planId: p.id, number: 1,
+      authorId: therapist.body.user.id, createdAt: h.clock.now(), updatedAt: h.clock.now(),
+    })) });
+    const first = (await get(therapist, c(`clinical/children/${kid}`)).expect(200)).body;
+    expect(first.plans).toHaveLength(200);
+    expect(first.hasMorePlans).toBe(true);
+    expect(first.plans[0].title).toBe('Plan 204');
+    expect(first.plans.some((p: { title: string }) => p.title === 'Plan 0')).toBe(false);
+    const next = (await get(therapist, c(`clinical/children/${kid}?planOffset=200`)).expect(200)).body;
+    expect(next.plans).toHaveLength(5);
+    expect(next.hasMorePlans).toBe(false);
+    expect(next.plans.some((p: { title: string }) => p.title === 'Plan 0')).toBe(true);
+    expect(new Set([...first.plans, ...next.plans].map((p: { id: string }) => p.id)).size).toBe(205);
+    await get(therapist, c(`clinical/children/${kid}?planOffset=-1`)).expect(400);
+  });
+
+  it('M2-H04 Codex P2: activity pagination and search reach beyond 200; therapist templates are service-filtered before cap', async () => {
+    const { therapist, kid } = await setup();
+    await h.prisma.activityTemplate.createMany({ data: [
+      ...Array.from({ length: 205 }, (_, i) => ({ centerId, service: 'occupational',
+        title: `Occupational sample ${String(i).padStart(3, '0')}`, ageBand: '5-8', minutes: 10,
+        materials: ['cards'], steps: ['Synthetic steps'], safety: ['Adult supports'], createdAt: h.clock.now() })),
+      ...Array.from({ length: 5 }, (_, i) => ({ centerId, service: 'speech',
+        title: `Speech needle ${i}`, ageBand: '5-8', minutes: 8,
+        materials: ['cards'], steps: ['Synthetic steps'], safety: ['Adult supports'], createdAt: h.clock.now() })),
+    ] });
+    const first = (await get(therapist, c('activities?limit=100')).expect(200)).body;
+    expect(first.items).toHaveLength(100);
+    expect(first.hasMore).toBe(true);
+    expect(first.nextOffset).toBe(100);
+    const last = (await get(therapist, c('activities?limit=100&offset=200')).expect(200)).body;
+    expect(last.items).toHaveLength(10);
+    expect(last.hasMore).toBe(false);
+    expect(last.items.some((t: { title: string }) => t.title === 'Speech needle 4')).toBe(true);
+    const searched = (await get(therapist, c('activities?search=Speech%20needle%204')).expect(200)).body;
+    expect(searched.items.map((t: { title: string }) => t.title)).toEqual(['Speech needle 4']);
+    const language = (await get(therapist, c('activities?search=LANGUAGE&service=speech')).expect(200)).body;
+    expect(language.items).toHaveLength(5);
+    const scoped = (await get(therapist, c(`clinical/children/${kid}`)).expect(200)).body;
+    expect(scoped.templates).toHaveLength(5);
+    expect(scoped.templates.every((t: { service: string }) => t.service === 'speech')).toBe(true);
+    await get(therapist, c('activities?limit=201')).expect(400);
+    await get(therapist, c('activities?offset=-1')).expect(400);
+  });
+
+  it('M2-H04 Codex P2: older/backdated assessments are reachable in stable authorized pages', async () => {
+    const { therapist, kid } = await setup();
+    const base = Date.parse('2026-01-01T00:00:00Z');
+    await h.prisma.assessment.createMany({ data: Array.from({ length: 205 }, (_, i) => ({
+      centerId, childId: kid, membershipId: therapist.body.activeContext.membershipId,
+      service: 'speech', assessedOn: new Date(base + i * DAY), summary: `Historical assessment ${i}`,
+      areas: [], createdAt: h.clock.now(), updatedAt: h.clock.now(),
+    })) });
+    const backdated = (await post(h, c(`clinical/children/${kid}/assessments`), therapist,
+      { service: 'speech', assessedOn: '2025-10-01', summary: 'Late-entered older assessment', areas: [] }).expect(201)).body.id;
+    const first = (await get(therapist, c(`clinical/children/${kid}`)).expect(200)).body;
+    expect(first.assessments).toHaveLength(200);
+    expect(first.hasMoreAssessments).toBe(true);
+    expect(first.assessments.some((a: { id: string }) => a.id === backdated)).toBe(false);
+    const older = (await get(therapist, c(`clinical/children/${kid}?assessmentOffset=200`)).expect(200)).body;
+    expect(older.assessments).toHaveLength(6);
+    expect(older.hasMoreAssessments).toBe(false);
+    expect(older.assessments.some((a: { id: string }) => a.id === backdated)).toBe(true);
+    expect(new Set([...first.assessments, ...older.assessments].map((a: { id: string }) => a.id)).size).toBe(206);
+    await get(therapist, c(`clinical/children/${kid}?assessmentOffset=-1`)).expect(400);
+  });
+
+
+  it('hides a same-center different-child assessment ID just like an unknown ID', async () => {
+    const { therapist, other } = await setup();
+    // Direct synthetic fixture avoids the centre's single-child onboarding
+    // capacity limit; this test exercises authorization, not provisioning.
+    const childB = (await h.prisma.child.create({ data: {
+      centerId, firstName: 'Other', lastName: 'Child',
+      dateOfBirth: new Date('2020-01-02'), services: ['speech'],
+      createdById: admin.body.user.id, createdAt: h.clock.now(),
+    } })).id;
+    await post(h, c(`children/${childB}/assignments`), admin,
+      { membershipId: other.body.activeContext.membershipId, service: 'speech' }).expect(201);
+    const assessment = (await post(h, c(`clinical/children/${childB}/assessments`), other,
+      { service: 'speech', assessedOn: '2026-10-18', summary: 'Restricted speech assessment', areas: [] }).expect(201)).body;
+    const body = { service: 'speech', assessedOn: '2026-10-18',
+      summary: 'Attempted overwrite of another child', areas: [], version: 1 };
+    const wrongChild = await patch(therapist, c(`clinical/assessments/${assessment.id}`), body).expect(404);
+    const unknown = await patch(therapist, c('clinical/assessments/00000000-0000-0000-0000-000000000000'), body).expect(404);
+    expect(wrongChild.body).toEqual(unknown.body);
+    expect((await h.prisma.assessment.findUniqueOrThrow({ where: { id: assessment.id } })).summary).toBe('Restricted speech assessment');
+    expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.assessment_updated' } })).toBe(0);
+    const foreignPlan = (await post(h, c(`clinical/children/${childB}/plans`), other,
+      { service: 'speech', title: 'Restricted child plan' }).expect(201)).body;
+    const goal = { key: 'dup', title: 'A synthetic goal', measure: 'count', baseline: 0, target: 1 };
+    const invalid = { summary: 'Do not reveal validation for a hidden plan', goals: [goal, goal], homeActivities: [], version: 1 };
+    const wrongPlan = await patch(therapist, c(`clinical/plan-versions/${foreignPlan.versionId}`), invalid).expect(404);
+    const unknownPlan = await patch(therapist, c('clinical/plan-versions/00000000-0000-0000-0000-000000000000'), invalid).expect(404);
+    expect(wrongPlan.body).toEqual(unknownPlan.body);
+    expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.plan_draft_saved' } })).toBe(0);
+  });
+
+  it('M2-H05 Mistral P3: unchanged unmeasured legacy title retains exact bytes', async () => {
+    const { therapist, kid } = await setup();
+    const versionId = (await post(h, c(`clinical/children/${kid}/plans`), therapist, {
+      service: 'speech', title: 'Historical unmeasured goal formatting',
+    }).expect(201)).body.versionId as string;
+    const goal = { key: 'legacy-unmeasured', title: 'Valid initial goal', measure: 'count', baseline: 0, target: 2 };
+    const planPath = c(`clinical/plan-versions/${versionId}`);
+    await patch(therapist, planPath, {
+      summary: 'Original draft', goals: [goal], homeActivities: [], version: 1,
+    }).expect(200);
+    const historicTitle = ' ' + 'Z'.repeat(248) + ' ';
+    await h.prisma.planVersion.update({ where: { id: versionId }, data: {
+      goals: [{ ...goal, title: historicTitle }],
+    } });
+    await patch(therapist, planPath, {
+      summary: 'A summary-only change', goals: [{ ...goal, title: historicTitle.trim() }],
+      homeActivities: [], version: 2,
+    }).expect(200);
+    const saved = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: versionId } });
+    expect((saved.goals as Array<{ title: string }>)[0].title).toBe(historicTitle);
+  });
+
+  it('M2-H05 Codex P2: measured 250-character legacy title can round-trip; new long titles fail', async () => {
+    const { therapist, kid } = await setup();
+    const versionId = (await post(h, c(`clinical/children/${kid}/plans`), therapist, {
+      service: 'speech', title: 'Long legacy goal title compatibility',
+    }).expect(201)).body.versionId as string;
+    const goal = { key: 'legacy-long', title: 'Original synthetic title', measure: 'count', baseline: 0, target: 8 };
+    const planPath = c(`clinical/plan-versions/${versionId}`);
+    await patch(therapist, planPath, {
+      summary: 'Initial draft', goals: [goal], homeActivities: [], version: 1,
+    }).expect(200);
+    const legacyTitle = 'L'.repeat(250); // Accepted by the former 300-character DTO.
+    // Materialize a historical import before it becomes immutable.
+    await h.prisma.planVersion.update({ where: { id: versionId }, data: {
+      goals: [{ ...goal, title: legacyTitle }],
+    } });
+    await post(h, c(`clinical/children/${kid}/observations`), therapist, {
+      planVersionId: versionId, goalKey: goal.key, value: 2, observedOn: '2026-10-18',
+    }).expect(201);
+    await patch(therapist, planPath, {
+      summary: 'Clinician summary revised without goal change',
+      goals: [{ ...goal, title: legacyTitle }], homeActivities: [], version: 2,
+    }).expect(200);
+    const saved = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: versionId } });
+    expect((saved.goals as Array<{ title: string }>)[0].title).toBe(legacyTitle);
+    await patch(therapist, planPath, {
+      summary: 'Cannot add a new long goal', goals: [
+        { ...goal, title: legacyTitle },
+        { key: 'new-long', title: 'N'.repeat(250), measure: 'count', baseline: 0, target: 1 },
+      ], homeActivities: [], version: 3,
+    }).expect(400);
+  });
+
+  it('M2-H05 Codex P2: a measured legacy goal with whitespace title can round-trip without redefinition', async () => {
+    const { therapist, kid } = await setup();
+    const versionId = (await post(h, c(`clinical/children/${kid}/plans`), therapist, {
+      service: 'speech', title: 'Legacy draft goal compatibility',
+    }).expect(201)).body.versionId as string;
+    const goal = { key: 'legacy', title: 'Names familiar objects', measure: 'count', baseline: 0, target: 8 };
+    const planPath = c(`clinical/plan-versions/${versionId}`);
+    await patch(therapist, planPath, {
+      summary: 'Original synthetic draft', goals: [goal], homeActivities: [], version: 1,
+    }).expect(200);
+    // Model a legacy import BEFORE the first measurement: the database
+    // correctly forbids rewriting a goal definition after observation.
+    await h.prisma.planVersion.update({ where: { id: versionId }, data: {
+      goals: [{ ...goal, title: '  Names familiar objects  ' }],
+    } });
+    await post(h, c(`clinical/children/${kid}/observations`), therapist, {
+      planVersionId: versionId, goalKey: 'legacy', value: 2, observedOn: '2026-10-18',
+    }).expect(201);
+    await patch(therapist, planPath, {
+      summary: 'Summary-only revision after import', goals: [goal], homeActivities: [], version: 2,
+    }).expect(200);
+    const saved = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: versionId } });
+    expect((saved.goals as Array<{ title: string }>)[0].title).toBe('  Names familiar objects  ');
+    expect(saved.summary).toBe('Summary-only revision after import');
+    await patch(therapist, planPath, {
+      summary: 'Must not redefine measured goal',
+      goals: [{ ...goal, title: 'Renamed goal should fail' }], homeActivities: [], version: 3,
+    }).expect(409);
+  });
+
+  it('records non-authorizing therapist goal checkpoints with exact saved observation sources', async () => {
+    const { therapist, other, sup, kid, rosa } = await setup();
+    const created = (await post(h, c(`clinical/children/${kid}/plans`), therapist, {
+      service: 'speech', title: 'Synthetic dated goal review'
+    }).expect(201)).body;
+    const verId = created.versionId;
+    await patch(therapist, c('clinical/plan-versions/' + verId), {
+      summary: 'Synthetic goal plan only', goals: [
+        { key: 'check', title: 'Names familiar pictures', measure: 'count', baseline: 1, target: 8 },
+        { key: 'other', title: 'Uses complete phrases', measure: 'count', baseline: 2, target: 10 },
+        { key: 'review-only', title: 'Plans a practice routine', measure: 'count', baseline: 0, target: 5 },
+      ], homeActivities: [], version: 1,
+    }).expect(200);
+    const observe = async (goalKey: string) => (await post(h,
+      c(`clinical/children/${kid}/observations`), therapist, {
+        planVersionId: verId, goalKey, value: 3, observedOn: '2026-10-18',
+      }).expect(201)).body.id as string;
+    const exactSource = await observe('check');
+    const unrelatedSource = await observe('other');
+    const path = c(`clinical/plan-versions/${verId}/goal-checkpoints`);
+    const body = { goalKey: 'check', reviewedOn: '2026-10-18',
+      summary: 'Examined one recorded source; more observation visits may be needed.',
+      observationIds: [exactSource], version: 2 };
+    await post(h, path, other, body).expect(404);
+    await post(h, path, sup, body).expect(403);
+    await post(h, path, admin, body).expect(403);
+    await post(h, path, rosa, body).expect(403);
+    await post(h, path, therapist, { ...body, goalKey: 'not-in-plan' }).expect(422);
+    await post(h, path, therapist, { ...body, observationIds: [unrelatedSource] }).expect(422);
+    await post(h, path, therapist, { ...body, observationIds: [exactSource, exactSource] }).expect(422);
+    await post(h, path, therapist, { ...body, reviewedOn: '2026-02-30' }).expect(400);
+    await post(h, path, therapist, { ...body, reviewedOn: '2026-11-02' }).expect(422);
+    await post(h, path, therapist, { ...body, summary: 'short' }).expect(400);
+    const receipt = (await post(h, path, therapist, body).expect(200)).body;
+    expect(receipt).toMatchObject({
+      persisted: true, version: 3, released: false, clinicalAuthorization: false,
+    });
+    await post(h, path, therapist, body).expect(409); // CAS: no double append
+    const saved = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: verId } });
+    const checkpoints = (saved.reviewNotes as any[]).filter(n => n.kind === 'GOAL_CHECKPOINT');
+    expect(checkpoints).toHaveLength(1);
+    expect(checkpoints[0]).toMatchObject({
+      goalKey: 'check', reviewedOn: '2026-10-18',
+      observationIds: [exactSource], summary: body.summary,
+      clinicalAuthorization: false, released: false,
+    });
+    expect(saved.goals).toHaveLength(3);
+    expect(await h.prisma.observation.count({ where: { planVersionId: verId } })).toBe(2);
+    const read = (await get(sup, c('clinical/children/' + kid)).expect(200)).body;
+    expect(read.plans[0].versions[0].goalCheckpoints).toEqual([
+      expect.objectContaining({ goalKey: 'check', observationIds: [exactSource] }),
+    ]);
+    expect(read.plans[0].versions[0].reviewNotes).toEqual([]);
+    await get(rosa, c('clinical/children/' + kid)).expect(403);
+    // Ordinary centre/admin event timelines must not expose even goal keys,
+    // review dates or source counts from the protected clinical review ledger.
+    expect(await h.prisma.centerEvent.count({
+      where: { centerId, type: 'clinical.goal_checkpoint_recorded' },
+    })).toBe(0);
+    // It is already Oct 20 at the Berlin centre, although still Oct 19 UTC:
+    // a therapist may record the centre-local day, not UTC midnight's day.
+    h.clock.t = Date.parse('2026-10-19T22:30:00Z');
+    // The synthetic test jumps past the original login session expiry.
+    // Refresh authentication so date validation, not 401, is exercised.
+    const midnightTherapist = await signIn(h, 'thera@clin.test');
+    await post(h, path, midnightTherapist, { ...body,
+      goalKey: 'review-only', reviewedOn: '2026-10-21',
+      observationIds: [], version: 3 }).expect(422);
+    await post(h, path, midnightTherapist, { ...body,
+      goalKey: 'review-only', reviewedOn: '2026-10-20',
+      summary: 'Reviewed the unsampled objective definition; no observations yet.',
+      observationIds: [], version: 3 }).expect(200);
+    // Narrative-only checkpoints must also freeze their exact goal definition.
+    await patch(midnightTherapist, c('clinical/plan-versions/' + verId), {
+      summary: 'Synthetic goal plan only', version: 4, homeActivities: [],
+      goals: [
+        { key: 'check', title: 'Names familiar pictures', measure: 'count', baseline: 1, target: 8 },
+        { key: 'other', title: 'Uses complete phrases', measure: 'count', baseline: 2, target: 10 },
+      ],
+    }).expect(409);
+    // Specialty revocation without care-assignment removal is still a denial.
+    await h.prisma.membership.update({
+      where: { id: therapist.body.activeContext.membershipId },
+      data: { specialties: [] },
+    });
+    await post(h, path, midnightTherapist, { ...body, version: 4 }).expect(404);
+
+  });
 
   it('Child360 includes authorized upcoming visits beyond tomorrow within its explicit 42-day window', async () => {
     const { therapist, other, sup, kid } = await setup();
@@ -108,6 +385,89 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     expect(invalid.childWideReferentStatus).toBe('UNAVAILABLE');
   });
 
+  it('retains optional short/long-term goal dates and scoped weekly/monthly home schedules in saved plan versions', async () => {
+    const { therapist, other, sup, kid, rosa } = await setup();
+    const template = await h.prisma.activityTemplate.create({
+      data: {
+        centerId, service: 'speech', title: 'Synthetic home picture practice', ageBand: '6-8',
+        minutes: 10, materials: ['cards'], steps: ['Practice'], safety: ['Adult supports'],
+        createdAt: h.clock.now(),
+      },
+    });
+    const plan = (await post(h, c(`clinical/children/${kid}/plans`), therapist,
+      { service: 'speech', title: 'Dated objectives and home schedule' }).expect(201)).body;
+    const url = c(`clinical/plan-versions/${plan.versionId}`);
+    const goal = {
+      key: 'naming', title: 'Names familiar pictures', measure: 'count',
+      baseline: 1, target: 8, horizon: 'SHORT_TERM',
+      targetOn: '2027-03-15', reviewOn: '2026-12-15',
+    };
+    const activity = {
+      templateId: template.id, goalKey: 'naming', frequency: 'Weekly calendar draft',
+      schedule: { cadence: 'WEEKLY', startsOn: '2026-10-19', endsOn: '2026-12-16', weekdays: [1, 3] },
+    };
+    const update = { summary: 'Synthetic, unapproved draft with dated objectives', goals: [goal], homeActivities: [activity], version: 1 };
+    await patch(therapist, url, { ...update, goals: [{ ...goal, measure: 'percent', target: 101 }] }).expect(400);
+    await patch(therapist, url, { ...update, goals: [{ ...goal, measure: 'percent', baseline: -1 }] }).expect(400);
+    await patch(therapist, url, { ...update, goals: [{ ...goal, targetOn: '2027-02-30' }] }).expect(400);
+    await patch(therapist, url, { ...update, goals: [{ ...goal, reviewOn: '2027-02-29' }] }).expect(400);
+    await patch(therapist, url, { ...update, goals: [{ ...goal, horizon: 'VERY_LONG' }] }).expect(400);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
+      schedule: { ...activity.schedule, weekdays: [1, 1] } }] }).expect(422);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
+      schedule: { ...activity.schedule, weekdays: [] } }] }).expect(400);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
+      schedule: { ...activity.schedule, monthDay: 10 } }] }).expect(422);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
+      schedule: { ...activity.schedule, endsOn: '2025-12-01' } }] }).expect(422);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
+      schedule: { ...activity.schedule, endsOn: '2028-12-01' } }] }).expect(422);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
+      schedule: { cadence: 'MONTHLY', startsOn: '2026-10-01', endsOn: '2027-03-31', weekdays: [1] } }] }).expect(422);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
+      schedule: { cadence: 'MONTHLY', startsOn: '2027-02-01', endsOn: '2027-02-28', monthDay: 31 } }] }).expect(422);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity,
+      schedule: { cadence: 'WEEKLY', startsOn: '2026-10-19', endsOn: '2026-10-19', weekdays: [2] } }] }).expect(422);
+
+    // TB-EM-047: validate optional per-plan duration at the HTTP boundary.
+    // Explicit null must be rejected, not saved as a hidden/invalid override.
+    for (const badDuration of [null, 0, 121, 10.5, -1]) {
+      await patch(therapist, url, { ...update, homeActivities: [{ ...activity, durationMinutes: badDuration }] }).expect(400);
+    }
+    expect((await h.prisma.planVersion.findUniqueOrThrow({ where: { id: plan.versionId } })).version).toBe(1);
+    await patch(other, url, update).expect(404);
+    await patch(sup, url, update).expect(403);
+    await patch(therapist, url, { ...update, homeActivities: [{ ...activity, durationMinutes: 7 }] }).expect(200);
+    const current = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: plan.versionId } });
+    expect(current.version).toBe(2);
+    expect(current.goals).toEqual([goal]);
+    expect(current.homeActivities).toEqual([expect.objectContaining({
+      templateId: template.id, goalKey: 'naming', schedule: activity.schedule, durationMinutes: 7,
+      snapshot: expect.objectContaining({ title: 'Synthetic home picture practice', minutes: 10, safety: ['Adult supports'] }),
+    })]);
+    const viewed = (await get(sup, c(`clinical/children/${kid}`)).expect(200)).body;
+    expect(viewed.plans[0].versions[0].goals).toEqual([goal]);
+    expect(viewed.plans[0].versions[0].homeActivities[0].schedule).toEqual(activity.schedule);
+    expect(viewed.plans[0].versions[0].homeActivities[0].durationMinutes).toBe(7);
+    await get(rosa, c(`clinical/children/${kid}`)).expect(403);
+    expect(JSON.stringify((await get(rosa, c('family/activities')).expect(200)).body))
+      .not.toContain('Synthetic home picture practice');
+
+    const longTerm = { ...goal, horizon: 'LONG_TERM', targetOn: '2028-02-29' };
+    const monthly = {
+      ...activity, frequency: 'Monthly calendar draft',
+      schedule: { cadence: 'MONTHLY', startsOn: '2026-10-01', endsOn: '2027-03-31', monthDay: 31 },
+    };
+    await patch(therapist, url, { summary: update.summary, goals: [longTerm], homeActivities: [monthly], version: 2 }).expect(200);
+    const updated = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: plan.versionId } });
+    expect(updated.goals).toEqual([longTerm]);
+    expect(updated.homeActivities).toEqual([expect.objectContaining({ schedule: monthly.schedule })]);
+    const cleared = (updated.homeActivities as unknown as Array<{ durationMinutes?: number; snapshot: { minutes: number } }>)[0];
+    expect(cleared.durationMinutes).toBeUndefined();
+    expect(cleared.snapshot.minutes).toBe(10);
+    expect(await h.prisma.observation.count({ where: { planVersionId: plan.versionId } })).toBe(0);
+  });
+
   it('supports scoped activity duplication and author-only versioned edits without exposing global samples', async () => {
     const { therapist, other, sup, rosa } = await setup();
     const ot = await staff('ot-library@clin.test', ['THERAPIST'], ['occupational']);
@@ -118,14 +478,14 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     };
     // A therapist may only author an activity in an active declared specialty.
     await post(h, c('activities'), ot, data).expect(403);
-    await post(h, c('activities'), therapist, { ...data, title: '    ' }).expect(422);
+    await post(h, c('activities'), therapist, { ...data, title: '    ' }).expect(400);
     await post(h, c('activities'), admin, data).expect(403);
     const originalId = (await post(h, c('activities'), therapist, data).expect(201)).body.id;
     const original = await h.prisma.activityTemplate.findUniqueOrThrow({ where: { id: originalId } });
     expect(original).toMatchObject({ title: data.title, service: 'speech', version: 1, centerId });
 
     // A different therapist can copy but cannot overwrite the original author.
-    await post(h, c(`activities/${originalId}/duplicate`), other, { title: '    ' }).expect(422);
+    await post(h, c(`activities/${originalId}/duplicate`), other, { title: '    ' }).expect(400);
     const copy = (await post(h, c(`activities/${originalId}/duplicate`), other, {
       title: 'Personalized speech copy',
     }).expect(201)).body;
@@ -141,7 +501,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     const { service, ...editable } = data;
     const update = { ...editable, title: 'Author edited speech activity', version: 1 };
     await patch(other, c(`activities/${originalId}`), update).expect(403);
-    await patch(therapist, c(`activities/${originalId}`), { ...update, title: '    ' }).expect(422);
+    await patch(therapist, c(`activities/${originalId}`), { ...update, title: '    ' }).expect(400);
     const saved = await patch(therapist, c(`activities/${originalId}`), update).expect(200);
     expect(saved.body).toMatchObject({ id: originalId, version: 2 });
     await patch(therapist, c(`activities/${originalId}`), update).expect(409);
@@ -403,7 +763,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     });
   });
 
-  it.each(['staging', 'production'])('denies all existing synthetic message routes in %s with demo flag enabled', async (environment) => {
+  it.each(['local', 'preview', 'development', 'staging', 'production'])('denies all existing synthetic message routes in %s with demo flag enabled', async (environment) => {
     const { therapist, kid, link, rosa } = await setup();
     const threadId = (await post(h, c('threads'), therapist, {
       childId: kid, guardianLinkId: link, category: 'scheduling',
@@ -427,7 +787,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
       ];
       for (const attempt of attempts) {
         const response = await attempt().expect(403);
-        expect(response.body.message).toMatch(/synthetic demonstration/);
+        expect(response.body.message).toMatch(/synthetic demonstration|role does not include/);
       }
     } finally {
       if (oldEnvironment === undefined) delete process.env.DEPLOYMENT_ENV;
@@ -547,6 +907,21 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     }
   });
 
+  it('revokes guardian access to pre-existing message history without touching archived content', async () => {
+    const { therapist, kid, link, rosa } = await setup();
+    const threadId = (await post(h, c('threads'), therapist, {
+      childId: kid, guardianLinkId: link, category: 'scheduling',
+      subject: 'Historical synthetic coordination', body: 'Original non-clinical message',
+    }).expect(201)).body.id;
+    expect((await get(rosa, c('threads')).expect(200)).body.items.map((t: { id: string }) => t.id)).toContain(threadId);
+    const before = await h.prisma.message.count({ where: { threadId } });
+    await post(h, c(`children/${kid}/guardians/${link}/remove`), admin, { reason: 'Synthetic custody boundary test' }).expect(200);
+    expect((await get(rosa, c('threads')).expect(200)).body.items).toHaveLength(0);
+    await get(rosa, c(`threads/${threadId}`)).expect(404);
+    await post(h, c(`threads/${threadId}/messages`), rosa, { body: 'Revoked access attempt' }).expect(404);
+    expect(await h.prisma.message.count({ where: { threadId } })).toBe(before);
+  });
+
   it('messages are recipient-specific, demo-gated, and blocked after trial expiry while consented reminders continue', async () => {
     const { therapist, kid, link, rosa } = await setup();
     await post(h, c(`children/${kid}/guardians`), admin, { displayName: 'Dan Stone', email: 'dan@family.test', relationship: 'father', invite: true }).expect(201);
@@ -557,7 +932,7 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     expect((await get(dan, c('threads')).expect(200)).body.items).toHaveLength(0);
     await get(dan, c(`threads/${t}`)).expect(404);
     process.env.FAMILY_MESSAGING_DEMO = 'false';
-    expect((await post(h, c(`threads/${t}/messages`), rosa, { body: 'hi' }).expect(403)).body.message).toMatch(/synthetic demonstration/);
+    expect((await post(h, c(`threads/${t}/messages`), rosa, { body: 'hi' }).expect(403)).body.message).toMatch(/synthetic demonstration|role does not include/);
     for (const viewer of [rosa, therapist, admin]) {
       await get(viewer, c('threads')).expect(403);
       await get(viewer, c(`threads/${t}`)).expect(403);

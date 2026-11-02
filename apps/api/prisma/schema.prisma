@@ -88,6 +88,12 @@ model User {
   tokens          VerificationToken[]
   memberships     Membership[]
   platformRoles   PlatformRoleAssignment[] @relation("PlatformRoleHolder")
+  authoredPlanVersions PlanVersion[]
+  createdTherapyPlans TherapyPlan[]
+  snapshotAuthors GovernanceSnapshot[] @relation("SnapshotAuthor")
+  snapshotGenerators GovernanceSnapshot[] @relation("SnapshotGenerator")
+  createdConsentDrafts ConsentRecordDraft[]
+  createdTransferDrafts CaseloadTransferDraft[]
 
   @@map("app_user")
 }
@@ -177,6 +183,8 @@ model Center {
   slug          String             @unique @db.VarChar(64)
   name          String             @db.VarChar(160)
   status        CenterStatus       @default(ACTIVE)
+  // Dedicated server-controlled TB-EM-053 flag; no center-admin route may set it.
+  syntheticFamilyReleaseEnabled Boolean @default(false) @map("synthetic_family_release_enabled")
   timezone      String             @db.VarChar(64)
   country       String?            @db.VarChar(80)
   city          String?            @db.VarChar(80)
@@ -188,6 +196,7 @@ model Center {
   trialEndsAt   DateTime?          @map("trial_ends_at") @db.Timestamptz(3)
   children      Child[]
   guardianLinks GuardianLink[]
+  homePlanRequests HomePlanRequest[]
   appointments  Appointment[]
   createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -196,6 +205,15 @@ model Center {
   invitations   Invitation[]
   events        CenterEvent[]
   setupSteps    CenterSetupStep[]
+  assessments   Assessment[]
+  therapyPlans  TherapyPlan[]
+  planVersions  PlanVersion[]
+  sessionNotes  SessionNote[]
+  observations  Observation[]
+  progressReports ProgressReport[]
+  governanceSnapshots GovernanceSnapshot[]
+  transferDrafts CaseloadTransferDraft[]
+  consentRecordDrafts ConsentRecordDraft[]
 
   @@map("center")
 }
@@ -218,6 +236,13 @@ model Membership {
   referredChildren Child[]          @relation("ChildReferent")
   roles            RoleAssignment[]
   sessions         Session[]
+  answeredHomePlanRequests HomePlanRequest[] @relation("HomePlanRequestResponder")
+  assessments Assessment[]
+  sessionNotes SessionNote[]
+  observations Observation[]
+  progressReports ProgressReport[]
+  transfersFrom CaseloadTransferDraft[] @relation("TransferFrom")
+  transfersTo CaseloadTransferDraft[] @relation("TransferTo")
 
   @@unique([userId, centerId])
   @@map("membership")
@@ -378,8 +403,17 @@ model Child {
   referentHistory ChildReferentHistory[]
   guardians     GuardianLink[]
   assignments   CareAssignment[]
+  homePlanRequests HomePlanRequest[]
   appointments  Appointment[]
   threads       MessageThread[]
+  assessments   Assessment[]
+  therapyPlans  TherapyPlan[]
+  sessionNotes  SessionNote[]
+  observations  Observation[]
+  progressReports ProgressReport[]
+  governanceSnapshots GovernanceSnapshot[]
+  transferDrafts CaseloadTransferDraft[]
+  consentRecordDrafts ConsentRecordDraft[]
 
   @@index([centerId, status])
   @@map("child")
@@ -416,11 +450,15 @@ model GuardianLink {
   remindersEnabled Boolean @default(true) @map("reminders_enabled")
   userId       String?   @map("user_id") @db.Uuid
   removedAt    DateTime? @map("removed_at") @db.Timestamptz(3)
+  // Default unresolved: never infer custody or household authority from linkage.
+  familyReleaseRestriction String @default("UNRESOLVED") @map("family_release_restriction") @db.VarChar(16)
+  householdReference String? @map("household_reference") @db.VarChar(80)
   createdAt    DateTime  @map("created_at") @db.Timestamptz(3)
   center       Center    @relation(fields: [centerId], references: [id], onDelete: Restrict)
   child        Child     @relation(fields: [childId], references: [id], onDelete: Restrict)
   threads      MessageThread[]
   practiceOutcomes PracticeOutcome[]
+  homePlanRequests HomePlanRequest[]
 
   @@index([userId])
   @@map("guardian_link")
@@ -438,6 +476,7 @@ model CareAssignment {
   child        Child     @relation(fields: [childId], references: [id], onDelete: Restrict)
 
   @@index([membershipId])
+  @@index([centerId, membershipId, endedAt], map: "care_assignment_center_member_active_idx")
   @@map("care_assignment")
 }
 
@@ -467,6 +506,7 @@ model Appointment {
   @@index([centerId, startsAt])
   @@index([membershipId, startsAt])
   @@index([childId, startsAt])
+  @@index([centerId, childId, status, startsAt], map: "appointment_center_child_status_start_idx")
   @@map("appointment")
 }
 
@@ -501,6 +541,7 @@ model AppointmentSeries {
   appointments  Appointment[]
 
   @@index([centerId, childId])
+  @@index([centerId, status], map: "appointment_series_center_status_idx")
   @@map("appointment_series")
 }
 
@@ -583,6 +624,9 @@ model Assessment {
   version      Int      @default(1)
   createdAt    DateTime @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime @map("updated_at") @db.Timestamptz(3)
+  center       Center   @relation(fields: [centerId], references: [id], onDelete: Restrict, map: "assessment_center_fk")
+  child        Child    @relation(fields: [childId], references: [id], onDelete: Restrict, map: "assessment_child_fk")
+  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Restrict, map: "assessment_membership_fk")
 
   @@index([centerId, childId])
   @@map("assessment")
@@ -597,6 +641,9 @@ model TherapyPlan {
   createdById String      @map("created_by_id") @db.Uuid
   createdAt DateTime      @map("created_at") @db.Timestamptz(3)
   versions  PlanVersion[]
+  center    Center        @relation(fields: [centerId], references: [id], onDelete: Restrict, map: "therapy_plan_center_fk")
+  child     Child         @relation(fields: [childId], references: [id], onDelete: Restrict, map: "therapy_plan_child_fk")
+  creator   User          @relation(fields: [createdById], references: [id], onDelete: Restrict, map: "therapy_plan_creator_fk")
 
   @@index([centerId, childId])
   @@map("therapy_plan")
@@ -617,6 +664,8 @@ model PlanVersion {
   createdAt      DateTime    @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime    @map("updated_at") @db.Timestamptz(3)
   plan           TherapyPlan @relation(fields: [planId], references: [id], onDelete: Restrict)
+  center         Center      @relation(fields: [centerId], references: [id], onDelete: Restrict, map: "plan_version_center_fk")
+  author         User        @relation(fields: [authorId], references: [id], onDelete: Restrict, map: "plan_version_author_fk")
 
   @@unique([planId, number])
   @@map("plan_version")
@@ -643,6 +692,9 @@ model SessionNote {
   version       Int      @default(1)
   createdAt     DateTime @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime @map("updated_at") @db.Timestamptz(3)
+  center        Center   @relation(fields: [centerId], references: [id], onDelete: Restrict, map: "session_note_center_fk")
+  child         Child    @relation(fields: [childId], references: [id], onDelete: Restrict, map: "session_note_child_fk")
+  membership    Membership @relation(fields: [membershipId], references: [id], onDelete: Restrict, map: "session_note_membership_fk")
 
   @@index([centerId, childId])
   @@map("session_note")
@@ -660,6 +712,9 @@ model Observation {
   observedOn    DateTime @map("observed_on") @db.Date
   note          String?  @db.VarChar(500)
   createdAt     DateTime @map("created_at") @db.Timestamptz(3)
+  center        Center   @relation(fields: [centerId], references: [id], onDelete: Restrict, map: "observation_center_fk")
+  child         Child    @relation(fields: [childId], references: [id], onDelete: Restrict, map: "observation_child_fk")
+  membership    Membership @relation(fields: [membershipId], references: [id], onDelete: Restrict, map: "observation_membership_fk")
 
   @@index([childId, goalKey, observedOn])
   @@map("observation")
@@ -708,6 +763,29 @@ model PracticeOutcome {
   @@map("practice_outcome")
 }
 
+
+// TB-EM-048: structured SYNTHETIC operational request, never a released care plan.
+model HomePlanRequest {
+  id            String    @id @default(uuid()) @db.Uuid
+  centerId      String    @map("center_id") @db.Uuid
+  childId       String    @map("child_id") @db.Uuid
+  guardianLinkId String   @map("guardian_link_id") @db.Uuid
+  requestKey    String    @unique @map("request_key") @db.Uuid
+  service       String    @db.VarChar(32)
+  status        String    @default("PENDING") @db.VarChar(32)
+  createdAt     DateTime  @map("created_at") @db.Timestamptz(3)
+  respondedAt   DateTime? @map("responded_at") @db.Timestamptz(3)
+  respondedById String?   @map("responded_by_id") @db.Uuid
+  center        Center    @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  child         Child     @relation(fields: [childId], references: [id], onDelete: Restrict)
+  guardianLink  GuardianLink @relation(fields: [guardianLinkId], references: [id], onDelete: Restrict)
+  responder     Membership? @relation("HomePlanRequestResponder", fields: [respondedById], references: [id], onDelete: Restrict)
+
+  @@index([centerId, childId, service, status])
+  @@index([guardianLinkId, createdAt])
+  @@map("home_plan_request")
+}
+
 // TB-EM-009 progress reports. Drafts, immutable versions and future release records are separate tables.
 model ProgressReport {
   id           String          @id @default(uuid()) @db.Uuid
@@ -727,8 +805,12 @@ model ProgressReport {
   versions     ReportVersion[]
   releases     ReportRelease[]
   suggestionDecisions ReportSuggestionDecision[]
+  center       Center          @relation(fields: [centerId], references: [id], onDelete: Restrict, map: "progress_report_center_fk")
+  child        Child           @relation(fields: [childId], references: [id], onDelete: Restrict, map: "progress_report_child_fk")
+  membership   Membership     @relation(fields: [membershipId], references: [id], onDelete: Restrict, map: "progress_report_membership_fk")
 
   @@index([centerId, childId])
+  @@index([centerId, childId, status], map: "progress_report_center_child_status_idx")
   @@map("progress_report")
 }
 
@@ -809,6 +891,10 @@ model GovernanceSnapshot {
   authorId String @map("author_id") @db.Uuid
   generatedById String @map("generated_by_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  center Center @relation(fields: [centerId], references: [id], onDelete: Restrict, map: "governance_snapshot_center_fk")
+  child Child @relation(fields: [childId], references: [id], onDelete: Restrict, map: "governance_snapshot_child_fk")
+  author User @relation("SnapshotAuthor", fields: [authorId], references: [id], onDelete: Restrict, map: "governance_snapshot_author_fk")
+  generator User @relation("SnapshotGenerator", fields: [generatedById], references: [id], onDelete: Restrict, map: "governance_snapshot_generator_fk")
   @@index([centerId, kind, documentId])
   @@map("governance_snapshot")
 }
@@ -826,6 +912,7 @@ model GovernanceHistory {
   snapshotId String @map("snapshot_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   @@index([centerId, kind, documentId])
+  @@index([centerId, kind, documentId, createdAt], map: "governance_history_center_doc_created_idx")
   @@map("governance_history")
 }
 model ConsentPolicyDraft {
@@ -857,6 +944,9 @@ model ConsentRecordDraft {
   authorizes Boolean @default(false)
   createdById String @map("created_by_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  center Center @relation(fields: [centerId], references: [id], onDelete: Restrict, map: "consent_record_draft_center_fk")
+  child Child @relation(fields: [childId], references: [id], onDelete: Restrict, map: "consent_record_draft_child_fk")
+  creator User @relation(fields: [createdById], references: [id], onDelete: Restrict, map: "consent_record_draft_creator_fk")
   @@index([centerId, childId, guardianLinkId])
   @@map("consent_record_draft")
 }
@@ -875,6 +965,16 @@ model RecipientRelease {
   decisionId String @map("decision_id") @db.Uuid
   guardianLinkId String @map("guardian_link_id") @db.Uuid
   status String @default("BLOCKED_POLICY") @db.VarChar(32)
+  kind String @default("REPORT") @db.VarChar(8)
+  purpose String @default("") @db.VarChar(120)
+  approvedRenderingHash String? @map("approved_rendering_hash") @db.Char(64)
+  approvedById String? @map("approved_by_id") @db.Uuid
+  releasedById String? @map("released_by_id") @db.Uuid
+  releasedAt DateTime? @map("released_at") @db.Timestamptz(3)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  @@index([centerId, childId, guardianLinkId, status])
+  @@index([centerId, snapshotId, status])
   @@map("recipient_release")
 }
 model RecipientReleaseHistory {
@@ -886,6 +986,58 @@ model RecipientReleaseHistory {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   @@map("recipient_release_history")
 }
+
+// TB-EM-053 owner-approved synthetic-only release workflow. The historical
+// ClinicalAuthorizationDecision/RecipientRelease/ConsentRecordDraft gates stay
+// locked; these explicitly separated records are NOT production attestations.
+model SyntheticFamilyApproval {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  childId String @map("child_id") @db.Uuid
+  snapshotId String @map("snapshot_id") @db.Uuid
+  kind String @db.VarChar(8)
+  purpose String @db.VarChar(32)
+  rendering Json
+  renderingHash String @map("rendering_hash") @db.Char(64)
+  approvedById String @map("approved_by_id") @db.Uuid
+  approvedAt DateTime @default(now()) @map("approved_at") @db.Timestamptz(3)
+  @@unique([centerId, snapshotId, renderingHash])
+  @@index([centerId, childId, snapshotId])
+  @@map("synthetic_family_approval")
+}
+
+model SyntheticFamilyConsent {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  childId String @map("child_id") @db.Uuid
+  guardianLinkId String @map("guardian_link_id") @db.Uuid
+  purpose String @db.VarChar(32)
+  status String @default("ACTIVE") @db.VarChar(12)
+  actorUserId String @map("actor_user_id") @db.Uuid
+  revision Int @default(0)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
+  @@index([centerId, childId, guardianLinkId, purpose, status])
+  @@unique([centerId, childId, guardianLinkId, purpose, revision], map: "synthetic_family_consent_revision_key")
+  @@map("synthetic_family_consent")
+}
+
+model SyntheticFamilyGrant {
+  id String @id @default(uuid()) @db.Uuid
+  centerId String @map("center_id") @db.Uuid
+  childId String @map("child_id") @db.Uuid
+  approvalId String @map("approval_id") @db.Uuid
+  guardianLinkId String @map("guardian_link_id") @db.Uuid
+  purpose String @db.VarChar(32)
+  status String @default("ACTIVE") @db.VarChar(16)
+  releasedById String @map("released_by_id") @db.Uuid
+  releasedAt DateTime @default(now()) @map("released_at") @db.Timestamptz(3)
+  changedById String? @map("changed_by_id") @db.Uuid
+  changedAt DateTime? @map("changed_at") @db.Timestamptz(3)
+  @@unique([centerId, approvalId, guardianLinkId])
+  @@index([centerId, childId, guardianLinkId, status])
+  @@map("synthetic_family_grant")
+}
 model CaseloadTransferDraft {
   id String @id @default(uuid()) @db.Uuid
   centerId String @map("center_id") @db.Uuid
@@ -893,10 +1045,20 @@ model CaseloadTransferDraft {
   fromMembershipId String @map("from_membership_id") @db.Uuid
   toMembershipId String @map("to_membership_id") @db.Uuid
   service String @db.VarChar(32)
+  // Legacy SIMULATION_ONLY stores free-text simulation reason; new handover statuses
+  // store a fixed operational reason code. See migration 20261029100000.
   reason String @db.VarChar(1000)
   status String @default("SIMULATION_ONLY") @db.VarChar(32)
   createdById String @map("created_by_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  version Int @default(1)
+  center Center @relation(fields: [centerId], references: [id], onDelete: Restrict, map: "caseload_transfer_draft_center_fk")
+  child Child @relation(fields: [childId], references: [id], onDelete: Restrict, map: "caseload_transfer_draft_child_fk")
+  creator User @relation(fields: [createdById], references: [id], onDelete: Restrict, map: "caseload_transfer_draft_creator_fk")
+  fromMember Membership @relation("TransferFrom", fields: [fromMembershipId], references: [id], onDelete: Restrict, map: "caseload_transfer_draft_from_fk")
+  toMember Membership @relation("TransferTo", fields: [toMembershipId], references: [id], onDelete: Restrict, map: "caseload_transfer_draft_to_fk")
   @@index([centerId])
+  @@index([centerId, status, createdAt], map: "caseload_transfer_draft_center_status_created_idx")
+  @@index([centerId, toMembershipId, status, createdAt], map: "caseload_transfer_draft_center_target_status_created_idx")
   @@map("caseload_transfer_draft")
 }

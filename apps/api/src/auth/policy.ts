@@ -24,13 +24,17 @@ export const PERMISSIONS: Record<string, readonly Role[]> = {
   'center.children.manage': ['CENTER_ADMIN', 'COORDINATOR'],
   'center.families.manage': ['CENTER_ADMIN', 'COORDINATOR'],
   'center.assignments.manage': ['CENTER_ADMIN', 'COORDINATOR'],
+  'center.handover.read': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST'],
+  'center.handover.propose': ['CENTER_ADMIN', 'COORDINATOR'],
+  'center.handover.acknowledge': ['THERAPIST'],
+  'center.handover.cancel': ['CENTER_ADMIN', 'COORDINATOR'],
   'center.schedule.read': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'CLINICAL_SUPERVISOR'],
   'center.schedule.manage': ['CENTER_ADMIN', 'COORDINATOR'],
   'center.appointments.status': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST'],
   'family.portal.read': ['GUARDIAN'],
   'family.preferences.update': ['GUARDIAN'],
-  // Operational (non-clinical) messages; supervisors have no discussion access.
-  // Center managers use internal threads only; guardians converse exclusively with assigned therapists.
+  // D-NEW-5 UNSIGNED: these roles apply only to isolated Jest fixtures.
+  // Even an explicit FAMILY_MESSAGING_DEMO flag cannot enable production/demo traffic.
   'center.messages.use': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'GUARDIAN'],
   'center.messages.manage': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST'],
   'platform.reminders.run': ['PLATFORM_ADMIN'],
@@ -49,6 +53,11 @@ export const PERMISSIONS: Record<string, readonly Role[]> = {
   'center.practice.acknowledge': ['THERAPIST'],
   'family.practice.read': ['GUARDIAN'],
   'family.practice.record': ['GUARDIAN'],
+  // TB-EM-048: structured request/response ONLY; never clinical release or free-text messaging.
+  'family.home_plan_request.read': ['GUARDIAN'],
+  'family.home_plan_request.create': ['GUARDIAN'],
+  'center.home_plan_request.read': ['THERAPIST'],
+  'center.home_plan_request.respond': ['THERAPIST'],
 };
 
 // No clinical capability can be granted to anyone until an owner-approved clinical policy exists.
@@ -61,7 +70,19 @@ export const CLINICAL_CAPABILITIES = [
   'session.recording',
 ] as const;
 
+// D-NEW-5 is unsigned: no deployment flag can activate free-text messaging.
+// An isolated Jest/CI fixture may still verify historical scope and revocation rules.
+// Real environments (including local dev and hosted synthetic preview) always deny.
+export const syntheticMessagesTestFixtureOnly = (): boolean =>
+  process.env.NODE_ENV === 'test' &&
+  process.env.DEPLOYMENT_ENV === 'ci' &&
+  !!process.env.JEST_WORKER_ID &&
+  process.env.FAMILY_MESSAGING_DEMO === 'true';
+
 export function can(role: Role, permission: string): boolean {
+  if (permission === 'center.messages.use' || permission === 'center.messages.manage') {
+    if (!syntheticMessagesTestFixtureOnly()) return false;
+  }
   if ((CLINICAL_CAPABILITIES as readonly string[]).includes(permission)) return false;
   return PERMISSIONS[permission]?.includes(role) ?? false;
 }

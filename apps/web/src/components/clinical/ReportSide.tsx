@@ -1,12 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { History, MessageSquareText } from 'lucide-react';
 import { FormAlert } from '@/components/auth/Field';
 import { errorText } from '@/components/centers/kit';
 import { GoalChart, STATUS_TEXT } from '@/components/clinical/GoalChart';
+import { ReportStatementTrace } from './ReportStatementTrace';
+import { ReportEvidenceDiff } from './ReportEvidenceDiff';
 import { Button, Card, Pill } from '@/components/design/ui';
-import { KIND_LABEL, SECTIONS, reportsApi, type ReportDetail, type ReportVersion } from '@/lib/reports';
+import { KIND_LABEL, SECTIONS, reportsApi, type Evidence, type ReportDetail, type ReportVersion } from '@/lib/reports';
 
 const when = (s: string) => new Date(s).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
 
@@ -25,6 +28,13 @@ export function Evidence({ d }: { d: ReportDetail }) {
           <details className="mt-2 rounded-control border border-border-light p-2 text-[12px]" data-testid={`evidence-sources-${g.key}`}>
             <summary className="cursor-pointer font-semibold text-brand-action">Trace recorded evidence ({g.points.length} in period)</summary>
             <p className="mt-2 break-all text-brand-inkMuted">Plan version: {g.planVersionId??'Historical evidence snapshot'}</p>
+            {g.planVersionId && <Link
+              href={`/app/clinical/${d.report.childId}#plan?version=${encodeURIComponent(g.planVersionId)}&goal=${encodeURIComponent(g.key)}`}
+              className="mt-2 inline-flex min-h-[44px] items-center rounded-control px-2 font-semibold text-brand-action underline"
+              data-testid={`report-evidence-open-goal-${g.key}`}>
+              Locate this recorded goal in its therapy plan (permission required)
+            </Link>}
+            <p className="text-brand-inkMuted">The source may be a historical plan version. The current plan must never be substituted for its recorded measurements.</p>
             {g.points.length ? <ul className="mt-2 space-y-1">
               {g.points.map((point,i)=><li key={point.observationId??i} className="break-all">{point.date} · {point.value} {g.measure} · Observation {point.observationId??'source ID unavailable'}{point.sessionNoteId?' · Session '+point.sessionNoteId:''}</li>)}
             </ul> : <p className="mt-2">No recorded observation in this period.</p>}
@@ -93,7 +103,7 @@ export function HistoryList({ centerId, d, onError, onCompare }: { centerId: str
   );
 }
 
-export function Compare({ v, current, onClose }: { v: ReportVersion; current: Record<string, string>; onClose: () => void }) {
+export function Compare({ v, current, currentEvidence, childId, onClose }: { v: ReportVersion; current: Record<string, string>; currentEvidence: Evidence; childId: string; onClose: () => void }) {
   const changed = SECTIONS.filter(([k]) => (v.sections[k] ?? '') !== (current[k] ?? '')).length;
   return (
     <Card className="space-y-3 p-5" testId="report-compare">
@@ -101,6 +111,8 @@ export function Compare({ v, current, onClose }: { v: ReportVersion; current: Re
         <h2 className="text-[16px] font-semibold">Version {v.number} compared with the current draft</h2>
         <Button size="sm" variant="ghost" onClick={onClose} data-testid="compare-close">Close</Button>
       </div>
+      <ReportStatementTrace version={v} childId={childId} />
+      <ReportEvidenceDiff saved={v.evidence} current={currentEvidence} />
       <p className="text-[13px] text-brand-inkMuted" data-testid="compare-summary">{changed ? `${changed} of ${SECTIONS.length} sections changed since version ${v.number}.` : `No changes since version ${v.number}.`} Saved {when(v.createdAt)} by {v.author}.</p>
       {SECTIONS.map(([k, label]) => {
         const diff = (v.sections[k] ?? '') !== (current[k] ?? '');

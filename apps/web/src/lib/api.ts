@@ -5,6 +5,12 @@ export class ApiError extends Error {
     public readonly details?: Record<string, unknown>,
   ) {
     super(message);
+    this.name = 'ApiError';
+  }
+
+  /** Stable machine-readable API code, while retaining the complete response for existing callers. */
+  get code(): string | undefined {
+    return typeof this.details?.code === 'string' ? this.details.code : undefined;
   }
 }
 

@@ -2,15 +2,43 @@ import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Query, Req
 import type { FastifyReply } from 'fastify';
 import { RequirePermission, TbRequest } from '../auth/access';
 import type { Viewer } from '../operations/children.service';
-import { FeedbackQueryDto, OutcomeDto, PracticeWeekDto } from './clinical.dto';
+import { FeedbackQueryDto, OutcomeDto, PracticeWeekDto, HomePlanRequestDto, HomePlanRequestResponseDto } from './clinical.dto';
 import { PracticeService } from './practice.service';
+import { HomePlanRequestsService } from './home-plan-requests.service';
 
 const uuid = () => new ParseUUIDPipe();
 const viewer = (req: TbRequest): Viewer => ({ userId: req.auth!.session.userId, membershipId: req.auth!.session.activeMembershipId!, role: req.auth!.session.activeRole! });
 
 @Controller('centers/:centerId')
 export class PracticeController {
-  constructor(private readonly practice: PracticeService) {}
+  constructor(private readonly practice: PracticeService, private readonly requests: HomePlanRequestsService) {}
+
+  @Get('family/home-plan-requests')
+  @RequirePermission('family.home_plan_request.read')
+  guardianRequests(@Param('centerId', uuid()) c: string, @Req() req: TbRequest) {
+    return this.requests.guardianList(c, viewer(req));
+  }
+
+  @Post('family/home-plan-requests')
+  @HttpCode(200)
+  @RequirePermission('family.home_plan_request.create')
+  requestHomePlan(@Param('centerId', uuid()) c: string, @Body() dto: HomePlanRequestDto, @Req() req: TbRequest) {
+    return this.requests.create(c, viewer(req), dto);
+  }
+
+  @Get('clinical/home-plan-requests')
+  @RequirePermission('center.home_plan_request.read')
+  clinicianRequests(@Param('centerId', uuid()) c: string, @Req() req: TbRequest) {
+    return this.requests.clinicianList(c, viewer(req));
+  }
+
+  @Post('clinical/home-plan-requests/:id/respond')
+  @HttpCode(200)
+  @RequirePermission('center.home_plan_request.respond')
+  respondHomePlan(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string,
+    @Body() dto: HomePlanRequestResponseDto, @Req() req: TbRequest) {
+    return this.requests.respond(c, viewer(req), id, dto);
+  }
 
   @Get('family/practice')
   @RequirePermission('family.practice.read')

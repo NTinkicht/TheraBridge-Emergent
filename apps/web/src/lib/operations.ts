@@ -24,6 +24,24 @@ export interface ChildDetail {
   events: { id: number; type: string; actor: string | null; subject: string | null; meta: Record<string, unknown>; createdAt: string }[];
 }
 export interface ChildInput { firstName: string; lastName: string; preferredName?: string; dateOfBirth: string; services: string[] }
+export type HandoverStatus = 'PENDING_ACK' | 'ACKNOWLEDGED' | 'CANCELLED';
+export const HANDOVER_LABELS: Record<HandoverStatus, string> = {
+  PENDING_ACK: 'Awaiting incoming therapist receipt',
+  ACKNOWLEDGED: 'Receipt acknowledged — assignment unchanged',
+  CANCELLED: 'Proposal cancelled — assignment unchanged',
+};
+export interface HandoverProposal {
+  id: string; service: string; status: HandoverStatus; reasonCode: string;
+  createdAt: string; childId?: string; fromMembershipId?: string; toMembershipId?: string;
+  synthetic: true; accessGranted: false; assignmentChanged: false; clinicalHandover: false; released: false;
+}
+export interface HandoverInbox { enabled: boolean; synthetic: true; items: HandoverProposal[]; nextCancelledOffset?: number | null }
+export interface HandoverReadiness {
+  proposalId: string; childId: string; service: string; status: HandoverStatus; checkedAt: string;
+  synthetic: true; readonly: true; readyForTransfer: false; assignmentChanged: false;
+  accessGranted: false; clinicalHandover: false; released: false;
+  checks: { code: string; met: boolean; label: string }[];
+}
 export interface Therapist { membershipId: string; displayName: string; title: string | null; specialties: string[] }
 export interface Dashboard { dayStart: string; timezone: string; today: Appointment[]; counts: { activeChildren: number; unassigned: number; noGuardian: number; therapists: number; pendingInvites: number; upcomingWeek: number }; trial: Trial }
 export interface FamilyOverview {
@@ -48,7 +66,11 @@ export const opsApi = {
   extendTrial: (centerId: string, days: number, reason: string) => rest.send<Trial>('POST', `/api/platform/centers/${centerId}/trial/extend`, { days, reason }),
   dashboard: (centerId: string) => rest.get<Dashboard>(c(centerId, 'dashboard')).then((r) => { setCenterTz(r.timezone); return r; }),
   family: (centerId: string) => rest.get<FamilyOverview>(c(centerId, 'family')).then((r) => { setCenterTz(r.center.timezone); return r; }),
-  therapists: (centerId: string) => rest.get<{ items: Therapist[] }>(c(centerId, 'therapists')),
+  therapists: (centerId: string, options: { offset?: number; limit?: number; service?: string; search?: string; ids?: string } = {}) => {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(options)) if (value !== undefined && value !== '') query.set(key, String(value));
+    return rest.get<{ items: Therapist[]; hasMore: boolean; nextOffset: number | null }>(c(centerId, 'therapists' + (query.size ? '?' + query.toString() : '')));
+  },
   children: (centerId: string, q: { q?: string; status?: string }) => rest.get<{ items: ChildRow[] }>(`${c(centerId, 'children')}?${qs(q)}`),
   createChild: (centerId: string, body: ChildInput) => rest.send<{ id: string }>('POST', c(centerId, 'children'), body),
   child: (centerId: string, id: string) => rest.get<ChildDetail & { timezone: string }>(c(centerId, `children/${id}`)).then((r) => { setCenterTz(r.timezone); return r; }),
@@ -59,6 +81,21 @@ export const opsApi = {
     rest.send<{ id: string; connected: boolean; invited: boolean }>('POST', c(centerId, `children/${id}/guardians`), body),
   inviteGuardian: (centerId: string, id: string, linkId: string) => rest.send('POST', c(centerId, `children/${id}/guardians/${linkId}/invite`)),
   removeGuardian: (centerId: string, id: string, linkId: string, reason: string) => rest.send('POST', c(centerId, `children/${id}/guardians/${linkId}/remove`), { reason }),
+  handovers: (centerId: string, query?: { childId?: string; cancelledOffset?: number }) => {
+    const params = new URLSearchParams();
+    if (query?.childId) params.set('childId', query.childId);
+    if (query?.cancelledOffset !== undefined) params.set('cancelledOffset', String(query.cancelledOffset));
+    return rest.get<HandoverInbox>(c(centerId, `governance/handover-proposals${params.size ? `?${params}` : ''}`));
+  },
+  handoverReadiness: (centerId: string, id: string) =>
+    rest.get<HandoverReadiness>(c(centerId, `governance/handover-proposals/${id}/readiness`)),
+  proposeHandover: (centerId: string, body: { childId: string; fromMembershipId: string;
+    toMembershipId: string; service: string; reasonCode: 'STAFF_CHANGE' | 'AVAILABILITY' | 'FAMILY_REQUEST' }) =>
+    rest.send<HandoverProposal>('POST',c(centerId,'governance/handover-proposals'),body),
+  acknowledgeHandover: (centerId: string, id: string) =>
+    rest.send<HandoverProposal>('POST',c(centerId,`governance/handover-proposals/${id}/acknowledge`),{}),
+  cancelHandover: (centerId: string, id: string) =>
+    rest.send<HandoverProposal>('POST',c(centerId,`governance/handover-proposals/${id}/cancel`),{}),
   assign: (centerId: string, id: string, body: { membershipId: string; service: string; isLead: boolean }) => rest.send('POST', c(centerId, `children/${id}/assignments`), body),
   endAssignment: (centerId: string, id: string, aid: string) => rest.send('POST', c(centerId, `children/${id}/assignments/${aid}/end`)),
   designateReferent: (centerId: string, id: string, body: { membershipId: string | null; version: number; reason: string }) =>
@@ -77,7 +114,8 @@ export const opsApi = {
 // All times are shown and entered in the center's time zone (set from API responses), not the browser's.
 let centerTz: string | undefined;
 export const setCenterTz = (tz: string | undefined) => {
-  if (tz) centerTz = tz;
+  // Clearing the previous center on context change must never leave a stale timezone.
+  centerTz = tz;
 };
 export const getCenterTz = () => centerTz;
 const wall = (ms: number, tz?: string) => {
@@ -86,17 +124,53 @@ const wall = (ms: number, tz?: string) => {
 };
 const offset = (ms: number, tz?: string) => wall(Math.floor(ms / 60000) * 60000, tz) - Math.floor(ms / 60000) * 60000;
 // Same rules as the API: repeated times resolve to the later instant, skipped times move forward.
-export function zonedToUtc(date: string, time: string): Date {
+export function zonedToUtc(date: string, time: string, tz = centerTz): Date {
+  if (!tz) throw new Error('Center timezone is unavailable. Refresh the workspace before entering appointment times.');
   const [y, m, d] = date.split('-').map(Number);
   const [h, mi] = time.split(':').map(Number);
   const guess = Date.UTC(y, m - 1, d, h, mi);
-  const o1 = offset(guess, centerTz);
+  const o1 = offset(guess, tz);
   const t1 = guess - o1;
-  const o2 = offset(t1, centerTz);
+  const o2 = offset(t1, tz);
   if (o1 === o2) return new Date(t1);
   const t2 = guess - o2;
-  return new Date(offset(t2, centerTz) === o2 ? t2 : Math.max(t1, t2));
+  return new Date(offset(t2, tz) === o2 ? t2 : Math.max(t1, t2));
 }
+/** Format a server timestamp as HTML datetime-local in the specified care center time zone. */
+export function formatZonedDateTimeInput(iso: string | null, tz: string, seconds = false): string {
+  if (!iso) return '';
+  const fields = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+    timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  }).formatToParts(new Date(iso)).map(part => [part.type, part.value]));
+  return fields.year + '-' + fields.month + '-' + fields.day + 'T' + fields.hour + ':' + fields.minute + (seconds ? ':' + fields.second : '');
+}
+
+/** Convert center wall-clock time to UTC; never use the browser OS timezone. */
+export function zonedDateTimeInputToIso(value: string, tz: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/.test(value)) {
+    throw new Error('Enter a valid date and time for this center.');
+  }
+  const seconds = value.length === 19 ? Number(value.slice(17, 19)) : 0;
+  if (seconds > 59) throw new Error('Enter a valid time with seconds below 60.');
+  const instant = zonedToUtc(value.slice(0, 10), value.slice(11, 16), tz);
+  if (!Number.isFinite(instant.valueOf())) throw new Error('Enter a valid date and time for this center.');
+  instant.setUTCSeconds(seconds);
+  // The calendar may omit a spring-forward hour. Never silently normalize
+  // a clinician-entered local time to a different wall-clock value.
+  if (formatZonedDateTimeInput(instant.toISOString(), tz, value.length === 19) !== value) {
+    throw new Error('This local time does not exist in the center time zone. Select a valid time.');
+  }
+  return instant.toISOString();
+}
+
+/** An unchanged ambiguous fall-back hour must retain its originally recorded offset. */
+export function preservedZonedInstant(value: string, originalIso: string | null, tz: string): string | undefined {
+  if (!value) return undefined;
+  if (originalIso && formatZonedDateTimeInput(originalIso, tz, true) === value) return originalIso;
+  return zonedDateTimeInputToIso(value, tz);
+}
+
 export const addDays = (day: string, n: number) => {
   const [y, m, d] = day.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);

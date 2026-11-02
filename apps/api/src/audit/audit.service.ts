@@ -7,6 +7,7 @@ export type AuditType =
   | 'auth.login.success' | 'auth.login.failure' | 'auth.lockout' | 'auth.rate_limited'
   | 'auth.logout' | 'auth.logout_all' | 'auth.session.rotated'
   | 'auth.password.reset_requested' | 'auth.password.reset_completed' | 'auth.password.changed'
+  | 'auth.password.change_rate_limited'
   | 'auth.context.switched' | 'security.csrf_rejected' | 'security.origin_rejected'
   | 'platform.owner_bootstrapped' | 'seed.synthetic'
   | 'application.submitted' | 'application.review_started' | 'application.approved' | 'application.rejected'

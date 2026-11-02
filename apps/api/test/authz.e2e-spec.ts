@@ -87,7 +87,7 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
     it('a guardian in an active context is still denied center admin data', async () => {
       await member('guardian', harbor, ['GUARDIAN']);
       const s = await signIn(h, email('guardian'));
-      expect(s.body.permissions).toEqual(['family.portal.read', 'family.preferences.update', 'center.messages.use', 'family.activities.read', 'family.progress.demo', 'family.practice.read', 'family.practice.record']);
+      expect(s.body.permissions).toEqual(['family.portal.read', 'family.preferences.update', 'center.messages.use', 'family.activities.read', 'family.progress.demo', 'family.practice.read', 'family.practice.record', 'family.home_plan_request.read', 'family.home_plan_request.create']);
     });
 
     it.each([
@@ -139,6 +139,13 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
     it('only the reviewed set of routes writes data, and none writes platform roles', () => {
       const unsafe = h.app.get(RouteAccessVerifier).routes().filter((r) => r.method !== 'GET').map((r) => `${r.method} ${r.route}`).sort();
       expect(unsafe).toEqual([
+        // TB-EM-053: explicit synthetic-only release writes, each separately scoped
+        // by the authenticated route policy and server-controlled dual flags.
+        'POST /centers/:centerId/family-releases/approvals',
+        'POST /centers/:centerId/family-releases/consents',
+        'POST /centers/:centerId/family-releases/consents/withdraw',
+        'POST /centers/:centerId/family-releases/grants',
+        'POST /centers/:centerId/family-releases/grants/:id/change',
         'PATCH /centers/:centerId/activities/:templateId', 'PATCH /centers/:centerId/appointments/:appointmentId', 'PATCH /centers/:centerId/children/:childId', 'PATCH /centers/:centerId/children/:childId/referent',
         'PATCH /centers/:centerId/clinical/assessments/:id', 'PATCH /centers/:centerId/clinical/notes/:id', 'PATCH /centers/:centerId/clinical/plan-versions/:id', 'PATCH /centers/:centerId/clinical/reports/:id', 'PATCH /centers/:centerId/clinical/sessions/:id',
         'PATCH /centers/:centerId/me', 'PATCH /centers/:centerId/series/:seriesId', 'PATCH /centers/:centerId/settings', 'PATCH /centers/:centerId/staff/:membershipId',
@@ -151,11 +158,11 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
         'POST /centers/:centerId/children/:childId/guardians/:linkId/invite', 'POST /centers/:centerId/children/:childId/guardians/:linkId/remove',
         'POST /centers/:centerId/children/:childId/restore', 'POST /centers/:centerId/clinical/children/:childId/assessments',
         'POST /centers/:centerId/clinical/children/:childId/notes', 'POST /centers/:centerId/clinical/children/:childId/observations', 'POST /centers/:centerId/clinical/children/:childId/plans', 'POST /centers/:centerId/clinical/children/:childId/reports', 'POST /centers/:centerId/clinical/children/:childId/sessions',
-        'POST /centers/:centerId/clinical/notes/:id/sign', 'POST /centers/:centerId/clinical/plan-versions/:id/approve', 'POST /centers/:centerId/clinical/plan-versions/:id/return',
+        'POST /centers/:centerId/clinical/home-plan-requests/:id/respond', 'POST /centers/:centerId/clinical/notes/:id/sign', 'POST /centers/:centerId/clinical/plan-versions/:id/approve', 'POST /centers/:centerId/clinical/plan-versions/:id/goal-checkpoints', 'POST /centers/:centerId/clinical/plan-versions/:id/return',
         'POST /centers/:centerId/clinical/plan-versions/:id/submit', 'POST /centers/:centerId/clinical/plans/:planId/versions', 'POST /centers/:centerId/clinical/practice-feedback/:id/acknowledge',
-        'POST /centers/:centerId/clinical/reports/:id/comments', 'POST /centers/:centerId/clinical/reports/:id/release', 'POST /centers/:centerId/clinical/reports/:id/return',
-        'POST /centers/:centerId/clinical/reports/:id/submit', 'POST /centers/:centerId/clinical/reports/:id/suggestion-decisions', 'POST /centers/:centerId/clinical/reports/:id/versions', 'POST /centers/:centerId/family/practice/outcomes', 'POST /centers/:centerId/family/preferences',
-        'POST /centers/:centerId/governance/consent-grants', 'POST /centers/:centerId/governance/documents/:kind/:id/transitions', 'POST /centers/:centerId/governance/release', 'POST /centers/:centerId/governance/transfer-simulations',
+        'POST /centers/:centerId/clinical/reports/:id/comments', 'POST /centers/:centerId/clinical/reports/:id/plan-drafts', 'POST /centers/:centerId/clinical/reports/:id/release', 'POST /centers/:centerId/clinical/reports/:id/return',
+        'POST /centers/:centerId/clinical/reports/:id/submit', 'POST /centers/:centerId/clinical/reports/:id/suggestion-decisions', 'POST /centers/:centerId/clinical/reports/:id/versions', 'POST /centers/:centerId/family/home-plan-requests', 'POST /centers/:centerId/family/practice/outcomes', 'POST /centers/:centerId/family/preferences',
+        'POST /centers/:centerId/governance/consent-grants', 'POST /centers/:centerId/governance/documents/:kind/:id/transitions', 'POST /centers/:centerId/governance/handover-proposals', 'POST /centers/:centerId/governance/handover-proposals/:id/acknowledge', 'POST /centers/:centerId/governance/handover-proposals/:id/cancel', 'POST /centers/:centerId/governance/release', 'POST /centers/:centerId/governance/transfer-simulations',
         'POST /centers/:centerId/invitations', 'POST /centers/:centerId/invitations/:invitationId/resend', 'POST /centers/:centerId/invitations/:invitationId/revoke',
         'POST /centers/:centerId/series', 'POST /centers/:centerId/series/:seriesId/cancel',
         'POST /centers/:centerId/setup/:key/complete',
@@ -167,7 +174,7 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
         'POST /platform/centers/:centerId/admin-invitations/:invitationId/replace', 'POST /platform/centers/:centerId/admin-invitations/:invitationId/resend',
         'POST /platform/centers/:centerId/admin-invitations/:invitationId/revoke', 'POST /platform/centers/:centerId/trial/extend',
         'POST /platform/reminders/run',
-      ]);
+      ].sort());
     });
 
     it('the database rejects self-grants, a second bootstrap record and PLATFORM_ADMIN as a center role', async () => {
@@ -205,6 +212,10 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
       'center.children.manage': ['CENTER_ADMIN', 'COORDINATOR'],
       'center.families.manage': ['CENTER_ADMIN', 'COORDINATOR'],
       'center.assignments.manage': ['CENTER_ADMIN', 'COORDINATOR'],
+      'center.handover.read': ['CENTER_ADMIN','COORDINATOR','THERAPIST'],
+      'center.handover.propose': ['CENTER_ADMIN','COORDINATOR'],
+      'center.handover.acknowledge': ['THERAPIST'],
+      'center.handover.cancel': ['CENTER_ADMIN','COORDINATOR'],
       'center.schedule.read': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST', 'CLINICAL_SUPERVISOR'],
       'center.schedule.manage': ['CENTER_ADMIN', 'COORDINATOR'],
       'center.appointments.status': ['CENTER_ADMIN', 'COORDINATOR', 'THERAPIST'],
@@ -225,6 +236,10 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
       'center.practice.acknowledge': ['THERAPIST'],
       'family.practice.read': ['GUARDIAN'],
       'family.practice.record': ['GUARDIAN'],
+      'family.home_plan_request.read': ['GUARDIAN'],
+      'family.home_plan_request.create': ['GUARDIAN'],
+      'center.home_plan_request.read': ['THERAPIST'],
+      'center.home_plan_request.respond': ['THERAPIST'],
     };
     const cases = ROLES.flatMap((role) => [...Object.keys(PERMISSIONS), ...CLINICAL_CAPABILITIES].map((p) => [role, p] as const));
     it.each(cases)('%s × %s', (role, permission) => {

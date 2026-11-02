@@ -15,7 +15,10 @@ RUN yarn workspace @therabridge/api prisma generate && yarn workspace @therabrid
 ENV API_UPSTREAM_ORIGIN=http://127.0.0.1:8001
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN yarn workspace @therabridge/web build
+RUN mkdir -p /repo/.workspace/local-credentials /repo/apps/web/.next/cache && chown -R node:node /repo
+USER node
 ENV NODE_ENV=production
+HEALTHCHECK --interval=30s --timeout=5s --start-period=180s --retries=3 CMD node -e "fetch('http://127.0.0.1:10000/api/health').then(r=>r.json()).then(h=>{if(h.database?.status!=='up')process.exit(1)}).catch(()=>process.exit(1))"
 EXPOSE 10000
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["bash", "scripts/preview/start.sh"]

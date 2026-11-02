@@ -80,19 +80,28 @@ export function StateGate({ children, empty, rows = 3, tone = 'clinical', testId
 
 export function Dialog({ open, onClose, title, children, footer, tone = 'clinical', testId }: { open: boolean; onClose: () => void; title: string; children: ReactNode; footer?: ReactNode; tone?: Tone; testId: string }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const returnFocus = useRef<HTMLElement | null>(null);
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
-    if (open && !d.open) d.showModal();
-    if (!open && d.open) d.close();
+    if (open && !d.open) {
+      returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      d.showModal(); // Native modal dialog traps keyboard focus and handles Escape.
+      (d.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])') ?? d).focus();
+    }
+    if (!open && d.open) {
+      d.close();
+      returnFocus.current?.focus();
+    }
   }, [open]);
+  useEffect(() => () => { returnFocus.current?.focus(); }, []);
   const fam = tone === 'family';
   return (
     <dialog ref={ref} onClose={onClose} aria-labelledby={`${testId}-title`} data-testid={testId}
       className={`w-[min(560px,calc(100vw-24px))] rounded-[18px] border p-0 shadow-2xl backdrop:bg-[#0D1226]/55 backdrop:backdrop-blur-[2px] ${fam ? 'border-fam-border bg-fam-surface text-fam-ink' : 'border-border-light bg-surface-white text-brand-ink'}`}>
       <div className={`flex items-start justify-between gap-4 border-b px-5 py-4 md:px-6 ${fam ? 'border-fam-border' : 'border-border-light'}`}>
         <h2 id={`${testId}-title`} className="font-display text-[18px] font-semibold">{title}</h2>
-        <button type="button" onClick={onClose} aria-label="Close" data-testid={`${testId}-close`} className="grid h-10 w-10 place-items-center rounded-control hover:bg-black/5">
+        <button type="button" onClick={onClose} aria-label="Close" data-testid={`${testId}-close`} className="grid h-11 w-11 place-items-center rounded-control hover:bg-black/5">
           <X size={18} aria-hidden="true" />
         </button>
       </div>

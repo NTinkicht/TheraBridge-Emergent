@@ -21,7 +21,7 @@ const VARIANTS: Record<Tone, Record<Variant, string>> = {
   },
 };
 const SIZES: Record<Size, string> = {
-  sm: 'min-h-[44px] md:min-h-[36px] px-3 text-[13px]',
+  sm: 'min-h-[44px] px-3 text-[13px]',
   md: 'min-h-[44px] px-4 text-[14px]',
   lg: 'min-h-[52px] px-6 text-[16px]',
 };

@@ -1,7 +1,7 @@
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
 import { RequirePermission, TbRequest } from '../auth/access';
 import type { Viewer } from '../operations/children.service';
-import { ProgressQueryDto, ReportCreateDto, ReportSaveDto, ReportVersionDto, ReviewDto, ReportSuggestionDecisionDto } from './clinical.dto';
+import { ProgressQueryDto, ReportCreateDto, ReportSaveDto, ReportVersionDto, ReviewDto, ReviewQueueQueryDto, ReportSuggestionDecisionDto, ReportToPlanDraftDto } from './clinical.dto';
 import { GovernanceService } from './governance.service';
 import { FAMILY_PROGRESS_SAMPLE, ReportsService } from './reports.service';
 import { ReportDecisionsService } from './report-decisions.service';
@@ -19,16 +19,33 @@ export class ReportsController {
     return this.reports.dashboard(c, viewer(req), q);
   }
 
+  @Get('clinical/reports/review-queue')
+  @RequirePermission('center.clinical.review')
+  queue(@Param('centerId', uuid()) c: string, @Query() q: ReviewQueueQueryDto, @Req() req: TbRequest) {
+    return this.reports.reviewQueue(c, viewer(req), q);
+  }
+
   @Get('clinical/children/:childId/reports')
   @RequirePermission('center.clinical.read')
-  list(@Param('centerId', uuid()) c: string, @Param('childId', uuid()) id: string, @Req() req: TbRequest) {
-    return this.reports.list(c, viewer(req), id);
+  list(@Param('centerId', uuid()) c: string, @Param('childId', uuid()) id: string, @Req() req: TbRequest, @Query('offset') rawOffset?: string) {
+    const offset = rawOffset === undefined ? 0 : Number(rawOffset);
+    if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100_000 || (rawOffset !== undefined && !/^\d+$/.test(rawOffset))) {
+      throw new BadRequestException('Invalid report pagination offset.');
+    }
+    return this.reports.list(c, viewer(req), id, offset);
   }
 
   @Post('clinical/children/:childId/reports')
   @RequirePermission('center.clinical.draft')
   create(@Param('centerId', uuid()) c: string, @Param('childId', uuid()) id: string, @Body() dto: ReportCreateDto, @Req() req: TbRequest) {
     return this.reports.create(c, viewer(req), id, dto);
+  }
+
+  @Post('clinical/reports/:id/plan-drafts')
+  @RequirePermission('center.clinical.draft')
+  createPlanDraftFromReport(@Param('centerId', uuid()) c: string, @Param('id', uuid()) id: string,
+    @Body() dto: ReportToPlanDraftDto, @Req() req: TbRequest) {
+    return this.reports.createPlanDraftFromReport(c, viewer(req), id, dto);
   }
 
   @Get('clinical/reports/:id')

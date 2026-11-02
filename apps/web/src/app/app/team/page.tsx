@@ -1,4 +1,5 @@
 'use client';
+import { navigateTabs } from '@/lib/a11y-tabs';
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
@@ -169,13 +170,15 @@ function Team({ session, onError }: { session: SessionInfo; onError: (e: unknown
       <PageTitle title="Team" body="Everyone with staff access to this center." testId="team-title"
         action={canInvite ? <Button onClick={() => setInviting(true)} data-testid="invite-staff-button"><MailPlus size={17} aria-hidden="true" /> Invite people</Button> : undefined} />
       {notice && <FormAlert tone="success" testId="team-notice">{notice}</FormAlert>}
-      <div role="tablist" aria-label="Team views" className="inline-flex gap-1 rounded-control bg-surface-white p-1 shadow-sm">
+      <div role="tablist" onKeyDown={navigateTabs} aria-label="Team views" className="inline-flex gap-1 rounded-control bg-surface-white p-1 shadow-sm">
         {(['members', 'invitations'] as const).map((t) => (
-          <button key={t} role="tab" aria-selected={tab === t} onClick={() => { setTab(t); setNotice(null); }} data-testid={`team-tab-${t}`}
-            className={`min-h-[40px] rounded-[8px] px-4 text-[14px] font-medium transition-colors ${tab === t ? 'bg-brand-action text-white' : 'text-brand-inkMuted hover:bg-surface-subtle'}`}>{t === 'members' ? 'Members' : 'Invitations'}</button>
+          <button key={t} role="tab" aria-selected={tab === t} tabIndex={tab === t ? 0 : -1} id={`team-tab-${t}`} aria-controls="team-tabpanel" onClick={() => { setTab(t); setNotice(null); }} data-testid={`team-tab-${t}`}
+            className={`min-h-[44px] rounded-[8px] px-4 text-[14px] font-medium transition-colors ${tab === t ? 'bg-brand-action text-white' : 'text-brand-inkMuted hover:bg-surface-subtle'}`}>{t === 'members' ? 'Members' : 'Invitations'}</button>
         ))}
       </div>
+      <div role="tabpanel" id="team-tabpanel" aria-labelledby={`team-tab-${tab}`}>
       {tab === 'members' ? <Directory centerId={centerId} version={version} onError={onError} /> : <Invitations centerId={centerId} canInvite={canInvite} version={version} onError={onError} onNotice={() => setNotice(null)} />}
+      </div>
       {canInvite && <InviteDialog centerId={centerId} open={inviting} onClose={() => setInviting(false)} onError={onError}
         onSent={(email) => { setInviting(false); setNotice(`Invitation sent to ${email}.`); setTab('invitations'); setVersion((v) => v + 1); }} />}
     </div>

@@ -1,3 +1,7 @@
+## 2026-10-31 — M2-H08 implementation checkpoint
+
+PR #146 implements non-root API/web/preview Docker runtimes with healthchecks; preview dual-process 192 MiB V8 old-space bounds; CI cancellation and job limits; shared canonical governance and order-sensitive report fingerprint primitives with golden regressions; removes clinical-to-operations Viewer type dependency; adds web upstream-origin unit tests and a Jest-measured API fingerprint core coverage gate. Exact-head integration, review and merge not yet qualified at writing. Synthetic only.
+
 # WORK_LOG
 
 ## TB-EM-000 feasibility and portability gate (2026-10-20)

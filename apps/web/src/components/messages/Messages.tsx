@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { navigateTabs } from '@/lib/a11y-tabs';
 import { ArrowLeft, Lock, MessageSquarePlus, MessagesSquare, Send, ShieldAlert } from 'lucide-react';
 import { FormAlert } from '@/components/auth/Field';
 import { SelectField, errorText, useLoad } from '@/components/centers/kit';
@@ -195,10 +196,10 @@ export function Messages({ centerId, family, kids, therapistMembershipId, onErro
       <NonClinicalNotice tone={tone} />
       <Card tone={tone} className="grid min-h-[480px] grid-cols-1 overflow-hidden md:grid-cols-[320px_1fr]" testId="messages-card">
         <div className={`border-border-light md:border-r ${active ? 'hidden md:block' : ''}`}>
-          <div role="tablist" aria-label="Conversation status" className="flex gap-1 border-b border-border-light p-2">
+          <div role="tablist" onKeyDown={navigateTabs} aria-label="Conversation status" className="flex gap-1 border-b border-border-light p-2">
             {(['OPEN', 'CLOSED'] as const).map((s) => (
-              <button key={s} role="tab" type="button" aria-selected={status === s} onClick={() => { setStatus(s); setActive(null); }} data-testid={`threads-tab-${s.toLowerCase()}`}
-                className={`min-h-[38px] flex-1 rounded-[8px] text-[14px] font-semibold transition-colors ${status === s ? 'bg-surface-subtle' : 'text-brand-inkMuted hover:bg-surface-subtle'}`}>{s === 'OPEN' ? 'Open' : 'Closed'}</button>
+              <button key={s} role="tab" type="button" aria-selected={status === s} tabIndex={status === s ? 0 : -1} onClick={() => { setStatus(s); setActive(null); }} data-testid={`threads-tab-${s.toLowerCase()}`}
+                className={`min-h-[44px] flex-1 rounded-[8px] text-[14px] font-semibold transition-colors ${status === s ? 'bg-surface-subtle' : 'text-brand-inkMuted hover:bg-surface-subtle'}`}>{s === 'OPEN' ? 'Open' : 'Closed'}</button>
             ))}
           </div>
           {failed && <div className="p-4"><ErrorState tone={tone} onRetry={() => void reload()} testId="threads-error" /></div>}

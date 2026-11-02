@@ -107,6 +107,23 @@ try {
   await page.getByRole('button', { name: 'Save draft', exact: true }).click();
   await page.waitForFunction(() => [...document.querySelectorAll('[role="status"]')].some(e => e.textContent.includes('Saved on server ·')));
   assert.equal(saved.activities[0].outcome, 'ACHIEVED'); assert.equal(saved.activities[0].assistance, 'SUBSTANTIAL_ASSISTANCE');
+  // M3-STT01: simulated capture has no audio/device access, and language-specific
+  // fictional text stays local until explicit clinician insertion.
+  await page.getByLabel('Synthetic dictation language').selectOption('fr');
+  await page.getByRole('button', { name: 'Start simulated capture' }).click();
+  assert.match(await page.getByTestId('dictation-capture-state').innerText(), /simulating/);
+  assert(await page.getByRole('button', { name: 'Run synthetic transcription' }).isDisabled());
+  await page.getByRole('button', { name: 'Pause simulated capture' }).click();
+  assert.match(await page.getByTestId('dictation-capture-state').innerText(), /paused/);
+  await page.getByRole('button', { name: 'Resume simulated capture' }).click();
+  await page.getByRole('button', { name: 'Stop simulated capture' }).click();
+  assert.match(await page.getByTestId('dictation-capture-state').innerText(), /ready/);
+  await page.getByRole('button', { name: 'Run synthetic transcription' }).click();
+  await page.waitForTimeout(350);
+  assert.match(await page.getByLabel('Editable transcript (not saved)', { exact: true }).inputValue(), /Exercice fictif/);
+  assert(!JSON.stringify(saved).includes('Exercice fictif'));
+  page.once('dialog', d => d.accept()); await page.getByRole('button', { name: 'Discard transcript' }).click();
+  await page.getByLabel('Synthetic dictation language').selectOption('en');
   for (const scenario of ['permission','unavailable','unsupported','interrupted','empty','provider','network']) {
     await page.getByLabel('Synthetic test scenario').selectOption(scenario);
     await page.getByRole('button', { name: 'Run synthetic transcription' }).click();

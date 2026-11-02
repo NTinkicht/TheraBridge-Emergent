@@ -8,6 +8,7 @@
     "start:dev": "nest start --watch",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "jest --runInBand",
+    "test:coverage:core": "jest --runInBand test/fingerprints.e2e-spec.ts --coverage --collectCoverageFrom=src/common/fingerprints.ts --coverageThreshold='{\"global\":{\"statements\":95,\"branches\":90,\"functions\":95,\"lines\":95}}'",
     "seed:synthetic": "ts-node --transpile-only src/cli/seed-synthetic.ts",
     "bootstrap:owner": "ts-node --transpile-only src/cli/bootstrap-owner.ts",
     "seed:demo": "ts-node --transpile-only src/cli/seed-demo.ts"

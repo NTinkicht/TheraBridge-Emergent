@@ -6,6 +6,8 @@ import { clinicalApi, type Workspace, type PracticeFeedbackReadModel } from '@/l
 import { currentGoals } from '@/lib/progress-analysis';
 import { serviceLabel } from '@/components/operations/BookDialog';
 import { Card, Pill } from '@/components/design/ui';
+import { Child360ClinicalTimeline } from './Child360ClinicalTimeline';
+import { ClinicianJourneyPanel } from './ClinicianJourneyPanel';
 
 type Tab = 'plan' | 'assessments' | 'sessions' | 'progress' | 'reports';
 const dateOnly = (x: string) => x.slice(0,10);
@@ -39,11 +41,6 @@ export function Child360({ ws, centerId, onNavigate }: {ws: Workspace;centerId: 
   const goals = currentGoals(ws);
   const upcoming = [...ws.appointments].filter(x=>x.status === 'SCHEDULED' && Date.parse(x.endsAt) >= Date.now()).sort((a,b)=>a.startsAt.localeCompare(b.startsAt));
   const lastNotes = [...ws.notes].sort((a,b)=>b.sessionDate.localeCompare(a.sessionDate)).slice(0,5);
-  const timeline = [
-    ...ws.notes.map(n=>({id:'note-'+n.id,date:n.sessionDate,label:'Session note',detail:serviceLabel(n.service),section:'sessions' as const})),
-    ...ws.assessments.map(a=>({id:'assessment-'+a.id,date:a.assessedOn,label:'Draft assessment',detail:serviceLabel(a.service),section:'assessments' as const})),
-    ...ws.observations.map(o=>({id:'observation-'+o.id,date:o.observedOn,label:'Recorded observation',detail:'Goal-specific measured value',section:'progress' as const})),
-  ].sort((a,b)=>b.date.localeCompare(a.date)||a.id.localeCompare(b.id)).slice(0,12);
   const cards = [
     {name:'Current draft goals',count:goals.length,icon:Target,tab:'progress' as const},
     {name:'Recorded observations',count:ws.observations.length,icon:Activity,tab:'progress' as const},
@@ -57,6 +54,7 @@ export function Child360({ ws, centerId, onNavigate }: {ws: Workspace;centerId: 
         <p className="text-[13px] text-brand-inkMuted">One authorized clinical view · {ws.child.services.map(serviceLabel).join(' · ') || 'No service recorded'} · draft/internal evidence only</p>
         <p className="text-[12px] text-brand-inkMuted">Information is limited to your permitted specialties and assignments. This overview is never a family release.</p>
       </div>
+      <ClinicianJourneyPanel ws={ws} onNavigate={onNavigate} />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {cards.map(({name,count,icon:Icon,tab})=>(
           <button type="button" key={name} onClick={()=>onNavigate(tab)} className="rounded-card border border-border-light bg-surface-white p-4 text-left hover:border-brand-action focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action" data-testid={"child360-"+tab+"-"+name.replaceAll(' ','-')}>
@@ -152,18 +150,7 @@ export function Child360({ ws, centerId, onNavigate }: {ws: Workspace;centerId: 
           }
         </Card>
       )}
-      <Card className="p-5">
-        <h3 className="text-[17px] font-semibold">Clinical activity timeline</h3>
-        <p className="mt-1 text-[13px] text-brand-inkMuted">The latest recorded events shown here are drafts and operational observations, not clinical interpretations.</p>
-        {timeline.length===0 ? <p className="mt-3 text-[14px]">No authorized activity available.</p> :
-          <ol className="mt-3 divide-y divide-border-light" data-testid="child360-timeline">
-            {timeline.map(e=><li key={e.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-              <div><p className="text-[14px] font-semibold">{e.label}</p><p className="text-[12px] text-brand-inkMuted">{e.date} · {e.detail}</p></div>
-              <button type="button" onClick={()=>onNavigate(e.section)} className="text-[13px] font-semibold text-brand-action hover:underline">View section</button>
-            </li>)}
-          </ol>
-        }
-      </Card>
+      <Child360ClinicalTimeline ws={ws} onNavigate={onNavigate} />
     </div>
   );
 }

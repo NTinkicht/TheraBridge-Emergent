@@ -1,3 +1,7 @@
+## Milestone 2 active order — M2-H08 (2026-10-31)
+
+M2-H07 PR #145 merged. M2-H08 PR #146 is the current ordered unit (#133, #135, #136), under exact-head CI and independent-review qualification. Next after its authorized merge: M2-QA01 (#81, #61). TB-EM-052 and TB-EM-053 require separate clinical/consent approvals and remain non-authorizing.
+
 # NEXT_WORK
 
 ## Immediate (owner): export TB-EM-010 Family Home Practice and Outcomes

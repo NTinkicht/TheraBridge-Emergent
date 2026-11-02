@@ -5,6 +5,7 @@ import { SessionEditor } from './SessionEditor';
 import { Field } from '@/components/auth/Field';
 import { SelectField } from '@/components/centers/kit';
 import { GoalChart } from '@/components/clinical/GoalChart';
+import { GoalVersionContext } from './GoalVersionContext';
 import { currentGoals, historicalGoals, summarizeObservations, type Granularity } from '@/lib/progress-analysis';
 import { Button, Card, LockedAction, Pill } from '@/components/design/ui';
 import { serviceLabel } from '@/components/operations/BookDialog';
@@ -16,7 +17,8 @@ const input = 'mt-1 w-full rounded-control border border-border-light bg-transpa
 const today = () => zonedParts(new Date().toISOString()).date;
 const SECTIONS = [['focus', 'Session focus'], ['activities', 'Activities used'], ['response', 'Child’s response'], ['nextSteps', 'Next steps']] as const;
 
-export function AssessmentsPanel({ centerId, ws, run }: { centerId: string; ws: Workspace; run: Run }) {
+export function AssessmentsPanel({ centerId, ws, run, pagination }: { centerId: string; ws: Workspace; run: Run;
+  pagination: { hasMore: boolean; loading: boolean; error: string; load: () => Promise<void> } }) {
   const [f, setF] = useState({ service: ws.child.services[0] ?? '', assessedOn: today(), summary: '', area: '', finding: '' });
   return (
     <div className="space-y-4" data-testid="assessments-panel">
@@ -29,6 +31,10 @@ export function AssessmentsPanel({ centerId, ws, run }: { centerId: string; ws: 
         </Card>
       ))}
       {!ws.assessments.length && <p className="text-[14px] text-brand-inkMuted" data-testid="assessments-empty">No initial assessment recorded yet.</p>}
+      {pagination.hasMore && <Button variant="secondary" disabled={pagination.loading} onClick={() => void pagination.load()} data-testid="assessments-load-more">
+        {pagination.loading ? 'Loading earlier assessments…' : 'Load earlier assessments'}
+      </Button>}
+      {pagination.error && <p role="alert" className="text-[13px] text-status-caution" data-testid="assessments-load-error">{pagination.error}</p>}
       {ws.canEdit && (
         <Card className="space-y-3 p-5" testId="assessment-form">
           <h3 className="text-[16px] font-semibold">New initial assessment (draft)</h3>
@@ -76,7 +82,7 @@ export function SessionsPanel({ centerId, ws, run, onPending }: { centerId: stri
   </div>;
 }
 
-export function ProgressPanel({ centerId, ws, run }: { centerId: string; ws: Workspace; run: Run }) {
+export function ProgressPanel({ centerId, ws, run, onNavigate }: { centerId: string; ws: Workspace; run: Run; onNavigate: () => void }) {
   const goals = currentGoals(ws).map(g => ({ ...g, versionId: g.planVersionId, plan: g.planTitle }));
   const [granularity, setGranularity] = useState<Granularity>('week');
   const [showHistory, setShowHistory] = useState(false);
@@ -111,6 +117,7 @@ export function ProgressPanel({ centerId, ws, run }: { centerId: string; ws: Wor
           </Card>
         );
       })}
+      <GoalVersionContext ws={ws} onNavigate={onNavigate} />
       {history.length > 0 && (
         <section className="space-y-3" aria-label="Previous plan version evidence" data-testid="progress-history">
           <Button variant="secondary" onClick={()=>setShowHistory(!showHistory)}

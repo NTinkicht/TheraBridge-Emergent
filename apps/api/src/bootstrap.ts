@@ -4,6 +4,9 @@ import { AuditService } from './audit/audit.service';
 import { TbRequest, UNSAFE_METHODS } from './auth/access';
 import { resolveClientIp } from './common/security';
 import { AUTH_CONFIG, AuthConfig } from './config/env';
+import { PrismaExceptionFilter } from './common/prisma-exception.filter';
+
+export const API_BODY_LIMIT_BYTES = 1024 * 1024;
 
 function requestOrigin(req: TbRequest): string | undefined {
   const origin = req.headers.origin;
@@ -28,7 +31,11 @@ export function configureApp(app: NestFastifyApplication): void {
     const req = request as TbRequest;
     const forwarded = req.headers['x-forwarded-for'];
     req.clientIp = resolveClientIp(req.raw.socket.remoteAddress ?? 'unknown', Array.isArray(forwarded) ? forwarded.join(',') : forwarded, cfg.trustedProxies);
-    if (req.url.startsWith('/api/auth')) reply.header('cache-control', 'no-store');
+    if (req.url.startsWith('/api/')) {
+      reply.header('cache-control', 'no-store, no-cache, must-revalidate, private');
+      reply.header('pragma', 'no-cache');
+      reply.header('expires', '0');
+    }
 
     // JSON-only bodies: blocks cross-site "simple" form posts that skip CORS preflight.
     const hasBody = Number(req.headers['content-length'] ?? 0) > 0 || req.headers['transfer-encoding'] !== undefined;
@@ -44,6 +51,7 @@ export function configureApp(app: NestFastifyApplication): void {
   });
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
+  app.useGlobalFilters(new PrismaExceptionFilter());
   app.enableCors({ origin: cfg.corsOrigins, credentials: true, allowedHeaders: ['content-type', 'x-csrf-token'] });
   app.enableShutdownHooks();
 }

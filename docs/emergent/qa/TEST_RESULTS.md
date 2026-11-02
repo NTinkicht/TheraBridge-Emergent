@@ -1,3 +1,7 @@
+## M2-H08 verification plan — 2026-10-31
+
+PR #146 validation requires exact-head six-job GitHub CI (`secret-scan`, `test`, `live-session`, `demo-journey`, `compose`, `preview-container`). The API fingerprint-core Jest gate targets 95% statements/lines/functions and 90% branches for **apps/api/src/common/fingerprints.ts only**; it is not a global application coverage claim. Web unit tests validate fixed upstream-origin configuration. Compose and unified preview jobs exercise non-root healthchecked containers, and preview validates Postgres migrations and synthetic seed. Outcomes shall be read from final SHA before merge.
+
 # TEST_RESULTS
 
 Environment: Emergent workspace, Debian 12, Node 20.20.2, Yarn 1.22.22, PostgreSQL 15.19, Prisma 5.22.0, Next.js 14.2.35, NestJS 10.4.  

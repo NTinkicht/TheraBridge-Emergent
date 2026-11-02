@@ -1,8 +1,9 @@
 import { Transform, Type } from 'class-transformer';
 import {
-  ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDateString, IsEmail, IsIn, IsInt, IsISO8601, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength,
+  ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsEmail, IsIn, IsInt, IsISO8601, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength,
 } from 'class-validator';
 import { SPECIALTIES } from '../applications/applications.dto';
+import { IsCalendarDate } from '../common/validators';
 
 const trim = () => Transform(({ value }) => (typeof value === 'string' ? value.trim() : value));
 export const RELATIONSHIPS = ['mother', 'father', 'parent', 'grandparent', 'legal_guardian', 'foster_parent', 'other'] as const;
@@ -11,7 +12,7 @@ export class ChildDto {
   @trim() @IsString() @MinLength(1) @MaxLength(80) firstName!: string;
   @trim() @IsString() @MinLength(1) @MaxLength(80) lastName!: string;
   @IsOptional() @trim() @IsString() @MaxLength(80) preferredName?: string;
-  @IsDateString({ strict: true }) @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'dateOfBirth must be YYYY-MM-DD' }) dateOfBirth!: string;
+  @IsCalendarDate() dateOfBirth!: string;
   @IsArray() @ArrayMinSize(1) @ArrayMaxSize(6) @IsIn(SPECIALTIES, { each: true }) services!: string[];
 }
 
@@ -19,7 +20,7 @@ export class UpdateChildDto {
   @IsOptional() @trim() @IsString() @MinLength(1) @MaxLength(80) firstName?: string;
   @IsOptional() @trim() @IsString() @MinLength(1) @MaxLength(80) lastName?: string;
   @IsOptional() @trim() @IsString() @MaxLength(80) preferredName?: string;
-  @IsOptional() @IsDateString({ strict: true }) @Matches(/^\d{4}-\d{2}-\d{2}$/) dateOfBirth?: string;
+  @IsOptional() @IsCalendarDate() dateOfBirth?: string;
   @IsOptional() @IsArray() @ArrayMinSize(1) @ArrayMaxSize(6) @IsIn(SPECIALTIES, { each: true }) services?: string[];
   @IsInt() @Min(1) version!: number;
 }
@@ -88,7 +89,6 @@ export class ExtendTrialDto {
   @trim() @IsString() @MinLength(3) @MaxLength(500) reason!: string;
 }
 
-const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 export const THREAD_CATEGORIES = ['scheduling', 'attendance', 'logistics', 'other'] as const;
 
@@ -97,18 +97,18 @@ export class SeriesDto {
   @IsUUID() membershipId!: string;
   @IsIn(SPECIALTIES) service!: string;
   @IsOptional() @trim() @IsString() @MaxLength(80) room?: string;
-  @Matches(DATE, { message: 'startDate must be YYYY-MM-DD' }) startDate!: string;
+  @IsCalendarDate() startDate!: string;
   @Matches(TIME, { message: 'startTime must be HH:MM' }) startTime!: string;
   @IsInt() @Min(15) @Max(480) durationMinutes!: number;
   @IsArray() @ArrayMinSize(1) @ArrayMaxSize(7) @IsInt({ each: true }) @Min(1, { each: true }) @Max(7, { each: true }) weekdays!: number[];
   @IsInt() @Min(1) @Max(4) intervalWeeks!: number;
-  @IsOptional() @Matches(DATE, { message: 'untilDate must be YYYY-MM-DD' }) untilDate?: string;
+  @IsOptional() @IsCalendarDate() untilDate?: string;
   @IsOptional() @IsInt() @Min(1) @Max(60) count?: number;
   @IsOptional() @IsBoolean() skipConflicts?: boolean;
 }
 
 export class SeriesUpdateDto {
-  @Matches(DATE, { message: 'fromDate must be YYYY-MM-DD' }) fromDate!: string;
+  @IsCalendarDate() fromDate!: string;
   @IsOptional() @Matches(TIME, { message: 'startTime must be HH:MM' }) startTime?: string;
   @IsOptional() @IsInt() @Min(15) @Max(480) durationMinutes?: number;
   @IsOptional() @IsUUID() membershipId?: string;
@@ -117,7 +117,7 @@ export class SeriesUpdateDto {
 }
 
 export class SeriesCancelDto {
-  @Matches(DATE, { message: 'fromDate must be YYYY-MM-DD' }) fromDate!: string;
+  @IsCalendarDate() fromDate!: string;
   @trim() @IsString() @MinLength(3, { message: 'Give a reason of at least 3 characters' }) @MaxLength(500) reason!: string;
 }
 

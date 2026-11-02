@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "workUnit": "TB-EM-051",
+  "title": "Real therapist replacement and clinical handover — authorization decision register",
+  "status": "DESIGN_CANDIDATE_UNAPPROVED",
+  "clinicalActivation": "BLOCKED",
+  "approvalKind": "HUMAN_SIGNATURE_REQUIRED",
+  "signedPolicyCount": 0,
+  "executableTransferEnabled": false,
+  "appliesTo": [
+    "development",
+    "ci",
+    "preview",
+    "staging",
+    "production"
+  ],
+  "scope": "Design and test planning only; no patient data, transfer execution, grant, consent, signing or release",
+  "canonicalSpecCandidate": {
+    "operation": "transferCaseload",
+    "route": "POST /api/v1/assignments/transfers",
+    "state": "PROPOSED_NOT_IMPLEMENTABLE",
+    "duplicateCandidates": [
+      "POST /api/v1/admin/assignments/transfers"
+    ],
+    "reference": "Private NTinkicht/TheraBridge specs/CB-SDD-001.md, CB-SAD-001.md; V0.9.16 source-candidate-only"
+  },
+  "currentApp": {
+    "operationalProposal": "TB-EM-049; acknowledgement is not transfer",
+    "readiness": "TB-EM-050; readyForTransfer always false",
+    "legacySimulation": "POST /api/centers/:centerId/governance/transfer-simulations — simulation only"
+  },
+  "decisionGates": [
+    {
+      "id": "D10_TRANSFER",
+      "state": "UNSIGNED",
+      "requiredOwnerRole": "Clinical operations and accountable clinical governance",
+      "question": "Approve the caseload replacement lifecycle, open-item enumerations/dispositions and what remains quarantined",
+      "source": "PFR-CT-01 / D10, CB-SRS-001 and CB-SDD-001"
+    },
+    {
+      "id": "OR15_ROLE_MATRIX",
+      "state": "UNSIGNED",
+      "requiredOwnerRole": "Security owner and clinical governance",
+      "question": "Who may initiate, approve, execute, witness, reverse and audit each transfer; no admin clinical privilege",
+      "source": "OR-15 / D-NEW-2; V0916 decision register"
+    },
+    {
+      "id": "OR16_IDEMPOTENCY_AND_DENIAL",
+      "state": "UNSIGNED",
+      "requiredOwnerRole": "Security owner",
+      "question": "Define scope-before-replay, current-actor proof, no cross-tenant existence leak, retry conflict and 403/404/409 precedence",
+      "source": "OR-16, V0916 decision register"
+    },
+    {
+      "id": "D7_CONSENT",
+      "state": "UNSIGNED",
+      "requiredOwnerRole": "Privacy/data protection owner",
+      "question": "Approve purpose-bound consent/withdrawal vocabulary and whether an internal therapist change requires new consent",
+      "source": "D7, CB-RMP-001 and owner decision register"
+    },
+    {
+      "id": "CLINICAL_RECORD_SCOPE",
+      "state": "UNSIGNED",
+      "requiredOwnerRole": "Clinical governance and records owner",
+      "question": "Which clinical artifacts may be viewed by the receiver, from when and under what restricted purposes; freeze signer attribution",
+      "source": "CB-SRS-001; CB-SDD-001 transferCaseload candidate"
+    },
+    {
+      "id": "DNEW5_SAFEGUARDING",
+      "state": "UNSIGNED",
+      "requiredOwnerRole": "Named safeguarding lead and clinical governance",
+      "question": "Define quarantined concern handling, emergency escalation and who may see sensitive records",
+      "source": "D-NEW-5, owner decision register"
+    },
+    {
+      "id": "D4_GUARDIAN_RESTRICTIONS",
+      "state": "UNSIGNED",
+      "requiredOwnerRole": "Clinical/privacy owner",
+      "question": "Specify guardian restriction propagation; never equate transfer with new guardian grant",
+      "source": "D4, owner decision register"
+    },
+    {
+      "id": "D1_SIGNING",
+      "state": "UNSIGNED",
+      "requiredOwnerRole": "Clinical governance and security owner",
+      "question": "Approve signed-action step-up mechanism and immutable author/signer semantics (not inherited by receiver)",
+      "source": "D1, owner decision register"
+    },
+    {
+      "id": "SECURITY_AND_AUDIT",
+      "state": "UNSIGNED",
+      "requiredOwnerRole": "Security, clinical operations and privacy",
+      "question": "Approve atomic lock order, revocation, break-glass denial, audit retention and data minimization before real transfer",
+      "source": "PFR-CT-01, CB-RMP-001; AGENTS.md"
+    }
+  ],
+  "explicitNonAuthorizations": [
+    "Operational proposal acknowledged",
+    "Operational readiness checks passing",
+    "Existing manual child assignment controls",
+    "Admin membership/role",
+    "Legacy SIMULATION_ONLY transfer draft",
+    "A draft consent record",
+    "Synthetic CI passing",
+    "Independent AI review passing"
+  ],
+  "proposedTestScenarios": [
+    "DENY_UNSIGNED_ALL_ENVS",
+    "DENY_UNRELATED_TENANT",
+    "DENY_DEACTIVATED_SOURCE_OR_TARGET",
+    "DENY_WRONG_SERVICE",
+    "DENY_STALE_ASSIGNMENT_VERSION",
+    "DENY_WITH_OPEN_ITEMS_UNRESOLVED",
+    "DENY_IF_GUARDIAN_RESTRICTED",
+    "DENY_IF_CONSENT_WITHDRAWN",
+    "DENY_IF_SIGNER_AUTHORITY_ASSUMED",
+    "DENY_IF_SAFEGUARDING_POLICY_MISSING",
+    "CONCURRENT_REVOKE_VS_COMMIT",
+    "ATOMIC_ALL_OR_NOTHING",
+    "NO_CROSS_SPECIALTY_CONTENT",
+    "NO_UNRELEASED_FAMILY_DOCUMENT",
+    "IDEMPOTENCY_SCOPE_BEFORE_REPLAY",
+    "RETRY_UNKNOWN_OUTCOME",
+    "EMERGENCY_SUSPEND_QUARANTINE",
+    "AUDIT_PROVENANCE_WITHOUT_CLINICAL_TEXT"
+  ],
+  "approvals": [],
+  "humanDecisionEvidence": "NOT_SUBMITTED",
+  "implementationAuthorization": "NOT_GRANTED"
+}

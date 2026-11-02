@@ -1,3 +1,400 @@
+# M3-AI06 implementation checkpoint — 2026-11-02
+
+M3-AI06 PR #159 synthetic safety implementation in progress: qualify six exact-head CI jobs and final independent code review, fix reviewer findings, merge under Rule 16. This is the last ordered Milestone 3 item; no next M3 PR. Keep clinical real-data/activation gates disabled.
+
+# M3-AI05 implementation checkpoint — 2026-11-02
+
+M3-AI05 PR #158 implementation includes session-scoped clinician examination/acknowledgment/rejection for fictional proposals; qualify six exact-head CI jobs and independent review, dispose findings, then Rule 16 merge and open M3-AI06 draft. No clinical signing, release or real data.
+
+# M3-AI04 implementation checkpoint — 2026-11-02
+
+M3-AI04 PR #157 now has synthetic evidence-scoping/integrity implementation. Qualify the exact implementation HEAD with six CI jobs, independent review, and explicit comment dispositions. After Rule 16 merge, open M3-AI05 planning draft. No real data or clinical activation.
+
+# M3-AI03 implementation checkpoint — 2026-11-02
+
+M3-AI03 PR #156 synthetic-only home-plan draft integration implemented: qualify exact final HEAD with all six CI jobs and independent review, disposition every finding, then merge if Rule 16 permits. M3-AI04 is next after qualification.
+
+# Next work — 2026-11-02 — M3-AI02 PR #155
+
+Qualify synthetic report-drafting implementation on exact PR #155 HEAD: browser regression, six CI jobs, independent code review and explicit dispositions. Only merge once Rule 16 is met; then open M3-AI03 draft. No real clinical data, external AI provider, signing or release. Previous NEXT_WORK checkpoints below are historical.
+
+# Historical next work — 2026-11-01 — TB-EM-053 PR #152
+
+The owner-approved [TB-EM-053 v1.1](https://github.com/NTinkicht/TheraBridge/pull/48) **synthetic-only API, persistence, UI and tests are implemented** in PR #152. CI on head `70c5a083` passed six jobs/672 API tests; older Codex P1/P2 are fixed and resolved. Next: requalify the final documentation SHA through all six CI jobs, obtain independent exact-head Codex review, disposition any new P0–P3 findings, merge only under Rule 16. Do not activate real-patient family release, D1 clinical signing, production consent or protected legacy release triggers. Full clinician transfer #115 is independent and still blocked.
+
+# Historical next work — 2026-11-01 — TB-EM-052 PR #151
+
+1. Verify new-head six-job CI, including the synthetic lifecycle regression tests, and independent exact-head Codex review; disposition and resolve every current review finding. Do not merge with unresolved blocking findings.
+2. Keep the TB-EM-051 assignment-mutation tripwire unchanged. Owner policy v1.1 is approved, **but** professional clinical, DPO, safeguarding, security and legal attestations, formal PD-06 parameters and G2/G2b/G3-G7 activation gates are still pending.
+3. Until those accountable approvals explicitly authorize executable transfer development, the PR is a non-mutating synthetic decision-model checkpoint only. No endpoint, clinical access grant, assignment write, consent/signing or release.
+4. After authorization, implement full persisted therapist transfer/handover (dispositions, proposal versions, preview/consent, temporary/emergency, audit, rollback, tenant isolation), obtain independent review and tests, then merge if all Rule 16 requirements pass.
+5. Once TB-EM-052 is merge-qualified and merged, open the next frozen item TB-EM-053 as a separately gated draft.
+
+# Latest next work — 2026-10-31 — qualify PR #144 after Codex DST fixes
+
+Two Codex P2 findings addressed and threads resolved; re-review of latest head required. Verify test cases `2026-10-25T00:30:37.000Z` preserved through unchanged Paris fall-hour input and `2026-03-29T02:30` rejected as nonexistent Paris local time. Run six exact-head CI jobs; inspect CodeRabbit/Mistral/Grok/Codex comments, disposition all, then merge if qualified and immediately open M2-H07. Confirm #128 current `components/clinical/ReportToPlanHandoff.tsx` (not old child360 path) is single-transaction idempotent and clinical release stays disabled. No deferrals so far. Owner approvals for #115 / TB-EM-053 still REQUIRED.
+
+# Latest next work — 2026-10-31 — qualify M2-H06 PR #144
+
+Implementation on [PR #144](https://github.com/NTinkicht/TheraBridge-Emergent/pull/144) is underway for #127–#130. Finish six exact-HEAD CI jobs, verify actual Node regression tests, run live browser/session/preview checks, evaluate new Codex and other review comments, explicitly disposition each as FIX_NOW / DEFER_ISSUE linked follow-up / DECLINE_WITH_REASON, resolve threads, update all handover/QA docs, request fresh Codex on *final* HEAD. Verify #128 historical ReportToPlanHandoff path absent and PlanEditor atomic instead of split create/retry; verify initial schedule makes only one appointments call after center zone preload; verify failure of session/center timezone and cross-tab 401 fail closed. Do NOT merge before all qualifications. After eligible merge, immediately open frozen M2-H07 (#131,#132,#112,#114) and request opening Codex. TB-EM-052/#115 and TB-EM-053 remain owner-gated and NO-GO.
+
+# Latest next work — 2026-10-31 — M2-H06
+
+M2-H05 #143 merged `f30a659`; do not reopen it. Implement frozen **M2-H06 Frontend Reliability and Architecture** (#127, #128, #129, #130), in this order: (1) SessionEditor stable render, timestamp/timezone, center context and CSRF isolation (#127); (2) ReportToPlanHandoff partial failure idempotent recovery and global ApiError/401 handling (#128); (3) authenticated App Router layout/session provider, schedule single fetch, feature-gated messaging (#129); (4) UI error/not-found recovery, production dev-route gating, security headers (#130). Current M2-H06 branch is planning-only; **NOT IMPLEMENTED/NOT TESTED**. After implementation require exact-HEAD six CI successes, Codex review, explicit FIX_NOW/DEFER_ISSUE/DECLINE_WITH_REASON tracking and no unresolved blockers before merge. Next frozen item M2-H07 (#131,#132,#112,#114). TB-EM-052/#115 and TB-EM-053 still need signed owner/clinical approvals; NO-GO.
+
+## 2026-10-31 — CURRENT: security P1 requalification before M2-H05 merge
+
+1. Codex's withdrawal side-channel P1 at `7a75667` addressed by `bc70c5f` and `e6b9f88`: revoked therapist receives no clinical status feedback. All prior P2 and P3 fixes remain on branch; no deferrals.
+2. Re-run six exact-final-head CI jobs and request fresh Codex code review. Only if all pass, resolve comments and squash merge #143 under Rule 16. Never activate consent/signing/releases, real patient data or production.
+3. Immediately after qualified #143 merge open M2-H06 #127/#128/#129/#130 and request Codex opening review.
+
+## 2026-10-31 — CURRENT: M2-H05 final review-driven regression gate
+
+1. Source and tests now cover three Codex P2 fixes plus two Mistral P3 compatibility/boundary suggestions (latest: `ff05058`, `9f3b979`, `7871202`). All FIX_NOW; no deferrals.
+2. Wait for 6/6 exact-final-HEAD CI and new Codex code review. Disposition and resolve inline threads before merge under Rule 16. Clinical signing, consent, releases, real data, production NO-GO.
+3. Upon qualified merge, immediately open M2-H06 #127/#128/#129/#130 draft and request opening Codex review.
+
+## 2026-10-31 — CURRENT next step: M2-H05 third P2 and final HEAD gate
+
+1. Addressed Codex long-title P2 in `a79735c`/`276a7e7`/`ca001a7` (legacy 250-character measured goal round-trips; new 250-character goal rejected). All three Codex P2s FIX_NOW; no deferrals.
+2. Re-run six CI jobs on final docs+test HEAD and get new Codex review. Resolve all reviewer threads and merge only when Rule 16 is satisfied; clinical releases and production remain NO-GO.
+3. Immediately open frozen M2-H06 #127/#128/#129/#130 draft, request opening @codex review, synchronize handover.
+
+## 2026-10-31 — CURRENT: M2-H05 Codex P2 repairs awaiting final-head qualification
+
+1. Two Codex P2 findings reviewed on #143 exact HEAD `7f77d66`: **FIX_NOW** for unchanged-wall-time recurring bookings shifting during DST fold (`02a0485`, regression `57651b9`), and for legacy immutable goal-title formatting breaking summary-only edits (`51c672d`, regression `ca12b89`). Both fixes are pushed.
+2. **Gate still pending at this checkpoint:** six jobs and new Codex review on final updated head, plus reviewer disposition/threads. Merge only after Rule 16. Never activate signing, consent, clinical release or real data.
+3. After qualified merge open draft M2-H06 #127/#128/#129/#130 and request opening `@codex review`.
+
+## 2026-10-31 — M2-H05 code CI green: remaining exact-final-HEAD review gates
+
+1. Implementation HEAD `55163d5fe7d1d567d8ec66f1499bc9d745c459f0` is **6/6 CI PASS** ([run 41233257189](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41233257189)), **611/611 API tests PASS** across 23 suites. All frozen #122/#123/#125 features are implemented and regression-tested on this code HEAD; no clinical activation.
+2. **Final gate:** run six CI jobs again on the documentation-updated exact current HEAD. Mark PR #143 ready, obtain fresh independent Codex review of the same HEAD (planning-only `5f17f99` review insufficient), read all reviewer comments and disposition every P0–P3 as FIX_NOW/DEFER_ISSUE/DECLINE_WITH_REASON. Merge without additional owner prompt only if Rule 16 fully satisfied; otherwise keep open.
+3. Immediately after qualified #143 merge open **M2-H06 (#127/#128/#129/#130)** as next frozen Milestone 2 draft and request opening Codex review. Governance-gated signing/consent/safeguarding/release/deployment remain **NO-GO**.
+
+## 2026-10-31 — CURRENT: qualify implemented M2-H05 #143 (#122, #123, #125)
+
+0. In last API run [41232523644](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41232523644), five legacy test expectations failed after deliberate stricter DTO 400, earlier DST fold choice and conflict wording. These are corrected in subsequent code/test commits; also added before-submit withdrawal guard and PostgreSQL regression. **Do not reuse that red run or earlier green subjobs for final qualification.**
+1. [PR #143](https://github.com/NTinkicht/TheraBridge-Emergent/pull/143) now contains implementation for **all three frozen M2-H05 issues**, plus synthetic calendar/timezone/DTO and real-PostgreSQL report/governance regressions. Earlier planning-only status below is superseded. The first TS narrowing CI failure was fixed; review latest CI and any newly raised findings before claiming completion.
+2. Obtain **6/6 checks on the exact final HEAD**, including test, secret-scan, live-session, preview-container, demo-journey and compose. Confirm new PostgreSQL tests and all old API/web checks. Mark ready for review, request a distinct final-head Codex review, disposition all reviewer comments (FIX_NOW/DEFER_ISSUE/DECLINE_WITH_REASON), and apply Rule 16 merge only when qualified. Otherwise keep draft.
+3. Preserve synthetic-only and unsigned clinical consent/safeguarding/signing/release/deployment **NO-GO**. After eligible #143 merge open **M2-H06 — Frontend Reliability and Architecture (#127, #128, #129, #130)** immediately in frozen order with automatic initial Codex review request under Rules 17/18.
+
+## 2026-10-31 — CURRENT: implement M2-H05 (#122, #123, #125)
+
+1. [PR #142](https://github.com/NTinkicht/TheraBridge-Emergent/pull/142) **merged** as `b95a0ce6e5504c7660bdc265ea08ba3f9a754e23`, finishing original M2-H04 #120/#119/#126 and approved H03 carryover #124/#121 with six exact-HEAD CI green and Codex final-head review clean.
+2. Current new draft **M2-H05 (6/12): #122 timezone/DST/date windows, #123 RETURNED_FOR_REVISION diagnostics + WITHDRAWN evidence exclusion, #125 calendar/IANA/numeric/trim validation.** Read the exact criteria and plan in `docs/emergent/workunits/M2-H05.md`. Planning checkpoint is **NOT IMPLEMENTED / NOT TESTED**.
+3. Implement and regress each of the three issues using synthetic fixtures and real PostgreSQL where needed; retain clinical signing/release/consent/safeguarding NO-GO. After 6/6 exact final-head CI green, get independent Codex review, disposition all comments and qualify Rule 16 merge.
+4. Upon eligible merge, continue only to next frozen item **M2-H06 (#127/#128/#129/#130)**. Historical instructions below are superseded.
+
+## 2026-10-31 — CURRENT: M2-H04 PR #142, five required issues
+
+1. **Complete both owner-approved carried-over P1 issues in PR #142: #124 HTTP security and #121 therapist revocation.** PR #141 merged documents only; its feature scope is not complete and must not be treated as fixed.
+2. **Complete all three original M2-H04 issues in that same PR:** #120 safe additive foreign keys/indexes and transfer/audit integrity, #119 N+1/center-lock performance and concurrency, #126 bounded queries/reminder idempotency/rate-limit pruning. Read current models instead of blindly applying obsolete audit examples.
+3. Run real-PostgreSQL regression and lock-wait tests, verify six exact-final-head CI jobs, request a new independent Codex review on the final implementation code, disposition every reviewer finding and merge only if Rule 16 qualifies. Keep draft during work. No clinical/production approval is implied.
+4. **Only after all five issues actually qualify and #142 merges**, open next frozen item **M2-H05 (#122, #123, #125)**. Historical instructions below have been superseded by explicit owner-approved carryover.
+
+## 2026-10-31 — CURRENT ordered next work: M2-H03 PR #141 (#124, #121)
+
+1. **Work on [PR #141](https://github.com/NTinkicht/TheraBridge-Emergent/pull/141), item 4/12 (M2-H03).** Its opening HEAD `bbc85cdb174be6b1f43726e161b54cfd8a82cbb3` only planned the work; **implementation is NOT STARTED**, so do not merge or mark work complete based on its documentation-only CI/reviews.
+2. **#124 HTTP security:** inventory current NestJS/Fastify routes and Prisma errors; implement private no-store responses, safe rate limiting across sessions/instances, GET read-only semantics, known-error sanitization, CORS allowlist and global body limit. Add negative and compatibility regression tests.
+3. **#121 therapist revocation:** inventory current membership, assignments, child referents, recurring series, future appointments and notices. Keep every cascade tenant-pinned and transactional with established lock order; regression-test concurrent membership revocation, last child-referent removal, series reschedule/cancellation and exactly-one-winner behavior.
+4. Re-run real PostgreSQL API tests and six required jobs on the final implementation HEAD; get an independent exact-head Codex review; disposition all P0–P3 findings. Merge only after Rule 16 qualifies, preserving synthetic-only and unsigned clinical NO-GO gates.
+5. **Immediately after #141 qualifies and merges, open next frozen item M2-H04 — Database Integrity, Concurrency and Performance (#120, #119, #126)** under Rule 17. Do not reorder or silently skip issues.
+6. Historical instructions below that describe M2-S01 or #139 as still open were correct only when written and are **superseded** by this checkpoint.
+
+## 2026-10-31 — Frozen Milestone 2 next actions after M2-H02 merge
+
+1. **M2-S01 (#35) family messaging:** finish server deny-by-default on every free-text route and deployed permission disclosure; test synthetic fixture-only behavior, all-denied deployment modes, historical read denial after revoked guardian link and independent household privacy. Run six exact-head jobs and obtain independent Codex review before merge.
+2. After M2-S01 qualifies and merges, immediately **open M2-H03 (#124 + #121)** — HTTP Security and Therapist Revocation — per the owner's new automatic same-milestone handoff instruction. Do not reorder the frozen 12-item plan.
+3. Retain separately signed D-NEW-5 safeguarding, D4 custody and D7 consent decisions as NO-GO; the fail-closed implementation does not resolve or pre-approve clinical policy.
+
+## 2026-10-31 — Frozen Milestone 2 queue after M2-H02 work
+
+1. **Complete PR #139 (M2-H02, #117 and #118):** run all exact-final-head CI jobs (test, secret-scan, live-session, preview-container, demo-journey, compose), obtain independent current-head review, disposition every P0–P3 finding, and merge automatically only if Rule 16 is satisfied. Preserve documented test evidence and handover checkpoint.
+2. **Next ordered PR M2-S01: Family Messaging Security and Fail-Closed Enforcement (#35)** only after M2-H02 is merged; then M2-H03 (#124, #121), M2-H04 (#120, #119, #126), M2-H05 (#122, #123, #125), M2-H06 (#127–#130), M2-H07 (#131, #132, #112, #114), M2-H08 (#133, #135, #136), M2-QA01 (#81, #61).
+3. **Owner approval gates remain:** TB-EM-052 (#115) requires explicit transfer/handover approval; TB-EM-053 protected family-plan/report release requires signed consent, privacy and safeguarding approvals. Neither is authorized by ordinary auto-merge policy.
+4. **Do not replan** the frozen 12-item order; follow the next specified work unit rather than opportunistic scope changes.
+
+## 2026-10-31 — M2-H02 / GH-01 specialty isolation implementation queue
+
+1. Implement GH-01 (#117) in this draft PR: audit current code/fixtures first, then enforce child + required specialty authorization for therapist clinical/report/governance/practice reads and mutations, including cross-caseload denials and linked goal/session specialty consistency.
+2. Add real PostgreSQL/HTTP regression matrix covering allowed same-specialty actions, denied wrong-specialty, unassigned, inactive/revoked and cross-center/child access (non-confirming 404), plus mismatch 400. Preserve existing admin/coordinator authorization only where policy truly permits it.
+3. Maintain strict synthetic-only and clinical NO-GO boundaries; no release, consent, real records or production rollout.
+4. Verify all six exact-final-HEAD CI jobs, independent review, and every P0–P3 finding's FIX_NOW / DEFER_ISSUE / DECLINE_WITH_REASON ledger. The new autonomous merge policy is **proposed**; apply only after it is effective on main and fully qualified.
+5. Keep GH-18 historical Prisma migration chronology OPEN, using no unsafe in-place rename.
+
+## 2026-10-31 — PR #137 final P3 qualification
+
+1. Verify six required CI jobs on the FINAL documentation/code HEAD: `test`, `secret-scan`, `live-session`, `preview-container`, `demo-journey`, `compose`. The `test` job must pass the new real-PostgreSQL COMMIT-acknowledgement, missing-identity, and interrupted-seed fixtures.
+2. Record explicit PR discussion FIX_NOW dispositions for all three P3 follow-ups from independent review 5717799244, including commit references and final CI status.
+3. Request only one stabilized Codex exact-HEAD review after CI green (PR #137 is already ready; check if automation dispatched first). Re-dispose any new findings.
+4. Do not merge until owner decision. No clinical activation or historic Prisma migration rename; GH-18 chronological question remains OPEN.
+
+## 2026-10-30 — M2-H01 reviewer remediation qualification
+
+1. Re-run six exact-HEAD jobs after all P2/P3 fixes, especially the real PostgreSQL rollback tests and the seven-role demo. Do not reuse `06b2f21` green CI as new-head qualification.
+2. Once code is stable and CI green, mark PR #137 ready and use the existing automated single Codex review; do not manually duplicate paid review. Check new comments and disposition every finding.
+3. Preserve all published migration identities; retain GH-18 chronology issue OPEN until the actual applied `_prisma_migrations` ledger can justify any forward-compatible repair.
+4. Require explicit owner merge decision. Do not activate real transfer, real health data, or family clinical release.
+
+## 2026-10-30 — M2-H01 exact-HEAD qualification and migration-identity decision
+
+1. Run required PR CI including seven migration-guard cases, both seed fault-injection tests, clean DB migrations, existing through-012 upgrade simulation, demo seven-role browser and preview deployment checks. Resolve type/build/runtime regressions and repeat all six jobs on corrected exact HEAD.
+2. Obtain the `_prisma_migrations` ledger from a disposable/synthetic representative upgraded database, identify actual published 049 folder and checksums, then determine whether any chronology correction is *needed*. Never rewrite historical applied migration names or checksums. If a remediation is required, develop a forward-only, upgrade-tested plan first.
+3. Ensure the deferred credential-file write behavior is documented for filesystem write failure recovery; never export a credential file on a failed transaction.
+4. Review all independent PR feedback and disposition with FIX_NOW / DEFER_ISSUE / DECLINE_WITH_REASON, with 6/6 exact-head CI and explicit owner merge approval. Keep clinical transfer and family release disabled.
+
+## 2026-10-29 — TB-EM-051 policy/technical-design draft qualification
+
+1. Verify `scripts/qa/verify-tb-em-051-gates.mjs` executes in required `test` CI on exact final PR head. Its positive pass means only **unsigned/blocked** state and unchanged runtime invariants. Fix any test errors; rerun all six jobs at changed HEAD; do not confuse green CI with policy approval.
+2. Audit plan and register against private canonical human signoff list: D10/PFR-CT-01, OR-15/D-NEW-2, OR-16, D7, D-NEW-5, D4, D1, clinical scope and security/audit. Record owner names, verifiable signatures/digests and scope only after genuine authorized decisions; until then all `UNSIGNED`, `BLOCKED`.
+3. Obtain exact-head independent P0–P2 review after CI stable; log all reviewer findings as FIX_NOW/DEFER_ISSUE/DECLINE_WITH_REASON. Respect review-budget rule; no duplicate Codex request on intermediate commits. Owner approval required before merging design PR.
+4. Later work **blocked by issue #115**: actual caseload replacement, transfer of pending items/clinical data, signer/consent/grants and production deployment. Plan for atomic source assignment revocation and target grant only after signed policy, no direct route now. Deferred history #112, cross-session browser #114, external hosted QA #81 not part of this design scope.
+
+## 2026-10-29 — PR #113 final corrected-HEAD qualification and second review
+
+1. Wait for all six latest-HEAD GitHub CI jobs (test incl PostgreSQL archived-child and supervisor regression, secret-scan, live-session, preview-container, demo-journey, compose) to pass. Fix failures on feature/tb-em-050-handover-readiness, rerun on any new commit; do not infer status from old 7b6551f8dc green run.
+2. Re-read PR #113 comments, threads, Codex summary and exact HEAD/BASE. If no already pending request at current HEAD+BASE, post **one** owner-authorized second Codex review for the corrected SHA after CI green; provide exact SHA and focus on lock-free authorization, child archival, UI freshness, no data grants or clinical signing/release. Otherwise avoid duplicate request. Obtain and disposition all findings.
+3. Apply universal policy FIX_NOW / DEFER_ISSUE / DECLINE_WITH_REASON to all fresh suggestions; browser multi-session UI test deferred to #114 with criteria, while on-demand status synchronization is already fixed. No automatic merge.
+4. Clinical approvals, purpose-specific consent, genuine transfer/reassignment and real family/clinician access remain explicit NO-GO pending owner-signed policy. Hosted QA #81 incomplete.
+
+## 2026-10-29 — TB-EM-050 draft PR qualification
+
+1. Open draft PR from feature/tb-em-050-handover-readiness based on merged main@ef1761a36d62bd626baf9a587798f0fc11afd35b. Verify readiness code contains no assignment/clinical/consent writes.
+2. Require six successful CI jobs at final exact HEAD (real PostgreSQL handover tests, authz/route inventory, Next.js compile/UX, security scan, live-session, preview-container, demo-journey and Compose). Fix red job causes and rerun.
+3. Apply owner-approved reviewer disposition policy (every P0-P3 FIX_NOW / DEFER_ISSUE / DECLINE_WITH_REASON). Obtain independent current-head P0–P2 review after stabilization; avoid duplicate/overlapping Codex usage. Owner decides when to merge.
+4. Next policy dependency: authorized sign-off for real staff replacement, purpose-specific consent, receiving clinician scope and clinical documentation visibility. Until these decisions, no actual transfer or release; hosted QA #81 remains incomplete. Follow-up issue #112 is deferred P3 history UX.
+
+## 2026-10-29 — Immediate post-policy PR #111 qualification
+
+1. Verify corrected exact-HEAD CI for all six jobs; inspect new real PostgreSQL cancel-first/acknowledge-second concurrency test and frontend button guard. Fix red jobs before review.
+2. Inspect any new Codex comments on original e7caba SHA: apply real P0–P2 fixes, record every P3 as FIX_NOW, DEFER_ISSUE or DECLINE_WITH_REASON. **Do not treat the prior SHA review as qualifying the new HEAD**. Avoid duplicate Codex requests; request one final exact-head review only when CI green and stable.
+3. Confirm current PR #111 disposition ledger and issue #112. Keep draft/unmerged until complete qualification and owner authorization.
+4. Retain synthetic-only disabled-by-default handover flag, no clinical access transfer or release. After merge the documented review policy will apply repository-wide through AGENTS.md and the PR template.
+
+## 2026-10-29 — TB-EM-049 corrected-head qualification
+
+Inspect exact-head six-job CI including PostgreSQL status migration, 17+ e2e suites, real row-lock tests, security routes, web build, live-session, demo-journey, preview-container, compose and secret scan. Fix failures and repeat at the new exact HEAD. Only after CI is green and code stabilizes, request one Codex P0-P2 re-review to conserve credits. Compare new independent findings with corrected code, resolve all actionable blockers before owner-authorized merge. Actual therapist re-assignment, clinical chart access, consent, signing and family release are NOT authorized in this operational handover preparation slice.
+
+## 2026-10-29 — TB-EM-049 immediate next actions
+
+1. Run all six exact-HEAD CI jobs including Nest/Web TS build, PostgreSQL handover.e2e, route inventory and browser demo. Correct failures and rerun on new HEAD.
+2. Once code stable and CI green, request one credit-conscious Codex exact HEAD P0–P2 review; check authorization, idempotency, concurrency and leakage, and handle actual findings. Do not request Codex per intermediate commit.
+3. Require owner merge decision after all reviewers/CI green. Keep HANDOVER_DEMO OFF for hosted/production and unchanged clinical governance NO-GO.
+4. Next follow-up in same roadmap work item: *guarded actual therapist replacement and clinical handover acceptance* with independent authorization signatures/consent decision; do not implement by merely changing operational acknowledgement status.
+
+## 2026-10-29 — PR #109 last qualification
+
+1. Inspect exact-head six-job CI for corrected source (especially PostgreSQL races, Prisma migration generate/typecheck, AC-9/AC-11 test suite, Chromium family/staff journey, Compose).
+2. If failures, fix code/tests and rerun exact-head CI; do not spend Codex review until CI is all green and HEAD stable.
+3. Then request one Codex independent exact-HEAD P0–P2 re-review covering staff-role/specialty, end-assignment and guardian revocations; address actionable findings.
+4. Reply to existing four Codex inline threads and three independent reviewed-body findings with tested evidence, resolve only after verifying fixes; request owner merge authorization separately.
+5. No clinical content, signing, consent/release, or production operations enabled; next milestone remains therapist replacement and controlled clinical handover.
+
+## 2026-10-29 — TB-EM-048 final qualification after permission-matrix update
+
+Re-run exact-HEAD six-job CI after revised RBAC expectation tests and pending-history fix. Review latest Codex threads P1 guardian-link row race, P2 pending-idempotency rejection and P2 pending-history pagination/drop. Reply with tested fix evidence only; resolve after new exact-HEAD independent review. Keep this PR DRAFT and require owner merge authorization. Hosted and clinical release still NO-GO.
+
+## 2026-10-29 — PR #109 corrected-head qualification
+
+Requalify latest exact HEAD after guardian-link row lock, idempotency rejection, concurrency test and CI browser journey were added. First inspect six real CI jobs (including PostgreSQL lock-wait test and Chromium family/staff workflow); fix failures and request new exact-HEAD Codex independent review. Resolve original P1/P2 threads only with verified fixes. Do not mark an old SHA's review as current. Draft/no merge until owner decision; production/hosted flag remains OFF and clinical NO-GO intact.
+
+## 2026-10-29 — TB-EM-048 qualification and next unit
+
+1. Qualify synthetic guardian home-plan requests on exact current PR branch: Prisma migration on fresh PostgreSQL, Nest/Web compile, e2e permission and idempotency tests, five-width seven-role browser, Gitleaks, live-session, preview-container and Compose. Fix any errors with a new exact-head qualification cycle.
+2. Obtain independent Codex P0–P2 code review; inspect Grok/Mistral when actually received and verify model/source evidence. Resolve all actionable threads. A prior review on PR #108 cannot qualify TB-EM-048.
+3. Keep `HOME_PLAN_REQUESTS_DEMO` OFF for hosted/production by default. No family-facing clinical content or safeguarding discussion. External QA #81 stays INCOMPLETE.
+4. After exact-head CI and review, request owner authorization to merge. Next queue: therapist replacement and controlled clinical handover, separate PR.
+
+## 2026-10-29 — TB-EM-047 PR #108 next qualification gates
+
+1. Verify latest exact-HEAD six CI jobs (test with PostgreSQL, secret-scan, live-session, preview-container, demo-journey, compose) following the corrective commits. An earlier head failed demo-journey due to stale copy; do not reuse its status.
+2. Obtain fresh Codex and independent P0–P2 review of **current corrected HEAD**, respond to findings, resolve review threads only when fixed, and rerun checks after every new commit. Existing Grok/Mistral/Codex comments were bound to original `ed5414a` only.
+3. After green exact-head qualification, request explicit owner merge decision. Do not automatically merge; keep synthetic/clinical NO-GO and hosted #81 separate.
+4. Next development unit **after qualification**: guardian home-plan request/tracking/clinician response; do not enable guardian access to unsigned plans or reports.
+
+The per-plan duration override is implemented on draft PR #108, not an unstarted future slice; the feature is NOT yet qualified or merged.
+
+## 2026-10-27 — PR #97 final dispatch qualification
+
+- Confirm owner-authored exact manual comments enter the dispatched review job ONLY through the read-only preflight and ineligible owner comments cannot occupy the paid concurrency queue; automatic PR dispatch is unaffected by preflight skip.
+- Require all six real CI jobs on final HEAD, especially offline preflight parser and provider reservation replay assertions, plus clean Gitleaks history. Recheck any new CodeRabbit/Codex findings; resolve only verified threads.
+- Explicit owner merge decision required after qualification. Paid reviewer opt-in stays disabled by default and hosted clinical/production gates remain separate.
+
+## 2026-10-27 — PR #97 final qualification after new reviewer P2s
+
+- Verify all six exact-HEAD CI jobs on PR #97 after latest paid-call fixes and mandatory handover updates: test (including offline review fixtures), Gitleaks `--all`, live-session, preview-container, seven-role demo journey and Compose. Confirm the final clean branch remains based directly on main@294f3d4298bb9a6b378937f7e40c336572ddef1d; no scanner allowlist weakened.
+- Obtain CodeRabbit and independent exact-HEAD review; inspect any additional P0–P2. Reply and resolve all eight original/follow-up threads only with verified fixes. Keep paid provider opt-in OFF and treat an attempt reservation as uncertain, not a review.
+- This infra PR must not be merged until owner authorization and complete gates. Hosted external acceptance, clinical/guardian release, real patients and provider AI/STT remain separately NO-GO.
+
+## 2026-10-27 — PR #97 qualification sequence
+
+1. Confirm PR #97 branch after clean rebase onto main #107 merge `294f3d4298bb9a6b378937f7e40c336572ddef1d`. Run six-job exact-head CI and independent CodeRabbit/Codex review. Verify Gitleaks `--all` passes with clean history, offline provider test has no network/billing, and all five original threads addressed/resolved. An automatically posted request is not a reviewer verdict.
+2. Keep `TB_PAID_REVIEW_OPT_IN` disabled (default), no Mistral/xAI API secrets configured or invoked through ChatGPT, no live provider spending. Any future owner enablement must be separately authorized and usage-limited.
+3. Owner-authorized merge only when full CI, reviewer findings and context qualify. This is review-infrastructure code independent of clinician acceptance and hosted QA #81. The later per-plan activity-duration UI override, hosted acceptance, production/real data, AI/STT clinical release and consent remain separately gated.
+
+## 2026-10-27 — TB-EM-046 required acceptance and release sequence
+
+1. Finish exact-head six-job CI and independent P0–P2 review for PR #105 against combined #103/#104 main, resolve any findings, and owner-authorized merge before promoting dependent PR #106.
+2. Retarget PR #106 to latest main, verify exact feature diff contains only acceptance tests/ledger/mandatory handover changes, re-run six-job CI at exact head (PostgreSQL/API, pure cross-document fixture, seven-role Chromium, responsive five widths, Docker/preview, secret scan/live-session), request independent Codex/Mistral review and resolve findings. No automatic merge, no hosted mutation.
+3. Assess all internal milestone1 gates as PASS/FAIL/NOT RUN with cited real run IDs; keep hosted external runner issue #81 BLOCKED/INCOMPLETE and clinical authorization/family release/real AI/STT/production NO-GO.
+4. Separate home activity per-plan duration override as independent next development slice if scoped milestone remainder is needed; do not alter immutable library minutes or loosen governance to pass acceptance.
+
+## 2026-10-26 — TB-EM-045 integration qualification and handover
+
+1. Qualify draft PR #105, `feature/tb-em-045-clinician-journey-navigation`, after updating all four required checkpoint files. Re-run all six jobs at the new exact HEAD; require test, secret-scan, live-session, preview-container, seven-role/demo-journey and compose SUCCESS plus fresh independent Codex/Mistral P0–P2 review and resolved discussions. No automatic merge or deployment.
+2. After owner merges earlier milestone PRs #103 and #104, reconcile #105 with the new main and ensure the earlier progress/report components remain navigable from the four new buttons; re-qualify the final head if updated. Review cross-tenant/specialty, child URL continuity, mobile 320/390/768/1024/1440, permissioned reports and no fabricated source or report count.
+3. Perform separate end-to-end hosted acceptance, real cookie/session and external browser work tracked in #61/#81. Synthetic GitHub CI and this read-only journey do not establish clinical readiness. External AI/STT, signing, consent, safeguarding, guardian clinical releases, pilot and production remain NO-GO. PR #97 is independent.
+
+## 2026-10-26 — TB-EM-044 review/merge gate
+
+1. Requalify report comparison PR #104 after mandatory four-file checkpoint update: six jobs green for final exact HEAD, independent P0–P2 review and zero unresolved discussions, then owner-directed (never automatic) merge. Carefully distinguish matching recorded source metadata from signed source integrity, evidence adequacy or clinical judgement. No new auth grants.
+2. Reconcile with other milestone branches (#103 progress evidence and #105 integrated navigation) if either merges to main; rerun CI on reconciled commit. Continue synthetic-only role and 320/390/768/1024/1440 acceptance, and separate hosted QA #61.
+3. No external AI/STT, real patients, safeguarding, consent grant, clinical signing/co-signing, guardian clinical report/home-plan release, PDF distribution, production/pilot or approval. Do not bypass owner policy gates.
+
+## 2026-10-26 — TB-EM-043 qualification and remaining Milestone 1
+
+1. Open a focused draft PR for `feature/tb-em-043-goal-version-context`, base merged `main@d242a001a880984fc9d4123dff5430aebc440019`. Qualify complete six-job CI, independent exact-head P0–P2 review, resolved threads and owner-approved merge. Focus review on reused goal key across changed measurement units, observation/checkpoint exact-version identity, no attribution for orphan observations, disjoint service/plan scopes, current-versus-historical status, safe links and responsive mobile accordion.
+2. Slice 15: report integrity, selected-source staleness and version amendment context WITHOUT clinical inference or permission expansion. Slice 16: integrated Child 360 → progress → report → home plan journey, source-consistent navigation and final synthetic seven-role acceptance. Avoid duplicate functionality from PRs #88–102. Existing hosted issue #61 QA and external browsers remain independent.
+3. Real external AI/STT, production/pilot patients, clinician signature/co-sign/approval, family release, purpose-specific consent and safeguarding workflows continue NO-GO pending separate decisions. PR #97 review automation control plane remains separate.
+
+## 2026-10-26 — TB-EM-042 clinician event timeline qualification
+
+1. Open draft PR `feature/tb-em-042-child360-clinical-timeline` based exactly on owner-merged `main@91036e063db2afc07fac2d9cdb6951d47e4711d1` (PR #101). Require exact-head six-job CI including real PostgreSQL/API, web builds, pure event source/chronology tests, synthetic 7-role Chromium and 320/390/768/1024/1440, secret scan, live-session, preview and Docker Compose. Fix P0–P2 and obtain independent exact-head review before owner-authorized merge.
+2. Review event date semantics (plan.updatedAt last update vs clinician-reviewedOn vs server checkpoint.at), no hidden truncation, specialist filter, reused goalKey across plan versions, orphaned source-link honest labeling, effective keyboard/320px navigation, absence of family outcomes or clinical inference, no new data fetch or permissions. Existing authorized workspace remains the only clinical source.
+3. After merge, continue Milestone 1 with advanced progress/report context, source consistency cues and complete clinician care-journey acceptance, not duplicate earlier goals/activity/home-plan features. PR #97 reviewer control-plane remains isolated. Clinical signatures, approval, consent grants, safeguarding actions, family clinical release, external AI/STT, real patients and deployment/pilot remain NO-GO. Hosted issue #61 baseline unchanged.
+
+## 2026-10-26 — TB-EM-041 saved plan preview qualification
+
+1. Open a DRAFT PR for `feature/tb-em-041-exact-plan-preview` from merged PR #100 `main@ab9a87737d5c104890ed4e40d5609fc58adae1fa`. Qualify six-job exact-head CI (PostgreSQL/API, Next builds, pure snapshot/report origin tests, seven-role 320–1440 Chromium, preview-container, live-session, gitleaks, Compose), independent exact-head P0–P2 reviewer, resolved threads, owner-approved merge. No auto deploy.
+2. Independently review **saved-vs-unsaved** invariants, original report source goal mapping restricted to `originalPlanVersionId`, no link to absent current goal, historical snapshot precedence over changed library, missing-template safety labeling, no inherited clinical evidence and guardian isolation. Browser overlay represents fictional authorized read-model presentation ONLY, not hosted QA or real clinical sign-off.
+3. After merge, Milestone 1 remaining integration slices: richer clinician Child 360 clinical timeline, advanced progress/report context, exception/source consistency, complete 7-role journey QA. External report/plan release, AI/STT, guardian messages, clinical approvals/sign/co-sign, consent grants, safeguarding escalation, production/pilot continue NO-GO; #61 hosted ledger unchanged. PR #97 control plane separate.
+
+## 2026-10-26 — TB-EM-040 qualification and next slice
+
+1. Open draft PR from `feature/tb-em-040-home-activity-details`, based at merged PR #99 `main@f40360b595a42f8735e3f7a80be1221e00dbb0e6`. Require exact-head six-job CI: PostgreSQL/API and web builds, pure snapshot priority and note tests, seven-role Chromium with five viewport widths, preview, live-session, secret scan and Docker Compose; independently review note max 500 client/server, dirty-state lock, saved snapshot vs current mutable library precedence, historical notes and calendar, specialty isolation, no guardian release. Fix P0–P2 and resolve threads before separate owner-authorized merge; no auto deploy.
+2. After merge continue focused Milestone 1 completion: source-consistent clinician report/plan internal preview, richer Child 360 clinical timeline, longitudinal progress/export context and report provenance gap closure. Do not invent a per-plan editable duration without compatible DTO and versioned server storage. Reassess completed items to avoid duplicate work.
+3. PR #97 control-plane AI reviewer remains separate. Clinical signing/co-sign, consent grant, guardian report/plan release, safeguard action, real audio/STT, provider AI, production pilot still NO-GO; hosted #61 not changed.
+
+## 2026-10-26 — TB-EM-039 qualification and subsequent milestone
+
+1. Open draft PR for `feature/tb-em-039-home-plan-handoff` from merged main `d9921cb94dca0ca949f1af0b3d1847ebdc51a345`. Require six-job exact-head CI (PostgreSQL/API, Next, synthetic seven-role 320–1440 Chromium, secret scan, preview, live-session, Compose); independent review of save-first semantics including **other dirty plan**, server submit/version authority, no unintended hard gating of legacy plans, client-only advisory language, and correct safety-snapshot precedence. Fix P0–P2 before owner-authorized merge; never auto deploy.
+2. Next logical work after merge: reassess remaining Milestone 1 gaps before Milestone 2 family operations. Prioritize only functionality not already merged or gated by owner policy. Keep PR #97 review-control-plane separate; avoid touching its branch.
+3. All production, family clinical report/home-plan release, external AI/STT, signature/co-sign, consent grants, safeguarding escalation and live pilot remain NO-GO. Hosted #61 acceptance ledger unchanged.
+
+## 2026-10-26 — TB-EM-038 qualification and continuation
+
+1. Open DRAFT Slice 9 PR; require exact-head six-job CI, including PostgreSQL/API, Next web build, pure month recurrence, seven-role synthetic browser responsive 320/390/768/1024/1440, live-session, preview-container, secret scan and Compose. Independently review local-calendar date math, no 40-item truncation, cross-version isolation, saved historical snapshot title preference, missing schedules and forbidden family/clinical release. Fix P0–P2, resolve threads, request owner approval before merge. No auto deploy.
+2. After merge, reassess remaining clinician experience: source-linked internal home-plan editor handoff, better longitudinal goal context, and scheduling usability. Avoid repeating already merged Milestone 1 slices. PR #97 reviewer integration is a separate control-plane PR; do not change it from this branch.
+3. Keep clinical sign/co-sign, consent grants, family clinical release, safeguarding escalation, external AI/STT, real records and live pilot blocked. Hosted #61 53 PASS / 0 FAIL / 47 BLOCKED / 4 NOT TESTED (+4 historical supplemental PASS).
+
+## 2026-10-25 — TB-EM-037 qualification and next slice
+
+1. Open draft PR from `feature/tb-em-037-checkpoint-comparison`. Qualify exact HEAD with six standard CI jobs (PostgreSQL/API, Next builds, seven-role responsive loopback Chromium with fictional-only checkpoint overlay, preview, live-session, scan and Compose). Independently review strict same-version/goal boundaries, timestamp ordering, sparse/historical checkpoint handling, accessible responsive controls, no clinical inference or guardian access; fix P0–P2 and resolve threads before separately authorized merge. No automatic deploy.
+2. Once merged, complete a dated internal home-activity calendar view using the already-validated weekly/monthly recurrence; use only authored draft schedules, keep date-timezone and 366-day bounds, do not confuse scheduled activities with attended sessions or approved family release. Defer P3 from #94: cosmetic absent-section filter option, checkpoint source search fixture, and mismatch visibility hint.
+3. No external AI/STT, real patient data, audio recording, clinical signature/consent/safeguarding release, guardian clinical access, hosted QA ledger change or pilot.
+
+## 2026-10-25 — TB-EM-036 source inspector qualification
+
+1. Open a DRAFT PR from `feature/tb-em-036-claim-source-inspector`; verify its exact final HEAD through all six CI jobs (real PostgreSQL/API, responsive seven-role Chromium, web build, preview, live-session, secret scan, Compose). Review the fictional multi-claim route overlay strictly as UI coverage; it is not proof of source hash validity or hosted acceptance. Fix P0–P2 defects on the same branch and obtain independent exact-head review; resolve threads; do not merge or deploy without owner-authorized gates.
+2. After qualification, continue Milestone 1 with read-only *within exact plan-version* longitudinal clinician goal-review checkpoint comparisons and dated home-practice calendar visualization. Never merge observations across historical goal versions or infer clinical outcomes. Keep guardian-visible clinical report content isolated.
+3. No real audio/STT, external AI, sign/co-sign, consent grants, safeguarding escalation, family clinical release, live Render changes or clinical pilot; #61 QA baseline unchanged.
+
+## 2026-10-25 — TB-EM-035 closeout gates
+
+1. Qualify new branch/PR exact HEAD with PostgreSQL report decision regression, frozen version source fidelity, pure multi-claim/stale/malformed cases, Next.js build, seven-role browser at five widths, secret scan, preview and Compose smoke. Fix P0–P2 findings on same branch and request exact-head independent review. Do not merge without owner approval.
+2. Next Milestone 1 continuation: in-report inspector for multiple clinician claim associations, richer longitudinal goal checkpoint comparison, immutable review provenance; maintain compatibility with legacy saved versions and keep family-visible content completely isolated.
+3. No external AI/STT, clinical signing/co-signing, consent, sensitive behavior safeguarding actions, authorized family report release or production pilot. Hosted issue #61 baseline stays 53 PASS, 0 FAIL, 47 BLOCKED, 4 NOT TESTED (+4 supplemental historical PASS).
+
+## 2026-10-25 — TB-EM-034 gates
+
+Run exact-head 6-job CI including PostgreSQL e2e for source/role/replay/immutability, seven-role browser and five viewport widths, web and API builds, secret scan, Docker Compose smoke. Fix all P0–P2 findings on the draft branch and request exact-head independent review before marking Ready. No automatic merge/deploy; follow owner process. Then milestone continues with evidence-linked report statements and explicit checkpoint follow-up reading, maintaining unsigned synthetic clinical-only boundaries.
+
+## 2026-10-25 — TB-EM-033 review-readiness closeout
+
+Qualify exact HEAD of `feature/tb-em-033-goal-review-readiness`: API/web builds, PostgreSQL/regressions, pure date+version test, responsive seven-role Chromium and exact report→goal deep link, secret scan, Docker Compose smoke. Fix P0–P2 on same PR, independent exact-head review, resolve threads, mark ready only after gates. No merge or deploy without further owner instruction. Future Milestone 1 steps: persistent clinician-authored goal review checkpoints (separate from goal definition immutability), evidence-to-report statement trace UI and retrospective goal reviews; no automatic clinical effectiveness inference or guardian release.
+
+## 2026-10-25 — TB-EM-032 review and qualification gates
+
+1. Execute exact HEAD PostgreSQL API/scope, Next.js web build, pure goal source pairing, seven-role synthetic Chromium 320–1440 px, security scan, container preview and Docker Compose smoke. Correct actionable P0–P2 on same draft PR. Request independent exact-head review; no auto merge/deploy.
+2. After qualifying the first provenance display, extend Milestone 1: source-to-report sentence anchors, richer goal milestone reviews and longitudinal comparisons, read-only authorized cross-document navigation, dated home-practice calendar views. Never infer progress from family-practice feedback.
+3. Clinical sign/co-sign, releases, safeguarding, consent grants, supervisor-family discussions, external AI/STT and production pilots remain denied pending signed policy. Hosted #61 acceptance unchanged.
+
+## 2026-10-25 — TB-EM-031 qualification and Milestone 1 continuation
+
+1. Run exact HEAD 6-job CI on the new PR: PostgreSQL clinical regressions and scope, pure calendar helper, frontend build, disposable seven-role/320–1440 responsive browser, Docker Compose smoke and secret scan. Fix any actionable P0–P2 in same branch, request exact-head independent source review; do not automatically merge or deploy.
+2. After merge, Milestone 1 remains: richer goal milestone review workflows; persistent source/observation-to-goal traceability UI; complete dated calendar presentation and report-to-home-plan provenance. Retain separation of synthetic family-practice feedback from clinical observation evidence.
+3. All production, external AI/speech-to-text, clinical signing, consent grant, safeguarding escalation, release and parent clinical visibility remain policy blocked. Hosted issue #61 acceptance unchanged (53 PASS, 0 FAIL, 47 BLOCKED, 4 NOT TESTED, four historical supplemental PASS).
+
+## 2026-10-25 — PR #88 reviewer corrections: closeout
+
+1. Verify exact-HEAD CI of synchronous transition lease, whitespace title validation, pending-submit synthetic browser race and navigation fallback changes. Inspect jobs; fix any P0–P2 failure on PR #88. Request exact-head independent re-review; resolve Codex's remaining race thread only after verification. No self-approval or automatic merge/deploy.
+2. Once independently qualified and merged by owner-authorized process, proceed to remaining Milestone 1 features: short/long-term objective metadata, goal due/review dates, weekly/monthly home plan, source provenance UI. Preserve no guardian clinical access, release or AI/STT activation.
+3. Keep historical CI runs distinct from current branch, and keep issue #61 hosted acceptance unchanged (53 PASS / 0 FAIL / 47 BLOCKED / 4 NOT TESTED, +4 historical supplemental PASS).
+
+## 2026-10-25 — TB-EM-030 closeout gates
+
+1. Await exact HEAD GitHub CI for corrected PR #88; inspect API Postgres/browser failures and fix on SAME branch. Verify code review against latest head, especially report save lease, double-submit/ambiguous retry, durable fingerprint audit, role scopes and unchanged consent/release denials. Re-review/resolved threads before owner merge; do not automatically deploy/merge.
+2. After qualification, proceed to Milestone 1 short/long-term goal metadata and milestones; weekly/monthly dated home-activity plan scheduling; visible source-to-plan audit UX and richer evidence continuity. Keep one active PR at a time, no duplicate writer branch.
+3. Hosted acceptance issue #61 and pending safeguarding/clinical/AI policy gates remain separate; no CI browser run counts as hosted acceptance.
+
+## 2026-10-25 — Milestone 1 / TB-EM-030 next actions
+
+1. Qualify `feature/tb-em-030-report-to-plan-draft` with exact-HEAD GitHub CI (API/PostgreSQL, web build, seven-role synthetic browser, Docker Compose, secret scan); correct any P0-P2 issue in this same PR; independent source review. No merge/deploy until approved gates. Verify authorization, report-version identity and request replay under concurrent calls as a possible P3 follow-up.
+2. After this first handoff is merged, continue same Milestone 1: short-/long-term objective metadata, timeframe/review dates, richer home-plan weekly/monthly scheduling and goal-linked activity prescription, provenance shown in plan UI, and cross-document report/plan navigation. Avoid generating medical instructions from report prose; no family clinical release.
+3. Work QA remains separate; do not interpret CI Chromium as hosted acceptance. Clinical signing, co-sign, supervisor discussions, consent grants, media, STT, real AI and release remain denied until owner-signed policies.
+
+## 2026-10-25 — PR #87 closeout and next vertical slice
+
+Complete exact final-head CI and verify review-thread status; merge PR #87 only once protected GitHub gates permit. No further P3 work required on this PR: seed-independent browser fixture and broader removed-item UI testing are later QA improvements, not blockers. Do not update hosted issue #61 without actual approved evidence. After merge return to clinician-controlled home-plan and report evidence traceability roadmap, preserving synthetic-only clinical restrictions. No real speech-to-text, AI medical inference, signing, approval or release authorized.
+
+## 2026-10-25 — TB-EM-029 next gates
+
+1. Open draft PR from `feature/tb-em-029-plan-version-history`; run exact-head CI (including pure goal diff and seven-role disposable-browser regression), inspect failures, fix on same branch, and request independent review. Do not merge without required gates/owner authority.
+2. Validate that historical snapshots remain read-only, clinicians see only their current authorized child/specialties, draft status labels never imply approval/release, and same-goal keys across versions never aggregate measured observations.
+3. After merge, issue #37 can be closed if accepted. Parent-facing plans, speech-to-text, AI clinical inference, approval, signing and report release remain policy gated. No protected hosted QA rerun or #61 ledger change from this PR; P3 UI backlog can remain separate.
+
+## 2026-10-25 — PR #86 remaining gates and follow-up
+
+1. Verify documentation-only checkpoint commit, exact-new-head CI and review; confirm Codex P1 is addressed and all review threads resolved. Apply protected-branch/independent-approval requirements; do not self-approve or bypass. Owner to merge after gates are satisfied; repository AGENTS.md prohibits automatic merging.
+2. Do not count hosted acceptance from offline tests. Following an explicitly authorized deployment, run focused synthetic seven-role smoke checks; only an approved complete evidence review can change #61's 53 PASS / 0 FAIL / 47 BLOCKED / 4 NOT TESTED (+4 supplemental PASS). Investigate hosted session cleanup warnings separately; no automatic new hosted run.
+3. Advisory follow-up P3 (not PR #86 merge blockers): independent UI assertion instead of duplicate indicator color, CI dropdown interaction/permission checks, activity creation aria-controls and toggle/save regressions, and exact pathname comparison for /select-context. Avoid re-running the entire 104-case suite for small fixes.
+4. Continue synthetic Child 360, care referent, evidence traceability and clinician-controlled home plans workstream; real STT, clinical signing, release, consent and production remain policy-gated.
+
+## 2026-10-25 — TB-EM-028 hosted QA run #40175463830; container path fix (PR pending)
+
+The first authorized hosted workflow run 40175463830 reached Chromium, private synthetic seven-role credential preflight and public /api/health successfully. Collector reported **1 PASS / 0 FAIL / 41 BLOCKED** for 42 N-052..N-093 test outcomes, plus session logout warnings; these are *new run receipts, not accepted case updates*. Workflow then failed writing `collector-exit` to GitHub's host-expanded `runner.temp` path `/home/runner/work/_temp` from inside the Playwright container (mount actually exposed at `/__w/_temp`). As a result no encrypted artifact was uploaded and #61 remains **53 PASS / 0 FAIL / 47 BLOCKED / 4 NOT TESTED** (+4 historical supplemental PASS).
+
+Corrective branch replaces all runner.temp file paths in the container with `/__w/_temp`, explicitly creates receipt directory, and runs encryption/upload before the intentional incomplete status on BLOCKED cases. Adds static workflow path/privacy/order tests to `qa-readonly-contracts`; exact-head CI **NOT YET VERIFIED**. No credentials, raw cookies, screenshots, Render deployment or clinical policy changed. Follow-up investigation of six session-cleanup warnings needed. No automatic hosted rerun is permitted without renewed owner authorization.
+
+## 2026-10-25 — TB-EM-028 private external QA runner (#81; CODE ADDED, NOT QUALIFIED)
+
+A manual-only main-branch GitHub Actions workflow now proposes a matching Playwright 1.48.2 preinstalled Chromium container, strict seven-role secret-file validation, public health preflight, five CSS viewports, cookie attribute review, AES-256-GCM encrypted screenshot receipts and short retention. Source: `scripts/qa/prepare-hosted-run.mjs`, `scripts/qa/evidence-crypto.mjs`, `.github/workflows/hosted-responsive-private.yml`, offline tests and `docs/qa/TB-EM-028-PRIVATE-HOSTED-WORKFLOW.md`. **No real hosted run, credentials, browser screenshot, Render deployment, environment protection or secret configuration is verified by this code change.** Offline CI and independent code review are pending. Issue #61 remains 53 PASS / 0 FAIL / 47 BLOCKED / 4 NOT TESTED (+4 historical supplemental PASS); Work's 42 blocked preconditions did not execute new assertions. Scope synthetic only; do not infer clinical or hosted acceptance. Issue #81 remains open until operator config and actual approved run.
+
+## 2026-10-25 — PR #78 accessibility follow-up to DeepSeek review
+
+The chart date error now appears directly after date fields and both invalid inputs receive Field error/ARIA linkage. Previous exact head bdc3ecf completed 6/6 CI green, but new changes REQUIRE fresh CI and exact-head review. No clinical policy changes or hosted deploy. Hosted acceptance issue #61 remains 53 PASS / 0 FAIL / 47 BLOCKED / 4 NOT TESTED.
+
+## 2026-10-25 — TB-EM-027 review-queue pagination and expanded QA (PR #79 DRAFT)
+
+Issues #75/#77: CODE ADDED (NOT QUALIFIED). A parameterized PostgreSQL JOIN replaces materialized ACTIVE-child UUID lists, with a centre/active-child/IN_REVIEW scope, server child/service/search filters, bounded 25-row pages, deterministic updatedAt+id order, centre and filtered counts. New 102-report real PostgreSQL regressions exercise pagination beyond 100, metadata and authorizations; disposable synthetic Chromium checks five widths and focus-visible. Existing clinical write/approval/release permissions remain unchanged. Exact-head CI and Codex verdict PENDING at authoring. The clinical disposition for archived-child pending IN_REVIEW reports remains an UNSIGNED owner decision, not an automatic status transition; follow-up policy decision required. No protected Render deployment or #61 acceptance change.
+
+## 2026-10-25 — TB-EM-026 CI failure and regression correction
+
+At `1ad25b581f7aecbe1557979d806fd84edfc570ce`, GitHub CI runs 40130052063 / 40130047227 **FAILED** (API job: 481 PASS / 1 FAIL, `progress-reports.e2e-spec.ts:132`). Cause verified from CI logs and source: archiving a child permanently ends therapist care assignments; restoring the child does not restore their access, so the same workflow's subsequent therapist report read correctly returned 404. Not an application regression. Corrective commit `bfb2340f4099ab3e68512cfb9867a5e37dc627eb` moves the archive/restore queue check into an isolated synthetic PostgreSQL test and explicitly asserts ended therapist assignments and denial of therapist report access after restore; original report workflow is no longer interrupted. New exact-head CI and review **NOT YET QUALIFIED** at authoring. No clinical policy changes, no deployment. Preserve #61 hosted acceptance baseline.
+
+## 2026-10-25 — TB-EM-026 PR #74 DeepSeek review remediation
+
+At previous HEAD `e9325c5322ff666e01313ff448b3ebfe8f417b06`, CI pull-request run 40128332485 and push run 40128329125 both completed SUCCESS (six standard jobs). DeepSeek later reported CHANGES_REQUIRED because the documentation claimed DRAFT-exclusion was tested when it was not. That is a genuine P2 qualification gap; the source predicate was already correct. **This corrective branch adds a real pre-submit DRAFT exclusion test.** It also adds coordinator/foreign-centre access checks, archive/restore visibility, accessible report-specific link names, consistent diacritic folding, clearer centre-wide count and 100-row cap messaging, and a chart-period-independent queue with browser regression. These new modifications are CODE ADDED; **exact corrective HEAD CI and external review remain NOT VERIFIED at this checkpoint**. Existing CI at e9325c5 does not qualify new commits. Longer-term server-side filtered pagination and active-child query performance improvements stay advisory in issue #75. Archived-child IN_REVIEW records remain hidden without status changes; no clinical policy decision made. No protected Render/Neon changes, hosted issue #61 unchanged, clinical gates NO-GO.
+
+## 2026-10-24 — TB-EM-026 supervisor review queue (PR #74, DRAFT)
+
+Source HEAD under qualification: `bc51a8bc8f5430121ec21cff902570709af366d9` plus this correction. Adds server-authorized, metadata-only supervisor review queue to the Progress page with search, links, and PostgreSQL/Chromium regressions. Codex P1 required checkpoint records, and P2 required a populated fixture: both corrected in this branch. **CODE ADDED; new exact-head API/Chromium results NOT YET VERIFIED.** Full six-job Actions CI and fresh independent review required. No merge/Render deploy. External hosted QA issue #61 remains OPEN (53 PASS, 0 FAIL, 47 BLOCKED, 4 NOT TESTED, plus 4 supplemental PASS); real AI/STT, clinical authorization, consent and release remain NO-GO.
+
+## TB-EM-024 — PR #72 acceptance
+
+CI on `b234c519` verified 6/6 PASS (run 40117705186). Recheck the newer read-only-role regression/documentation update on its own exact head, especially the staff library Chromium tests. If failing, correct the actual failure in a new commit. Request exact-head Codex/Grok/Mistral/DeepSeek independent review. Keep draft until reviewer findings and CI are resolved; owner controls merge/deployment. Separately, Work continues hosted QA issue #61. No clinical gate activation.
+
 ## 2026-10-24 — TB-EM-023 next actions
 
 1. Wait for exact-head six-job CI and specifically `demo-journey` Chromium computed-style checks.
@@ -99,3 +496,32 @@ Phase: 1 — Foundation + center onboarding
 - After approval, first implementation checkpoint must include reproducible cold-clone instructions and actual test results.
 
 Blocked until owner's Emergent plan is returned and accepted. No code implemented.
+## 2026-10-31 — CURRENT: qualify combined M2-H04 #142 before any merge
+
+1. Run migration chronology guard and Prisma deploy/generate on a fresh and pre-migrated isolated PostgreSQL database; inspect all new center/child FK validation and transfer CAS SQL. Never rewrite published migrations.
+2. Run the entire API suite and all six exact-HEAD GitHub checks, including the new therapist revocation, reminder idempotence, audit immutability, HTTP security and migration-guard tests. Fix any regressions in the same draft.
+3. Audit coverage of legacy #124/#121/#120/#119/#126 against actual split models. Flag any missing actor FK, direct user-disable lifecycle, per-row series update, pagination/clinical evidence retention or residual P3 as actionable before merge; do not silently defer it.
+4. Mark ready, request a new final-implementation `@codex review`, disposition every comment and link any owner-approved deferrals, then Rule16-qualify and auto-merge. Open M2-H05 (#122, #123, #125) immediately after a qualified merge.
+5. Clinical consent, signing, family release, real data and deployment remain NO-GO.
+
+
+## Active M2-H07 — do not skip qualification
+1. Await exact final HEAD GitHub Actions six jobs; investigate and fix every failing job (including new Playwright cross-session fixture, live a11y and PostgreSQL history regression). Run fresh CI after any change.
+2. Inspect all PR #145 top-level and inline reviewer findings. Disposition FIX_NOW / DEFER_ISSUE / DECLINE_WITH_REASON with regression/linked issue and update these ledgers.
+3. Request or verify single final exact-head Codex review once implementation and CI are stable. No merge without all six passing jobs and no unresolved blocking findings.
+4. Once Rule 16 qualified, merge M2-H07 and open M2-H08 (#133/#135/#136) under Rule 17. Do not activate TB-EM-052/053 absent signed owner approvals.
+
+
+## M2-H07 CI qualification checkpoint — 2026-11-01
+GitHub Actions [run 41242446451](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/41242446451) completed **SUCCESS, 6/6 jobs** at implementation HEAD `0955bb3e66033a5099a46506990ffa1b6bdadda9`: test (23/23 suites, 617/617 API tests, web build + frontend regression), secret-scan, live-session, preview-container, demo-journey (including three-browser handover synchronization), compose. The initial earlier SHA typecheck failure was fixed by adding the required `createdAt` to a synthetic child fixture. **This documentation update creates a new HEAD**; latest exact-head CI and final Codex review must still be rechecked before merge. No governance release approvals changed.
+## M2-QA01 next validation — 2026-11-01
+
+Qualify PR #147 on its final HEAD with all six CI jobs, QA-specific contracts, and exact-head independent review; resolve every finding before merge. After tooling-only merge, obtain separate protected-run authorization to exercise the one-day HTML/JSON/**layout-only redacted PNG** synthetic report. Public artifacts must not include readable personal or clinical content. The 35 pending full visual/dialog cases still require approved independent inspection; reconcile #61/#81 only with actual proof. Do not change the fixed 104-case ledger or activate clinical consent, transfer, signing, or release gates without owner approvals.
+# Next work — 2026-11-02 — M3-AI01
+
+Finish M3-AI01 first: validate offline fixture bounds and safety tests, complete all six required CI jobs on exact HEAD, obtain independent exact-head review and dispose every comment. Merge only under AGENTS.md Rule 16. Next approved ordered work item after qualified merge: **M3-STT01** (synthetic STT architecture and controlled transcription; no real audio processing without D2/PD approvals). Do not reopen Milestone 2; PR #152 merged.
+
+# Next work — 2026-11-02 — M3-STT01 qualification
+
+Qualify PR #154 on exact implementation HEAD: six CI jobs, real-browser simulated capture/correction tests, independent review, explicit reviewer comment dispositions, resolve all P0–P2 before Rule 16 merge. Preserve `realMicrophone` rejection and synthetic-only activity; D2/PD data-processing approvals are not granted. After a qualified merge, next ordered milestone item is M3-AI02 (AI-assisted report drafting under synthetic-only policy).
+

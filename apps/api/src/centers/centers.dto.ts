@@ -3,10 +3,10 @@ import {
   ArrayMaxSize, ArrayMinSize, IsArray, IsDefined, IsObject, IsEmail, IsIn, IsInt, IsOptional, IsString, IsUUID, Length, Matches, Max, MaxLength, Min, MinLength, ValidateNested,
 } from 'class-validator';
 import { SPECIALTIES } from '../applications/applications.dto';
+import { IsIanaTimeZone } from '../common/validators';
 import { RESPONSIBILITIES, STAFF_ROLES } from './history';
 
 const trim = () => Transform(({ value }) => (typeof value === 'string' ? value.trim() : value));
-const TZ = /^[A-Za-z_]+\/[A-Za-z_/+-]+$|^UTC$/;
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 export class InviteeDto {
@@ -17,7 +17,7 @@ export class InviteeDto {
 export class CreateCenterDto {
   @trim() @IsString() @MinLength(2) @MaxLength(160) name!: string;
   @IsOptional() @trim() @IsString() @Length(3, 64) @Matches(SLUG, { message: 'slug may contain lowercase letters, numbers and single dashes' }) slug?: string;
-  @IsString() @MaxLength(64) @Matches(TZ, { message: 'timezone must be an IANA time zone' }) timezone!: string;
+  @trim() @IsString() @MaxLength(64) @IsIanaTimeZone() timezone!: string;
   @trim() @IsString() @MinLength(2) @MaxLength(80) country!: string;
   @trim() @IsString() @MinLength(2) @MaxLength(80) city!: string;
   @IsArray() @ArrayMinSize(1) @ArrayMaxSize(6) @IsIn(SPECIALTIES, { each: true }) specialties!: string[];
@@ -27,7 +27,7 @@ export class CreateCenterDto {
 
 export class UpdateCenterDto {
   @IsOptional() @trim() @IsString() @MinLength(2) @MaxLength(160) name?: string;
-  @IsOptional() @IsString() @MaxLength(64) @Matches(TZ, { message: 'timezone must be an IANA time zone' }) timezone?: string;
+  @IsOptional() @trim() @IsString() @MaxLength(64) @IsIanaTimeZone() timezone?: string;
   @IsOptional() @trim() @IsString() @MinLength(2) @MaxLength(80) country?: string;
   @IsOptional() @trim() @IsString() @MinLength(2) @MaxLength(80) city?: string;
   @IsOptional() @IsArray() @ArrayMinSize(1) @ArrayMaxSize(6) @IsIn(SPECIALTIES, { each: true }) specialties?: string[];

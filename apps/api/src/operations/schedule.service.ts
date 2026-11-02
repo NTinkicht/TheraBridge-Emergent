@@ -1,6 +1,7 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
+import { addDays, localDate, zonedDayStart } from '../common/zoned';
 import { Tx, logCenterEvent, uniq } from '../centers/history';
 import { PrismaService } from '../prisma/prisma.service';
 import { Viewer, childScope } from './children.service';
@@ -9,11 +10,9 @@ import type { AppointmentDto, AppointmentStatusDto, FamilyPreferenceDto, RangeQu
 import { TrialService } from './trial.service';
 
 const DAY = 86_400_000;
-const offset = (d: Date, tz: string) => new Date(d.toLocaleString('en-US', { timeZone: tz })).getTime() - new Date(d.toLocaleString('en-US', { timeZone: 'UTC' })).getTime();
+// Center-local day boundaries are independent of the server's TZ and DST length.
 export function dayStart(now: Date, tz: string): Date {
-  const local = new Date(now.getTime() + offset(now, tz));
-  const midnight = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate());
-  return new Date(midnight - offset(new Date(midnight), tz));
+  return zonedDayStart(localDate(now, tz), tz);
 }
 const isManager = (v: Viewer) => v.role === 'CENTER_ADMIN' || v.role === 'COORDINATOR';
 
@@ -58,6 +57,31 @@ export class ScheduleService {
     if (await tx.appointment.findFirst({ where: { ...overlap, membershipId: a.membershipId } })) return 'The therapist already has an appointment at this time.';
     if (await tx.appointment.findFirst({ where: { ...overlap, childId: a.childId } })) return 'The child already has an appointment at this time.';
     return null;
+  }
+
+  // Batch the read for up to 60 repeating visits instead of making two
+  // database round-trips for every occurrence under the center lock.
+  async clashesForSlots(tx: Tx, centerId: string, slots: { childId: string; membershipId: string; startsAt: Date; endsAt: Date }[], excludeIds: string[] = []): Promise<(string | null)[]> {
+    if (!slots.length) return [];
+    const earliest = new Date(Math.min(...slots.map((s) => s.startsAt.getTime())));
+    const latest = new Date(Math.max(...slots.map((s) => s.endsAt.getTime())));
+    const existing = await tx.appointment.findMany({
+      where: {
+        centerId, status: 'SCHEDULED', startsAt: { lt: latest }, endsAt: { gt: earliest },
+        OR: [
+          { membershipId: { in: [...new Set(slots.map((s) => s.membershipId))] } },
+          { childId: { in: [...new Set(slots.map((s) => s.childId))] } },
+        ],
+        ...(excludeIds.length ? { id: { notIn: excludeIds } } : {}),
+      },
+      select: { membershipId: true, childId: true, startsAt: true, endsAt: true },
+    });
+    return slots.map((slot) => {
+      const overlap = (a: typeof existing[number]) => a.startsAt < slot.endsAt && a.endsAt > slot.startsAt;
+      if (existing.some((a) => a.membershipId === slot.membershipId && overlap(a))) return 'The therapist already has an appointment at this time.';
+      if (existing.some((a) => a.childId === slot.childId && overlap(a))) return 'The child already has an appointment at this time.';
+      return null;
+    });
   }
 
   private async assertFree(tx: Tx, a: { childId: string; membershipId: string; startsAt: Date; endsAt: Date }, excludeId?: string) {
@@ -137,13 +161,15 @@ export class ScheduleService {
   async dashboard(centerId: string, v: Viewer) {
     const now = this.trial.now();
     const center = await this.prisma.center.findUniqueOrThrow({ where: { id: centerId } });
-    const start = dayStart(now, center.timezone);
-    const end = new Date(start.getTime() + DAY);
+    const todayLocal = localDate(now, center.timezone);
+    const start = zonedDayStart(todayLocal, center.timezone);
+    const end = zonedDayStart(addDays(todayLocal, 1), center.timezone);
+    const weekEnd = zonedDayStart(addDays(todayLocal, 7), center.timezone);
     const mine = v.role === 'THERAPIST' ? { membershipId: v.membershipId } : {};
     const children: Prisma.ChildWhereInput = { centerId, status: 'ACTIVE', ...childScope(v) };
     const [today, week, activeChildren, unassigned, noGuardian, therapists, pendingInvites, trial] = await Promise.all([
-      this.prisma.appointment.findMany({ where: { centerId, ...mine, startsAt: { gte: start, lt: end } }, include: { child: true, notices: true }, orderBy: { startsAt: 'asc' } }),
-      this.prisma.appointment.count({ where: { centerId, ...mine, status: 'SCHEDULED', startsAt: { gte: now, lt: new Date(start.getTime() + 7 * DAY) } } }),
+      this.prisma.appointment.findMany({ where: { centerId, ...mine, startsAt: { gte: start, lt: end } }, include: { child: true, notices: true }, orderBy: { startsAt: 'asc' }, take: 500 }),
+      this.prisma.appointment.count({ where: { centerId, ...mine, status: 'SCHEDULED', startsAt: { gte: now, lt: weekEnd } } }),
       this.prisma.child.count({ where: children }),
       this.prisma.child.count({ where: { ...children, assignments: { none: { endedAt: null } } } }),
       this.prisma.child.count({ where: { ...children, guardians: { none: { removedAt: null } } } }),

@@ -1,0 +1,108 @@
+name: hosted-responsive-private
+
+# Never runs on PRs or pushes: authorized operator starts against the fixed
+# synthetic Render host after independently verifying its active deployment.
+on:
+  workflow_dispatch:
+    inputs:
+      deployed_sha:
+        description: 'Operator-verified LIVE Render 40-char SHA (recorded, NOT independently checked by runner)'
+        required: true
+        type: string
+      synthetic_only_authorized:
+        description: 'I authorize login/logout for seven fictional users on the fixed synthetic host'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tb-hosted-responsive-private
+  cancel-in-progress: false
+
+jobs:
+  capture-private:
+    if: ${{ github.ref == 'refs/heads/main' && inputs.synthetic_only_authorized == true }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    # Preinstalled matching Chromium binary, no flaky runtime browser CDN download.
+    container:
+      image: mcr.microsoft.com/playwright:v1.48.2-noble
+      options: --ipc=host
+    environment: hosted-responsive-private
+    # /__w/_temp is the writable volume mounted into the Playwright job
+    # container. GitHub runner.temp resolves to a HOST-only path here.
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Install exact locked Playwright JS dependency
+        run: |
+          corepack enable
+          yarn install --frozen-lockfile
+          node -e "if(require('playwright/package.json').version!=='1.48.2') process.exit(2)"
+          node -e "require('playwright').chromium.executablePath() && console.log('Matching Chromium binary path configured')"
+      - name: Validate approved private credentials and live public health
+        env:
+          TB_QA_USERS_JSON: ${{ secrets.TB_HOSTED_QA_USERS_JSON }}
+          TB_QA_DEPLOY_SHA: ${{ inputs.deployed_sha }}
+          TB_QA_PRIVATE_DIR: /__w/_temp/tb-hosted-private
+        run: |
+          umask 077
+          node scripts/qa/prepare-hosted-run.mjs
+      - name: Run read-only seven-role viewport and cookie collector
+        id: collect
+        env:
+          QA_USERS_FILE: /__w/_temp/tb-hosted-private/users.json
+          QA_PRIVATE_OUTPUT: /__w/_temp/tb-hosted-private/evidence
+          QA_DEPLOY_SHA: ${{ inputs.deployed_sha }}
+        run: |
+          umask 077
+          set +e
+          node scripts/qa/hosted-readonly.mjs
+          exit_code=$?
+          set -e
+          mkdir -p "/__w/_temp/tb-hosted-private"
+          printf '%s\n' "$exit_code" > "/__w/_temp/tb-hosted-private/collector-exit"
+          # The collector's BLOCKED cases are expected until independent manual
+          # screenshot, dialog, a11y and cookie review. Never imply acceptance.
+          if [ "$exit_code" -eq 2 ]; then
+            echo 'QA runner precondition failed; no acceptance inferred.'
+          fi
+      - name: Build sanitized synthetic-only HTML and JSON report
+        id: report
+        if: ${{ always() && steps.collect.outcome == 'success' }}
+        run: |
+          umask 077
+          node scripts/qa/build-hosted-report.mjs \
+            "/__w/_temp/tb-hosted-private/evidence" \
+            "/__w/_temp/tb-hosted-private/report"
+      - name: Upload restricted synthetic QA report and screenshots
+        if: ${{ always() && steps.report.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: therabridge-synthetic-qa-${{ github.run_id }}
+          path: /__w/_temp/tb-hosted-private/report/
+          if-no-files-found: error
+          retention-days: 1
+      - name: Do not mark visual acceptance PASS automatically
+        if: ${{ always() && steps.collect.outcome == 'success' }}
+        run: |
+          test '${{ steps.report.outcome }}' = success || exit 2
+          test -f "/__w/_temp/tb-hosted-private/collector-exit" || exit 2
+          test "$(cat "/__w/_temp/tb-hosted-private/collector-exit")" = 0 || {
+            echo 'INCOMPLETE: synthetic report uploaded; #61 baseline remains unchanged pending visual review.'
+            exit 1
+          }
+      - name: Delete private credentials and temporary synthetic evidence
+        if: always()
+        run: |
+          rm -rf "/__w/_temp/tb-hosted-private"

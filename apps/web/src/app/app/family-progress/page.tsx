@@ -7,6 +7,7 @@ import { FamilyProgress } from '@/components/clinical/FamilyProgress';
 import { ErrorState, SkeletonRows } from '@/components/design/states';
 import type { SessionInfo } from '@/lib/auth';
 import { reportsApi } from '@/lib/reports';
+import { FamilyReleasedDocuments } from '@/components/clinical/FamilyReleasedDocuments';
 
 function Demo({ session, onError }: { session: SessionInfo; onError: (e: unknown) => void }) {
   const centerId = session.activeContext?.type === 'center' ? session.activeContext.centerId : '';
@@ -23,6 +24,7 @@ function Demo({ session, onError }: { session: SessionInfo; onError: (e: unknown
           <span><strong>Sample only.</strong> This shows how a progress update could look one day. It uses a made-up child and made-up numbers. Your child’s therapy records are not shared here, because sharing reports is switched off in this version.</span>
         </p>
       } />
+      <FamilyReleasedDocuments centerId={centerId} />
     </div>
   );
 }

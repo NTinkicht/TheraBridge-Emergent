@@ -13,7 +13,7 @@ describe('TB-EM-011 non-authorizing governance (real PostgreSQL)', () => {
  const transition=(s:Signed,action:string,version:number,kind='PLAN',id=plan,reason='Synthetic internal governance reason')=>post(h,path(`governance/documents/${kind}/${id}/transitions`),s,{action,version,reason});
  const patch=(body:object)=>h.http().patch(path(`clinical/plan-versions/${plan}`)).set('Origin',ORIGIN).set('Cookie',therapist.cookie).set('X-CSRF-Token',therapist.csrf).send(body);
  const goal={key:'phrases',title:'Synthetic goal',measure:'percent',baseline:20,target:80};
- async function actor(name:string,role:'THERAPIST'|'CLINICAL_SUPERVISOR'|'CENTER_ADMIN'|'GUARDIAN',center=c){const u=await createUser(h.prisma,`${name}@governance.test`);const m=await h.prisma.membership.create({data:{centerId:center,userId:u.id,roles:{create:{role}}}});return {s:await signIn(h,u.email),u,m};}
+ async function actor(name:string,role:'THERAPIST'|'CLINICAL_SUPERVISOR'|'CENTER_ADMIN'|'GUARDIAN',center=c){const u=await createUser(h.prisma,`${name}@governance.test`);const m=await h.prisma.membership.create({data:{centerId:center,userId:u.id,specialties:role==='THERAPIST'?['speech','ot']:[],roles:{create:{role}}}});return {s:await signIn(h,u.email),u,m};}
  beforeAll(async()=>{h=await makeApp();});afterAll(async()=>h.close());
  beforeEach(async()=>{
   await resetDb(h.prisma);c=(await h.prisma.center.create({data:{slug:'governance',name:'Synthetic governance center',timezone:'UTC'}})).id;
@@ -28,6 +28,67 @@ describe('TB-EM-011 non-authorizing governance (real PostgreSQL)', () => {
   plan=(await h.prisma.planVersion.create({data:{centerId:c,planId:p.id,number:1,authorId,summary:'Immutable synthetic content',goals:[goal],createdAt:h.clock.now(),updatedAt:h.clock.now()}})).id;
   report=(await post(h,path(`clinical/children/${kid}/reports`),therapist,{service:'speech',title:'Synthetic report',periodStart:'2026-01-01',periodEnd:'2026-01-02'}).expect(201)).body.id;
  });
+ it('M2-H05 reports distinguish stale RETURNED_FOR_REVISION resubmission from invalid status', async () => {
+  await h.prisma.progressReport.update({ where: { id: report }, data: { sections: {
+    summary: 'Synthetic report summary for internal reviewer', assessment: '', goals: '', sessions: '', recommendations: '', familySummary: '',
+  } } });
+  const first = await transition(therapist, 'SUBMIT', 1, 'REPORT', report).expect(201);
+  expect(first.body.status).toBe('IN_REVIEW');
+  const returned = await transition(supervisor, 'RETURN', 2, 'REPORT', report).expect(201);
+  expect(returned.body.status).toBe('RETURNED_FOR_REVISION');
+  const stale = await transition(therapist, 'SUBMIT', 2, 'REPORT', report).expect(409);
+  expect(stale.body.code).toBe('VERSION_CONFLICT');
+  const submitted = await transition(therapist, 'SUBMIT', 3, 'REPORT', report).expect(201);
+  expect(submitted.body.status).toBe('IN_REVIEW');
+  const wrong = await transition(therapist, 'SUBMIT', 4, 'REPORT', report).expect(409);
+  expect(wrong.body.code).toBe('INVALID_REPORT_STATUS');
+ });
+
+ it('M2-H05 Codex P1: revoked assignment cannot learn withdrawn status from observations', async () => {
+  await transition(therapist, 'SUBMIT', 1).expect(201);
+  await transition(therapist, 'WITHDRAW', 2).expect(201);
+  const pathToObservation = path(`clinical/children/${kid}/observations`);
+  const body = { planVersionId: plan, goalKey: 'phrases', value: 40, observedOn: '2026-01-01' };
+  const permitted = await post(h, pathToObservation, therapist, body).expect(409);
+  expect(permitted.body.code).toBe('PLAN_VERSION_WITHDRAWN');
+  await h.prisma.careAssignment.updateMany({
+    where: { centerId: c, childId: kid, membershipId: memberId },
+    data: { endedAt: h.clock.now() },
+  });
+  const withdrawn = await post(h, pathToObservation, therapist, body).expect(404);
+  const unknown = await post(h, pathToObservation, therapist, { ...body, planVersionId: randomUUID() }).expect(404);
+  expect(withdrawn.body).toEqual(unknown.body);
+ });
+
+ it('M2-H05 excludes WITHDRAWN versions from current report evidence but retains history', async () => {
+  const first = await transition(therapist, 'SUBMIT', 1).expect(201);
+  await transition(therapist, 'WITHDRAW', 2).expect(201);
+  expect((await h.prisma.planVersion.findUniqueOrThrow({ where: { id: plan } })).status).toBe('WITHDRAWN');
+  const next = await post(h, path(`clinical/children/${kid}/reports`), therapist, {
+    service: 'speech', title: 'After withdrawal synthetic report', periodStart: '2026-01-01', periodEnd: '2026-01-02',
+  }).expect(201);
+  const detail = await get(therapist, `clinical/reports/${next.body.id}`).expect(200);
+  expect(detail.body.evidence.plans).toEqual([]);
+  expect(detail.body.evidence.goals).toEqual([]);
+  // The withdrawn version remains in the historical workspace, but cannot be
+  // advertised as a current draft or used for a new goal observation.
+  const workspace = (await get(therapist, `clinical/children/${kid}`).expect(200)).body;
+  expect(workspace.activePlanVersions).toEqual([]);
+  expect(workspace.currentDraftPlanVersions).toEqual([]);
+  expect(workspace.plans[0].versions[0].status).toBe('WITHDRAWN');
+  // Existing draft report still has a frozen CREATED evidence version that
+  // referenced this plan. It must not silently rebind to an empty evidence set.
+  await h.prisma.progressReport.update({ where: { id: report }, data: { sections: {
+    summary: 'Synthetic report written against the earlier plan', assessment: '', goals: '', sessions: '', recommendations: '', familySummary: '',
+  } } });
+  const rejected = await transition(therapist, 'SUBMIT', 1, 'REPORT', report).expect(409);
+  expect(rejected.body.code).toBe('PLAN_VERSION_WITHDRAWN');
+  await post(h, path(`clinical/children/${kid}/observations`), therapist, {
+    planVersionId: plan, goalKey: goal.key, value: 25, observedOn: '2026-01-01',
+  }).expect(409);
+  expect((await get(supervisor, `governance/previews/${first.body.snapshotId}`).expect(200)).body.content).toBeDefined();
+ });
+
  it('withdraws explicitly, preserves reviewed content and requires withdrawal before a new version',async()=>{
   const submitted=await transition(therapist,'SUBMIT',1).expect(201);
   const p=await h.prisma.planVersion.findUniqueOrThrow({where:{id:plan}});
@@ -69,6 +130,28 @@ describe('TB-EM-011 non-authorizing governance (real PostgreSQL)', () => {
  });
  it('only one concurrent transition succeeds and creates one snapshot',async()=>{
   const r=await Promise.all([transition(therapist,'FREEZE',1),transition(therapist,'SUBMIT',1)]);expect(r.map(x=>x.status).sort()).toEqual([201,409]);expect(await h.prisma.governanceSnapshot.count()).toBe(1);
+  expect((await h.prisma.planVersion.findUniqueOrThrow({where:{id:plan}})).version).toBe(2);
+  expect(await h.prisma.centerEvent.count({where:{centerId:c,type:{in:['clinical.plan_freeze','clinical.plan_submitted']}}})).toBe(1);
+ });
+ it('allows exactly one report CAS transition and audit event for concurrent updates',async()=>{
+  const r=await Promise.all([transition(therapist,'FREEZE',1,'REPORT',report),transition(therapist,'FREEZE',1,'REPORT',report)]);
+  expect(r.map(x=>x.status).sort()).toEqual([201,409]);
+  expect((await h.prisma.progressReport.findUniqueOrThrow({where:{id:report}})).version).toBe(2);
+  expect(await h.prisma.governanceHistory.count({where:{centerId:c,kind:'REPORT',documentId:report}})).toBe(1);
+  expect(await h.prisma.centerEvent.count({where:{centerId:c,type:'clinical.report_freeze'}})).toBe(1);
+ });
+ it('revokes clinical, report, governance and progress reads when membership specialty is removed',async()=>{
+  await h.prisma.membership.update({where:{id:memberId},data:{specialties:[]}});
+  await get(therapist,`clinical/children/${kid}`).expect(404);
+  await get(therapist,`clinical/children/${kid}/reports`).expect(404);
+  const revokedReport = await get(therapist,`clinical/reports/${report}`).expect(404);
+  const unknownReport = await get(therapist,'clinical/reports/00000000-0000-0000-0000-000000000000').expect(404);
+  expect(revokedReport.body).toEqual(unknownReport.body);
+  await get(therapist,`governance/documents/PLAN/${plan}/history`).expect(404);
+  await transition(therapist,'FREEZE',1).expect(404);
+  expect((await get(therapist,'governance/documents').expect(200)).body.items).toEqual([]);
+  expect((await get(therapist,'clinical/progress').expect(200)).body.children).toEqual([]);
+  expect(await h.prisma.governanceSnapshot.count()).toBe(0);
  });
  it('denies cross-specialty clinical records in therapist workspace', async () => {
   await h.prisma.child.update({where:{id:kid},data:{services:['speech','ot']}});
@@ -123,7 +206,8 @@ describe('TB-EM-011 non-authorizing governance (real PostgreSQL)', () => {
   const after=(await get(supervisor,`governance/previews/${r.body.snapshotId}`).expect(200)).body;expect(after.fingerprint).toBe(before.fingerprint);expect(after.evidence).toEqual(before.evidence);
  });
  it('rejects cross-child observation note associations',async()=>{
-  const n=await h.prisma.sessionNote.create({data:{centerId:c,childId:randomUUID(),membershipId:memberId,service:'speech',sessionDate:new Date(),createdAt:new Date(),updatedAt:new Date()}});
+  const otherChild=await h.prisma.child.create({data:{centerId:c,firstName:'Unrelated',lastName:'Child',dateOfBirth:new Date('2020-01-01'),services:['speech'],createdById:authorId,createdAt:h.clock.now()}});
+  const n=await h.prisma.sessionNote.create({data:{centerId:c,childId:otherChild.id,membershipId:memberId,service:'speech',sessionDate:new Date(),createdAt:new Date(),updatedAt:new Date()}});
   await post(h,path(`clinical/children/${kid}/observations`),therapist,{planVersionId:plan,goalKey:goal.key,value:3,observedOn:'2026-01-01',sessionNoteId:n.id}).expect(422);
  });
  it('consent policy/record revisions remain immutable and cannot authorize grants',async()=>{
@@ -182,7 +266,9 @@ describe('TB-EM-011 non-authorizing governance (real PostgreSQL)', () => {
   expect(original.content.sections.familySummary).toBe('');expect(original.fingerprint).toBe(a.fingerprint);
  });
  it.each(['child','center','therapist','service'])('rejects linked session-note %s mismatch at API and database',async mismatch=>{
-  const n=await h.prisma.sessionNote.create({data:{centerId:mismatch==='center'?randomUUID():c,childId:mismatch==='child'?randomUUID():kid,membershipId:mismatch==='therapist'?otherId:memberId,service:mismatch==='service'?'physical':'speech',sessionDate:new Date(),createdAt:new Date(),updatedAt:new Date()}});
+  const otherChild=mismatch==='child'?await h.prisma.child.create({data:{centerId:c,firstName:'Unrelated',lastName:'Child',dateOfBirth:new Date('2020-01-01'),services:['speech'],createdById:authorId,createdAt:h.clock.now()}}):null;
+  const foreignCenter=mismatch==='center'?await h.prisma.center.findUniqueOrThrow({where:{slug:'foreign'}}):null;
+  const n=await h.prisma.sessionNote.create({data:{centerId:foreignCenter?.id??c,childId:otherChild?.id??kid,membershipId:mismatch==='therapist'?otherId:memberId,service:mismatch==='service'?'physical':'speech',sessionDate:new Date(),createdAt:new Date(),updatedAt:new Date()}});
   await post(h,path(`clinical/children/${kid}/observations`),therapist,{planVersionId:plan,goalKey:goal.key,value:3,observedOn:'2026-01-01',sessionNoteId:n.id}).expect(422);
   await expect(h.prisma.observation.create({data:{centerId:c,childId:kid,planVersionId:plan,goalKey:goal.key,membershipId:memberId,sessionNoteId:n.id,value:3,observedOn:new Date('2026-01-01'),createdAt:new Date()}})).rejects.toThrow(/note scope/);
  });
