@@ -63,6 +63,11 @@ async function navigate(page, role, route, rows) {
     await link.click({timeout:10000});
     await page.waitForURL(u => u.pathname === route,{timeout:15000});
     await page.getByTestId('product-shell').waitFor({timeout:15000});
+    await page.getByTestId('session-loading').waitFor({state:'hidden',timeout:15000});
+    if (await page.getByTestId('page-forbidden').isVisible().catch(()=>false) ||
+        await page.getByTestId('schedule-error').isVisible().catch(()=>false) ||
+        await page.getByTestId('practice-error').isVisible().catch(()=>false))
+      throw Error('route_error');
     rows.push(result(role,'link:'+route,'PASS','clicked_authorized_navigation'));
     return true;
   } catch {
@@ -80,7 +85,9 @@ async function openCancel(page, role, rows, config) {
         return;
       }
     }
+    await page.getByTestId('session-loading').waitFor({state:'hidden',timeout:15000});
     const button=page.getByTestId(open);
+    await button.waitFor({state:'visible',timeout:15000}).catch(()=>{});
     if (await button.count() !== 1 || !await button.isVisible()) {
       rows.push(result(role,label,'BLOCKED','authorized_open_control_unavailable'));
       return;
@@ -132,12 +139,21 @@ async function inspectRole(browser,role,user) {
         const week=page.getByTestId('view-week');
         const next=page.getByTestId('week-next');
         const prev=page.getByTestId('week-prev');
-        if (!await week.isVisible() || !await next.isVisible() || !await prev.isVisible()) {
-          rows.push(result(role,'schedule_view_controls','BLOCKED','controls_unavailable'));
-        } else {
-          await week.click(); await next.click(); await prev.click();
-          rows.push(result(role,'schedule_view_controls','PASS','view_and_period_controls_operated'));
-        }
+        await page.getByTestId('schedule-title').waitFor({state:'visible',timeout:15000});
+        await page.getByTestId('schedule-loading').waitFor({state:'hidden',timeout:15000});
+        const day=page.getByTestId('view-day');
+        await week.waitFor({state:'visible',timeout:15000});
+        await day.click();
+        if (await day.getAttribute('aria-pressed') !== 'true') throw Error('day_not_selected');
+        await week.click();
+        if (await week.getAttribute('aria-pressed') !== 'true') throw Error('week_not_selected');
+        const label=page.getByTestId('week-label');
+        const initial=await label.innerText();
+        await next.click();
+        await page.waitForFunction(prevText=>document.querySelector('[data-testid="week-label"]')?.textContent !== prevText,initial,{timeout:15000});
+        await prev.click();
+        await page.waitForFunction(prevText=>document.querySelector('[data-testid="week-label"]')?.textContent === prevText,initial,{timeout:15000});
+        rows.push(result(role,'schedule_view_controls','PASS','view_and_period_changes_asserted'));
       } catch {
         rows.push(result(role,'schedule_view_controls','FAIL','schedule_controls_failed'));
       }
@@ -145,8 +161,12 @@ async function inspectRole(browser,role,user) {
     if (role === 'guardian') {
       try {
         await page.goto(BASE+'/app/practice',{waitUntil:'domcontentloaded',timeout:30000});
-        await page.getByTestId('product-shell').waitFor({timeout:15000});
-        rows.push(result(role,'guardian_practice_open','PASS','practice_route_rendered_no_mutation'));
+        await page.getByTestId('practice-page').waitFor({state:'visible',timeout:15000});
+        if (safePath(page) !== '/app/practice' ||
+          await page.getByTestId('practice-error').isVisible().catch(()=>false) ||
+          await page.getByTestId('page-forbidden').isVisible().catch(()=>false))
+          throw Error('practice_unavailable');
+        rows.push(result(role,'guardian_practice_open','PASS','practice_content_rendered_no_mutation'));
       } catch {
         rows.push(result(role,'guardian_practice_open','FAIL','practice_route_unavailable'));
       }
