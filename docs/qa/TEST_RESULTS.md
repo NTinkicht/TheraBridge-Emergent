@@ -1,3 +1,7 @@
+# M3-AI04 implementation checkpoint — 2026-11-02
+
+M3-AI04 PR #157 browser coverage added for stale report autosave revision, changed goal provenance, and scoped source-inspection links. Exact-head six CI and independent review PENDING — no M3-AI04 PASS claim.
+
 # M3-AI03 implementation checkpoint — 2026-11-02
 
 M3-AI03 PR #156 browser regression added for offline shortlist, review, discard, edit, explicit insertion and undo. Exact-head CI NOT RUN/NOT VERIFIED yet. No claims of test PASS.

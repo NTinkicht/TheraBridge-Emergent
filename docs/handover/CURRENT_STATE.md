@@ -1,3 +1,7 @@
+# M3-AI04 implementation checkpoint — 2026-11-02
+
+M3-AI03 PR #156 merged at 92709d5. M3-AI04 PR #157 now contains synthetic-only evidence snapshot and stale/tamper validation in clinician report/home-plan draft UIs, plus browser tests. CI and independent implementation review are PENDING; no clinical release, external AI or real data.
+
 # M3-AI03 implementation checkpoint — 2026-11-02
 
 M3-AI02 PR #155 merged as 066f628. M3-AI03 PR #156 now has synthetic-only therapist home-plan proposal code and browser regression. Tests, CI and final review are PENDING; no live data, external AI, signing or family release.

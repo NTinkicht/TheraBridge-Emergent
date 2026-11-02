@@ -783,11 +783,26 @@ try {
       const beforeCount = await page.locator('li[data-testid^="home-activity-"]').count();
       await candidateReview.click();
       await page.getByTestId('home-ai-review').waitFor();
+      assert((await page.getByTestId('home-ai-source-open').getAttribute('href'))?.includes('/app/clinical/' + child.id));
+      assert.equal(await page.getByTestId('home-ai-source-open').getAttribute('target'), '_blank', 'Plan source inspection must not navigate away from unsaved plan edits');
       await page.getByTestId('home-ai-frequency').fill('Therapist review pending');
       await page.getByTestId('home-ai-discard').click();
       assert.equal(await page.locator('li[data-testid^="home-activity-"]').count(), beforeCount,
         'Discarding an offline suggestion must leave the draft unchanged');
       await candidateReview.click();
+      // Switching the goal must preserve the *original* template provenance;
+      // it must never silently repin a changed or deleted activity template.
+      const originalSources = await page.getByTestId('home-ai-sources').innerText();
+      const originalTemplateRef = originalSources.split(' · ').find(x => x.startsWith('activity-template:'));
+      const goalPicker = page.getByTestId('home-ai-goal');
+      const goalOptions = await goalPicker.locator('option').evaluateAll(options => options.map(o => o.value));
+      if (goalOptions.length > 1) {
+        const originalGoal = await goalPicker.inputValue();
+        await goalPicker.selectOption(goalOptions.find(key => key !== originalGoal));
+        assert((await page.getByTestId('home-ai-sources').innerText()).includes(originalTemplateRef),
+          'Changing a selected goal must not replace the originally pinned template');
+        await goalPicker.selectOption(originalGoal);
+      }
       // A goal removed from the unsaved editor must immediately invalidate
       // the previously selected activity-link target (no stale v.goals).
       const firstGoalTitle = page.getByTestId('goal-title-0').first();
@@ -795,6 +810,7 @@ try {
       await firstGoalTitle.fill('');
       assert(await page.getByTestId('home-ai-insert').isDisabled(),
         'Unsaved goal removal must block insertion against stale goal references');
+      await page.getByTestId('home-ai-stale').waitFor();
       await firstGoalTitle.fill(savedGoalTitle);
       await page.getByTestId('home-ai-frequency').fill('Twice weekly — fictional');
       await page.getByTestId('home-ai-insert').click();
@@ -1016,7 +1032,21 @@ try {
     const beforeProposal = await page.getByTestId('report-section-assessment').inputValue();
     await page.getByTestId('synthetic-report-generate').click();
     assert((await page.getByTestId('synthetic-report-proposal').innerText()).includes('REFERENCED_NOT_VERIFIED'));
+    assert((await page.getByTestId('synthetic-report-source-open').getAttribute('href'))?.includes('/app/clinical/' + child.id));
+    assert.equal(await page.getByTestId('synthetic-report-source-open').getAttribute('target'), '_blank', 'Report source inspection must retain unsaved draft in the original tab');
     assert.equal(await page.getByTestId('report-section-assessment').inputValue(), beforeProposal);
+    // M3-AI04: any acknowledged report revision invalidates a previously
+    // prepared fictional-evidence proposal until it is regenerated.
+    const summaryBeforeTrace = await page.getByTestId('report-section-summary').inputValue();
+    await page.getByTestId('report-section-summary').fill(summaryBeforeTrace + ' (synthetic trace check)');
+    await page.locator('[data-testid="report-save-state"][data-state="pending"]').waitFor();
+    await page.locator('[data-testid="report-save-state"][data-state="saved"]').waitFor({ timeout: 10000 });
+    await page.getByTestId('synthetic-report-stale').waitFor();
+    assert(await page.getByTestId('synthetic-report-insert').isDisabled(),
+      'Proposal from an earlier report revision must not be inserted');
+    await page.getByTestId('report-section-summary').fill(summaryBeforeTrace);
+    await page.locator('[data-testid="report-save-state"][data-state="pending"]').waitFor();
+    await page.locator('[data-testid="report-save-state"][data-state="saved"]').waitFor({ timeout: 10000 });
     await page.getByTestId('synthetic-report-discard').click();
     assert.equal(await page.getByTestId('report-section-assessment').inputValue(), beforeProposal);
     await page.getByTestId('synthetic-report-section').selectOption('sessions');

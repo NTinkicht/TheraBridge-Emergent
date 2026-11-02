@@ -171,7 +171,7 @@ function VersionEditor({ centerId, ws, planId, planTitle, service, v, source, ru
       </div>
       <HomePracticeCalendar key={v.id} activities={acts} goals={goals} templates={templateWs.templates}
         versionNumber={v.number} timezone={ws.timezone} unsaved={unsavedPlanEdits} />
-      {edit && <HomePlanSyntheticAssist ws={ws} v={v} service={service} existing={acts} editableGoals={goals} onInsert={candidate => setActs(previous => previous.some(a => a.templateId === candidate.templateId) ? previous : [...previous, candidate])} />}
+      {edit && <HomePlanSyntheticAssist ws={ws} v={v} service={service} centerId={centerId} existing={acts} editableGoals={goals} onInsert={candidate => setActs(previous => previous.some(a => a.templateId === candidate.templateId) ? previous : [...previous, candidate])} />}
       {edit && <HomePlanHandoff result={handoff} versionNumber={v.number} />}
       <div className="flex flex-wrap items-start gap-2">
         {edit && <div>

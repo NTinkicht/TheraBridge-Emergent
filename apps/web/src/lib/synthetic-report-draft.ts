@@ -1,18 +1,33 @@
 import type { Evidence } from './reports';
+import type { SyntheticSourceRef } from './synthetic-source-integrity';
 
 export type DraftSection = 'assessment' | 'goals' | 'sessions';
 export interface SyntheticReportProposal {
   section: DraftSection;
   text: string;
   sourceRefs: string[];
+  pinnedSources: SyntheticSourceRef[];
+  sourceScope: string;
   warnings: string[];
   promptVersion: 'm3-ai02-offline-v1';
   validation: 'REFERENCED_NOT_VERIFIED';
   released: false;
 }
 
+/** Read-only reference snapshot. The caller supplies an authorized scope. */
+export function reportSourceSnapshot(e: Evidence, section: DraftSection, scope: string): SyntheticSourceRef[] {
+  const mk = (kind: SyntheticSourceRef['kind'], id: string, revision: string, snapshot: unknown): SyntheticSourceRef =>
+    ({ kind, id, scope, revision, snapshot: JSON.stringify(snapshot), validation: 'REFERENCED_NOT_VERIFIED' });
+  if (section === 'assessment') return e.assessments.slice(0, 20).filter(a => a.id && a.summary?.trim())
+    .map(a => mk('assessment', a.id, a.assessedOn, [a.summary, a.assessedOn]));
+  if (section === 'goals') return e.goals.slice(0, 20).filter(g => g.key)
+    .map(g => mk('goal', (g.planVersionId ?? 'unversioned') + ':' + g.key,
+      g.planVersionId ?? 'unversioned', [g.title, g.measure, g.baseline, g.target, g.points]));
+  return [mk('session-count', 'period-counts', e.period.from + ':' + e.period.to, [e.period, e.sessions])];
+}
+
 /** Offline, deterministic fictional-evidence proposal; never calls a model or stores a report. */
-export function proposeSyntheticReportSection(e: Evidence, section: DraftSection): SyntheticReportProposal {
+export function proposeSyntheticReportSection(e: Evidence, section: DraftSection, scope: string): SyntheticReportProposal {
   const sourceRefs: string[] = [];
   const warnings: string[] = [];
   const lines: string[] = [];
@@ -51,7 +66,9 @@ export function proposeSyntheticReportSection(e: Evidence, section: DraftSection
   }
   if (!lines.length) warnings.push('No eligible recorded sources: do not infer findings.');
   return {
-    section, sourceRefs, warnings, promptVersion: 'm3-ai02-offline-v1',
+    section, sourceRefs, warnings, sourceScope: scope,
+    pinnedSources: reportSourceSnapshot(e, section, scope).filter(ref => sourceRefs.includes(ref.kind === 'session-count' ? 'session:period-counts' : ref.kind === 'goal' ? 'goal:' + ref.id : 'assessment:' + ref.id)),
+    promptVersion: 'm3-ai02-offline-v1',
     validation: 'REFERENCED_NOT_VERIFIED', released: false,
     text: `${prefix}${lines.join('\n') || 'No eligible recorded evidence.'}`,
   };
