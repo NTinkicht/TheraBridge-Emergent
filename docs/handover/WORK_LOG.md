@@ -1,3 +1,7 @@
+# M3-AI05 implementation checkpoint — 2026-11-02
+
+M3-AI04 PR #157 merged at 47945ec after six CI jobs and clean final review. M3-AI05 PR #158 adds session-scoped review state machine and UI to report/home-plan proposals with browser tests. Not an audit attestation or clinical approval; CI/review pending.
+
 # M3-AI04 implementation checkpoint — 2026-11-02
 
 M3-AI03 PR #156 merged at 92709d5. M3-AI04 PR #157 implements deterministic scoped source snapshots and reject-on-stale insertion for synthetic report/home-plan proposals, with reviewer-visible source links and browser regression. CI/review not yet qualified.

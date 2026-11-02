@@ -1,3 +1,7 @@
+# M3-AI05 implementation checkpoint — 2026-11-02
+
+M3-AI04 PR #157 merged at 47945ec. M3-AI05 PR #158 now implements a local explicit clinician review sequence for fictional suggestions, without granting clinical approval or release. Browser regressions added. CI/final review PENDING.
+
 # M3-AI04 implementation checkpoint — 2026-11-02
 
 M3-AI03 PR #156 merged at 92709d5. M3-AI04 PR #157 now contains synthetic-only evidence snapshot and stale/tamper validation in clinician report/home-plan draft UIs, plus browser tests. CI and independent implementation review are PENDING; no clinical release, external AI or real data.
