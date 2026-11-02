@@ -208,7 +208,7 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
         {proposal && <div className="space-y-2" data-testid="synthetic-report-proposal">
           <p className="text-[12px] text-brand-inkMuted">{proposal.promptVersion} · {proposal.validation} · {proposal.sourceRefs.length} source references · Not released</p>
           {proposalStale && <p role="alert" data-testid="synthetic-report-stale" className="text-[12px] text-status-danger">Evidence or report revision changed. Discard and regenerate this proposal.</p>}
-          <a className="text-[12px] font-semibold text-brand-action underline" href={`/app/clinical/${d.report.childId}`} data-testid="synthetic-report-source-open">Inspect authorized child evidence</a>
+          <a className="text-[12px] font-semibold text-brand-action underline" href={`/app/clinical/${d.report.childId}`} target="_blank" rel="noopener noreferrer" data-testid="synthetic-report-source-open">Inspect authorized child evidence</a>
           <p className="break-all text-[12px] text-brand-inkMuted" data-testid="synthetic-report-sources">{proposal.pinnedSources.map(ref => ref.kind + ':' + ref.id + ' (' + ref.revision + ')').join(' · ')}</p>
           {proposal.warnings.map((w, i) => <p key={i} className="text-[12px] text-status-danger">{w}</p>)}
           <label className="block text-[13px] font-semibold">Review and edit this proposal before insertion
