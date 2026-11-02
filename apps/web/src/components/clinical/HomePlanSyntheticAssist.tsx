@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/design/ui';
+import { SyntheticHumanReviewControls } from './SyntheticHumanReviewControls';
+import { useSharedSession } from '@/lib/session-context';
+import type { SyntheticHumanReview } from '@/lib/synthetic-human-review';
 import type { Goal, HomeActivity, PlanVersion, Template, Workspace } from '@/lib/clinical';
 import { inspectSyntheticSources, syntheticScope, type SyntheticSourceRef } from '@/lib/synthetic-source-integrity';
 
@@ -63,17 +66,22 @@ export function HomePlanSyntheticAssist({ ws, v, service, centerId, existing, ed
   const [goalKey, setGoalKey] = useState('');
   const [frequency, setFrequency] = useState('');
   const [note, setNote] = useState('');
+  const [humanReview, setHumanReview] = useState<SyntheticHumanReview | null>(null);
+  const sharedSession = useSharedSession();
+  const actorMembershipId = sharedSession?.state.status === 'ready' && sharedSession.state.data.activeContext?.type === 'center' ? sharedSession.state.data.activeContext.membershipId : '';
   const candidates = syntheticHomePlanCandidates(ws, v, service, existing, editableGoals, centerId);
   const goals: Goal[] = editableGoals.filter(g => g.key && g.title.trim());
   const scope = syntheticScope(centerId, ws.child.id, service);
   const currentSources = homePlanSourceSnapshot(ws, v, service, centerId, editableGoals);
   const sourceCheck = selected ? inspectSyntheticSources(selected.pinnedSources, currentSources, scope) : null;
+  const reviewRevision = JSON.stringify([selected?.sourceScope, selected?.pinnedSources, goalKey, frequency, note]);
+  const reviewedDraft = !!humanReview && humanReview.phase === 'ACKNOWLEDGED' && humanReview.sourceRevision === reviewRevision && humanReview.actorMembershipId === actorMembershipId;
   const stale = !!selected && (selected.sourceScope !== scope || sourceCheck?.status !== 'CURRENT');
   const select = (candidate: SyntheticHomePlanCandidate) => {
-    setSelected(candidate); setGoalKey(candidate.goalKey);
+    setSelected(candidate); setGoalKey(candidate.goalKey); setHumanReview(null);
     setFrequency(candidate.suggested.frequency); setNote(candidate.suggested.note ?? '');
   };
-  const discard = () => { setSelected(null); setGoalKey(''); setFrequency(''); setNote(''); };
+  const discard = () => { setHumanReview(null); setSelected(null); setGoalKey(''); setFrequency(''); setNote(''); };
   return <section className="space-y-3 rounded-card border border-border-light bg-surface-subtle p-4" data-testid="home-plan-synthetic-assist">
     <h3 className="text-[16px] font-semibold">Synthetic home-plan drafting</h3>
     <p className="text-[13px] text-brand-inkMuted">Offline fictional library shortlist. No model call, treatment recommendation, consent, approval or family release. Review each candidate before insertion. Saving is separate.</p>
@@ -105,10 +113,12 @@ export function HomePlanSyntheticAssist({ ws, v, service, centerId, existing, ed
       <label className="block text-[13px] font-semibold">Instructions (draft only)
         <textarea className="mt-1 w-full rounded-control border border-border-light p-2" maxLength={1000} rows={3} value={note} onChange={e => setNote(e.target.value)} data-testid="home-ai-note" />
       </label>
+      <SyntheticHumanReviewControls review={humanReview} onReview={setHumanReview} sourceRevision={reviewRevision} actorMembershipId={actorMembershipId}
+        authorized={ws.canEdit && v.mine && !stale && goals.some(g => g.key === goalKey)} onReject={discard} />
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" disabled={stale || !goals.some(g => g.key === goalKey) || !frequency.trim() || existing.some(a => a.templateId === selected.templateId)}
+        <Button size="sm" disabled={stale || !reviewedDraft || !goals.some(g => g.key === goalKey) || !frequency.trim() || existing.some(a => a.templateId === selected.templateId)}
           onClick={() => {
-            if (stale || inspectSyntheticSources(selected.pinnedSources, homePlanSourceSnapshot(ws, v, service, centerId, editableGoals), scope).status !== 'CURRENT' || !goals.some(g => g.key === goalKey) || !frequency.trim() || existing.some(a => a.templateId === selected.templateId)) return;
+            if (stale || !reviewedDraft || inspectSyntheticSources(selected.pinnedSources, homePlanSourceSnapshot(ws, v, service, centerId, editableGoals), scope).status !== 'CURRENT' || !goals.some(g => g.key === goalKey) || !frequency.trim() || existing.some(a => a.templateId === selected.templateId)) return;
             onInsert({ templateId: selected.templateId, goalKey, frequency: frequency.trim(), note: note.trim() });
             discard();
           }} data-testid="home-ai-insert">Insert into unsaved plan draft</Button>
