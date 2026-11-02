@@ -1,3 +1,7 @@
+# M3-AI04 implementation checkpoint — 2026-11-02
+
+M3-AI04 PR #157 now has synthetic evidence-scoping/integrity implementation. Qualify the exact implementation HEAD with six CI jobs, independent review, and explicit comment dispositions. After Rule 16 merge, open M3-AI05 planning draft. No real data or clinical activation.
+
 # M3-AI03 implementation checkpoint — 2026-11-02
 
 M3-AI03 PR #156 synthetic-only home-plan draft integration implemented: qualify exact final HEAD with all six CI jobs and independent review, disposition every finding, then merge if Rule 16 permits. M3-AI04 is next after qualification.
