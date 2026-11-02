@@ -19,6 +19,12 @@ export const DEMO_EMAILS = {
   supervisor: 'supervisor@childrens-home.therabridge.test',
   parent: 'mariam.ahmed@childrens-home.therabridge.test',
 } as const;
+export const DEMO_EXTRA_EMAILS = {
+  aba2: 'dalia.mansour@childrens-home.therabridge.test',
+  ot2: 'nour.haddad@childrens-home.therabridge.test',
+  speech2: 'huda.rahim@childrens-home.therabridge.test',
+} as const;
+const ALL_DEMO_EMAILS = { ...DEMO_EMAILS, ...DEMO_EXTRA_EMAILS };
 export const DEMO_CREDS = resolve(__dirname, '../../../../.workspace/local-credentials/childrens-home-demo.json');
 
 // Hosted previews use operator-managed secrets instead of ephemeral credential files.
@@ -50,6 +56,30 @@ export function parseHostedDemoPasswords(src: Record<string, string | undefined>
   return passwords;
 }
 
+// Independent three-account secret preserves all seven existing passwords.
+export function parseExtraHostedDemoPasswords(src: Record<string, string | undefined> = process.env): Record<string, string> | null {
+  const raw = src.DEMO_EXTRA_PASSWORDS_JSON;
+  if (!raw) {
+    if (src.DEPLOYMENT_ENV === 'preview') throw new Error('Hosted preview requires DEMO_EXTRA_PASSWORDS_JSON for three therapist accounts.');
+    return null;
+  }
+  if (Buffer.byteLength(raw, 'utf8') > 4096) throw new Error('DEMO_EXTRA_PASSWORDS_JSON is unexpectedly large.');
+  let parsed: unknown;
+  try { parsed = JSON.parse(raw); } catch { throw new Error('DEMO_EXTRA_PASSWORDS_JSON must be valid JSON.'); }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('DEMO_EXTRA_PASSWORDS_JSON must be an email-to-password object.');
+  const map = parsed as Record<string, unknown>;
+  const required = Object.values(DEMO_EXTRA_EMAILS);
+  if (Object.keys(map).length !== required.length || Object.keys(map).some(k => !required.includes(k as typeof required[number]))) throw new Error('Exactly three designated .test therapist emails are required.');
+  const out: Record<string, string> = {};
+  for (const email of required) {
+    const pass = map[email];
+    if (typeof pass !== 'string' || pass.length < 24 || pass.length > 128 || passwordPolicyError(pass, email)) throw new Error('Extra therapist password must satisfy the 24–128 character password policy.');
+    out[email] = pass;
+  }
+  if (new Set(Object.values(out)).size !== required.length) throw new Error('Extra therapist passwords must be distinct.');
+  return out;
+}
+
 function id(name: string): string {
   const s = createHash('sha256').update(SCOPE + ':' + name).digest('hex');
   return [s.slice(0, 8), s.slice(8, 12), '4' + s.slice(13, 16), '8' + s.slice(17, 20), s.slice(20, 32)].join('-');
@@ -73,6 +103,13 @@ const roster: { key: keyof typeof DEMO_EMAILS; name: string; role: Role | null; 
   { key: 'parent', name: 'Mariam Ahmed', role: 'GUARDIAN', specialties: [], title: 'Parent' },
 ];
 
+const extraRoster: { key: keyof typeof DEMO_EXTRA_EMAILS; name: string; role: Role; specialties: string[]; title: string }[] = [
+  { key: 'aba2', name: 'Dalia Mansour', role: 'THERAPIST', specialties: ['behavioral'], title: 'ABA therapist' },
+  { key: 'ot2', name: 'Nour Haddad', role: 'THERAPIST', specialties: ['occupational'], title: 'Occupational therapist' },
+  { key: 'speech2', name: 'Huda Rahim', role: 'THERAPIST', specialties: ['speech'], title: 'Speech and language therapist' },
+];
+const allRoster = [...roster, ...extraRoster];
+
 const DAY = 86400000;
 function localDate(offset: number, now: Date): string {
   const fmt = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Dubai', year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -88,15 +125,17 @@ function at(date: string, hourUTC: number): Date {
 export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_CREDS) {
   assertDemoAllowed(process.env);
   const passwords = parseHostedDemoPasswords(process.env);
+  const extraPasswords = parseExtraHostedDemoPasswords(process.env);
+  if (passwords && extraPasswords && new Set([...Object.values(passwords), ...Object.values(extraPasswords)]).size !== 10) throw new Error('All ten hosted demo passwords must be distinct.');
   const now = new Date();
   const cid = id('center');
   // Prepare all passwords/hashes before locking a database connection.
   // For local demo bootstrap, write the exclusively created, fsynced credential
   // file BEFORE account mutations, so filesystem failure cannot strand identities.
   const prepared: { email: string; password: string; passwordHash: string; role: string }[] = [];
-  for (const a of roster) {
-    const email = DEMO_EMAILS[a.key];
-    const password = passwords?.[email] ?? ('tb-' + randomToken(20));
+  for (const a of allRoster) {
+    const email = ALL_DEMO_EMAILS[a.key];
+    const password = passwords?.[email] ?? extraPasswords?.[email] ?? ('tb-' + randomToken(20));
     prepared.push({ email, password, passwordHash: await hashPassword(password), role: a.role ?? 'PLATFORM_ADMIN' });
   }
   const byEmail = new Map(prepared.map(p => [p.email, p]));
@@ -105,14 +144,7 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     // All database writes and tenant/collision checks share one transaction.
     const result = await db.$transaction(async (tx) => {
   // Fail closed: a dedicated preview database may contain only this demo tenant and its users.
-  const displayStaff = [
-    { key: 'aba2', name: 'Dalia Mansour', email: 'dalia.mansour@childrens-home.therabridge.test', service: 'behavioral', title: 'ABA therapist' },
-    { key: 'ot2', name: 'Nour Haddad', email: 'nour.haddad@childrens-home.therabridge.test', service: 'occupational', title: 'Occupational therapist' },
-    { key: 'speech2', name: 'Huda Rahim', email: 'huda.rahim@childrens-home.therabridge.test', service: 'speech', title: 'Speech and language therapist' },
-  ] as const;
-  // Extra staff have no authentication identity: roster/display assignments only.
-  // Seven operator-secret accounts above remain the ONLY login identities.
-  const demoIds = [...roster.map(a => id('user:' + a.key)), ...displayStaff.map(a => id('user:' + a.key))];
+  const demoIds = allRoster.map(a => id('user:' + a.key));
   const [unrelatedCenters, unrelatedUsers] = await Promise.all([
     tx.center.count({ where: { id: { not: cid } } }),
     tx.user.count({ where: { id: { notIn: demoIds } } }),
@@ -142,7 +174,7 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
   }
   if (!passwords && existsSync(credentialFile)) {
     const stored = JSON.parse(readFileSync(credentialFile, 'utf8')) as { accounts?: { email: string }[] };
-    if (roster.some(a => !stored.accounts?.some(x => x.email === DEMO_EMAILS[a.key]))) throw new Error('Stored demo credentials are incomplete; refusing silent rotation.');
+    if (allRoster.some(a => !stored.accounts?.some(x => x.email === ALL_DEMO_EMAILS[a.key]))) throw new Error('Stored demo credentials are incomplete; refusing silent rotation.');
   }
   if (await tx.center.findUnique({ where: { id: cid } })) {
     const c = await tx.center.findUniqueOrThrow({ where: { id: cid } });
@@ -179,14 +211,15 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     update: { specialties: ['speech', 'occupational', 'behavioral'] },
   });
   const users: Record<string, string> = {}, members: Record<string, string> = {};
-  for (const a of roster) {
-    const email = DEMO_EMAILS[a.key];
+  for (const a of allRoster) {
+    const email = ALL_DEMO_EMAILS[a.key];
     const uid = id('user:' + a.key);
     const existing = await tx.user.findUnique({ where: { id: uid } });
     const user = existing ?? await tx.user.create({ data: { id: uid, email, emailNormalized: email, displayName: a.name } });
     users[a.key] = user.id;
     const identity = await tx.authIdentity.findUnique({ where: { userId_provider: { userId: user.id, provider: 'local' } } });
-    if (identity && passwords && !(await verifyPassword(identity.passwordHash ?? '', passwords[email]))) {
+    const operatorPassword = passwords?.[email] ?? extraPasswords?.[email];
+    if (identity && operatorPassword && !(await verifyPassword(identity.passwordHash ?? '', operatorPassword))) {
       throw new Error('Hosted demo password no longer matches existing account; refusing silent rotation for ' + email);
     }
     if (!identity) {
@@ -220,34 +253,6 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     });
   }
 
-  // Add three fictional staff members without issuing or exporting passwords.
-  // Repeated previews are idempotent and never grant these display-only staff login.
-  for (const staff of displayStaff) {
-    const uid = id('user:' + staff.key);
-    const existingByEmail = await tx.user.findUnique({where:{emailNormalized:staff.email}});
-    if (existingByEmail && existingByEmail.id !== uid) throw new Error('Demo display-staff email collision.');
-    const user = await tx.user.upsert({
-      where:{id:uid},
-      create:{id:uid,email:staff.email,emailNormalized:staff.email,displayName:staff.name},
-      update:{}
-    });
-    if (user.emailNormalized !== staff.email) throw new Error('Demo display-staff identity collision.');
-    if (await tx.authIdentity.count({where:{userId:uid}}) !== 0)
-      throw new Error('Display-only staff unexpectedly has an authentication identity.');
-    const mid = id('member:' + staff.key);
-    const membership = await tx.membership.upsert({
-      where:{id:mid},
-      create:{id:mid,userId:uid,centerId:cid,status:'ACTIVE',title:staff.title,specialties:[staff.service],responsibilities:[]},
-      update:{}
-    });
-    if (membership.userId !== uid || membership.centerId !== cid || membership.status !== 'ACTIVE')
-      throw new Error('Demo staff membership collision.');
-    await tx.roleAssignment.upsert({
-      where:{membershipId_role:{membershipId:mid,role:'THERAPIST'}},
-      create:{membershipId:mid,role:'THERAPIST'},update:{}
-    });
-    members[staff.key] = mid;
-  }
   const childId = id('child:yusuf');
   const child = await tx.child.upsert({
     where: { id: childId },
@@ -515,7 +520,7 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     });
   }
 
-    return { center: center.slug, family: 'Ahmed', child: 'Yusuf Ahmed', children: 6, displayOnlyTherapists: 3, accounts: roster.length, appointments: 15, historicalSessions: 8, observations: 16, assessments: 2, plans: 2, reportDrafts: 2, credentials: passwords ? 'EXTERNAL HOST SECRETS' : credentialFile };
+    return { center: center.slug, family: 'Ahmed', child: 'Yusuf Ahmed', children: 6, displayOnlyTherapists: 0, accounts: allRoster.length, appointments: 15, historicalSessions: 8, observations: 16, assessments: 2, plans: 2, reportDrafts: 2, credentials: passwords ? 'EXTERNAL HOST SECRETS' : credentialFile };
     }, { timeout: 180_000 });
     return result;
   } catch (error) {
@@ -525,7 +530,7 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
       let visibleIdentities: number;
       try {
         visibleIdentities = await db.authIdentity.count({
-          where: { provider: 'local', userId: { in: roster.map(a => id('user:' + a.key)) } },
+          where: { provider: 'local', userId: { in: allRoster.map(a => id('user:' + a.key)) } },
         });
       } catch (verificationError) {
         throw new AggregateError(
