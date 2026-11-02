@@ -7,7 +7,7 @@ try {
   const center = await db.center.findUniqueOrThrow({ where: { slug: 'childrens-home-demo' } });
   assert.equal(center.name, "Children's Home Centre");
   assert.equal(center.timezone, 'Asia/Dubai');
-  assert.deepEqual(center.specialties, ['speech', 'occupational']);
+  assert.deepEqual(center.specialties, ['speech', 'occupational', 'behavioral']);
   assert(center.trialEndsAt && center.trialEndsAt > new Date(), 'Demo centre trial must still be writable');
   const child = await db.child.findFirstOrThrow({ where: { centerId: center.id, firstName: 'Yusuf', lastName: 'Ahmed' } });
   const guardians = await db.guardianLink.findMany({ where: { centerId: center.id, childId: child.id, removedAt: null } });
@@ -37,13 +37,22 @@ try {
   assert.equal(await db.clinicalAuthorizationDecision.count({ where: { centerId: center.id } }), 0);
   assert.equal(await db.recipientRelease.count({ where: { centerId: center.id } }), 0);
   const scopedAccounts = await db.membership.findMany({ where: { centerId: center.id }, include: { user: true, roles: true } });
-  assert.equal(scopedAccounts.length, 6);
+  assert.equal(scopedAccounts.length, 9);
   const twoTherapists = scopedAccounts.filter(m => m.roles.some(r => r.role === 'THERAPIST'));
-  assert.equal(twoTherapists.length, 2);
+  assert.equal(twoTherapists.length, 5);
   assert(twoTherapists.every(m => m.specialties.length === 1));
-  assert.equal(await db.child.count({ where: { centerId: center.id } }), 1);
-  assert.equal(await db.guardianLink.count({ where: { centerId: center.id } }), 1);
-  console.log('PASS: exactly one Ahmed family/child, six scoped memberships, 10 appointments, eight unsigned sessions, 16 evidence points, two draft plans/reports and zero authorizations/releases');
+  assert.equal(await db.child.count({ where: { centerId: center.id } }), 6);
+  assert.equal(await db.guardianLink.count({ where: { centerId: center.id } }), 3);
+  assert.equal(await db.appointment.count({where:{centerId:center.id}}),15);
+  const siblings = await db.child.findMany({where:{centerId:center.id,lastName:'Ahmed'}});
+  assert.equal(siblings.length,3);
+  const guardianUser = await db.user.findUniqueOrThrow({where:{emailNormalized:'mariam.ahmed@childrens-home.therabridge.test'}});
+  assert.equal(await db.guardianLink.count({where:{userId:guardianUser.id,removedAt:null}}),3);
+  for (const member of twoTherapists.filter(m=>m.user.emailNormalized !== 'speech@childrens-home.therabridge.test' &&
+      m.user.emailNormalized !== 'ot@childrens-home.therabridge.test')) {
+    assert.equal(await db.authIdentity.count({where:{userId:member.userId}}),0,'Extra staff must be display-only');
+  }
+  console.log('PASS: six fictional children, three Ahmed siblings, nine scoped memberships, five therapists, 15 appointments, eight unsigned historical sessions, 16 evidence points, two draft plans/reports, seven protected logins and zero authorizations/releases');
 } finally {
   await db.$disconnect();
 }

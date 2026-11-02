@@ -525,3 +525,11 @@ Finish M3-AI01 first: validate offline fixture bounds and safety tests, complete
 
 Qualify PR #154 on exact implementation HEAD: six CI jobs, real-browser simulated capture/correction tests, independent review, explicit reviewer comment dispositions, resolve all P0–P2 before Rule 16 merge. Preserve `realMicrophone` rejection and synthetic-only activity; D2/PD data-processing approvals are not granted. After a qualified merge, next ordered milestone item is M3-AI02 (AI-assisted report drafting under synthetic-only policy).
 
+
+## 2026-11-02 — Next: qualify PR #162 and perform private demo rehearsal
+
+Complete six CI checks and final independent Codex review of the exact head, resolve all findings, then merge PR #162 only under Rule 16. Dispatch `hosted-interactive-private` on main with independently verified live Render SHA `f1216b1735d5c548424f4b5da3c1961793be0a4d` and protected environment approval. Inspect new clinical child-tab and guardian sample rows. Preserve 14 expected blocked clinical/form rows, 104-case baseline and NO-GO gates. If any new row FAIL, distinguish runner contract from genuine app defect and fix in a reviewed PR. Rehearse spoken AI limitation: no live model, STT or clinical release.
+
+## 2026-11-02 — Expanded synthetic demo next work
+
+Qualify roster-seed PR via six exact-head CI jobs and independent Codex review; fix all findings. Verify the additive seed on disposable synthetic DB, then merge. Sync manually controlled Render demo branch to reviewed main, deploy and check 6 children/3 extra staff/15 appointments and unchanged seven logins; run protected private QA again. Do not expose new credentials, activate clinical AI or change the acceptance baseline. Demo script target 25 minutes.

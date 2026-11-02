@@ -196,6 +196,59 @@ async function inspectRole(browser,role,user) {
         rows.push(result(role,'guardian_practice_open','FAIL','practice_route_unavailable'));
       }
     }
+    // Presenter rehearsal: visit a real assigned synthetic child and exercise
+    // every clinical section without submitting, signing, or generating AI.
+    if (role === 'speech' || role === 'ot' || role === 'supervisor') {
+      try {
+        await page.goto(BASE+'/app/clinical',{waitUntil:'domcontentloaded',timeout:30000});
+        await page.getByTestId('session-loading').waitFor({state:'hidden',timeout:15000});
+        await page.locator('[data-testid="clinical-list"]:visible, [data-testid="clinical-list-empty"]:visible, [data-testid="clinical-list-error"]:visible')
+          .first().waitFor({state:'visible',timeout:15000});
+        if (await page.getByTestId('clinical-list-error').isVisible().catch(()=>false))
+          throw Error('clinical_list_error');
+        if (await page.getByTestId('clinical-list-empty').isVisible().catch(()=>false)) {
+          rows.push(result(role,'demo_clinical_child_walkthrough','BLOCKED','no_assigned_synthetic_child'));
+        } else {
+          const child=page.locator('[data-testid^="clinical-child-"]:visible').first();
+          await child.waitFor({state:'visible',timeout:15000});
+          await child.click();
+          await page.getByTestId('clinical-workspace').waitFor({state:'visible',timeout:15000});
+          await page.getByTestId('clinical-child-name').waitFor({state:'visible',timeout:15000});
+          const banner=await page.getByTestId('clinical-synthetic-banner').innerText();
+          if (!banner.includes('Synthetic data only') ||
+              !banner.includes('AI processing are not available'))
+            throw Error('clinical_gate_banner_missing');
+          const panels={overview:'child-360',plan:'plans-panel',assessments:'assessments-panel',
+            sessions:'sessions-panel',progress:'progress-panel',reports:'reports-panel'};
+          for (const [name,panel] of Object.entries(panels)) {
+            const tab=page.getByTestId('clinical-tab-'+name);
+            await tab.click({timeout:10000});
+            if (await tab.getAttribute('aria-selected') !== 'true')
+              throw Error('clinical_tab_unselected');
+            await page.getByTestId(panel).waitFor({state:'visible',timeout:10000});
+            if (name === 'reports') {
+              await page.locator('[data-testid="reports-empty"]:visible, [data-testid^="report-row-"]:visible, [data-testid="reports-error"]:visible')
+                .first().waitFor({state:'visible',timeout:15000});
+              if (await page.getByTestId('reports-error').isVisible().catch(()=>false))
+                throw Error('reports_unavailable');
+            }
+          }
+          rows.push(result(role,'demo_clinical_child_walkthrough','PASS','six_tabs_and_disabled_ai_banner_verified'));
+        }
+      } catch {
+        rows.push(result(role,'demo_clinical_child_walkthrough','FAIL','clinical_child_or_tab_rehearsal_failed'));
+      }
+    }
+    if (role === 'guardian') {
+      try {
+        await page.goto(BASE+'/app/family-progress',{waitUntil:'domcontentloaded',timeout:30000});
+        await page.getByTestId('family-progress-demo').waitFor({state:'visible',timeout:15000});
+        await page.getByTestId('family-progress-sample-banner').waitFor({state:'visible',timeout:15000});
+        rows.push(result(role,'demo_guardian_progress_sample','PASS','explicitly_labeled_fictional_progress_shown'));
+      } catch {
+        rows.push(result(role,'demo_guardian_progress_sample','FAIL','guardian_sample_rehearsal_failed'));
+      }
+    }
     // The following require separate controlled scenarios, and are NEVER
     // promoted merely because route navigation or modal rendering worked.
     rows.push(result(role,'form_submission_validation','BLOCKED','no_mutating_submission_authorized'));

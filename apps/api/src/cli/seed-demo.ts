@@ -105,7 +105,14 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     // All database writes and tenant/collision checks share one transaction.
     const result = await db.$transaction(async (tx) => {
   // Fail closed: a dedicated preview database may contain only this demo tenant and its users.
-  const demoIds = roster.map(a => id('user:' + a.key));
+  const displayStaff = [
+    { key: 'aba2', name: 'Dalia Mansour', email: 'dalia.mansour@childrens-home.therabridge.test', service: 'behavioral', title: 'ABA therapist' },
+    { key: 'ot2', name: 'Nour Haddad', email: 'nour.haddad@childrens-home.therabridge.test', service: 'occupational', title: 'Occupational therapist' },
+    { key: 'speech2', name: 'Huda Rahim', email: 'huda.rahim@childrens-home.therabridge.test', service: 'speech', title: 'Speech and language therapist' },
+  ] as const;
+  // Extra staff have no authentication identity: roster/display assignments only.
+  // Seven operator-secret accounts above remain the ONLY login identities.
+  const demoIds = [...roster.map(a => id('user:' + a.key)), ...displayStaff.map(a => id('user:' + a.key))];
   const [unrelatedCenters, unrelatedUsers] = await Promise.all([
     tx.center.count({ where: { id: { not: cid } } }),
     tx.user.count({ where: { id: { notIn: demoIds } } }),
@@ -164,12 +171,12 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     where: { id: cid },
     create: {
       id: cid, name: "Children's Home Centre", slug: DEMO_SLUG, timezone: 'Asia/Dubai',
-      country: 'United Arab Emirates', city: 'Sharjah', specialties: ['speech', 'occupational'],
+      country: 'United Arab Emirates', city: 'Sharjah', specialties: ['speech', 'occupational', 'behavioral'],
       source: 'DIRECT', trialEndsAt: new Date(now.getTime() + 30 * DAY),
       syntheticFamilyReleaseEnabled: process.env.TB_FAMILY_RELEASE_SYNTHETIC === 'true' &&
         !['production', 'staging'].includes(process.env.DEPLOYMENT_ENV ?? ''),
     },
-    update: {},
+    update: { specialties: ['speech', 'occupational', 'behavioral'] },
   });
   const users: Record<string, string> = {}, members: Record<string, string> = {};
   for (const a of roster) {
@@ -213,6 +220,34 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     });
   }
 
+  // Add three fictional staff members without issuing or exporting passwords.
+  // Repeated previews are idempotent and never grant these display-only staff login.
+  for (const staff of displayStaff) {
+    const uid = id('user:' + staff.key);
+    const existingByEmail = await tx.user.findUnique({where:{emailNormalized:staff.email}});
+    if (existingByEmail && existingByEmail.id !== uid) throw new Error('Demo display-staff email collision.');
+    const user = await tx.user.upsert({
+      where:{id:uid},
+      create:{id:uid,email:staff.email,emailNormalized:staff.email,displayName:staff.name},
+      update:{}
+    });
+    if (user.emailNormalized !== staff.email) throw new Error('Demo display-staff identity collision.');
+    if (await tx.authIdentity.count({where:{userId:uid}}) !== 0)
+      throw new Error('Display-only staff unexpectedly has an authentication identity.');
+    const mid = id('member:' + staff.key);
+    const membership = await tx.membership.upsert({
+      where:{id:mid},
+      create:{id:mid,userId:uid,centerId:cid,status:'ACTIVE',title:staff.title,specialties:[staff.service],responsibilities:[]},
+      update:{}
+    });
+    if (membership.userId !== uid || membership.centerId !== cid || membership.status !== 'ACTIVE')
+      throw new Error('Demo staff membership collision.');
+    await tx.roleAssignment.upsert({
+      where:{membershipId_role:{membershipId:mid,role:'THERAPIST'}},
+      create:{membershipId:mid,role:'THERAPIST'},update:{}
+    });
+    members[staff.key] = mid;
+  }
   const childId = id('child:yusuf');
   const child = await tx.child.upsert({
     where: { id: childId },
@@ -246,6 +281,62 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
       update: {},
     });
     if (assignment.endedAt || assignment.membershipId !== members[key] || assignment.childId !== childId) throw new Error('Demo assignment is missing or revoked.');
+  }
+
+  // Five additional fictional children. Amina and Zayd share the Ahmed
+  // guardian with Yusuf; all links stay within this single synthetic centre.
+  const addedChildren = [
+    { key:'amina', first:'Amina', last:'Ahmed', birth:'2019-08-12', services:['speech','behavioral'], assignments:[['speech2','speech'],['aba2','behavioral']], family:true },
+    { key:'zayd', first:'Zayd', last:'Ahmed', birth:'2021-03-24', services:['occupational','behavioral'], assignments:[['ot2','occupational'],['aba2','behavioral']], family:true },
+    { key:'leen', first:'Leen', last:'Al Mansouri', birth:'2020-11-06', services:['speech'], assignments:[['speech','speech']], family:false },
+    { key:'faris', first:'Faris', last:'Khalil', birth:'2018-09-19', services:['occupational'], assignments:[['ot','occupational']], family:false },
+    { key:'maya', first:'Maya', last:'Saleh', birth:'2022-01-17', services:['behavioral','speech'], assignments:[['aba2','behavioral'],['speech2','speech']], family:false },
+  ] as const;
+  for (const info of addedChildren) {
+    const kid = id('child:' + info.key);
+    const child = await tx.child.upsert({
+      where:{id:kid},
+      create:{id:kid,centerId:cid,firstName:info.first,lastName:info.last,
+        preferredName:info.first,dateOfBirth:new Date(info.birth+'T00:00:00Z'),
+        services:[...info.services],createdById:users.admin,createdAt:now},
+      update:{}
+    });
+    if (child.centerId !== cid || child.firstName !== info.first || child.lastName !== info.last)
+      throw new Error('Extra demo child collision.');
+    if (info.family) {
+      const link = await tx.guardianLink.upsert({
+        where:{id:id('guardian:mariam:' + info.key)},
+        create:{id:id('guardian:mariam:' + info.key),centerId:cid,childId:kid,
+          userId:users.parent,email:DEMO_EMAILS.parent,emailNorm:DEMO_EMAILS.parent,
+          displayName:'Mariam Ahmed',relationship:'mother',isPrimary:true,createdAt:now,
+          familyReleaseRestriction:'UNRESOLVED'},update:{}
+      });
+      if (link.childId !== kid || link.userId !== users.parent || link.removedAt)
+        throw new Error('Extra demo guardian link collision.');
+    }
+    for (const [staffKey,service] of info.assignments) {
+      const assignmentId = id('assignment:' + info.key + ':' + service);
+      const assn = await tx.careAssignment.upsert({
+        where:{id:assignmentId},
+        create:{id:assignmentId,centerId:cid,childId:kid,membershipId:members[staffKey],
+          service,isLead:service===info.services[0],startedAt:new Date(now.getTime()-14*DAY)},
+        update:{}
+      });
+      if (assn.childId!==kid || assn.membershipId!==members[staffKey] || assn.endedAt)
+        throw new Error('Extra demo care assignment collision.');
+    }
+    // A future appointment per child, explicitly marked synthetic.
+    const [staffKey,service] = info.assignments[0];
+    const startsAt = at(localDate(2 + addedChildren.indexOf(info),now),7);
+    const appointment = await tx.appointment.upsert({
+      where:{id:id('appointment:extra:' + info.key)},
+      create:{id:id('appointment:extra:' + info.key),centerId:cid,childId:kid,
+        membershipId:members[staffKey],service,startsAt,endsAt:new Date(startsAt.getTime()+45*60000),
+        room:'Demo room',status:'SCHEDULED',createdById:users.coordinator,createdAt:now},
+      update:{}
+    });
+    if (appointment.childId!==kid || appointment.membershipId!==members[staffKey])
+      throw new Error('Extra demo appointment collision.');
   }
 
   const activityDefinitions = [
@@ -424,7 +515,7 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     });
   }
 
-    return { center: center.slug, family: 'Ahmed', child: 'Yusuf Ahmed', accounts: roster.length, appointments: 10, historicalSessions: 8, observations: 16, assessments: 2, plans: 2, reportDrafts: 2, credentials: passwords ? 'EXTERNAL HOST SECRETS' : credentialFile };
+    return { center: center.slug, family: 'Ahmed', child: 'Yusuf Ahmed', children: 6, displayOnlyTherapists: 3, accounts: roster.length, appointments: 15, historicalSessions: 8, observations: 16, assessments: 2, plans: 2, reportDrafts: 2, credentials: passwords ? 'EXTERNAL HOST SECRETS' : credentialFile };
     }, { timeout: 180_000 });
     return result;
   } catch (error) {
