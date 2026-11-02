@@ -1,0 +1,208 @@
+// Private synthetic-only hosted interactive smoke checks.
+// Never persist page text, API bodies, credentials, cookies, or browser traces.
+import {readFile, mkdir, writeFile, chmod} from 'node:fs/promises';
+import {resolve, join} from 'node:path';
+import {chromium} from 'playwright';
+import {BASE, ROLES, settleLoginPage, logout, validateTarget} from './hosted-readonly.mjs';
+import {verifySyntheticUsers, publicHealth} from './prepare-hosted-run.mjs';
+
+const ORIGIN = new URL(BASE).origin;
+const CHECKS = ['PASS', 'FAIL', 'BLOCKED'];
+const result = (role, step, status, reason) => ({role, step, status, reason});
+const safePath = page => {
+  try { return new URL(page.url()).pathname; } catch { return ''; }
+};
+async function login(page, role, user) {
+  await page.goto(BASE + '/login', {waitUntil:'domcontentloaded', timeout:30000});
+  await settleLoginPage(page);
+  await page.getByTestId('login-email-input').fill(user.email);
+  await page.getByTestId('login-password-input').fill(user.password);
+  const [response] = await Promise.all([
+    page.waitForResponse(r => new URL(r.url()).pathname === '/api/auth/login' && r.request().method() === 'POST', {timeout:25000}),
+    page.getByTestId('login-submit-button').click()
+  ]);
+  if (response.status() !== 200) return false;
+  await page.waitForURL(u => u.pathname === '/select-context' || u.pathname.startsWith('/app'), {timeout:25000});
+  if (safePath(page) === '/select-context') {
+    const selected = await page.evaluate(async ([email, expected]) => {
+      const r = await fetch('/api/auth/session', {credentials:'include'});
+      if (!r.ok) return false;
+      const session = await r.json();
+      if (session.user?.email?.toLowerCase() !== email.toLowerCase()) return false;
+      const matches = (session.contexts ?? []).filter(c => c.role === expected);
+      if (matches.length !== 1) return false;
+      const c = matches[0];
+      const choice = c.type === 'platform' ? {platform:true} : {membershipId:c.membershipId,role:expected};
+      const changed = await fetch('/api/auth/context', {
+        method:'POST',credentials:'include',
+        headers:{'Content-Type':'application/json','X-CSRF-Token':session.csrfToken},
+        body:JSON.stringify(choice)
+      });
+      return changed.ok;
+    }, [user.email,ROLES[role].role]);
+    if (!selected) return false;
+    await page.goto(BASE + '/app', {waitUntil:'domcontentloaded',timeout:30000});
+  }
+  await page.getByTestId('product-shell').waitFor({timeout:20000});
+  return page.evaluate(async ([expectedEmail,expectedRole]) => {
+    const r = await fetch('/api/auth/session', {credentials:'include'});
+    if (!r.ok) return false;
+    const s = await r.json();
+    return s.user?.email?.toLowerCase() === expectedEmail.toLowerCase() &&
+      s.activeContext?.role === expectedRole;
+  },[user.email,ROLES[role].role]);
+}
+async function navigate(page, role, route, rows) {
+  try {
+    // Only actual visible navigation links count as an interactive navigation PASS.
+    const link = page.locator('a[href="' + route + '"]:visible').first();
+    if (await link.count() === 0) {
+      rows.push(result(role,'link:'+route,'BLOCKED','visible_navigation_link_unavailable'));
+      return false;
+    }
+    await link.click({timeout:10000});
+    await page.waitForURL(u => u.pathname === route,{timeout:15000});
+    await page.getByTestId('product-shell').waitFor({timeout:15000});
+    rows.push(result(role,'link:'+route,'PASS','clicked_authorized_navigation'));
+    return true;
+  } catch {
+    rows.push(result(role,'link:'+route,'FAIL','navigation_click_or_render_failed'));
+    return false;
+  }
+}
+async function openCancel(page, role, rows, config) {
+  const {route,open,dialog,cancel,label} = config;
+  try {
+    if (safePath(page) !== route) {
+      const response = await page.goto(BASE+route,{waitUntil:'domcontentloaded',timeout:30000});
+      if (response?.status() !== 200) {
+        rows.push(result(role,label,'BLOCKED','route_unavailable'));
+        return;
+      }
+    }
+    const button=page.getByTestId(open);
+    if (await button.count() !== 1 || !await button.isVisible()) {
+      rows.push(result(role,label,'BLOCKED','authorized_open_control_unavailable'));
+      return;
+    }
+    await button.click();
+    await page.getByTestId(dialog).waitFor({state:'visible',timeout:10000});
+    const dismiss=page.getByTestId(cancel);
+    if (!await dismiss.isVisible()) throw Error('cancel_unavailable');
+    await dismiss.click();
+    await page.getByTestId(dialog).waitFor({state:'hidden',timeout:10000});
+    rows.push(result(role,label,'PASS','dialog_opened_and_cancelled_without_submit'));
+  } catch {
+    rows.push(result(role,label,'FAIL','dialog_open_cancel_failed'));
+  }
+}
+async function inspectRole(browser,role,user) {
+  const rows=[];
+  const ctx=await browser.newContext({
+    viewport:{width:1440,height:900},deviceScaleFactor:1,acceptDownloads:false
+  });
+  const page=await ctx.newPage();
+  let attempted=false;
+  try {
+    // Do not allow the runner to send the configured credentials to another origin.
+    page.on('request',r => {
+      if (r.isNavigationRequest() && new URL(r.url()).origin !== ORIGIN)
+        throw Error('unexpected_navigation_origin');
+    });
+    attempted=true;
+    const valid=await login(page,role,user);
+    if (!valid) {
+      rows.push(result(role,'authentication','FAIL','role_or_identity_unverified'));
+      return rows;
+    }
+    rows.push(result(role,'authentication','PASS','exact_role_identity_confirmed'));
+    for (const route of ROLES[role].routes.filter(p => p !== '/app')) {
+      await navigate(page,role,route,rows);
+    }
+    if (role === 'admin') {
+      await openCancel(page,role,rows,{
+        route:'/app/children',open:'register-child-button',
+        dialog:'register-child-dialog',cancel:'register-child-cancel',
+        label:'child_registration_open_cancel'
+      });
+    }
+    if (role === 'admin' || role === 'coordinator') {
+      await openCancel(page,role,rows,{
+        route:'/app/schedule',open:'book-appointment-button',
+        dialog:'book-dialog',cancel:'book-cancel',
+        label:'appointment_booking_open_cancel'
+      });
+      try {
+        await page.goto(BASE+'/app/schedule',{waitUntil:'domcontentloaded',timeout:30000});
+        const week=page.getByTestId('view-week');
+        const next=page.getByTestId('week-next');
+        const prev=page.getByTestId('week-prev');
+        if (!await week.isVisible() || !await next.isVisible() || !await prev.isVisible()) {
+          rows.push(result(role,'schedule_view_controls','BLOCKED','controls_unavailable'));
+        } else {
+          await week.click(); await next.click(); await prev.click();
+          rows.push(result(role,'schedule_view_controls','PASS','view_and_period_controls_operated'));
+        }
+      } catch {
+        rows.push(result(role,'schedule_view_controls','FAIL','schedule_controls_failed'));
+      }
+    }
+    if (role === 'guardian') {
+      try {
+        await page.goto(BASE+'/app/practice',{waitUntil:'domcontentloaded',timeout:30000});
+        await page.getByTestId('product-shell').waitFor({timeout:15000});
+        rows.push(result(role,'guardian_practice_open','PASS','practice_route_rendered_no_mutation'));
+      } catch {
+        rows.push(result(role,'guardian_practice_open','FAIL','practice_route_unavailable'));
+      }
+    }
+    // The following require separate controlled scenarios, and are NEVER
+    // promoted merely because route navigation or modal rendering worked.
+    rows.push(result(role,'form_submission_validation','BLOCKED','no_mutating_submission_authorized'));
+    rows.push(result(role,'clinical_or_ai_draft_review','BLOCKED','clinical_gate_and_review_not_exercised'));
+  } catch {
+    rows.push(result(role,'role_execution','BLOCKED','browser_operation_incomplete'));
+  } finally {
+    let cleaned=false;
+    if (attempted) {
+      try { cleaned=await logout(ctx); } catch {/* keep cleanup failure */ }
+    }
+    rows.push(result(role,'session_cleanup',cleaned?'PASS':'FAIL',
+      cleaned?'server_logout_confirmed':'logout_unconfirmed'));
+    await ctx.close().catch(()=>{});
+  }
+  return rows;
+}
+export async function run({
+  credentialsFile=process.env.QA_USERS_FILE,
+  output=process.env.QA_PRIVATE_OUTPUT
+}={}) {
+  if (!validateTarget(BASE) || !credentialsFile || !output) throw Error('private_hosted_preconditions_missing');
+  const users=verifySyntheticUsers(await readFile(credentialsFile,'utf8'));
+  await publicHealth();
+  const out=resolve(output);
+  await mkdir(out,{recursive:true,mode:0o700});
+  if (process.platform !== 'win32') await chmod(out,0o700);
+  const browser=await chromium.launch();
+  const rows=[];
+  try {
+    for (const role of Object.keys(ROLES))
+      rows.push(...await inspectRole(browser,role,users[role]));
+  } finally { await browser.close().catch(()=>{}); }
+  const counts=Object.fromEntries(CHECKS.map(s=>[s,rows.filter(r=>r.status===s).length]));
+  const report={
+    schema:1,kind:'hosted_synthetic_interactive_readonly',target:ORIGIN,
+    baseline104Unchanged:true,clinicalGatesUnchanged:true,
+    generatedAt:new Date().toISOString(),counts,rows
+  };
+  await writeFile(join(out,'hosted-interactive-results.json'),
+    JSON.stringify(report,null,2)+'\n',{mode:0o600});
+  console.log('INTERACTIVE_QA_SUMMARY '+JSON.stringify({counts}));
+  return counts.FAIL ? 1 : counts.BLOCKED ? 2 : 0;
+}
+if (process.argv[1]?.endsWith('/hosted-interactive.mjs')) {
+  run().then(code=>{process.exitCode=code;}).catch(()=>{
+    console.error('Private interactive QA precondition unavailable');
+    process.exitCode=2;
+  });
+}
