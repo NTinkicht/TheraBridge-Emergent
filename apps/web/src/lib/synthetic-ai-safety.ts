@@ -29,10 +29,17 @@ export function scanSyntheticDraft(text: string, sources: readonly SyntheticSour
   // Snapshots remain serialized for equality, but safety scans must inspect
   // decoded strings: JSON escapes multiline instructions as literal \\n.
   const values = (value: unknown): string[] => {
-    if (typeof value === 'string') return [value];
-    if (Array.isArray(value)) return value.flatMap(values);
-    if (value && typeof value === 'object') return Object.values(value).flatMap(values);
-    return [];
+    const pending: unknown[] = [value];
+    const found: string[] = [];
+    let inspected = 0;
+    while (pending.length && inspected++ < 4000) {
+      const item = pending.pop();
+      if (typeof item === 'string') found.push(item);
+      else if (Array.isArray(item)) pending.push(...item);
+      else if (item && typeof item === 'object') pending.push(...Object.values(item));
+    }
+    if (pending.length) found.push('SOURCE_VALUE_BUDGET_EXCEEDED');
+    return found;
   };
   let malformed = false;
   const sourceText = sources.map(source => {
@@ -40,6 +47,7 @@ export function scanSyntheticDraft(text: string, sources: readonly SyntheticSour
     catch { malformed = true; return source.snapshot; }
   }).join('\n');
   if (malformed) reasons.push('Malformed fictional source snapshot.');
+  if (sourceText.includes('SOURCE_VALUE_BUDGET_EXCEEDED')) reasons.push('Fictional source traversal budget exceeded.');
   if (sourceText.length > 30000) reasons.push('Fictional source budget exceeded.');
   if (hostile.some(pattern => pattern.test(text) || pattern.test(sourceText)))
     reasons.push('Instruction-spoofing or executable content detected in proposed text or evidence.');
