@@ -259,7 +259,7 @@ describe('M2-H01 real PostgreSQL rollback and protected-file consistency', () =>
         for (const member of extraOnly) {
           expect(await h.prisma.authIdentity.count({where:{userId:member.userId}})).toBe(0);
         }
-        expect(extraOnly.find(m=>m.title==='ABA therapist')?.specialties).toContain('aba');
+        expect(extraOnly.find(m=>m.title==='ABA therapist')?.specialties).toContain('behavioral');
       });
     } finally {
       if (existsSync(destination)) unlinkSync(destination);
