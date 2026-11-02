@@ -18,12 +18,12 @@ export interface SyntheticHomePlanCandidate {
 }
 
 /** Offline fictional shortlist based on the authorized workspace snapshot; never infers treatment. */
-export function syntheticHomePlanCandidates(ws: Workspace, v: PlanVersion, service: string, existing: HomeActivity[]): SyntheticHomePlanCandidate[] {
+export function syntheticHomePlanCandidates(ws: Workspace, v: PlanVersion, service: string, existing: HomeActivity[], editableGoals: Goal[]): SyntheticHomePlanCandidate[] {
   if (ws.synthetic !== true || !ws.canEdit || !v.mine || !['DRAFT', 'RETURNED_FOR_REVISION'].includes(v.status)) return [];
   const existingIds = new Set(existing.map(a => a.templateId));
   const templates = ws.templates.filter(t => t.service === service && t.library === 'center' && !existingIds.has(t.id))
     .sort((a, b) => a.title.localeCompare(b.title)).slice(0, 5);
-  const validGoals = v.goals.filter(g => g.key && g.title.trim());
+  const validGoals = editableGoals.filter(g => g.key && g.title.trim());
   if (!validGoals.length) return [];
   return templates.map((template: Template) => ({
     templateId: template.id, templateVersion: template.version ?? null, planVersionId: v.id,
@@ -36,16 +36,16 @@ export function syntheticHomePlanCandidates(ws: Workspace, v: PlanVersion, servi
   }));
 }
 
-export function HomePlanSyntheticAssist({ ws, v, service, existing, onInsert }: {
-  ws: Workspace; v: PlanVersion; service: string; existing: HomeActivity[]; onInsert: (a: HomeActivity) => void;
+export function HomePlanSyntheticAssist({ ws, v, service, existing, editableGoals, onInsert }: {
+  ws: Workspace; v: PlanVersion; service: string; existing: HomeActivity[]; editableGoals: Goal[]; onInsert: (a: HomeActivity) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<SyntheticHomePlanCandidate | null>(null);
   const [goalKey, setGoalKey] = useState('');
   const [frequency, setFrequency] = useState('');
   const [note, setNote] = useState('');
-  const candidates = syntheticHomePlanCandidates(ws, v, service, existing);
-  const goals: Goal[] = v.goals.filter(g => g.key && g.title.trim());
+  const candidates = syntheticHomePlanCandidates(ws, v, service, existing, editableGoals);
+  const goals: Goal[] = editableGoals.filter(g => g.key && g.title.trim());
   const select = (candidate: SyntheticHomePlanCandidate) => {
     setSelected(candidate); setGoalKey(candidate.goalKey);
     setFrequency(candidate.suggested.frequency); setNote(candidate.suggested.note ?? '');
@@ -76,7 +76,7 @@ export function HomePlanSyntheticAssist({ ws, v, service, existing, onInsert }: 
         <textarea className="mt-1 w-full rounded-control border border-border-light p-2" maxLength={1000} rows={3} value={note} onChange={e => setNote(e.target.value)} data-testid="home-ai-note" />
       </label>
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" disabled={!goalKey || !frequency.trim() || existing.some(a => a.templateId === selected.templateId)}
+        <Button size="sm" disabled={!goals.some(g => g.key === goalKey) || !frequency.trim() || existing.some(a => a.templateId === selected.templateId)}
           onClick={() => {
             if (!goals.some(g => g.key === goalKey) || !frequency.trim() || existing.some(a => a.templateId === selected.templateId)) return;
             onInsert({ templateId: selected.templateId, goalKey, frequency: frequency.trim(), note: note.trim() });
