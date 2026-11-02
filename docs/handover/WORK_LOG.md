@@ -1,3 +1,7 @@
+# M3-AI03 implementation checkpoint — 2026-11-02
+
+M3-AI02 PR #155 merged as 066f628. M3-AI03 PR #156 adds offline fictional home-plan activity proposal review/insert/discard, source version references and browser regression. CI/review pending.
+
 # Work log — 2026-11-02 — M3-AI02 synthetic report drafting
 
 PR #154 merged as `d4fa4b5` after 6/6 CI PASS. PR #155 implementation adds offline synthetic evidence proposals, therapist-controlled editable/explicit insertion and discard UI, and browser tests. Implementation CI/review still PENDING. Historical work log follows.
