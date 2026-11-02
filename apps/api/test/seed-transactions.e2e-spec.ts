@@ -226,7 +226,7 @@ describe('M2-H01 real PostgreSQL rollback and protected-file consistency', () =>
         expect(await h.prisma.user.count()).toBe(0);
         unlinkSync(destination);
         await seedChildrensHome(h.prisma, destination);
-        expect(await h.prisma.user.count()).toBe(7);
+        expect(await h.prisma.user.count()).toBe(10);
         expect(await h.prisma.authIdentity.count()).toBe(7);
         expect(existsSync(destination)).toBe(true);
       });
@@ -234,5 +234,36 @@ describe('M2-H01 real PostgreSQL rollback and protected-file consistency', () =>
       if (existsSync(destination)) unlinkSync(destination);
     }
   }, 60_000);
+
+  it('seeds six fictional children including siblings and display-only ABA/OT/Speech staff idempotently', async () => {
+    const destination = join(tmpdir(), 'tb-expanded-demo-' + randomUUID() + '.json');
+    try {
+      await withLocalDemoEnv(async () => {
+        await seedChildrensHome(h.prisma, destination);
+        await seedChildrensHome(h.prisma, destination);
+        expect(await h.prisma.child.count()).toBe(6);
+        expect(await h.prisma.user.count()).toBe(10);
+        expect(await h.prisma.authIdentity.count()).toBe(7);
+        expect(await h.prisma.appointment.count()).toBe(15);
+        const siblings = await h.prisma.child.findMany({where:{lastName:'Ahmed'}});
+        expect(siblings).toHaveLength(3);
+        const parent = await h.prisma.user.findUniqueOrThrow({where:{emailNormalized:DEMO_EMAILS.parent}});
+        expect(await h.prisma.guardianLink.count({where:{userId:parent.id,removedAt:null}})).toBe(3);
+        const extra = await h.prisma.membership.findMany({where:{title:{in:[
+          'ABA therapist','Occupational therapist','Speech and language therapist'
+        ]}},include:{user:true}});
+        const extraOnly = extra.filter(m=>['dalia.mansour@childrens-home.therabridge.test',
+          'nour.haddad@childrens-home.therabridge.test',
+          'huda.rahim@childrens-home.therabridge.test'].includes(m.user.emailNormalized));
+        expect(extraOnly).toHaveLength(3);
+        for (const member of extraOnly) {
+          expect(await h.prisma.authIdentity.count({where:{userId:member.userId}})).toBe(0);
+        }
+        expect(extraOnly.find(m=>m.title==='ABA therapist')?.specialties).toContain('aba');
+      });
+    } finally {
+      if (existsSync(destination)) unlinkSync(destination);
+    }
+  }, 120_000);
 
 });
