@@ -201,7 +201,11 @@ async function inspectRole(browser,role,user) {
     if (role === 'speech' || role === 'ot' || role === 'supervisor') {
       try {
         await page.goto(BASE+'/app/clinical',{waitUntil:'domcontentloaded',timeout:30000});
-        await page.getByTestId('clinical-list-loading').waitFor({state:'hidden',timeout:15000});
+        await page.getByTestId('session-loading').waitFor({state:'hidden',timeout:15000});
+        await page.locator('[data-testid="clinical-list"]:visible, [data-testid="clinical-list-empty"]:visible, [data-testid="clinical-list-error"]:visible')
+          .first().waitFor({state:'visible',timeout:15000});
+        if (await page.getByTestId('clinical-list-error').isVisible().catch(()=>false))
+          throw Error('clinical_list_error');
         if (await page.getByTestId('clinical-list-empty').isVisible().catch(()=>false)) {
           rows.push(result(role,'demo_clinical_child_walkthrough','BLOCKED','no_assigned_synthetic_child'));
         } else {
@@ -214,12 +218,20 @@ async function inspectRole(browser,role,user) {
           if (!banner.includes('Synthetic data only') ||
               !banner.includes('AI processing are not available'))
             throw Error('clinical_gate_banner_missing');
-          for (const name of ['overview','plan','assessments','sessions','progress','reports']) {
+          const panels={overview:'child-360',plan:'plans-panel',assessments:'assessments-panel',
+            sessions:'sessions-panel',progress:'progress-panel',reports:'reports-panel'};
+          for (const [name,panel] of Object.entries(panels)) {
             const tab=page.getByTestId('clinical-tab-'+name);
             await tab.click({timeout:10000});
-            if (await tab.getAttribute('aria-selected') !== 'true' ||
-                !await page.locator('#clinical-tabpanel').isVisible())
-              throw Error('clinical_tab_unavailable');
+            if (await tab.getAttribute('aria-selected') !== 'true')
+              throw Error('clinical_tab_unselected');
+            await page.getByTestId(panel).waitFor({state:'visible',timeout:10000});
+            if (name === 'reports') {
+              await page.locator('[data-testid="reports-empty"]:visible, [data-testid^="report-row-"]:visible, [data-testid="reports-error"]:visible')
+                .first().waitFor({state:'visible',timeout:15000});
+              if (await page.getByTestId('reports-error').isVisible().catch(()=>false))
+                throw Error('reports_unavailable');
+            }
           }
           rows.push(result(role,'demo_clinical_child_walkthrough','PASS','six_tabs_and_disabled_ai_banner_verified'));
         }
