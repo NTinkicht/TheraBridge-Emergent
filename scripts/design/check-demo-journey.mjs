@@ -813,6 +813,10 @@ try {
       await page.getByTestId('home-ai-stale').waitFor();
       await firstGoalTitle.fill(savedGoalTitle);
       await page.getByTestId('home-ai-frequency').fill('Twice weekly — fictional');
+      assert(await page.getByTestId('home-ai-insert').isDisabled(),
+        'Home-plan proposal must not insert without human acknowledgment');
+      await page.getByTestId('synthetic-review-examine').click();
+      await page.getByTestId('synthetic-review-acknowledge').click();
       await page.getByTestId('home-ai-insert').click();
       assert.equal(await page.locator('li[data-testid^="home-activity-"]').count(), beforeCount + 1,
         'Explicit therapist insertion must add exactly one unsaved activity');
@@ -1052,6 +1056,16 @@ try {
     await page.getByTestId('synthetic-report-section').selectOption('sessions');
     await page.getByTestId('synthetic-report-generate').click();
     await page.getByTestId('synthetic-report-text').fill('SYNTHETIC DRAFT — clinician-edited fictional session count summary');
+    assert(await page.getByTestId('synthetic-report-insert').isDisabled(),
+      'Report proposal must not insert before explicit clinician draft acknowledgment');
+    await page.getByTestId('synthetic-review-examine').click();
+    await page.getByTestId('synthetic-review-acknowledge').click();
+    assert(await page.getByTestId('synthetic-report-insert').isEnabled());
+    await page.getByTestId('synthetic-report-text').fill('SYNTHETIC DRAFT — clinician-edited fictional session count summary ');
+    assert(await page.getByTestId('synthetic-report-insert').isDisabled(),
+      'Editing acknowledged text must require fresh human review');
+    await page.getByTestId('synthetic-review-examine').click();
+    await page.getByTestId('synthetic-review-acknowledge').click();
     await page.getByTestId('synthetic-report-insert').click();
     assert((await page.getByTestId('report-section-sessions').inputValue()).includes('clinician-edited'));
     await page.locator('[data-testid="report-save-state"][data-state="saved"]').waitFor({ timeout: 10000 });
