@@ -78,7 +78,10 @@ async function navigate(page, role, route, rows) {
     await page.waitForURL(u => u.pathname === route,{timeout:15000});
     await page.getByTestId('product-shell').waitFor({timeout:15000});
     await page.getByTestId('session-loading').waitFor({state:'hidden',timeout:15000});
-    const [success,loading,error]=ROUTE_EVIDENCE[route]??[];
+    const evidence = role === 'guardian' && route === '/app/activities'
+      ? ['family-activities','family-activities-loading','family-activities-error']
+      : ROUTE_EVIDENCE[route]??[];
+    const [success,loading,error]=evidence;
     if (!success) throw Error('route_contract_missing');
     await page.getByTestId(success).waitFor({state:'visible',timeout:15000});
     if (loading) await page.getByTestId(loading).waitFor({state:'hidden',timeout:15000});
