@@ -1,3 +1,7 @@
+# M3-AI03 implementation checkpoint — 2026-11-02
+
+M3-AI03 PR #156 synthetic-only home-plan draft integration implemented: qualify exact final HEAD with all six CI jobs and independent review, disposition every finding, then merge if Rule 16 permits. M3-AI04 is next after qualification.
+
 # Next work — 2026-11-02 — M3-AI02 PR #155
 
 Qualify synthetic report-drafting implementation on exact PR #155 HEAD: browser regression, six CI jobs, independent code review and explicit dispositions. Only merge once Rule 16 is met; then open M3-AI03 draft. No real clinical data, external AI provider, signing or release. Previous NEXT_WORK checkpoints below are historical.

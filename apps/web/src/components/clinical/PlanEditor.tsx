@@ -20,7 +20,7 @@ import { PlanEvidenceTrail } from './PlanEvidenceTrail';
 import { GoalCheckpointPanel } from './GoalCheckpointPanel';
 import { GoalReviewWorklist } from './GoalReviewWorklist';
 import { goalReviewAnchor } from '@/lib/goal-review';
-import { draftHomeActivitySuggestions } from '@/lib/evidence-assist';
+import { HomePlanSyntheticAssist } from './HomePlanSyntheticAssist';
 
 type Run = (fn: () => Promise<unknown>, ok: string) => Promise<boolean>;
 const STATUS = { DRAFT: ['Draft', 'neutral'], IN_REVIEW: ['In review', 'info'], SUPERSEDED: ['Superseded', 'neutral'], RETURNED_FOR_REVISION: ['Returned for revision', 'caution'], WITHDRAWN: ['Withdrawn', 'neutral'], FROZEN_INTERNAL: ['Frozen internal', 'info'] } as const;
@@ -75,7 +75,6 @@ function VersionEditor({ centerId, ws, planId, planTitle, service, v, source, ru
   const [goals, setGoals] = useState<Goal[]>(v.goals);
   const [acts, setActs] = useState<HomeActivity[]>(v.homeActivities);
   const [comment, setComment] = useState('');
-  const [suggestOpen, setSuggestOpen] = useState(false);
   const [preview, setPreview] = useState<Awaited<ReturnType<typeof clinicalApi.familyPreview>> | null>(null);
   const [templateSearch, setTemplateSearch] = useState('');
   const [searchedTemplates, setSearchedTemplates] = useState<Template[] | null>(null);
@@ -172,17 +171,7 @@ function VersionEditor({ centerId, ws, planId, planTitle, service, v, source, ru
       </div>
       <HomePracticeCalendar key={v.id} activities={acts} goals={goals} templates={templateWs.templates}
         versionNumber={v.number} timezone={ws.timezone} unsaved={unsavedPlanEdits} />
-      {edit && <div className="space-y-2 rounded-card border border-border-light bg-surface-subtle p-4" data-testid="home-plan-evidence-assist">
-        <h3 className="text-[16px] font-semibold">Draft activity shortlist</h3>
-        <p className="text-[13px] text-brand-inkMuted">Specialty-filtered local library, NOT AI advice or approved home practice. The therapist must check each goal, age and safety. No automatic family sharing.</p>
-        <Button variant="secondary" onClick={()=>setSuggestOpen(!suggestOpen)} data-testid="home-assist-toggle">{suggestOpen?'Hide suggestions':'Review activity suggestions'}</Button>
-        {suggestOpen && draftHomeActivitySuggestions(ws,service,acts).map(item=><div key={item.templateId} className="flex flex-wrap items-center gap-3 rounded-control border border-border-light bg-white p-3">
-          <div className="min-w-0 flex-1"><p className="text-[14px] font-semibold">{item.title}</p><p className="text-[12px] text-brand-inkMuted">{item.reason}</p></div>
-          <Button variant="secondary" size="sm" data-testid={'home-assist-add-'+item.templateId} onClick={()=>setActs(prev=>prev.some(a=>a.templateId===item.templateId)?prev:[...prev,item.proposed])}>Add to draft</Button>
-        </div>)}
-        {suggestOpen && draftHomeActivitySuggestions(ws,service,acts).length===0 && <p className="text-[13px]">No further centre activity templates for this specialty.</p>}
-        <p className="text-[12px] text-brand-inkMuted">Suggestions require Save draft to persist; signing and release remain disabled.</p>
-      </div>}
+      {edit && <HomePlanSyntheticAssist ws={ws} v={v} service={service} existing={acts} editableGoals={goals} onInsert={candidate => setActs(previous => previous.some(a => a.templateId === candidate.templateId) ? previous : [...previous, candidate])} />}
       {edit && <HomePlanHandoff result={handoff} versionNumber={v.number} />}
       <div className="flex flex-wrap items-start gap-2">
         {edit && <div>
