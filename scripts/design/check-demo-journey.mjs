@@ -1553,7 +1553,7 @@ try {
     assert.notEqual((await read(page, clinicalPath)).status, 200, 'Parent must not see unreleased clinical evidence');
     const practice = await read(page, centerBase + '/family/practice');
     assert.equal(practice.status, 200);
-    assert(practice.body.children.length === 1 && practice.body.children[0].activities.length > 0);
+    assert(practice.body.children.length === 3 && practice.body.children.some(c => c.id === child.id && c.activities.length > 0), 'Guardian must see three Ahmed siblings and Yusuf practice');
     assert.equal(practice.body.released, false);
     // Hosted-QA follow-up: the family view switches are ordinary buttons,
     // not broken composite ARIA tabs. Validate five actual Chromium widths.
@@ -1624,7 +1624,7 @@ try {
     assert((await page.getByTestId('messages-demo-disabled').innerText()).includes('switched off'));
     await page.setViewportSize({ width: 1280, height: 900 });
     if (practice.body.gates.practiceDemo) {
-      const slot = practice.body.children[0].activities.flatMap(a => a.slots.map(s => ({ ...s, templateId: a.id }))).find(s => s.recordable);
+      const slot = practice.body.children.find(c => c.id === child.id).activities.flatMap(a => a.slots.map(s => ({ ...s, templateId: a.id }))).find(s => s.recordable);
       assert(slot, 'Parent should have an enabled synthetic practice slot');
       const submission = await page.evaluate(async ({ url, token, kid, templateId, date }) => {
         const r = await fetch(url, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token }, body: JSON.stringify({ childId: kid, templateId, practiceDate: date, choice: 'NEEDED_HELP', idempotencyKey: crypto.randomUUID() }) });
