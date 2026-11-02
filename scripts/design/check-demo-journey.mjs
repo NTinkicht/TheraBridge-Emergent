@@ -790,6 +790,19 @@ try {
       assert.equal(await page.locator('li[data-testid^="home-activity-"]').count(), beforeCount,
         'Discarding an offline suggestion must leave the draft unchanged');
       await candidateReview.click();
+      // Switching the goal must preserve the *original* template provenance;
+      // it must never silently repin a changed or deleted activity template.
+      const originalSources = await page.getByTestId('home-ai-sources').innerText();
+      const originalTemplateRef = originalSources.split(' · ').find(x => x.startsWith('activity-template:'));
+      const goalPicker = page.getByTestId('home-ai-goal');
+      const goalOptions = await goalPicker.locator('option').evaluateAll(options => options.map(o => o.value));
+      if (goalOptions.length > 1) {
+        const originalGoal = await goalPicker.inputValue();
+        await goalPicker.selectOption(goalOptions.find(key => key !== originalGoal));
+        assert((await page.getByTestId('home-ai-sources').innerText()).includes(originalTemplateRef),
+          'Changing a selected goal must not replace the originally pinned template');
+        await goalPicker.selectOption(originalGoal);
+      }
       // A goal removed from the unsaved editor must immediately invalidate
       // the previously selected activity-link target (no stale v.goals).
       const firstGoalTitle = page.getByTestId('goal-title-0').first();
