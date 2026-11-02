@@ -1559,6 +1559,8 @@ try {
     // not broken composite ARIA tabs. Validate five actual Chromium widths.
     await page.goto(base + '/app/practice');
     await page.getByTestId('practice-page').waitFor();
+    // Multiple siblings are now visible; target Yusuf's assigned speech therapist.
+    await page.getByTestId(`practice-child-${child.id}`).click();
     assert.equal(await page.locator('[data-testid="practice-page"] [role="tablist"]').count(), 0);
     // TB-EM-048: show only fixed request statuses; no care-plan drafts.
     const guardianRequests = page.getByTestId('guardian-home-plan-requests');
