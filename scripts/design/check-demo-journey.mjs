@@ -1022,11 +1022,13 @@ try {
     // prepared fictional-evidence proposal until it is regenerated.
     const summaryBeforeTrace = await page.getByTestId('report-section-summary').inputValue();
     await page.getByTestId('report-section-summary').fill(summaryBeforeTrace + ' (synthetic trace check)');
+    await page.locator('[data-testid="report-save-state"][data-state="pending"]').waitFor();
     await page.locator('[data-testid="report-save-state"][data-state="saved"]').waitFor({ timeout: 10000 });
     await page.getByTestId('synthetic-report-stale').waitFor();
     assert(await page.getByTestId('synthetic-report-insert').isDisabled(),
       'Proposal from an earlier report revision must not be inserted');
     await page.getByTestId('report-section-summary').fill(summaryBeforeTrace);
+    await page.locator('[data-testid="report-save-state"][data-state="pending"]').waitFor();
     await page.locator('[data-testid="report-save-state"][data-state="saved"]').waitFor({ timeout: 10000 });
     await page.getByTestId('synthetic-report-discard').click();
     assert.equal(await page.getByTestId('report-section-assessment').inputValue(), beforeProposal);
