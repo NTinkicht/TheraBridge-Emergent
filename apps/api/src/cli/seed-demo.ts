@@ -300,7 +300,9 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     if (!identity) {
       // An existing account cannot receive a new random password whose
       // plaintext was never exported or deliberately supplied by the operator.
-      if (existing) {
+      if (existing && !(Object.values(DEMO_EXTRA_EMAILS).includes(
+        email as typeof DEMO_EXTRA_EMAILS[keyof typeof DEMO_EXTRA_EMAILS],
+      ) && (extraPasswords?.[email] || extraFromFile?.[email] || savedPasswords.get(email)))) {
         throw new Error('Demo identity missing for existing account; refusing unexported password for ' + email);
       }
       const selected = byEmail.get(email);
