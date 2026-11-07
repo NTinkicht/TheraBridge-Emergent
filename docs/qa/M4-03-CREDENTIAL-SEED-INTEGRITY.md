@@ -1,6 +1,6 @@
 # M4-03 — Demo credential preservation, secure export, and transactional seed integrity
 
-**Status:** IMPLEMENTATION NOT STARTED — draft work-unit checkpoint only.
+**Status:** IMPLEMENTATION COMMITTED ON PR #270; final exact-head CI and independent reviews pending. The code is not yet merged or deployed.
 **Tracking issue:** [#177](https://github.com/NTinkicht/TheraBridge-Emergent/issues/177) · **Milestone:** [M4 #167](https://github.com/NTinkicht/TheraBridge-Emergent/issues/167).
 **Predecessor:** [M4-02 PR #267](https://github.com/NTinkicht/TheraBridge-Emergent/pull/267), merged as `8174a87ed27e2424500f64256742ab134f15fa3d`.
 
@@ -49,4 +49,15 @@
 | Two simultaneous seed processes | One consistent resulting roster, no orphan file | NOT RUN |
 | No real child/clinical data or activation | Safety invariant preserved | NOT RUN |
 
-**Review expectation:** This work unit needs code implementation and actual CI + reviewer evidence before becoming ready to merge. This initial PR is a **draft checkpoint**, not a claim of completion.
+## Implementation evidence
+
+- `scripts/preview/generate-secrets.mjs`: independently creates original 7 and extra 3 account password files, supports partial generation/restart without touching an existing file, uses exclusive writes and restrictive filesystem mode; never logs secret values.
+- `apps/api/src/cli/seed-demo.ts`: reads/validates recoverable local credentials; when an actual seven-account local seed needs three more accounts, stages a **separate protected extra-only file** before DB writes, leaving the seven-file byte-for-byte unchanged. Validates existing hashes before reuse, rejects unsupported partial identities, and fails closed on operator-managed seven-only inputs. Uses verified database identity counts to retain staged credentials on ambiguous COMMIT and remove on confirmed rollback.
+- `scripts/preview/generate-secrets.test.mjs`: fresh, repeated, missing-extra, missing-seven, file permissions and no-secret-logging test.
+- `apps/api/test/seed-transactions.e2e-spec.ts`: real PostgreSQL seven→ten upgrade, seven unchanged hashes, three extra password recovery, idempotent reruns and rollback cleanup, plus existing fault-injection suite.
+- `apps/api/test/demo-seed-config.e2e-spec.ts`: denies operator-only seven secrets before any DB transaction.
+- Required CI test job now runs independent generator tests. No production/clinical code was changed.
+
+**Remaining qualification:** Complete all exact-head six-job CI checks and independent review; document all review findings and any necessary tracked deferrals. Actual hosted ten-account acceptance from #176/#268 and clinical activation remain separate and **NOT RUN / NO-GO**.
+
+**Review expectation:** This PR may be marked ready-for-review now that runtime implementation and regression tests are committed. It must **not** merge without independent approval and final-head CI.
