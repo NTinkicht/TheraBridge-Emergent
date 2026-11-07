@@ -19,6 +19,18 @@ describe('M4-07 reminder and reschedule batch selection', () => {
       .toEqual(['moved_out', 'moved_in']);
   });
 
+  it('keeps both-inside changes once and excludes missing-prior both-outside changes', () => {
+    const rows = [
+      { id: 'both_inside', startsAt: new Date('2026-11-11T12:00:00Z') },
+      { id: 'absent_before_outside', startsAt: new Date('2026-12-01T12:00:00Z') },
+    ];
+    const items = [
+      { id: 'both_inside', before: new Date('2026-11-10T12:00:00Z') },
+      { id: 'absent_before_outside' },
+    ];
+    expect(upcomingChangedAppointmentIds(rows, items, now, soon)).toEqual(['both_inside']);
+  });
+
   it('handles large synthetic batches without per-row searching and preserves first duplicate input', () => {
     const rows = Array.from({ length: 5000 }, (_, index) => ({
       id: 'appt-' + index,
