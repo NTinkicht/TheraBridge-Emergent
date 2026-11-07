@@ -43,27 +43,30 @@ export class AuthService {
       await this.audit.record('auth.rate_limited', { ip: meta.ip });
       throw new HttpException('Too many sign-in attempts. Please wait a few minutes and try again.', HttpStatus.TOO_MANY_REQUESTS);
     }
-    const acctKey = this.accountKey(email);
+    // A targeted attacker must not be able to globally lock another user out:
+    // enforce the account lockout per origin while the separate IP spray
+    // limiter still covers attempts across different account names.
+    const originKey = `${this.accountKey(email)}:origin:${hmac(this.cfg.secret, meta.ip)}`;
     const user = await this.prisma.user.findUnique({
       where: { emailNormalized: normalizeEmail(email) },
       include: { identities: { where: { provider: 'local' } } },
     });
     const identity = user?.identities[0];
-    const locked = await this.limits.isLocked(acctKey, now);
+    const locked = await this.limits.isLocked(originKey, now);
     const valid = await verifyPassword(identity?.passwordHash ?? (await dummyHash()), password);
 
     if (!user || !identity?.passwordHash || !valid || locked || user.status !== 'ACTIVE') {
       await this.limits.hit(ipKey, WINDOW_MS, now);
-      const failures = await this.limits.hit(acctKey, WINDOW_MS, now);
+      const failures = await this.limits.hit(originKey, WINDOW_MS, now);
       if (failures >= ACCOUNT_LIMIT && !locked) {
-        await this.limits.lock(acctKey, new Date(now.getTime() + LOCK_MS));
+        await this.limits.lock(originKey, new Date(now.getTime() + LOCK_MS));
         await this.audit.record('auth.lockout', { subjectUserId: user?.id, ip: meta.ip });
       }
       await this.audit.record('auth.login.failure', { subjectUserId: user?.id, ip: meta.ip, meta: { reason: locked ? 'locked' : 'invalid' } });
       throw new UnauthorizedException(GENERIC_LOGIN_ERROR);
     }
 
-    await this.limits.clear(acctKey);
+    await this.limits.clear(originKey);
     if (needsRehash(identity.passwordHash)) {
       await this.prisma.authIdentity.update({ where: { id: identity.id }, data: { passwordHash: await hashPassword(password) } });
     }
@@ -99,10 +102,20 @@ export class AuthService {
   }
 
   async forgot(email: string, meta: ClientMeta): Promise<void> {
+    // Rate-limit reset requests by origin, not by target account: an attacker
+    // must not be able to lock another user's password-recovery capability.
+    // Keep the public 202 response identical for known and unknown accounts.
+    const now = this.clock.now();
+    const requests = await this.limits.hit(`password-reset-ip:${hmac(this.cfg.secret, meta.ip)}`, WINDOW_MS, now);
+    if (requests > 10) {
+      // Emit the crossing event once per window, not one append-only audit row
+      // per blocked request: otherwise the throttle itself amplifies a flood.
+      if (requests === 11) await this.audit.record('auth.password.reset_rate_limited', { ip: meta.ip });
+      return;
+    }
     const user = await this.prisma.user.findUnique({ where: { emailNormalized: normalizeEmail(email) } });
     await this.audit.record('auth.password.reset_requested', { subjectUserId: user?.id, ip: meta.ip, meta: { known: !!user } });
     if (!user || user.status !== 'ACTIVE') return;
-    const now = this.clock.now();
     const token = randomToken();
     await this.prisma.$transaction([
       this.prisma.verificationToken.updateMany({ where: { userId: user.id, purpose: 'PASSWORD_RESET', usedAt: null }, data: { usedAt: now } }),
@@ -130,6 +143,9 @@ export class AuthService {
     await this.setPassword(row.userId, password);
     await this.sessions.revokeAllForUser(row.userId, 'password_reset');
     await this.limits.clear(this.accountKey(row.user.email));
+    // A verified reset must restore access even from the originally locked
+    // origin, without needing to know or persist any source IP addresses.
+    await this.limits.clearPrefix(`${this.accountKey(row.user.email)}:origin:`);
     await this.audit.record('auth.password.reset_completed', { subjectUserId: row.userId, ip: meta.ip });
   }
 
