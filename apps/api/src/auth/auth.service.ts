@@ -99,6 +99,15 @@ export class AuthService {
   }
 
   async forgot(email: string, meta: ClientMeta): Promise<void> {
+    // Rate-limit reset requests by origin, not by target account: an attacker
+    // must not be able to lock another user's password-recovery capability.
+    // Keep the public 202 response identical for known and unknown accounts.
+    const now = this.clock.now();
+    const requests = await this.limits.hit(`password-reset-ip:${hmac(this.cfg.secret, meta.ip)}`, WINDOW_MS, now);
+    if (requests > 10) {
+      await this.audit.record('auth.password.reset_rate_limited', { ip: meta.ip });
+      return;
+    }
     const user = await this.prisma.user.findUnique({ where: { emailNormalized: normalizeEmail(email) } });
     await this.audit.record('auth.password.reset_requested', { subjectUserId: user?.id, ip: meta.ip, meta: { known: !!user } });
     if (!user || user.status !== 'ACTIVE') return;
