@@ -1,3 +1,5 @@
+**M4-04 code work:** Following Codex P1 Rule 7 documentation fix, added a database-backed service-boundary regression to `clinical.e2e-spec.ts` for multi-specialty clinical workspace filtering after assignment revocation. Validates child.services and assessment response exclusion, not merely route 200. No runtime guard changes yet; use evidence to confirm existing behavior, escalate any failure as a tracked security defect. Exact-head CI/re-review pending.
+
 # M4-04 parallel planning record — 2026-11-08
 
 PR #271 initially introduced clinical authorization execution plan, not runtime code. Independent Codex review identified P1 omission of Rule 7 handover/QA checkpoint; this commit fixes four required records. Implementation/test evidence absent at this checkpoint. Role- and tenant-bound denial, specialty revocation, mutation CAS and row-scoped filtering remain the scheduled implementation objectives. M4-03 continues independently, and clinical policy gates remain fail-closed.
