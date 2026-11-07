@@ -1,3 +1,7 @@
+**Codex P2 correction QA update (M4-02, 2026-11-07):** Old-head CI `0ad1d96285` passed but had two logic gaps: cleared-cookie test was not a server-revocation test and child-list team was not proof of actor specialty. Corrected with independent pre-logout cookie replay requiring 401, all-assigned-child `ClinicalService.workspace.child.services` actor service assertions, and explicit offline regression cases for stale-cookie 200 and wrong-actor specialties; CI inclusion added. **At this checkpoint final-head six-job CI and fresh review are PENDING**, protected hosted ten-account HA-01…HA-10 **NOT RUN**, and two-valid-tenant/revocation cases #268 **BLOCKED**. Never report these as live PASS; no clinical activation.
+
+---
+
 # M4-02 QA checkpoint — 2026-11-07 — PR #267
 
 **Status:** QA code IMPLEMENTED on PR branch; code tests / exact-head CI **PENDING** at writing; **actual protected hosted ten-account QA NOT RUN**. No real credentials, child data or clinical functionality used. This is not a declaration of deployed SHA acceptance.
