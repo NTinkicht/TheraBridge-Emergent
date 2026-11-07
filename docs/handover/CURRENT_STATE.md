@@ -1,3 +1,9 @@
+# M4-07 parallel performance checkpoint — 2026-11-08
+
+PR #274 / issue #181: replaced repeated notification recipient and rescheduling list scans with maps and linear selection. New synthetic 5,000-appointment and 14-day boundary tests; no new authorization permissions, clinical activation or production mail dispatch. Exact-head CI and fresh review must be rerun after reconciliation. Remaining worker memory, bounded pagination and benchmarks stay open in #181.
+
+---
+
 # M4-06 parallel database integrity checkpoint — 2026-11-08
 
 **PR #273 / issue #180.** Existing M2 migration already provides audit append-only database trigger, clinical foreign keys and tenant indexes. Added real PostgreSQL regression for audit INSERT vs forbidden UPDATE/DELETE, validated plan-version center/author FK and scoped appointment/assignment indexes. No redundant migrations or clinical activation introduced. **New test code committed; final exact-head CI and reviewer NOT YET VERIFIED.** Remaining DB concurrency, Neon locking and performance investigation still open. Coordinates with M4-03 merged main and M4-07 runtime branch**M4-03 review status correction (2026-11-07):** Codex found two actionable P2 issues on earlier implementation HEAD: overlapping upgrade could consume a sidecar later removed by rollback, and malformed JSON could leak a password fragment in CLI error text. Both were FIX_NOW and are corrected in PR #270 with exclusive local seed lifecycle lock + error sanitization and negative-path regressions. Demo-journey CI initially failed because its runner supplied only seven secrets; runner now supplies independent ten-account secrets. Historical fixture gitleaks false-positive narrowly excluded; final CI and fresh review still pending. Parallel PRs #271–#276 are planning-only and remain independently scoped. No clinical activation.
