@@ -15,6 +15,17 @@ apps/api/prisma/** migrations/schema, database integrity/audit helpers and migra
 - [ ] Test clean and historical migration ordering and locked-connection retry behavior on Neon-compatible pools
 - [ ] Confirm transactional integrity and no tenant-crossing orphan/collision records
 
+## Implemented database integrity regression slice
+
+Current merged `20261103100000_m2_h04_integrity_indexes` already creates `audit_event_no_mutation` trigger, validated plan-version center/author FKs and tenant hot-path indexes. Do **not** duplicate this migration.
+
+Added `apps/api/test/m4-db-integrity.e2e-spec.ts` to verify in real PostgreSQL:
+- An ordinary audit INSERT succeeds while audit UPDATE/DELETE are rejected by the database and the original row remains immutable.
+- `plan_version_center_fk` and `plan_version_author_fk` remain present and validated.
+- `care_assignment_center_member_active_idx` and `appointment_center_child_status_start_idx` remain installed.
+
+**State:** source-level regression code committed, exact-head CI and fresh code review not yet verified. Wider M4-06 work on migration locks, concurrency, query plans and benchmark evidence remains OPEN. This test does not implement a retention-policy bypass or authorize clinical release.
+
 ## Acceptance and quality gates
 
 - [ ] Verify current merged behavior before changing code; do not rebuild closed M1–M3 features.
