@@ -81,6 +81,10 @@ jobs:
         run: |
           node scripts/qa/check-roadmap-registers.mjs
           node --test scripts/qa/check-roadmap-registers.test.mjs
+      - name: M4-09 historical issue evidence register and negative regression tests
+        run: |
+          node scripts/qa/check-historic-issues.mjs
+          node --test scripts/qa/check-historic-issues.test.mjs
       - name: M4-03 independent credential generator and recovery tests
         run: node --test scripts/preview/generate-secrets.test.mjs
       - name: M4-02 private hosted scope and workflow safety regressions
