@@ -7,6 +7,7 @@ import { ipPrefix, parseTrustedProxiesForTest, resolveClientIp, sha256 } from '.
 import { loadAuthConfig } from '../src/config/env';
 import { passwordPolicyError } from '../src/auth/password';
 import { RateLimitStore } from '../src/auth/rate-limit.store';
+import { ACCOUNT_LIMIT } from '../src/auth/auth.service';
 import {
   FakeClock, Harness, ORIGIN, PASSWORD, cookieFrom, createUser, freshPassword, login, makeApp, post, preAuth, rawCookie, resetDb, signIn,
 } from './helpers';
@@ -79,6 +80,33 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
     });
   });
 
+  describe('M4-05 WF-S6 server-side expiry and protected-response cache policy', () => {
+    it('rejects the actual expired session cookie before serving account or clinical centre data', async () => {
+      const u = await createUser(h.prisma, 'expiry@security.therabridge.test');
+      const s = await signIn(h, u.email);
+      const originalCookie = s.cookie;
+      const good = await h.http().get('/api/auth/session').set('Cookie', originalCookie).expect(200);
+      expect(good.headers['cache-control']).toContain('no-store');
+      const updated = await h.prisma.session.updateMany({
+        where: { tokenHash: sha256(s.token) },
+        data: { absoluteExpiresAt: new Date(h.clock.now().getTime() - 1000) },
+      });
+      expect(updated.count).toBe(1);
+      for (const path of [
+        '/api/auth/session',
+        '/api/centers/00000000-0000-4000-8000-000000000001/children',
+      ]) {
+        const denied = await h.http().get(path).set('Cookie', originalCookie).expect(401);
+        expect(denied.headers['cache-control']).toContain('no-store');
+        expect(denied.headers.pragma).toBe('no-cache');
+        expect(JSON.stringify(denied.body)).not.toContain(u.email);
+      }
+      const another = await createUser(h.prisma, 'active@security.therabridge.test');
+      const live = await signIn(h, another.email);
+      await h.http().get('/api/auth/session').set('Cookie', live.cookie).expect(200);
+    });
+  });
+
   describe('AC-2/3 generic errors, lockout, IP limit', () => {
     it('M2-H04: prunes expired buckets across keys without removing active windows', async () => {
       const old = new Date(h.clock.now().getTime() - 2 * 86_400_000);
@@ -132,6 +160,22 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
       expect(await h.prisma.auditEvent.count({ where: { type: 'auth.lockout' } })).toBe(1);
       h.clock.advance(16 * MIN);
       expect((await login(h, u.email)).status).toBe(200);
+    });
+
+    it('M4-05: targeted account lockout blocks only the attacking origin', async () => {
+      const proxied = await makeApp({ TRUSTED_PROXY_CIDRS: '127.0.0.1/32,::1/128' }, h.clock);
+      try {
+        const u = await createUser(proxied.prisma, 'targeted-lockout@test.therabridge.test');
+        const attacker = '198.51.100.77';
+        const legitimate = '198.51.100.88';
+        for (let i = 0; i < ACCOUNT_LIMIT; i++) {
+          expect((await login(proxied, u.email, 'incorrect-targeted-password', attacker)).status).toBe(401);
+        }
+        expect((await login(proxied, u.email, PASSWORD, attacker)).status).toBe(401);
+        expect((await login(proxied, u.email, PASSWORD, legitimate)).status).toBe(200);
+      } finally {
+        await proxied.close();
+      }
     });
 
     it('returns 429 after 30 failures from one IP', async () => {
@@ -392,6 +436,30 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
       await h.http().get('/api/dev/mailbox').expect(404);
     });
 
+    it('M4-05: throttles password recovery by origin without leaking account existence or locking the target', async () => {
+      const u = await createUser(h.prisma);
+      const request = async (email: string, ip: string) => {
+        const p = await preAuth(h);
+        return h.http().post('/api/auth/password/forgot')
+          .set('Origin', ORIGIN).set('Cookie', p.cookie).set('X-CSRF-Token', p.token)
+          .set('X-Forwarded-For', ip).send({ email });
+      };
+      const first = await request(u.email, '198.51.100.42');
+      expect(first.status).toBe(202);
+      const anonymous = await request('not-registered@test.therabridge.test', '198.51.100.42');
+      expect(anonymous.status).toBe(202);
+      expect(anonymous.body).toEqual(first.body);
+      for (let i = 0; i < 14; i++) {
+        expect((await request(u.email, '198.51.100.42')).status).toBe(202);
+      }
+      // Even many denied requests must produce one threshold-crossing audit
+      // event rather than unbounded append-only audit amplification.
+      expect(await h.prisma.auditEvent.count({ where: { type: 'auth.password.reset_rate_limited' } })).toBe(1);
+      // Never lock the target account because another origin consumed its own budget.
+      expect((await login(h, u.email)).status).toBe(200);
+      expect(await h.prisma.authLockout.count()).toBe(0);
+    });
+
     it('reset is single-use, hash-only, expires in 30 minutes and revokes sessions', async () => {
       const local = await makeApp({ DEPLOYMENT_ENV: 'local', DEV_MAILBOX_ENABLED: 'true' }, h.clock);
       try {
@@ -408,6 +476,12 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
           return local.http().post('/api/auth/password/reset').set('Origin', ORIGIN).set('Cookie', p.cookie).set('X-CSRF-Token', p.token).send({ token, password });
         };
         const token = await requestReset();
+        // The locked origin must be able to recover through its valid token;
+        // password reset clears all account-specific origin lock records.
+        for (let i = 0; i < ACCOUNT_LIMIT; i++) {
+          expect((await login(local, u.email, 'wrong-before-reset-123')).status).toBe(401);
+        }
+        expect((await login(local, u.email)).status).toBe(401);
         expect(JSON.stringify(await local.prisma.verificationToken.findMany())).not.toContain(token);
         expect(dumpJson(await local.prisma.auditEvent.findMany())).not.toContain(token);
         expect((await reset(token, 'Brand-New-Synthetic-Pass-1')).status).toBe(204);

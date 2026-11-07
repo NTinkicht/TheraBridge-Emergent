@@ -1,4 +1,8 @@
-**M4-04 partial clinical-authorization QA — 2026-11-08:** PR #271 / issue #178 adds a real-PostgreSQL regression for immediate specialty-revocation denial despite an unchanged care-assignment row and authorized supervisor continuity. Application-wide clinical endpoint audit, race/CAS cases, browser tests, exact-head six-job CI and new independent implementation review are NOT COMPLETE. Synthetic-only and clinical NO-GO remain unchanged.
+**M4-04 clinical read security reconciliation — 2026-11-08:** PR #271 implements active-membership and live-supervisor checks for clinical child, progress and review-queue reads, plus specialty-revocation and suspension negative tests. Reconciled after M4-05/#272 merge. Final new-head six-job CI and independent implementation review NOT YET VERIFIED. The remaining P0 #178 authorization/CAS/browser scope and all clinical NO-GO remain OPEN.
+
+---
+
+**M4-05 partial security implementation — 2026-11-08:** PR #272 / issue #179 now adds origin-based password-reset throttling with generic responses, an API abuse regression, and previously added expiry/no-cache tests. Exact-head CI and independent review are NOT VERIFIED. Recovery UI, unsigned MFA, dirty-form and edit-conflict UX remain OPEN; clinical NO-GO remains in force.
 
 ---
 
