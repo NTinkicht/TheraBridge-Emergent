@@ -105,7 +105,9 @@ export class AuthService {
     const now = this.clock.now();
     const requests = await this.limits.hit(`password-reset-ip:${hmac(this.cfg.secret, meta.ip)}`, WINDOW_MS, now);
     if (requests > 10) {
-      await this.audit.record('auth.password.reset_rate_limited', { ip: meta.ip });
+      // Emit the crossing event once per window, not one append-only audit row
+      // per blocked request: otherwise the throttle itself amplifies a flood.
+      if (requests === 11) await this.audit.record('auth.password.reset_rate_limited', { ip: meta.ip });
       return;
     }
     const user = await this.prisma.user.findUnique({ where: { emailNormalized: normalizeEmail(email) } });
