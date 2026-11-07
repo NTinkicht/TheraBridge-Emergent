@@ -1,3 +1,11 @@
+# M4-07 next actions — 2026-11-08
+
+1. Qualify re-synchronized PR #274 with six exact-head CI jobs and independent code review.
+2. Retain guardian-link tenant checks and synthetic-outbox restrictions; track realistic pagination, queue stress and memory sizing in #181.
+3. Preserve signed clinical NO-GO; do not treat optimized notification lookups as authorization changes.
+
+---
+
 # M4-06 next actions — 2026-11-08
 
 1. Run all six final-head CI jobs for new PostgreSQL integrity regression; investigate any changed migration schema/constraints.
