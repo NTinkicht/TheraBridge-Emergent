@@ -1,3 +1,23 @@
+# M4-03 QA checkpoint — 2026-11-07 — PR #270
+
+**Source implementation and tests committed; latest exact-head CI / independent review PENDING at writing.** This paragraph is not an assertion of successful hosted account authentication or clinical authorization.
+
+| Scenario | Current evidence state |
+|---|---|
+| Independent 7/3 local credential files, restart and permission modes | Test committed; CI result PENDING |
+| Fresh ten-account protected local seed | Existing integration test + added idempotent coverage; final-head CI PENDING |
+| Actual legacy seven→ten upgrade without rotating seven hashes | New PostgreSQL integration test committed; final-head CI PENDING |
+| Three additional recoverable passwords, no unexported identities | New local sidecar logic and tests committed; final-head CI PENDING |
+| DB rollback/file cleanup and ambiguous COMMIT retention | Existing + new fault injection and real DB checks; final-head CI PENDING |
+| Operator seven-only secret fail-closed | Regression committed; final-head CI PENDING |
+| Private hosted ten-account HA-01…HA-10 | NOT RUN; #268 |
+| Historical source evidence and Mistral QA hardening | OPEN #266/#269 |
+| Real patient data, signing/release, external AI/STT | NO-GO |
+
+No passwords, cookies or patient data were introduced into the PR or QA artifacts.
+
+---
+
 **Codex P2 correction QA update (M4-02, 2026-11-07):** Old-head CI `0ad1d96285` passed but had two logic gaps: cleared-cookie test was not a server-revocation test and child-list team was not proof of actor specialty. Corrected with independent pre-logout cookie replay requiring 401, all-assigned-child `ClinicalService.workspace.child.services` actor service assertions, and explicit offline regression cases for stale-cookie 200 and wrong-actor specialties; CI inclusion added. **At this checkpoint final-head six-job CI and fresh review are PENDING**, protected hosted ten-account HA-01…HA-10 **NOT RUN**, and two-valid-tenant/revocation cases #268 **BLOCKED**. Never report these as live PASS; no clinical activation.
 
 ---
