@@ -1,3 +1,5 @@
+> **Review-cycle next steps (2026-11-07):** Verify final exact HEAD CI includes new `node scripts/qa/check-roadmap-registers.mjs` and `node --test scripts/qa/check-roadmap-registers.test.mjs`; obtain fresh independent Codex/approved review after corrections; disposition every review before merging PR #265 under Rule 16. Keep #175 open for row-by-row verified evidence, and [#266](https://github.com/NTinkicht/TheraBridge-Emergent/issues/266) specifically tracks inaccessible private spec/1,023-step historical mapping. After verified merge, immediately open draft PR for [M4-02 #176](https://github.com/NTinkicht/TheraBridge-Emergent/issues/176) ten-account hosted synthetic acceptance. Do not treat a draft as implemented.
+
 # Active next work — 2026-11-07 — M4-01 / PR #265
 
 1. Qualify the **final exact PR #265 HEAD** through six jobs: test, secret-scan, live-session, preview-container, demo-journey and compose. Do not transfer old-head CI to new commits. Execute `node scripts/qa/check-roadmap-registers.mjs` explicitly and record real result; currently **NOT RUN**.
