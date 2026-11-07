@@ -1,3 +1,13 @@
+# Active M4 checkpoint — M4-03 credential/seed integrity — 2026-11-07
+
+**PR:** [#270](https://github.com/NTinkicht/TheraBridge-Emergent/pull/270) — runtime implementation committed and being submitted for independent review. **Issue:** [#177](https://github.com/NTinkicht/TheraBridge-Emergent/issues/177). **Predecessor:** M4-02 PR #267 merged at `8174a87ed27e2424500f64256742ab134f15fa3d`. M1–M3 remain owner-closed; no clinical activation.
+
+**Implemented:** independent original-seven/extra-three secret generation and protected file modes; seven→ten local seed with a separately recoverable three-password file; unchanged seven-password hashes; preview fail-closed for partial operator secrets; database rollback/ambiguous-commit credential retention; new real PostgreSQL and fault-injection regression tests. Review/CI actual status: **PENDING final-head verification** at documentation update. Hosted private ten-account HA-01–HA-10 remains NOT RUN; #268 and #269 keep remaining QA evidence and P3 hardening visible.
+
+**Parallel M4 workstreams:** Draft PRs #271 (authorization), #272 (HTTP/security), #273 (DB integrity), #274 (worker/performance), #275 (CI/coverage) and #276 (historical audit). These are planning drafts, not claimed as independently running agents or qualified implementations. Dedicated file ownership prevents overlapping code; #275 must rebase final CI after #270.
+
+---
+
 **Review correction (2026-11-07, M4-02 PR #267):** Codex identified two actionable P2 findings on reviewed HEAD `0ad1d96285`: (1) stale-session test used a cleared cookie, (2) child-list team membership could mask the actor's wrong specialty. Both fixed on PR branch; pre-logout cookie now replayed privately with isolated context, and exact actor-filtered `ClinicalService.workspace.child.services` is validated across *every* assigned child. Added regression tests and workflow CI gate. **Latest exact-head CI and second Codex review remain pending.** Protected real ten-account run NOT RUN; controlled two-valid-tenant/revocation cases #268 remain release blocked. No clinical activation.
 
 ---
