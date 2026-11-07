@@ -476,6 +476,12 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
           return local.http().post('/api/auth/password/reset').set('Origin', ORIGIN).set('Cookie', p.cookie).set('X-CSRF-Token', p.token).send({ token, password });
         };
         const token = await requestReset();
+        // The locked origin must be able to recover through its valid token;
+        // password reset clears all account-specific origin lock records.
+        for (let i = 0; i < ACCOUNT_LIMIT; i++) {
+          expect((await login(local, u.email, 'wrong-before-reset-123')).status).toBe(401);
+        }
+        expect((await login(local, u.email)).status).toBe(401);
         expect(JSON.stringify(await local.prisma.verificationToken.findMany())).not.toContain(token);
         expect(dumpJson(await local.prisma.auditEvent.findMany())).not.toContain(token);
         expect((await reset(token, 'Brand-New-Synthetic-Pass-1')).status).toBe(204);
