@@ -1,6 +1,10 @@
-# M4-07 parallel performance checkpoint — 2026-11-08
+**M4-07 implementation reconciliation — 2026-11-08:** PR #274 preserves the linear appointment/recipient lookup and explicit date-window/duplicate regressions. This merge checkpoint incorporates #273 database integrity and #275 QA inventory without dropping their source, CI or Rule-7 handover changes. Latest exact-head CI and independent review require requalification after this merge commit. Existing synthetic-only, clinical and real-delivery NO-GO gates remain intact.
 
-PR #274 / issue #181: replaced repeated notification recipient and rescheduling list scans with maps and linear selection. New synthetic 5,000-appointment and 14-day boundary tests; no new authorization permissions, clinical activation or production mail dispatch. Exact-head CI and fresh review must be rerun after reconciliation. Remaining worker memory, bounded pagination and benchmarks stay open in #181.
+---
+
+# M4-08 QA suite coverage inventory — 2026-11-08
+
+PR #275 / issue #182: checked-in API/web test suite inventory and six required CI job presence verifier, plus negative regressions. Measured 95/90/95/95 coverage gate applies ONLY to `apps/api/src/common/fingerprints.ts`; general 95% application coverage remains UNKNOWN, not claimed. CI now invokes the inventory verifier. Exact-head CI and review pending after base reconciliation; clinical NO-GO unchanged.
 
 ---
 
