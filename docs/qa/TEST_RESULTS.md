@@ -1,3 +1,7 @@
+**M4-09 historical issue evidence integration — 2026-11-08:** PR #276 tracks 75 frozen historical issues with zero unverified closures, exact snapshot/URL checks and fail-closed evidence requirements. The required CI test job executes its validator and negative regressions alongside merged M4-08 inventory tests. Post-reconciliation six-job CI and final exact-head reviewer acceptance are PENDING; full #266 evidence triage and clinical NO-GO remain unchanged.
+
+---
+
 **M4-07 implementation reconciliation — 2026-11-08:** PR #274 preserves the linear appointment/recipient lookup and explicit date-window/duplicate regressions. This merge checkpoint incorporates #273 database integrity and #275 QA inventory without dropping their source, CI or Rule-7 handover changes. Latest exact-head CI and independent review require requalification after this merge commit. Existing synthetic-only, clinical and real-delivery NO-GO gates remain intact.
 
 ---
