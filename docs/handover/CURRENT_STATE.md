@@ -1,3 +1,5 @@
+**M4-04 implementation update:** Added real PostgreSQL regression in `apps/api/test/clinical.e2e-spec.ts` asserting a multi-specialty therapist immediately loses OT assessment evidence after the OT care assignment is revoked, while retaining authorized speech data. The same still-authenticated session must not recover OT content by pagination. This is an implementation/test change; final exact-head CI and independent review are PENDING, and broader authorization audit #178 remains open. Clinical NO-GO preserved.
+
 # M4-04 parallel planning checkpoint — 2026-11-08
 
 **Scope:** PR #271, issue #178 — clinical authorization, active role/specialty assignment and center/child tenancy. **State:** design-only, no implementation or QA executed. Original M4-03 #270 remains independently in review. This branch owns clinical-domain read/authorization tests; authentication session internals belong to M4-05, schema migration to M4-06. Do not infer live clinical authorization or signing; policy G2/G2b remains NO-GO.
