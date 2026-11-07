@@ -1,3 +1,7 @@
+**Current reviewer gate for M4-02 PR #267 (2026-11-07):** Verify six-job final-HEAD CI after both Codex P2 fixes, including cookie replay and actor-specific specialty regression. Reply to both Codex inline comments with code/test pointers, resolve only after code changes verified and request fresh independent exact-HEAD review. Do not merge on earlier head `0ad1d96285` approval. Protected manual ten-account QA still NOT RUN; #268 governs second-valid-tenant, revocation/expiry and SHA attestation. Keep all clinical gates fail closed.
+
+---
+
 # Active next work — 2026-11-07 — M4-02 / PR #267
 
 1. Verify exact final HEAD in six required CI jobs. Specifically confirm new `hosted-extra-contracts.test.mjs`, `hosted-role-guards.test.mjs`, `hosted-private-workflow.test.mjs` and mocked `hosted-extra-runtime.test.mjs` green, and gitleaks full-history/working-tree checks green. Do not transfer previous-head results.
