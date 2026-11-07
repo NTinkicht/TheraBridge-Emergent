@@ -1,3 +1,14 @@
+# M4-01 work log — 2026-11-07
+
+- M1–M3 considered owner-closed; started new M4-01 [#175](https://github.com/NTinkicht/TheraBridge-Emergent/issues/175) on `chatgpt/m4-01-canonical-roadmap-reconciliation`.
+- Imported 66 original numbered features to a new M4–M11 crosswalk; extracted all 91 workflow IDs and 55 owner requirement IDs from the 2026-10-22 workbook. Preserved `WF-X6` V2 exclusion.
+- Snapshotted 75 historic open issues before 2026-11-07 and added triage protocol; historical statuses not automatically closed. Added structural CSV check script.
+- Opened ready-for-review PR #265 and requested independent exact-head Codex review; Codex returned P1 missing Rule 7 handover/QA updates. This commit addresses that finding without changing the original M3 logs.
+- Connector-assisted check of files confirmed 66 unique feature IDs, 91 unique workflow IDs, 55 unique owner IDs and `WF-X6` correctly excluded. **Standalone Node script NOT RUN**, six-job CI **IN PROGRESS** on previous head, clinical acceptance **NOT RUN**, real-data activation **NO-GO**.
+- Remaining #175 tasks: source-level proof for each row, controlled 1023 step mapping, signed-spec reconciliation, issue-by-issue evidence-backed closure. Do not mark #175 fully done from this PR.
+
+---
+
 # M3-AI06 implementation checkpoint — 2026-11-02
 
 M3-AI05 PR #158 merged at bfc2a9b. M3-AI06 PR #159 now includes offline heuristic safety gates for fictional draft review and adversarial browser regression. CI and independent review pending.
