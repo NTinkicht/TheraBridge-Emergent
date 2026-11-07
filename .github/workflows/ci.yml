@@ -71,6 +71,8 @@ jobs:
         run: |
           node scripts/qa/check-roadmap-registers.mjs
           node --test scripts/qa/check-roadmap-registers.test.mjs
+      - name: M4-02 private hosted scope and workflow safety regressions
+        run: node --test scripts/qa/hosted-extra-contracts.test.mjs scripts/qa/hosted-role-guards.test.mjs scripts/qa/hosted-private-workflow.test.mjs
       - run: yarn install --frozen-lockfile
       - name: Verify migration guard negative-path tests
         run: node --test scripts/qa/check-migration-history.test.mjs
