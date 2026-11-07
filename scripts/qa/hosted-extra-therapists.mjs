@@ -6,7 +6,8 @@ import {join,resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {BASE,settleLoginPage,logout,inspectCookieJar,validateTarget} from './hosted-readonly.mjs';
 import {EXTRA_IDENTITIES,DENIED_PAIRS,validateExtraUsers,inspectTherapistContext,
- inspectAssignedChildren,denied,safeResult,totals} from './hosted-extra-contracts.mjs';
+ inspectAssignedChildren,inspectClinicalScope,denied,safeResult,totals} from './hosted-extra-contracts.mjs';
+import {captureSessionCookie,verifyRevokedSession} from './hosted-session-guards.mjs';
 
 const SCOPE='therabridge-childrens-home-ahmed-synthetic-v1';
 const ORIGIN=new URL(BASE).origin;
@@ -22,7 +23,7 @@ const signal=(rows,key,step,pass,okCode,badCode)=>rows.push(
 
 async function exercise(browser,key,user,rows){
  const ctx=await browser.newContext({acceptDownloads:false});
- let started=false;
+ let started=false,preLogoutCookie=null;
  try {
   const page=await ctx.newPage();
   await page.goto(BASE+'/login',{waitUntil:'domcontentloaded',timeout:25000});
@@ -63,16 +64,25 @@ async function exercise(browser,key,user,rows){
   const center=selected.activeContext.centerId;
   const cookies=await ctx.cookies(BASE);
   const cookie=inspectCookieJar(cookies);
+  preLogoutCookie=captureSessionCookie(cookies);
   signal(rows,key,'session_cookie',cookie.ok,'secure_cookie_ok','session_cookie_contract_failed');
   const children=await ctx.request.get(BASE+'/api/centers/'+center+'/children');
   const childList=children.ok()?await children.json():null;
   const scopeOk=children.ok()&&inspectAssignedChildren(childList,key);
   signal(rows,key,'assigned_children',scopeOk,'assigned_scope_exact','assigned_scope_mismatch');
   if(!scopeOk)return;
-  const firstChild=childList.items[0].id;
-  const own=await ctx.request.get(BASE+'/api/centers/'+center+'/clinical/children/'+firstChild);
-  signal(rows,key,'own_clinical_read',own.status()===200,
-    'authorized_assigned_child','assigned_child_read_failed');
+  // Check EACH seeded child; the child-list team's specialties are not
+  // evidence of the signed-in therapist's service. ClinicalService filters
+  // child.services by the active membership's authorized assignment.
+  let scopeOkAll=true;
+  for(const item of childList.items){
+    const own=await ctx.request.get(BASE+'/api/centers/'+center+'/clinical/children/'+item.id);
+    if(own.status()!==200){scopeOkAll=false;break;}
+    const workspace=await own.json();
+    if(!inspectClinicalScope(workspace,key,item.id)){scopeOkAll=false;break;}
+  }
+  signal(rows,key,'own_clinical_read',scopeOkAll,
+    'authorized_actor_specialty','actor_specialty_or_child_scope_failed');
   // DENIED_PAIRS names are source-derived fixture references and are deliberately
   // never emitted into QA evidence. Their UUIDs come from seed-demo.ts.
   if(!DENIED_PAIRS[key]||childList.items.some(x=>x.id===forbiddenChildren[key])){
@@ -102,8 +112,10 @@ async function exercise(browser,key,user,rows){
   if(started){
     try{
       const done=await logout(ctx);
-      const stale=await ctx.request.get(BASE+'/api/auth/session');
-      clean=done&&stale.status()===401;
+      // Replay the *pre-logout* cookie from an independent empty context.
+      // The original context's cookie jar has been cleared by Set-Cookie.
+      const staleDenied=await verifyRevokedSession(browser,preLogoutCookie);
+      clean=done&&staleDenied;
     }catch{/* log only allowlisted failure */}
   }
   signal(rows,key,'session_cleanup',clean,'server_logout_and_stale_denied','logout_or_revocation_unconfirmed');
