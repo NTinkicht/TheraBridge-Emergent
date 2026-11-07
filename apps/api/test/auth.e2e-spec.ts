@@ -79,6 +79,33 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
     });
   });
 
+  describe('M4-05 WF-S6 server-side expiry and protected-response cache policy', () => {
+    it('rejects the actual expired session cookie before serving account or clinical centre data', async () => {
+      const u = await createUser(h.prisma, 'expiry@security.therabridge.test');
+      const s = await signIn(h, u.email);
+      const originalCookie = s.cookie;
+      const good = await h.http().get('/api/auth/session').set('Cookie', originalCookie).expect(200);
+      expect(good.headers['cache-control']).toContain('no-store');
+      const updated = await h.prisma.session.updateMany({
+        where: { tokenHash: sha256(s.token) },
+        data: { absoluteExpiresAt: new Date(h.clock.now().getTime() - 1000) },
+      });
+      expect(updated.count).toBe(1);
+      for (const path of [
+        '/api/auth/session',
+        '/api/centers/00000000-0000-4000-8000-000000000001/children',
+      ]) {
+        const denied = await h.http().get(path).set('Cookie', originalCookie).expect(401);
+        expect(denied.headers['cache-control']).toContain('no-store');
+        expect(denied.headers.pragma).toBe('no-cache');
+        expect(JSON.stringify(denied.body)).not.toContain(u.email);
+      }
+      const another = await createUser(h.prisma, 'active@security.therabridge.test');
+      const live = await signIn(h, another.email);
+      await h.http().get('/api/auth/session').set('Cookie', live.cookie).expect(200);
+    });
+  });
+
   describe('AC-2/3 generic errors, lockout, IP limit', () => {
     it('M2-H04: prunes expired buckets across keys without removing active windows', async () => {
       const old = new Date(h.clock.now().getTime() - 2 * 86_400_000);
