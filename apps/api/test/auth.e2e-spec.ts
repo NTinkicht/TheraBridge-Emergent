@@ -419,6 +419,28 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
       await h.http().get('/api/dev/mailbox').expect(404);
     });
 
+    it('M4-05: throttles password recovery by origin without leaking account existence or locking the target', async () => {
+      const u = await createUser(h.prisma);
+      const request = async (email: string, ip: string) => {
+        const p = await preAuth(h);
+        return h.http().post('/api/auth/password/forgot')
+          .set('Origin', ORIGIN).set('Cookie', p.cookie).set('X-CSRF-Token', p.token)
+          .set('X-Forwarded-For', ip).send({ email });
+      };
+      const first = await request(u.email, '198.51.100.42');
+      expect(first.status).toBe(202);
+      const anonymous = await request('not-registered@test.therabridge.test', '198.51.100.42');
+      expect(anonymous.status).toBe(202);
+      expect(anonymous.body).toEqual(first.body);
+      for (let i = 0; i < 9; i++) {
+        expect((await request(u.email, '198.51.100.42')).status).toBe(202);
+      }
+      expect(await h.prisma.auditEvent.count({ where: { type: 'auth.password.reset_rate_limited' } })).toBe(1);
+      // Never lock the target account because another origin consumed its own budget.
+      expect((await login(h, u.email)).status).toBe(200);
+      expect(await h.prisma.authLockout.count()).toBe(0);
+    });
+
     it('reset is single-use, hash-only, expires in 30 minutes and revokes sessions', async () => {
       const local = await makeApp({ DEPLOYMENT_ENV: 'local', DEV_MAILBOX_ENABLED: 'true' }, h.clock);
       try {
