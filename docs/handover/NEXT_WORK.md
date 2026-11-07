@@ -1,4 +1,9 @@
-**M4-03 next gate (2026-11-07):** Confirm full six-job CI green at PR #270's final exact SHA, including generator, real Postgres seven-to-ten, concurrency/rollback, malformed credential safety and demo journey. Reply/resolve Codex P2 threads only after corrections verified, request a fresh exact-head Codex review, address any new findings, and do not merge against earlier reviewed SHAs. Continue M4-04…M4-09 from their scoped draft PRs #271–#276 after individual implementation; M4-08 CI changes must rebase after #270. No protected hosted account or live clinical acceptance implied.
+# M4-06 next actions — 2026-11-08
+
+1. Run all six final-head CI jobs for new PostgreSQL integrity regression; investigate any changed migration schema/constraints.
+2. Obtain fresh independent implementation review; do not count planning reviews as approval.
+3. Review database transaction locks, historical migration chains, Neon pool behavior, CAS concurrency and performance benchmarks; add reproducible tests and fixes where proven.
+4. Rebase this older branch against merged M4-03 before merge and reconcile all Rule 7 files, preserving current audit policies and no clinical activation**M4-03 next gate (2026-11-07):** Confirm full six-job CI green at PR #270's final exact SHA, including generator, real Postgres seven-to-ten, concurrency/rollback, malformed credential safety and demo journey. Reply/resolve Codex P2 threads only after corrections verified, request a fresh exact-head Codex review, address any new findings, and do not merge against earlier reviewed SHAs. Continue M4-04…M4-09 from their scoped draft PRs #271–#276 after individual implementation; M4-08 CI changes must rebase after #270. No protected hosted account or live clinical acceptance implied.
 
 ---
 
