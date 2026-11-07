@@ -1,3 +1,9 @@
+# Active checkpoint — M4-02 ten-account hosted synthetic acceptance — 2026-11-07
+
+**Status:** PLANNING ONLY, NOT IMPLEMENTED/NOT TESTED. **Issue:** #176. **Predecessor:** PR #265 merged `aa14fb46976a30fd41ec800e1060c3e7f64125f0`. The M4-02 acceptance plan is at `docs/qa/M4-02-TEN-ACCOUNT-ACCEPTANCE.md`. Preserve 7 existing and 3 extra QA identities securely; do not print secrets. M1–M3 closed and clinical activation NO-GO. Historical entries below superseded.
+
+---
+
 > **Review reconciliation update (2026-11-07):** Grok exact-head review found no blocking findings; Claude identified P1 V1/V2 school-scope contradiction, P1 documentation-unit misrouting, P2 cross-register ownership contradictions, plus CI/validator and provenance suggestions. Fixed feature #39 as V2-DEFERRED consistent with WF-X6; assigned implementation owners across 66/91/55; standardized evidence states; added enforced CI regression tests for false verification, bad ownership, V2 mismatch, BOM/quoted cells. Deferred unavailable canonical private specs and 1,023 step evidence to [#266](https://github.com/NTinkicht/TheraBridge-Emergent/issues/266), linked to open #175. Final-head CI and re-review MUST be checked independently; this note does not claim green final-head CI.
 
 # Active checkpoint — M4-01 canonical roadmap reconciliation — 2026-11-07
