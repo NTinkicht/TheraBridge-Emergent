@@ -1,3 +1,9 @@
+# M4-07 work log — 2026-11-08
+
+Reapplied runtime O(n) lookups on current main: guardian email and staff display-name maps and a first-match-preserving linear changed-appointment selector. Added synthetic date-window and large-batch regressions. Reconciled previous overlapping handover changes with merged M4-06 work; exact-head post-rebase CI/review pending.
+
+---
+
 # M4-06 DB audit progress — 2026-11-08
 
 Inspected merged migrations and confirmed original M2-H04 already implemented `audit_event_no_mutation`, plan-version center/author FKs and composite scoped indexes. Avoided duplicate migrations. Added `apps/api/test/m4-db-integrity.e2e-spec.ts` with real-Postgres positive append and negative update/delete, FK validation and index existence checks. Existing M1–M3 code preserved. Final-head CI/review still required; broader M4-06 work not completed**M4-03 Codex/P2 findings (2026-11-07):** Review #4503124363 FIX_NOW — local `.seed.lock` covers credential-file read, sidecar creation, DB transaction and verified cleanup to prevent concurrent orphaned extra hashes; overlap regression added. Review #4503124366 FIX_NOW — sanitize malformed protected original/extra JSON errors; negative tests verify no fragment reaches message or log. Earlier demo-journey runner configured 7 secrets only, updated to 7+3 independent generated secrets. Existing scanner caught synthetic malformed-JSON JavaScript expression; maintained full history gitleaks and added one exact historical expression exception, restored valid TOML after JS replacement issue. No review findings deferred. Fresh exact-head CI and independent review still required.
