@@ -12,6 +12,23 @@ export const SERVICE_LABEL: Record<string, string> = {
 type Kind = 'reminder_24h' | 'rescheduled' | 'cancelled';
 const SUBJECT: Record<Kind, string> = { reminder_24h: 'Reminder: appointment tomorrow', rescheduled: 'Appointment moved', cancelled: 'Appointment cancelled' };
 
+// Keep the prior first-match semantics for repeated IDs while avoiding the
+// O(appointments × changed-items) scan of historical reschedule batches.
+export function upcomingChangedAppointmentIds(
+  rows: { id: string; startsAt: Date }[],
+  items: { id: string; before?: Date }[],
+  now: Date,
+  soon: Date,
+): string[] {
+  const previousStart = new Map<string, Date | undefined>();
+  for (const item of items) {
+    if (!previousStart.has(item.id)) previousStart.set(item.id, item.before);
+  }
+  return rows.filter(r => [r.startsAt, previousStart.get(r.id)].some(
+    t => t && t > now && t < soon,
+  )).map(r => r.id);
+}
+
 // Operational notices to connected guardians who keep reminders on. Delivered only to the restricted synthetic outbox.
 @Injectable()
 export class NoticesService implements OnModuleInit, OnModuleDestroy {
@@ -36,7 +53,9 @@ export class NoticesService implements OnModuleInit, OnModuleDestroy {
     const appts = await this.prisma.appointment.findMany({ where: { id: { in: ids } }, include: { center: true, child: { include: { guardians: { where: { removedAt: null, userId: { not: null }, remindersEnabled: true } } } } } });
     const users = await this.prisma.user.findMany({ where: { id: { in: appts.flatMap((a) => a.child.guardians.map((g) => g.userId!)) }, status: 'ACTIVE' }, select: { id: true, email: true } });
     const team = await this.prisma.membership.findMany({ where: { id: { in: appts.map((a) => a.membershipId) } }, select: { id: true, user: { select: { displayName: true } } } });
-    const permitted = new Set(users.map((u) => u.id));
+    const userEmails = new Map(users.map((u) => [u.id, u.email]));
+    const staffNames = new Map(team.map((t) => [t.id, t.user.displayName]));
+    const permitted = new Set(userEmails.keys());
     // Atomically reserve reminder deliveries across workers; no repeated
     // P2002 exceptions and no emails for duplicates that lost the race.
     const reservations = await this.prisma.appointmentNotice.createManyAndReturn({
@@ -55,10 +74,10 @@ export class NoticesService implements OnModuleInit, OnModuleDestroy {
     try {
       for (const a of appts) {
         for (const g of a.child.guardians) {
-          const to = users.find((u) => u.id === g.userId)?.email;
+          const to = g.userId ? userEmails.get(g.userId) : undefined;
           const id = allowed.get(`${a.id}:${g.id}:${a.startsAt.toISOString()}`);
           if (!to || !id) continue;
-          const who = `${a.child.preferredName ?? a.child.firstName}’s ${SERVICE_LABEL[a.service] ?? a.service} with ${team.find((t) => t.id === a.membershipId)?.user.displayName ?? 'the care team'}`;
+          const who = `${a.child.preferredName ?? a.child.firstName}’s ${SERVICE_LABEL[a.service] ?? a.service} with ${staffNames.get(a.membershipId) ?? 'the care team'}`;
           const when = `${describeLocal(a.startsAt, a.center.timezone)} (${a.center.timezone.replace('_', ' ')} time)`;
           const lead = kind === 'reminder_24h' ? `This is a reminder of ${who} on ${when}.` : kind === 'rescheduled' ? `${who} has moved to ${when}.` : `${who} on ${when} has been cancelled.`;
           this.mail.send({
@@ -86,7 +105,7 @@ export class NoticesService implements OnModuleInit, OnModuleDestroy {
     const now = this.trial.now();
     const soon = new Date(now.getTime() + 14 * 24 * HOUR);
     const rows = await this.prisma.appointment.findMany({ where: { id: { in: items.map((i) => i.id) } }, select: { id: true, startsAt: true } });
-    const near = rows.filter((r) => [r.startsAt, items.find((i) => i.id === r.id)?.before].some((t) => t && t > now && t < soon)).map((r) => r.id);
+    const near = upcomingChangedAppointmentIds(rows, items, now, soon);
     return this.send(near, kind, now).catch(() => 0);
   }
 }
