@@ -67,6 +67,10 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: yarn
+      - name: Verify canonical roadmap register integrity and negative-path regressions
+        run: |
+          node scripts/qa/check-roadmap-registers.mjs
+          node --test scripts/qa/check-roadmap-registers.test.mjs
       - run: yarn install --frozen-lockfile
       - name: Verify migration guard negative-path tests
         run: node --test scripts/qa/check-migration-history.test.mjs

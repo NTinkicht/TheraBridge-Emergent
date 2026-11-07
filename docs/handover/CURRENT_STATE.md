@@ -1,3 +1,15 @@
+> **Review reconciliation update (2026-11-07):** Grok exact-head review found no blocking findings; Claude identified P1 V1/V2 school-scope contradiction, P1 documentation-unit misrouting, P2 cross-register ownership contradictions, plus CI/validator and provenance suggestions. Fixed feature #39 as V2-DEFERRED consistent with WF-X6; assigned implementation owners across 66/91/55; standardized evidence states; added enforced CI regression tests for false verification, bad ownership, V2 mismatch, BOM/quoted cells. Deferred unavailable canonical private specs and 1,023 step evidence to [#266](https://github.com/NTinkicht/TheraBridge-Emergent/issues/266), linked to open #175. Final-head CI and re-review MUST be checked independently; this note does not claim green final-head CI.
+
+# Active checkpoint — M4-01 canonical roadmap reconciliation — 2026-11-07
+
+**Owner status:** Milestones 1, 2 and 3 are CLOSED; older M3-AI06 sections below are historical, not active next actions. **Current PR:** [#265](https://github.com/NTinkicht/TheraBridge-Emergent/pull/265) (not merged). **Issue:** [#175](https://github.com/NTinkicht/TheraBridge-Emergent/issues/175); M4 tracking [#167](https://github.com/NTinkicht/TheraBridge-Emergent/issues/167).
+
+**Delivered on PR branch:** 66 numbered original capabilities → M4–M11 work units, 91 controlled workflow IDs, 55 owner requirement IDs, pre-new-roadmap historical 75-open-issue snapshot, and CSV structural check. These are **unverified reconciliation registers**; no new clinical functionality, policy signing, production/deployment or real data. The source 2026-10-22 workbook furnished workflow/owner ID titles. Private clause-level canonical specs and historical 1023 workflow steps remain to be inspected before #175 closure.
+
+**Latest review/check status:** Codex reviewed PR #265 at original head `602d3111e4`; P1 Rule 7 handover documentation gap is being fixed on this branch. Structural row/unique counts checked through GitHub file reads: 66/66, 91/91, 55/55; `WF-X6` marked V2 excluded. Node script execution: **NOT RUN here**. Full six-job exact-head CI: **IN PROGRESS / NOT YET QUALIFIED** on original head; fresh head requires fresh CI/review. No claim of V1 or clinical qualification.
+
+---
+
 # M3-AI06 implementation checkpoint — 2026-11-02
 
 M3-AI05 PR #158 merged at bfc2a9b. M3-AI06 PR #159 implementation adds deterministic safety verdicts for fictional report and home-plan suggestions and adversarial browser tests; exact-head CI/review pending. No external AI or clinical activation.
