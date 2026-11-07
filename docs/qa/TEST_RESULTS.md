@@ -1,3 +1,7 @@
+**M4-07 implementation reconciliation — 2026-11-08:** PR #274 preserves the linear appointment/recipient lookup and explicit date-window/duplicate regressions. This merge checkpoint incorporates #273 database integrity and #275 QA inventory without dropping their source, CI or Rule-7 handover changes. Latest exact-head CI and independent review require requalification after this merge commit. Existing synthetic-only, clinical and real-delivery NO-GO gates remain intact.
+
+---
+
 # M4-08 QA checkpoint — 2026-11-08
 
 CI verifier and negative tests COMMITTED; full exact-head CI is not yet verified. Inventory records existing API and web test-suite counts only, not line/function/branch coverage. Existing core fingerprint threshold remains 95 statements/functions/lines, 90 branches; measured app-wide baseline is UNKNOWN. No clinical activation or protected hosted acceptance qualified.

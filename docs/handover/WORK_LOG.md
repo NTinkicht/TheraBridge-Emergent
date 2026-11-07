@@ -1,3 +1,7 @@
+**M4-07 implementation reconciliation — 2026-11-08:** PR #274 preserves the linear appointment/recipient lookup and explicit date-window/duplicate regressions. This merge checkpoint incorporates #273 database integrity and #275 QA inventory without dropping their source, CI or Rule-7 handover changes. Latest exact-head CI and independent review require requalification after this merge commit. Existing synthetic-only, clinical and real-delivery NO-GO gates remain intact.
+
+---
+
 # M4-08 QA work log — 2026-11-08
 
 Ported structural test-suite inventory and exact six-job mapping validator onto main, preserving earlier demo credential generator job. Corrected JS regex escaping in coverage/CI job checks and newline fixture. Enforces separate fingerprint-only 95/90/95/95 check, but refuses to claim global coverage. New exact-head CI and review pending.

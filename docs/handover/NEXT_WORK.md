@@ -1,3 +1,7 @@
+**M4-07 implementation reconciliation — 2026-11-08:** PR #274 preserves the linear appointment/recipient lookup and explicit date-window/duplicate regressions. This merge checkpoint incorporates #273 database integrity and #275 QA inventory without dropping their source, CI or Rule-7 handover changes. Latest exact-head CI and independent review require requalification after this merge commit. Existing synthetic-only, clinical and real-delivery NO-GO gates remain intact.
+
+---
+
 # M4-08 next actions — 2026-11-08
 
 1. Qualify the QA inventory verifier and YAML fixture with six exact-head CI jobs and independent review.
