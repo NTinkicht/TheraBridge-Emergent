@@ -126,7 +126,64 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
   assertDemoAllowed(process.env);
   const passwords = parseHostedDemoPasswords(process.env);
   const extraPasswords = parseExtraHostedDemoPasswords(process.env);
+  // A seven-account operator secret on its own must never create three
+  // unexported random hashes. Explicitly supply the independent extra secret.
+  if (passwords && !extraPasswords) {
+    throw new Error('Seven operator-managed demo passwords require DEMO_EXTRA_PASSWORDS_JSON for the three new therapists.');
+  }
   if (passwords && extraPasswords && new Set([...Object.values(passwords), ...Object.values(extraPasswords)]).size !== 10) throw new Error('All ten hosted demo passwords must be distinct.');
+  // Local credentials are a filesystem/database pair. Serialize the *whole*
+  // read/stage/transaction/cleanup lifecycle, not just exclusive sidecar writes:
+  // a concurrent seed must never consume a sidecar still pending rollback.
+  // The .seed.lock is fail-closed; after a process crash an operator must
+  // reconcile database and credential files before manually clearing it.
+  // Hosted previews use external 7+3 secrets and never stage local passwords.
+  const seedLockPath = credentialFile + '.seed.lock';
+  let seedLockFd: number | null = null;
+  if (!passwords) {
+    mkdirSync(dirname(seedLockPath), { recursive: true, mode: 0o700 });
+    seedLockFd = openSync(seedLockPath, 'wx', 0o600);
+  }
+  try {
+  // Original seven-account credential files remain immutable on upgrade.
+  // Only extra therapist credentials may be created in this separate file.
+  const extraCredentialFile = credentialFile.endsWith('.json')
+    ? credentialFile.slice(0, -5) + '-extra.json' : credentialFile + '.extra.json';
+  // Never propagate JSON.parse's exception message: it may contain a
+  // fragment of malformed protected credential content and reach stderr.
+  const readProtected = (file: string): { accounts?: { email: string; password: string; role: string }[] } => {
+    try {
+      const raw = readFileSync(file, 'utf8');
+      if (Buffer.byteLength(raw, 'utf8') > 8192) throw new Error('oversize');
+      const value: unknown = JSON.parse(raw);
+      if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('shape');
+      return value as { accounts?: { email: string; password: string; role: string }[] };
+    } catch {
+      throw new Error('Protected local demo credential file is invalid or unreadable.');
+    }
+  };
+  const savedAccounts = !passwords && existsSync(credentialFile)
+    ? readProtected(credentialFile).accounts : undefined;
+  const savedPasswords = new Map<string, string>();
+  for (const a of savedAccounts ?? []) {
+    if (!Object.values(ALL_DEMO_EMAILS).includes(a.email as typeof ALL_DEMO_EMAILS[keyof typeof ALL_DEMO_EMAILS]) ||
+        typeof a.password !== 'string' || passwordPolicyError(a.password, a.email) ||
+        savedPasswords.has(a.email)) throw new Error('Protected demo credentials are malformed or duplicated.');
+    savedPasswords.set(a.email, a.password);
+  }
+  const savedExtraRaw = !extraPasswords && existsSync(extraCredentialFile)
+    ? readProtected(extraCredentialFile) : null;
+  if (savedExtraRaw && (!Array.isArray(savedExtraRaw.accounts) || savedExtraRaw.accounts.length !== extraRoster.length)) {
+    throw new Error('Protected extra-therapist credential file is incomplete or malformed.');
+  }
+  const extraFromFile = savedExtraRaw
+    ? parseExtraHostedDemoPasswords({ DEMO_EXTRA_PASSWORDS_JSON: JSON.stringify(
+        Object.fromEntries(savedExtraRaw.accounts!.map(a => [a.email, a.password])),
+      ) }) : null;
+  if (extraFromFile && [...Object.entries(extraFromFile)].some(([email,pass]) =>
+    savedPasswords.has(email) && savedPasswords.get(email) !== pass)) {
+    throw new Error('Extra-therapist credential file conflicts with original protected credentials.');
+  }
   const now = new Date();
   const cid = id('center');
   // Prepare all passwords/hashes before locking a database connection.
@@ -135,11 +192,14 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
   const prepared: { email: string; password: string; passwordHash: string; role: string }[] = [];
   for (const a of allRoster) {
     const email = ALL_DEMO_EMAILS[a.key];
-    const password = passwords?.[email] ?? extraPasswords?.[email] ?? ('tb-' + randomToken(20));
+    const password = passwords?.[email] ?? extraPasswords?.[email] ??
+      savedPasswords.get(email) ?? extraFromFile?.[email] ?? ('tb-' + randomToken(20));
     prepared.push({ email, password, passwordHash: await hashPassword(password), role: a.role ?? 'PLATFORM_ADMIN' });
   }
+  if (new Set(prepared.map(p => p.password)).size !== allRoster.length) throw new Error('All ten demo passwords must be different.');
   const byEmail = new Map(prepared.map(p => [p.email, p]));
   let createdCredentialFile = false;
+  let createdExtraCredentialFile = false;
   try {
     // All database writes and tenant/collision checks share one transaction.
     const result = await db.$transaction(async (tx) => {
@@ -153,6 +213,18 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
   const existingSlug = await tx.center.findUnique({ where: { slug: DEMO_SLUG } });
   if (existingSlug && existingSlug.id !== cid) throw new Error('Demo slug already belongs to another centre; refusing to overwrite it.');
   const preexistingUsers: string[] = [];
+  const preexistingExtras: string[] = [];
+  for (const a of extraRoster) {
+    const email = DEMO_EXTRA_EMAILS[a.key];
+    const user = await tx.user.findUnique({ where: { emailNormalized: email } });
+    if (user && user.id !== id('user:' + a.key)) throw new Error('Extra therapist email collision: ' + email);
+    if (user) {
+      if (user.status !== 'ACTIVE') throw new Error('Existing extra therapist account is disabled: ' + email);
+      preexistingExtras.push(email);
+    }
+  }
+  if (preexistingExtras.length && preexistingExtras.length !== extraRoster.length)
+    throw new Error('Partial extra demo identities found; refusing credential regeneration.');
   for (const a of roster) {
     const email = DEMO_EMAILS[a.key];
     const user = await tx.user.findUnique({ where: { emailNormalized: email } });
@@ -173,12 +245,38 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     throw new Error('Protected demo credential file exists but no demo users were found. A previous seed may have been interrupted before commit, or the file may belong to another database. Refusing to overwrite; verify the database has no demo users before removing the orphan file and retrying.');
   }
   if (!passwords && existsSync(credentialFile)) {
-    const stored = JSON.parse(readFileSync(credentialFile, 'utf8')) as { accounts?: { email: string }[] };
-    if (roster.some(a => !stored.accounts?.some(x => x.email === DEMO_EMAILS[a.key]))) throw new Error('Stored original seven demo credentials are incomplete; refusing silent rotation.');
-    // Existing local seven-account files may be upgraded only by supplying the
-    // three new passwords separately; no silent random identity creation.
-    if (extraRoster.some(a => !stored.accounts?.some(x => x.email === DEMO_EXTRA_EMAILS[a.key])) && !extraPasswords)
-      throw new Error('Upgrading seven-account local demo requires DEMO_EXTRA_PASSWORDS_JSON for three new therapist identities.');
+    if (roster.some(a => !savedPasswords.has(DEMO_EMAILS[a.key]))) {
+      throw new Error('Stored original seven demo credentials are incomplete; refusing silent rotation.');
+    }
+    if (preexistingExtras.length && extraRoster.some(a =>
+      !savedPasswords.has(DEMO_EXTRA_EMAILS[a.key]) &&
+      !extraFromFile?.[DEMO_EXTRA_EMAILS[a.key]] && !extraPasswords?.[DEMO_EXTRA_EMAILS[a.key]])) {
+      throw new Error('Existing extra therapist password is not recoverable; restore its protected source.');
+    }
+  }
+  // Both a fresh original credential file and a leftover sidecar must not be
+  // consumed for an unrelated fresh database.
+  if (!passwords && !preexistingUsers.length && existsSync(extraCredentialFile)) {
+    throw new Error('Protected extra credential file exists but no original demo users were found.');
+  }
+  if (!passwords && preexistingUsers.length && !preexistingExtras.length &&
+      !extraPasswords && !extraFromFile && extraRoster.some(a => !savedPasswords.has(DEMO_EXTRA_EMAILS[a.key]))) {
+    // An existing seven-account database can be upgraded without changing its
+    // seven-file. Staging these three passwords BEFORE any account mutation
+    // makes all three new hashes recoverable even after a failed COMMIT.
+    mkdirSync(dirname(extraCredentialFile), { recursive: true, mode: 0o700 });
+    const fd = openSync(extraCredentialFile, 'wx', 0o600);
+    createdExtraCredentialFile = true;
+    try {
+      writeFileSync(fd, JSON.stringify({
+        synthetic: true, center: DEMO_SLUG, createdAt: now.toISOString(),
+        accounts: prepared.filter(p => Object.values(DEMO_EXTRA_EMAILS).includes(
+          p.email as typeof DEMO_EXTRA_EMAILS[keyof typeof DEMO_EXTRA_EMAILS],
+        )).map(({email,password,role}) => ({email,password,role})),
+      }, null, 2));
+      fsyncSync(fd);
+    } finally { closeSync(fd); }
+    chmodSync(extraCredentialFile, 0o600);
   }
   if (await tx.center.findUnique({ where: { id: cid } })) {
     const c = await tx.center.findUniqueOrThrow({ where: { id: cid } });
@@ -222,14 +320,17 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     const user = existing ?? await tx.user.create({ data: { id: uid, email, emailNormalized: email, displayName: a.name } });
     users[a.key] = user.id;
     const identity = await tx.authIdentity.findUnique({ where: { userId_provider: { userId: user.id, provider: 'local' } } });
-    const operatorPassword = passwords?.[email] ?? extraPasswords?.[email];
+    const operatorPassword = passwords?.[email] ?? extraPasswords?.[email] ??
+      savedPasswords.get(email) ?? extraFromFile?.[email];
     if (identity && operatorPassword && !(await verifyPassword(identity.passwordHash ?? '', operatorPassword))) {
       throw new Error('Hosted demo password no longer matches existing account; refusing silent rotation for ' + email);
     }
     if (!identity) {
       // An existing account cannot receive a new random password whose
       // plaintext was never exported or deliberately supplied by the operator.
-      if (existing && !passwords && !extraPasswords?.[email]) {
+      if (existing && !(Object.values(DEMO_EXTRA_EMAILS).includes(
+        email as typeof DEMO_EXTRA_EMAILS[keyof typeof DEMO_EXTRA_EMAILS],
+      ) && (extraPasswords?.[email] || extraFromFile?.[email] || savedPasswords.get(email)))) {
         throw new Error('Demo identity missing for existing account; refusing unexported password for ' + email);
       }
       const selected = byEmail.get(email);
@@ -528,13 +629,17 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     }, { timeout: 180_000 });
     return result;
   } catch (error) {
-    if (createdCredentialFile) {
+    if (createdCredentialFile || createdExtraCredentialFile) {
       // A connection can drop during COMMIT after PostgreSQL commits. Never
-      // delete the only passwords unless rollback is confirmed by a new read.
+      // delete the only passwords unless rollback is confirmed by new reads.
       let visibleIdentities: number;
+      let visibleExtraIdentities: number;
       try {
         visibleIdentities = await db.authIdentity.count({
           where: { provider: 'local', userId: { in: allRoster.map(a => id('user:' + a.key)) } },
+        });
+        visibleExtraIdentities = await db.authIdentity.count({
+          where: { provider: 'local', userId: { in: extraRoster.map(a => id('user:' + a.key)) } },
         });
       } catch (verificationError) {
         throw new AggregateError(
@@ -543,20 +648,31 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
             '. Verify database state before retrying or removing the protected file.',
         );
       }
-      if (visibleIdentities > 0) {
+      if ((createdCredentialFile && visibleIdentities > 0) ||
+          (createdExtraCredentialFile && visibleExtraIdentities > 0)) {
+        const retained = createdExtraCredentialFile ? extraCredentialFile : credentialFile;
         throw new AggregateError(
           [error],
           'Demo seed outcome unknown (' + visibleIdentities +
-            ' demo identities visible); credentials retained at ' + credentialFile +
+            ' demo identities visible); credentials retained at ' + retained +
             '. Verify database state before retrying.',
         );
       }
-      try { unlinkSync(credentialFile); }
-      catch (cleanupError) {
+      try {
+        if (createdCredentialFile) unlinkSync(credentialFile);
+        if (createdExtraCredentialFile) unlinkSync(extraCredentialFile);
+      } catch (cleanupError) {
         throw new AggregateError([error, cleanupError], 'Demo seed failed and credential cleanup also failed');
       }
     }
     throw error;
+  }
+  } finally {
+    if (seedLockFd !== null) {
+      // Do not suppress an error from the seed when lock cleanup fails.
+      try { closeSync(seedLockFd); }
+      finally { unlinkSync(seedLockPath); }
+    }
   }
 }
 
