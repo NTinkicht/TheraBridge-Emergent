@@ -32,6 +32,7 @@ export function validateRegister(csv) {
   const frozen=frozenIssueIds(fs.readFileSync(SNAPSHOT,'utf8'));
   for(const r of rows){
     const [id,url,,owner,status,source,test,policy,reviewer]=r;
+    // #167 opened the M4 roadmap; this register is ONLY the frozen pre-roadmap issues.
     if(!/^\d+$/.test(id) || +id>=167 || ids.has(id))throw Error('Duplicate/invalid issue id');
     ids.add(id);
     if(!frozen.has(id))throw Error('Register ID missing from frozen snapshot: '+id);
