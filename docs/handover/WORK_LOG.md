@@ -1,3 +1,11 @@
+# M4-05 security workflow evidence — 2026-11-08
+
+- Dispositioned Codex P2 review: explicitly mapped recovery/MFA/lockout and session expiry/unsaved-change/edit-conflict to their source and frontend dependencies; unsigned MFA remains policy-blocked, not silently accepted.
+- Added expiry-response regression to `apps/api/test/auth.e2e-spec.ts`: original token forced past absolute expiration in PostgreSQL, 401 from `/api/auth/session` and protected centre read, both noncacheable, no user email disclosed; unaffected account remains active.
+- Scope is authentication tests and design at present; full WF-S4/WF-S6 frontend and policy acceptance still OPEN. No clinical activation or test PASS claimed before final-head CI.
+
+---
+
 **M4-02 Codex P2 remediation — 2026-11-07:** FIX_NOW review #4502930203: capture correct secure `__Host-tb_session` before logout and replay it with an isolated Playwright browser request context, fail closed if missing, validate server rejects old cookie 401; both seven- and three-account scripts changed. FIX_NOW review #4502930209: inspect actor-filtered clinical workspace `child.services` for every assigned child (exact one expected specialty) rather than full multi-clinician child-list team; add wrong-actor-specialty regression. Added `hosted-session-guards.mjs` tests in required CI and protected workflow. Recognized `locked` is a text string in ClinicalService rather than boolean and corrected contract/test. No deferral of these two P2 issues. #268 remains explicit other-scope deferral. Final CI/re-review not yet qualified.
 
 ---
