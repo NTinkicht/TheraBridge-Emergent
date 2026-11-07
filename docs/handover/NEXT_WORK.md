@@ -1,3 +1,11 @@
+# M4-08 next actions — 2026-11-08
+
+1. Qualify the QA inventory verifier and YAML fixture with six exact-head CI jobs and independent review.
+2. After M4-09 merges, integrate historical snapshot verifier/tests into CI without duplicating or losing M4-03 credential tests.
+3. Measure real application-wide API/web coverage and define justified exclusions; never interpret suite counts as coverage percentage.
+
+---
+
 # M4-06 next actions — 2026-11-08
 
 1. Run all six final-head CI jobs for new PostgreSQL integrity regression; investigate any changed migration schema/constraints.
