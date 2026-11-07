@@ -1,8 +1,24 @@
-**M4-04 verification update:** New PostgreSQL test committed: dual-specialty therapist sees authorized speech and OT assessments, then OT assignment ended; same existing session should see only speech with OT content absent even on paginated read. **NOT YET EXECUTED/VERIFIED on current HEAD** at checkpoint; six required CI checks and independent code review pending. No clinical release authorization.
+**M4-04 partial clinical-authorization QA — 2026-11-08:** PR #271 / issue #178 adds a real-PostgreSQL regression for immediate specialty-revocation denial despite an unchanged care-assignment row and authorized supervisor continuity. Application-wide clinical endpoint audit, race/CAS cases, browser tests, exact-head six-job CI and new independent implementation review are NOT COMPLETE. Synthetic-only and clinical NO-GO remain unchanged.
 
-# M4-04 QA planning checkpoint — 2026-11-08
+---
 
-**NOT RUN / NOT IMPLEMENTED.** The initial PR #271 changes only the clinical authorization execution plan plus this documented checkpoint. No tests of tenant isolation or specialty revocation have been executed on this branch; no code-level evidence. Independent review P1 handover omission is being corrected. Final exact-head six CI checks and new independent code review are required after actual implementation. All unsigned clinical gates remain NO-GO**M4-03 reviewer regression update — 2026-11-07:** Code+tests committed: original/extra protected JSON parse errors sanitized; local exclusive seed file lock prevents concurrent consumption/cleanup; overlap regression in `seed-transactions.e2e-spec.ts`; malformed original/sidecar regression in `demo-seed-config.e2e-spec.ts`. First CI on an earlier head failed demo journey because runner provided only 7 secrets; corrected to 7+3. Later earlier-head gitleaks flagged a synthetic JS expression in malformed fixture; exact historical expression exception added and TOML restored. **Latest exact-head CI and new independent review pending**, not claimed PASS. Protected ten-role live hosted HA-01…HA-10 still NOT RUN; real clinical data/signing/release/AI remains NO-GO.
+**M4-09 historical issue evidence integration — 2026-11-08:** PR #276 tracks 75 frozen historical issues with zero unverified closures, exact snapshot/URL checks and fail-closed evidence requirements. The required CI test job executes its validator and negative regressions alongside merged M4-08 inventory tests. Post-reconciliation six-job CI and final exact-head reviewer acceptance are PENDING; full #266 evidence triage and clinical NO-GO remain unchanged.
+
+---
+
+**M4-07 implementation reconciliation — 2026-11-08:** PR #274 preserves the linear appointment/recipient lookup and explicit date-window/duplicate regressions. This merge checkpoint incorporates #273 database integrity and #275 QA inventory without dropping their source, CI or Rule-7 handover changes. Latest exact-head CI and independent review require requalification after this merge commit. Existing synthetic-only, clinical and real-delivery NO-GO gates remain intact.
+
+---
+
+# M4-08 QA checkpoint — 2026-11-08
+
+CI verifier and negative tests COMMITTED; full exact-head CI is not yet verified. Inventory records existing API and web test-suite counts only, not line/function/branch coverage. Existing core fingerprint threshold remains 95 statements/functions/lines, 90 branches; measured app-wide baseline is UNKNOWN. No clinical activation or protected hosted acceptance qualified.
+
+---
+
+# M4-06 QA checkpoint — 2026-11-08
+
+New real-Postgres audit/foreign-key/index regression tests **COMMITTED, NOT YET VERIFIED** on exact-head CI. Existing M2 migration already enforces append-only audit rows, validated clinical FKs and tenant hot-path indexes; no redundant SQL migration. Pending six CI jobs, independent review and database concurrency/Neon validation. Do not treat this test alone as complete M4-06 or signed clinical approval**M4-03 reviewer regression update — 2026-11-07:** Code+tests committed: original/extra protected JSON parse errors sanitized; local exclusive seed file lock prevents concurrent consumption/cleanup; overlap regression in `seed-transactions.e2e-spec.ts`; malformed original/sidecar regression in `demo-seed-config.e2e-spec.ts`. First CI on an earlier head failed demo journey because runner provided only 7 secrets; corrected to 7+3. Later earlier-head gitleaks flagged a synthetic JS expression in malformed fixture; exact historical expression exception added and TOML restored. **Latest exact-head CI and new independent review pending**, not claimed PASS. Protected ten-role live hosted HA-01…HA-10 still NOT RUN; real clinical data/signing/release/AI remains NO-GO.
 
 ---
 

@@ -1,6 +1,6 @@
 # M4-04 — Clinical authorization, specialty isolation and tenancy
 
-**State:** DRAFT EXECUTION PLAN / NOT IMPLEMENTED / NOT REVIEW-QUALIFIED. **Roadmap issue:** [#178](https://github.com/NTinkicht/TheraBridge-Emergent/issues/178). **Baseline:** main after M4-02 merge `8174a87ed27e2424500f64256742ab134f15fa3d`.
+**State:** PARTIAL TEST IMPLEMENTATION / FULL WORK UNIT NOT REVIEW-QUALIFIED. **Roadmap issue:** [#178](https://github.com/NTinkicht/TheraBridge-Emergent/issues/178). **Baseline:** main after M4-02 merge `8174a87ed27e2424500f64256742ab134f15fa3d`.
 
 ## Parallel ownership boundary
 
@@ -26,4 +26,4 @@ apps/api/src/clinical/**, clinical read-model policies, authorization test files
 
 ## Execution status
 
-Planning document only, no runtime implementation or validation claimed. This branch is available for an independent developer. Its PR must remain draft until work and tests are complete.
+Partial test implementation: `apps/api/test/clinical.e2e-spec.ts` now asserts immediate clinical workspace denial when the therapist's specialty is revoked while the assignment remains active, and supervisor continuity. No runtime authorization changes are claimed. Full endpoint audit, concurrent CAS/read revocation, browser coverage, exact-head CI and fresh independent code review remain open; do not merge as complete M4-04.

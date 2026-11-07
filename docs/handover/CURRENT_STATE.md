@@ -1,8 +1,24 @@
-**M4-04 implementation update:** Added real PostgreSQL regression in `apps/api/test/clinical.e2e-spec.ts` asserting a multi-specialty therapist immediately loses OT assessment evidence after the OT care assignment is revoked, while retaining authorized speech data. The same still-authenticated session must not recover OT content by pagination. This is an implementation/test change; final exact-head CI and independent review are PENDING, and broader authorization audit #178 remains open. Clinical NO-GO preserved.
+**M4-04 partial clinical-authorization QA — 2026-11-08:** PR #271 / issue #178 adds a real-PostgreSQL regression for immediate specialty-revocation denial despite an unchanged care-assignment row and authorized supervisor continuity. Application-wide clinical endpoint audit, race/CAS cases, browser tests, exact-head six-job CI and new independent implementation review are NOT COMPLETE. Synthetic-only and clinical NO-GO remain unchanged.
 
-# M4-04 parallel planning checkpoint — 2026-11-08
+---
 
-**Scope:** PR #271, issue #178 — clinical authorization, active role/specialty assignment and center/child tenancy. **State:** design-only, no implementation or QA executed. Original M4-03 #270 remains independently in review. This branch owns clinical-domain read/authorization tests; authentication session internals belong to M4-05, schema migration to M4-06. Do not infer live clinical authorization or signing; policy G2/G2b remains NO-GO**M4-03 review status correction (2026-11-07):** Codex found two actionable P2 issues on earlier implementation HEAD: overlapping upgrade could consume a sidecar later removed by rollback, and malformed JSON could leak a password fragment in CLI error text. Both were FIX_NOW and are corrected in PR #270 with exclusive local seed lifecycle lock + error sanitization and negative-path regressions. Demo-journey CI initially failed because its runner supplied only seven secrets; runner now supplies independent ten-account secrets. Historical fixture gitleaks false-positive narrowly excluded; final CI and fresh review still pending. Parallel PRs #271–#276 are planning-only and remain independently scoped. No clinical activation.
+**M4-09 historical issue evidence integration — 2026-11-08:** PR #276 tracks 75 frozen historical issues with zero unverified closures, exact snapshot/URL checks and fail-closed evidence requirements. The required CI test job executes its validator and negative regressions alongside merged M4-08 inventory tests. Post-reconciliation six-job CI and final exact-head reviewer acceptance are PENDING; full #266 evidence triage and clinical NO-GO remain unchanged.
+
+---
+
+**M4-07 implementation reconciliation — 2026-11-08:** PR #274 preserves the linear appointment/recipient lookup and explicit date-window/duplicate regressions. This merge checkpoint incorporates #273 database integrity and #275 QA inventory without dropping their source, CI or Rule-7 handover changes. Latest exact-head CI and independent review require requalification after this merge commit. Existing synthetic-only, clinical and real-delivery NO-GO gates remain intact.
+
+---
+
+# M4-08 QA suite coverage inventory — 2026-11-08
+
+PR #275 / issue #182: checked-in API/web test suite inventory and six required CI job presence verifier, plus negative regressions. Measured 95/90/95/95 coverage gate applies ONLY to `apps/api/src/common/fingerprints.ts`; general 95% application coverage remains UNKNOWN, not claimed. CI now invokes the inventory verifier. Exact-head CI and review pending after base reconciliation; clinical NO-GO unchanged.
+
+---
+
+# M4-06 parallel database integrity checkpoint — 2026-11-08
+
+**PR #273 / issue #180.** Existing M2 migration already provides audit append-only database trigger, clinical foreign keys and tenant indexes. Added real PostgreSQL regression for audit INSERT vs forbidden UPDATE/DELETE, validated plan-version center/author FK and scoped appointment/assignment indexes. No redundant migrations or clinical activation introduced. **New test code committed; final exact-head CI and reviewer NOT YET VERIFIED.** Remaining DB concurrency, Neon locking and performance investigation still open. Coordinates with M4-03 merged main and M4-07 runtime branch**M4-03 review status correction (2026-11-07):** Codex found two actionable P2 issues on earlier implementation HEAD: overlapping upgrade could consume a sidecar later removed by rollback, and malformed JSON could leak a password fragment in CLI error text. Both were FIX_NOW and are corrected in PR #270 with exclusive local seed lifecycle lock + error sanitization and negative-path regressions. Demo-journey CI initially failed because its runner supplied only seven secrets; runner now supplies independent ten-account secrets. Historical fixture gitleaks false-positive narrowly excluded; final CI and fresh review still pending. Parallel PRs #271–#276 are planning-only and remain independently scoped. No clinical activation.
 
 ---
 

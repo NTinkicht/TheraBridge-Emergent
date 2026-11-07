@@ -1,8 +1,24 @@
-**M4-04 code work:** Following Codex P1 Rule 7 documentation fix, added a database-backed service-boundary regression to `clinical.e2e-spec.ts` for multi-specialty clinical workspace filtering after assignment revocation. Validates child.services and assessment response exclusion, not merely route 200. No runtime guard changes yet; use evidence to confirm existing behavior, escalate any failure as a tracked security defect. Exact-head CI/re-review pending.
+**M4-04 partial clinical-authorization QA — 2026-11-08:** PR #271 / issue #178 adds a real-PostgreSQL regression for immediate specialty-revocation denial despite an unchanged care-assignment row and authorized supervisor continuity. Application-wide clinical endpoint audit, race/CAS cases, browser tests, exact-head six-job CI and new independent implementation review are NOT COMPLETE. Synthetic-only and clinical NO-GO remain unchanged.
 
-# M4-04 parallel planning record — 2026-11-08
+---
 
-PR #271 initially introduced clinical authorization execution plan, not runtime code. Independent Codex review identified P1 omission of Rule 7 handover/QA checkpoint; this commit fixes four required records. Implementation/test evidence absent at this checkpoint. Role- and tenant-bound denial, specialty revocation, mutation CAS and row-scoped filtering remain the scheduled implementation objectives. M4-03 continues independently, and clinical policy gates remain fail-closed**M4-03 Codex/P2 findings (2026-11-07):** Review #4503124363 FIX_NOW — local `.seed.lock` covers credential-file read, sidecar creation, DB transaction and verified cleanup to prevent concurrent orphaned extra hashes; overlap regression added. Review #4503124366 FIX_NOW — sanitize malformed protected original/extra JSON errors; negative tests verify no fragment reaches message or log. Earlier demo-journey runner configured 7 secrets only, updated to 7+3 independent generated secrets. Existing scanner caught synthetic malformed-JSON JavaScript expression; maintained full history gitleaks and added one exact historical expression exception, restored valid TOML after JS replacement issue. No review findings deferred. Fresh exact-head CI and independent review still required.
+**M4-09 historical issue evidence integration — 2026-11-08:** PR #276 tracks 75 frozen historical issues with zero unverified closures, exact snapshot/URL checks and fail-closed evidence requirements. The required CI test job executes its validator and negative regressions alongside merged M4-08 inventory tests. Post-reconciliation six-job CI and final exact-head reviewer acceptance are PENDING; full #266 evidence triage and clinical NO-GO remain unchanged.
+
+---
+
+**M4-07 implementation reconciliation — 2026-11-08:** PR #274 preserves the linear appointment/recipient lookup and explicit date-window/duplicate regressions. This merge checkpoint incorporates #273 database integrity and #275 QA inventory without dropping their source, CI or Rule-7 handover changes. Latest exact-head CI and independent review require requalification after this merge commit. Existing synthetic-only, clinical and real-delivery NO-GO gates remain intact.
+
+---
+
+# M4-08 QA work log — 2026-11-08
+
+Ported structural test-suite inventory and exact six-job mapping validator onto main, preserving earlier demo credential generator job. Corrected JS regex escaping in coverage/CI job checks and newline fixture. Enforces separate fingerprint-only 95/90/95/95 check, but refuses to claim global coverage. New exact-head CI and review pending.
+
+---
+
+# M4-06 DB audit progress — 2026-11-08
+
+Inspected merged migrations and confirmed original M2-H04 already implemented `audit_event_no_mutation`, plan-version center/author FKs and composite scoped indexes. Avoided duplicate migrations. Added `apps/api/test/m4-db-integrity.e2e-spec.ts` with real-Postgres positive append and negative update/delete, FK validation and index existence checks. Existing M1–M3 code preserved. Final-head CI/review still required; broader M4-06 work not completed**M4-03 Codex/P2 findings (2026-11-07):** Review #4503124363 FIX_NOW — local `.seed.lock` covers credential-file read, sidecar creation, DB transaction and verified cleanup to prevent concurrent orphaned extra hashes; overlap regression added. Review #4503124366 FIX_NOW — sanitize malformed protected original/extra JSON errors; negative tests verify no fragment reaches message or log. Earlier demo-journey runner configured 7 secrets only, updated to 7+3 independent generated secrets. Existing scanner caught synthetic malformed-JSON JavaScript expression; maintained full history gitleaks and added one exact historical expression exception, restored valid TOML after JS replacement issue. No review findings deferred. Fresh exact-head CI and independent review still required.
 
 ---
 
