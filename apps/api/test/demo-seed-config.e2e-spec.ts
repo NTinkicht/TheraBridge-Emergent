@@ -1,4 +1,7 @@
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
+import {existsSync,writeFileSync,unlinkSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import { assertDemoAllowed, DEMO_EMAILS, DEMO_EXTRA_EMAILS, parseHostedDemoPasswords, parseExtraHostedDemoPasswords, seedChildrensHome } from '../src/cli/seed-demo';
 
 const valid = () => Object.fromEntries(Object.values(DEMO_EMAILS).map(e=>[e,'demo-'+randomBytes(24).toString('base64url')]));
@@ -58,5 +61,41 @@ describe('synthetic hosted preview bootstrap policy',()=>{
     expect(()=>parseExtraHostedDemoPasswords(preview({DEMO_EXTRA_PASSWORDS_JSON:JSON.stringify(reused)}))).toThrow();
     const weak={...correct,[DEMO_EXTRA_EMAILS.speech2]:'password123'};
     expect(()=>parseExtraHostedDemoPasswords(preview({DEMO_EXTRA_PASSWORDS_JSON:JSON.stringify(weak)}))).toThrow();
+  });
+
+  test('malformed protected original or extra file never leaks its contents in exception messages',async()=>{
+    const filename=join(tmpdir(),'tb-m4-03-malformed-'+randomUUID()+'.json');
+    const extraFile=filename.slice(0,-5)+'-extra.json';
+    const lock=filename+'.seed.lock';
+    const keys=['DEPLOYMENT_ENV','DEMO_SEED_CONFIRM','DATABASE_URL','DEMO_PASSWORDS_JSON','DEMO_EXTRA_PASSWORDS_JSON'] as const;
+    const prior=Object.fromEntries(keys.map(k=>[k,process.env[k]]));
+    const db={$transaction:jest.fn()} as any;
+    const injectedFragment='should_not_print_'+randomUUID().replaceAll('-','');
+    try{
+      process.env.DEPLOYMENT_ENV='ci';
+      process.env.DEMO_SEED_CONFIRM='CHILDRENS_HOME_SYNTHETIC_ONLY';
+      process.env.DATABASE_URL='postgresql://test:test@localhost:5432/synthetic_test';
+      delete process.env.DEMO_PASSWORDS_JSON;delete process.env.DEMO_EXTRA_PASSWORDS_JSON;
+      writeFileSync(filename,'{"accounts":[{"password":'+injectedFragment+']}',{flag:'wx',mode:0o600});
+      const originalError=await seedChildrensHome(db,filename).catch(e=>e as Error);
+      expect(originalError).toBeInstanceOf(Error);
+      expect(originalError.message).toBe('Protected local demo credential file is invalid or unreadable.');
+      expect(originalError.message).not.toContain(injectedFragment);
+      expect(existsSync(lock)).toBe(false);
+      unlinkSync(filename);
+      writeFileSync(filename,JSON.stringify({synthetic:true,accounts:
+        Object.values(DEMO_EMAILS).map(email=>({email,password:'demo-'+randomBytes(24).toString('base64url'),role:'THERAPIST'}))
+      }),{flag:'wx',mode:0o600});
+      writeFileSync(extraFile,'{"accounts":[{"password":'+injectedFragment+']}',{flag:'wx',mode:0o600});
+      const extraError=await seedChildrensHome(db,filename).catch(e=>e as Error);
+      expect(extraError).toBeInstanceOf(Error);
+      expect(extraError.message).toBe('Protected local demo credential file is invalid or unreadable.');
+      expect(extraError.message).not.toContain(injectedFragment);
+      expect(existsSync(lock)).toBe(false);
+      expect(db.$transaction).not.toHaveBeenCalled();
+    } finally{
+      for(const key of keys)if(prior[key]===undefined)delete process.env[key];else process.env[key]=prior[key];
+      for(const name of [filename,extraFile,lock])if(existsSync(name))unlinkSync(name);
+    }
   });
 });
