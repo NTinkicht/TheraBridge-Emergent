@@ -1,3 +1,9 @@
+# M4-07 QA checkpoint — 2026-11-08
+
+Performance regression code and tests added, including 5,000 synthetic changed visits, duplicate IDs and strict notice windows. After branch synchronization exact-head six-job CI is NOT YET VERIFIED and no measured production latency is claimed. Real clinical release NO-GO; broader benchmarking stays open in #181.
+
+---
+
 # M4-06 QA checkpoint — 2026-11-08
 
 New real-Postgres audit/foreign-key/index regression tests **COMMITTED, NOT YET VERIFIED** on exact-head CI. Existing M2 migration already enforces append-only audit rows, validated clinical FKs and tenant hot-path indexes; no redundant SQL migration. Pending six CI jobs, independent review and database concurrency/Neon validation. Do not treat this test alone as complete M4-06 or signed clinical approval**M4-03 reviewer regression update — 2026-11-07:** Code+tests committed: original/extra protected JSON parse errors sanitized; local exclusive seed file lock prevents concurrent consumption/cleanup; overlap regression in `seed-transactions.e2e-spec.ts`; malformed original/sidecar regression in `demo-seed-config.e2e-spec.ts`. First CI on an earlier head failed demo journey because runner provided only 7 secrets; corrected to 7+3. Later earlier-head gitleaks flagged a synthetic JS expression in malformed fixture; exact historical expression exception added and TOML restored. **Latest exact-head CI and new independent review pending**, not claimed PASS. Protected ten-role live hosted HA-01…HA-10 still NOT RUN; real clinical data/signing/release/AI remains NO-GO.
