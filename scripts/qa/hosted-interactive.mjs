@@ -5,6 +5,7 @@ import {resolve, join} from 'node:path';
 import {chromium} from 'playwright';
 import {BASE, ROLES, settleLoginPage, logout, validateTarget} from './hosted-readonly.mjs';
 import {verifySyntheticUsers, publicHealth} from './prepare-hosted-run.mjs';
+import {deniedRoute,isDeniedStatus} from './hosted-role-guards.mjs';
 
 const ORIGIN = new URL(BASE).origin;
 const CHECKS = ['PASS', 'FAIL', 'BLOCKED'];
@@ -143,6 +144,21 @@ async function inspectRole(browser,role,user) {
       return rows;
     }
     rows.push(result(role,'authentication','PASS','exact_role_identity_confirmed'));
+    // M4-02 read-only RBAC denial: use only an authorized centerId from this
+    // session, never a copied token or page content. Report status only.
+    try {
+      const sessionResponse=await ctx.request.get(BASE+'/api/auth/session');
+      const session=sessionResponse.ok()?await sessionResponse.json():null;
+      if(!session || session.activeContext?.role!==ROLES[role].role)
+        throw Error('role_context_unavailable');
+      const probe=deniedRoute(role,session);
+      const forbidden=await ctx.request.get(probe);
+      const rejected=isDeniedStatus(forbidden.status());
+      rows.push(result(role,'forbidden_role_read',rejected?'PASS':'FAIL',
+        rejected?'server_denied_unauthorized_route':'unexpected_permission_or_transport'));
+    } catch {
+      rows.push(result(role,'forbidden_role_read','FAIL','permission_probe_unavailable'));
+    }
     for (const route of ROLES[role].routes.filter(p => p !== '/app')) {
       await navigate(page,role,route,rows);
     }
@@ -258,10 +274,14 @@ async function inspectRole(browser,role,user) {
   } finally {
     let cleaned=false;
     if (attempted) {
-      try { cleaned=await logout(ctx); } catch {/* keep cleanup failure */ }
+      try {
+        const didLogout=await logout(ctx);
+        const stale=await ctx.request.get(BASE+'/api/auth/session');
+        cleaned=didLogout && stale.status()===401;
+      } catch {/* keep cleanup failure */ }
     }
     rows.push(result(role,'session_cleanup',cleaned?'PASS':'FAIL',
-      cleaned?'server_logout_confirmed':'logout_unconfirmed'));
+      cleaned?'server_logout_and_stale_denied':'logout_or_stale_session_unconfirmed'));
     await ctx.close().catch(()=>{});
   }
   return rows;
