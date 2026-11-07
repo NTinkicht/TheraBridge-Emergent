@@ -126,6 +126,11 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
   assertDemoAllowed(process.env);
   const passwords = parseHostedDemoPasswords(process.env);
   const extraPasswords = parseExtraHostedDemoPasswords(process.env);
+  // A seven-account operator secret on its own must never create three
+  // unexported random hashes. Explicitly supply the independent extra secret.
+  if (passwords && !extraPasswords) {
+    throw new Error('Seven operator-managed demo passwords require DEMO_EXTRA_PASSWORDS_JSON for the three new therapists.');
+  }
   if (passwords && extraPasswords && new Set([...Object.values(passwords), ...Object.values(extraPasswords)]).size !== 10) throw new Error('All ten hosted demo passwords must be distinct.');
   // Original seven-account credential files remain immutable on upgrade.
   // Only extra therapist credentials may be created in this separate file.
