@@ -117,6 +117,10 @@ jobs:
         run: yarn workspace @therabridge/api test:coverage:core
       - name: Web configuration unit tests
         run: yarn workspace @therabridge/web test
+      - name: Verify M4-08 suite inventory and truthfully scoped coverage baseline
+        run: |
+          node scripts/qa/check-ci-test-inventory.mjs
+          node --test scripts/qa/check-ci-test-inventory.test.mjs
       - run: yarn workspace @therabridge/api build
       - run: yarn workspace @therabridge/web build
       - name: M2-H06 frontend timezone, CSRF, shared session and response-header regression
