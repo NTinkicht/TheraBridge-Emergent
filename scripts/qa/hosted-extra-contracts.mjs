@@ -60,7 +60,7 @@ export function inspectClinicalScope(workspace,key,childId) {
     Array.isArray(workspace.child.services) &&
     workspace.child.services.length===1 &&
     workspace.child.services[0]===expected.specialty &&
-    workspace.synthetic===true && workspace.locked===true;
+    workspace.synthetic===true && typeof workspace.locked==='string' && workspace.locked.includes('disabled until');
 }
 export function safeResponseCode(status){
   if(status===401)return 'denied_unauthenticated';
