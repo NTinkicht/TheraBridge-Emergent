@@ -35,6 +35,23 @@ describe('TB-EM-009 progress tracking, report drafting and family progress demo 
     admin = await accept('lead@prog.test', 'Lead Admin');
   });
 
+  it('M4-04: suspended supervisor cannot read progress dashboard or report queue from stale session', async () => {
+    const supervisor = await staff('revoked-supervisor@prog.test', ['CLINICAL_SUPERVISOR'], []);
+    const kid = (await post(h, c('children'), admin, {
+      firstName: 'Synthetic', lastName: 'Case', dateOfBirth: '2019-04-02', services: ['speech'],
+    }).expect(201)).body.id;
+    await get(supervisor, c('clinical/progress')).expect(200);
+    await get(supervisor, c('clinical/reports/review-queue')).expect(200);
+    await h.prisma.membership.update({
+      where: { id: supervisor.body.activeContext.membershipId }, data: { status: 'SUSPENDED' },
+    });
+    for (const endpoint of ['clinical/progress', 'clinical/reports/review-queue', `clinical/children/${kid}/reports`]) {
+      const response = await get(supervisor, c(endpoint));
+      expect([401, 403, 404]).toContain(response.status);
+      expect(JSON.stringify(response.body)).not.toContain('Synthetic Case');
+    }
+  });
+
   it('M2-H04 Codex P2: older unfinished reports remain retrievable past the bounded first page', async () => {
     const therapist = await staff('report-page@prog.test', ['THERAPIST']);
     const kid = (await post(h, c('children'), admin, { firstName: 'Report', lastName: 'History',
