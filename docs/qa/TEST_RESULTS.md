@@ -1,3 +1,9 @@
+# M4-05 QA checkpoint — 2026-11-08
+
+**Test code committed, results NOT YET VERIFIED.** New PostgreSQL regression verifies actual expired session cookie yields 401 on auth session and protected centre read, no-store/no-cache headers, no leakage of user email; independent active session remains valid. CI on current head pending. WF-S4 policy-dependent MFA and WF-S6 frontend dirty-form/CAS UX are not qualified and must not be counted as PASS. No clinical activation.
+
+---
+
 **Codex P2 correction QA update (M4-02, 2026-11-07):** Old-head CI `0ad1d96285` passed but had two logic gaps: cleared-cookie test was not a server-revocation test and child-list team was not proof of actor specialty. Corrected with independent pre-logout cookie replay requiring 401, all-assigned-child `ClinicalService.workspace.child.services` actor service assertions, and explicit offline regression cases for stale-cookie 200 and wrong-actor specialties; CI inclusion added. **At this checkpoint final-head six-job CI and fresh review are PENDING**, protected hosted ten-account HA-01…HA-10 **NOT RUN**, and two-valid-tenant/revocation cases #268 **BLOCKED**. Never report these as live PASS; no clinical activation.
 
 ---
