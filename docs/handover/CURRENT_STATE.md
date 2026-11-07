@@ -1,3 +1,9 @@
+# M4-06 parallel database integrity checkpoint — 2026-11-08
+
+**PR #273 / issue #180.** Existing M2 migration already provides audit append-only database trigger, clinical foreign keys and tenant indexes. Added real PostgreSQL regression for audit INSERT vs forbidden UPDATE/DELETE, validated plan-version center/author FK and scoped appointment/assignment indexes. No redundant migrations or clinical activation introduced. **New test code committed; final exact-head CI and reviewer NOT YET VERIFIED.** Remaining DB concurrency, Neon locking and performance investigation still open. Coordinates with M4-03 merged main and M4-07 runtime branch.
+
+---
+
 **Review correction (2026-11-07, M4-02 PR #267):** Codex identified two actionable P2 findings on reviewed HEAD `0ad1d96285`: (1) stale-session test used a cleared cookie, (2) child-list team membership could mask the actor's wrong specialty. Both fixed on PR branch; pre-logout cookie now replayed privately with isolated context, and exact actor-filtered `ClinicalService.workspace.child.services` is validated across *every* assigned child. Added regression tests and workflow CI gate. **Latest exact-head CI and second Codex review remain pending.** Protected real ten-account run NOT RUN; controlled two-valid-tenant/revocation cases #268 remain release blocked. No clinical activation.
 
 ---
