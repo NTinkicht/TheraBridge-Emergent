@@ -1,3 +1,13 @@
+# Active next actions — M4-03 PR #270 — 2026-11-07
+
+1. Mark #270 **ready for review** and request Codex on the implementation exact-head SHA (not just the original planning draft).
+2. Check six required CI jobs, including existing 7+3 seed transaction regressions, new real PostgreSQL 7→10 upgrades/unchanged original hashes and generator file idempotency; address every P0–P3 finding, track justified nonblocking deferral as issue and re-review.
+3. Prevent premature merge/activation: synthetic-only, protected secrets never printed, clinical signing/release/AI NO-GO and hosted ten-account HA-01…HA-10 not yet qualified.
+4. Independent parallel drafts #271–#276 are ready for separately scoped developers; coordinate shared files and rebase after main changes. Do not treat planning drafts as implemented.
+5. After #270 review/CI green, merge under Rule 16; continue M4-04…09 and test evidence #268/#269 as separately tracked.
+
+---
+
 **Current reviewer gate for M4-02 PR #267 (2026-11-07):** Verify six-job final-HEAD CI after both Codex P2 fixes, including cookie replay and actor-specific specialty regression. Reply to both Codex inline comments with code/test pointers, resolve only after code changes verified and request fresh independent exact-HEAD review. Do not merge on earlier head `0ad1d96285` approval. Protected manual ten-account QA still NOT RUN; #268 governs second-valid-tenant, revocation/expiry and SHA attestation. Keep all clinical gates fail closed.
 
 ---
