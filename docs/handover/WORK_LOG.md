@@ -1,3 +1,5 @@
+> **M4-01 review corrections — 2026-11-07:** Assessed both independent reviews. FIX_NOW: Claude P1 feature 39 school integration → V2-DEFERRED (aligned WF-X6); P1 15 owner requirements + 13 workflows formerly routed to M4-01 → explicit implementation owners; P2 cross-register mismatches → owner-based routing, not phase-bucket owners; code-quality items → machine-readable states, strict validator, BOM support, negative-path tests and CI gate. DEFER_ISSUE: code-level reconciliation of private specs, 1,023 workflow steps and 75 historic issue dispositions remains open [#266](https://github.com/NTinkicht/TheraBridge-Emergent/issues/266) / [#175](https://github.com/NTinkicht/TheraBridge-Emergent/issues/175); no clinical activation.
+
 # M4-01 work log — 2026-11-07
 
 - M1–M3 considered owner-closed; started new M4-01 [#175](https://github.com/NTinkicht/TheraBridge-Emergent/issues/175) on `chatgpt/m4-01-canonical-roadmap-reconciliation`.
