@@ -3,7 +3,17 @@
 1. Run all six final-head CI jobs for new PostgreSQL integrity regression; investigate any changed migration schema/constraints.
 2. Obtain fresh independent implementation review; do not count planning reviews as approval.
 3. Review database transaction locks, historical migration chains, Neon pool behavior, CAS concurrency and performance benchmarks; add reproducible tests and fixes where proven.
-4. Rebase this older branch against merged M4-03 before merge and reconcile all Rule 7 files, preserving current audit policies and no clinical activation.
+4. Rebase this older branch against merged M4-03 before merge and reconcile all Rule 7 files, preserving current audit policies and no clinical activation**M4-03 next gate (2026-11-07):** Confirm full six-job CI green at PR #270's final exact SHA, including generator, real Postgres seven-to-ten, concurrency/rollback, malformed credential safety and demo journey. Reply/resolve Codex P2 threads only after corrections verified, request a fresh exact-head Codex review, address any new findings, and do not merge against earlier reviewed SHAs. Continue M4-04…M4-09 from their scoped draft PRs #271–#276 after individual implementation; M4-08 CI changes must rebase after #270. No protected hosted account or live clinical acceptance implied.
+
+---
+
+# Active next actions — M4-03 PR #270 — 2026-11-07
+
+1. Mark #270 **ready for review** and request Codex on the implementation exact-head SHA (not just the original planning draft).
+2. Check six required CI jobs, including existing 7+3 seed transaction regressions, new real PostgreSQL 7→10 upgrades/unchanged original hashes and generator file idempotency; address every P0–P3 finding, track justified nonblocking deferral as issue and re-review.
+3. Prevent premature merge/activation: synthetic-only, protected secrets never printed, clinical signing/release/AI NO-GO and hosted ten-account HA-01…HA-10 not yet qualified.
+4. Independent parallel drafts #271–#276 are ready for separately scoped developers; coordinate shared files and rebase after main changes. Do not treat planning drafts as implemented.
+5. After #270 review/CI green, merge under Rule 16; continue M4-04…09 and test evidence #268/#269 as separately tracked.
 
 ---
 

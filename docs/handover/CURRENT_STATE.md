@@ -1,6 +1,16 @@
 # M4-06 parallel database integrity checkpoint — 2026-11-08
 
-**PR #273 / issue #180.** Existing M2 migration already provides audit append-only database trigger, clinical foreign keys and tenant indexes. Added real PostgreSQL regression for audit INSERT vs forbidden UPDATE/DELETE, validated plan-version center/author FK and scoped appointment/assignment indexes. No redundant migrations or clinical activation introduced. **New test code committed; final exact-head CI and reviewer NOT YET VERIFIED.** Remaining DB concurrency, Neon locking and performance investigation still open. Coordinates with M4-03 merged main and M4-07 runtime branch.
+**PR #273 / issue #180.** Existing M2 migration already provides audit append-only database trigger, clinical foreign keys and tenant indexes. Added real PostgreSQL regression for audit INSERT vs forbidden UPDATE/DELETE, validated plan-version center/author FK and scoped appointment/assignment indexes. No redundant migrations or clinical activation introduced. **New test code committed; final exact-head CI and reviewer NOT YET VERIFIED.** Remaining DB concurrency, Neon locking and performance investigation still open. Coordinates with M4-03 merged main and M4-07 runtime branch**M4-03 review status correction (2026-11-07):** Codex found two actionable P2 issues on earlier implementation HEAD: overlapping upgrade could consume a sidecar later removed by rollback, and malformed JSON could leak a password fragment in CLI error text. Both were FIX_NOW and are corrected in PR #270 with exclusive local seed lifecycle lock + error sanitization and negative-path regressions. Demo-journey CI initially failed because its runner supplied only seven secrets; runner now supplies independent ten-account secrets. Historical fixture gitleaks false-positive narrowly excluded; final CI and fresh review still pending. Parallel PRs #271–#276 are planning-only and remain independently scoped. No clinical activation.
+
+---
+
+# Active M4 checkpoint — M4-03 credential/seed integrity — 2026-11-07
+
+**PR:** [#270](https://github.com/NTinkicht/TheraBridge-Emergent/pull/270) — runtime implementation committed and being submitted for independent review. **Issue:** [#177](https://github.com/NTinkicht/TheraBridge-Emergent/issues/177). **Predecessor:** M4-02 PR #267 merged at `8174a87ed27e2424500f64256742ab134f15fa3d`. M1–M3 remain owner-closed; no clinical activation.
+
+**Implemented:** independent original-seven/extra-three secret generation and protected file modes; seven→ten local seed with a separately recoverable three-password file; unchanged seven-password hashes; preview fail-closed for partial operator secrets; database rollback/ambiguous-commit credential retention; new real PostgreSQL and fault-injection regression tests. Review/CI actual status: **PENDING final-head verification** at documentation update. Hosted private ten-account HA-01–HA-10 remains NOT RUN; #268 and #269 keep remaining QA evidence and P3 hardening visible.
+
+**Parallel M4 workstreams:** Draft PRs #271 (authorization), #272 (HTTP/security), #273 (DB integrity), #274 (worker/performance), #275 (CI/coverage) and #276 (historical audit). These are planning drafts, not claimed as independently running agents or qualified implementations. Dedicated file ownership prevents overlapping code; #275 must rebase final CI after #270.
 
 ---
 
