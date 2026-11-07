@@ -48,6 +48,23 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     return { therapist, other, sup, kid, link, rosa };
   }
 
+  it('M4-04: specialty revocation fails closed for clinical reads despite a stale assignment', async () => {
+    const { therapist, sup, kid } = await setup(['speech', 'occupational']);
+    const workspace = c(`clinical/children/${kid}`);
+    await get(therapist, workspace).expect(200);
+    await get(sup, workspace).expect(200);
+    const membershipId = therapist.body.activeContext.membershipId;
+    // An unchanged care_assignment must never authorize a revoked specialty.
+    await h.prisma.membership.update({ where: { id: membershipId }, data: { specialties: [] } });
+    await get(therapist, workspace).expect(404);
+    await get(sup, workspace).expect(200);
+    // Restoring the specialty reinstates the original actively scoped assignment.
+    await h.prisma.membership.update({ where: { id: membershipId }, data: { specialties: ['speech'] } });
+    const restored = (await get(therapist, workspace).expect(200)).body;
+    expect(restored.child.services).toEqual(['speech']);
+    expect(restored.child.services).not.toContain('occupational');
+  });
+
   it('M2-H04 Codex P2: newest plan stays reachable above 200 and older plans are paged with tenant scope', async () => {
     const { therapist, kid } = await setup();
     const base = Date.parse('2026-10-18T00:00:00Z');
