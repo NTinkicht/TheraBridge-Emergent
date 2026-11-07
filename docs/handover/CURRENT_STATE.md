@@ -1,3 +1,7 @@
+**Review correction (2026-11-07, M4-02 PR #267):** Codex identified two actionable P2 findings on reviewed HEAD `0ad1d96285`: (1) stale-session test used a cleared cookie, (2) child-list team membership could mask the actor's wrong specialty. Both fixed on PR branch; pre-logout cookie now replayed privately with isolated context, and exact actor-filtered `ClinicalService.workspace.child.services` is validated across *every* assigned child. Added regression tests and workflow CI gate. **Latest exact-head CI and second Codex review remain pending.** Protected real ten-account run NOT RUN; controlled two-valid-tenant/revocation cases #268 remain release blocked. No clinical activation.
+
+---
+
 # Active checkpoint — M4-02 implemented for review — 2026-11-07
 
 **Issue:** #176. **PR:** #267. **Implementation:** three extra-therapist read-only session/scope/permission checks, seven-role read-denial and stale logout verification, sanitized result artifacts, protected workflow isolation, offline tests and CI gates. No clinical or production behavior changed.
