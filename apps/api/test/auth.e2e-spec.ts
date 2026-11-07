@@ -7,6 +7,7 @@ import { ipPrefix, parseTrustedProxiesForTest, resolveClientIp, sha256 } from '.
 import { loadAuthConfig } from '../src/config/env';
 import { passwordPolicyError } from '../src/auth/password';
 import { RateLimitStore } from '../src/auth/rate-limit.store';
+import { ACCOUNT_LIMIT } from '../src/auth/auth.service';
 import {
   FakeClock, Harness, ORIGIN, PASSWORD, cookieFrom, createUser, freshPassword, login, makeApp, post, preAuth, rawCookie, resetDb, signIn,
 } from './helpers';
@@ -159,6 +160,22 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
       expect(await h.prisma.auditEvent.count({ where: { type: 'auth.lockout' } })).toBe(1);
       h.clock.advance(16 * MIN);
       expect((await login(h, u.email)).status).toBe(200);
+    });
+
+    it('M4-05: targeted account lockout blocks only the attacking origin', async () => {
+      const proxied = await makeApp({ TRUSTED_PROXY_CIDRS: '127.0.0.1/32,::1/128' }, h.clock);
+      try {
+        const u = await createUser(proxied.prisma, 'targeted-lockout@test.therabridge.test');
+        const attacker = '198.51.100.77';
+        const legitimate = '198.51.100.88';
+        for (let i = 0; i < ACCOUNT_LIMIT; i++) {
+          expect((await login(proxied, u.email, 'incorrect-targeted-password', attacker)).status).toBe(401);
+        }
+        expect((await login(proxied, u.email, PASSWORD, attacker)).status).toBe(401);
+        expect((await login(proxied, u.email, PASSWORD, legitimate)).status).toBe(200);
+      } finally {
+        await proxied.close();
+      }
     });
 
     it('returns 429 after 30 failures from one IP', async () => {
