@@ -58,6 +58,14 @@
 - `apps/api/test/demo-seed-config.e2e-spec.ts`: denies operator-only seven secrets before any DB transaction.
 - Required CI test job now runs independent generator tests. No production/clinical code was changed.
 
+## Independent reviewer findings addressed on PR #270
+
+- **Codex P2 — concurrent upgrade sidecar consumption:** local read/stage/DB transaction/rollback now protected by a fail-closed exclusive `.seed.lock` beside the credential file. Overlap rejects before reading any uncommitted sidecar; the first seed controls cleanup. A process crash intentionally leaves the lock until an operator checks DB/files and removes it safely. Added concurrent failed-upgrade/second-attempt denial regression.
+- **Codex P2 — parse error leaks:** a fixed, non-sensitive `Protected local demo credential file is invalid or unreadable.` error replaces JSON.parse exceptions for both original and extra files. Added malformed credential file tests checking output contains no test payload and lock is removed.
+- **CI integration:** isolated demo-journey test runner now generates and injects independent synthetic secrets for all **ten** identities, not only seven. This corrected the initial red demo-journey run under new fail-closed policy. New fixture scanner false positive is handled with an **exact** historical JavaScript expression exception; broad secret scanning remains enabled. A temporary TOML corruption from JS replacement expansion was repaired by restoring main's syntax before adding the exact exception.
+
+**Review status:** both P2 source fixes and tests are committed. A *fresh review on the final exact HEAD* and all six CI jobs are still required. Hosted ten-account login acceptance remains NOT RUN.
+
 **Remaining qualification:** Complete all exact-head six-job CI checks and independent review; document all review findings and any necessary tracked deferrals. Actual hosted ten-account acceptance from #176/#268 and clinical activation remain separate and **NOT RUN / NO-GO**.
 
 **Review expectation:** This PR may be marked ready-for-review now that runtime implementation and regression tests are committed. It must **not** merge without independent approval and final-head CI.
