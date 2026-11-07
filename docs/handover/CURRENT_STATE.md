@@ -1,3 +1,11 @@
+# Active checkpoint — M4-02 implemented for review — 2026-11-07
+
+**Issue:** #176. **PR:** #267. **Implementation:** three extra-therapist read-only session/scope/permission checks, seven-role read-denial and stale logout verification, sanitized result artifacts, protected workflow isolation, offline tests and CI gates. No clinical or production behavior changed.
+
+**State:** Implementation committed, exact final-head CI and independent review NOT YET QUALIFIED at writing; protected ten-account hosted authentication QA NOT RUN. One-centre mock-denial is not proof of valid two-tenant isolation; deferred controlled multi-tenant/revocation/deployment attestation [#268](https://github.com/NTinkicht/TheraBridge-Emergent/issues/268) (P1/P0 release gate). M1–M3 owner-closed; G2/G2b and other unsigned clinical gates remain NO-GO. Prior planning and M4-01 entries below are historical.
+
+---
+
 # Active checkpoint — M4-02 ten-account hosted synthetic acceptance — 2026-11-07
 
 **Status:** PLANNING ONLY, NOT IMPLEMENTED/NOT TESTED. **Issue:** #176. **Predecessor:** PR #265 merged `aa14fb46976a30fd41ec800e1060c3e7f64125f0`. The M4-02 acceptance plan is at `docs/qa/M4-02-TEN-ACCOUNT-ACCEPTANCE.md`. Preserve 7 existing and 3 extra QA identities securely; do not print secrets. M1–M3 closed and clinical activation NO-GO. Historical entries below superseded.
