@@ -1,3 +1,13 @@
+# Active next work — 2026-11-07 — M4-02 / PR #267
+
+1. Verify exact final HEAD in six required CI jobs. Specifically confirm new `hosted-extra-contracts.test.mjs`, `hosted-role-guards.test.mjs`, `hosted-private-workflow.test.mjs` and mocked `hosted-extra-runtime.test.mjs` green, and gitleaks full-history/working-tree checks green. Do not transfer previous-head results.
+2. Mark PR #267 **ready for review** after implementation checkpoint, request independent exact-head Codex/approved reviewer, assess and disposition P0–P3 findings; requalify new HEAD after any changes.
+3. Keep full live ten-account HA-01…HA-10 **NOT RUN** until the protected `hosted-interactive-private.yml` workflow is manually run from `main`, with operator-verified Render deployed SHA, approved environment and existing encrypted secrets.
+4. Reconcile any actual denied permissions or login failures; do not claim a missing UUID is a full two-valid-centre isolation test. See [#268](https://github.com/NTinkicht/TheraBridge-Emergent/issues/268) for the controlled second-tenant, revocation, session expiry and SHA attestation release blockers.
+5. Do not merge if incomplete exact-head CI, reviewer objections or sensitive clinical policy gates remain; owner-closed M1–M3 and M4-01 #175/#266 evidence follow-ups remain in effect.
+
+---
+
 # Active next work — 2026-11-07 — M4-02 (issue #176)
 
 1. Open draft PR from `chatgpt/m4-02-ten-account-hosted-acceptance` to `main`, explicitly label planning-only/NOT IMPLEMENTED; request initial `@codex review` on opening HEAD per AGENTS.md Rule 18.
