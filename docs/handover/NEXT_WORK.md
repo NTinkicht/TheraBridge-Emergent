@@ -1,3 +1,12 @@
+# M4-06 next actions — 2026-11-08
+
+1. Run all six final-head CI jobs for new PostgreSQL integrity regression; investigate any changed migration schema/constraints.
+2. Obtain fresh independent implementation review; do not count planning reviews as approval.
+3. Review database transaction locks, historical migration chains, Neon pool behavior, CAS concurrency and performance benchmarks; add reproducible tests and fixes where proven.
+4. Rebase this older branch against merged M4-03 before merge and reconcile all Rule 7 files, preserving current audit policies and no clinical activation.
+
+---
+
 **Current reviewer gate for M4-02 PR #267 (2026-11-07):** Verify six-job final-HEAD CI after both Codex P2 fixes, including cookie replay and actor-specific specialty regression. Reply to both Codex inline comments with code/test pointers, resolve only after code changes verified and request fresh independent exact-HEAD review. Do not merge on earlier head `0ad1d96285` approval. Protected manual ten-account QA still NOT RUN; #268 governs second-valid-tenant, revocation/expiry and SHA attestation. Keep all clinical gates fail closed.
 
 ---
