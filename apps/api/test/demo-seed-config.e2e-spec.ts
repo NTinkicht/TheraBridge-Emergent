@@ -77,7 +77,7 @@ describe('synthetic hosted preview bootstrap policy',()=>{
       process.env.DATABASE_URL='postgresql://test:test@localhost:5432/synthetic_test';
       delete process.env.DEMO_PASSWORDS_JSON;delete process.env.DEMO_EXTRA_PASSWORDS_JSON;
       writeFileSync(filename,'{"accounts":[{"pass' + 'word":' + injectedFragment + ']}',{flag:'wx',mode:0o600});
-      const originalError=await seedChildrensHome(db,filename).catch(e=>e as Error);
+      const originalError=await seedChildrensHome(db,filename).then(() => new Error('unexpected_success'), (e: unknown) => e as Error);
       expect(originalError).toBeInstanceOf(Error);
       expect(originalError.message).toBe('Protected local demo credential file is invalid or unreadable.');
       expect(originalError.message).not.toContain(injectedFragment);
@@ -87,7 +87,7 @@ describe('synthetic hosted preview bootstrap policy',()=>{
         Object.values(DEMO_EMAILS).map(email=>({email,password:'demo-'+randomBytes(24).toString('base64url'),role:'THERAPIST'}))
       }),{flag:'wx',mode:0o600});
       writeFileSync(extraFile,'{"accounts":[{"pass' + 'word":' + injectedFragment + ']}',{flag:'wx',mode:0o600});
-      const extraError=await seedChildrensHome(db,filename).catch(e=>e as Error);
+      const extraError=await seedChildrensHome(db,filename).then(() => new Error('unexpected_success'), (e: unknown) => e as Error);
       expect(extraError).toBeInstanceOf(Error);
       expect(extraError.message).toBe('Protected local demo credential file is invalid or unreadable.');
       expect(extraError.message).not.toContain(injectedFragment);
