@@ -31,7 +31,17 @@ jobs:
           tar -xzf /tmp/gitleaks.tgz -C /tmp gitleaks
           /tmp/gitleaks version
       - name: Scan full Git history (all fetched refs), values redacted
-        run: /tmp/gitleaks git . --config .gitleaks.toml --log-opts="--all" --redact=100 --no-banner --exit-code 1
+        run: |
+          set +e
+          /tmp/gitleaks git . --config .gitleaks.toml --log-opts="--all" --redact=100 --no-banner --report-format=json --report-path=/tmp/tb-secret-scan.json --exit-code 1
+          result=$?
+          set -e
+          if [ "$result" -ne 0 ]; then
+            # Print rule and tracked file only: NEVER leak matched text, snippets or secrets.
+            node -e 'const fs=require("fs");const a=JSON.parse(fs.readFileSync("/tmp/tb-secret-scan.json","utf8"));for(const x of a)console.log("SCAN_FINDING_RULE_PATH "+JSON.stringify({rule:x.RuleID,file:x.File}));'
+          fi
+          rm -f /tmp/tb-secret-scan.json
+          exit "$result"
       - name: Scan tracked files in this checkout, values redacted
         run: /tmp/gitleaks dir . --config .gitleaks.toml --redact=100 --no-banner --exit-code 1
 
@@ -71,7 +81,11 @@ jobs:
         run: |
           node scripts/qa/check-roadmap-registers.mjs
           node --test scripts/qa/check-roadmap-registers.test.mjs
+      - name: M4-02 private hosted scope and workflow safety regressions
+        run: node --test scripts/qa/hosted-extra-contracts.test.mjs scripts/qa/hosted-role-guards.test.mjs scripts/qa/hosted-session-guards.test.mjs scripts/qa/hosted-private-workflow.test.mjs
       - run: yarn install --frozen-lockfile
+      - name: M4-02 private QA runtime redaction and fail-closed tests
+        run: node --test scripts/qa/hosted-extra-runtime.test.mjs
       - name: Verify migration guard negative-path tests
         run: node --test scripts/qa/check-migration-history.test.mjs
       - name: Enforce immutable published migration history against PR base or previous main

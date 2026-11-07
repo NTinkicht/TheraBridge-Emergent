@@ -1,3 +1,32 @@
+**Codex P2 correction QA update (M4-02, 2026-11-07):** Old-head CI `0ad1d96285` passed but had two logic gaps: cleared-cookie test was not a server-revocation test and child-list team was not proof of actor specialty. Corrected with independent pre-logout cookie replay requiring 401, all-assigned-child `ClinicalService.workspace.child.services` actor service assertions, and explicit offline regression cases for stale-cookie 200 and wrong-actor specialties; CI inclusion added. **At this checkpoint final-head six-job CI and fresh review are PENDING**, protected hosted ten-account HA-01…HA-10 **NOT RUN**, and two-valid-tenant/revocation cases #268 **BLOCKED**. Never report these as live PASS; no clinical activation.
+
+---
+
+# M4-02 QA checkpoint — 2026-11-07 — PR #267
+
+**Status:** QA code IMPLEMENTED on PR branch; code tests / exact-head CI **PENDING** at writing; **actual protected hosted ten-account QA NOT RUN**. No real credentials, child data or clinical functionality used. This is not a declaration of deployed SHA acceptance.
+
+| Evidence | State |
+|---|---|
+| Three extra role identity, specialty and child-assignment contracts | Implemented; final-head CI verification pending |
+| Three extra login / secure cookie / allowed clinical read / denied unassigned real seeded child read / absent-center denial / logout + stale session | Implemented; protected manual hosted execution NOT RUN |
+| Seven legacy role forbidden API GET and stale logout checks | Implemented; protected manual hosted execution NOT RUN |
+| Invalid credentials, output redaction, workflow gates and fail-closed offline tests | Implemented; final-head CI verification pending |
+| Full-history secret scan | Earlier branch had a deterministic test-fixture match and a transient TOML syntax error; corrected; final-head result PENDING |
+| Six exact-head mandatory CI jobs / independent exact-head review | PENDING |
+| Two *valid* centres, true cross-tenant isolation, therapist revocation, expiry, verified Render SHA | BLOCKED for disposable synthetic fixture; linked #268 |
+| Clinical signing, real family releases, external AI/STT, real patient data | NO-GO |
+
+For every HA-01…HA-10 item, record actual hosted evidence after main-only protected workflow. Do not infer PASS from the synthetic seed, unit test or last week's deployment.
+
+---
+
+# M4-02 QA checkpoint — 2026-11-07
+
+**PLANNING ONLY / NOT IMPLEMENTED / NOT TESTED**. Added `docs/qa/M4-02-TEN-ACCOUNT-ACCEPTANCE.md` with ten-account acceptance matrix HA-01…HA-10; no new hosted QA workflow dispatched or credentials collected. No claim of login PASS or role-isolation qualification from prior demo deployment. PR #265 M4-01 predecessor merged after exact-head 6/6 CI success, Codex no-major-issues; M4-01 row-level evidence remains #175/#266. Current M4-02 branch CI and private-hosted ten-account acceptance NOT RUN; real clinical usage NO-GO.
+
+---
+
 > **M4-01 correction QA update (2026-11-07):** Claude independently executed original-head validator PASS (66/91/55), checked 75/75 historic issue references and confirmed exact prior HEAD `f9f8de4` all six CI jobs green on runs 42386951474 and 42386954197. Those are **previous-head results only**. New code adds mandatory test-job gate for roadmap validator and negative-path regression cases; **final-head CI and updated review pending at writing**. The implementation-level 66/91/55 and 1,023-step clinical qualification remain **NOT VERIFIED**. Sensitive clinical activation continues NO-GO.
 
 # Active QA checkpoint — 2026-11-07 — M4-01 / PR #265

@@ -1,3 +1,21 @@
+**Review correction (2026-11-07, M4-02 PR #267):** Codex identified two actionable P2 findings on reviewed HEAD `0ad1d96285`: (1) stale-session test used a cleared cookie, (2) child-list team membership could mask the actor's wrong specialty. Both fixed on PR branch; pre-logout cookie now replayed privately with isolated context, and exact actor-filtered `ClinicalService.workspace.child.services` is validated across *every* assigned child. Added regression tests and workflow CI gate. **Latest exact-head CI and second Codex review remain pending.** Protected real ten-account run NOT RUN; controlled two-valid-tenant/revocation cases #268 remain release blocked. No clinical activation.
+
+---
+
+# Active checkpoint — M4-02 implemented for review — 2026-11-07
+
+**Issue:** #176. **PR:** #267. **Implementation:** three extra-therapist read-only session/scope/permission checks, seven-role read-denial and stale logout verification, sanitized result artifacts, protected workflow isolation, offline tests and CI gates. No clinical or production behavior changed.
+
+**State:** Implementation committed, exact final-head CI and independent review NOT YET QUALIFIED at writing; protected ten-account hosted authentication QA NOT RUN. One-centre mock-denial is not proof of valid two-tenant isolation; deferred controlled multi-tenant/revocation/deployment attestation [#268](https://github.com/NTinkicht/TheraBridge-Emergent/issues/268) (P1/P0 release gate). M1–M3 owner-closed; G2/G2b and other unsigned clinical gates remain NO-GO. Prior planning and M4-01 entries below are historical.
+
+---
+
+# Active checkpoint — M4-02 ten-account hosted synthetic acceptance — 2026-11-07
+
+**Status:** PLANNING ONLY, NOT IMPLEMENTED/NOT TESTED. **Issue:** #176. **Predecessor:** PR #265 merged `aa14fb46976a30fd41ec800e1060c3e7f64125f0`. The M4-02 acceptance plan is at `docs/qa/M4-02-TEN-ACCOUNT-ACCEPTANCE.md`. Preserve 7 existing and 3 extra QA identities securely; do not print secrets. M1–M3 closed and clinical activation NO-GO. Historical entries below superseded.
+
+---
+
 > **Review reconciliation update (2026-11-07):** Grok exact-head review found no blocking findings; Claude identified P1 V1/V2 school-scope contradiction, P1 documentation-unit misrouting, P2 cross-register ownership contradictions, plus CI/validator and provenance suggestions. Fixed feature #39 as V2-DEFERRED consistent with WF-X6; assigned implementation owners across 66/91/55; standardized evidence states; added enforced CI regression tests for false verification, bad ownership, V2 mismatch, BOM/quoted cells. Deferred unavailable canonical private specs and 1,023 step evidence to [#266](https://github.com/NTinkicht/TheraBridge-Emergent/issues/266), linked to open #175. Final-head CI and re-review MUST be checked independently; this note does not claim green final-head CI.
 
 # Active checkpoint — M4-01 canonical roadmap reconciliation — 2026-11-07

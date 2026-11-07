@@ -42,7 +42,9 @@ jobs:
           node -e "if(require('playwright/package.json').version!=='1.48.2') process.exit(2)"
           node --check scripts/qa/hosted-interactive.mjs
           node --check scripts/qa/hosted-extra-therapists.mjs
+          node --test scripts/qa/hosted-extra-contracts.test.mjs scripts/qa/hosted-role-guards.test.mjs scripts/qa/hosted-session-guards.test.mjs
       - name: Private credential and live health preflight
+        id: preflight
         env:
           TB_QA_USERS_JSON: ${{ secrets.TB_HOSTED_QA_USERS_JSON }}
           TB_QA_DEPLOY_SHA: ${{ inputs.deployed_sha }}
@@ -50,14 +52,18 @@ jobs:
         run: |
           umask 077
           node scripts/qa/prepare-hosted-run.mjs
-      - name: Verify three additional synthetic therapist logins privately
+      - name: Verify three additional synthetic therapist logins and scope privately
+        id: extra
+        if: ${{ steps.preflight.outcome == 'success' }}
         env:
           TB_QA_EXTRA_USERS_JSON: ${{ secrets.TB_HOSTED_QA_EXTRA_USERS_JSON }}
+          TB_QA_EXTRA_OUTPUT: /__w/_temp/tb-interactive-private/report
         run: |
           umask 077
           node scripts/qa/hosted-extra-therapists.mjs
       - name: Run seven-role non-mutating interactive checks
         id: run
+        if: ${{ always() && steps.preflight.outcome == 'success' }}
         env:
           QA_USERS_FILE: /__w/_temp/tb-interactive-private/users.json
           QA_PRIVATE_OUTPUT: /__w/_temp/tb-interactive-private/report
@@ -65,11 +71,13 @@ jobs:
           umask 077
           node scripts/qa/hosted-interactive.mjs
       - name: Upload secret-free interaction results
-        if: ${{ always() && steps.run.outcome != 'skipped' }}
+        if: ${{ always() && (steps.run.outcome != 'skipped' || steps.extra.outcome != 'skipped') }}
         uses: actions/upload-artifact@v4
         with:
           name: therabridge-interactive-qa-${{ github.run_id }}
-          path: /__w/_temp/tb-interactive-private/report/hosted-interactive-results.json
+          path: |
+            /__w/_temp/tb-interactive-private/report/hosted-interactive-results.json
+            /__w/_temp/tb-interactive-private/report/hosted-extra-results.json
           if-no-files-found: warn
           retention-days: 1
       - name: Remove credentials and report

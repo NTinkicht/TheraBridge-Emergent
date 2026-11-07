@@ -1,3 +1,26 @@
+**M4-02 Codex P2 remediation — 2026-11-07:** FIX_NOW review #4502930203: capture correct secure `__Host-tb_session` before logout and replay it with an isolated Playwright browser request context, fail closed if missing, validate server rejects old cookie 401; both seven- and three-account scripts changed. FIX_NOW review #4502930209: inspect actor-filtered clinical workspace `child.services` for every assigned child (exact one expected specialty) rather than full multi-clinician child-list team; add wrong-actor-specialty regression. Added `hosted-session-guards.mjs` tests in required CI and protected workflow. Recognized `locked` is a text string in ClinicalService rather than boolean and corrected contract/test. No deferral of these two P2 issues. #268 remains explicit other-scope deferral. Final CI/re-review not yet qualified.
+
+---
+
+# M4-02 implementation work log — 2026-11-07
+
+- Extended protected existing hosted interactive QA instead of introducing any public or credential-carrying endpoint.
+- Added three-therapist account contract and seed-scoped assignment checks; login/session/context, secure cookie, own clinical read, unassigned existing child read denial, nonexistent center denial, logout plus stale-session 401. Result rows allowlisted; no email, passwords, cookies, child UUIDs or clinical content serialized.
+- Enhanced seven-role interactive run with explicit denied GET route per role and post-logout stale session verification; kept other non-mutating checks.
+- Protected GitHub Actions workflow emits sanitized extra+legacy reports independently, even if one test step fails, and cleans private temporary directory; main-only manual approval remains required.
+- Added contract, redaction, mocked failure, workflow and seven-role denial tests to required CI test job. Full-history gitleaks scan preserved with a precisely scoped historic synthetic-fixture allowance.
+- Identified and corrected accidental TOML corruption caused by string-replacement substitution in earlier branch commits. Current config is reconstructed from main; actual secret-scan success must be revalidated on final HEAD.
+- Controlled two-valid-centre, revocation, expiry and live SHA attestation checks cannot be claimed from read-only one-centre demo: deferred as [#268](https://github.com/NTinkicht/TheraBridge-Emergent/issues/268), with owner/acceptance/safety limits.
+- **Actual live ten-account workflow:** NOT RUN. **Final exact-head CI and independent review:** PENDING until new commit validated.
+
+---
+
+# Work log — 2026-11-07 — M4-02 planning checkpoint
+
+M4-01 PR #265 merged after six exact-head CI jobs and Codex no-major-issues review. All Grok/Claude/Codex findings dispositioned; #266 tracks private spec/1,023-step source verification. New M4-02 branch opened from merged main; added ten-account synthetic hosted QA plan. No hosted test run, credential change or clinical authorization performed on this branch. Next: implement scoped private browser assertions and run protected QA with live verified SHA.
+
+---
+
 > **M4-01 review corrections — 2026-11-07:** Assessed both independent reviews. FIX_NOW: Claude P1 feature 39 school integration → V2-DEFERRED (aligned WF-X6); P1 15 owner requirements + 13 workflows formerly routed to M4-01 → explicit implementation owners; P2 cross-register mismatches → owner-based routing, not phase-bucket owners; code-quality items → machine-readable states, strict validator, BOM support, negative-path tests and CI gate. DEFER_ISSUE: code-level reconciliation of private specs, 1,023 workflow steps and 75 historic issue dispositions remains open [#266](https://github.com/NTinkicht/TheraBridge-Emergent/issues/266) / [#175](https://github.com/NTinkicht/TheraBridge-Emergent/issues/175); no clinical activation.
 
 # M4-01 work log — 2026-11-07

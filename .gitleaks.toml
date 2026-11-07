@@ -24,6 +24,8 @@ regexes = [
   # Exact synthetic-only test literals retained in earlier PR #73 commits.
   '''^LOCAL_FIXTURE_ONLY$''',
   '''^PRIVATE_CSRF$''',
+  # M4-02 old Git commit contains this deterministic local test-only literal.
+  '''^offline_only_fixture_$''',
 ]
 
 [[rules]]
