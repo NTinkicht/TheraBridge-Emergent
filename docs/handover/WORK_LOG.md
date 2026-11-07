@@ -1,3 +1,7 @@
+**M4-03 Codex/P2 findings (2026-11-07):** Review #4503124363 FIX_NOW — local `.seed.lock` covers credential-file read, sidecar creation, DB transaction and verified cleanup to prevent concurrent orphaned extra hashes; overlap regression added. Review #4503124366 FIX_NOW — sanitize malformed protected original/extra JSON errors; negative tests verify no fragment reaches message or log. Earlier demo-journey runner configured 7 secrets only, updated to 7+3 independent generated secrets. Existing scanner caught synthetic malformed-JSON JavaScript expression; maintained full history gitleaks and added one exact historical expression exception, restored valid TOML after JS replacement issue. No review findings deferred. Fresh exact-head CI and independent review still required.
+
+---
+
 # M4-03 work log — 2026-11-07
 
 - Opened draft PR #270 on merged M4-02 main; reviewed PR #166 two P2 issues and current seed/credential code.
