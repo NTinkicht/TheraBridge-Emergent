@@ -8,6 +8,12 @@ test('historical original issue snapshot has exactly 75 uniquely linked issues',
 test('reject fabricated verification without SHA/test/reviewer evidence',()=>{
  assert.throws(()=>validateRegister(sample.replace('"PENDING_EVIDENCE"','"VERIFIED_IMPLEMENTED"')),/Verified issue without/);
 });
+test('reject verified disposition when its test evidence is missing',()=>{
+ const changed=sample.replace('"PENDING_EVIDENCE","","","",""',
+   '"VERIFIED_IMPLEMENTED","0123456789abcdef0123456789abcdef01234567","","","independent reviewer"');
+ assert.notEqual(changed,sample);
+ assert.throws(()=>validateRegister(changed),/Verified issue without valid source SHA, test and reviewer/);
+});
 test('reject duplicate historical issue',()=>{
  const lines=sample.trim().split('\n');
  lines[2]=lines[1];
