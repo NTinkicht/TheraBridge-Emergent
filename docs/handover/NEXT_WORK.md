@@ -1,3 +1,11 @@
+# M4-09 next actions — 2026-11-08
+
+1. Verify new register validator on current PR #276 with exact-head CI plus direct Node negative regressions.
+2. Add validator/test to CI under coordinated M4-08 PR #275 after this PR merges.
+3. Assess 75 historical issues individually against merged source/tests and approvals; do not blindly close or classify historic issues.
+
+---
+
 # M4-06 next actions — 2026-11-08
 
 1. Run all six final-head CI jobs for new PostgreSQL integrity regression; investigate any changed migration schema/constraints.
