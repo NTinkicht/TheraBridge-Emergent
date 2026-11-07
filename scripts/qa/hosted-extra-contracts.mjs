@@ -48,8 +48,19 @@ export function inspectAssignedChildren(data,key) {
   const names=data.items.map(c=>`${c.firstName} ${c.lastName}`);
   if(new Set(names).size!==names.length ||
      names.some(n=>!expected.children.includes(n)))return false;
-  return data.items.every(c=>typeof c.id==='string' &&
-    Array.isArray(c.team) && c.team.some(t=>t.service===expected.specialty));
+  // Child-list team contains *other members*. It cannot prove the *actor's*
+  // specialty. A successful scoped clinical workspace read is checked separately.
+  return data.items.every(c=>typeof c.id==='string' && c.id.length>0);
+}
+export function inspectClinicalScope(workspace,key,childId) {
+  const expected=EXTRA_IDENTITIES[key];
+  // ClinicalService.workspace() filters child.services to the actor's active
+  // assigned service(s), unlike ChildrenService.list()'s full care team.
+  return !!expected && workspace?.child?.id===childId &&
+    Array.isArray(workspace.child.services) &&
+    workspace.child.services.length===1 &&
+    workspace.child.services[0]===expected.specialty &&
+    workspace.synthetic===true && workspace.locked===true;
 }
 export function safeResponseCode(status){
   if(status===401)return 'denied_unauthenticated';
