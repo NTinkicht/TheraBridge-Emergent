@@ -6,6 +6,7 @@ import {chromium} from 'playwright';
 import {BASE, ROLES, settleLoginPage, logout, validateTarget} from './hosted-readonly.mjs';
 import {verifySyntheticUsers, publicHealth} from './prepare-hosted-run.mjs';
 import {deniedRoute,isDeniedStatus} from './hosted-role-guards.mjs';
+import {captureSessionCookie,verifyRevokedSession} from './hosted-session-guards.mjs';
 
 const ORIGIN = new URL(BASE).origin;
 const CHECKS = ['PASS', 'FAIL', 'BLOCKED'];
@@ -135,7 +136,7 @@ async function inspectRole(browser,role,user) {
     viewport:{width:1440,height:900},deviceScaleFactor:1,acceptDownloads:false
   });
   const page=await ctx.newPage();
-  let attempted=false;
+  let attempted=false,preLogoutCookie=null;
   try {
     attempted=true;
     const valid=await login(page,role,user);
@@ -265,6 +266,9 @@ async function inspectRole(browser,role,user) {
         rows.push(result(role,'demo_guardian_progress_sample','FAIL','guardian_sample_rehearsal_failed'));
       }
     }
+    // Capture the original authenticated cookie ONLY in private process memory.
+    // This is not an artifact and will not be printed.
+    preLogoutCookie=captureSessionCookie(await ctx.cookies(BASE));
     // The following require separate controlled scenarios, and are NEVER
     // promoted merely because route navigation or modal rendering worked.
     rows.push(result(role,'form_submission_validation','BLOCKED','no_mutating_submission_authorized'));
@@ -276,8 +280,7 @@ async function inspectRole(browser,role,user) {
     if (attempted) {
       try {
         const didLogout=await logout(ctx);
-        const stale=await ctx.request.get(BASE+'/api/auth/session');
-        cleaned=didLogout && stale.status()===401;
+        cleaned=didLogout && await verifyRevokedSession(browser,preLogoutCookie);
       } catch {/* keep cleanup failure */ }
     }
     rows.push(result(role,'session_cleanup',cleaned?'PASS':'FAIL',
