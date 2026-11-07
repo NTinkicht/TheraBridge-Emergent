@@ -63,6 +63,14 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     const restored = (await get(therapist, workspace).expect(200)).body;
     expect(restored.child.services).toEqual(['speech']);
     expect(restored.child.services).not.toContain('occupational');
+    // Supervisor sessions must also lose protected clinical read access as soon
+    // as their membership is suspended; a stale role claim grants nothing.
+    await h.prisma.membership.update({
+      where: { id: sup.body.activeContext.membershipId }, data: { status: 'SUSPENDED' },
+    });
+    const revokedSupervisor = await get(sup, workspace);
+    expect([401, 403, 404]).toContain(revokedSupervisor.status);
+    expect(JSON.stringify(revokedSupervisor.body)).not.toContain('Mila');
   });
 
   it('M2-H04 Codex P2: newest plan stays reachable above 200 and older plans are paged with tenant scope', async () => {
