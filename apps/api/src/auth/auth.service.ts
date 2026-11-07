@@ -43,27 +43,30 @@ export class AuthService {
       await this.audit.record('auth.rate_limited', { ip: meta.ip });
       throw new HttpException('Too many sign-in attempts. Please wait a few minutes and try again.', HttpStatus.TOO_MANY_REQUESTS);
     }
-    const acctKey = this.accountKey(email);
+    // A targeted attacker must not be able to globally lock another user out:
+    // enforce the account lockout per origin while the separate IP spray
+    // limiter still covers attempts across different account names.
+    const originKey = `acct-origin:${hmac(this.cfg.secret, `${normalizeEmail(email)}:${meta.ip}`)}`;
     const user = await this.prisma.user.findUnique({
       where: { emailNormalized: normalizeEmail(email) },
       include: { identities: { where: { provider: 'local' } } },
     });
     const identity = user?.identities[0];
-    const locked = await this.limits.isLocked(acctKey, now);
+    const locked = await this.limits.isLocked(originKey, now);
     const valid = await verifyPassword(identity?.passwordHash ?? (await dummyHash()), password);
 
     if (!user || !identity?.passwordHash || !valid || locked || user.status !== 'ACTIVE') {
       await this.limits.hit(ipKey, WINDOW_MS, now);
-      const failures = await this.limits.hit(acctKey, WINDOW_MS, now);
+      const failures = await this.limits.hit(originKey, WINDOW_MS, now);
       if (failures >= ACCOUNT_LIMIT && !locked) {
-        await this.limits.lock(acctKey, new Date(now.getTime() + LOCK_MS));
+        await this.limits.lock(originKey, new Date(now.getTime() + LOCK_MS));
         await this.audit.record('auth.lockout', { subjectUserId: user?.id, ip: meta.ip });
       }
       await this.audit.record('auth.login.failure', { subjectUserId: user?.id, ip: meta.ip, meta: { reason: locked ? 'locked' : 'invalid' } });
       throw new UnauthorizedException(GENERIC_LOGIN_ERROR);
     }
 
-    await this.limits.clear(acctKey);
+    await this.limits.clear(originKey);
     if (needsRehash(identity.passwordHash)) {
       await this.prisma.authIdentity.update({ where: { id: identity.id }, data: { passwordHash: await hashPassword(password) } });
     }
