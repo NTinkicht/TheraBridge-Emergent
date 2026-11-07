@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {EXTRA_IDENTITIES,DENIED_PAIRS,validateExtraUsers,inspectTherapistContext,
- inspectAssignedChildren,safeResponseCode,denied,safeResult,totals} from './hosted-extra-contracts.mjs';
+ inspectAssignedChildren,inspectClinicalScope,safeResponseCode,denied,safeResult,totals} from './hosted-extra-contracts.mjs';
 const creds=()=>Object.fromEntries(Object.entries(EXTRA_IDENTITIES).map(([key,p],i)=>
  [key,{email:p.email,password:'ci_only_fixture'+'x'.repeat(28)+i}]));
 const json=()=>JSON.stringify(creds());
@@ -38,7 +38,16 @@ test('child scope requires exact assigned list and matching therapist specialty'
     team:[{service:p.specialty}]}));
   assert.equal(inspectAssignedChildren({items},key),true);
   assert.equal(inspectAssignedChildren({items:[...items,{...items[0],firstName:'Extra'}]},key),false);
-  assert.equal(inspectAssignedChildren({items:items.map(x=>({...x,team:[{service:'other'}]}))},key),false);
+  // Team is the entire child's team, not the actor. Do not infer the actor's
+  // permitted specialty from a different clinician's team membership.
+  assert.equal(inspectAssignedChildren({items:items.map(x=>({...x,team:[{service:'other'}]}))},key),true);
+  const childId=items[0].id;
+  assert.equal(inspectClinicalScope({synthetic:true,locked:true,child:{id:childId,services:[p.specialty]}},key,childId),true);
+  const other=p.specialty==='speech'?'behavioral':'speech';
+  assert.equal(inspectClinicalScope({synthetic:true,locked:true,child:{id:childId,services:[other]}},key,childId),false);
+  assert.equal(inspectClinicalScope({synthetic:true,locked:true,child:{id:childId,services:[p.specialty,other]}},key,childId),false);
+  assert.equal(inspectClinicalScope({synthetic:true,locked:true,child:{id:'another-child',services:[p.specialty]}},key,childId),false);
+  assert.equal(inspectClinicalScope({synthetic:true,locked:false,child:{id:childId,services:[p.specialty]}},key,childId),false);
  }
  assert.equal(DENIED_PAIRS.ot2,'Amina Ahmed');
 });
