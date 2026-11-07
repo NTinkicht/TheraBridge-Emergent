@@ -1,3 +1,9 @@
+# Work log — 2026-11-07 — M4-02 planning checkpoint
+
+M4-01 PR #265 merged after six exact-head CI jobs and Codex no-major-issues review. All Grok/Claude/Codex findings dispositioned; #266 tracks private spec/1,023-step source verification. New M4-02 branch opened from merged main; added ten-account synthetic hosted QA plan. No hosted test run, credential change or clinical authorization performed on this branch. Next: implement scoped private browser assertions and run protected QA with live verified SHA.
+
+---
+
 > **M4-01 review corrections — 2026-11-07:** Assessed both independent reviews. FIX_NOW: Claude P1 feature 39 school integration → V2-DEFERRED (aligned WF-X6); P1 15 owner requirements + 13 workflows formerly routed to M4-01 → explicit implementation owners; P2 cross-register mismatches → owner-based routing, not phase-bucket owners; code-quality items → machine-readable states, strict validator, BOM support, negative-path tests and CI gate. DEFER_ISSUE: code-level reconciliation of private specs, 1,023 workflow steps and 75 historic issue dispositions remains open [#266](https://github.com/NTinkicht/TheraBridge-Emergent/issues/266) / [#175](https://github.com/NTinkicht/TheraBridge-Emergent/issues/175); no clinical activation.
 
 # M4-01 work log — 2026-11-07
