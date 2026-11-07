@@ -1,3 +1,13 @@
+# Active next work — 2026-11-07 — M4-01 / PR #265
+
+1. Qualify the **final exact PR #265 HEAD** through six jobs: test, secret-scan, live-session, preview-container, demo-journey and compose. Do not transfer old-head CI to new commits. Execute `node scripts/qa/check-roadmap-registers.mjs` explicitly and record real result; currently **NOT RUN**.
+2. Obtain fresh independent Codex review after Rule 7 evidence updates, address new reviewer findings and resolve all threads. Prior Codex P1 on outdated handover/QA files is being corrected, not dismissed.
+3. Preserve owner-closed Milestones 1–3 and current safety/clinical NO-GO. Do not merge without the existing Rule 16 criteria.
+4. Continue #175 **after this inventory PR**: for every 66/91/55 row attach merged-code/CI/hosted acceptance and signed-policy evidence; reconcile 75 historical issues and remaining 1023 source steps. Treat default `PENDING_VERIFICATION` as unknown, not missing.
+5. Once M4-01 acceptance is truly complete, proceed with M4-02 ten-account hosted QA followed by M4-03 seed/credential P2 remediation and other M4 units.
+
+---
+
 # M3-AI06 implementation checkpoint — 2026-11-02
 
 M3-AI06 PR #159 synthetic safety implementation in progress: qualify six exact-head CI jobs and final independent code review, fix reviewer findings, merge under Rule 16. This is the last ordered Milestone 3 item; no next M3 PR. Keep clinical real-data/activation gates disabled.
