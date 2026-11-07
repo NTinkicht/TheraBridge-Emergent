@@ -1,3 +1,5 @@
+**M4-04 verification update:** New PostgreSQL test committed: dual-specialty therapist sees authorized speech and OT assessments, then OT assignment ended; same existing session should see only speech with OT content absent even on paginated read. **NOT YET EXECUTED/VERIFIED on current HEAD** at checkpoint; six required CI checks and independent code review pending. No clinical release authorization.
+
 # M4-04 QA planning checkpoint — 2026-11-08
 
 **NOT RUN / NOT IMPLEMENTED.** The initial PR #271 changes only the clinical authorization execution plan plus this documented checkpoint. No tests of tenant isolation or specialty revocation have been executed on this branch; no code-level evidence. Independent review P1 handover omission is being corrected. Final exact-head six CI checks and new independent code review are required after actual implementation. All unsigned clinical gates remain NO-GO.
