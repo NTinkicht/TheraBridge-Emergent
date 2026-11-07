@@ -1,3 +1,9 @@
+# M4-04 next work — 2026-11-08
+
+Implement M4-04 clinical authorization tests and strictly scoped improvements on PR #271. Test assigned vs unassigned clinician, center/child scope, cross-specialty access, role revocation, and CAS race. Coordinate shared guard contracts with M4-05, and add Rule 7 implementation evidence when code changes. Six-job exact-head CI and fresh code review mandatory; design review is not a sign-off. Preserve NO-GO for signing, family releases, real AI/STT and real patient data.
+
+---
+
 **Current reviewer gate for M4-02 PR #267 (2026-11-07):** Verify six-job final-HEAD CI after both Codex P2 fixes, including cookie replay and actor-specific specialty regression. Reply to both Codex inline comments with code/test pointers, resolve only after code changes verified and request fresh independent exact-HEAD review. Do not merge on earlier head `0ad1d96285` approval. Protected manual ten-account QA still NOT RUN; #268 governs second-valid-tenant, revocation/expiry and SHA attestation. Keep all clinical gates fail closed.
 
 ---
