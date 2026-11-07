@@ -1,3 +1,7 @@
+**M4-03 next gate (2026-11-07):** Confirm full six-job CI green at PR #270's final exact SHA, including generator, real Postgres seven-to-ten, concurrency/rollback, malformed credential safety and demo journey. Reply/resolve Codex P2 threads only after corrections verified, request a fresh exact-head Codex review, address any new findings, and do not merge against earlier reviewed SHAs. Continue M4-04…M4-09 from their scoped draft PRs #271–#276 after individual implementation; M4-08 CI changes must rebase after #270. No protected hosted account or live clinical acceptance implied.
+
+---
+
 # Active next actions — M4-03 PR #270 — 2026-11-07
 
 1. Mark #270 **ready for review** and request Codex on the implementation exact-head SHA (not just the original planning draft).
