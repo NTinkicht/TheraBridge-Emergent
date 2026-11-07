@@ -1,3 +1,9 @@
+# M4-06 DB audit progress — 2026-11-08
+
+Inspected merged migrations and confirmed original M2-H04 already implemented `audit_event_no_mutation`, plan-version center/author FKs and composite scoped indexes. Avoided duplicate migrations. Added `apps/api/test/m4-db-integrity.e2e-spec.ts` with real-Postgres positive append and negative update/delete, FK validation and index existence checks. Existing M1–M3 code preserved. Final-head CI/review still required; broader M4-06 work not completed.
+
+---
+
 **M4-02 Codex P2 remediation — 2026-11-07:** FIX_NOW review #4502930203: capture correct secure `__Host-tb_session` before logout and replay it with an isolated Playwright browser request context, fail closed if missing, validate server rejects old cookie 401; both seven- and three-account scripts changed. FIX_NOW review #4502930209: inspect actor-filtered clinical workspace `child.services` for every assigned child (exact one expected specialty) rather than full multi-clinician child-list team; add wrong-actor-specialty regression. Added `hosted-session-guards.mjs` tests in required CI and protected workflow. Recognized `locked` is a text string in ClinicalService rather than boolean and corrected contract/test. No deferral of these two P2 issues. #268 remains explicit other-scope deferral. Final CI/re-review not yet qualified.
 
 ---
