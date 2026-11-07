@@ -1,9 +1,29 @@
-# M4-05 security next actions — 2026-11-08
+**M4-05 partial security implementation — 2026-11-08:** PR #272 / issue #179 now adds origin-based password-reset throttling with generic responses, an API abuse regression, and previously added expiry/no-cache tests. Exact-head CI and independent review are NOT VERIFIED. Recovery UI, unsigned MFA, dirty-form and edit-conflict UX remain OPEN; clinical NO-GO remains in force.
 
-1. Verify new expired-token API security test and all six exact-head CI jobs on PR #272; fix any failing tests.
-2. Obtain fresh independent implementation review; do not infer code acceptance from initial planning reviews.
-3. Continue password reset enumeration/lockout and proxy trust audit. Reconcile existing MFA policy and frontend unsaved-change/edit-conflict UX with M5; create exact-scope issues for policy-dependent work if not executable now.
-4. Rebase onto M4-03 merged main and reconcile shared Rule 7 document changes before any merge. Preserve private account credentials and clinical NO-GO**M4-03 next gate (2026-11-07):** Confirm full six-job CI green at PR #270's final exact SHA, including generator, real Postgres seven-to-ten, concurrency/rollback, malformed credential safety and demo journey. Reply/resolve Codex P2 threads only after corrections verified, request a fresh exact-head Codex review, address any new findings, and do not merge against earlier reviewed SHAs. Continue M4-04…M4-09 from their scoped draft PRs #271–#276 after individual implementation; M4-08 CI changes must rebase after #270. No protected hosted account or live clinical acceptance implied.
+---
+
+**M4-09 historical issue evidence integration — 2026-11-08:** PR #276 tracks 75 frozen historical issues with zero unverified closures, exact snapshot/URL checks and fail-closed evidence requirements. The required CI test job executes its validator and negative regressions alongside merged M4-08 inventory tests. Post-reconciliation six-job CI and final exact-head reviewer acceptance are PENDING; full #266 evidence triage and clinical NO-GO remain unchanged.
+
+---
+
+**M4-07 implementation reconciliation — 2026-11-08:** PR #274 preserves the linear appointment/recipient lookup and explicit date-window/duplicate regressions. This merge checkpoint incorporates #273 database integrity and #275 QA inventory without dropping their source, CI or Rule-7 handover changes. Latest exact-head CI and independent review require requalification after this merge commit. Existing synthetic-only, clinical and real-delivery NO-GO gates remain intact.
+
+---
+
+# M4-08 next actions — 2026-11-08
+
+1. Qualify the QA inventory verifier and YAML fixture with six exact-head CI jobs and independent review.
+2. After M4-09 merges, integrate historical snapshot verifier/tests into CI without duplicating or losing M4-03 credential tests.
+3. Measure real application-wide API/web coverage and define justified exclusions; never interpret suite counts as coverage percentage.
+
+---
+
+# M4-06 next actions — 2026-11-08
+
+1. Run all six final-head CI jobs for new PostgreSQL integrity regression; investigate any changed migration schema/constraints.
+2. Obtain fresh independent implementation review; do not count planning reviews as approval.
+3. Review database transaction locks, historical migration chains, Neon pool behavior, CAS concurrency and performance benchmarks; add reproducible tests and fixes where proven.
+4. Rebase this older branch against merged M4-03 before merge and reconcile all Rule 7 files, preserving current audit policies and no clinical activation**M4-03 next gate (2026-11-07):** Confirm full six-job CI green at PR #270's final exact SHA, including generator, real Postgres seven-to-ten, concurrency/rollback, malformed credential safety and demo journey. Reply/resolve Codex P2 threads only after corrections verified, request a fresh exact-head Codex review, address any new findings, and do not merge against earlier reviewed SHAs. Continue M4-04…M4-09 from their scoped draft PRs #271–#276 after individual implementation; M4-08 CI changes must rebase after #270. No protected hosted account or live clinical acceptance implied.
 
 ---
 

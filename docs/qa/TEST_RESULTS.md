@@ -1,6 +1,24 @@
-# M4-05 QA checkpoint — 2026-11-08
+**M4-05 partial security implementation — 2026-11-08:** PR #272 / issue #179 now adds origin-based password-reset throttling with generic responses, an API abuse regression, and previously added expiry/no-cache tests. Exact-head CI and independent review are NOT VERIFIED. Recovery UI, unsigned MFA, dirty-form and edit-conflict UX remain OPEN; clinical NO-GO remains in force.
 
-**Test code committed, results NOT YET VERIFIED.** New PostgreSQL regression verifies actual expired session cookie yields 401 on auth session and protected centre read, no-store/no-cache headers, no leakage of user email; independent active session remains valid. CI on current head pending. WF-S4 policy-dependent MFA and WF-S6 frontend dirty-form/CAS UX are not qualified and must not be counted as PASS. No clinical activation**M4-03 reviewer regression update — 2026-11-07:** Code+tests committed: original/extra protected JSON parse errors sanitized; local exclusive seed file lock prevents concurrent consumption/cleanup; overlap regression in `seed-transactions.e2e-spec.ts`; malformed original/sidecar regression in `demo-seed-config.e2e-spec.ts`. First CI on an earlier head failed demo journey because runner provided only 7 secrets; corrected to 7+3. Later earlier-head gitleaks flagged a synthetic JS expression in malformed fixture; exact historical expression exception added and TOML restored. **Latest exact-head CI and new independent review pending**, not claimed PASS. Protected ten-role live hosted HA-01…HA-10 still NOT RUN; real clinical data/signing/release/AI remains NO-GO.
+---
+
+**M4-09 historical issue evidence integration — 2026-11-08:** PR #276 tracks 75 frozen historical issues with zero unverified closures, exact snapshot/URL checks and fail-closed evidence requirements. The required CI test job executes its validator and negative regressions alongside merged M4-08 inventory tests. Post-reconciliation six-job CI and final exact-head reviewer acceptance are PENDING; full #266 evidence triage and clinical NO-GO remain unchanged.
+
+---
+
+**M4-07 implementation reconciliation — 2026-11-08:** PR #274 preserves the linear appointment/recipient lookup and explicit date-window/duplicate regressions. This merge checkpoint incorporates #273 database integrity and #275 QA inventory without dropping their source, CI or Rule-7 handover changes. Latest exact-head CI and independent review require requalification after this merge commit. Existing synthetic-only, clinical and real-delivery NO-GO gates remain intact.
+
+---
+
+# M4-08 QA checkpoint — 2026-11-08
+
+CI verifier and negative tests COMMITTED; full exact-head CI is not yet verified. Inventory records existing API and web test-suite counts only, not line/function/branch coverage. Existing core fingerprint threshold remains 95 statements/functions/lines, 90 branches; measured app-wide baseline is UNKNOWN. No clinical activation or protected hosted acceptance qualified.
+
+---
+
+# M4-06 QA checkpoint — 2026-11-08
+
+New real-Postgres audit/foreign-key/index regression tests **COMMITTED, NOT YET VERIFIED** on exact-head CI. Existing M2 migration already enforces append-only audit rows, validated clinical FKs and tenant hot-path indexes; no redundant SQL migration. Pending six CI jobs, independent review and database concurrency/Neon validation. Do not treat this test alone as complete M4-06 or signed clinical approval**M4-03 reviewer regression update — 2026-11-07:** Code+tests committed: original/extra protected JSON parse errors sanitized; local exclusive seed file lock prevents concurrent consumption/cleanup; overlap regression in `seed-transactions.e2e-spec.ts`; malformed original/sidecar regression in `demo-seed-config.e2e-spec.ts`. First CI on an earlier head failed demo journey because runner provided only 7 secrets; corrected to 7+3. Later earlier-head gitleaks flagged a synthetic JS expression in malformed fixture; exact historical expression exception added and TOML restored. **Latest exact-head CI and new independent review pending**, not claimed PASS. Protected ten-role live hosted HA-01…HA-10 still NOT RUN; real clinical data/signing/release/AI remains NO-GO.
 
 ---
 

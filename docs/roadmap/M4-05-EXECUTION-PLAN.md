@@ -1,6 +1,6 @@
 # M4-05 — HTTP, account and session security hardening
 
-**State:** DRAFT EXECUTION PLAN / NOT IMPLEMENTED / NOT REVIEW-QUALIFIED. **Roadmap issue:** [#179](https://github.com/NTinkicht/TheraBridge-Emergent/issues/179). **Baseline:** main after M4-02 merge `8174a87ed27e2424500f64256742ab134f15fa3d`.
+**State:** PARTIALLY IMPLEMENTED / FULL WORK UNIT NOT REVIEW-QUALIFIED. **Roadmap issue:** [#179](https://github.com/NTinkicht/TheraBridge-Emergent/issues/179). **Baseline:** main after M4-02 merge `8174a87ed27e2424500f64256742ab134f15fa3d`.
 
 ## Parallel ownership boundary
 
@@ -47,4 +47,4 @@ apps/api/src/auth/**, apps/api/src/common HTTP middleware, proxy/cookie/error po
 
 ## Execution status
 
-Planning document only, no runtime implementation or validation claimed. This branch is available for an independent developer. Its PR must remain draft until work and tests are complete.
+Partial code: origin-limited recovery in `apps/api/src/auth/auth.service.ts`, recovery abuse and session expiry regressions in `apps/api/test/auth.e2e-spec.ts`. Final six-job CI and implementation review NOT VERIFIED. Other MFA, recovery UI, dirty-form, conflict UX and HTTP policy checks remain OPEN; do not merge as a completed work unit.
