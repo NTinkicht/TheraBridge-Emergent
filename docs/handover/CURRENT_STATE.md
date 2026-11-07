@@ -1,3 +1,9 @@
+# M4-05 parallel security implementation checkpoint — 2026-11-08
+
+**Issue:** #179 / PR #272. Codex P2 workflow-ownership concern fixed: WF-S4 password recovery, MFA/lockout and WF-S6 session expiry, unsaved drafts and edit conflicts now explicitly routed with separate acceptance and policy decisions. **Implemented test:** real-DB expiry of the original authenticated session cookie must yield 401 on session and centre API, with no-store/no-cache headers; a separate live session remains usable. No changes to clinical policy, real data, cookies or runtime code yet. **CI and final implementation review NOT YET VERIFIED.** M4-03 #270 has merged; rebase and reconcile shared handovers before merge. MFA decision remains OPEN and clinical NO-GO unchanged.
+
+---
+
 **Review correction (2026-11-07, M4-02 PR #267):** Codex identified two actionable P2 findings on reviewed HEAD `0ad1d96285`: (1) stale-session test used a cleared cookie, (2) child-list team membership could mask the actor's wrong specialty. Both fixed on PR branch; pre-logout cookie now replayed privately with isolated context, and exact actor-filtered `ClinicalService.workspace.child.services` is validated across *every* assigned child. Added regression tests and workflow CI gate. **Latest exact-head CI and second Codex review remain pending.** Protected real ten-account run NOT RUN; controlled two-valid-tenant/revocation cases #268 remain release blocked. No clinical activation.
 
 ---
