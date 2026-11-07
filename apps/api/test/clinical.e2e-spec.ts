@@ -739,6 +739,41 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     expect(types).toEqual(expect.arrayContaining(['clinical.assessment_drafted', 'clinical.plan_submitted', 'clinical.plan_returned', 'clinical.plan_version_started', 'clinical.session_saved', 'clinical.observation_recorded']));
   });
 
+  it('M4-04: therapist clinical workspace immediately drops revoked specialty evidence while preserving active specialty', async () => {
+    const therapist = await staff('dual@clin.test', ['THERAPIST'], ['speech', 'occupational']);
+    const kid = (await post(h, c('children'), admin, {
+      firstName: 'Synthetic', lastName: 'Revocation', dateOfBirth: '2019-04-02',
+      services: ['speech', 'occupational'],
+    }).expect(201)).body.id;
+    const membershipId = therapist.body.activeContext.membershipId;
+    for (const service of ['speech', 'occupational']) {
+      await post(h, c(`children/${kid}/assignments`), admin,
+        { membershipId, service, isLead: service === 'speech' }).expect(201);
+    }
+    await post(h, c(`clinical/children/${kid}/assessments`), therapist,
+      { service: 'speech', assessedOn: '2026-10-19', summary: 'Speech only private evidence', areas: [] }).expect(201);
+    await post(h, c(`clinical/children/${kid}/assessments`), therapist,
+      { service: 'occupational', assessedOn: '2026-10-19', summary: 'OT only private evidence', areas: [] }).expect(201);
+    const before = (await get(therapist, c(`clinical/children/${kid}`)).expect(200)).body;
+    expect(before.child.services).toEqual(expect.arrayContaining(['speech', 'occupational']));
+    expect(before.assessments.map((a: { service: string }) => a.service).sort())
+      .toEqual(['occupational', 'speech']);
+
+    // Revoke one specialist assignment without terminating the login session.
+    await h.prisma.careAssignment.updateMany({
+      where: { centerId, childId: kid, membershipId, service: 'occupational', endedAt: null },
+      data: { endedAt: h.clock.now() },
+    });
+    const after = (await get(therapist, c(`clinical/children/${kid}`)).expect(200)).body;
+    expect(after.child.services).toEqual(['speech']);
+    expect(after.assessments.map((a: { service: string }) => a.service)).toEqual(['speech']);
+    expect(JSON.stringify(after)).not.toContain('OT only private evidence');
+    expect(JSON.stringify(after)).toContain('Speech only private evidence');
+    // A stale session cannot restore the revoked specialty by querying pages.
+    const offset = (await get(therapist, c(`clinical/children/${kid}?assessmentOffset=1`)).expect(200)).body;
+    expect(JSON.stringify(offset)).not.toContain('OT only private evidence');
+  });
+
   it('denies assessment edits after specialty revocation', async () => {
     const therapist = await staff('dual@clin.test', ['THERAPIST'], ['speech', 'occupational']);
     const kid = (await post(h, c('children'), admin, { firstName: 'Test', lastName: 'Child', dateOfBirth: '2019-04-02', services: ['speech', 'occupational'] }).expect(201)).body.id;
