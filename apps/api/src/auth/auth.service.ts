@@ -46,7 +46,7 @@ export class AuthService {
     // A targeted attacker must not be able to globally lock another user out:
     // enforce the account lockout per origin while the separate IP spray
     // limiter still covers attempts across different account names.
-    const originKey = `acct-origin:${hmac(this.cfg.secret, `${normalizeEmail(email)}:${meta.ip}`)}`;
+    const originKey = `${this.accountKey(email)}:origin:${hmac(this.cfg.secret, meta.ip)}`;
     const user = await this.prisma.user.findUnique({
       where: { emailNormalized: normalizeEmail(email) },
       include: { identities: { where: { provider: 'local' } } },
@@ -143,6 +143,9 @@ export class AuthService {
     await this.setPassword(row.userId, password);
     await this.sessions.revokeAllForUser(row.userId, 'password_reset');
     await this.limits.clear(this.accountKey(row.user.email));
+    // A verified reset must restore access even from the originally locked
+    // origin, without needing to know or persist any source IP addresses.
+    await this.limits.clearPrefix(`${this.accountKey(row.user.email)}:origin:`);
     await this.audit.record('auth.password.reset_completed', { subjectUserId: row.userId, ip: meta.ip });
   }
 
