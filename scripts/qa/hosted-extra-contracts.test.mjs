@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {EXTRA_IDENTITIES,DENIED_PAIRS,validateExtraUsers,inspectTherapistContext,
  inspectAssignedChildren,safeResponseCode,denied,safeResult,totals} from './hosted-extra-contracts.mjs';
 const creds=()=>Object.fromEntries(Object.entries(EXTRA_IDENTITIES).map(([key,p],i)=>
- [key,{email:p.email,password:'offline_only_fixture_'+'x'.repeat(28)+i}]));
+ [key,{email:p.email,password:'ci_only_fixture'+'x'.repeat(28)+i}]));
 const json=()=>JSON.stringify(creds());
 test('accept exact three private identities without serializing passwords',()=>{
  const users=validateExtraUsers(json());
