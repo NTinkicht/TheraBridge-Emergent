@@ -2,7 +2,18 @@
 
 # M4-04 parallel planning record — 2026-11-08
 
-PR #271 initially introduced clinical authorization execution plan, not runtime code. Independent Codex review identified P1 omission of Rule 7 handover/QA checkpoint; this commit fixes four required records. Implementation/test evidence absent at this checkpoint. Role- and tenant-bound denial, specialty revocation, mutation CAS and row-scoped filtering remain the scheduled implementation objectives. M4-03 continues independently, and clinical policy gates remain fail-closed.
+PR #271 initially introduced clinical authorization execution plan, not runtime code. Independent Codex review identified P1 omission of Rule 7 handover/QA checkpoint; this commit fixes four required records. Implementation/test evidence absent at this checkpoint. Role- and tenant-bound denial, specialty revocation, mutation CAS and row-scoped filtering remain the scheduled implementation objectives. M4-03 continues independently, and clinical policy gates remain fail-closed**M4-03 Codex/P2 findings (2026-11-07):** Review #4503124363 FIX_NOW — local `.seed.lock` covers credential-file read, sidecar creation, DB transaction and verified cleanup to prevent concurrent orphaned extra hashes; overlap regression added. Review #4503124366 FIX_NOW — sanitize malformed protected original/extra JSON errors; negative tests verify no fragment reaches message or log. Earlier demo-journey runner configured 7 secrets only, updated to 7+3 independent generated secrets. Existing scanner caught synthetic malformed-JSON JavaScript expression; maintained full history gitleaks and added one exact historical expression exception, restored valid TOML after JS replacement issue. No review findings deferred. Fresh exact-head CI and independent review still required.
+
+---
+
+# M4-03 work log — 2026-11-07
+
+- Opened draft PR #270 on merged M4-02 main; reviewed PR #166 two P2 issues and current seed/credential code.
+- Changed local secret generator to generate missing seven- and three-account files independently without overwriting files; exclusive 0600 files and no printed secrets.
+- Changed `seed-demo.ts` so local legacy seven-account DB can safely upgrade with a separate protected extra-three credentials file; no silent random unexported hashes, no mutation when only operator-managed seven secrets supplied, existing hash verification and confirmed rollback/unknown commit cleanup.
+- Added unit/CLI tests and real Postgres upgrade/failure-injection cases; CI generator test step added. Await exact-head CI and independent code review; no claim of test PASS yet.
+- Opened isolated **draft** branches/PRs #271–#276 for M4-04…M4-09; ownership boundaries recorded. M4-09 historical-issue closure remains gated by source evidence #175/#266. M4-08 shared CI integration must rebase after #270. No other new unit has been implemented.
+- Preserved seven existing passwords, three extra identity source, all clinical NO-GO, no real data and protected hosted QA settings.
 
 ---
 

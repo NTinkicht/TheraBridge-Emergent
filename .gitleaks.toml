@@ -26,6 +26,8 @@ regexes = [
   '''^PRIVATE_CSRF$''',
   # M4-02 old Git commit contains this deterministic local test-only literal.
   '''^offline_only_fixture_$''',
+  # M4-03 historic JavaScript expression capture from a synthetic malformed-JSON test only.
+  '''^\+injectedFragment\+$''',
 ]
 
 [[rules]]

@@ -2,7 +2,27 @@
 
 # M4-04 QA planning checkpoint — 2026-11-08
 
-**NOT RUN / NOT IMPLEMENTED.** The initial PR #271 changes only the clinical authorization execution plan plus this documented checkpoint. No tests of tenant isolation or specialty revocation have been executed on this branch; no code-level evidence. Independent review P1 handover omission is being corrected. Final exact-head six CI checks and new independent code review are required after actual implementation. All unsigned clinical gates remain NO-GO.
+**NOT RUN / NOT IMPLEMENTED.** The initial PR #271 changes only the clinical authorization execution plan plus this documented checkpoint. No tests of tenant isolation or specialty revocation have been executed on this branch; no code-level evidence. Independent review P1 handover omission is being corrected. Final exact-head six CI checks and new independent code review are required after actual implementation. All unsigned clinical gates remain NO-GO**M4-03 reviewer regression update — 2026-11-07:** Code+tests committed: original/extra protected JSON parse errors sanitized; local exclusive seed file lock prevents concurrent consumption/cleanup; overlap regression in `seed-transactions.e2e-spec.ts`; malformed original/sidecar regression in `demo-seed-config.e2e-spec.ts`. First CI on an earlier head failed demo journey because runner provided only 7 secrets; corrected to 7+3. Later earlier-head gitleaks flagged a synthetic JS expression in malformed fixture; exact historical expression exception added and TOML restored. **Latest exact-head CI and new independent review pending**, not claimed PASS. Protected ten-role live hosted HA-01…HA-10 still NOT RUN; real clinical data/signing/release/AI remains NO-GO.
+
+---
+
+# M4-03 QA checkpoint — 2026-11-07 — PR #270
+
+**Source implementation and tests committed; latest exact-head CI / independent review PENDING at writing.** This paragraph is not an assertion of successful hosted account authentication or clinical authorization.
+
+| Scenario | Current evidence state |
+|---|---|
+| Independent 7/3 local credential files, restart and permission modes | Test committed; CI result PENDING |
+| Fresh ten-account protected local seed | Existing integration test + added idempotent coverage; final-head CI PENDING |
+| Actual legacy seven→ten upgrade without rotating seven hashes | New PostgreSQL integration test committed; final-head CI PENDING |
+| Three additional recoverable passwords, no unexported identities | New local sidecar logic and tests committed; final-head CI PENDING |
+| DB rollback/file cleanup and ambiguous COMMIT retention | Existing + new fault injection and real DB checks; final-head CI PENDING |
+| Operator seven-only secret fail-closed | Regression committed; final-head CI PENDING |
+| Private hosted ten-account HA-01…HA-10 | NOT RUN; #268 |
+| Historical source evidence and Mistral QA hardening | OPEN #266/#269 |
+| Real patient data, signing/release, external AI/STT | NO-GO |
+
+No passwords, cookies or patient data were introduced into the PR or QA artifacts.
 
 ---
 
