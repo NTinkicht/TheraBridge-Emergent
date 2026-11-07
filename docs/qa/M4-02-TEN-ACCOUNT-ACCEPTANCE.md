@@ -1,6 +1,6 @@
 # M4-02 — Ten-account hosted synthetic authentication and role-isolation acceptance
 
-**Status:** PLANNING ONLY / NOT IMPLEMENTED / NOT TESTED on this draft branch.
+**Status:** IMPLEMENTED ON PR BRANCH / AUTOMATED CI VALIDATION PENDING / PROTECTED HOSTED RUN NOT YET EXECUTED.
 **Roadmap:** [#176](https://github.com/NTinkicht/TheraBridge-Emergent/issues/176), [M4 epic #167](https://github.com/NTinkicht/TheraBridge-Emergent/issues/167).
 **Predecessor:** [M4-01 PR #265](https://github.com/NTinkicht/TheraBridge-Emergent/pull/265) merged at `aa14fb46976a30fd41ec800e1060c3e7f64125f0`.
 **Target:** Render hosted synthetic demo; operator-verified deployed SHA mandatory.
@@ -13,7 +13,7 @@
 - `.github/workflows/hosted-interactive-private.yml`: manual `workflow_dispatch`, requires `deployed_sha` (40-char SHA) and `synthetic_only_authorized=true`, protected `hosted-responsive-private` environment and GitHub secrets `TB_HOSTED_QA_USERS_JSON`, `TB_HOSTED_QA_EXTRA_USERS_JSON`.
 - `docs/qa/TB-EM-HOSTED-INTERACTIVE-20261102.md`, `docs/qa/TB-EM-HOSTED-DEMO-REHEARSAL-20261102.md`: historical evidence, not current acceptance.
 
-## Implementation work (not yet completed)
+## Original acceptance scope (implemented checks and remaining hosted qualification)
 1. **Inspect live code and fixture truth** to map 7 legacy roles + Dalia ABA, Nour OT, Huda Speech into 10 isolated browser contexts; prohibit password logging, screenshots of sensitive content, or cookie/header leaks.
 2. **Expand three-therapist acceptance** beyond login/logout with read-only API and UI permission checks: each account sees exactly its assigned center/child/specialty, no other specialist's clinical workspace; deny missing membership, other child, cross-center access; preserve no-write behavior. Prefer known fixture identifiers discovered from authorized session endpoints over fabricated IDs.
 3. **Seven-role isolation**: platform admin, center admin, coordinator, speech therapist, OT therapist, clinical supervisor, guardian. Verify authorized landing/route matrix; negative role and specialty paths; coordinator/supervisor no clinical escalation; supervisor no family-message read.
@@ -22,7 +22,7 @@
 6. **Negative paths and reliability**: missing/wrong extra identity, invalid key set/credential shape, auth reject, wrong assigned role, failed logout, cookie rejection, hosted outage, stale deployed SHA. Test these locally/CI with fully synthetic stubs.
 7. **Document approval and failures**: capture actual job URL, required protected-environment human approval, screenshot redaction, evidence integrity, risk findings and separate follow-up issues for any accepted nonblocking deferrals.
 
-## Acceptance matrix (NOT RUN)
+## Hosted acceptance matrix (NOT RUN on the live deployment)
 
 | ID | Actor / scope | Acceptance | State |
 |---|---|---|---|
@@ -36,6 +36,19 @@
 | HA-08 | All 10 | Secure session cookie, expiry/logout and stale token denial | NOT RUN |
 | HA-09 | Workflow and QA | Redacted receipts tied to the operator-verified live SHA | NOT RUN |
 | HA-10 | Fail-closed cases | No clinical signing/release, real STT/AI or write side effects | NOT RUN |
+
+## Implemented on PR #267
+
+- `scripts/qa/hosted-extra-contracts.mjs`: validates exact three synthetic identities and password uniqueness/shape, exact one-role therapist membership, expected assigned child sets, sanitized outcome codes.
+- `scripts/qa/hosted-extra-therapists.mjs`: private Playwright login → session/context → secure cookie → assigned-child GET → authorized clinical GET → real seeded unassigned-child denial → wrong-centre deny-by-default → logout and stale-session 401. Child IDs derived only from the published **synthetic** seed function and never emitted. Checks are **read-only** except login/context/logout.
+- `scripts/qa/hosted-role-guards.mjs` and `hosted-interactive.mjs`: seven legacy roles now test a known forbidden server route and deny stale sessions after logout; existing authorized UI journey checks preserved.
+- `hosted-extra-contracts.test.mjs`, `hosted-role-guards.test.mjs`, `hosted-private-workflow.test.mjs`, and `hosted-extra-runtime.test.mjs`: isolated malformed-config, failed-login, read boundary, redaction and workflow-regression tests. Included in CI.
+- `hosted-interactive-private.yml`: operator-authorized protected workflow writes only sanitized extra+seven results to a one-day artifact; an extra account failure does not suppress the seven-role run. No passwords, page text or clinical content uploaded.
+- Full history secret scan remains enabled; exact historical deterministic test fixture is narrowly allowlisted after confirming no genuine credential is present.
+
+**Limitations:** This synthetic single-center demo demonstrates denial against an unassigned *existing synthetic child* and an **absent center UUID**. It does **not** prove cross-tenant denial against another valid center. No live assignment revocation, accelerated session expiry, custody mutation or real clinician activation was attempted. Those controlled scenarios are tracked explicitly in [#268](https://github.com/NTinkicht/TheraBridge-Emergent/issues/268). The user-supplied 40-hex Render deployed SHA is currently format-validated but **not independently attested** by the preflight script.
+
+**Reported status policy:** Code-level PASS can be marked only after exact-head CI; HA-01…HA-10 remain **NOT RUN** until the protected manual workflow is executed on the verified live Render build. A manual approval gate must not be bypassed.
 
 ## Technical and review gates
 - [ ] Review existing scripts for *actual* exported imports and API paths before extending; no guess-based test.
