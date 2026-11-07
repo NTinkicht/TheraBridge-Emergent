@@ -1,3 +1,7 @@
+**M4-03 review status correction (2026-11-07):** Codex found two actionable P2 issues on earlier implementation HEAD: overlapping upgrade could consume a sidecar later removed by rollback, and malformed JSON could leak a password fragment in CLI error text. Both were FIX_NOW and are corrected in PR #270 with exclusive local seed lifecycle lock + error sanitization and negative-path regressions. Demo-journey CI initially failed because its runner supplied only seven secrets; runner now supplies independent ten-account secrets. Historical fixture gitleaks false-positive narrowly excluded; final CI and fresh review still pending. Parallel PRs #271–#276 are planning-only and remain independently scoped. No clinical activation.
+
+---
+
 # Active M4 checkpoint — M4-03 credential/seed integrity — 2026-11-07
 
 **PR:** [#270](https://github.com/NTinkicht/TheraBridge-Emergent/pull/270) — runtime implementation committed and being submitted for independent review. **Issue:** [#177](https://github.com/NTinkicht/TheraBridge-Emergent/issues/177). **Predecessor:** M4-02 PR #267 merged at `8174a87ed27e2424500f64256742ab134f15fa3d`. M1–M3 remain owner-closed; no clinical activation.
