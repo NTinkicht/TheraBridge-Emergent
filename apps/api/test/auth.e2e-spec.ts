@@ -432,9 +432,11 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
       const anonymous = await request('not-registered@test.therabridge.test', '198.51.100.42');
       expect(anonymous.status).toBe(202);
       expect(anonymous.body).toEqual(first.body);
-      for (let i = 0; i < 9; i++) {
+      for (let i = 0; i < 14; i++) {
         expect((await request(u.email, '198.51.100.42')).status).toBe(202);
       }
+      // Even many denied requests must produce one threshold-crossing audit
+      // event rather than unbounded append-only audit amplification.
       expect(await h.prisma.auditEvent.count({ where: { type: 'auth.password.reset_rate_limited' } })).toBe(1);
       // Never lock the target account because another origin consumed its own budget.
       expect((await login(h, u.email)).status).toBe(200);
