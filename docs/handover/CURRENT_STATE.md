@@ -1,3 +1,7 @@
+**M4-09 CI wiring update (2026-11-08; PR #276):** The historical issue validator and negative tests are now invoked by the required CI `test` job. Latest exact-head six-job results and fresh reviewer acceptance remain PENDING at this checkpoint; do not claim PASS until recorded. No historical issue is marked verified or closed; clinical NO-GO.
+
+---
+
 # M4-09 historical issue evidence register — 2026-11-08
 
 PR #276 / issue #183: frozen M4-01 list of 75 historic open issues captured with exact IDs/URLs and provisional owner routing; every row remains PENDING_EVIDENCE and no historic issue is closed as verified. Validator enforces snapshot equivalence and nonblank source/test/reviewer or policy evidence. Current-head CI and independent review pending; clinical NO-GO unchanged.

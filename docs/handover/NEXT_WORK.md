@@ -1,3 +1,7 @@
+**M4-09 CI wiring update (2026-11-08; PR #276):** The historical issue validator and negative tests are now invoked by the required CI `test` job. Latest exact-head six-job results and fresh reviewer acceptance remain PENDING at this checkpoint; do not claim PASS until recorded. No historical issue is marked verified or closed; clinical NO-GO.
+
+---
+
 # M4-09 next actions — 2026-11-08
 
 1. Verify new register validator on current PR #276 with exact-head CI plus direct Node negative regressions.
