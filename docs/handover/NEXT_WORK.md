@@ -1,12 +1,16 @@
-**M4-09 CI wiring update (2026-11-08; PR #276):** The historical issue validator and negative tests are now invoked by the required CI `test` job. Latest exact-head six-job results and fresh reviewer acceptance remain PENDING at this checkpoint; do not claim PASS until recorded. No historical issue is marked verified or closed; clinical NO-GO.
+**M4-09 historical issue evidence integration — 2026-11-08:** PR #276 tracks 75 frozen historical issues with zero unverified closures, exact snapshot/URL checks and fail-closed evidence requirements. The required CI test job executes its validator and negative regressions alongside merged M4-08 inventory tests. Post-reconciliation six-job CI and final exact-head reviewer acceptance are PENDING; full #266 evidence triage and clinical NO-GO remain unchanged.
 
 ---
 
-# M4-09 next actions — 2026-11-08
+**M4-07 implementation reconciliation — 2026-11-08:** PR #274 preserves the linear appointment/recipient lookup and explicit date-window/duplicate regressions. This merge checkpoint incorporates #273 database integrity and #275 QA inventory without dropping their source, CI or Rule-7 handover changes. Latest exact-head CI and independent review require requalification after this merge commit. Existing synthetic-only, clinical and real-delivery NO-GO gates remain intact.
 
-1. Verify new register validator on current PR #276 with exact-head CI plus direct Node negative regressions.
-2. Add validator/test to CI under coordinated M4-08 PR #275 after this PR merges.
-3. Assess 75 historical issues individually against merged source/tests and approvals; do not blindly close or classify historic issues.
+---
+
+# M4-08 next actions — 2026-11-08
+
+1. Qualify the QA inventory verifier and YAML fixture with six exact-head CI jobs and independent review.
+2. After M4-09 merges, integrate historical snapshot verifier/tests into CI without duplicating or losing M4-03 credential tests.
+3. Measure real application-wide API/web coverage and define justified exclusions; never interpret suite counts as coverage percentage.
 
 ---
 

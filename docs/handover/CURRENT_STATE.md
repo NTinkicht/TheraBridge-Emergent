@@ -1,10 +1,14 @@
-**M4-09 CI wiring update (2026-11-08; PR #276):** The historical issue validator and negative tests are now invoked by the required CI `test` job. Latest exact-head six-job results and fresh reviewer acceptance remain PENDING at this checkpoint; do not claim PASS until recorded. No historical issue is marked verified or closed; clinical NO-GO.
+**M4-09 historical issue evidence integration — 2026-11-08:** PR #276 tracks 75 frozen historical issues with zero unverified closures, exact snapshot/URL checks and fail-closed evidence requirements. The required CI test job executes its validator and negative regressions alongside merged M4-08 inventory tests. Post-reconciliation six-job CI and final exact-head reviewer acceptance are PENDING; full #266 evidence triage and clinical NO-GO remain unchanged.
 
 ---
 
-# M4-09 historical issue evidence register — 2026-11-08
+**M4-07 implementation reconciliation — 2026-11-08:** PR #274 preserves the linear appointment/recipient lookup and explicit date-window/duplicate regressions. This merge checkpoint incorporates #273 database integrity and #275 QA inventory without dropping their source, CI or Rule-7 handover changes. Latest exact-head CI and independent review require requalification after this merge commit. Existing synthetic-only, clinical and real-delivery NO-GO gates remain intact.
 
-PR #276 / issue #183: frozen M4-01 list of 75 historic open issues captured with exact IDs/URLs and provisional owner routing; every row remains PENDING_EVIDENCE and no historic issue is closed as verified. Validator enforces snapshot equivalence and nonblank source/test/reviewer or policy evidence. Current-head CI and independent review pending; clinical NO-GO unchanged.
+---
+
+# M4-08 QA suite coverage inventory — 2026-11-08
+
+PR #275 / issue #182: checked-in API/web test suite inventory and six required CI job presence verifier, plus negative regressions. Measured 95/90/95/95 coverage gate applies ONLY to `apps/api/src/common/fingerprints.ts`; general 95% application coverage remains UNKNOWN, not claimed. CI now invokes the inventory verifier. Exact-head CI and review pending after base reconciliation; clinical NO-GO unchanged.
 
 ---
 

@@ -1,10 +1,14 @@
-**M4-09 CI wiring update (2026-11-08; PR #276):** The historical issue validator and negative tests are now invoked by the required CI `test` job. Latest exact-head six-job results and fresh reviewer acceptance remain PENDING at this checkpoint; do not claim PASS until recorded. No historical issue is marked verified or closed; clinical NO-GO.
+**M4-09 historical issue evidence integration — 2026-11-08:** PR #276 tracks 75 frozen historical issues with zero unverified closures, exact snapshot/URL checks and fail-closed evidence requirements. The required CI test job executes its validator and negative regressions alongside merged M4-08 inventory tests. Post-reconciliation six-job CI and final exact-head reviewer acceptance are PENDING; full #266 evidence triage and clinical NO-GO remain unchanged.
 
 ---
 
-# M4-09 historical audit work log — 2026-11-08
+**M4-07 implementation reconciliation — 2026-11-08:** PR #274 preserves the linear appointment/recipient lookup and explicit date-window/duplicate regressions. This merge checkpoint incorporates #273 database integrity and #275 QA inventory without dropping their source, CI or Rule-7 handover changes. Latest exact-head CI and independent review require requalification after this merge commit. Existing synthetic-only, clinical and real-delivery NO-GO gates remain intact.
 
-Imported original 75 frozen historic issues into a machine-validated CSV, kept PENDING_EVIDENCE and nonauthoritative owner routing. Fixed regex backslash parsing defect in snapshot extraction; negative tests cover unknown IDs, duplicates, whitespace evidence, invalid policy state and ungrounded verification. Current-head CI and reviewer acceptance remain pending; full audit continues under #266.
+---
+
+# M4-08 QA work log — 2026-11-08
+
+Ported structural test-suite inventory and exact six-job mapping validator onto main, preserving earlier demo credential generator job. Corrected JS regex escaping in coverage/CI job checks and newline fixture. Enforces separate fingerprint-only 95/90/95/95 check, but refuses to claim global coverage. New exact-head CI and review pending.
 
 ---
 
