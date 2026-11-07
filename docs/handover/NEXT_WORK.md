@@ -1,3 +1,12 @@
+# Active next work — 2026-11-07 — M4-02 (issue #176)
+
+1. Open draft PR from `chatgpt/m4-02-ten-account-hosted-acceptance` to `main`, explicitly label planning-only/NOT IMPLEMENTED; request initial `@codex review` on opening HEAD per AGENTS.md Rule 18.
+2. Inspect existing seven-role / three-therapist private QA scripts, fixtures and selected hosted Render SHA; implement read-only ten-account scope/role/session/denial checks.
+3. Run exact-head six CI jobs, independent final review, then protected hosted QA with approved secrets and approval gate; classify PASS/FAIL/BLOCKED.
+4. If any nonblocking work is deferred, create linked issue with priority, acceptance criteria and safety boundary. Preserve M1–M3, M4-01 #175/#266 open evidence follow-up, and clinical NO-GO.
+
+---
+
 > **Review-cycle next steps (2026-11-07):** Verify final exact HEAD CI includes new `node scripts/qa/check-roadmap-registers.mjs` and `node --test scripts/qa/check-roadmap-registers.test.mjs`; obtain fresh independent Codex/approved review after corrections; disposition every review before merging PR #265 under Rule 16. Keep #175 open for row-by-row verified evidence, and [#266](https://github.com/NTinkicht/TheraBridge-Emergent/issues/266) specifically tracks inaccessible private spec/1,023-step historical mapping. After verified merge, immediately open draft PR for [M4-02 #176](https://github.com/NTinkicht/TheraBridge-Emergent/issues/176) ten-account hosted synthetic acceptance. Do not treat a draft as implemented.
 
 # Active next work — 2026-11-07 — M4-01 / PR #265
