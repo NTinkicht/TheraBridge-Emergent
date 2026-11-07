@@ -42,12 +42,12 @@ test('child scope requires exact assigned list and matching therapist specialty'
   // permitted specialty from a different clinician's team membership.
   assert.equal(inspectAssignedChildren({items:items.map(x=>({...x,team:[{service:'other'}]}))},key),true);
   const childId=items[0].id;
-  assert.equal(inspectClinicalScope({synthetic:true,locked:true,child:{id:childId,services:[p.specialty]}},key,childId),true);
+  assert.equal(inspectClinicalScope({synthetic:true,locked:'Signing, approval and release are disabled until policy',child:{id:childId,services:[p.specialty]}},key,childId),true);
   const other=p.specialty==='speech'?'behavioral':'speech';
-  assert.equal(inspectClinicalScope({synthetic:true,locked:true,child:{id:childId,services:[other]}},key,childId),false);
-  assert.equal(inspectClinicalScope({synthetic:true,locked:true,child:{id:childId,services:[p.specialty,other]}},key,childId),false);
-  assert.equal(inspectClinicalScope({synthetic:true,locked:true,child:{id:'another-child',services:[p.specialty]}},key,childId),false);
-  assert.equal(inspectClinicalScope({synthetic:true,locked:false,child:{id:childId,services:[p.specialty]}},key,childId),false);
+  assert.equal(inspectClinicalScope({synthetic:true,locked:'Signing, approval and release are disabled until policy',child:{id:childId,services:[other]}},key,childId),false);
+  assert.equal(inspectClinicalScope({synthetic:true,locked:'Signing, approval and release are disabled until policy',child:{id:childId,services:[p.specialty,other]}},key,childId),false);
+  assert.equal(inspectClinicalScope({synthetic:true,locked:'Signing, approval and release are disabled until policy',child:{id:'another-child',services:[p.specialty]}},key,childId),false);
+  assert.equal(inspectClinicalScope({synthetic:true,locked:'',child:{id:childId,services:[p.specialty]}},key,childId),false);
  }
  assert.equal(DENIED_PAIRS.ot2,'Amina Ahmed');
 });
