@@ -1,3 +1,5 @@
+> **M4-01 correction QA update (2026-11-07):** Claude independently executed original-head validator PASS (66/91/55), checked 75/75 historic issue references and confirmed exact prior HEAD `f9f8de4` all six CI jobs green on runs 42386951474 and 42386954197. Those are **previous-head results only**. New code adds mandatory test-job gate for roadmap validator and negative-path regression cases; **final-head CI and updated review pending at writing**. The implementation-level 66/91/55 and 1,023-step clinical qualification remain **NOT VERIFIED**. Sensitive clinical activation continues NO-GO.
+
 # Active QA checkpoint — 2026-11-07 — M4-01 / PR #265
 
 **Type:** Documentation/inventory; no clinical code changes. **Validation performed:** GitHub connector reads confirmed 66 distinct original IDs (1–66), 91 distinct `WF-` IDs including `WF-X6` explicitly V2 excluded, and 55 distinct `OB-` IDs (01–55). This is a **structural COUNT/UNIQUENESS PASS only**, not proof of implementation or requirement coverage.
