@@ -1,7 +1,8 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, randomBytes, createHash } from 'node:crypto';
+import { hashPassword, verifyPassword } from '../src/auth/password';
 import type { PrismaClient } from '@prisma/client';
 import { runSeed } from '../src/cli/seed-synthetic';
 import { Harness, makeApp, resetDb } from './helpers';
@@ -251,7 +252,7 @@ describe('M2-H01 real PostgreSQL rollback and protected-file consistency', () =>
         writeFileSync(destination,JSON.stringify({...stored,accounts:seven}),{mode:0o600});
         await h.prisma.authIdentity.deleteMany({where:{subject:{in:additional}}});
         expect(await h.prisma.authIdentity.count()).toBe(7);
-        await expect(seedChildrensHome(h.prisma,destination)).rejects.toThrow(/DEMO_EXTRA_PASSWORDS_JSON/);
+        await expect(seedChildrensHome(h.prisma,destination)).rejects.toThrow(/Existing extra therapist password is not recoverable/);
         expect(await h.prisma.authIdentity.count()).toBe(7);
         process.env.DEMO_EXTRA_PASSWORDS_JSON=JSON.stringify(credentials);
         await seedChildrensHome(h.prisma,destination);
@@ -261,6 +262,170 @@ describe('M2-H01 real PostgreSQL rollback and protected-file consistency', () =>
       });
     } finally { if (existsSync(destination)) unlinkSync(destination); }
   }, 120_000);
+
+
+  it('upgrades actual seven-account synthetic records to ten without modifying the legacy file or password hashes', async () => {
+    const destination = join(tmpdir(), 'tb-m4-03-legacy-' + randomUUID() + '.json');
+    const extraFile = destination.slice(0, -5) + '-extra.json';
+    const scope = 'therabridge-childrens-home-ahmed-synthetic-v1';
+    const stableId = (name: string) => {
+      const h = createHash('sha256').update(scope + ':' + name).digest('hex');
+      return [h.slice(0,8),h.slice(8,12),'4'+h.slice(13,16),'8'+h.slice(17,20),h.slice(20,32)].join('-');
+    };
+    try {
+      await withLocalDemoEnv(async () => {
+        const original = Object.entries(DEMO_EMAILS).map(([key,email]) => ({
+          key,email,password:'demo-'+randomBytes(24).toString('base64url'),
+          role:key==='platform'?'PLATFORM_ADMIN':'THERAPIST',
+        }));
+        for (const a of original) {
+          const user = await h.prisma.user.create({data:{
+            id:stableId('user:'+a.key),email:a.email,emailNormalized:a.email,displayName:'Synthetic '+a.key,
+          }});
+          await h.prisma.authIdentity.create({data:{
+            userId:user.id,provider:'local',subject:a.email,passwordHash:await hashPassword(a.password),
+          }});
+        }
+        writeFileSync(destination,JSON.stringify({
+          synthetic:true,center:'childrens-home-demo',
+          accounts:original.map(({email,password,role})=>({email,password,role})),
+        },null,2),{flag:'wx',mode:0o600});
+        const originalBytes=readFileSync(destination,'utf8');
+        const hashesBefore=await h.prisma.authIdentity.findMany({
+          where:{subject:{in:Object.values(DEMO_EMAILS)}},
+          select:{subject:true,passwordHash:true},
+        });
+        await seedChildrensHome(h.prisma,destination);
+        expect(readFileSync(destination,'utf8')).toBe(originalBytes);
+        expect(existsSync(extraFile)).toBe(true);
+        const extra=JSON.parse(readFileSync(extraFile,'utf8')) as {
+          accounts:{email:string;password:string;role:string}[];
+        };
+        expect(extra.accounts).toHaveLength(3);
+        for (const a of extra.accounts) {
+          expect(Object.values(DEMO_EXTRA_EMAILS)).toContain(a.email);
+          const identity=await h.prisma.authIdentity.findFirstOrThrow({where:{subject:a.email}});
+          expect(await verifyPassword(identity.passwordHash ?? '',a.password)).toBe(true);
+        }
+        expect(await h.prisma.authIdentity.count()).toBe(10);
+        await seedChildrensHome(h.prisma,destination);
+        expect(await h.prisma.authIdentity.findMany({
+          where:{subject:{in:Object.values(DEMO_EMAILS)}},
+          select:{subject:true,passwordHash:true},
+        })).toEqual(hashesBefore);
+        expect(readFileSync(destination,'utf8')).toBe(originalBytes);
+        expect(JSON.parse(readFileSync(extraFile,'utf8')).accounts).toEqual(extra.accounts);
+      });
+    } finally {
+      if(existsSync(destination))unlinkSync(destination);
+      if(existsSync(extraFile))unlinkSync(extraFile);
+    }
+  }, 180_000);
+
+  it('removes freshly staged extra passwords on confirmed upgrade rollback while retaining all seven original accounts', async () => {
+    const destination=join(tmpdir(),'tb-m4-03-rollback-'+randomUUID()+'.json');
+    const extraFile=destination.slice(0,-5)+'-extra.json';
+    const scope='therabridge-childrens-home-ahmed-synthetic-v1';
+    const stableId=(key:string)=>{
+      const h=createHash('sha256').update(scope+':user:'+key).digest('hex');
+      return [h.slice(0,8),h.slice(8,12),'4'+h.slice(13,16),'8'+h.slice(17,20),h.slice(20,32)].join('-');
+    };
+    const entries=Object.entries(DEMO_EMAILS).map(([key,email])=>({
+      key,email,password:'demo-'+randomBytes(24).toString('base64url'),role:'THERAPIST',
+    }));
+    writeFileSync(destination,JSON.stringify({synthetic:true,
+      accounts:entries.map(({email,password,role})=>({email,password,role}))}),{flag:'wx',mode:0o600});
+    const initial=readFileSync(destination,'utf8');
+    const tx={
+      center:{count:jest.fn(async()=>0),findUnique:jest.fn(async()=>null),
+        upsert:jest.fn(async()=>{throw Error('upgrade_write_rollback');})},
+      user:{count:jest.fn(async()=>0),findUnique:jest.fn(async(args: any)=>{
+        const a=entries.find(e=>e.email===args.where.emailNormalized);
+        return a?{id:stableId(a.key),status:'ACTIVE'}:null;
+      })},
+    };
+    const db={$transaction:jest.fn(async(cb:(tx:unknown)=>Promise<unknown>)=>cb(tx)),
+      authIdentity:{count:jest.fn(async(args:any)=>
+        args.where.userId.in.length===3?0:7)},
+    } as unknown as PrismaClient;
+    const keys=['DEPLOYMENT_ENV','DEMO_SEED_CONFIRM','DATABASE_URL','DEMO_PASSWORDS_JSON','DEMO_EXTRA_PASSWORDS_JSON'] as const;
+    const prior=Object.fromEntries(keys.map(k=>[k,process.env[k]]));
+    try {
+      process.env.DEPLOYMENT_ENV='ci';
+      process.env.DEMO_SEED_CONFIRM='CHILDRENS_HOME_SYNTHETIC_ONLY';
+      process.env.DATABASE_URL='postgresql://test:test@localhost:5432/synthetic_test';
+      delete process.env.DEMO_PASSWORDS_JSON; delete process.env.DEMO_EXTRA_PASSWORDS_JSON;
+      await expect(seedChildrensHome(db,destination)).rejects.toThrow('upgrade_write_rollback');
+      expect(tx.center.upsert).toHaveBeenCalledTimes(1);
+      expect(readFileSync(destination,'utf8')).toBe(initial);
+      expect(existsSync(extraFile)).toBe(false);
+    } finally {
+      for(const key of keys)if(prior[key]===undefined)delete process.env[key];
+      else process.env[key]=prior[key];
+      if(existsSync(destination))unlinkSync(destination);
+      if(existsSync(extraFile))unlinkSync(extraFile);
+    }
+  }, 60_000);
+
+
+  it('serializes overlapping local upgrades so a failed seed cannot delete a sidecar another seed consumed', async()=>{
+    const destination=join(tmpdir(),'tb-m4-03-overlap-'+randomUUID()+'.json');
+    const extraFile=destination.slice(0,-5)+'-extra.json';
+    const lockFile=destination+'.seed.lock';
+    const scope='therabridge-childrens-home-ahmed-synthetic-v1';
+    const stableId=(key:string)=>{
+      const h=createHash('sha256').update(scope+':user:'+key).digest('hex');
+      return [h.slice(0,8),h.slice(8,12),'4'+h.slice(13,16),'8'+h.slice(17,20),h.slice(20,32)].join('-');
+    };
+    const accounts=Object.entries(DEMO_EMAILS).map(([key,email])=>({
+      key,email,password:'demo-'+randomBytes(24).toString('base64url'),role:'THERAPIST',
+    }));
+    writeFileSync(destination,JSON.stringify({synthetic:true,
+      accounts:accounts.map(({email,password,role})=>({email,password,role}))}),
+      {flag:'wx',mode:0o600});
+    const original=readFileSync(destination,'utf8');
+    const keys=['DEPLOYMENT_ENV','DEMO_SEED_CONFIRM','DATABASE_URL','DEMO_PASSWORDS_JSON','DEMO_EXTRA_PASSWORDS_JSON'] as const;
+    const previous=Object.fromEntries(keys.map(k=>[k,process.env[k]]));
+    let signalStarted:()=>void=()=>{};
+    let finishFirst:()=>void=()=>{};
+    const firstReached=new Promise<void>(resolve=>{signalStarted=resolve;});
+    const releaseFirst=new Promise<void>(resolve=>{finishFirst=resolve;});
+    const tx={
+      center:{count:jest.fn(async()=>0),findUnique:jest.fn(async()=>null),
+        upsert:jest.fn(async()=>{signalStarted();await releaseFirst;throw Error('first_seed_rollback');})},
+      user:{count:jest.fn(async()=>0),findUnique:jest.fn(async(args:any)=>{
+        const a=accounts.find(x=>x.email===args.where.emailNormalized);
+        return a?{id:stableId(a.key),status:'ACTIVE'}:null;
+      })},
+    };
+    const db={$transaction:jest.fn(async(cb:(tx:unknown)=>Promise<unknown>)=>cb(tx)),
+      authIdentity:{count:jest.fn(async(args:any)=>
+        args.where.userId.in.length===3?0:7)},
+    } as unknown as PrismaClient;
+    try{
+      process.env.DEPLOYMENT_ENV='ci';
+      process.env.DEMO_SEED_CONFIRM='CHILDRENS_HOME_SYNTHETIC_ONLY';
+      process.env.DATABASE_URL='postgresql://test:test@localhost:5432/synthetic_test';
+      delete process.env.DEMO_PASSWORDS_JSON;delete process.env.DEMO_EXTRA_PASSWORDS_JSON;
+      const first=seedChildrensHome(db,destination);
+      await firstReached;
+      expect(existsSync(extraFile)).toBe(true);
+      expect(existsSync(lockFile)).toBe(true);
+      // A second seed must fail before reading the *uncommitted* extra file.
+      await expect(seedChildrensHome(db,destination)).rejects.toThrow(/EEXIST/);
+      expect(db.$transaction).toHaveBeenCalledTimes(1);
+      finishFirst();
+      await expect(first).rejects.toThrow('first_seed_rollback');
+      expect(existsSync(extraFile)).toBe(false);
+      expect(existsSync(lockFile)).toBe(false);
+      expect(readFileSync(destination,'utf8')).toBe(original);
+    }finally{
+      finishFirst();
+      for(const key of keys)if(previous[key]===undefined)delete process.env[key];
+      else process.env[key]=previous[key];
+      for(const name of [destination,extraFile,lockFile])if(existsSync(name))unlinkSync(name);
+    }
+  },90_000);
 
   it('seeds six fictional children including siblings and independently authenticated ABA/OT/Speech staff idempotently', async () => {
     const destination = join(tmpdir(), 'tb-expanded-demo-' + randomUUID() + '.json');
