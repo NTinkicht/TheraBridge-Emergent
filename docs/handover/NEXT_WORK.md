@@ -1,3 +1,5 @@
+**M4-04 implementation next:** Qualify newly added real PostgreSQL revocation-and-service isolation test on exact current HEAD; if failing, fix source authorization before any review approval. Continue routes/CAS/tenant query audit and add findings as separately tracked work. Fresh review after implementation. Do not merge with only a planning review; resolve cross-branch Rule 7 conflicts when rebasing main after #270.
+
 # M4-04 next work — 2026-11-08
 
 Implement M4-04 clinical authorization tests and strictly scoped improvements on PR #271. Test assigned vs unassigned clinician, center/child scope, cross-specialty access, role revocation, and CAS race. Coordinate shared guard contracts with M4-05, and add Rule 7 implementation evidence when code changes. Six-job exact-head CI and fresh code review mandatory; design review is not a sign-off. Preserve NO-GO for signing, family releases, real AI/STT and real patient data.
