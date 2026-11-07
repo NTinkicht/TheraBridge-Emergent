@@ -111,7 +111,6 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { emailNormalized: normalizeEmail(email) } });
     await this.audit.record('auth.password.reset_requested', { subjectUserId: user?.id, ip: meta.ip, meta: { known: !!user } });
     if (!user || user.status !== 'ACTIVE') return;
-    const now = this.clock.now();
     const token = randomToken();
     await this.prisma.$transaction([
       this.prisma.verificationToken.updateMany({ where: { userId: user.id, purpose: 'PASSWORD_RESET', usedAt: null }, data: { usedAt: now } }),
