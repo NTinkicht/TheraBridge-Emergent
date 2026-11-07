@@ -1,3 +1,12 @@
+# M4-05 security next actions — 2026-11-08
+
+1. Verify new expired-token API security test and all six exact-head CI jobs on PR #272; fix any failing tests.
+2. Obtain fresh independent implementation review; do not infer code acceptance from initial planning reviews.
+3. Continue password reset enumeration/lockout and proxy trust audit. Reconcile existing MFA policy and frontend unsaved-change/edit-conflict UX with M5; create exact-scope issues for policy-dependent work if not executable now.
+4. Rebase onto M4-03 merged main and reconcile shared Rule 7 document changes before any merge. Preserve private account credentials and clinical NO-GO.
+
+---
+
 **Current reviewer gate for M4-02 PR #267 (2026-11-07):** Verify six-job final-HEAD CI after both Codex P2 fixes, including cookie replay and actor-specific specialty regression. Reply to both Codex inline comments with code/test pointers, resolve only after code changes verified and request fresh independent exact-HEAD review. Do not merge on earlier head `0ad1d96285` approval. Protected manual ten-account QA still NOT RUN; #268 governs second-valid-tenant, revocation/expiry and SHA attestation. Keep all clinical gates fail closed.
 
 ---
