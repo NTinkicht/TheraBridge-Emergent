@@ -1,3 +1,9 @@
+# M4-04 parallel planning checkpoint — 2026-11-08
+
+**Scope:** PR #271, issue #178 — clinical authorization, active role/specialty assignment and center/child tenancy. **State:** design-only, no implementation or QA executed. Original M4-03 #270 remains independently in review. This branch owns clinical-domain read/authorization tests; authentication session internals belong to M4-05, schema migration to M4-06. Do not infer live clinical authorization or signing; policy G2/G2b remains NO-GO.
+
+---
+
 **Review correction (2026-11-07, M4-02 PR #267):** Codex identified two actionable P2 findings on reviewed HEAD `0ad1d96285`: (1) stale-session test used a cleared cookie, (2) child-list team membership could mask the actor's wrong specialty. Both fixed on PR branch; pre-logout cookie now replayed privately with isolated context, and exact actor-filtered `ClinicalService.workspace.child.services` is validated across *every* assigned child. Added regression tests and workflow CI gate. **Latest exact-head CI and second Codex review remain pending.** Protected real ten-account run NOT RUN; controlled two-valid-tenant/revocation cases #268 remain release blocked. No clinical activation.
 
 ---
