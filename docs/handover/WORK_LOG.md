@@ -1,3 +1,9 @@
+# M4-09 historical audit work log — 2026-11-08
+
+Imported original 75 frozen historic issues into a machine-validated CSV, kept PENDING_EVIDENCE and nonauthoritative owner routing. Fixed regex backslash parsing defect in snapshot extraction; negative tests cover unknown IDs, duplicates, whitespace evidence, invalid policy state and ungrounded verification. Current-head CI and reviewer acceptance remain pending; full audit continues under #266.
+
+---
+
 # M4-06 DB audit progress — 2026-11-08
 
 Inspected merged migrations and confirmed original M2-H04 already implemented `audit_event_no_mutation`, plan-version center/author FKs and composite scoped indexes. Avoided duplicate migrations. Added `apps/api/test/m4-db-integrity.e2e-spec.ts` with real-Postgres positive append and negative update/delete, FK validation and index existence checks. Existing M1–M3 code preserved. Final-head CI/review still required; broader M4-06 work not completed**M4-03 Codex/P2 findings (2026-11-07):** Review #4503124363 FIX_NOW — local `.seed.lock` covers credential-file read, sidecar creation, DB transaction and verified cleanup to prevent concurrent orphaned extra hashes; overlap regression added. Review #4503124366 FIX_NOW — sanitize malformed protected original/extra JSON errors; negative tests verify no fragment reaches message or log. Earlier demo-journey runner configured 7 secrets only, updated to 7+3 independent generated secrets. Existing scanner caught synthetic malformed-JSON JavaScript expression; maintained full history gitleaks and added one exact historical expression exception, restored valid TOML after JS replacement issue. No review findings deferred. Fresh exact-head CI and independent review still required.
