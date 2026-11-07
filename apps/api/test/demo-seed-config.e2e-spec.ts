@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { assertDemoAllowed, DEMO_EMAILS, DEMO_EXTRA_EMAILS, parseHostedDemoPasswords, parseExtraHostedDemoPasswords } from '../src/cli/seed-demo';
+import { assertDemoAllowed, DEMO_EMAILS, DEMO_EXTRA_EMAILS, parseHostedDemoPasswords, parseExtraHostedDemoPasswords, seedChildrensHome } from '../src/cli/seed-demo';
 
 const valid = () => Object.fromEntries(Object.values(DEMO_EMAILS).map(e=>[e,'demo-'+randomBytes(24).toString('base64url')]));
 const preview=(v: object): Record<string,string|undefined>=>({DEPLOYMENT_ENV:'preview',...v});
@@ -27,6 +27,24 @@ describe('synthetic hosted preview bootstrap policy',()=>{
     expect(()=>parseHostedDemoPasswords(preview({DEMO_PASSWORDS_JSON:JSON.stringify(reused)}))).toThrow();
     const weak={...correct,[DEMO_EMAILS.parent]:'password123'};
     expect(()=>parseHostedDemoPasswords(preview({DEMO_PASSWORDS_JSON:JSON.stringify(weak)}))).toThrow();
+  });
+  test('a seven-only operator secret cannot create unexported random extra therapist hashes in local mode',async()=>{
+    const keys=['DEPLOYMENT_ENV','DEMO_SEED_CONFIRM','DATABASE_URL','DEMO_PASSWORDS_JSON','DEMO_EXTRA_PASSWORDS_JSON'] as const;
+    const saved=Object.fromEntries(keys.map(k=>[k,process.env[k]]));
+    const transaction=jest.fn();
+    try{
+      process.env.DEPLOYMENT_ENV='ci';
+      process.env.DEMO_SEED_CONFIRM='CHILDRENS_HOME_SYNTHETIC_ONLY';
+      process.env.DATABASE_URL='postgresql://test:test@localhost:5432/therabridge_demo_test';
+      process.env.DEMO_PASSWORDS_JSON=JSON.stringify(valid());
+      delete process.env.DEMO_EXTRA_PASSWORDS_JSON;
+      await expect(seedChildrensHome({$transaction:transaction} as any))
+        .rejects.toThrow(/require DEMO_EXTRA_PASSWORDS_JSON/);
+      expect(transaction).not.toHaveBeenCalled();
+    } finally{
+      for(const key of keys)if(saved[key]===undefined)delete process.env[key];
+      else process.env[key]=saved[key];
+    }
   });
   test('requires three independent high-entropy therapist passwords on hosted preview',()=>{
     expect(()=>parseExtraHostedDemoPasswords(preview({}))).toThrow(/DEMO_EXTRA_PASSWORDS_JSON/);
