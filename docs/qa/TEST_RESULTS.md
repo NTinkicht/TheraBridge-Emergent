@@ -1,3 +1,22 @@
+# Active QA checkpoint — 2026-11-07 — M4-01 / PR #265
+
+**Type:** Documentation/inventory; no clinical code changes. **Validation performed:** GitHub connector reads confirmed 66 distinct original IDs (1–66), 91 distinct `WF-` IDs including `WF-X6` explicitly V2 excluded, and 55 distinct `OB-` IDs (01–55). This is a **structural COUNT/UNIQUENESS PASS only**, not proof of implementation or requirement coverage.
+
+| Gate | State at documentation update |
+|---|---|
+| GitHub 66/91/55 uniqueness and V2 exclusion | **PASS** (connector-assisted file read/check) |
+| `node scripts/qa/check-roadmap-registers.mjs` execution | **NOT RUN**; pending exact-head execution |
+| Six required GitHub Actions CI jobs on updated final SHA | **NOT RUN / NOT QUALIFIED** (new SHA created by these updates) |
+| Codex independent review of original HEAD `602d3111e4` | **P1 raised**: Rule 7 handover/QA update missing; being fixed |
+| Fresh final-head Codex review | **PENDING** |
+| Per-item 66/91/55 merged-code/hosted acceptance | **NOT VERIFIED**; #175 remains open |
+| 1023 controlled workflow steps | **NOT VERIFIED**; source not accessible through current GitHub connection |
+| Clinical signing/release, real STT/AI, real-patient/pilot use | **NO-GO** |
+
+Do not describe this status as six-job CI PASS or as a complete audit. Historical M3 notes below remain preserved as historic checkpoints.
+
+---
+
 # M3-AI06 implementation checkpoint — 2026-11-02
 
 M3-AI06 PR #159 adds browser adversarial tests: malicious fictional instruction in report draft and role-spoofing home-plan instruction must block examination. Six exact-head CI and final review PENDING, no PASS claim.
