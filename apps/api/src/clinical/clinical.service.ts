@@ -89,6 +89,18 @@ export class ClinicalService {
 
   async child(db: Tx | PrismaService, centerId: string, v: Viewer, childId: string, service?: string) {
     if (!['THERAPIST', 'CLINICAL_SUPERVISOR'].includes(v.role)) throw new ForbiddenException('Clinical records are restricted.');
+    // The context role alone is insufficient for read access: a suspended
+    // clinical supervisor or revoked role must not retain child visibility
+    // through an already-issued session after a membership change.
+    if (v.role === 'CLINICAL_SUPERVISOR') {
+      const active = await db.membership.findFirst({
+        where: { id: v.membershipId, userId: v.userId, centerId, status: 'ACTIVE',
+          user: { status: 'ACTIVE' }, center: { status: 'ACTIVE' },
+          roles: { some: { role: 'CLINICAL_SUPERVISOR' } } },
+        select: { id: true },
+      });
+      if (!active) throw new NotFoundException('Child not found');
+    }
     if (v.role === 'THERAPIST') {
       const assigned = await this.therapistAssignments(db, centerId, v, childId);
       if (!assigned.some(a => !service || a.service === service)) throw new NotFoundException('Child not found');
