@@ -12,6 +12,11 @@ export const SERVICE_LABEL: Record<string, string> = {
 type Kind = 'reminder_24h' | 'rescheduled' | 'cancelled';
 const SUBJECT: Record<Kind, string> = { reminder_24h: 'Reminder: appointment tomorrow', rescheduled: 'Appointment moved', cancelled: 'Appointment cancelled' };
 
+/**
+ * Return appointment IDs when the previous or next start is strictly inside the
+ * open (now, soon) window. An absent `before` means there is no prior start
+ * to evaluate; retain the first input item for repeated IDs.
+ */
 // Keep the prior first-match semantics for repeated IDs while avoiding the
 // O(appointments × changed-items) scan of historical reschedule batches.
 export function upcomingChangedAppointmentIds(
