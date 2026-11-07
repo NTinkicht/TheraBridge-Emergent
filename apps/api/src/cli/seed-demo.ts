@@ -132,14 +132,38 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     throw new Error('Seven operator-managed demo passwords require DEMO_EXTRA_PASSWORDS_JSON for the three new therapists.');
   }
   if (passwords && extraPasswords && new Set([...Object.values(passwords), ...Object.values(extraPasswords)]).size !== 10) throw new Error('All ten hosted demo passwords must be distinct.');
+  // Local credentials are a filesystem/database pair. Serialize the *whole*
+  // read/stage/transaction/cleanup lifecycle, not just exclusive sidecar writes:
+  // a concurrent seed must never consume a sidecar still pending rollback.
+  // The .seed.lock is fail-closed; after a process crash an operator must
+  // reconcile database and credential files before manually clearing it.
+  // Hosted previews use external 7+3 secrets and never stage local passwords.
+  const seedLockPath = credentialFile + '.seed.lock';
+  let seedLockFd: number | null = null;
+  if (!passwords) {
+    mkdirSync(dirname(seedLockPath), { recursive: true, mode: 0o700 });
+    seedLockFd = openSync(seedLockPath, 'wx', 0o600);
+  }
+  try {
   // Original seven-account credential files remain immutable on upgrade.
   // Only extra therapist credentials may be created in this separate file.
   const extraCredentialFile = credentialFile.endsWith('.json')
     ? credentialFile.slice(0, -5) + '-extra.json' : credentialFile + '.extra.json';
+  // Never propagate JSON.parse's exception message: it may contain a
+  // fragment of malformed protected credential content and reach stderr.
+  const readProtected = (file: string): { accounts?: { email: string; password: string; role: string }[] } => {
+    try {
+      const raw = readFileSync(file, 'utf8');
+      if (Buffer.byteLength(raw, 'utf8') > 8192) throw new Error('oversize');
+      const value: unknown = JSON.parse(raw);
+      if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('shape');
+      return value as { accounts?: { email: string; password: string; role: string }[] };
+    } catch {
+      throw new Error('Protected local demo credential file is invalid or unreadable.');
+    }
+  };
   const savedAccounts = !passwords && existsSync(credentialFile)
-    ? (JSON.parse(readFileSync(credentialFile, 'utf8')) as {
-        accounts?: { email: string; password: string; role: string }[];
-      }).accounts : undefined;
+    ? readProtected(credentialFile).accounts : undefined;
   const savedPasswords = new Map<string, string>();
   for (const a of savedAccounts ?? []) {
     if (!Object.values(ALL_DEMO_EMAILS).includes(a.email as typeof ALL_DEMO_EMAILS[keyof typeof ALL_DEMO_EMAILS]) ||
@@ -148,8 +172,7 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
     savedPasswords.set(a.email, a.password);
   }
   const savedExtraRaw = !extraPasswords && existsSync(extraCredentialFile)
-    ? JSON.parse(readFileSync(extraCredentialFile, 'utf8')) as { accounts?: { email: string; password: string }[] }
-    : null;
+    ? readProtected(extraCredentialFile) : null;
   if (savedExtraRaw && (!Array.isArray(savedExtraRaw.accounts) || savedExtraRaw.accounts.length !== extraRoster.length)) {
     throw new Error('Protected extra-therapist credential file is incomplete or malformed.');
   }
@@ -643,6 +666,13 @@ export async function seedChildrensHome(db: PrismaClient, credentialFile = DEMO_
       }
     }
     throw error;
+  }
+  } finally {
+    if (seedLockFd !== null) {
+      // Do not suppress an error from the seed when lock cleanup fails.
+      try { closeSync(seedLockFd); }
+      finally { unlinkSync(seedLockPath); }
+    }
   }
 }
 
