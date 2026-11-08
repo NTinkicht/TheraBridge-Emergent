@@ -51,9 +51,9 @@ test('child scope requires exact assigned list and matching therapist specialty'
  }
  assert.equal(DENIED_PAIRS.ot2,'Amina Ahmed');
 });
-test('deny only 401, 403 or 404; reject 200 and 5xx',()=>{
- for(const s of [401,403,404])assert.equal(denied(s),true);
- for(const s of [200,302,422,500])assert.equal(denied(s),false);
+test('authenticated denial requires 403 or 404, never a lost 401 session',()=>{
+ for(const s of [403,404])assert.equal(denied(s),true);
+ for(const s of [200,302,401,422,500])assert.equal(denied(s),false);
  assert.equal(safeResponseCode(200),'unexpected_success');
 });
 test('results never contain email/password, only allowlisted status and reason',()=>{
