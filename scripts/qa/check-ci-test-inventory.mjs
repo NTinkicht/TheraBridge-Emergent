@@ -3,6 +3,7 @@
 // Print only paths and counts. Actual coverage must come from Istanbul/Jest.
 import fs from 'node:fs';
 import path from 'node:path';
+import {spawnSync} from 'node:child_process';
 
 export const JOBS=['secret-scan','test','live-session','demo-journey','preview-container','compose'];
 
@@ -41,6 +42,43 @@ export function workflowJobNames(yaml) {
   return found;
 }
 
+
+// A green CI label cannot be substituted for a disabled or partial secrets scan.
+// Keep these checks tied to the actual checked-in workflow, not handover prose.
+export function secretScanContract(yaml) {
+  const start=yaml.indexOf('\n  secret-scan:\n');
+  const end=start<0?-1:yaml.indexOf('\n  test:\n',start);
+  if(start<0||end<0)throw Error('Required secret-scan job layout missing');
+  const block=yaml.slice(start,end);
+  const requirements=[
+    [/\bfetch-depth:\s*0\b/,'full Git history checkout'],
+    [/\bGITLEAKS_VERSION:\s*\d+\.\d+\.\d+\b/,'pinned gitleaks version'],
+    [/\bGITLEAKS_SHA256:\s*[a-f0-9]{64}\b/,'pinned gitleaks checksum'],
+    [/sha256sum\s+-c\s+-/,'checksum verification'],
+    [/gitleaks git \. [^\n]*--log-opts="--all"[^\n]*--redact=100/,'redacted all-ref history scan'],
+    [/gitleaks dir \. .*--redact=100/,'tracked checkout scan'],
+    [/--redact=100/,'redacted scan output'],
+    [/exit\s+"\$result"/,'nonzero result propagation']
+  ];
+  for(const [pattern,label] of requirements)
+    if(!pattern.test(block))throw Error('Secret scanning missing '+label);
+  if(/continue-on-error:\s*true/.test(block)||/\|\|\s*true/.test(block))
+    throw Error('Secret scanning must fail closed');
+  return true;
+}
+// Python 3.11+ ships a standards-compliant TOML parser on CI's Ubuntu image.
+// No additional package, external request or gitleaks download is required.
+export function validateGitleaksToml(contents) {
+  if(typeof contents!=='string'||!contents.includes('[[rules]]'))
+    throw Error('Gitleaks TOML missing custom rules');
+  const proc=spawnSync('python3',['-c',
+    'import sys,tomllib; x=tomllib.loads(sys.stdin.read()); assert len(x.get("rules", [])) >= 2'
+  ],{input:contents,encoding:'utf8',timeout:5000});
+  if(proc.error||proc.status!==0)
+    throw Error('Gitleaks TOML syntax or rule structure invalid');
+  return true;
+}
+
 const root=path.resolve(process.cwd());
 function names(dir,filter){
   return fs.readdirSync(path.join(root,dir),{withFileTypes:true})
@@ -77,6 +115,8 @@ export function baseline(){
     throw Error('API or web test command missing');
   const core=api.scripts?.['test:coverage:core']||'';
   const thresholds=coreThresholds(core);
+  secretScanContract(ci);
+  validateGitleaksToml(fs.readFileSync(path.join(root,'.gitleaks.toml'),'utf8'));
   const jobs=workflowJobNames(ci);
   for(const j of JOBS){
     if(!jobs.has(j))throw Error('Missing required CI job '+j);
@@ -93,6 +133,7 @@ export function baseline(){
     existing_core_thresholds:thresholds,
     application_wide_coverage_percent:null,
     application_wide_95_percent_gate:false,
+    secret_scan_contract_validated:true,
     six_required_jobs:JOBS
   };
 }
