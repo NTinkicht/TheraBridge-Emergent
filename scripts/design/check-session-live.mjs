@@ -138,15 +138,26 @@ try {
     timeZone: centerTz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit', second: '2-digit',
   }).formatToParts(new Date(Date.now() - 5000)).map(p => [p.type, p.value]));
-  // Playwright datetime-local fill accepts YYYY-MM-DDTHH:mm. Supplying an
-  // explicit :ss (especially :00) causes Chromium/Playwright to throw
-  // "Malformed value" before the app sees an input event. Keep the center
-  // timezone conversion, but use the native minute-precision input format.
-  const centerEnd = parts.year + '-' + parts.month + '-' + parts.day + 'T' + parts.hour + ':' + parts.minute;
+  // Server completion requires end strictly after start, even within the
+  // same minute. Preserve center-local *seconds*: rounding to HH:mm can make
+  // actualEnd === actualStart and legitimately fail clinical time validation.
+  // Playwright locator.fill() rejects seconds-bearing datetime-local values
+  // in the pinned Chromium. Use the browser's native input value setter,
+  // followed by bubbled input/change events so React sees the exact value.
+  const centerEnd = parts.year + '-' + parts.month + '-' + parts.day + 'T' +
+    parts.hour + ':' + parts.minute + ':' + parts.second;
   const actualEndInput = note.getByLabel('Actual end', { exact: true });
-  await actualEndInput.fill(centerEnd);
-  assert.equal(await actualEndInput.inputValue(), centerEnd,
-    'Native datetime-local input must accept the center-timezone value');
+  const acceptedEnd = await actualEndInput.evaluate((input, value) => {
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+    if (!setter || input.type !== 'datetime-local' || input.step !== '1')
+      return false;
+    setter.call(input, value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    return input.value === value || (value.endsWith(':00') && input.value === value.slice(0, -3));
+  }, centerEnd);
+  assert.equal(acceptedEnd, true, 'Native datetime-local control must retain center-local end seconds');
+  assert.equal((await actualEndInput.inputValue()).slice(0, 16), centerEnd.slice(0, 16));
   page.once('dialog', d => d.accept());
   await note.getByRole('button', { name: 'Review and complete session', exact: true }).click();
   await note.getByText('Completed · unsigned', { exact: true }).waitFor().catch(async e => { console.error(await note.innerText()); throw e; });
