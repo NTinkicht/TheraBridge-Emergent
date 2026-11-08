@@ -1,3 +1,11 @@
+## M4-C04 Historical evidence gate — 2026-11-08
+
+Historic issue validator now emits a conservative 75-row disposition summary and lists independently-evidenced VERIFIED_IMPLEMENTED candidates while explicitly setting automatic closure and M4 milestone closure authorization to false. Negative tests reject false evidence, policy block without proof and misleading completion assertions. No historical issue is auto-closed. #183/#167 remain open and C01–C03 independent qualifications are dependencies.
+
+## M4-05 password reset early-boundary tests — PR #286 (2026-11-08)
+
+Implementation HEAD before this handover update: `b932971cb79c578e79d560faec72775a7c1ffded`. Adds **two real-PostgreSQL fault-injection test cases** at the `auth_identity` UPDATE (credential mutation) and `session` UPDATE (session revocation) transaction boundaries. Both assert that failure leaves the reset token unspent, original password hash and session intact, then demonstrate same-token success after removing the synthetic trigger, session invalidation, new password login and replay rejection. These supplement (do not replace) the **audit INSERT failure** rollback regression delivered in merged PR #284. No runtime implementation changes or patient data; G2/G2b and clinical release remain NO-GO. **Current qualification: NOT YET VERIFIED on final documentation HEAD**; initial code-head CI run 42475586207 was in progress when checked, and the Rule 7 corrective commit necessarily requires new exact-HEAD CI and independent review. Parent #179 and follow-up #280 remain open until evidence permits closure.
+
 **M4-04 clinical provenance test reconciliation — 2026-11-08:** PR #285 adds synthetic negative tests for #39 session-note provenance and #40 plan author-only draft mutations. Reconciled with merged M4-05 transactional reset and narrow historical secret-scan exception from PR #284; neither production security nor clinical NO-GO changed. New six-job CI/review pending, #39/#40/#178 remain OPEN.
 
 ---
