@@ -95,4 +95,27 @@ describe('M4-06 database integrity protections (real PostgreSQL)', () => {
     // that requires an independently provisioned least-privileged role.
   });
 
+  it('M4-06: forbidden audit UPDATE rolls back the whole transaction including earlier INSERT', async () => {
+    const original = await h.prisma.auditEvent.create({
+      data: { type: 'm4.atomic.original', meta: { synthetic: true } },
+    });
+    // Real PostgreSQL transaction: a denied mutation must roll back the prior
+    // insert as well. No trigger bypass or direct DB cleanup is permitted.
+    await expect(h.prisma.$transaction(async tx => {
+      await tx.auditEvent.create({
+        data: { type: 'm4.atomic.should_rollback', meta: { synthetic: true } },
+      });
+      await tx.auditEvent.update({
+        where: { id: original.id }, data: { type: 'm4.atomic.denied_rewrite' },
+      });
+    })).rejects.toThrow();
+    const rows = await h.prisma.auditEvent.findMany();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      id: original.id, type: 'm4.atomic.original', meta: { synthetic: true },
+    });
+    await h.prisma.auditEvent.create({ data: { type: 'm4.atomic.after_rollback', meta: {} } });
+    expect(await h.prisma.auditEvent.count()).toBe(2);
+  });
+
 });
