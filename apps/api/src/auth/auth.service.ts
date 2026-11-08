@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Inject, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service';
 import { CLOCK, Clock } from '../common/clock';
-import { hmac, normalizeEmail, randomToken, sha256 } from '../common/security';
+import { hmac, ipPrefix, normalizeEmail, randomToken, sha256 } from '../common/security';
 import { AUTH_CONFIG, AuthConfig } from '../config/env';
 import { DevMailboxService } from '../dev-mailbox/dev-mailbox.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -138,15 +138,40 @@ export class AuthService {
     }
     const policy = passwordPolicyError(password, row.user.email);
     if (policy) throw new UnprocessableEntityException(policy);
-    const claimed = await this.prisma.verificationToken.updateMany({ where: { id: row.id, usedAt: null }, data: { usedAt: now } });
-    if (claimed.count !== 1) throw new UnprocessableEntityException('This reset link is invalid or has expired. Request a new one.');
-    await this.setPassword(row.userId, password);
-    await this.sessions.revokeAllForUser(row.userId, 'password_reset');
-    await this.limits.clear(this.accountKey(row.user.email));
-    // A verified reset must restore access even from the originally locked
-    // origin, without needing to know or persist any source IP addresses.
-    await this.limits.clearPrefix(`${this.accountKey(row.user.email)}:origin:`);
-    await this.audit.record('auth.password.reset_completed', { subjectUserId: row.userId, ip: meta.ip });
+    // Compute the expensive hash before opening a database transaction. The
+    // token claim, credential mutation, session revocations, origin-lockout
+    // cleanup and audit receipt must either ALL commit or ALL roll back.
+    // In particular, a crash after claiming the token must not strand users
+    // with an unusable token and the old password still in place.
+    const passwordHash = await hashPassword(password);
+    const accountKey = this.accountKey(row.user.email);
+    const prefix = `${accountKey}:origin:`;
+    await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.verificationToken.updateMany({
+        where: { id: row.id, purpose: 'PASSWORD_RESET', usedAt: null, expiresAt: { gt: now } },
+        data: { usedAt: now },
+      });
+      if (claimed.count !== 1) throw new UnprocessableEntityException('This reset link is invalid or has expired. Request a new one.');
+      const user = await tx.user.findUnique({ where: { id: row.userId }, select: { status: true } });
+      if (user?.status !== 'ACTIVE') throw new UnprocessableEntityException('This reset link is invalid or has expired. Request a new one.');
+      await tx.authIdentity.update({
+        where: { userId_provider: { userId: row.userId, provider: 'local' } },
+        data: { passwordHash, passwordChangedAt: now },
+      });
+      await tx.session.updateMany({
+        where: { userId: row.userId, revokedAt: null },
+        data: { revokedAt: now, revokedReason: 'password_reset' },
+      });
+      // Reset all account-specific counters without recording raw user/IP
+      // information. The account key and its per-origin suffix are HMACs.
+      await tx.rateLimitCounter.deleteMany({ where: { OR: [{ key: accountKey }, { key: { startsWith: prefix } }] } });
+      await tx.authLockout.deleteMany({ where: { OR: [{ key: accountKey }, { key: { startsWith: prefix } }] } });
+      // A failed audit insert must also roll back the password and token.
+      await tx.auditEvent.create({
+        data: { type: 'auth.password.reset_completed', subjectUserId: row.userId,
+          ipPrefix: ipPrefix(meta.ip), meta: {} },
+      });
+    });
   }
 
   async change(auth: AuthState, current: string, next: string, meta: ClientMeta): Promise<string> {
