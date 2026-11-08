@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {validateRegister} from './check-historic-issues.mjs';
+import {validateRegister,closureEvidenceSummary} from './check-historic-issues.mjs';
 const filename='docs/roadmap/M4-09-HISTORICAL-ISSUE-DISPOSITIONS.csv';
 const sample=fs.readFileSync(filename,'utf8');
 test('historical original issue snapshot has exactly 75 uniquely linked issues',()=>assert.equal(validateRegister(sample),75));
@@ -40,4 +40,20 @@ test('rejects policy block justified only by whitespace',()=>{
    '"POLICY_BLOCKED","","","   ",""');
  assert.notEqual(changed,sample);
  assert.throws(()=>validateRegister(changed),/Policy blocked without explicit evidence/);
+});
+
+test('conservative 75-issue summary never authorizes automatic close or clinical milestone acceptance',()=>{
+ const summary=closureEvidenceSummary(sample);
+ assert.equal(summary.total,75);
+ assert.equal(Object.values(summary.counts).reduce((x,y)=>x+y,0),75);
+ assert.equal(summary.outstanding,75-summary.counts.VERIFIED_IMPLEMENTED);
+ assert.equal(summary.automatic_issue_closure_authorized,false);
+ assert.equal(summary.milestone_4_closure_authorized,false);
+ assert(summary.verified_candidates.every(x=>Number.isInteger(x)&&x>0&&x<167));
+});
+test('verified candidates require real SHA, tested evidence and independent review',()=>{
+ const fake=sample.replace('"PENDING_EVIDENCE"','"VERIFIED_IMPLEMENTED"');
+ assert.throws(()=>closureEvidenceSummary(fake),/Verified issue without valid source SHA/);
+ const blocked=sample.replace('"PENDING_EVIDENCE"','"POLICY_BLOCKED"');
+ assert.throws(()=>closureEvidenceSummary(blocked),/Policy blocked without explicit evidence/);
 });
