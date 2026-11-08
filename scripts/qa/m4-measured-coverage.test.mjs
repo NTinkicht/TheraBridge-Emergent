@@ -21,3 +21,11 @@ test('API and Web under-coverage are reported separately',()=>{
  assert(r.belowThreshold.includes('api_branches'));
  assert(r.belowThreshold.includes('web_statements'));
 });
+
+test('94.999% cannot round upward into a 95% acceptance PASS',()=>{
+ const nearly=fixture(94999,100000);
+ const r=measuredCoverage({api:nearly,web:nearly});
+ assert.equal(r.result,'FAIL');
+ assert.equal(r.scopes.api.lines,95,'display can round, gate cannot');
+ assert.equal(r.belowThreshold.length,8);
+});
