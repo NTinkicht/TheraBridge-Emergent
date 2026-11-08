@@ -121,11 +121,27 @@ jobs:
           # Prisma confirms all migrations applied on the previously migrated database.
           yarn workspace @therabridge/api prisma migrate status
       - run: yarn workspace @therabridge/api typecheck
-      - run: yarn workspace @therabridge/api test
+      - name: Instrument full API source test coverage (measurement, not M4 95% acceptance)
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/.workspace/m4-coverage/api"
+          yarn workspace @therabridge/api test --coverage --collectCoverageFrom='src/**/*.ts' --coverageReporters=json-summary --coverageDirectory="$GITHUB_WORKSPACE/.workspace/m4-coverage/api"
       - name: Gate measured API fingerprint-core coverage (95/90/95/95)
         run: yarn workspace @therabridge/api test:coverage:core
-      - name: Web configuration unit tests
-        run: yarn workspace @therabridge/web test
+      - name: Web configuration unit tests with observed V8 instrumentation
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/.workspace/m4-coverage/web-v8"
+          NODE_V8_COVERAGE="$GITHUB_WORKSPACE/.workspace/m4-coverage/web-v8" yarn workspace @therabridge/web test
+      - name: Publish honest M4 application coverage measurement and Web gap
+        run: |
+          node --test scripts/qa/m4-app-coverage-baseline.test.mjs
+          node scripts/qa/m4-app-coverage-baseline.mjs
+      - name: Archive redacted measurement summary (NOT a release gate)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-coverage-baseline-${{ github.run_id }}
+          path: .workspace/m4-coverage/m4-coverage-baseline.json
+          if-no-files-found: error
+          retention-days: 3
       - name: Verify M4-08 suite inventory and truthfully scoped coverage baseline
         run: |
           node scripts/qa/check-ci-test-inventory.mjs
