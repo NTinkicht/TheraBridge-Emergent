@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {evaluateM4HostedEvidence} from './m4-acceptance-evidence.mjs';
+import {ROLES} from './hosted-readonly.mjs';
 const oldRoles=['platform','admin','coordinator','speech','ot','supervisor','guardian'];
 const newRoles=['aba2','ot2','speech2'];
 const requiredOld=['authentication','forbidden_role_read','session_cleanup'];
@@ -13,6 +14,12 @@ const make=(roles,steps,kind)=> {
 const fixture=()=>{
  const sha='a'.repeat(40);
  const legacy=make(oldRoles,requiredOld,'hosted_synthetic_interactive_readonly');
+ // Match the real hosted-interactive producer's role-scoped positive routes.
+ for(const role of oldRoles){
+  for(const route of ROLES[role].routes.filter(route=>route!=='/app'))
+   legacy.rows.push({role,step:'link:'+route,status:'PASS',reason:'clicked_authorized_navigation'});
+ }
+ legacy.counts.PASS=legacy.rows.length;
  const extra=make(newRoles,requiredNew,'hosted_extra_therapists_private_readonly');
  for(const report of [legacy,extra]){report.deployedSha=sha;report.protectedRunId='42480077162';}
  return {legacy,extra,deployedSha:sha,verifiedSha:sha,operatorApproved:true,
@@ -77,4 +84,34 @@ test('an older account artifact cannot be paired with a current deployment or an
  f.legacy.deployedSha=f.deployedSha;
  f.extra.protectedRunId='123';
  assert(evaluateM4HostedEvidence(f).reasons.includes('account_reports_deployment_provenance_invalid'));
+});
+
+test('rejects a truncated seven-role artifact even with successful login and denial for all roles',()=>{
+ const f=fixture();
+ // A syntactically valid report with all 7 logins, all denials and all logouts,
+ // but zero positive authorized navigation evidence must not pass acceptance.
+ f.legacy.rows=f.legacy.rows.filter(r=>!r.step.startsWith('link:'));
+ f.legacy.counts.PASS=f.legacy.rows.length;
+ assert.equal(f.legacy.counts.FAIL,0);
+ assert.equal(f.legacy.counts.BLOCKED,0);
+ const result=evaluateM4HostedEvidence(f);
+ assert.equal(result.qualified,false);
+ assert(result.reasons.includes('legacy_authorized_navigation_missing'));
+});
+test('missing one role-specific clinical navigation fails even if every other route passes',()=>{
+ const f=fixture();
+ f.legacy.rows=f.legacy.rows.filter(r=>!(r.role==='speech'&&r.step==='link:/app/clinical'));
+ f.legacy.counts.PASS=f.legacy.rows.length;
+ const result=evaluateM4HostedEvidence(f);
+ assert.equal(result.qualified,false);
+ assert(result.reasons.includes('legacy_authorized_navigation_missing'));
+});
+test('positive authorization must PASS and cannot be replaced with a BLOCKED row',()=>{
+ const f=fixture();
+ const row=f.legacy.rows.find(r=>r.role==='guardian'&&r.step==='link:/app/practice');
+ assert(row);
+ row.status='BLOCKED';
+ f.legacy.counts.PASS--;
+ f.legacy.counts.BLOCKED++;
+ assert.equal(evaluateM4HostedEvidence(f).qualified,false);
 });
