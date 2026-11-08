@@ -2,6 +2,7 @@
 // Supply ONLY sanitized status artifacts from an approved protected workflow.
 // Never serialize credentials, cookies, page text, child IDs, or API bodies.
 import {readFileSync} from 'node:fs';
+import {ROLES} from './hosted-readonly.mjs';
 const LEGACY=['platform','admin','coordinator','speech','ot','supervisor','guardian'];
 const EXTRA=['aba2','ot2','speech2'];
 const SHA=/^[a-f0-9]{40}$/;
@@ -35,9 +36,16 @@ export function evaluateM4HostedEvidence({legacy,extra,deployedSha,verifiedSha,
   reasons.push('legacy_artifact_invalid');
  else{
   if(legacy.counts.FAIL||legacy.counts.BLOCKED)reasons.push('legacy_cases_not_all_pass');
-  for(const role of LEGACY)
+  for(const role of LEGACY){
    for(const step of ['authentication','forbidden_role_read','session_cleanup'])
     if(!isPass(legacy,role,step))reasons.push('legacy_required_check_missing');
+   // Every positive, role-allowed navigation actually tested by the
+   // seven-account runner must pass, not merely login and forbidden-route probes.
+   // Reuse its canonical route contract to avoid drifting from the producer.
+   for(const route of ROLES[role].routes.filter(route=>route!=='/app'))
+    if(!isPass(legacy,role,'link:'+route))
+     reasons.push('legacy_authorized_navigation_missing');
+  }
  }
  if(!secureRows(extra,'hosted_extra_therapists_private_readonly',EXTRA)
     ||extra.syntheticOnly!==true||extra.checksExpected!==3)
