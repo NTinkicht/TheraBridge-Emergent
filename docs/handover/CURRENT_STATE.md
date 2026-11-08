@@ -1,3 +1,7 @@
+**M4-06 P1 audit TRUNCATE protection — 2026-11-08:** PR #281 / issue #277 adds forward-only migration `20261108100000_m4_audit_truncate_guard` (statement-level BEFORE TRUNCATE trigger and PUBLIC privilege revoke), plus a real PostgreSQL denial-and-append regression. Test-only `resetDb` uses one transaction to temporarily disable/reenable that trigger for full fixture reset, rollback restoring it on failure. DB owners/superusers retain the ability to bypass triggers; operational least-privilege credentials and verified restore/upgrade remain required. First-head CI and fresh independent code review were initiated; Codex P1 Rule 7 documentation finding FIX_NOW in this commit. Current commit CI NOT RUN; #277/#180 remain OPEN, clinical NO-GO preserved.
+
+---
+
 **M4-04 clinical read security reconciliation — 2026-11-08:** PR #271 implements active-membership and live-supervisor checks for clinical child, progress and review-queue reads, plus specialty-revocation and suspension negative tests. Reconciled after M4-05/#272 merge. Final new-head six-job CI and independent implementation review NOT YET VERIFIED. The remaining P0 #178 authorization/CAS/browser scope and all clinical NO-GO remain OPEN.
 
 ---

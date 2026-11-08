@@ -1,3 +1,7 @@
+**M4-06 #277 follow-up — 2026-11-08:** (1) Obtain six exact-head CI jobs PASS for PR #281 after Rule 7 documentation fix; inspect migration build, test reset concurrency and audit TRUNCATE regression; (2) request fresh independent review and resolve P1 findings; (3) verify migration from existing database and clean database, backup/rollback and restricted operational DB role (owner/superuser can override triggers); (4) only then merge #281 and consider closing #277 with evidence; (5) continue parent M4-06 #180 transaction/CAS/migration audit. Synthetic-only; no clinical activation or owner signoff implied.
+
+---
+
 **M4-04 clinical read security reconciliation — 2026-11-08:** PR #271 implements active-membership and live-supervisor checks for clinical child, progress and review-queue reads, plus specialty-revocation and suspension negative tests. Reconciled after M4-05/#272 merge. Final new-head six-job CI and independent implementation review NOT YET VERIFIED. The remaining P0 #178 authorization/CAS/browser scope and all clinical NO-GO remain OPEN.
 
 ---
