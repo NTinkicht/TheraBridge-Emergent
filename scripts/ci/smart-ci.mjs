@@ -9,7 +9,8 @@ import {appendFileSync} from 'node:fs';
 
 const SHA=/^[0-9a-f]{40}$/;
 const DOC=/(^|\/)[^/]+\.mdx?$/i;
-const WEB_STYLE=/^apps\/web\/(?:src\/.*\.css|public\/(?:[^/]+\/)*[^/]+)$/;
+// Only non-executable static assets qualify. SVG/HTML/JS/JSON and unknown assets force full CI.
+const WEB_STYLE=/^apps\/web\/(?:src\/.*\.css|public\/(?:[^/]+\/)*[^/]+\.(?:png|jpe?g|webp|gif|ico|avif|woff2?|ttf|otf))$/i;
 const HARD_BLOCK=/(^|\/)(?:AGENTS\.md|SECURITY\.md|CODEOWNERS|Dockerfile(?:\.[^/]*)?|render\.yaml)$/i;
 const VALID_STATUS=new Set(['A','M','D','T','U']);
 const jobs=['secret-scan','test','live-session','demo-journey','compose','preview-container','smart-targeted'];
