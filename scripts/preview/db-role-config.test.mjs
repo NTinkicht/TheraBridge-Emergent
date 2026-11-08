@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {spawnSync} from 'node:child_process';
 import {validateDbRoleConfiguration as check} from './db-role-config.mjs';
 
 const migration='postgresql://ddl:admin-secret@ep-demo.region.aws.neon.tech/therabridge_demo_m3_preview?sslmode=require';
@@ -52,7 +53,22 @@ test('preview entrypoint and Docker image preserve privileged migration-only sco
  assert.match(boot,/DATABASE_URL="\$MIGRATION_DATABASE_URL" yarn workspace @therabridge\/api prisma migrate deploy/);
  assert.match(boot,/DATABASE_URL="\$MIGRATION_DATABASE_URL" yarn workspace @therabridge\/api seed:demo/);
  assert.match(boot,/node scripts\/preview\/verify-runtime-db-role\.mjs/);
- assert.match(boot,/node --max-old-space-size=192 apps\/api\/dist\/main\.js/);
+ assert.match(boot,/bash scripts\/preview\/exec-runtime\.sh node --max-old-space-size=192 apps\/api\/dist\/main\.js/);
  assert.doesNotMatch(boot,/export DATABASE_URL="\$MIGRATION_DATABASE_URL"/);
  assert.match(docker,/COPY scripts\/preview\/db-role-config\.mjs scripts\/preview\/verify-runtime-db-role\.mjs/);
+ assert.match(docker,/COPY scripts\/preview\/exec-runtime\.sh/);
+ assert.match(boot,/unset MIGRATION_DATABASE_URL/);
+ assert.match(boot,/bash scripts\/preview\/exec-runtime\.sh node --max-old-space-size=192 node_modules\/next/);
+});
+
+test('real spawned API/web Node children cannot inherit the migration credential',()=>{
+ for(const tag of ['api','web']) {
+  const check = 'if (process.env.MIGRATION_DATABASE_URL !== undefined) process.exit(17);' +
+    'if (process.env.DATABASE_URL !== "runtime-placeholder") process.exit(18);' +
+    'process.stdout.write(process.argv[1]);';
+  const p=spawnSync('bash',['scripts/preview/exec-runtime.sh','node','-e',check,tag],{
+    env:{...process.env,DATABASE_URL:'runtime-placeholder',MIGRATION_DATABASE_URL:'owner-secret-never-export'},encoding:'utf8'});
+  assert.equal(p.status,0,tag + ': '+(p.stderr||'').replaceAll('owner-secret-never-export','<redacted>'));
+  assert.equal(p.stdout,tag);
+ }
 });
