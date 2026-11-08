@@ -27,7 +27,48 @@ regexes = [
   # M4-02 old Git commit contains this deterministic local test-only literal.
   '''^offline_only_fixture_$''',
   # M4-03 historic JavaScript expression capture from a synthetic malformed-JSON test only.
-  '''^\+injectedFragment\+$''',
+  '''^\+injectedFragment\+
+]
+
+[[rules]]
+id = "therabridge-env-credential"
+description = "Unquoted KEY=value credential in env-style files"
+regex = '''(?m)^\s*(?:export\s+)?[A-Z0-9_]*(?:PASSWORD|PASSWD|SECRET|TOKEN|API_KEY)[A-Z0-9_]*\s*[=:]\s*([^\s"'#]{8,})'''
+secretGroup = 1
+path = '''(^|/)\.env[^/]*$|\.ya?ml$|\.sh$|\.toml$|\.ini$|\.properties$'''
+keywords = ["password", "passwd", "secret", "token", "api_key"]
+
+[[rules.allowlists]]
+description = "Documented placeholders and env references"
+regexTarget = "secret"
+regexes = [
+  '''^CHANGE_ME[A-Z0-9_]*$''',
+  '''^ci_only_[a-z_]+$''',
+  '''^\$\{?[A-Z_][A-Z0-9_]*''',
+]
+'',
+  # PR #284 old, immutable feature-branch commit: exact synthetic-only rollback test string.
+  # Current test uses a constructed value; do not broaden this exception.
+  '''^Atomic-Reset-Synthetic-Password-1
+]
+
+[[rules]]
+id = "therabridge-env-credential"
+description = "Unquoted KEY=value credential in env-style files"
+regex = '''(?m)^\s*(?:export\s+)?[A-Z0-9_]*(?:PASSWORD|PASSWD|SECRET|TOKEN|API_KEY)[A-Z0-9_]*\s*[=:]\s*([^\s"'#]{8,})'''
+secretGroup = 1
+path = '''(^|/)\.env[^/]*$|\.ya?ml$|\.sh$|\.toml$|\.ini$|\.properties$'''
+keywords = ["password", "passwd", "secret", "token", "api_key"]
+
+[[rules.allowlists]]
+description = "Documented placeholders and env references"
+regexTarget = "secret"
+regexes = [
+  '''^CHANGE_ME[A-Z0-9_]*$''',
+  '''^ci_only_[a-z_]+$''',
+  '''^\$\{?[A-Z_][A-Z0-9_]*''',
+]
+'',
 ]
 
 [[rules]]
