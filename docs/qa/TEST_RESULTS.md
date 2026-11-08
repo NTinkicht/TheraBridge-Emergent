@@ -1,3 +1,7 @@
+## M4 final read-only qualification — 2026-11-08 live qualification checkpoint (2026-11-08)
+
+Verified via read-only Render and Neon: live branch zero-file diff from M4 main, correct database, 10 synthetic users, 25 completed migrations, audit UPDATE/DELETE and TRUNCATE triggers enabled, 78 FKs. Only one valid center and owner-only application role: full two-tenant and privileged audit integrity NOT VERIFIED. New tests on this PR NOT RUN yet. Protected HA-01–HA-10 and broad coverage NOT RUN. See docs/qa/M4-LIVE-QUALIFICATION-20261108.md.
+
 ## M4-F03 controlled acceptance — test evidence (2026-11-08)
 
 **NOT RUN / NOT YET VERIFIED:** New 7+3 protected acceptance receipt validator requires exact SHA, operator approval and separate two-valid-tenant positive/negative/revocation receipt. Negative regressions included in CI. NOT RUN on this final HEAD; protected hosted run and historic/controlled mapping remain unverified. G2/G2b NO-GO. Require six exact-head CI jobs and independent review before any merge.
