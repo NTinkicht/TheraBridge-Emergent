@@ -7,6 +7,17 @@ const LEGACY=['platform','admin','coordinator','speech','ot','supervisor','guard
 const EXTRA=['aba2','ot2','speech2'];
 const SHA=/^[a-f0-9]{40}$/;
 const STATUSES=['PASS','FAIL','BLOCKED'];
+const READ_ONLY_EXCLUSIONS=Object.freeze({
+ form_submission_validation:'no_mutating_submission_authorized',
+ clinical_or_ai_draft_review:'clinical_gate_and_review_not_exercised'
+});
+// The legacy runner emits exactly these two excluded cases per role.
+// Preserve them as BLOCKED: no clinical mutation/draft may be fabricated
+// as a PASS just to qualify the protected read-only acceptance.
+const allowedReadOnlyBlock=(row)=>
+ Object.hasOwn(READ_ONLY_EXCLUSIONS,row.step) &&
+ row.reason===READ_ONLY_EXCLUSIONS[row.step];
+
 const secureRows=(report,kind,roles)=>{
  if(report?.schema!==1 || report.kind!==kind || !Array.isArray(report.rows)
   || report.clinicalGatesUnchanged!==true)return false;
@@ -35,7 +46,16 @@ export function evaluateM4HostedEvidence({legacy,extra,deployedSha,verifiedSha,
  if(!secureRows(legacy,'hosted_synthetic_interactive_readonly',LEGACY))
   reasons.push('legacy_artifact_invalid');
  else{
-  if(legacy.counts.FAIL||legacy.counts.BLOCKED)reasons.push('legacy_cases_not_all_pass');
+  if(legacy.counts.FAIL)reasons.push('legacy_cases_not_all_pass');
+  if(legacy.rows.some(row=>row.status==='BLOCKED'&&!allowedReadOnlyBlock(row)))
+   reasons.push('legacy_unexpected_blocked_check');
+  for(const role of LEGACY){
+   for(const [step,reason] of Object.entries(READ_ONLY_EXCLUSIONS)){
+    const matches=legacy.rows.filter(row=>row.role===role&&row.step===step);
+    if(matches.length!==1||matches[0].status!=='BLOCKED'||matches[0].reason!==reason)
+     reasons.push('legacy_read_only_exclusion_invalid');
+   }
+  }
   for(const role of LEGACY){
    for(const step of ['authentication','forbidden_role_read','session_cleanup'])
     if(!isPass(legacy,role,step))reasons.push('legacy_required_check_missing');
