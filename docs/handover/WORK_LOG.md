@@ -1,3 +1,7 @@
+## M4-F01 security/database qualification — Implementation log (2026-11-08)
+
+Implemented scoped code and regression tests on chatgpt/m4-f01-security-db-final. Merged auth atomicity PRs #272/#284/#286 and DB triggers #273/#281 reused. New PostgreSQL synthetic audit concurrency plus PUBLIC TRUNCATE privilege-negative regression in apps/api/test/m4-db-integrity.e2e-spec.ts. Runtime least-privileged DB role, pooled migrations and full security matrix NOT YET VERIFIED; parent #179/#180 and #280 remain evidence-owned. No clinical activation. No unexecuted acceptance test is marked PASS.
+
 ## M4-C04 Historical evidence gate — implementation checkpoint
 
 Committed scoped code/test changes in branch `chatgpt/m4-c04-historic-evidence-closeout`. Historic issue validator now emits a conservative 75-row disposition summary and lists independently-evidenced VERIFIED_IMPLEMENTED candidates while explicitly setting automatic closure and M4 milestone closure authorization to false. Negative tests reject false evidence, policy block without proof and misleading completion assertions. No historical issue is auto-closed. #183/#167 remain open and C01–C03 independent qualifications are dependencies. No test outcome is promoted to PASS before exact-head CI evidence.
