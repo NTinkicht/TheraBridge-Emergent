@@ -18,6 +18,11 @@ services:
     envVars:
       - key: DATABASE_URL
         sync: false
+      # Operator-staged privileged migration/seed credential; never use in the API runtime.
+      - key: MIGRATION_DATABASE_URL
+        sync: false
+      - key: TB_DB_ROLE_SEPARATION
+        value: "false"
       - key: DEMO_PASSWORDS_JSON
         sync: false
       - key: AUTH_SECRET
