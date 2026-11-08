@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {EXTRA_IDENTITIES,DENIED_PAIRS,validateExtraUsers,inspectTherapistContext,
  inspectAssignedChildren,inspectClinicalScope,safeResponseCode,denied,safeResult,totals} from './hosted-extra-contracts.mjs';
 const creds=()=>Object.fromEntries(Object.entries(EXTRA_IDENTITIES).map(([key,p],i)=>
@@ -61,4 +62,25 @@ test('results never contain email/password, only allowlisted status and reason',
  assert.deepEqual(totals([r]),{PASS:1,FAIL:0,BLOCKED:0});
  assert.equal(JSON.stringify(r).includes('@'),false);
  assert.throws(()=>safeResult('ot2','clinical_access','FAIL','password=secret'),/invalid_safe_result/);
+});
+
+test('private hosted child IDs and negative probes remain coupled to the canonical synthetic seed',()=>{
+ const source=fs.readFileSync('apps/api/src/cli/seed-demo.ts','utf8');
+ const runner=fs.readFileSync('scripts/qa/hosted-extra-therapists.mjs','utf8');
+ const rootPattern=/const SCOPE\s*=\s*'([^']+)'/;
+ const seedScope=source.match(rootPattern)?.[1];
+ const qaScope=runner.match(rootPattern)?.[1];
+ assert.equal(seedScope,'therabridge-childrens-home-ahmed-synthetic-v1');
+ assert.equal(qaScope,seedScope, 'private QA must use same deterministic seed namespace');
+ const normalize=s=>s.replace(/\s+/g,'');
+ const algorithm="return [s.slice(0,8),s.slice(8,12),'4'+s.slice(13,16),'8'+s.slice(17,20),s.slice(20,32)].join('-');";
+ assert.match(source,/function id\(name: string\): string/);
+ assert(normalize(source).includes(normalize(algorithm)));
+ assert(normalize(runner).includes(normalize(algorithm)));
+ for(const [key,child] of [['aba2','leen'],['ot2','amina'],['speech2','zayd']]){
+  assert.match(source,new RegExp("key:'"+child+"'"), 'negative child must be seeded');
+  assert(runner.includes(key+":syntheticChildId('"+child+"')"), 'deny fixture must reference canonical seed');
+ }
+ assert(runner.includes('scopeOkAll&&denied(other.status())'));
+ assert(runner.includes('scopeOkAll&&denied(wrong.status())'));
 });
