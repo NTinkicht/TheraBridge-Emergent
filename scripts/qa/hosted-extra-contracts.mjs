@@ -70,7 +70,8 @@ export function safeResponseCode(status){
   return 'unexpected_status';
 }
 export function denied(status){
-  return status===401||status===403||status===404;
+  // Do not claim a tenant/specialty isolation PASS when authentication vanished.
+  return status===403||status===404;
 }
 export function safeResult(key,step,status,reason) {
   if(!Object.hasOwn(EXTRA_IDENTITIES,key) || !/^[a-z_]+$/.test(step) ||
