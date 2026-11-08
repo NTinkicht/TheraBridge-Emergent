@@ -1,3 +1,11 @@
+## M4-08 honest application-wide coverage measurement — 2026-11-09 (PR under review)
+
+A new **non-gating baseline** instruments the full `apps/api/src/**/*.ts` Jest suite rather than confusing fingerprint-only coverage with the application. Existing Web `node --test` runs under V8 observation; a sanitizer/report counts app source files and observed executed modules but **does not pretend that V8 module presence equals Istanbul line/branch/function/statement coverage**. The M4 report explicitly returns `NOT_QUALIFIED` until both API and Web have genuinely instrumented, full-scope four-metric coverage and meet the owner-reviewed ≥95% threshold. Tests fail closed for invalid/missing data and for fabricated API-only PASS. CI archives only aggregate percentages/counts—no raw files, data rows, credentials or cookies. This is **measurement infrastructure**, not an already-passing 95% application gate. New exact-head CI/independent review required; no clinical authorization changes; G2/G2b/safeguarding/consent/signing/release/real AI remain NO-GO.
+
+1. Review final-head CI run: confirm all six jobs pass, full API JSON summary is emitted, aggregate `m4-coverage-baseline.json` artifact exists, exact file counts/percentages are authentic and sanitized; address independent Codex P0–P3 findings and re-review before merge.
+2. Use measured API metrics to identify uncovered paths. For Web introduce true Istanbul-compatible TSX/Next instrumentation and executable component/browser tests; mere imported-source counting must not substitute for statements/branches/functions/lines. Only after API+Web genuine reports may the existing `scripts/qa/m4-measured-coverage.mjs` >=95 check act as required release gate.
+3. No blanket exclusions, arbitrary changed denominators, or invented 95% evidence. M4-08 #182 and epic #167 stay OPEN, and protected hosted QA/two-valid-centre acceptance remains independently blocked pending approved GitHub dispatch.
+
 ## M4-06 staged DB role cutover — actual next actions (2026-11-08)
 
 1. Qualify this review branch with six exact-head CI jobs and independent review; fix all actionable P0–P2 comments, document P3, re-review and merge only after exact final HEAD.
