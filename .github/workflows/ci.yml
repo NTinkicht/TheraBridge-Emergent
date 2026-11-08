@@ -103,6 +103,8 @@ jobs:
           BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
         run: node scripts/qa/check-migration-history.mjs
       - run: yarn workspace @therabridge/api prisma generate
+      - name: M4-06 staged migration/runtime database-role separation contract
+        run: node --test scripts/preview/db-role-config.test.mjs scripts/preview/verify-runtime-db-role.test.mjs
       - name: Check additive migration after TB-EM-012 was already applied
         run: |
           # Migrate the CI database using the original through-012 chain first,
