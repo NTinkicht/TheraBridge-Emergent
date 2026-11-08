@@ -1,4 +1,8 @@
-**M4-04 historical clinical regressions — 2026-11-08:** Added real-PostgreSQL API negative regressions for #39 (reject cross-child and wrong-author session-note linkage, no unauthorized observation/audit) and #40 (two same-service assigned therapists; only true plan author can edit/submit; CAS unchanged). Positive controls check legitimate note and author submit. PR review and six exact-head CI PENDING; #39/#40 not yet closed, parent #178 still broader OPEN. Clinical governance NO-GO preserved.
+**M4-04 clinical provenance test reconciliation — 2026-11-08:** PR #285 adds synthetic negative tests for #39 session-note provenance and #40 plan author-only draft mutations. Reconciled with merged M4-05 transactional reset and narrow historical secret-scan exception from PR #284; neither production security nor clinical NO-GO changed. New six-job CI/review pending, #39/#40/#178 remain OPEN.
+
+---
+
+**M4-05 atomic reset remediation — 2026-11-08:** PR #284 implements a single PostgreSQL transaction for reset token, password hash, sessions, origin lockouts and audit receipt. Synthetic fault-injection regression and full-history scanner's exact historical fixture exception added. Branch reconciled after M4-08 PR283 merge; new six-job CI and independent exact-HEAD review NOT YET VERIFIED. Issues #280/#179 OPEN; clinical NO-GO unchanged.
 
 ---
 
