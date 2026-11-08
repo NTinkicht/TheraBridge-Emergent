@@ -1,3 +1,5 @@
+**Additional static-asset safety tightening:** Smart CI now forces FULL CI for potentially executable Web public SVG/HTML/JS/JSON, as well as unknown assets. Only CSS and known non-executable image/font file types may be classified web-style in the simulation; the Rule16 owner-policy lock still prevents any actual job skipping. Regression tests updated; final-head CI/re-review pending.
+
 **Codex P1 Rule 16 disposition (FIX_NOW):** targeted execution cannot be activated by repository variables or GitHub branch protection alone. Existing AGENTS.md Rule 16 mandates six exact-head CI PASS. Production Smart CI classifier now **hard-codes `ownerPolicyApproved:false`**, always selecting FULL even if both activation variables are true; unit tests prove this. A separate, explicit owner-approved Rule 16 amendment, required gate setup, and reviewed code unlock are prerequisites. This PR changes no policy or merge authorization. 
 
 ## Smart CI shadow-mode implementation — 2026-11-09 (REVIEW PENDING)
