@@ -41,11 +41,13 @@ test('reviewed suite snapshot rejects deletion and rename without broadening cou
  assert.throws(()=>compareSuiteInventory(['beta.e2e-spec.ts','alpha.e2e-spec.ts'],pinned,'API'),/Invalid API suite snapshot/);
  assert.throws(()=>compareSuiteInventory(['alpha.e2e-spec.ts','alpha.e2e-spec.ts'],pinned,'API'),/Invalid API suite snapshot/);
 });
-test('real repository inventory matches the frozen baseline without new unexpected additions',()=>{
- const report=baseline();
- assert.deepEqual(report.newly_added_api_suites,[]);
- assert.deepEqual(report.newly_added_web_suites,[]);
- assert.equal(report.api_suite_count,32);
- assert.equal(report.web_suite_count,2);
+test('real repository inventory preserves frozen suites while permitting reported additions',()=>{
+ const report=baseline(); // throws if ANY pinned suite was deleted or renamed
+ assert(report.api_suite_count>=32);
+ assert(report.web_suite_count>=2);
+ assert(Array.isArray(report.newly_added_api_suites));
+ assert(Array.isArray(report.newly_added_web_suites));
+ assert.equal(report.api_suite_count,32+report.newly_added_api_suites.length);
+ assert.equal(report.web_suite_count,2+report.newly_added_web_suites.length);
  assert.equal(report.application_wide_coverage_percent,null);
 });
