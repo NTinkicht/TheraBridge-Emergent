@@ -1,3 +1,11 @@
+## M4-C02 Database/infra/coverage — test evidence
+
+**Result: NOT YET VERIFIED on final HEAD.** CI suite inventory now verifies pinned Gitleaks version/SHA-256, fail-closed all-ref and tracked-file scans, and standards-compliant TOML syntax via built-in Python `tomllib`; negative Node tests exercise removed safeguards and malformed configuration. No DB migration or runtime query code changed in this tranche. Application-wide 95% coverage, database contention, Render resource and load qualification remain NOT VERIFIED. Parents #180/#181/#182 stay OPEN. CI-run link, job-by-job PASS/FAIL and final reviewer receipt must be recorded after execution; no hosted ten-account or clinical acceptance is inferred.
+
+## M4-05 PR #286 — PostgreSQL early-boundary fault injection (2026-11-08)
+
+**Evidence status: NOT RUN / NOT YET VERIFIED on final HEAD.** Test source at code commit `b932971cb79c578e79d560faec72775a7c1ffded` adds two parameterized, real-PostgreSQL cases in `apps/api/test/auth.e2e-spec.ts`: (1) synthetic trigger rejecting `auth_identity` UPDATE, (2) synthetic trigger rejecting `session` UPDATE. Each expects password reset HTTP 500, unchanged `verification_token.used_at`, unchanged password hash and previously active session, followed by trigger teardown, successful same-token retry, revoked old session, new-password login and HTTP 422 replay rejection. **These new tests are separate from the existing `audit_event` INSERT fault-injection rollback case merged in PR #284.** No runtime, hosted or live-patient acceptance is inferred. Initial code-head CI workflow [42475586207](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42475586207) was in progress when inspected; final HEAD after documentation remediation needs its **own** six-job CI and independent re-review. Record PASS/FAIL and the immutable run SHA here only after an observed result. No 95%-coverage or clinical release claim.
+
 **M4-04 clinical provenance test reconciliation — 2026-11-08:** PR #285 adds synthetic negative tests for #39 session-note provenance and #40 plan author-only draft mutations. Reconciled with merged M4-05 transactional reset and narrow historical secret-scan exception from PR #284; neither production security nor clinical NO-GO changed. New six-job CI/review pending, #39/#40/#178 remain OPEN.
 
 ---
