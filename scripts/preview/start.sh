@@ -42,13 +42,13 @@ export FAMILY_PRACTICE_DEMO=true
 # provisioning/qualifying the role and same-database migration credential.
 node scripts/preview/db-role-config.mjs
 if [[ "${TB_DB_ROLE_SEPARATION:-false}" == "true" ]]; then
-  DATABASE_URL="$MIGRATION_DATABASE_URL" yarn workspace @therabridge/api prisma migrate deploy
+  DATABASE_URL="$MIGRATION_DATABASE_URL" bash scripts/preview/migrate-if-needed.sh
   DATABASE_URL="$MIGRATION_DATABASE_URL" yarn workspace @therabridge/api seed:demo
   # Privileged URL must not survive beyond owner-only migration/seed work.
   unset MIGRATION_DATABASE_URL
   node scripts/preview/verify-runtime-db-role.mjs
 else
-  yarn workspace @therabridge/api prisma migrate deploy
+  bash scripts/preview/migrate-if-needed.sh
   yarn workspace @therabridge/api seed:demo
 fi
 
