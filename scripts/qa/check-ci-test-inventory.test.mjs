@@ -68,8 +68,14 @@ test('secret scan retains version/checksum/full-history/checkout guard and fail-
   ['exit "$result"','exit 0'],
   ['GITLEAKS_VERSION: 8.30.1','GITLEAKS_VERSION: latest']
  ]) {
-  assert(workflow.includes(before),'fixture is out of date: '+before);
-  assert.throws(()=>secretScanContract(workflow.replace(before,after)),/Secret scanning missing|fail closed/);
+  // A preceding job may also checkout full history. Mutate only the scanner.
+  const start=workflow.indexOf('\n  secret-scan:\n');
+  const end=workflow.indexOf('\n  test:\n',start);
+  assert(start>=0&&end>start,'scanner job block absent');
+  const original=workflow.slice(start,end);
+  assert(original.includes(before),'scanner fixture is out of date: '+before);
+  const modified=workflow.slice(0,start)+original.replace(before,after)+workflow.slice(end);
+  assert.throws(()=>secretScanContract(modified),/Secret scanning missing|fail closed/);
  }
  assert.throws(()=>secretScanContract(workflow.replace('  secret-scan:', '  skipped-scan:')),/job layout/);
  assert.throws(()=>secretScanContract(workflow.replace('    timeout-minutes: 10','    continue-on-error: true\n    timeout-minutes: 10')),/fail closed/);

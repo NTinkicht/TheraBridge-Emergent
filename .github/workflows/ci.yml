@@ -14,6 +14,30 @@ permissions:
   contents: read
 
 jobs:
+  smart-plan:
+    name: smart-plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      mode: ${{ steps.select.outputs.mode }}
+      candidate: ${{ steps.select.outputs.candidate }}
+      reason: ${{ steps.select.outputs.reason }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Calculate complete PR diff and conservative risk plan
+        id: select
+        env:
+          TB_SMART_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          TB_SMART_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          TB_SMART_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          TB_SMART_FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+          TB_SMART_CI_MODE: ${{ vars.TB_SMART_CI_MODE }}
+          TB_SMART_CI_REQUIRED_GATE_READY: ${{ vars.TB_SMART_CI_REQUIRED_GATE_READY }}
+        run: node scripts/ci/smart-ci.mjs
+
   secret-scan:
     timeout-minutes: 10
     runs-on: ubuntu-24.04
@@ -49,6 +73,8 @@ jobs:
         run: /tmp/gitleaks dir . --config .gitleaks.toml --redact=100 --no-banner --exit-code 1
 
   test:
+    needs: smart-plan
+    if: needs.smart-plan.outputs.mode == 'full'
     timeout-minutes: 30
     runs-on: ubuntu-24.04
     services:
@@ -71,6 +97,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Verify Smart CI classifier, policy gate and workflow wiring
+        run: node --test scripts/ci/smart-ci.test.mjs scripts/ci/smart-ci-workflow.test.mjs
       - name: Required portability files are present
         run: |
           for f in yarn.lock .env.example apps/api/.env.example apps/web/.env.example .nvmrc; do
@@ -171,6 +199,8 @@ jobs:
           node scripts/design/check-session-workflow.mjs
 
   live-session:
+    needs: smart-plan
+    if: needs.smart-plan.outputs.mode == 'full' || needs.smart-plan.outputs.mode == 'web-style'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     services:
@@ -210,6 +240,8 @@ jobs:
         run: rm -f .workspace/local-credentials/synthetic-accounts.json
 
   demo-journey:
+    needs: smart-plan
+    if: needs.smart-plan.outputs.mode == 'full' || needs.smart-plan.outputs.mode == 'web-style'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     services:
@@ -251,7 +283,8 @@ jobs:
   compose:
     timeout-minutes: 25
     runs-on: ubuntu-24.04
-    needs: test
+    needs: [smart-plan, test]
+    if: needs.smart-plan.outputs.mode == 'full'
     steps:
       - uses: actions/checkout@v4
       - run: cp .env.example .env
@@ -278,6 +311,8 @@ jobs:
 
 
   preview-container:
+    needs: smart-plan
+    if: needs.smart-plan.outputs.mode == 'full'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     services:
@@ -343,3 +378,60 @@ jobs:
           rm -f /tmp/therabridge-preview-ci.env
           rm -f .workspace/local-credentials/render-demo-passwords.json
           rm -f .workspace/local-credentials/render-demo-extra-passwords.json
+
+  smart-targeted:
+    name: smart-targeted
+    needs: smart-plan
+    if: needs.smart-plan.outputs.mode == 'docs' || needs.smart-plan.outputs.mode == 'web-style'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - name: Validate Smart CI policy and decision regression
+        run: node --test scripts/ci/smart-ci.test.mjs scripts/ci/smart-ci-workflow.test.mjs
+      - name: Validate canonical roadmap and historical registers
+        run: |
+          node scripts/qa/check-roadmap-registers.mjs
+          node --test scripts/qa/check-roadmap-registers.test.mjs
+          node scripts/qa/check-historic-issues.mjs
+          node --test scripts/qa/check-historic-issues.test.mjs
+      - name: Web-focused tests and production build
+        if: needs.smart-plan.outputs.mode == 'web-style'
+        run: |
+          yarn install --frozen-lockfile
+          yarn workspace @therabridge/web test
+          yarn workspace @therabridge/web build
+          node scripts/design/check-child360-logic.mjs
+
+  smart-ci-gate:
+    name: smart-ci-gate
+    if: always()
+    needs:
+      - smart-plan
+      - secret-scan
+      - test
+      - live-session
+      - demo-journey
+      - compose
+      - preview-container
+      - smart-targeted
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify every job required by the exact-commit Smart CI plan
+        env:
+          TB_SMART_NEEDS_JSON: ${{ toJSON(needs) }}
+        run: node scripts/ci/smart-ci-gate.mjs
