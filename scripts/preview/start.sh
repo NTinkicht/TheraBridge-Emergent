@@ -35,10 +35,20 @@ export ENABLE_FEASIBILITY_DIAGNOSTICS=false
 export FAMILY_MESSAGING_DEMO=false
 export FAMILY_PRACTICE_DEMO=true
 
-# Keep Prisma as the single migration authority. Fail if database or
-# credential mapping is wrong; never silently repair unrelated tenants.
-yarn workspace @therabridge/api prisma migrate deploy
-yarn workspace @therabridge/api seed:demo
+# Preserve the existing synthetic demo until an explicitly approved credential
+# cutover. In enforced mode migrate/seed as DDL owner, then verify the API's
+# separate DATABASE_URL cannot own tables, create schema or TRUNCATE audit logs.
+# Never echo credentials, and never switch a live service to nonowner before
+# provisioning/qualifying the role and same-database migration credential.
+node scripts/preview/db-role-config.mjs
+if [[ "${TB_DB_ROLE_SEPARATION:-false}" == "true" ]]; then
+  DATABASE_URL="$MIGRATION_DATABASE_URL" yarn workspace @therabridge/api prisma migrate deploy
+  DATABASE_URL="$MIGRATION_DATABASE_URL" yarn workspace @therabridge/api seed:demo
+  node scripts/preview/verify-runtime-db-role.mjs
+else
+  yarn workspace @therabridge/api prisma migrate deploy
+  yarn workspace @therabridge/api seed:demo
+fi
 
 api_pid=""
 web_pid=""
