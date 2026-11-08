@@ -68,7 +68,7 @@ export function baseline(){
   const apiTests=names('apps/api/test',n=>n.endsWith('.e2e-spec.ts'));
   const webTests=names('apps/web/test',n=>n.endsWith('.test.mjs'));
   const suiteSnapshot=JSON.parse(fs.readFileSync(path.join(root,'docs/qa/M4-08-REVIEWED-SUITE-BASELINE.json'),'utf8'));
-  if(suiteSnapshot.schemaVersion!==1||!/^\\d{4}-\\d{2}-\\d{2}$/.test(suiteSnapshot.recordedOn)||
+  if(suiteSnapshot.schemaVersion!==1||!/^\d{4}-\d{2}-\d{2}$/.test(suiteSnapshot.recordedOn)||
     !/^[0-9a-f]{40}$/.test(suiteSnapshot.sourceCommit)||suiteSnapshot.applicationCoverageMeasured!==false)
     throw Error('Invalid reviewed suite baseline metadata');
   const newApi=compareSuiteInventory(suiteSnapshot.apiSuites,apiTests,'API');
