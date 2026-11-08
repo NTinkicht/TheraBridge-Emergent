@@ -91,7 +91,7 @@ async function exercise(browser,key,user,rows){
   }
   const other=await ctx.request.get(BASE+'/api/centers/'+center+
     '/clinical/children/'+forbiddenChildren[key]);
-  signal(rows,key,'cross_assignment_denial',denied(other.status()),
+  signal(rows,key,'cross_assignment_denial',scopeOkAll&&denied(other.status()),
     'denied_unassigned_child','unauthorized_child_disclosed');
   // A one-centre seeded database can verify deny-by-default on a nonexistent
   // centre ID, but cannot claim a full two-tenant isolation evaluation.
