@@ -1,3 +1,7 @@
+## M4-F01 security/database — test evidence (2026-11-08)
+
+**NOT RUN / NOT YET VERIFIED:** New synthetic PostgreSQL catalog/Public TRUNCATE privilege and simultaneous audit UPDATE/DELETE rejection regression. Existing transactional password recovery and early-boundary tests reused. NOT RUN on this final HEAD; Render runtime DB role, pooled migrations and full HTTP matrix still unverified. Require six exact-head CI jobs and independent review before any merge.
+
 ## M4-C04 Historical evidence gate — test evidence
 
 **Result: NOT YET VERIFIED on final HEAD.** Historic issue validator now emits a conservative 75-row disposition summary and lists independently-evidenced VERIFIED_IMPLEMENTED candidates while explicitly setting automatic closure and M4 milestone closure authorization to false. Negative tests reject false evidence, policy block without proof and misleading completion assertions. No historical issue is auto-closed. #183/#167 remain open and C01–C03 independent qualifications are dependencies. Record actual CI run, PASS/FAIL and independent review before Rule 16 merge; no clinical activation, protected release, or live-patient processing.
