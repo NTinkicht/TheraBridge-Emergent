@@ -12,7 +12,7 @@ The policy is deterministic: no model or issue label may skip tests. Rules are t
 |---|---|---|
 | full | Default; any API/TS/TSX logic, auth, tenant/clinical, DB, workflow, dependency, Docker, governance config, deleted Web assets or unknown changes | Existing six, including secret scan; `smart-targeted` skipped |
 | docs | Only Markdown/MDX under `docs/` plus root README or CONTRIBUTING; never AGENTS, SECURITY or CODEOWNERS | Secret scan; targeted policy tests and canonical register validators |
-| web-style | Only added/modified Web CSS and Web public assets, optionally accompanied by safe docs | Secret scan; targeted tests/Web production build; `live-session` and `demo-journey` browser/DB regressions |
+| web-style | Only added/modified Web CSS plus non-executable PNG/JPEG/WebP/GIF/ICO/AVIF/font public assets, optionally accompanied by safe docs; SVG/HTML/JS/JSON always full | Secret scan; targeted tests/Web production build; `live-session` and `demo-journey` browser/DB regressions |
  
 **Clinical and safety gates:** Any change to auth, RBAC/tenant/specialty, database migrations, clinical report/consent/release/safeguarding, scheduling or API/Web application logic beyond static assets always requires full CI. All G2/G2b, D-NEW-5, real signing/release/AI and patient-data NO-GO remain unchanged. Private ten-account/2-valid-centre acceptance is an independent protected workflow and is never replaced by Smart CI.
 
@@ -31,7 +31,7 @@ The independent `smart-ci-gate` always runs, reads exact `needs` job outcomes fr
 ## Invariants / caveats
 
 - No force-push, no changes to application credentials, Render/Neon runtime, or clinical data.
-- No runtime-only Web source code selected by the CSS/asset rule; Web UI and API changes default full.
+- No runtime-only Web source code or potentially executable Web public SVG/HTML/JS/JSON is selected by the CSS/asset rule; Web UI and API changes default full.
 - A new file extension, deleted asset, renamed source, mixed change or edited CI selector/workflow defaults full.
 - Shadow-mode CI may be marginally slower due to one small planning job; meaningful savings begin only after branch protection and targeted activation.
 - PR status comments or Codex review **do not** substitute for exact-head CI policy gate; no automatic merge.
