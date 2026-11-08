@@ -1,7 +1,8 @@
 // M4-02 protected hosted QA: three additional synthetic clinicians.
 // Never log credentials, cookies, response bodies, page content or child IDs.
 import {chromium} from 'playwright';
-import {writeFile,mkdir,chmod} from 'node:fs/promises';
+import {writeFile,mkdir,chmod,rename,unlink} from 'node:fs/promises';
+import {randomUUID} from 'node:crypto';
 import {join,resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {BASE,settleLoginPage,logout,inspectCookieJar,validateTarget} from './hosted-readonly.mjs';
@@ -152,8 +153,17 @@ export async function runExtra({
    const dest=resolve(output);
    await mkdir(dest,{recursive:true,mode:0o700});
    if(process.platform!=='win32')await chmod(dest,0o700);
-   await writeFile(join(dest,'hosted-extra-results.json'),JSON.stringify(report,null,2)+'\n',
-     {flag:'wx',mode:0o600});
+   // A retry may find the previous sanitized result in the same private
+   // workspace. Write a fresh 0600 temp file and atomically replace the
+   // previous result (rename never follows an existing destination symlink).
+   // Never create or overwrite any credential file.
+   const tmp=join(dest,'.hosted-extra-'+randomUUID()+'.tmp');
+   try{
+     await writeFile(tmp,JSON.stringify(report,null,2)+'\n',
+       {flag:'wx',mode:0o600});
+     if(process.platform!=='win32')await chmod(tmp,0o600);
+     await rename(tmp,join(dest,'hosted-extra-results.json'));
+   }finally{await unlink(tmp).catch(()=>{});}
   }catch{resultCode=2;}
  }
  console.log('EXTRA_THERAPIST_QA '+JSON.stringify({counts:report.counts}));

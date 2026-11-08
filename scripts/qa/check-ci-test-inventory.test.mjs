@@ -1,3 +1,4 @@
+import './m4-measured-coverage.test.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

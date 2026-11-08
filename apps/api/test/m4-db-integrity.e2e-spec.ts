@@ -62,4 +62,37 @@ describe('M4-06 database integrity protections (real PostgreSQL)', () => {
     expect(names.has('care_assignment_center_member_active_idx')).toBe(true);
     expect(names.has('appointment_center_child_status_start_idx')).toBe(true);
   });
+  it('M4-F01: audit protections survive concurrent mutation attempts and PUBLIC has no TRUNCATE grant', async () => {
+    const row = await h.prisma.auditEvent.create({
+      data: { type: 'm4.concurrent.protected', meta: { synthetic: true } },
+    });
+    const permissions = await h.prisma.$queryRaw<{ hasPublicTruncate: boolean }[]>`
+      SELECT EXISTS (
+        SELECT 1 FROM pg_class c,
+          LATERAL aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a
+        WHERE c.oid = 'public.audit_event'::regclass
+          AND a.grantee = 0 AND a.privilege_type = 'TRUNCATE'
+      ) AS "hasPublicTruncate"
+    `;
+    expect(permissions).toEqual([{ hasPublicTruncate: false }]);
+    const triggers = await h.prisma.$queryRaw<{ tgname: string; tgenabled: string }[]>`
+      SELECT tgname, tgenabled FROM pg_trigger
+      WHERE tgrelid = 'public.audit_event'::regclass
+        AND tgname IN ('audit_event_no_mutation', 'audit_event_no_truncate')
+    `;
+    expect(triggers).toHaveLength(2);
+    expect(triggers.every(t => t.tgenabled === 'O')).toBe(true);
+    const attempts = await Promise.allSettled([
+      h.prisma.auditEvent.update({ where: { id: row.id }, data: { type: 'm4.concurrent.rewrite' } }),
+      h.prisma.auditEvent.delete({ where: { id: row.id } }),
+    ]);
+    expect(attempts.map(x => x.status)).toEqual(['rejected', 'rejected']);
+    expect(await h.prisma.auditEvent.findUniqueOrThrow({ where: { id: row.id } }))
+      .toMatchObject({ type: 'm4.concurrent.protected', meta: { synthetic: true } });
+    await h.prisma.auditEvent.create({ data: { type: 'm4.concurrent.append.ok', meta: {} } });
+    expect(await h.prisma.auditEvent.count()).toBe(2);
+    // This does not certify the Render runtime DB account is non-owner:
+    // that requires an independently provisioned least-privileged role.
+  });
+
 });
