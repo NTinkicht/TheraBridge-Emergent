@@ -42,7 +42,7 @@ test('reject school feature routed to V1 despite WF-X6 exclusion', () => withFix
 }));
 test('reject false verified status without acceptance evidence', () => withFixture(dir => {
   mutate(dir,filenames[2],s=>s.replace(
-    /("OB-48","Guardian custody and individualized access\/consent","08","M9-02",)"PENDING_VERIFICATION"/,
+    /("OB-50","Complete genuine prototype and live UX acceptance","10","M11-03",)"PENDING_VERIFICATION"/,
     '$1"VERIFIED_IMPLEMENTED"'));
   assert.throws(()=>validateDirectory(dir),/marked verified without acceptance evidence/);
 }));
