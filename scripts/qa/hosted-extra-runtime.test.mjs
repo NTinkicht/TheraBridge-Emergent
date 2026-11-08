@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,readFile,rm} from 'node:fs/promises';
+import {mkdtemp,readFile,rm,readdir,stat} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {runExtra} from './hosted-extra-therapists.mjs';
@@ -52,6 +52,41 @@ test('failed synthetic logins leave an explicit FAIL and no password/session lea
   for(const item of Object.values(fixture)){
    assert.equal(artifact.includes(item.email),false);
    assert.equal(artifact.includes(item.password),false);
+  }
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('protected retry atomically replaces stale sanitized report, never stores credentials',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'tb-extra-retry-'));
+ const fixture=users();
+ try{
+  const first=await runExtra({raw:'not-json',output:dir,launchBrowser:async()=>{throw Error('must_not_launch');}});
+  assert.equal(first,2);
+  const before=await readFile(join(dir,'hosted-extra-results.json'),'utf8');
+  assert.equal(JSON.parse(before).counts.BLOCKED,1);
+  const second=await runExtra({raw:JSON.stringify(fixture),output:dir,
+   launchBrowser:async()=>({newContext:async()=>({
+    newPage:async()=>({
+     goto:async()=>{},waitForFunction:async()=>{},
+     getByTestId:()=>({fill:async()=>{},click:async()=>{}}),
+     waitForResponse:async()=>({status:()=>401})
+    }),
+    request:{get:async()=>({ok:()=>false,status:()=>401})},
+    close:async()=>{}
+   }),close:async()=>{}})
+  });
+  assert.equal(second,1,'retry must report genuine failed authentication, not stale report conflict');
+  const output=await readFile(join(dir,'hosted-extra-results.json'),'utf8');
+  const data=JSON.parse(output);
+  assert.equal(data.counts.FAIL,6);
+  assert.equal(data.counts.BLOCKED,0);
+  assert.deepEqual(await readdir(dir),['hosted-extra-results.json']);
+  for(const user of Object.values(fixture)){
+   assert(!output.includes(user.email));assert(!output.includes(user.password));
+  }
+  if(process.platform!=='win32'){
+   assert.equal((await stat(dir)).mode & 0o777,0o700);
+   assert.equal((await stat(join(dir,'hosted-extra-results.json'))).mode & 0o777,0o600);
   }
  }finally{await rm(dir,{recursive:true,force:true});}
 });

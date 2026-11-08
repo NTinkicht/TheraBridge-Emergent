@@ -1,3 +1,7 @@
+## M4-F02 reliability/QA — test evidence (2026-11-08)
+
+**NOT RUN / NOT YET VERIFIED:** Protected extra-account retry-safety regression added; measured Istanbul API/Web threshold parser and negative regressions added to required CI suite. NOT RUN on this final HEAD; actual application-wide measurements and load baselines NOT PROVIDED. Require six exact-head CI jobs and independent review before any merge.
+
 ## M4-F01 security/database — test evidence (2026-11-08)
 
 **NOT RUN / NOT YET VERIFIED:** New synthetic PostgreSQL catalog/Public TRUNCATE privilege and simultaneous audit UPDATE/DELETE rejection regression. Existing transactional password recovery and early-boundary tests reused. NOT RUN on this final HEAD; Render runtime DB role, pooled migrations and full HTTP matrix still unverified. Require six exact-head CI jobs and independent review before any merge.
