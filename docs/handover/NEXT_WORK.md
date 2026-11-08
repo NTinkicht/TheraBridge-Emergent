@@ -1,3 +1,7 @@
+## M4-C02 Database/infra/coverage — next qualification
+
+Run new CI contract tests and all six exact-head jobs; independently review conservative scan validators and TOML parser dependency. Then qualify real PostgreSQL concurrency/migration and performance baselines plus measured API/Web coverage; do not assert 95% from suite counts.
+
 ## M4-C01 Security closure — next qualification
 
 Qualify seven-role contract tests on exact HEAD; inspect reviewer findings and six CI jobs. Verify protected hosted positive-session control. Complete clinical cross-tenant/guardian revocation and auth/CSRF/cookie matrix in separately evidenced follow-ups. Do not claim M4-04/M4-05 closed merely because this regression is merged.

@@ -1,3 +1,7 @@
+## M4-C02 Database/infra/coverage — 2026-11-08
+
+CI suite inventory now verifies pinned Gitleaks version/SHA-256, fail-closed all-ref and tracked-file scans, and standards-compliant TOML syntax via built-in Python `tomllib`; negative Node tests exercise removed safeguards and malformed configuration. No DB migration or runtime query code changed in this tranche. Application-wide 95% coverage, database contention, Render resource and load qualification remain NOT VERIFIED. Parents #180/#181/#182 stay OPEN.
+
 ## M4-C01 Security closure — 2026-11-08
 
 Authenticated seven-role forbidden-route QA now rejects 401 as session loss, requiring 403 or masked 404 before an isolation PASS. `hosted-role-guards.test.mjs` adds this negative regression. This is synthetic, read-only QA; no change to the production clinical guards. Broader M4-04/M4-05 matrices and final exact-head six CI jobs/independent review remain PENDING. Parent issues #178/#179 stay OPEN; signed clinical activation remains NO-GO.
