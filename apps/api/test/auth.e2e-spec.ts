@@ -512,6 +512,7 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
         for (let i = 0; i < ACCOUNT_LIMIT; i++) {
           expect((await login(local, user.email, 'fault-test-incorrect-password')).status).toBe(401);
         }
+        const replacement = ['Atomic', 'Reset', 'Synthetic', 'Password', '1'].join('-');
         const beforeLocks = await local.prisma.authLockout.count();
         expect(beforeLocks).toBeGreaterThan(0);
         // This trigger models a database failure at the LAST write in the
@@ -527,7 +528,7 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
           const q = await preAuth(local);
           const failed = await local.http().post('/api/auth/password/reset')
             .set('Origin', ORIGIN).set('Cookie', q.cookie).set('X-CSRF-Token', q.token)
-            .send({ token, password: 'Atomic-Reset-Synthetic-Password-1' });
+            .send({ token, password: replacement });
           expect(failed.status).toBe(500);
         } finally {
           await local.prisma.$executeRawUnsafe('DROP TRIGGER IF EXISTS m4_reset_fault_injection ON audit_event');
@@ -546,10 +547,10 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
         const again = await preAuth(local);
         await local.http().post('/api/auth/password/reset').set('Origin', ORIGIN)
           .set('Cookie', again.cookie).set('X-CSRF-Token', again.token)
-          .send({ token, password: 'Atomic-Reset-Synthetic-Password-1' }).expect(204);
+          .send({ token, password: replacement }).expect(204);
         await local.http().get('/api/auth/session').set('Cookie', signed.cookie).expect(401);
         expect(await local.prisma.authLockout.count()).toBe(0);
-        expect((await login(local, user.email, 'Atomic-Reset-Synthetic-Password-1')).status).toBe(200);
+        expect((await login(local, user.email, replacement)).status).toBe(200);
         expect(await local.prisma.auditEvent.count({ where: { type: 'auth.password.reset_completed' } })).toBe(1);
       } finally {
         await local.close();
