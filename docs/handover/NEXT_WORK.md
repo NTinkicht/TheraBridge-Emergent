@@ -1,3 +1,7 @@
+## M4 final live qualification checkpoint — Acceptance not code handoff (2026-11-08)
+
+Do not reopen completed work. Unexecuted gates: operator-approved protected HA-01–HA-10 with 2 valid synthetic tenants and revoked sessions; controlled 66/91/55/1,023-step source-to-test acceptance and owner signatures; full API/Web measured 95% coverage; resource/DB role/migration qualification; remaining 56 historic records. New code only for a reproduced deficit and exact-head review.
+
 ## M4-F03 controlled acceptance/closure — Qualification (2026-11-08)
 
 Run all six exact-head CI jobs and obtain independent final-head review. Fix actionable P0-P2; disposition P3. Added executable sanitized two-report 7+3 identity acceptance validator with exact deployed SHA and separate two-valid-tenant/revocation receipt, and negative tests for missing evidence. No protected hosted acceptance run is asserted. Controlled 1,023 workflow-step mapping, historic 75 issue dispositions, #175/#176/#183/#266/#268/#279 and epic #167 remain OPEN until reviewed evidence. Clinical gates NO-GO. Do not merge or close remaining parent issues based solely on the new test harness.
