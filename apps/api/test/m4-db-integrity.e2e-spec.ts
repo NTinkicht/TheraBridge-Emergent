@@ -95,4 +95,23 @@ describe('M4-06 database integrity protections (real PostgreSQL)', () => {
     // that requires an independently provisioned least-privileged role.
   });
 
+  it('M4-F01: aborts the whole PostgreSQL transaction when an audit mutation is forbidden', async () => {
+    const existing = await h.prisma.auditEvent.create({
+      data: { type: 'm4.rollback.existing', meta: { synthetic: true } },
+    });
+    await expect(h.prisma.$transaction(async (tx) => {
+      await tx.auditEvent.create({
+        data: { type: 'm4.rollback.uncommitted', meta: { synthetic: true } },
+      });
+      await tx.auditEvent.update({
+        where: { id: existing.id }, data: { type: 'm4.rollback.illicit' },
+      });
+    })).rejects.toThrow();
+    const events = await h.prisma.auditEvent.findMany();
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      id: existing.id, type: 'm4.rollback.existing', meta: { synthetic: true },
+    });
+  });
+
 });
