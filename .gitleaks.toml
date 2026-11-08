@@ -28,8 +28,10 @@ regexes = [
   '''^offline_only_fixture_$''',
   # M4-03 historic JavaScript expression capture from a synthetic malformed-JSON test only.
   '''^\+injectedFragment\+$''',
-  # PR #284 historical synthetic password from original fault-injection test only.
+  # PR #284 historic local-only synthetic fixture.
   '''^Atomic-Reset-Synthetic-Password-1$''',
+  # PR #286 historic local-only synthetic fixture; no blanket exclusions.
+  '''^Synthetic-Atomic-Boundary-Test-123$''',
 ]
 
 [[rules]]
