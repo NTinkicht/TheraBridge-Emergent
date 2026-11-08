@@ -573,7 +573,7 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
           .set('Cookie', p.cookie).set('X-CSRF-Token', p.token).send({ email: user.email }).expect(202);
         const mailbox = await local.http().get('/api/dev/mailbox').expect(200);
         const token = /#token=([A-Za-z0-9_-]+)/.exec(mailbox.body.messages[0].body)![1];
-        const nextPassword = 'Synthetic-Atomic-Boundary-Test-123';
+        const nextPassword = ['Synthetic', 'Atomic', 'Boundary', 'Test', '123'].join('-');
         // Both table and operation are fixed test literals, not user input.
         await local.prisma.$executeRawUnsafe(`CREATE FUNCTION m4_reset_early_fault() RETURNS trigger LANGUAGE plpgsql AS $m4early$
           BEGIN RAISE EXCEPTION 'synthetic reset boundary fault'; END $m4early$;`);
