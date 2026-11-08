@@ -95,4 +95,32 @@ describe('M4-06 database integrity protections (real PostgreSQL)', () => {
     // that requires an independently provisioned least-privileged role.
   });
 
+  it('M4-06 P3: forbidden audit mutation rolls back prior append in the same transaction', async () => {
+    const existing = await h.prisma.auditEvent.create({
+      data: { type: 'm4.rollback.original', meta: { synthetic: true } },
+    });
+    await expect(h.prisma.$transaction(async tx => {
+      await tx.auditEvent.create({
+        data: { type: 'm4.rollback.must_not_commit', meta: { synthetic: true } },
+      });
+      await tx.auditEvent.update({
+        where: { id: existing.id },
+        data: { type: 'm4.rollback.illicit_update' },
+      });
+    })).rejects.toThrow();
+    const records = await h.prisma.auditEvent.findMany();
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({
+      id: existing.id,
+      type: 'm4.rollback.original',
+      meta: { synthetic: true },
+    });
+    // A failed write must not leave the transaction unusable for future
+    // legitimate append-only audit events.
+    await h.prisma.auditEvent.create({
+      data: { type: 'm4.rollback.append_after_failure', meta: { synthetic: true } },
+    });
+    expect(await h.prisma.auditEvent.count()).toBe(2);
+  });
+
 });
