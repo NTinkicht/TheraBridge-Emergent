@@ -1,3 +1,7 @@
+## 2026-11-08 — M4-05 follow-up PR #286, review P1 remediation
+
+Created ready-for-review PR #286, code HEAD `b932971cb79c578e79d560faec72775a7c1ffded`, adding parameterized synthetic PostgreSQL trigger fault tests for `auth_identity` UPDATE and `session` UPDATE. Tests assert transactional rollback of reset-token consumption, credentials and session revocation, then success using the same token and subsequent replay rejection. Earlier merged PR #284 independently covers terminal `audit_event` INSERT failure and transaction rollback. Codex's initial exact-code-head review identified **P1 missing AGENTS.md Rule 7 evidence files**; this commit updates CURRENT_STATE, WORK_LOG, NEXT_WORK and TEST_RESULTS. The new tests are **NOT YET VERIFIED** on this documentation-update HEAD; initial CI run 42475586207 was still in progress when inspected. No local or hosted test PASS is claimed. Keep #280 and #179 OPEN pending exact-head six-job CI, independent re-review, and all review dispositions. No clinical activation or deploy.
+
 **M4-04 clinical provenance test reconciliation — 2026-11-08:** PR #285 adds synthetic negative tests for #39 session-note provenance and #40 plan author-only draft mutations. Reconciled with merged M4-05 transactional reset and narrow historical secret-scan exception from PR #284; neither production security nor clinical NO-GO changed. New six-job CI/review pending, #39/#40/#178 remain OPEN.
 
 ---
