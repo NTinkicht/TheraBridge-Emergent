@@ -12,7 +12,7 @@ test('documentation changes require only security scan and targeted validation',
  assert.equal(x.required['smart-targeted'],'success');
 });
 test('CSS and public assets change selects Web + browser, not database or Docker',()=>{
- const x=eligible(paths('apps/web/src/app/globals.css','apps/web/public/logo.svg'));
+ const x=eligible(paths('apps/web/src/app/globals.css','apps/web/public/logo.png'));
  assert.equal(x.execution,'web-style');
  assert.equal(x.required['live-session'],'success');
  assert.equal(x.required['demo-journey'],'success');
@@ -24,7 +24,7 @@ test('security, DB, clinical, dependencies, workflows, scripts, missing and mixe
  'apps/web/src/app/api/session/route.ts','apps/web/src/app/guardian/page.tsx',
  '.github/workflows/ci.yml','scripts/ci/smart-ci.mjs','package.json','yarn.lock',
  'docs/roadmap/M4-01-66-FEATURE-CROSSWALK.csv','AGENTS.md','docs/qa/SECURITY.md',
- '.github/CODEOWNERS','Dockerfile.preview','render.yaml','apps/web/public/../bad.png'
+ '.github/CODEOWNERS','Dockerfile.preview','render.yaml','apps/web/public/../bad.png','apps/web/public/tracker.js','apps/web/public/promo.html','apps/web/public/logo.svg','apps/web/public/manifest.json'
  ];
  for(const path of samples)assert.equal(eligible(paths(path)).execution,'full',path);
  assert.equal(eligible(paths('README.md','apps/api/src/auth/auth.service.ts')).execution,'full');
