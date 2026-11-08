@@ -58,6 +58,7 @@ jobs:
         env:
           TB_QA_EXTRA_USERS_JSON: ${{ secrets.TB_HOSTED_QA_EXTRA_USERS_JSON }}
           TB_QA_EXTRA_OUTPUT: /__w/_temp/tb-interactive-private/report
+          TB_QA_DEPLOY_SHA: ${{ inputs.deployed_sha }}
         run: |
           umask 077
           node scripts/qa/hosted-extra-therapists.mjs
@@ -67,6 +68,7 @@ jobs:
         env:
           QA_USERS_FILE: /__w/_temp/tb-interactive-private/users.json
           QA_PRIVATE_OUTPUT: /__w/_temp/tb-interactive-private/report
+          TB_QA_DEPLOY_SHA: ${{ inputs.deployed_sha }}
         run: |
           umask 077
           node scripts/qa/hosted-interactive.mjs
