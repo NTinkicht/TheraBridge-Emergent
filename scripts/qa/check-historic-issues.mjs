@@ -47,6 +47,35 @@ export function validateRegister(csv) {
   for(const id of frozen)if(!ids.has(id))throw Error('Frozen issue missing from register: '+id);
   return rows.length;
 }
+
+// M4-C04: evidence summary deliberately does not perform issue state writes.
+// A VERIFIED_IMPLEMENTED row is only a candidate for manual evidence review,
+// never automatic issue closure or milestone acceptance.
+export function closureEvidenceSummary(csv) {
+  validateRegister(csv);
+  const counts=Object.fromEntries([...ALLOWED].map(s=>[s,0]));
+  const candidates=[];
+  const lines=csv.trim().split(/\r?\n/).slice(1);
+  for(const line of lines){
+    const status=[...ALLOWED].find(s=>line.includes(',"'+s+'",'));
+    const id=/^"(\d+)",/.exec(line)?.[1];
+    if(!status||!id)throw Error('Historical disposition is not parseable');
+    counts[status]++;
+    if(status==='VERIFIED_IMPLEMENTED')candidates.push(Number(id));
+  }
+  if(Object.values(counts).reduce((a,b)=>a+b,0)!==75)
+    throw Error('Historical evidence counts do not reconcile');
+  return {
+    total:75,
+    counts,
+    verified_candidates:candidates.sort((a,b)=>a-b),
+    outstanding:75-counts.VERIFIED_IMPLEMENTED,
+    // Even a verified candidate still needs an explicit issue close decision.
+    automatic_issue_closure_authorized:false,
+    milestone_4_closure_authorized:false,
+  };
+}
+
 if(process.argv[1]?.endsWith('check-historic-issues.mjs')){
   try{console.log('M4-09 historical issues validated: '+validateRegister(fs.readFileSync(FILE,'utf8')));}
   catch(e){console.error(e.message);process.exitCode=1;}
