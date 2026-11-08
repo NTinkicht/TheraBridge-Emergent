@@ -1,3 +1,7 @@
+## M4 final live qualification checkpoint — Executed work (2026-11-08)
+
+Reconciled 75-row historical register: 16 VERIFIED_IMPLEMENTED (including existing #8 and 15 newly closed GH-wave findings), two PARTIAL, one POLICY_BLOCKED, 56 pending. Added real PostgreSQL multi-statement audit rollback regression for #294. Verified Render deployment of byte-identical main M4 tree, not private account login acceptance. Source approvals unsigned and clinical gates NO-GO.
+
 ## M4-F03 controlled acceptance/closure — Implementation log (2026-11-08)
 
 Implemented scoped code and regression tests on chatgpt/m4-f03-acceptance-closeout-final. Added executable sanitized two-report 7+3 identity acceptance validator with exact deployed SHA and separate two-valid-tenant/revocation receipt, and negative tests for missing evidence. No protected hosted acceptance run is asserted. Controlled 1,023 workflow-step mapping, historic 75 issue dispositions, #175/#176/#183/#266/#268/#279 and epic #167 remain OPEN until reviewed evidence. Clinical gates NO-GO. No unexecuted acceptance test is marked PASS.
