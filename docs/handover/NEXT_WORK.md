@@ -1,3 +1,7 @@
+## M4-C01 Security closure — next qualification
+
+Qualify seven-role contract tests on exact HEAD; inspect reviewer findings and six CI jobs. Verify protected hosted positive-session control. Complete clinical cross-tenant/guardian revocation and auth/CSRF/cookie matrix in separately evidenced follow-ups. Do not claim M4-04/M4-05 closed merely because this regression is merged.
+
 ## M4-05 PR #286 — immediate qualification and acceptance
 
 1. Re-run/check six GitHub Actions jobs (`test`, `secret-scan`, `live-session`, `preview-container`, `demo-journey`, `compose`) on the **final HEAD after Rule 7 evidence updates**. Initial code-head CI [42475586207](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42475586207) was still in progress during evidence remediation; neither it nor earlier PR #284 CI qualifies the new HEAD.
