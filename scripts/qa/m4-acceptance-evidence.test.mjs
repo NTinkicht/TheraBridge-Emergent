@@ -20,6 +20,14 @@ const fixture=()=>{
    legacy.rows.push({role,step:'link:'+route,status:'PASS',reason:'clicked_authorized_navigation'});
  }
  legacy.counts.PASS=legacy.rows.length;
+ // Real hosted-interactive.mjs *always* writes these read-only exclusions.
+ for(const role of oldRoles){
+  legacy.rows.push({role,step:'form_submission_validation',
+   status:'BLOCKED',reason:'no_mutating_submission_authorized'});
+  legacy.rows.push({role,step:'clinical_or_ai_draft_review',
+   status:'BLOCKED',reason:'clinical_gate_and_review_not_exercised'});
+ }
+ legacy.counts.BLOCKED=oldRoles.length*2;
  const extra=make(newRoles,requiredNew,'hosted_extra_therapists_private_readonly');
  for(const report of [legacy,extra]){report.deployedSha=sha;report.protectedRunId='42480077162';}
  return {legacy,extra,deployedSha:sha,verifiedSha:sha,operatorApproved:true,
@@ -50,7 +58,7 @@ test('expired deployment identity, missing roles and a 401 masquerading as PASS 
 test('FAIL, BLOCKED, fabricated role and tampered counts fail closed',()=>{
  const input=fixture();
  input.legacy.rows[0].status='FAIL';
- input.legacy.counts={PASS:input.legacy.rows.length-1,FAIL:1,BLOCKED:0};
+ input.legacy.counts={PASS:input.legacy.counts.PASS-1,FAIL:1,BLOCKED:14};
  assert(evaluateM4HostedEvidence(input).reasons.includes('legacy_cases_not_all_pass'));
  input.legacy.rows[0].role='unknown';
  assert(evaluateM4HostedEvidence(input).reasons.includes('legacy_artifact_invalid'));
@@ -93,7 +101,7 @@ test('rejects a truncated seven-role artifact even with successful login and den
  f.legacy.rows=f.legacy.rows.filter(r=>!r.step.startsWith('link:'));
  f.legacy.counts.PASS=f.legacy.rows.length;
  assert.equal(f.legacy.counts.FAIL,0);
- assert.equal(f.legacy.counts.BLOCKED,0);
+ assert.equal(f.legacy.counts.BLOCKED,14,'excluded clinical checks remain visibly BLOCKED');
  const result=evaluateM4HostedEvidence(f);
  assert.equal(result.qualified,false);
  assert(result.reasons.includes('legacy_authorized_navigation_missing'));
@@ -114,4 +122,54 @@ test('positive authorization must PASS and cannot be replaced with a BLOCKED row
  f.legacy.counts.PASS--;
  f.legacy.counts.BLOCKED++;
  assert.equal(evaluateM4HostedEvidence(f).qualified,false);
+});
+
+test('real seven-role runner excluded scenarios remain BLOCKED without failing read-only scope',()=>{
+ const f=fixture();
+ assert.equal(f.legacy.counts.BLOCKED,14);
+ assert.equal(f.legacy.rows.filter(r=>r.status==='BLOCKED').length,14);
+ const result=evaluateM4HostedEvidence(f);
+ assert.equal(result.qualified,true);
+ assert.equal(result.clinicalActivationAuthorized,false);
+});
+test('unrelated BLOCKED navigation cannot be waived as a clinical exclusion',()=>{
+ const f=fixture();
+ const row=f.legacy.rows.find(r=>r.role==='speech'&&r.step==='link:/app/clinical');
+ assert(row);
+ row.status='BLOCKED';
+ f.legacy.counts.PASS--;
+ f.legacy.counts.BLOCKED++;
+ const result=evaluateM4HostedEvidence(f);
+ assert.equal(result.qualified,false);
+ assert(result.reasons.includes('legacy_unexpected_blocked_check'));
+ assert(result.reasons.includes('legacy_authorized_navigation_missing'));
+});
+test('missing, duplicated, or fabricated PASS for excluded clinical scenarios fails',()=>{
+ for(const kind of ['missing','duplicate','promote']){
+  const f=fixture();
+  const index=f.legacy.rows.findIndex(r=>r.role==='ot'&&r.step==='clinical_or_ai_draft_review');
+  assert(index>=0);
+  if(kind==='missing'){
+   f.legacy.rows.splice(index,1);
+   f.legacy.counts.BLOCKED--;
+  }else if(kind==='duplicate'){
+   f.legacy.rows.push({...f.legacy.rows[index]});
+   f.legacy.counts.BLOCKED++;
+  }else{
+   f.legacy.rows[index].status='PASS';
+   f.legacy.counts.BLOCKED--;
+   f.legacy.counts.PASS++;
+  }
+  const result=evaluateM4HostedEvidence(f);
+  assert.equal(result.qualified,false,kind);
+  assert(result.reasons.includes('legacy_read_only_exclusion_invalid'),kind);
+ }
+});
+test('wrong blocked reason does not qualify even with matched summary counts',()=>{
+ const f=fixture();
+ const blocked=f.legacy.rows.find(r=>r.role==='guardian'&&r.step==='form_submission_validation');
+ blocked.reason='no_assigned_synthetic_child';
+ const result=evaluateM4HostedEvidence(f);
+ assert.equal(result.qualified,false);
+ assert(result.reasons.includes('legacy_read_only_exclusion_invalid'));
 });
