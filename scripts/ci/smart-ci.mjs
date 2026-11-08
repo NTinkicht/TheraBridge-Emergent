@@ -51,11 +51,12 @@ export function expectedJobs(mode){
  if(!selected)throw Error('invalid_mode');
  return Object.fromEntries(jobs.map(name=>[name,selected.includes(name)?'success':'skipped']));
 }
-export function decide({changes,eventName,baseRef,mode,requiredGateReady,fromFork}){
+export function decide({changes,eventName,baseRef,mode,requiredGateReady,fromFork,ownerPolicyApproved=false}){
  const classified=classifyPaths(changes);
  let execution='full',reason='shadow_or_nonpr';
+ if(mode==='targeted'&&!ownerPolicyApproved)reason='rule16_owner_approval_required';
  if(eventName==='pull_request'&&baseRef==='main'&&!fromFork &&
-    mode==='targeted'&&requiredGateReady===true &&
+    mode==='targeted'&&requiredGateReady===true &&ownerPolicyApproved===true &&
     classified.candidate!=='full'){
    execution=classified.candidate;
    reason=classified.reason;
@@ -75,7 +76,7 @@ function writeOutput(record){
    'mode='+record.execution+'\n'+'candidate='+record.candidate+'\n'+'reason='+record.reason+'\n');
  if(process.env.GITHUB_STEP_SUMMARY)appendFileSync(process.env.GITHUB_STEP_SUMMARY,
    'Smart CI: **'+record.execution+'**, candidate **'+record.candidate+
-   '**, reason '+record.reason+'.\n\nShadow is default; targeted mode requires a separately required smart-ci-gate check.\n');
+   '**, reason '+record.reason+'.\n\nShadow is default. Rule 16 owner approval and a required smart-ci-gate are mandatory; neither CI variable alone can activate targeted mode.\n');
  console.log(JSON.stringify({execution:record.execution,candidate:record.candidate,reason:record.reason}));
 }
 if(process.argv[1]?.endsWith('/smart-ci.mjs')){
@@ -87,7 +88,11 @@ if(process.argv[1]?.endsWith('/smart-ci.mjs')){
   outcome=decide({changes,eventName,baseRef:process.env.TB_SMART_BASE_REF,
     mode:process.env.TB_SMART_CI_MODE,
     requiredGateReady:process.env.TB_SMART_CI_REQUIRED_GATE_READY==='true',
-    fromFork:process.env.TB_SMART_FORK==='true'});
+    fromFork:process.env.TB_SMART_FORK==='true',
+    // Rule 16 still requires all six full-CI jobs. Environment variables
+    // must NEVER override that owner-authorized merge policy. This constant
+    // may be changed only in a separately approved AGENTS.md policy PR.
+    ownerPolicyApproved:false});
  }catch{
   // Missing refs, git failures, malformed diff or unexpected data NEVER reduce tests.
   outcome={execution:'full',candidate:'full',reason:'diff_unavailable_fail_closed'};
