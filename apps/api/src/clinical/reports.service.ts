@@ -115,6 +115,8 @@ export class ReportsService {
   }
 
   async dashboard(centerId: string, v: Viewer, q: ProgressQueryDto) {
+    if (!['THERAPIST', 'CLINICAL_SUPERVISOR'].includes(v.role)) throw new ForbiddenException('Clinical access required.');
+    if (v.role === 'CLINICAL_SUPERVISOR') await this.clinical.assertActiveSupervisor(this.prisma, centerId, v);
     const { from, to } = this.period(q.from, q.to, 90);
     const pairs = v.role === 'THERAPIST' ? await this.clinical.therapistAssignments(this.prisma, centerId, v) : null;
     const kids = await this.prisma.child.findMany({ where: { centerId, status: 'ACTIVE', ...(pairs ? { id: { in: uniq(pairs.map((p) => p.childId)) } } : {}) }, orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }] });
@@ -158,7 +160,7 @@ export class ReportsService {
   // TB-EM-026: Supervisor-only operational inbox, never a clinical authorization
   // or approval endpoint. Only IN_REVIEW metadata from ACTIVE children is returned.
   async reviewQueue(centerId: string, v: Viewer, q: { childId?: string; service?: string; search?: string; page?: number }) {
-    if (v.role !== 'CLINICAL_SUPERVISOR') throw new ForbiddenException('Clinical supervisor access required.');
+    await this.clinical.assertActiveSupervisor(this.prisma, centerId, v);
     const page = q.page ?? 1;
     const pageSize = 25;
     const where = Prisma.sql`r.center_id = ${centerId}::uuid
