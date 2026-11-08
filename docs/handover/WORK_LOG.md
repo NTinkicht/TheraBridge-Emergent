@@ -1,3 +1,7 @@
+**M4-04 historical clinical regressions — 2026-11-08:** Added real-PostgreSQL API negative regressions for #39 (reject cross-child and wrong-author session-note linkage, no unauthorized observation/audit) and #40 (two same-service assigned therapists; only true plan author can edit/submit; CAS unchanged). Positive controls check legitimate note and author submit. PR review and six exact-head CI PENDING; #39/#40 not yet closed, parent #178 still broader OPEN. Clinical governance NO-GO preserved.
+
+---
+
 **M4-08 suite inventory baseline — 2026-11-08:** Added versioned `docs/qa/M4-08-REVIEWED-SUITE-BASELINE.json` enumerated from `main@a43e37bac6c5619f7499d7ff7b49a345f1ef7ac4` (32 API E2E suites, 2 web suites). QA checker now fails on removed/renamed tracked suites, reports new additions, and preserves existing six-job/fingerprint-only coverage gates. New CI and independent review PENDING; 95% *application-wide* coverage remains NOT MEASURED and M4-08 #182 stays OPEN. Clinical NO-GO unchanged.
 
 ---
