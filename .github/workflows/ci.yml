@@ -97,6 +97,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Verify Smart CI classifier, policy gate and workflow wiring
+        run: node --test scripts/ci/smart-ci.test.mjs scripts/ci/smart-ci-workflow.test.mjs
       - name: Required portability files are present
         run: |
           for f in yarn.lock .env.example apps/api/.env.example apps/web/.env.example .nvmrc; do
@@ -394,7 +396,7 @@ jobs:
           node-version-file: .nvmrc
           cache: yarn
       - name: Validate Smart CI policy and decision regression
-        run: node --test scripts/ci/smart-ci.test.mjs
+        run: node --test scripts/ci/smart-ci.test.mjs scripts/ci/smart-ci-workflow.test.mjs
       - name: Validate canonical roadmap and historical registers
         run: |
           node scripts/qa/check-roadmap-registers.mjs
