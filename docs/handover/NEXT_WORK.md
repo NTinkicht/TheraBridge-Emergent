@@ -1,3 +1,7 @@
+## M4-C04 Historical evidence gate — next qualification
+
+Verify 75-row evidence summary negative tests and six CI jobs on final HEAD; obtain independent review. Then assess every historic issue individually against merged code/test SHA, review and acceptance, close only verified eligible items, and draft M4 completion dossier after C01–C03 qualified. Never close M4 from candidate counts.
+
 ## M4-C03 Acceptance/traceability — next qualification
 
 Run new extra-therapist contract tests and all six final HEAD jobs, review independently; execute protected ten-account QA only with operator-verified deployed SHA and approved secret environment. Supply valid two-tenant/revocation sandbox, source-level 66/91/55 and 1,023-step mapping, or state BLOCKED with owner action.

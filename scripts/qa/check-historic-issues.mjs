@@ -13,7 +13,7 @@ export function frozenIssueIds(snapshot) {
   return new Set(ids);
 }
 
-export function validateRegister(csv) {
+export function parseHistoricRows(csv) {
   const lines=csv.replace(/^\uFEFF/,'').trim().split(/\r?\n/);
   const header=lines.shift();
   if(header!=='historic_issue,issue_url,original_title,suggested_owner,disposition,implementation_sha,test_evidence,policy_evidence,reviewer,notes')
@@ -27,6 +27,11 @@ export function validateRegister(csv) {
     if(fields.length!==10)throw Error('Unexpected historical row column count');
     return fields;
   });
+  return rows;
+}
+
+export function validateRegister(csv) {
+  const rows=parseHistoricRows(csv);
   if(rows.length!==75)throw Error('Expected exactly 75 historical issues');
   const ids=new Set();
   const frozen=frozenIssueIds(fs.readFileSync(SNAPSHOT,'utf8'));
@@ -47,6 +52,34 @@ export function validateRegister(csv) {
   for(const id of frozen)if(!ids.has(id))throw Error('Frozen issue missing from register: '+id);
   return rows.length;
 }
+
+// M4-C04: evidence summary deliberately does not perform issue state writes.
+// A VERIFIED_IMPLEMENTED row is only a candidate for manual evidence review,
+// never automatic issue closure or milestone acceptance.
+export function closureEvidenceSummary(csv) {
+  validateRegister(csv);
+  const counts=Object.fromEntries([...ALLOWED].map(s=>[s,0]));
+  const candidates=[];
+  // Use the same validated CSV field parser; never scan entire rows for
+  // disposition tokens that could appear in an issue title or evidence note.
+  for(const row of parseHistoricRows(csv)){
+    const id=row[0], status=row[4];
+    counts[status]++;
+    if(status==='VERIFIED_IMPLEMENTED')candidates.push(Number(id));
+  }
+  if(Object.values(counts).reduce((a,b)=>a+b,0)!==75)
+    throw Error('Historical evidence counts do not reconcile');
+  return {
+    total:75,
+    counts,
+    verified_candidates:candidates.sort((a,b)=>a-b),
+    outstanding:75-counts.VERIFIED_IMPLEMENTED,
+    // Even a verified candidate still needs an explicit issue close decision.
+    automatic_issue_closure_authorized:false,
+    milestone_4_closure_authorized:false,
+  };
+}
+
 if(process.argv[1]?.endsWith('check-historic-issues.mjs')){
   try{console.log('M4-09 historical issues validated: '+validateRegister(fs.readFileSync(FILE,'utf8')));}
   catch(e){console.error(e.message);process.exitCode=1;}

@@ -1,3 +1,7 @@
+## M4-C04 Historical evidence gate — implementation checkpoint
+
+Committed scoped code/test changes in branch `chatgpt/m4-c04-historic-evidence-closeout`. Historic issue validator now emits a conservative 75-row disposition summary and lists independently-evidenced VERIFIED_IMPLEMENTED candidates while explicitly setting automatic closure and M4 milestone closure authorization to false. Negative tests reject false evidence, policy block without proof and misleading completion assertions. No historical issue is auto-closed. #183/#167 remain open and C01–C03 independent qualifications are dependencies. No test outcome is promoted to PASS before exact-head CI evidence.
+
 ## M4-C03 Acceptance/traceability — implementation checkpoint
 
 Committed scoped code/test changes in branch `chatgpt/m4-c03-acceptance-traceability`. Protected extra-therapist QA now rejects authenticated-denial 401 as session loss, requires 403 or masked 404, and gates unassigned/wrong-centre negative PASS behind a successful same-session authorized clinical workspace control. A seed-source contract test checks IDs and deterministic namespace against `seed-demo.ts`. NO hosted ten-account success, valid two-tenant test or 1,023-step private source verification is claimed. Workstreams #175/#176 (and prior merged #177) with #266/#268/#269 still need hosted/traceability evidence. No test outcome is promoted to PASS before exact-head CI evidence.
