@@ -1,3 +1,7 @@
+## M4-F03 controlled acceptance/closure — Qualification (2026-11-08)
+
+Run all six exact-head CI jobs and obtain independent final-head review. Fix actionable P0-P2; disposition P3. Added executable sanitized two-report 7+3 identity acceptance validator with exact deployed SHA and separate two-valid-tenant/revocation receipt, and negative tests for missing evidence. No protected hosted acceptance run is asserted. Controlled 1,023 workflow-step mapping, historic 75 issue dispositions, #175/#176/#183/#266/#268/#279 and epic #167 remain OPEN until reviewed evidence. Clinical gates NO-GO. Do not merge or close remaining parent issues based solely on the new test harness.
+
 ## M4-F02 reliability/QA measurement — Qualification (2026-11-08)
 
 Run all six exact-head CI jobs and obtain independent final-head review. Fix actionable P0-P2; disposition P3. Protected extra therapist QA now writes a mode-0600 temporary sanitized result and atomically replaces stale private report on retry. Regression simulates two runs and asserts safe replacement, perms and no credential disclosure. Measured Istanbul API/Web coverage validator rejects missing/low coverage; actual API/Web 95% measurement and performance/resource proof NOT YET VERIFIED. #181/#182/#269 remain tracked; no clinical activation. Do not merge or close remaining parent issues based solely on the new test harness.

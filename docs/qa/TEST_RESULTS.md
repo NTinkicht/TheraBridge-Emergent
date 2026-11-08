@@ -1,3 +1,7 @@
+## M4-F03 controlled acceptance — test evidence (2026-11-08)
+
+**NOT RUN / NOT YET VERIFIED:** New 7+3 protected acceptance receipt validator requires exact SHA, operator approval and separate two-valid-tenant positive/negative/revocation receipt. Negative regressions included in CI. NOT RUN on this final HEAD; protected hosted run and historic/controlled mapping remain unverified. G2/G2b NO-GO. Require six exact-head CI jobs and independent review before any merge.
+
 ## M4-F02 reliability/QA — test evidence (2026-11-08)
 
 **NOT RUN / NOT YET VERIFIED:** Protected extra-account retry-safety regression added; measured Istanbul API/Web threshold parser and negative regressions added to required CI suite. NOT RUN on this final HEAD; actual application-wide measurements and load baselines NOT PROVIDED. Require six exact-head CI jobs and independent review before any merge.
