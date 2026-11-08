@@ -65,7 +65,8 @@ if(process.argv[1]?.endsWith('/m4-acceptance-evidence.mjs')){
    extra:JSON.parse(readFileSync(extraPath,'utf8')),
    deployedSha:sha,verifiedSha:process.env.TB_OPERATOR_VERIFIED_DEPLOYED_SHA,
    operatorApproved:process.env.TB_PROTECTED_QA_APPROVED==='true',
-   twoTenantEvidence:process.env.TB_TWO_VALID_TENANT_RECEIPT_FILE\n    ? JSON.parse(readFileSync(process.env.TB_TWO_VALID_TENANT_RECEIPT_FILE,'utf8')) : null
+   twoTenantEvidence:process.env.TB_TWO_VALID_TENANT_RECEIPT_FILE
+    ? JSON.parse(readFileSync(process.env.TB_TWO_VALID_TENANT_RECEIPT_FILE,'utf8')) : null
   });
   console.log(JSON.stringify(data));if(!data.qualified)process.exitCode=2;
  }catch{console.error('M4 evidence inputs unavailable or invalid');process.exitCode=2;}
