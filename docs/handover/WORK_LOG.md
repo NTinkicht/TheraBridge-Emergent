@@ -1,3 +1,11 @@
+**M4-01 source count verified from PRIVATE owner workbook — 2026-11-08:** `TheraBridge_V1_Exhaustive_Workflows_Step_Screen_Audit.xlsx` from owner Library is 237,877 bytes, SHA-256 `cc7e2d76b15d77853d08d726d4f1aa1e7ade0031ce115372056f1b7c5e15fee4` (matches hash in preserved controlled annex). Exact workbook has 1,023 unique step IDs across 90 V1 workflows; catalogue has 91, with WF-X6 excluded. Design evidence: 108 mapped awaiting verification, 880 lacking exact step-node mapping, 35 QA-only/not executed. This validates historical inventory identity/count only, NOT running code, current Figma review, signed clinical policy, 1,023-step QA PASS or permission to publish source. Row-by-row app/test evidence remains OPEN in #266/#175.
+
+---
+
+**M4 source/historical evidence update — 2026-11-08:** This branch pins accessible PRIVATE V0.9.16 controlled draft source blobs (unsigned, clinical NO-GO), records M4 #177 closed, updates four of 75 historical issue rows (#8 verified; #10 and #21 partial; #35 policy-blocked), and maintains all other issues PENDING_EVIDENCE. Register validator CI and independent review PENDING. No new runtime capability or policy activation.
+
+---
+
 **M4-06 P1 TRUNCATE guard work log — 2026-11-08:** Opened PR #281 for #277 at `92158e7928421a97c864ce267dadcf364bba9bdf`: migration adds BEFORE TRUNCATE statement trigger on audit_event and REVOKE TRUNCATE FROM PUBLIC, while retaining existing UPDATE/DELETE guard. Added `m4-db-integrity` negative TRUNCATE and positive INSERT real-DB test. Updated test helper only: transactional DB-owner DISABLE/ENABLE of TRUNCATE trigger for destructive test fixture cleanup (never runtime). Codex review raised P1 missing Rule 7 records: addressed this exact finding by updating CURRENT_STATE, WORK_LOG, NEXT_WORK and TEST_RESULTS, without claiming new-head PASS. Review/CI rerun pending; runtime DB owner privileges still require audit.
 
 ---
