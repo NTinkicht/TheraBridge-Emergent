@@ -18,7 +18,7 @@ const secureRows=(report,kind,roles)=>{
 const isPass=(report,role,step)=>
  report.rows.some(r=>r.role===role&&r.step===step&&r.status==='PASS');
 export function evaluateM4HostedEvidence({legacy,extra,deployedSha,verifiedSha,
- operatorApproved=false,validTwoTenantReceipt=false}={}){
+ operatorApproved=false,twoTenantEvidence=null}={}){
  const reasons=[];
  if(!SHA.test(deployedSha??'')||deployedSha!==verifiedSha)
   reasons.push('deployed_sha_unverified');
@@ -42,7 +42,16 @@ export function evaluateM4HostedEvidence({legacy,extra,deployedSha,verifiedSha,
     if(!isPass(extra,role,step))reasons.push('extra_required_check_missing');
  }
  // An absent-center UUID is not a valid second tenant.
- if(validTwoTenantReceipt!==true)reasons.push('two_valid_tenant_test_not_verified');
+ if(!twoTenantEvidence || twoTenantEvidence.schema!==1 ||
+  twoTenantEvidence.syntheticOnly!==true ||
+  twoTenantEvidence.deployedSha!==deployedSha ||
+  twoTenantEvidence.validTenantCount<2 ||
+  twoTenantEvidence.authorizedPositiveControlsPassed!==true ||
+  twoTenantEvidence.crossTenantDenied===undefined ||
+  twoTenantEvidence.crossTenantDenied!==true ||
+  twoTenantEvidence.revocationDenied!==true ||
+  twoTenantEvidence.operatorApproved!==true)
+   reasons.push('two_valid_tenant_test_not_verified');
  return {qualified:reasons.length===0,reasons:[...new Set(reasons)].sort(),
   accountsExpected:10,clinicalActivationAuthorized:false};
 }
@@ -55,7 +64,7 @@ if(process.argv[1]?.endsWith('/m4-acceptance-evidence.mjs')){
    extra:JSON.parse(readFileSync(extraPath,'utf8')),
    deployedSha:sha,verifiedSha:process.env.TB_OPERATOR_VERIFIED_DEPLOYED_SHA,
    operatorApproved:process.env.TB_PROTECTED_QA_APPROVED==='true',
-   validTwoTenantReceipt:process.env.TB_TWO_VALID_TENANT_EVIDENCE_APPROVED==='true'
+   twoTenantEvidence:process.env.TB_TWO_VALID_TENANT_RECEIPT_FILE\n    ? JSON.parse(readFileSync(process.env.TB_TWO_VALID_TENANT_RECEIPT_FILE,'utf8')) : null
   });
   console.log(JSON.stringify(data));if(!data.qualified)process.exitCode=2;
  }catch{console.error('M4 evidence inputs unavailable or invalid');process.exitCode=2;}
