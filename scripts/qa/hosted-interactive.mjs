@@ -308,6 +308,8 @@ export async function run({
   const counts=Object.fromEntries(CHECKS.map(s=>[s,rows.filter(r=>r.status===s).length]));
   const report={
     schema:1,kind:'hosted_synthetic_interactive_readonly',target:ORIGIN,
+    deployedSha:process.env.TB_QA_DEPLOY_SHA??null,
+    protectedRunId:process.env.GITHUB_RUN_ID??null,
     baseline104Unchanged:true,clinicalGatesUnchanged:true,
     generatedAt:new Date().toISOString(),counts,rows
   };
