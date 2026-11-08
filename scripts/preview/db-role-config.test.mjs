@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {validateDbRoleConfiguration as check} from './db-role-config.mjs';
 
 const migration='postgresql://ddl:admin-secret@ep-demo.region.aws.neon.tech/therabridge_demo_m3_preview?sslmode=require';
@@ -42,4 +43,16 @@ test('never include credentials or URLs in validation errors',()=>{
    assert(!e.message.includes('postgresql://'));
   }
  }
+});
+
+test('preview entrypoint and Docker image preserve privileged migration-only scope',()=>{
+ const boot=fs.readFileSync('scripts/preview/start.sh','utf8');
+ const docker=fs.readFileSync('Dockerfile.preview','utf8');
+ assert.match(boot,/node scripts\/preview\/db-role-config\.mjs/);
+ assert.match(boot,/DATABASE_URL="\$MIGRATION_DATABASE_URL" yarn workspace @therabridge\/api prisma migrate deploy/);
+ assert.match(boot,/DATABASE_URL="\$MIGRATION_DATABASE_URL" yarn workspace @therabridge\/api seed:demo/);
+ assert.match(boot,/node scripts\/preview\/verify-runtime-db-role\.mjs/);
+ assert.match(boot,/node --max-old-space-size=192 apps\/api\/dist\/main\.js/);
+ assert.doesNotMatch(boot,/export DATABASE_URL="\$MIGRATION_DATABASE_URL"/);
+ assert.match(docker,/COPY scripts\/preview\/db-role-config\.mjs scripts\/preview\/verify-runtime-db-role\.mjs/);
 });
