@@ -27,6 +27,21 @@ describe('M4-06 database integrity protections (real PostgreSQL)', () => {
     expect(await h.prisma.auditEvent.count()).toBe(2);
   });
 
+  it('M4-06 P1: rejects raw TRUNCATE while retaining normal audit INSERT', async () => {
+    const initial = await h.prisma.auditEvent.create({
+      data: { type: 'm4.audit.protected', meta: { synthetic: true } },
+    });
+    const triggers = await h.prisma.$queryRaw<{ tgname: string; enabled: string }[]>`
+      SELECT tgname, tgenabled AS enabled FROM pg_trigger
+      WHERE tgrelid = 'audit_event'::regclass AND NOT tgisinternal
+        AND tgname = 'audit_event_no_truncate'`;
+    expect(triggers).toEqual([{ tgname: 'audit_event_no_truncate', enabled: 'O' }]);
+    await expect(h.prisma.$executeRawUnsafe('TRUNCATE TABLE audit_event')).rejects.toThrow();
+    expect(await h.prisma.auditEvent.findUnique({ where: { id: initial.id } })).not.toBeNull();
+    await h.prisma.auditEvent.create({ data: { type: 'm4.audit.append', meta: {} } });
+    expect(await h.prisma.auditEvent.count()).toBe(2);
+  });
+
   it('retains center, child and author constraints for clinical version records', async () => {
     const found = await h.prisma.$queryRaw<{ conname: string; validated: boolean }[]>`
       SELECT conname, convalidated AS validated FROM pg_constraint

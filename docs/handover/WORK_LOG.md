@@ -1,3 +1,7 @@
+**M4-06 P1 TRUNCATE guard work log — 2026-11-08:** Opened PR #281 for #277 at `92158e7928421a97c864ce267dadcf364bba9bdf`: migration adds BEFORE TRUNCATE statement trigger on audit_event and REVOKE TRUNCATE FROM PUBLIC, while retaining existing UPDATE/DELETE guard. Added `m4-db-integrity` negative TRUNCATE and positive INSERT real-DB test. Updated test helper only: transactional DB-owner DISABLE/ENABLE of TRUNCATE trigger for destructive test fixture cleanup (never runtime). Codex review raised P1 missing Rule 7 records: addressed this exact finding by updating CURRENT_STATE, WORK_LOG, NEXT_WORK and TEST_RESULTS, without claiming new-head PASS. Review/CI rerun pending; runtime DB owner privileges still require audit.
+
+---
+
 **M4-04 clinical read security reconciliation — 2026-11-08:** PR #271 implements active-membership and live-supervisor checks for clinical child, progress and review-queue reads, plus specialty-revocation and suspension negative tests. Reconciled after M4-05/#272 merge. Final new-head six-job CI and independent implementation review NOT YET VERIFIED. The remaining P0 #178 authorization/CAS/browser scope and all clinical NO-GO remain OPEN.
 
 ---
