@@ -99,7 +99,7 @@ test('rejects a truncated seven-role artifact even with successful login and den
  // A syntactically valid report with all 7 logins, all denials and all logouts,
  // but zero positive authorized navigation evidence must not pass acceptance.
  f.legacy.rows=f.legacy.rows.filter(r=>!r.step.startsWith('link:'));
- f.legacy.counts.PASS=f.legacy.rows.length;
+ f.legacy.counts.PASS=f.legacy.rows.filter(r=>r.status==='PASS').length;
  assert.equal(f.legacy.counts.FAIL,0);
  assert.equal(f.legacy.counts.BLOCKED,14,'excluded clinical checks remain visibly BLOCKED');
  const result=evaluateM4HostedEvidence(f);
@@ -109,7 +109,7 @@ test('rejects a truncated seven-role artifact even with successful login and den
 test('missing one role-specific clinical navigation fails even if every other route passes',()=>{
  const f=fixture();
  f.legacy.rows=f.legacy.rows.filter(r=>!(r.role==='speech'&&r.step==='link:/app/clinical'));
- f.legacy.counts.PASS=f.legacy.rows.length;
+ f.legacy.counts.PASS=f.legacy.rows.filter(r=>r.status==='PASS').length;
  const result=evaluateM4HostedEvidence(f);
  assert.equal(result.qualified,false);
  assert(result.reasons.includes('legacy_authorized_navigation_missing'));
