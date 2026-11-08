@@ -1,6 +1,6 @@
 # TheraBridge Smart CI — risk-based execution policy
 
-**Status:** implemented behind a shadow-mode safety gate. This is CI optimization, **not** M4 release/clinical acceptance. No required status check may be removed or bypassed.
+**Status:** implemented in shadow mode with a **hard-coded Rule 16 owner-policy lock**. Setting the CI mode variables alone cannot activate targeted execution. This is CI optimization, **not** M4 release/clinical acceptance. No required status check may be removed or bypassed.
 
 ## Design
 
@@ -23,9 +23,10 @@ The independent `smart-ci-gate` always runs, reads exact `needs` job outcomes fr
 ## Activation
 
 1. **Shadow (default).** Leave `TB_SMART_CI_MODE` unset or `shadow`; `TB_SMART_CI_REQUIRED_GATE_READY` unset/false. All six existing jobs continue to run. `smart-plan` publishes an advisory candidate, but execution remains full. Use representative PRs (documentation, Web static assets, API, clinical, DB, workflows, mixed changes) to compare risk predictions to actual full-CI results.
-2. **GitHub branch protection prerequisite (manual admin task):** Confirm all protected branches and rulesets. Make the new `smart-ci-gate` **required**, and keep independent review and secret scan enforced; verify all status-check names are exact. Decide how pre-existing six required checks will be interpreted if legitimately skipped. The current GitHub App lacks branch-protection administration, so this step **cannot be automatically verified or changed** from this ChatGPT integration.
-3. **Activate carefully:** Set repo Actions variable `TB_SMART_CI_MODE=targeted` and `TB_SMART_CI_REQUIRED_GATE_READY=true` **only after** the gate is required and shadow classification is reviewed. This is operator opt-in, not a safety bypass; both flags are needed. Roll back instantly by setting mode `shadow` or unsetting either flag. A main-branch push always triggers full CI.
-4. **Observe:** For at least a week track each mode, full-vs-selected runner minutes, exact checked head SHA, failed classifier events, new code paths, reviewer dispositions and skipped-job gate receipts. Schedule periodic full CI on main (main pushes remain full), and retain protected hosted QA, rollback/migration, clinical governance approvals independently.
+2. **Owner policy prerequisite (separate approval and PR):** AGENTS.md Rule 16 explicitly mandates all six jobs pass on exact HEAD. An owner-approved amendment to Rule 16 must define the legally acceptable targeted mode and grant it equivalent merge-gate status. Until this approved revision merges, production code passes `ownerPolicyApproved:false` and always runs all six jobs, even if repository variables request targeting.
+3. **GitHub branch protection prerequisite (manual admin task):** Confirm all protected branches and rulesets. Make the new `smart-ci-gate` **required**, and keep independent review and secret scan enforced; verify all status-check names are exact. Decide how pre-existing six required checks will be interpreted if legitimately skipped. The current GitHub App lacks branch-protection administration, so this step **cannot be automatically verified or changed** from this ChatGPT integration.
+4. **Activate carefully:** After the approved Rule 16 amendment has merged, separately change the hard-coded source lock in a tested PR (including specific policy version/evidence) and verify branch protection. Only then Set repo Actions variable `TB_SMART_CI_MODE=targeted` and `TB_SMART_CI_REQUIRED_GATE_READY=true` **only after** the gate is required and shadow classification is reviewed. This is operator opt-in, not a safety bypass; both flags are needed. Roll back instantly by setting mode `shadow` or unsetting either flag. A main-branch push always triggers full CI.
+5. **Observe:** For at least a week track each mode, full-vs-selected runner minutes, exact checked head SHA, failed classifier events, new code paths, reviewer dispositions and skipped-job gate receipts. Schedule periodic full CI on main (main pushes remain full), and retain protected hosted QA, rollback/migration, clinical governance approvals independently.
 
 ## Invariants / caveats
 
