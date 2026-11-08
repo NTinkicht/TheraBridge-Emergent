@@ -4,7 +4,7 @@ import {classifyPaths,decide,decodeNameStatusNul,expectedJobs} from './smart-ci.
 import {verifySmartGate} from './smart-ci-gate.mjs';
 const paths=(...items)=>items.map(path=>({path,status:'M'}));
 const eligible=(changes,overrides={})=>decide({changes,eventName:'pull_request',
- baseRef:'main',mode:'targeted',requiredGateReady:true,fromFork:false,...overrides});
+ baseRef:'main',mode:'targeted',requiredGateReady:true,fromFork:false,ownerPolicyApproved:true,...overrides});
 test('documentation changes require only security scan and targeted validation',()=>{
  const x=eligible(paths('docs/roadmap/README.md','docs/handover/NEXT_WORK.md'));
  assert.equal(x.execution,'docs');assert.equal(x.required['test'],'skipped');
@@ -30,6 +30,11 @@ test('security, DB, clinical, dependencies, workflows, scripts, missing and mixe
  assert.equal(eligible(paths('README.md','apps/api/src/auth/auth.service.ts')).execution,'full');
  assert.equal(eligible([]).execution,'full');
  assert.equal(eligible(Array.from({length:301},(_,i)=>({path:'docs/a'+i+'.md',status:'A'}))).execution,'full');
+});
+test('current Rule 16 hard-lock prevents targeted execution even with both CI variables enabled',()=>{
+ const x=eligible(paths('docs/a.md'),{ownerPolicyApproved:false});
+ assert.equal(x.execution,'full');
+ assert.equal(x.reason,'rule16_owner_approval_required');
 });
 test('shadow is default; pushes, forked PRs and non-main target remain full',()=>{
  const changes=paths('README.md');
