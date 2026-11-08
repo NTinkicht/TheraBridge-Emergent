@@ -42,7 +42,7 @@ jobs:
           node -e "if(require('playwright/package.json').version!=='1.48.2') process.exit(2)"
           node --check scripts/qa/hosted-interactive.mjs
           node --check scripts/qa/hosted-extra-therapists.mjs
-          node --test scripts/qa/hosted-extra-contracts.test.mjs scripts/qa/hosted-role-guards.test.mjs scripts/qa/hosted-session-guards.test.mjs
+          node --test scripts/qa/hosted-extra-contracts.test.mjs scripts/qa/hosted-role-guards.test.mjs scripts/qa/hosted-session-guards.test.mjs scripts/qa/prepare-hosted-run.test.mjs
       - name: Private credential and live health preflight
         id: preflight
         env:
