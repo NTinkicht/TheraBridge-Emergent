@@ -12,9 +12,10 @@ const make=(roles,steps,kind)=> {
 };
 const fixture=()=>{
  const sha='a'.repeat(40);
- return {legacy:make(oldRoles,requiredOld,'hosted_synthetic_interactive_readonly'),
-  extra:make(newRoles,requiredNew,'hosted_extra_therapists_private_readonly'),
-  deployedSha:sha,verifiedSha:sha,operatorApproved:true,
+ const legacy=make(oldRoles,requiredOld,'hosted_synthetic_interactive_readonly');
+ const extra=make(newRoles,requiredNew,'hosted_extra_therapists_private_readonly');
+ for(const report of [legacy,extra]){report.deployedSha=sha;report.protectedRunId='42480077162';}
+ return {legacy,extra,deployedSha:sha,verifiedSha:sha,operatorApproved:true,
   twoTenantEvidence:{schema:1,syntheticOnly:true,deployedSha:sha,validTenantCount:2,
    authorizedPositiveControlsPassed:true,crossTenantDenied:true,revocationDenied:true,operatorApproved:true}};
 };
@@ -61,4 +62,19 @@ test('independent tenant receipt cannot be reduced to a boolean or wrong deploym
  input.twoTenantEvidence=fixture().twoTenantEvidence;
  input.twoTenantEvidence.crossTenantDenied=false;
  assert(evaluateM4HostedEvidence(input).reasons.includes('two_valid_tenant_test_not_verified'));
+});
+
+test('real hosted navigation labels are safe to keep in sanitized reports',()=>{
+ const f=fixture();
+ f.legacy.rows.push({role:'admin',step:'link:/app/children',status:'PASS',reason:'page_loaded'});
+ f.legacy.counts.PASS+=1;
+ assert.equal(evaluateM4HostedEvidence(f).qualified,true);
+});
+test('an older account artifact cannot be paired with a current deployment or another run',()=>{
+ const f=fixture();
+ f.legacy.deployedSha='b'.repeat(40);
+ assert(evaluateM4HostedEvidence(f).reasons.includes('account_reports_deployment_provenance_invalid'));
+ f.legacy.deployedSha=f.deployedSha;
+ f.extra.protectedRunId='123';
+ assert(evaluateM4HostedEvidence(f).reasons.includes('account_reports_deployment_provenance_invalid'));
 });
