@@ -12,9 +12,17 @@
 ## Mandatory restrictions
 The authoritative private source explicitly describes V0.9.16 as a **CONTROLLED DRAFT / UNSIGNED** and marks G2/G2b NO-GO, G3 NOT AUTHORIZED, G4–G7 NO-GO. Its 103 proposed OpenAPI operations and 65 unsigned role mappings are not permission to generate/live-activate clinical features. Owner-approved TB-EM-052/053 development-only policies do not supply clinical/privacy/security signatures.
 
+## Historical step-register source now recovered and hash-verified
+
+- Private owner workbook: `TheraBridge_V1_Exhaustive_Workflows_Step_Screen_Audit.xlsx`; 237,877 bytes.
+- SHA-256: `cc7e2d76b15d77853d08d726d4f1aa1e7ade0031ce115372056f1b7c5e15fee4` — agrees with source-workbook record embedded in the owner's preserved full-specifications annex.
+- Parsed sheet `Step-Screen Audit`: exactly **1,023 distinct nonempty Step IDs**, across **90** V1 workflows. `Workflow Catalogue` has **91** rows, with `WF-X6` explicitly V2-excluded.
+- Step coverage statuses: **108** `Mapped design — verify`; **880** `No exact step→node mapping`; **35** `QA evidence not executed`. Sum = 1,023. The historical design workbook is controlled draft / unsigned and does not prove implemented API/UI/tests or live Figma sign-off.
+- The private workbook's step prose/figma mappings are **not duplicated into the public Emergent repo**; record proof, metadata and secure source route only.
+
 ## Required M4-01 evidence still missing
 1. Reconcile each of the existing 66 feature, 91 workflow, and 55 owner-requirement rows against these pinned controlled sources, actual merged Emergent code/test HEAD and required owner/policy decision. The current crosswalks remain `PENDING_VERIFICATION` until this is done.
-2. Locate and hash-verify the original **1,023 workflow-step** matrix. Neither 1,294 Figma frames nor 3,150 prototype edges is evidence of 1,023 executable workflow steps; do not fabricate an equivalence.
+2. The historical original **1,023-step** workbook has now been located and SHA-256 verified; next reconcile EACH unique step ID to source, current Figma node/state, API/UI/DB behavior, positive/negative test, and blocked/approved policy outcome. Do not confuse the historical 108 design-mapped rows with executed acceptance.
 3. Link test case IDs, actual CI or hosted sanitized receipts, and clinical NO-GO disposition per row. Historical 75-issue reconciliation remains independently tracked under M4-09.
 4. Obtain independent evidence review and accountable owner signoff before closing #175/#266.
 

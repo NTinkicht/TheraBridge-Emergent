@@ -3,7 +3,7 @@
 **Milestone #167 OPEN, synthetic-only.** Nine work units, of which #177 (M4-03 credential/seed integrity) was closed with PR #270, six-job CI run 42400227318 and exact-head reviews. This is a scoped closeout; hosted 10-role acceptance remains open in #176/#268.
 
 ## Parent work units still open
-- **M4-01 #175:** 66/91/55 rows and 1,023 individual steps not reconciled to tested implementation. Private controlled source now READABLE but UNSIGNED (see `M4-01-CONTROLLED-SOURCE-ACCESS.md` and #266).
+- **M4-01 #175:** 66/91/55 code-evidence rows not reconciled. Historical 1,023-step workbook recovered and SHA-256 verified (108 design-only mapped, 880 unmapped, 35 QA-only); actual runtime and test acceptance NOT VERIFIED. Private controlled source remains UNSIGNED (see `M4-01-CONTROLLED-SOURCE-ACCESS.md` and #266).
 - **M4-02 #176:** protected hosted ten-account acceptance, two-tenant/read and live revocation evidence (#268/#269) NOT RUN.
 - **M4-04 #178:** clinical/guardian/tenant full negative matrices, CAS concurrency and browser acceptance remain.
 - **M4-05 #179:** proxy, cookie, CSRF, application enumeration, distributed abuse, account recovery/MFA and security UX acceptance; #280.
