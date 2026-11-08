@@ -1,3 +1,7 @@
+**M4 source/historical evidence update — 2026-11-08:** This branch pins accessible PRIVATE V0.9.16 controlled draft source blobs (unsigned, clinical NO-GO), records M4 #177 closed, updates four of 75 historical issue rows (#8 verified; #10 and #21 partial; #35 policy-blocked), and maintains all other issues PENDING_EVIDENCE. Register validator CI and independent review PENDING. No new runtime capability or policy activation.
+
+---
+
 **M4-06 P1 audit TRUNCATE protection — 2026-11-08:** PR #281 / issue #277 adds forward-only migration `20261108100000_m4_audit_truncate_guard` (statement-level BEFORE TRUNCATE trigger and PUBLIC privilege revoke), plus a real PostgreSQL denial-and-append regression. Test-only `resetDb` uses one transaction to temporarily disable/reenable that trigger for full fixture reset, rollback restoring it on failure. DB owners/superusers retain the ability to bypass triggers; operational least-privilege credentials and verified restore/upgrade remain required. First-head CI and fresh independent code review were initiated; Codex P1 Rule 7 documentation finding FIX_NOW in this commit. Current commit CI NOT RUN; #277/#180 remain OPEN, clinical NO-GO preserved.
 
 ---

@@ -1,3 +1,7 @@
+**M4 source/historical evidence update — 2026-11-08:** This branch pins accessible PRIVATE V0.9.16 controlled draft source blobs (unsigned, clinical NO-GO), records M4 #177 closed, updates four of 75 historical issue rows (#8 verified; #10 and #21 partial; #35 policy-blocked), and maintains all other issues PENDING_EVIDENCE. Register validator CI and independent review PENDING. No new runtime capability or policy activation.
+
+---
+
 **M4-06 P1 TRUNCATE guard work log — 2026-11-08:** Opened PR #281 for #277 at `92158e7928421a97c864ce267dadcf364bba9bdf`: migration adds BEFORE TRUNCATE statement trigger on audit_event and REVOKE TRUNCATE FROM PUBLIC, while retaining existing UPDATE/DELETE guard. Added `m4-db-integrity` negative TRUNCATE and positive INSERT real-DB test. Updated test helper only: transactional DB-owner DISABLE/ENABLE of TRUNCATE trigger for destructive test fixture cleanup (never runtime). Codex review raised P1 missing Rule 7 records: addressed this exact finding by updating CURRENT_STATE, WORK_LOG, NEXT_WORK and TEST_RESULTS, without claiming new-head PASS. Review/CI rerun pending; runtime DB owner privileges still require audit.
 
 ---

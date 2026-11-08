@@ -1,3 +1,7 @@
+**M4 source/historical evidence update — 2026-11-08:** This branch pins accessible PRIVATE V0.9.16 controlled draft source blobs (unsigned, clinical NO-GO), records M4 #177 closed, updates four of 75 historical issue rows (#8 verified; #10 and #21 partial; #35 policy-blocked), and maintains all other issues PENDING_EVIDENCE. Register validator CI and independent review PENDING. No new runtime capability or policy activation.
+
+---
+
 **M4-06 P1 audit TRUNCATE QA — 2026-11-08:** PR #281 introduces `apps/api/test/m4-db-integrity.e2e-spec.ts` regression: check `audit_event_no_truncate` enabled, reject TRUNCATE, confirm original row retained, then INSERT accepted; existing UPDATE/DELETE regression remains. Test setup uses transactional owner-only trigger disable/reenable inside `resetDb`; verify it cannot leave protection disabled on failure. Baseline `92158e7` first-head six CI jobs were running when this record was authored; tests on this new documentation-fix HEAD are **NOT RUN/PENDING**, no PASS claimed. Migration upgrade, backup/restore, operational non-owner privilege and reviewer signoff NOT VERIFIED; #277/#180 OPEN, clinical NO-GO.
 
 ---

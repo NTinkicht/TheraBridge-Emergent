@@ -1,3 +1,7 @@
+**M4 source/historical evidence update — 2026-11-08:** This branch pins accessible PRIVATE V0.9.16 controlled draft source blobs (unsigned, clinical NO-GO), records M4 #177 closed, updates four of 75 historical issue rows (#8 verified; #10 and #21 partial; #35 policy-blocked), and maintains all other issues PENDING_EVIDENCE. Register validator CI and independent review PENDING. No new runtime capability or policy activation.
+
+---
+
 **M4-06 #277 follow-up — 2026-11-08:** (1) Obtain six exact-head CI jobs PASS for PR #281 after Rule 7 documentation fix; inspect migration build, test reset concurrency and audit TRUNCATE regression; (2) request fresh independent review and resolve P1 findings; (3) verify migration from existing database and clean database, backup/rollback and restricted operational DB role (owner/superuser can override triggers); (4) only then merge #281 and consider closing #277 with evidence; (5) continue parent M4-06 #180 transaction/CAS/migration audit. Synthetic-only; no clinical activation or owner signoff implied.
 
 ---
