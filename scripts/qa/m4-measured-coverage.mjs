@@ -7,16 +7,18 @@ function score(summary,metric){
  const item=summary?.total?.[metric];
  if(!item||!Number.isFinite(item.total)||!Number.isFinite(item.covered)||
   item.total<=0||item.covered<0||item.covered>item.total)throw Error('invalid_coverage_data');
- return Math.round((item.covered/item.total)*10000)/100;
+ return (item.covered/item.total)*100; // Unrounded for gate comparisons.
 }
 export function measuredCoverage({api,web,threshold=95}={}){
  if(!Number.isFinite(threshold)||threshold<=0||threshold>100)throw Error('invalid_threshold');
  const scopes={};
+ const raw={};
  for(const [name,source] of Object.entries({api,web})){
   if(!source?.total)throw Error('missing_'+name+'_application_coverage');
-  scopes[name]=Object.fromEntries(METRICS.map(key=>[key,score(source,key)]));
+  raw[name]=Object.fromEntries(METRICS.map(key=>[key,score(source,key)]));
+  scopes[name]=Object.fromEntries(METRICS.map(key=>[key,Math.round(raw[name][key]*100)/100]));
  }
- const missing=Object.entries(scopes).flatMap(([name,metrics])=>
+ const missing=Object.entries(raw).flatMap(([name,metrics])=>
    Object.entries(metrics).filter(([,n])=>n<threshold).map(([metric])=>name+'_'+metric));
  return {measurement:'istanbul_json_summary',threshold,scopes,
   result:missing.length?'FAIL':'PASS',belowThreshold:missing};
