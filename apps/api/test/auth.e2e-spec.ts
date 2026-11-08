@@ -496,6 +496,66 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
       }
     });
 
+    it('M4-05: audit failure rolls back token claim, password, session revocation and origin lockout cleanup', async () => {
+      const local = await makeApp({ DEPLOYMENT_ENV: 'local', DEV_MAILBOX_ENABLED: 'true' }, h.clock);
+      try {
+        const user = await createUser(local.prisma);
+        const signed = await signIn(local, user.email);
+        const originalIdentity = await local.prisma.authIdentity.findUniqueOrThrow({
+          where: { userId_provider: { userId: user.id, provider: 'local' } },
+        });
+        const p = await preAuth(local);
+        await local.http().post('/api/auth/password/forgot').set('Origin', ORIGIN)
+          .set('Cookie', p.cookie).set('X-CSRF-Token', p.token).send({ email: user.email }).expect(202);
+        const mailbox = await local.http().get('/api/dev/mailbox').expect(200);
+        const token = /#token=([A-Za-z0-9_-]+)/.exec(mailbox.body.messages[0].body)![1];
+        for (let i = 0; i < ACCOUNT_LIMIT; i++) {
+          expect((await login(local, user.email, 'fault-test-incorrect-password')).status).toBe(401);
+        }
+        const beforeLocks = await local.prisma.authLockout.count();
+        expect(beforeLocks).toBeGreaterThan(0);
+        // This trigger models a database failure at the LAST write in the
+        // transaction. Before the fix it stranded a used token and revoked
+        // session, but now every preceding write must roll back atomically.
+        await local.prisma.$executeRawUnsafe(`CREATE FUNCTION m4_reset_fault_injection() RETURNS trigger LANGUAGE plpgsql AS $
+          BEGIN IF NEW.type = 'auth.password.reset_completed' THEN
+            RAISE EXCEPTION 'synthetic audit fault injection'; END IF;
+          RETURN NEW; END $;`);
+        await local.prisma.$executeRawUnsafe(`CREATE TRIGGER m4_reset_fault_injection
+          BEFORE INSERT ON audit_event FOR EACH ROW EXECUTE FUNCTION m4_reset_fault_injection();`);
+        try {
+          const q = await preAuth(local);
+          const failed = await local.http().post('/api/auth/password/reset')
+            .set('Origin', ORIGIN).set('Cookie', q.cookie).set('X-CSRF-Token', q.token)
+            .send({ token, password: 'Atomic-Reset-Synthetic-Password-1' });
+          expect(failed.status).toBe(500);
+        } finally {
+          await local.prisma.$executeRawUnsafe('DROP TRIGGER IF EXISTS m4_reset_fault_injection ON audit_event');
+          await local.prisma.$executeRawUnsafe('DROP FUNCTION IF EXISTS m4_reset_fault_injection()');
+        }
+        const stored = await local.prisma.verificationToken.findUniqueOrThrow({
+          where: { tokenHash: sha256(token) },
+        });
+        expect(stored.usedAt).toBeNull();
+        const identity = await local.prisma.authIdentity.findUniqueOrThrow({
+          where: { userId_provider: { userId: user.id, provider: 'local' } },
+        });
+        expect(identity.passwordHash).toBe(originalIdentity.passwordHash);
+        expect(await local.prisma.authLockout.count()).toBe(beforeLocks);
+        await local.http().get('/api/auth/session').set('Cookie', signed.cookie).expect(200);
+        const again = await preAuth(local);
+        await local.http().post('/api/auth/password/reset').set('Origin', ORIGIN)
+          .set('Cookie', again.cookie).set('X-CSRF-Token', again.token)
+          .send({ token, password: 'Atomic-Reset-Synthetic-Password-1' }).expect(204);
+        await local.http().get('/api/auth/session').set('Cookie', signed.cookie).expect(401);
+        expect(await local.prisma.authLockout.count()).toBe(0);
+        expect((await login(local, user.email, 'Atomic-Reset-Synthetic-Password-1')).status).toBe(200);
+        expect(await local.prisma.auditEvent.count({ where: { type: 'auth.password.reset_completed' } })).toBe(1);
+      } finally {
+        await local.close();
+      }
+    });
+
     it('writes audit events for the auth lifecycle without secrets', async () => {
       const u = await createUser(h.prisma);
       await login(h, u.email, 'not-the-password-123');
