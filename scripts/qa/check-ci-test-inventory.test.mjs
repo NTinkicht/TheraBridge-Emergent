@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {baseline,JOBS,coreThresholds,workflowJobNames} from './check-ci-test-inventory.mjs';
+import {baseline,JOBS,coreThresholds,workflowJobNames,compareSuiteInventory} from './check-ci-test-inventory.mjs';
 test('all six exact-head CI jobs remain named and both API/web test runners exist',()=>{
  const x=baseline();
  assert.equal(x.kind,'qa_suite_inventory_not_coverage');
@@ -29,4 +29,23 @@ test('rejects env.compose pretending to be a required CI job',()=>{
  assert(parsed.has('test'));
  assert(!parsed.has('compose'));
  assert(!parsed.has('live-session'));
+});
+
+test('reviewed suite snapshot rejects deletion and rename without broadening count floors',()=>{
+ const pinned=['alpha.e2e-spec.ts','beta.e2e-spec.ts'];
+ assert.deepEqual(compareSuiteInventory(pinned,[...pinned],'API'),[]);
+ assert.throws(()=>compareSuiteInventory(pinned,['beta.e2e-spec.ts'],'API'),/alpha.e2e-spec.ts/);
+ assert.throws(()=>compareSuiteInventory(pinned,['alpha-renamed.e2e-spec.ts','beta.e2e-spec.ts'],'API'),/alpha.e2e-spec.ts/);
+ // A new suite is accepted but surfaced for baseline review.
+ assert.deepEqual(compareSuiteInventory(pinned,[...pinned,'gamma.e2e-spec.ts'],'API'),['gamma.e2e-spec.ts']);
+ assert.throws(()=>compareSuiteInventory(['beta.e2e-spec.ts','alpha.e2e-spec.ts'],pinned,'API'),/Invalid API suite snapshot/);
+ assert.throws(()=>compareSuiteInventory(['alpha.e2e-spec.ts','alpha.e2e-spec.ts'],pinned,'API'),/Invalid API suite snapshot/);
+});
+test('real repository inventory matches the frozen baseline without new unexpected additions',()=>{
+ const report=baseline();
+ assert.deepEqual(report.newly_added_api_suites,[]);
+ assert.deepEqual(report.newly_added_web_suites,[]);
+ assert.equal(report.api_suite_count,32);
+ assert.equal(report.web_suite_count,2);
+ assert.equal(report.application_wide_coverage_percent,null);
 });
