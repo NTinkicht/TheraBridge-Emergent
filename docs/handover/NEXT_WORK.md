@@ -1,3 +1,10 @@
+## M4-01 PR #296 — exact-head review and remaining reconciliation (2026-11-08)
+
+1. Verify all six exact-head CI jobs on the *final* PR #296 SHA; confirm independent Codex re-review after Rule 7 handover fix, disposition P0–P3 comments before merge.
+2. Preserve exact CSV row totals (66/91/55), original IDs, owner work-unit routing and WF-X6/feature 39 V2 exclusions. PR #296 maps **44 PARTIAL**, leaves **166 PENDING_VERIFICATION** plus **2 V2_EXCLUDED**; partial means linked test evidence exists, **not** live/complete accepted behavior.
+3. Continue per-row merged-source/API/UI/test traceability only where actual evidence exists; do not create duplicate work for M1–M4 capability already coded. Full 1,023-step evidence, 75-issue review and owner acknowledgment are still needed for #175/#266/#183.
+4. Independently execute protected ten-account/two-valid-tenant/revocation acceptance (#176/#268) with approved private credentials and attested deployed SHA; non-owner Neon runtime role, measured API/Web coverage and performance/load/worker baselines require separate operational execution. No clinical activation, unsigned safeguarding, real STT or patient data.
+
 ## M4 final read-only qualification — Actual mandatory controls (2026-11-08)
 
 Require six CI jobs at final PR HEAD and independent Codex review. M4 original acceptance requires authorized protected 10-login workflow execution on independently attested Render SHA, a disposable second valid tenant for revocation/denial, separate non-owner runtime database identity, coverage measurements, and evidence-backed historical controlled-step mapping. Not satisfied by code or green CI alone.

@@ -1,3 +1,7 @@
+## 2026-11-08 — M4-01 existing-source mapping (PR #296, pending exact-head checks)
+
+Audited merged `main@6793dc225ae2900fe73f0992c81c93bb9cf9223b` API regression source; added 44 source-backed, carefully scoped `PARTIAL` entries to three canonical CSV registers (15 feature/15 workflow/14 owner). Preserved 166 `PENDING_VERIFICATION` entries and two V2 exclusions. Linked tests include `auth.e2e-spec.ts`, `clinical.e2e-spec.ts`, `operations.e2e-spec.ts`, `parent-scheduling.e2e-spec.ts`, `practice.e2e-spec.ts`, `notices-batch.e2e-spec.ts` and existing hosted runner contracts. No tests were executed locally by this mapping change; prior merged PR #295 six-job CI run 42506550732 passed, but **does not qualify PR #296's own HEAD**. Codex initial review identified Rule 7 missing mandatory handover records (P1); this update addresses the documentation omission, not yet independent re-review. No runtime code changed, no clinical gates relaxed, no issue auto-closed.
+
 ## M4 final read-only qualification — Changes and observation (2026-11-08)
 
 Scoped changes on final PR branch include platform valid-center RBAC check, policy/controller contract regression, and audit rollback transaction regression. Observed live Render deploy commit 7f19d552 equivalent to reviewed main 4784b241; active Neon DB therabridge_demo_m3_preview has 10 users, one center, 25 migrations. No live credentials or clinical data accessed; no protected login performed.

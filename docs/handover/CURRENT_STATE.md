@@ -1,3 +1,7 @@
+## M4-01 traceability reconciliation — PR #296 (2026-11-08; REVIEW PENDING)
+
+The three canonical registers now include **44 PARTIAL source-to-test matches**: 15/66 features, 15/91 workflows, 14/55 owner requirements. **166** other entries remain `PENDING_VERIFICATION`, with **two V2 exclusions** unchanged. Existing test file names and scenario descriptions are present in the CSVs; this is **not** full controlled-step execution or hosted evidence and must not be called 44 completed features. PR #296 is a documentation-only, unmerged review branch based on `main@6793dc225ae2900fe73f0992c81c93bb9cf9223b`. Its current-HEAD CI/review is **PENDING**. M4 #167 and #175/#266 remain OPEN. Protected ten-account/two-tenant acceptance, non-owner runtime DB role, measured application-wide 95% API/Web coverage, load/worker qualification and historic issue dispositions remain open. Clinical G2/G2b, D-NEW-5, consent/signing/release, real STT/AI and real patient use NO-GO.
+
 ## M4 final read-only qualification — Remaining M4 evidence (2026-11-08)
 
 Final M4 code-level remediation in progress: the RBAC protected-runner probes now require a real center and static controller/permission consistency, plus a PostgreSQL audit transaction rollback test. Read-only Render/Neon verification confirms 10 accounts, 25 migrations and 2 active audit guards on the correctly selected live database. Formal acceptance remains OPEN: only one live synthetic center; no protected run, independent non-owner DB role or application-wide coverage metrics.

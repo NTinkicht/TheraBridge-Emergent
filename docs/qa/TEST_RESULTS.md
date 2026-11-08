@@ -1,3 +1,7 @@
+## M4-01 PR #296 — regression-evidence traceability checkpoint (2026-11-08)
+
+**Change scope:** documentation-only CSV reconciliation, 44 existing test-linked rows marked `PARTIAL` (15 features + 15 workflows + 14 owner requirements); 166 rows still `PENDING_VERIFICATION`, two V2-excluded. All mapped claims distinguish test definition from full hosted/UI/controlled workflow acceptance. **No local/hosted tests executed for this change at recording time.** Previous main PR #295 six-job run [42506550732](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42506550732) was successful; it is NOT an exact-head QA receipt for PR #296. The new branch's six-job CI and independent follow-up review must complete before merge. Codex initial P1 Rule 7 handover omission addressed in this tranche; final-head re-review pending. Do not mark M4 accepted based on CSV references, no G2/G2b, signing, release, consent, real AI/STT, D-NEW-5 safeguarding or patient-use activation.
+
 ## M4 final read-only qualification — 2026-11-08 live qualification checkpoint (2026-11-08)
 
 Verified via read-only Render and Neon: live branch zero-file diff from M4 main, correct database, 10 synthetic users, 25 completed migrations, audit UPDATE/DELETE and TRUNCATE triggers enabled, 78 FKs. Only one valid center and owner-only application role: full two-tenant and privileged audit integrity NOT VERIFIED. New tests on this PR NOT RUN yet. Protected HA-01–HA-10 and broad coverage NOT RUN. See docs/qa/M4-LIVE-QUALIFICATION-20261108.md.
