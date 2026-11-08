@@ -2,6 +2,18 @@
 
 Historic issue validator now emits a conservative 75-row disposition summary and lists independently-evidenced VERIFIED_IMPLEMENTED candidates while explicitly setting automatic closure and M4 milestone closure authorization to false. Negative tests reject false evidence, policy block without proof and misleading completion assertions. No historical issue is auto-closed. #183/#167 remain open and C01–C03 independent qualifications are dependencies.
 
+## M4-C03 Acceptance/traceability — 2026-11-08
+
+Protected extra-therapist QA now rejects authenticated-denial 401 as session loss, requires 403 or masked 404, and gates unassigned/wrong-centre negative PASS behind a successful same-session authorized clinical workspace control. A seed-source contract test checks IDs and deterministic namespace against `seed-demo.ts`. NO hosted ten-account success, valid two-tenant test or 1,023-step private source verification is claimed. Workstreams #175/#176 (and prior merged #177) with #266/#268/#269 still need hosted/traceability evidence.
+
+## M4-C02 Database/infra/coverage — 2026-11-08
+
+CI suite inventory now verifies pinned Gitleaks version/SHA-256, fail-closed all-ref and tracked-file scans, and standards-compliant TOML syntax via built-in Python `tomllib`; negative Node tests exercise removed safeguards and malformed configuration. No DB migration or runtime query code changed in this tranche. Application-wide 95% coverage, database contention, Render resource and load qualification remain NOT VERIFIED. Parents #180/#181/#182 stay OPEN.
+
+## M4-C01 Security closure — 2026-11-08
+
+Authenticated seven-role forbidden-route QA now rejects 401 as session loss, requiring 403 or masked 404 before an isolation PASS. `hosted-role-guards.test.mjs` adds this negative regression. This is synthetic, read-only QA; no change to the production clinical guards. Broader M4-04/M4-05 matrices and final exact-head six CI jobs/independent review remain PENDING. Parent issues #178/#179 stay OPEN; signed clinical activation remains NO-GO.
+
 ## M4-05 password reset early-boundary tests — PR #286 (2026-11-08)
 
 Implementation HEAD before this handover update: `b932971cb79c578e79d560faec72775a7c1ffded`. Adds **two real-PostgreSQL fault-injection test cases** at the `auth_identity` UPDATE (credential mutation) and `session` UPDATE (session revocation) transaction boundaries. Both assert that failure leaves the reset token unspent, original password hash and session intact, then demonstrate same-token success after removing the synthetic trigger, session invalidation, new password login and replay rejection. These supplement (do not replace) the **audit INSERT failure** rollback regression delivered in merged PR #284. No runtime implementation changes or patient data; G2/G2b and clinical release remain NO-GO. **Current qualification: NOT YET VERIFIED on final documentation HEAD**; initial code-head CI run 42475586207 was in progress when checked, and the Rule 7 corrective commit necessarily requires new exact-HEAD CI and independent review. Parent #179 and follow-up #280 remain open until evidence permits closure.

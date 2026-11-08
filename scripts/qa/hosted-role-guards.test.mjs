@@ -24,5 +24,6 @@ test('success/redirect/server failure cannot be misreported as permission denial
  assert.equal(isDeniedStatus(200),false);
  assert.equal(isDeniedStatus(302),false);
  assert.equal(isDeniedStatus(500),false);
- for(const s of [401,403,404])assert.equal(isDeniedStatus(s),true);
+ for(const s of [403,404])assert.equal(isDeniedStatus(s),true);
+ assert.equal(isDeniedStatus(401),false, 'an expired session is not evidence of RBAC isolation');
 });

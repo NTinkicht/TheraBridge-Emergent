@@ -19,4 +19,6 @@ export function deniedRoute(role,session){
  if(!path.startsWith('/api/centers/'))throw Error('unsafe_qa_route');
  return BASE+path;
 }
-export const isDeniedStatus=s=>s===401||s===403||s===404;
+// Authenticated access denial must never accept HTTP 401: that would only
+// demonstrate a lost/invalid session, not tenant or role isolation.
+export const isDeniedStatus=s=>s===403||s===404;
