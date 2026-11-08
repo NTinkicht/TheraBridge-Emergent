@@ -12,7 +12,8 @@ const secureRows=(report,kind,roles)=>{
  if(!report.counts || STATUSES.some(s=>report.counts[s]!==report.rows.filter(r=>r.status===s).length))
   return false;
  return report.rows.every(r=>r && roles.includes(r.role) &&
-   STATUSES.includes(r.status) && /^[a-z_]+$/.test(r.step) &&
+   STATUSES.includes(r.status) &&
+   (/^[a-z_]+$/.test(r.step) || /^link:\/app(?:\/[a-z-]+)*$/.test(r.step)) &&
    /^[a-z_]+$/.test(r.reason));
 };
 const isPass=(report,role,step)=>
@@ -23,6 +24,13 @@ export function evaluateM4HostedEvidence({legacy,extra,deployedSha,verifiedSha,
  if(!SHA.test(deployedSha??'')||deployedSha!==verifiedSha)
   reasons.push('deployed_sha_unverified');
  if(operatorApproved!==true)reasons.push('protected_approval_missing');
+ // Both independent runner outputs must attest to one protected run and one
+ // operator-supplied deployment SHA. The operator must still verify Render.
+ if(!SHA.test(legacy?.deployedSha??'') || legacy.deployedSha!==deployedSha ||
+    !SHA.test(extra?.deployedSha??'') || extra.deployedSha!==deployedSha ||
+    !/^[0-9]+$/.test(legacy?.protectedRunId??'') ||
+    legacy.protectedRunId!==extra?.protectedRunId)
+  reasons.push('account_reports_deployment_provenance_invalid');
  if(!secureRows(legacy,'hosted_synthetic_interactive_readonly',LEGACY))
   reasons.push('legacy_artifact_invalid');
  else{
