@@ -144,6 +144,8 @@ export async function runExtra({
  }finally{await browser?.close().catch(()=>{});}
  const report={schema:1,kind:'hosted_extra_therapists_private_readonly',
   target:ORIGIN,syntheticOnly:true,clinicalGatesUnchanged:true,
+  deployedSha:process.env.TB_QA_DEPLOY_SHA??null,
+  protectedRunId:process.env.GITHUB_RUN_ID??null,
   checksExpected:3,counts:totals(rows),rows};
  if(output){
   try{
