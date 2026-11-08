@@ -48,6 +48,62 @@ describe('TB-EM-008 clinical workspace foundations + messaging policy (real Post
     return { therapist, other, sup, kid, link, rosa };
   }
 
+  it('M4-04 historical #39: observation cannot link another child or therapist session note', async () => {
+    const { therapist, other, kid } = await setup();
+    const W = c(`clinical/children/${kid}`);
+    const plan = (await post(h, W + '/plans', therapist,
+      { service: 'speech', title: 'Provenance-safe synthetic plan' }).expect(201)).body;
+    const goals = [{ key: 'words', title: 'Say three familiar words', measure: 'count', baseline: 0, target: 3 }];
+    await patch(therapist, c(`clinical/plan-versions/${plan.versionId}`),
+      { summary: 'Draft provenance test', goals, homeActivities: [], version: 1 }).expect(200);
+    // A second real synthetic child bypasses only the trial-capacity setup,
+    // never the API's actual clinical authorization predicates.
+    const otherChild = (await h.prisma.child.create({ data: {
+      centerId, firstName: 'Provenance', lastName: 'Boundary',
+      dateOfBirth: new Date('2020-01-02'), services: ['speech'],
+      createdById: admin.body.user.id, createdAt: h.clock.now(),
+    } })).id;
+    await post(h, c(`children/${otherChild}/assignments`), admin,
+      { membershipId: other.body.activeContext.membershipId, service: 'speech' }).expect(201);
+    await post(h, c(`children/${kid}/assignments`), admin,
+      { membershipId: other.body.activeContext.membershipId, service: 'speech' }).expect(201);
+    const foreignNote = (await post(h, c(`clinical/children/${otherChild}/notes`), other,
+      { service: 'speech', sessionDate: '2026-10-19' }).expect(201)).body.id;
+    const wrongAuthorNote = (await post(h, W + '/notes', other,
+      { service: 'speech', sessionDate: '2026-10-19' }).expect(201)).body.id;
+    const ownNote = (await post(h, W + '/notes', therapist,
+      { service: 'speech', sessionDate: '2026-10-19' }).expect(201)).body.id;
+    const evidence = { planVersionId: plan.versionId, goalKey: 'words', value: 2, observedOn: '2026-10-19' };
+    await post(h, W + '/observations', therapist, { ...evidence, sessionNoteId: foreignNote }).expect(422);
+    await post(h, W + '/observations', therapist, { ...evidence, sessionNoteId: wrongAuthorNote }).expect(422);
+    expect(await h.prisma.observation.count({ where: { centerId, childId: kid } })).toBe(0);
+    expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.observation_recorded' } })).toBe(0);
+    await post(h, W + '/observations', therapist, { ...evidence, sessionNoteId: ownNote }).expect(201);
+    expect(await h.prisma.observation.count({ where: { centerId, childId: kid, sessionNoteId: ownNote } })).toBe(1);
+    expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.observation_recorded' } })).toBe(1);
+  });
+
+  it('M4-04 historical #40: shared assignment never allows editing or submitting another therapist plan draft', async () => {
+    const { therapist, other, kid } = await setup();
+    await post(h, c(`children/${kid}/assignments`), admin,
+      { membershipId: other.body.activeContext.membershipId, service: 'speech' }).expect(201);
+    const W = c(`clinical/children/${kid}`);
+    const plan = (await post(h, W + '/plans', therapist,
+      { service: 'speech', title: 'Author-owned draft' }).expect(201)).body;
+    const planPath = c(`clinical/plan-versions/${plan.versionId}`);
+    const goals = [{ key: 'words', title: 'Use three descriptive words', measure: 'count', baseline: 0, target: 3 }];
+    await patch(therapist, planPath,
+      { summary: 'Owner draft', goals, homeActivities: [], version: 1 }).expect(200);
+    await get(other, W).expect(200); // Both therapists are legitimately assigned.
+    await patch(other, planPath,
+      { summary: 'Unauthorized draft edit', goals, homeActivities: [], version: 2 }).expect(403);
+    await post(h, planPath + '/submit', other, { version: 2 }).expect(403);
+    const saved = await h.prisma.planVersion.findUniqueOrThrow({ where: { id: plan.versionId } });
+    expect(saved).toMatchObject({ version: 2, summary: 'Owner draft', status: 'DRAFT', authorId: therapist.body.user.id });
+    expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'clinical.plan_draft_saved' } })).toBe(1);
+    await post(h, planPath + '/submit', therapist, { version: 2 }).expect(200);
+  });
+
   it('M4-04: specialty revocation fails closed for clinical reads despite a stale assignment', async () => {
     const { therapist, sup, kid } = await setup(['speech', 'occupational']);
     const workspace = c(`clinical/children/${kid}`);
