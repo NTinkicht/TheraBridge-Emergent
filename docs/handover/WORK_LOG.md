@@ -1,3 +1,7 @@
+## M4 final read-only qualification — Changes and observation (2026-11-08)
+
+Scoped changes on final PR branch include platform valid-center RBAC check, policy/controller contract regression, and audit rollback transaction regression. Observed live Render deploy commit 7f19d552 equivalent to reviewed main 4784b241; active Neon DB therabridge_demo_m3_preview has 10 users, one center, 25 migrations. No live credentials or clinical data accessed; no protected login performed.
+
 ## M4-F03 controlled acceptance/closure — Implementation log (2026-11-08)
 
 Implemented scoped code and regression tests on chatgpt/m4-f03-acceptance-closeout-final. Added executable sanitized two-report 7+3 identity acceptance validator with exact deployed SHA and separate two-valid-tenant/revocation receipt, and negative tests for missing evidence. No protected hosted acceptance run is asserted. Controlled 1,023 workflow-step mapping, historic 75 issue dispositions, #175/#176/#183/#266/#268/#279 and epic #167 remain OPEN until reviewed evidence. Clinical gates NO-GO. No unexecuted acceptance test is marked PASS.
