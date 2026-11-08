@@ -1,3 +1,7 @@
+## M4 final live qualification checkpoint — QA evidence status (2026-11-08)
+
+Current final merged M4 #293 CI run 42496485725 succeeded 6/6. Live Render demo deploy dep-dboa541srm7s73bcr5fg is status LIVE on branch SHA 7f19d552 with identical main@4784b241 tree. This does not establish HA-01–HA-10 or two-valid-tenant acceptance; protected workflow NOT RUN. Actual whole-app API/Web 95% instrumented coverage NOT MEASURED. This PR adds a new PostgreSQL transaction-rollback audit regression which is NOT YET RUN/REVIEWED on its head.
+
 ## M4-F03 controlled acceptance — test evidence (2026-11-08)
 
 **NOT RUN / NOT YET VERIFIED:** New 7+3 protected acceptance receipt validator requires exact SHA, operator approval and separate two-valid-tenant positive/negative/revocation receipt. Negative regressions included in CI. NOT RUN on this final HEAD; protected hosted run and historic/controlled mapping remain unverified. G2/G2b NO-GO. Require six exact-head CI jobs and independent review before any merge.
