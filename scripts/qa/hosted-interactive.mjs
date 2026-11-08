@@ -152,7 +152,19 @@ async function inspectRole(browser,role,user) {
       const session=sessionResponse.ok()?await sessionResponse.json():null;
       if(!session || session.activeContext?.role!==ROLES[role].role)
         throw Error('role_context_unavailable');
-      const probe=deniedRoute(role,session);
+      // The platform user has no center context. Obtain an existing center
+      // via their *authorized* platform read. Otherwise a masked 404 for a
+      // nonexistent center would not be evidence of role isolation.
+      let existingCenterId;
+      if(role==='platform'){
+        const centers=await ctx.request.get(BASE+'/api/platform/centers');
+        if(!centers.ok())throw Error('platform_centers_positive_control_failed');
+        const data=await centers.json();
+        existingCenterId=data?.items?.[0]?.id;
+        if(!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(existingCenterId??''))
+          throw Error('no_existing_synthetic_center');
+      }
+      const probe=deniedRoute(role,session,existingCenterId);
       const forbidden=await ctx.request.get(probe);
       const rejected=isDeniedStatus(forbidden.status());
       rows.push(result(role,'forbidden_role_read',rejected?'PASS':'FAIL',

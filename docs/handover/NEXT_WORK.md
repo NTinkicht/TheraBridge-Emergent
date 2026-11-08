@@ -1,3 +1,7 @@
+## M4 final read-only qualification — Actual mandatory controls (2026-11-08)
+
+Require six CI jobs at final PR HEAD and independent Codex review. M4 original acceptance requires authorized protected 10-login workflow execution on independently attested Render SHA, a disposable second valid tenant for revocation/denial, separate non-owner runtime database identity, coverage measurements, and evidence-backed historical controlled-step mapping. Not satisfied by code or green CI alone.
+
 ## M4-F03 controlled acceptance/closure — Qualification (2026-11-08)
 
 Run all six exact-head CI jobs and obtain independent final-head review. Fix actionable P0-P2; disposition P3. Added executable sanitized two-report 7+3 identity acceptance validator with exact deployed SHA and separate two-valid-tenant/revocation receipt, and negative tests for missing evidence. No protected hosted acceptance run is asserted. Controlled 1,023 workflow-step mapping, historic 75 issue dispositions, #175/#176/#183/#266/#268/#279 and epic #167 remain OPEN until reviewed evidence. Clinical gates NO-GO. Do not merge or close remaining parent issues based solely on the new test harness.

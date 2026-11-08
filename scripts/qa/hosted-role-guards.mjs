@@ -2,7 +2,7 @@
 import {BASE} from './hosted-readonly.mjs';
 export const WRONG_CENTER='00000000-0000-4000-8000-000000000001';
 const roleRoutes=Object.freeze({
- platform:()=>'/api/centers/'+WRONG_CENTER+'/children',
+ platform:id=>'/api/centers/'+id+'/children',
  admin:id=>'/api/centers/'+id+'/family',
  coordinator:id=>'/api/centers/'+id+'/family',
  speech:id=>'/api/centers/'+id+'/settings',
@@ -10,10 +10,13 @@ const roleRoutes=Object.freeze({
  supervisor:id=>'/api/centers/'+id+'/settings',
  guardian:id=>'/api/centers/'+id+'/children',
 });
-export function deniedRoute(role,session){
+export function deniedRoute(role,session,verifiedExistingCenterId){
  if(!Object.hasOwn(roleRoutes,role))throw Error('unrecognized_private_qa_role');
- const centerId=session?.activeContext?.centerId;
- if(role!=='platform' && !/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(centerId??''))
+ // Platform actors have no active center: the caller must first obtain a
+ // real center UUID from the authenticated platform.centers.read endpoint.
+ // A fabricated/not-found center cannot demonstrate RBAC denial.
+ const centerId=role==='platform'?verifiedExistingCenterId:session?.activeContext?.centerId;
+ if(!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(centerId??'') || centerId===WRONG_CENTER)
    throw Error('private_qa_center_context_unavailable');
  const path=roleRoutes[role](centerId);
  if(!path.startsWith('/api/centers/'))throw Error('unsafe_qa_route');

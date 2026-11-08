@@ -1,3 +1,7 @@
+## M4 final read-only qualification — Remaining M4 evidence (2026-11-08)
+
+Final M4 code-level remediation in progress: the RBAC protected-runner probes now require a real center and static controller/permission consistency, plus a PostgreSQL audit transaction rollback test. Read-only Render/Neon verification confirms 10 accounts, 25 migrations and 2 active audit guards on the correctly selected live database. Formal acceptance remains OPEN: only one live synthetic center; no protected run, independent non-owner DB role or application-wide coverage metrics.
+
 ## M4-F03 controlled acceptance/closure — Current state (2026-11-08)
 
 Added executable sanitized two-report 7+3 identity acceptance validator with exact deployed SHA and separate two-valid-tenant/revocation receipt, and negative tests for missing evidence. No protected hosted acceptance run is asserted. Controlled 1,023 workflow-step mapping, historic 75 issue dispositions, #175/#176/#183/#266/#268/#279 and epic #167 remain OPEN until reviewed evidence. Clinical gates NO-GO. This branch's new tests have NOT RUN on its final HEAD; six-job CI and independent review pending.
