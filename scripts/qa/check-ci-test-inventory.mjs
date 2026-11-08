@@ -55,7 +55,7 @@ export function secretScanContract(yaml) {
     [/\bGITLEAKS_VERSION:\s*\d+\.\d+\.\d+\b/,'pinned gitleaks version'],
     [/\bGITLEAKS_SHA256:\s*[a-f0-9]{64}\b/,'pinned gitleaks checksum'],
     [/sha256sum\s+-c\s+-/,'checksum verification'],
-    [/gitleaks git \. .*--log-opts="--all"/,'all-ref history scan'],
+    [/gitleaks git \. [^\n]*--log-opts="--all"[^\n]*--redact=100/,'redacted all-ref history scan'],
     [/gitleaks dir \. .*--redact=100/,'tracked checkout scan'],
     [/--redact=100/,'redacted scan output'],
     [/exit\s+"\$result"/,'nonzero result propagation']
