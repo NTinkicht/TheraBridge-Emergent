@@ -13,7 +13,7 @@ export function frozenIssueIds(snapshot) {
   return new Set(ids);
 }
 
-export function validateRegister(csv) {
+export function parseHistoricRows(csv) {
   const lines=csv.replace(/^\uFEFF/,'').trim().split(/\r?\n/);
   const header=lines.shift();
   if(header!=='historic_issue,issue_url,original_title,suggested_owner,disposition,implementation_sha,test_evidence,policy_evidence,reviewer,notes')
@@ -27,6 +27,11 @@ export function validateRegister(csv) {
     if(fields.length!==10)throw Error('Unexpected historical row column count');
     return fields;
   });
+  return rows;
+}
+
+export function validateRegister(csv) {
+  const rows=parseHistoricRows(csv);
   if(rows.length!==75)throw Error('Expected exactly 75 historical issues');
   const ids=new Set();
   const frozen=frozenIssueIds(fs.readFileSync(SNAPSHOT,'utf8'));
@@ -55,11 +60,10 @@ export function closureEvidenceSummary(csv) {
   validateRegister(csv);
   const counts=Object.fromEntries([...ALLOWED].map(s=>[s,0]));
   const candidates=[];
-  const lines=csv.trim().split(/\r?\n/).slice(1);
-  for(const line of lines){
-    const status=[...ALLOWED].find(s=>line.includes(',"'+s+'",'));
-    const id=/^"(\d+)",/.exec(line)?.[1];
-    if(!status||!id)throw Error('Historical disposition is not parseable');
+  // Use the same validated CSV field parser; never scan entire rows for
+  // disposition tokens that could appear in an issue title or evidence note.
+  for(const row of parseHistoricRows(csv)){
+    const id=row[0], status=row[4];
     counts[status]++;
     if(status==='VERIFIED_IMPLEMENTED')candidates.push(Number(id));
   }
