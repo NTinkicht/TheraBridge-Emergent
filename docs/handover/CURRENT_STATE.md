@@ -1,3 +1,7 @@
+## M4 final live qualification checkpoint — Current state (2026-11-08)
+
+All final M4 engineering PRs #291–293 merged with 6/6 exact-head CI. Render synthetic deployment branch synced non-force to main tree and deployed live at 7f19d552. M4 epic #167 is NOT FORMALLY CLOSED: protected ten-account/two-real-tenant acceptance, 1,023-step implementation traceability, whole-app coverage, operational database and workload qualification remain unverified. 15 legacy GH-wave issues closed on evidence. New audit-rollback test #294 awaiting CI.
+
 ## M4-F03 controlled acceptance/closure — Current state (2026-11-08)
 
 Added executable sanitized two-report 7+3 identity acceptance validator with exact deployed SHA and separate two-valid-tenant/revocation receipt, and negative tests for missing evidence. No protected hosted acceptance run is asserted. Controlled 1,023 workflow-step mapping, historic 75 issue dispositions, #175/#176/#183/#266/#268/#279 and epic #167 remain OPEN until reviewed evidence. Clinical gates NO-GO. This branch's new tests have NOT RUN on its final HEAD; six-job CI and independent review pending.
