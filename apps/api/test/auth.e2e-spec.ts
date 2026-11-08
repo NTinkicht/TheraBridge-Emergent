@@ -557,6 +557,59 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
       }
     });
 
+    it.each([
+      ['credential update', 'auth_identity', 'UPDATE'],
+      ['session revocation', 'session', 'UPDATE'],
+    ] as const)('M4-05: %s database failure preserves reset token and allows safe retry', async (_label, table, operation) => {
+      const local = await makeApp({ DEPLOYMENT_ENV: 'local', DEV_MAILBOX_ENABLED: 'true' }, h.clock);
+      try {
+        const user = await createUser(local.prisma);
+        const signed = await signIn(local, user.email);
+        const before = await local.prisma.authIdentity.findUniqueOrThrow({
+          where: { userId_provider: { userId: user.id, provider: 'local' } },
+        });
+        const p = await preAuth(local);
+        await local.http().post('/api/auth/password/forgot').set('Origin', ORIGIN)
+          .set('Cookie', p.cookie).set('X-CSRF-Token', p.token).send({ email: user.email }).expect(202);
+        const mailbox = await local.http().get('/api/dev/mailbox').expect(200);
+        const token = /#token=([A-Za-z0-9_-]+)/.exec(mailbox.body.messages[0].body)![1];
+        const nextPassword = ['Synthetic', 'Atomic', 'Boundary', 'Test', '123'].join('-');
+        // Both table and operation are fixed test literals, not user input.
+        await local.prisma.$executeRawUnsafe(`CREATE FUNCTION m4_reset_early_fault() RETURNS trigger LANGUAGE plpgsql AS $m4early$
+          BEGIN RAISE EXCEPTION 'synthetic reset boundary fault'; END $m4early$;`);
+        await local.prisma.$executeRawUnsafe(`CREATE TRIGGER m4_reset_early_fault
+          BEFORE ${operation} ON ${table} FOR EACH ROW EXECUTE FUNCTION m4_reset_early_fault();`);
+        try {
+          const q = await preAuth(local);
+          await local.http().post('/api/auth/password/reset').set('Origin', ORIGIN)
+            .set('Cookie', q.cookie).set('X-CSRF-Token', q.token)
+            .send({ token, password: nextPassword }).expect(500);
+        } finally {
+          await local.prisma.$executeRawUnsafe(`DROP TRIGGER IF EXISTS m4_reset_early_fault ON ${table}`);
+          await local.prisma.$executeRawUnsafe('DROP FUNCTION IF EXISTS m4_reset_early_fault()');
+        }
+        expect((await local.prisma.verificationToken.findUniqueOrThrow({
+          where: { tokenHash: sha256(token) },
+        })).usedAt).toBeNull();
+        expect((await local.prisma.authIdentity.findUniqueOrThrow({
+          where: { userId_provider: { userId: user.id, provider: 'local' } },
+        })).passwordHash).toBe(before.passwordHash);
+        await local.http().get('/api/auth/session').set('Cookie', signed.cookie).expect(200);
+        const retry = await preAuth(local);
+        await local.http().post('/api/auth/password/reset').set('Origin', ORIGIN)
+          .set('Cookie', retry.cookie).set('X-CSRF-Token', retry.token)
+          .send({ token, password: nextPassword }).expect(204);
+        await local.http().get('/api/auth/session').set('Cookie', signed.cookie).expect(401);
+        expect((await login(local, user.email, nextPassword)).status).toBe(200);
+        const replay = await preAuth(local);
+        await local.http().post('/api/auth/password/reset').set('Origin', ORIGIN)
+          .set('Cookie', replay.cookie).set('X-CSRF-Token', replay.token)
+          .send({ token, password: nextPassword }).expect(422);
+      } finally {
+        await local.close();
+      }
+    });
+
     it('writes audit events for the auth lifecycle without secrets', async () => {
       const u = await createUser(h.prisma);
       await login(h, u.email, 'not-the-password-123');
