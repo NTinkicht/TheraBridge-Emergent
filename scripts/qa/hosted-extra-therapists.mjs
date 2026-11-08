@@ -99,7 +99,7 @@ async function exercise(browser,key,user,rows){
     signal(rows,key,'wrong_center_denial',false,'denied_unknown_center','invalid_center_fixture');
   }else{
     const wrong=await ctx.request.get(BASE+'/api/centers/'+wrongCenter+'/children');
-    signal(rows,key,'wrong_center_denial',denied(wrong.status()),
+    signal(rows,key,'wrong_center_denial',scopeOkAll&&denied(wrong.status()),
       'denied_unknown_center','wrong_center_route_accessible');
   }
   const sessionCheck=await ctx.request.get(BASE+'/api/auth/session');
