@@ -518,10 +518,10 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
         // This trigger models a database failure at the LAST write in the
         // transaction. Before the fix it stranded a used token and revoked
         // session, but now every preceding write must roll back atomically.
-        await local.prisma.$executeRawUnsafe(`CREATE FUNCTION m4_reset_fault_injection() RETURNS trigger LANGUAGE plpgsql AS $
+        await local.prisma.$executeRawUnsafe(`CREATE FUNCTION m4_reset_fault_injection() RETURNS trigger LANGUAGE plpgsql AS $m4reset$
           BEGIN IF NEW.type = 'auth.password.reset_completed' THEN
             RAISE EXCEPTION 'synthetic audit fault injection'; END IF;
-          RETURN NEW; END $;`);
+          RETURN NEW; END $m4reset$;`);
         await local.prisma.$executeRawUnsafe(`CREATE TRIGGER m4_reset_fault_injection
           BEFORE INSERT ON audit_event FOR EACH ROW EXECUTE FUNCTION m4_reset_fault_injection();`);
         try {
