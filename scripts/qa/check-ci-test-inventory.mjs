@@ -46,14 +46,33 @@ function names(dir,filter){
   return fs.readdirSync(path.join(root,dir),{withFileTypes:true})
     .filter(x=>x.isFile()&&filter(x.name)).map(x=>x.name).sort();
 }
+// The source-controlled suite snapshot is an integrity floor, not a percentage.
+// Additions remain allowed and visible, but a missing or renamed suite fails
+// until a reviewer explicitly updates this versioned baseline.
+export function compareSuiteInventory(expected,current,kind) {
+  if(!Array.isArray(expected)||!expected.length||!expected.every(v=>typeof v==='string')||
+     new Set(expected).size!==expected.length||expected.some((v,i)=>i>0&&v<=expected[i-1]))
+    throw Error('Invalid '+kind+' suite snapshot');
+  if(!Array.isArray(current)||new Set(current).size!==current.length)
+    throw Error('Invalid current '+kind+' suite inventory');
+  const have=new Set(current),pinned=new Set(expected);
+  const missing=expected.filter(name=>!have.has(name));
+  if(missing.length)throw Error(kind+' reviewed suite missing or renamed: '+missing.join(', '));
+  return current.filter(name=>!pinned.has(name)).sort();
+}
+
 export function baseline(){
   const api=JSON.parse(fs.readFileSync(path.join(root,'apps/api/package.json'),'utf8'));
   const web=JSON.parse(fs.readFileSync(path.join(root,'apps/web/package.json'),'utf8'));
   const ci=fs.readFileSync(path.join(root,'.github/workflows/ci.yml'),'utf8');
   const apiTests=names('apps/api/test',n=>n.endsWith('.e2e-spec.ts'));
   const webTests=names('apps/web/test',n=>n.endsWith('.test.mjs'));
-  if(apiTests.length<30)throw Error('API test suite inventory unexpectedly contracted');
-  if(webTests.length<2)throw Error('Web test suite inventory unexpectedly contracted');
+  const suiteSnapshot=JSON.parse(fs.readFileSync(path.join(root,'docs/qa/M4-08-REVIEWED-SUITE-BASELINE.json'),'utf8'));
+  if(suiteSnapshot.schemaVersion!==1||!/^\d{4}-\d{2}-\d{2}$/.test(suiteSnapshot.recordedOn)||
+    !/^[0-9a-f]{40}$/.test(suiteSnapshot.sourceCommit)||suiteSnapshot.applicationCoverageMeasured!==false)
+    throw Error('Invalid reviewed suite baseline metadata');
+  const newApi=compareSuiteInventory(suiteSnapshot.apiSuites,apiTests,'API');
+  const newWeb=compareSuiteInventory(suiteSnapshot.webSuites,webTests,'Web');
   if(!api.scripts?.test?.includes('jest')||!web.scripts?.test?.includes('node --test'))
     throw Error('API or web test command missing');
   const core=api.scripts?.['test:coverage:core']||'';
@@ -66,6 +85,10 @@ export function baseline(){
     kind:'qa_suite_inventory_not_coverage',
     api_suite_count:apiTests.length,
     web_suite_count:webTests.length,
+    reviewed_suite_baseline_commit:suiteSnapshot.sourceCommit,
+    reviewed_suite_baseline_date:suiteSnapshot.recordedOn,
+    newly_added_api_suites:newApi,
+    newly_added_web_suites:newWeb,
     measured_threshold_scope:'apps/api/src/common/fingerprints.ts ONLY',
     existing_core_thresholds:thresholds,
     application_wide_coverage_percent:null,
