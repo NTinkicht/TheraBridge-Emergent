@@ -138,8 +138,15 @@ try {
     timeZone: centerTz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit', second: '2-digit',
   }).formatToParts(new Date(Date.now() - 5000)).map(p => [p.type, p.value]));
-  const centerEnd = parts.year + '-' + parts.month + '-' + parts.day + 'T' + parts.hour + ':' + parts.minute + ':' + parts.second;
-  await note.getByLabel('Actual end', { exact: true }).fill(centerEnd);
+  // Playwright datetime-local fill accepts YYYY-MM-DDTHH:mm. Supplying an
+  // explicit :ss (especially :00) causes Chromium/Playwright to throw
+  // "Malformed value" before the app sees an input event. Keep the center
+  // timezone conversion, but use the native minute-precision input format.
+  const centerEnd = parts.year + '-' + parts.month + '-' + parts.day + 'T' + parts.hour + ':' + parts.minute;
+  const actualEndInput = note.getByLabel('Actual end', { exact: true });
+  await actualEndInput.fill(centerEnd);
+  assert.equal(await actualEndInput.inputValue(), centerEnd,
+    'Native datetime-local input must accept the center-timezone value');
   page.once('dialog', d => d.accept());
   await note.getByRole('button', { name: 'Review and complete session', exact: true }).click();
   await note.getByText('Completed · unsigned', { exact: true }).waitFor().catch(async e => { console.error(await note.innerText()); throw e; });
