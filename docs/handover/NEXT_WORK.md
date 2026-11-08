@@ -1,3 +1,14 @@
+## M4-C02 Database/infra/coverage — next qualification
+
+Run new CI contract tests and all six exact-head jobs; independently review conservative scan validators and TOML parser dependency. Then qualify real PostgreSQL concurrency/migration and performance baselines plus measured API/Web coverage; do not assert 95% from suite counts.
+
+## M4-05 PR #286 — immediate qualification and acceptance
+
+1. Re-run/check six GitHub Actions jobs (`test`, `secret-scan`, `live-session`, `preview-container`, `demo-journey`, `compose`) on the **final HEAD after Rule 7 evidence updates**. Initial code-head CI [42475586207](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42475586207) was still in progress during evidence remediation; neither it nor earlier PR #284 CI qualifies the new HEAD.
+2. Confirm the two new PostgreSQL fault tests actually execute and pass (credential UPDATE and session UPDATE); inspect trigger teardown and retry/replay assertions. Distinguish them from the prior audit INSERT failure test in PR #284. No synthetic local PASS is asserted until observed.
+3. Obtain an independent review of final HEAD and resolve Codex P1 Rule 7 thread with explicit FIX_NOW evidence. Check all top-level and inline comments, including newly submitted reviews. Merge only if Rule 16 is satisfied; otherwise address failures and requalify.
+4. Record actual test/run IDs and immutable SHA once completed. Only then reassess issue #280 closure. Keep parent #179 and broader M4 security matrix open until separately evidenced; no real-patient data, signing, clinical policy activation or production deployment.
+
 **M4-04 clinical provenance test reconciliation — 2026-11-08:** PR #285 adds synthetic negative tests for #39 session-note provenance and #40 plan author-only draft mutations. Reconciled with merged M4-05 transactional reset and narrow historical secret-scan exception from PR #284; neither production security nor clinical NO-GO changed. New six-job CI/review pending, #39/#40/#178 remain OPEN.
 
 ---
