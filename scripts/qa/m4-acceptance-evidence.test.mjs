@@ -14,7 +14,9 @@ const fixture=()=>{
  const sha='a'.repeat(40);
  return {legacy:make(oldRoles,requiredOld,'hosted_synthetic_interactive_readonly'),
   extra:make(newRoles,requiredNew,'hosted_extra_therapists_private_readonly'),
-  deployedSha:sha,verifiedSha:sha,operatorApproved:true,validTwoTenantReceipt:true};
+  deployedSha:sha,verifiedSha:sha,operatorApproved:true,
+  twoTenantEvidence:{schema:1,syntheticOnly:true,deployedSha:sha,validTenantCount:2,
+   authorizedPositiveControlsPassed:true,crossTenantDenied:true,revocationDenied:true,operatorApproved:true}};
 };
 test('complete synthetic status contract qualifies only with external approval and two valid tenants',()=>{
  const result=evaluateM4HostedEvidence(fixture());
@@ -25,7 +27,7 @@ test('complete synthetic status contract qualifies only with external approval a
 test('default and missing protected evidence always block M4 closure',()=>{
  assert.equal(evaluateM4HostedEvidence().qualified,false);
  const input=fixture();
- delete input.validTwoTenantReceipt;
+ delete input.twoTenantEvidence;
  assert.deepEqual(evaluateM4HostedEvidence(input).reasons,['two_valid_tenant_test_not_verified']);
 });
 test('expired deployment identity, missing roles and a 401 masquerading as PASS do not qualify',()=>{
@@ -47,4 +49,16 @@ test('FAIL, BLOCKED, fabricated role and tampered counts fail closed',()=>{
  input.legacy.rows[0].role='platform';
  input.legacy.counts.PASS+=1;
  assert(evaluateM4HostedEvidence(input).reasons.includes('legacy_artifact_invalid'));
+});
+
+test('independent tenant receipt cannot be reduced to a boolean or wrong deployment',()=>{
+ const input=fixture();
+ input.twoTenantEvidence=true;
+ assert(evaluateM4HostedEvidence(input).reasons.includes('two_valid_tenant_test_not_verified'));
+ input.twoTenantEvidence=fixture().twoTenantEvidence;
+ input.twoTenantEvidence.deployedSha='b'.repeat(40);
+ assert(evaluateM4HostedEvidence(input).reasons.includes('two_valid_tenant_test_not_verified'));
+ input.twoTenantEvidence=fixture().twoTenantEvidence;
+ input.twoTenantEvidence.crossTenantDenied=false;
+ assert(evaluateM4HostedEvidence(input).reasons.includes('two_valid_tenant_test_not_verified'));
 });
