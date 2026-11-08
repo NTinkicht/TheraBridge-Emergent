@@ -1,3 +1,7 @@
+## M4-F03 controlled acceptance/closure — Implementation log (2026-11-08)
+
+Implemented scoped code and regression tests on chatgpt/m4-f03-acceptance-closeout-final. Added executable sanitized two-report 7+3 identity acceptance validator with exact deployed SHA and separate two-valid-tenant/revocation receipt, and negative tests for missing evidence. No protected hosted acceptance run is asserted. Controlled 1,023 workflow-step mapping, historic 75 issue dispositions, #175/#176/#183/#266/#268/#279 and epic #167 remain OPEN until reviewed evidence. Clinical gates NO-GO. No unexecuted acceptance test is marked PASS.
+
 ## M4-C04 Historical evidence gate — implementation checkpoint
 
 Committed scoped code/test changes in branch `chatgpt/m4-c04-historic-evidence-closeout`. Historic issue validator now emits a conservative 75-row disposition summary and lists independently-evidenced VERIFIED_IMPLEMENTED candidates while explicitly setting automatic closure and M4 milestone closure authorization to false. Negative tests reject false evidence, policy block without proof and misleading completion assertions. No historical issue is auto-closed. #183/#167 remain open and C01–C03 independent qualifications are dependencies. No test outcome is promoted to PASS before exact-head CI evidence.
