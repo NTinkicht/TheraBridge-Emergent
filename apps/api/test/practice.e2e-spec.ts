@@ -28,8 +28,8 @@ describe('TB-EM-010 family home practice and outcomes (real PostgreSQL)', () => 
 
   async function family() {
     const kid = (await post(h, c('children'), admin, { firstName: 'Mila', lastName: 'Stone', dateOfBirth: '2020-02-02', services: ['speech'] }).expect(201)).body.id;
-    const link = (await post(h, c(`children/${kid}/guardians`), admin, { displayName: 'Ada Stone', email: 'ada@family.test', relationship: 'mother', invite: true }).expect(201)).body.id;
-    const guardian = await accept('ada@family.test', 'Ada Stone');
+    const link = (await post(h, c(`children/${kid}/guardians`), admin, { displayName: 'Ada Stone', email: 'adeline@family.test', relationship: 'mother', invite: true }).expect(201)).body.id;
+    const guardian = await accept('adeline@family.test', 'Ada Stone');
     const week = (await get(guardian, c('family/practice')).expect(200)).body;
     return { kid, link, guardian, body: { childId: kid, templateId: week.children[0].activities[0].id, practiceDate: week.today, choice: 'COMPLETED', idempotencyKey: randomUUID() } };
   }
@@ -355,7 +355,7 @@ describe('TB-EM-010 family home practice and outcomes (real PostgreSQL)', () => 
     }
     await get(guardian, c(`family/practice/outcomes/${body.idempotencyKey}`)).expect(404);
     // Fixture a newly accepted link for the same user: old outcomes stay revoked.
-    await h.prisma.guardianLink.create({ data: { centerId, childId: kid, userId: guardian.body.user.id, displayName: 'Ada Stone', email: 'ada@family.test', emailNorm: 'ada@family.test', relationship: 'mother', createdAt: h.clock.now() } });
+    await h.prisma.guardianLink.create({ data: { centerId, childId: kid, userId: guardian.body.user.id, displayName: 'Ada Stone', email: 'adeline@family.test', emailNorm: 'adeline@family.test', relationship: 'mother', createdAt: h.clock.now() } });
     await post(h, c('family/practice/outcomes'), guardian, body).expect(404);
     await get(guardian, c(`family/practice/outcomes/${body.idempotencyKey}`)).expect(404);
     expect(await h.prisma.practiceOutcome.count()).toBe(1);
@@ -389,7 +389,7 @@ describe('TB-EM-010 family home practice and outcomes (real PostgreSQL)', () => 
     const userId = guardian.body.user.id;
     const membership = await h.prisma.membership.create({ data: { centerId: otherCenter.id, userId, roles: { create: { role: 'GUARDIAN' } } } });
     const otherChild = await h.prisma.child.create({ data: { centerId: otherCenter.id, firstName: 'Other', lastName: 'Tenant', dateOfBirth: new Date('2020-01-01'), services: ['speech'], createdById: admin.body.user.id, createdAt: h.clock.now() } });
-    await h.prisma.guardianLink.create({ data: { centerId: otherCenter.id, childId: otherChild.id, userId, displayName: 'Ada', email: 'ada@family.test', emailNorm: 'ada@family.test', relationship: 'mother', createdAt: h.clock.now() } });
+    await h.prisma.guardianLink.create({ data: { centerId: otherCenter.id, childId: otherChild.id, userId, displayName: 'Ada', email: 'adeline@family.test', emailNorm: 'adeline@family.test', relationship: 'mother', createdAt: h.clock.now() } });
     const switched = await post(h, '/api/auth/context', guardian, { membershipId: membership.id, role: 'GUARDIAN' }).expect(200);
     const token = cookieFrom(switched, 'tb_session')!;
     const other = { cookie: `tb_session=${token}`, csrf: switched.body.csrfToken };
@@ -495,8 +495,8 @@ describe('TB-EM-010 family home practice and outcomes (real PostgreSQL)', () => 
     const sup = await staff('sup@prac.test', ['CLINICAL_SUPERVISOR'], []);
     const kid = (await post(h, c('children'), admin, { firstName: 'Mila', lastName: 'Stone', dateOfBirth: '2020-02-02', services: ['speech'] }).expect(201)).body.id;
     await post(h, c(`children/${kid}/assignments`), admin, { membershipId: therapist.body.activeContext.membershipId, service: 'speech', isLead: true }).expect(201);
-    const adaLink = (await post(h, c(`children/${kid}/guardians`), admin, { displayName: 'Ada Stone', email: 'ada@family.test', relationship: 'mother', invite: true }).expect(201)).body.id;
-    const ada = await accept('ada@family.test', 'Ada Stone');
+    const adaLink = (await post(h, c(`children/${kid}/guardians`), admin, { displayName: 'Ada Stone', email: 'adeline@family.test', relationship: 'mother', invite: true }).expect(201)).body.id;
+    const ada = await accept('adeline@family.test', 'Ada Stone');
     await post(h, c(`children/${kid}/guardians`), admin, { displayName: 'Bo Stone', email: 'bo@family.test', relationship: 'father', invite: true }).expect(201);
     const bo = await accept('bo@family.test', 'Bo Stone');
 
