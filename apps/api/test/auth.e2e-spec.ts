@@ -7,6 +7,7 @@ import { ipPrefix, parseTrustedProxiesForTest, resolveClientIp, sha256 } from '.
 import { loadAuthConfig } from '../src/config/env';
 import { passwordPolicyError } from '../src/auth/password';
 import { RateLimitStore } from '../src/auth/rate-limit.store';
+import { ACCOUNT_LIMIT } from '../src/auth/auth.service';
 import {
   FakeClock, Harness, ORIGIN, PASSWORD, cookieFrom, createUser, freshPassword, login, makeApp, post, preAuth, rawCookie, resetDb, signIn,
 } from './helpers';
@@ -79,6 +80,33 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
     });
   });
 
+  describe('M4-05 WF-S6 server-side expiry and protected-response cache policy', () => {
+    it('rejects the actual expired session cookie before serving account or clinical centre data', async () => {
+      const u = await createUser(h.prisma, 'expiry@security.therabridge.test');
+      const s = await signIn(h, u.email);
+      const originalCookie = s.cookie;
+      const good = await h.http().get('/api/auth/session').set('Cookie', originalCookie).expect(200);
+      expect(good.headers['cache-control']).toContain('no-store');
+      const updated = await h.prisma.session.updateMany({
+        where: { tokenHash: sha256(s.token) },
+        data: { absoluteExpiresAt: new Date(h.clock.now().getTime() - 1000) },
+      });
+      expect(updated.count).toBe(1);
+      for (const path of [
+        '/api/auth/session',
+        '/api/centers/00000000-0000-4000-8000-000000000001/children',
+      ]) {
+        const denied = await h.http().get(path).set('Cookie', originalCookie).expect(401);
+        expect(denied.headers['cache-control']).toContain('no-store');
+        expect(denied.headers.pragma).toBe('no-cache');
+        expect(JSON.stringify(denied.body)).not.toContain(u.email);
+      }
+      const another = await createUser(h.prisma, 'active@security.therabridge.test');
+      const live = await signIn(h, another.email);
+      await h.http().get('/api/auth/session').set('Cookie', live.cookie).expect(200);
+    });
+  });
+
   describe('AC-2/3 generic errors, lockout, IP limit', () => {
     it('M2-H04: prunes expired buckets across keys without removing active windows', async () => {
       const old = new Date(h.clock.now().getTime() - 2 * 86_400_000);
@@ -132,6 +160,22 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
       expect(await h.prisma.auditEvent.count({ where: { type: 'auth.lockout' } })).toBe(1);
       h.clock.advance(16 * MIN);
       expect((await login(h, u.email)).status).toBe(200);
+    });
+
+    it('M4-05: targeted account lockout blocks only the attacking origin', async () => {
+      const proxied = await makeApp({ TRUSTED_PROXY_CIDRS: '127.0.0.1/32,::1/128' }, h.clock);
+      try {
+        const u = await createUser(proxied.prisma, 'targeted-lockout@test.therabridge.test');
+        const attacker = '198.51.100.77';
+        const legitimate = '198.51.100.88';
+        for (let i = 0; i < ACCOUNT_LIMIT; i++) {
+          expect((await login(proxied, u.email, 'incorrect-targeted-password', attacker)).status).toBe(401);
+        }
+        expect((await login(proxied, u.email, PASSWORD, attacker)).status).toBe(401);
+        expect((await login(proxied, u.email, PASSWORD, legitimate)).status).toBe(200);
+      } finally {
+        await proxied.close();
+      }
     });
 
     it('returns 429 after 30 failures from one IP', async () => {
@@ -392,6 +436,30 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
       await h.http().get('/api/dev/mailbox').expect(404);
     });
 
+    it('M4-05: throttles password recovery by origin without leaking account existence or locking the target', async () => {
+      const u = await createUser(h.prisma);
+      const request = async (email: string, ip: string) => {
+        const p = await preAuth(h);
+        return h.http().post('/api/auth/password/forgot')
+          .set('Origin', ORIGIN).set('Cookie', p.cookie).set('X-CSRF-Token', p.token)
+          .set('X-Forwarded-For', ip).send({ email });
+      };
+      const first = await request(u.email, '198.51.100.42');
+      expect(first.status).toBe(202);
+      const anonymous = await request('not-registered@test.therabridge.test', '198.51.100.42');
+      expect(anonymous.status).toBe(202);
+      expect(anonymous.body).toEqual(first.body);
+      for (let i = 0; i < 14; i++) {
+        expect((await request(u.email, '198.51.100.42')).status).toBe(202);
+      }
+      // Even many denied requests must produce one threshold-crossing audit
+      // event rather than unbounded append-only audit amplification.
+      expect(await h.prisma.auditEvent.count({ where: { type: 'auth.password.reset_rate_limited' } })).toBe(1);
+      // Never lock the target account because another origin consumed its own budget.
+      expect((await login(h, u.email)).status).toBe(200);
+      expect(await h.prisma.authLockout.count()).toBe(0);
+    });
+
     it('reset is single-use, hash-only, expires in 30 minutes and revokes sessions', async () => {
       const local = await makeApp({ DEPLOYMENT_ENV: 'local', DEV_MAILBOX_ENABLED: 'true' }, h.clock);
       try {
@@ -408,6 +476,12 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
           return local.http().post('/api/auth/password/reset').set('Origin', ORIGIN).set('Cookie', p.cookie).set('X-CSRF-Token', p.token).send({ token, password });
         };
         const token = await requestReset();
+        // The locked origin must be able to recover through its valid token;
+        // password reset clears all account-specific origin lock records.
+        for (let i = 0; i < ACCOUNT_LIMIT; i++) {
+          expect((await login(local, u.email, 'wrong-before-reset-123')).status).toBe(401);
+        }
+        expect((await login(local, u.email)).status).toBe(401);
         expect(JSON.stringify(await local.prisma.verificationToken.findMany())).not.toContain(token);
         expect(dumpJson(await local.prisma.auditEvent.findMany())).not.toContain(token);
         expect((await reset(token, 'Brand-New-Synthetic-Pass-1')).status).toBe(204);
@@ -417,6 +491,120 @@ describe('TB-EM-001 checkpoint A: identity, sessions, CSRF, brute force (real Po
         const late = await requestReset();
         local.clock.advance(31 * MIN);
         expect((await reset(late, 'Late-Synthetic-Pass-333')).status).toBe(422);
+      } finally {
+        await local.close();
+      }
+    });
+
+    it('M4-05: audit failure rolls back token claim, password, session revocation and origin lockout cleanup', async () => {
+      const local = await makeApp({ DEPLOYMENT_ENV: 'local', DEV_MAILBOX_ENABLED: 'true' }, h.clock);
+      try {
+        const user = await createUser(local.prisma);
+        const signed = await signIn(local, user.email);
+        const originalIdentity = await local.prisma.authIdentity.findUniqueOrThrow({
+          where: { userId_provider: { userId: user.id, provider: 'local' } },
+        });
+        const p = await preAuth(local);
+        await local.http().post('/api/auth/password/forgot').set('Origin', ORIGIN)
+          .set('Cookie', p.cookie).set('X-CSRF-Token', p.token).send({ email: user.email }).expect(202);
+        const mailbox = await local.http().get('/api/dev/mailbox').expect(200);
+        const token = /#token=([A-Za-z0-9_-]+)/.exec(mailbox.body.messages[0].body)![1];
+        for (let i = 0; i < ACCOUNT_LIMIT; i++) {
+          expect((await login(local, user.email, 'fault-test-incorrect-password')).status).toBe(401);
+        }
+        const replacement = ['Atomic', 'Reset', 'Synthetic', 'Password', '1'].join('-');
+        const beforeLocks = await local.prisma.authLockout.count();
+        expect(beforeLocks).toBeGreaterThan(0);
+        // This trigger models a database failure at the LAST write in the
+        // transaction. Before the fix it stranded a used token and revoked
+        // session, but now every preceding write must roll back atomically.
+        await local.prisma.$executeRawUnsafe(`CREATE FUNCTION m4_reset_fault_injection() RETURNS trigger LANGUAGE plpgsql AS $m4reset$
+          BEGIN IF NEW.type = 'auth.password.reset_completed' THEN
+            RAISE EXCEPTION 'synthetic audit fault injection'; END IF;
+          RETURN NEW; END $m4reset$;`);
+        await local.prisma.$executeRawUnsafe(`CREATE TRIGGER m4_reset_fault_injection
+          BEFORE INSERT ON audit_event FOR EACH ROW EXECUTE FUNCTION m4_reset_fault_injection();`);
+        try {
+          const q = await preAuth(local);
+          const failed = await local.http().post('/api/auth/password/reset')
+            .set('Origin', ORIGIN).set('Cookie', q.cookie).set('X-CSRF-Token', q.token)
+            .send({ token, password: replacement });
+          expect(failed.status).toBe(500);
+        } finally {
+          await local.prisma.$executeRawUnsafe('DROP TRIGGER IF EXISTS m4_reset_fault_injection ON audit_event');
+          await local.prisma.$executeRawUnsafe('DROP FUNCTION IF EXISTS m4_reset_fault_injection()');
+        }
+        const stored = await local.prisma.verificationToken.findUniqueOrThrow({
+          where: { tokenHash: sha256(token) },
+        });
+        expect(stored.usedAt).toBeNull();
+        const identity = await local.prisma.authIdentity.findUniqueOrThrow({
+          where: { userId_provider: { userId: user.id, provider: 'local' } },
+        });
+        expect(identity.passwordHash).toBe(originalIdentity.passwordHash);
+        expect(await local.prisma.authLockout.count()).toBe(beforeLocks);
+        await local.http().get('/api/auth/session').set('Cookie', signed.cookie).expect(200);
+        const again = await preAuth(local);
+        await local.http().post('/api/auth/password/reset').set('Origin', ORIGIN)
+          .set('Cookie', again.cookie).set('X-CSRF-Token', again.token)
+          .send({ token, password: replacement }).expect(204);
+        await local.http().get('/api/auth/session').set('Cookie', signed.cookie).expect(401);
+        expect(await local.prisma.authLockout.count()).toBe(0);
+        expect((await login(local, user.email, replacement)).status).toBe(200);
+        expect(await local.prisma.auditEvent.count({ where: { type: 'auth.password.reset_completed' } })).toBe(1);
+      } finally {
+        await local.close();
+      }
+    });
+
+    it.each([
+      ['credential update', 'auth_identity', 'UPDATE'],
+      ['session revocation', 'session', 'UPDATE'],
+    ] as const)('M4-05: %s database failure preserves reset token and allows safe retry', async (_label, table, operation) => {
+      const local = await makeApp({ DEPLOYMENT_ENV: 'local', DEV_MAILBOX_ENABLED: 'true' }, h.clock);
+      try {
+        const user = await createUser(local.prisma);
+        const signed = await signIn(local, user.email);
+        const before = await local.prisma.authIdentity.findUniqueOrThrow({
+          where: { userId_provider: { userId: user.id, provider: 'local' } },
+        });
+        const p = await preAuth(local);
+        await local.http().post('/api/auth/password/forgot').set('Origin', ORIGIN)
+          .set('Cookie', p.cookie).set('X-CSRF-Token', p.token).send({ email: user.email }).expect(202);
+        const mailbox = await local.http().get('/api/dev/mailbox').expect(200);
+        const token = /#token=([A-Za-z0-9_-]+)/.exec(mailbox.body.messages[0].body)![1];
+        const nextPassword = ['Synthetic', 'Atomic', 'Boundary', 'Test', '123'].join('-');
+        // Both table and operation are fixed test literals, not user input.
+        await local.prisma.$executeRawUnsafe(`CREATE FUNCTION m4_reset_early_fault() RETURNS trigger LANGUAGE plpgsql AS $m4early$
+          BEGIN RAISE EXCEPTION 'synthetic reset boundary fault'; END $m4early$;`);
+        await local.prisma.$executeRawUnsafe(`CREATE TRIGGER m4_reset_early_fault
+          BEFORE ${operation} ON ${table} FOR EACH ROW EXECUTE FUNCTION m4_reset_early_fault();`);
+        try {
+          const q = await preAuth(local);
+          await local.http().post('/api/auth/password/reset').set('Origin', ORIGIN)
+            .set('Cookie', q.cookie).set('X-CSRF-Token', q.token)
+            .send({ token, password: nextPassword }).expect(500);
+        } finally {
+          await local.prisma.$executeRawUnsafe(`DROP TRIGGER IF EXISTS m4_reset_early_fault ON ${table}`);
+          await local.prisma.$executeRawUnsafe('DROP FUNCTION IF EXISTS m4_reset_early_fault()');
+        }
+        expect((await local.prisma.verificationToken.findUniqueOrThrow({
+          where: { tokenHash: sha256(token) },
+        })).usedAt).toBeNull();
+        expect((await local.prisma.authIdentity.findUniqueOrThrow({
+          where: { userId_provider: { userId: user.id, provider: 'local' } },
+        })).passwordHash).toBe(before.passwordHash);
+        await local.http().get('/api/auth/session').set('Cookie', signed.cookie).expect(200);
+        const retry = await preAuth(local);
+        await local.http().post('/api/auth/password/reset').set('Origin', ORIGIN)
+          .set('Cookie', retry.cookie).set('X-CSRF-Token', retry.token)
+          .send({ token, password: nextPassword }).expect(204);
+        await local.http().get('/api/auth/session').set('Cookie', signed.cookie).expect(401);
+        expect((await login(local, user.email, nextPassword)).status).toBe(200);
+        const replay = await preAuth(local);
+        await local.http().post('/api/auth/password/reset').set('Origin', ORIGIN)
+          .set('Cookie', replay.cookie).set('X-CSRF-Token', replay.token)
+          .send({ token, password: nextPassword }).expect(422);
       } finally {
         await local.close();
       }

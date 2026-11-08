@@ -18,9 +18,19 @@ const emails = [
   'mariam.ahmed@childrens-home.therabridge.test',
 ];
 const demoPasswords = Object.fromEntries(emails.map(e => [e, 'demo-' + randomBytes(24).toString('base64url')]));
+// The runner must provide an independent, recoverable-in-process set for
+// all three added therapists. No passwords enter logs, files or artifacts.
+const extraEmails = [
+  'dalia.mansour@childrens-home.therabridge.test',
+  'nour.haddad@childrens-home.therabridge.test',
+  'huda.rahim@childrens-home.therabridge.test',
+];
+const extraDemoPasswords = Object.fromEntries(extraEmails.map(e =>
+  [e, 'demo-' + randomBytes(24).toString('base64url')]));
 const env = {
   ...process.env, DEMO_SEED_CONFIRM: 'CHILDRENS_HOME_SYNTHETIC_ONLY',
   DEMO_PASSWORDS_JSON: JSON.stringify(demoPasswords),
+  DEMO_EXTRA_PASSWORDS_JSON: JSON.stringify(extraDemoPasswords),
   AUTH_SECRET: randomBytes(32).toString('base64url'),
   HOST: '127.0.0.1', PORT: '8001', CORS_ORIGINS: 'http://127.0.0.1:3000',
   COOKIE_SECURE: 'false', TRUSTED_PROXY_CIDRS: '',

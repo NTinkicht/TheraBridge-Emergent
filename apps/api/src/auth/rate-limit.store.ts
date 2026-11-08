@@ -39,6 +39,14 @@ export class RateLimitStore {
     await this.prisma.authLockout.deleteMany({ where: { key } });
   }
 
+  // Only use with a keyed, non-PII account prefix. Supports resetting all
+  // attacker-origin lockouts after verified password recovery without storing
+  // raw email addresses or IPs in the rate-limit tables.
+  async clearPrefix(prefix: string): Promise<void> {
+    await this.prisma.rateLimitCounter.deleteMany({ where: { key: { startsWith: prefix } } });
+    await this.prisma.authLockout.deleteMany({ where: { key: { startsWith: prefix } } });
+  }
+
   async lock(key: string, until: Date): Promise<void> {
     await this.prisma.authLockout.upsert({ where: { key }, create: { key, lockedUntil: until }, update: { lockedUntil: until } });
   }

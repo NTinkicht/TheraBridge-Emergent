@@ -5,6 +5,8 @@ import {resolve, join} from 'node:path';
 import {chromium} from 'playwright';
 import {BASE, ROLES, settleLoginPage, logout, validateTarget} from './hosted-readonly.mjs';
 import {verifySyntheticUsers, publicHealth} from './prepare-hosted-run.mjs';
+import {deniedRoute,isDeniedStatus} from './hosted-role-guards.mjs';
+import {captureSessionCookie,verifyRevokedSession} from './hosted-session-guards.mjs';
 
 const ORIGIN = new URL(BASE).origin;
 const CHECKS = ['PASS', 'FAIL', 'BLOCKED'];
@@ -134,7 +136,7 @@ async function inspectRole(browser,role,user) {
     viewport:{width:1440,height:900},deviceScaleFactor:1,acceptDownloads:false
   });
   const page=await ctx.newPage();
-  let attempted=false;
+  let attempted=false,preLogoutCookie=null;
   try {
     attempted=true;
     const valid=await login(page,role,user);
@@ -143,6 +145,21 @@ async function inspectRole(browser,role,user) {
       return rows;
     }
     rows.push(result(role,'authentication','PASS','exact_role_identity_confirmed'));
+    // M4-02 read-only RBAC denial: use only an authorized centerId from this
+    // session, never a copied token or page content. Report status only.
+    try {
+      const sessionResponse=await ctx.request.get(BASE+'/api/auth/session');
+      const session=sessionResponse.ok()?await sessionResponse.json():null;
+      if(!session || session.activeContext?.role!==ROLES[role].role)
+        throw Error('role_context_unavailable');
+      const probe=deniedRoute(role,session);
+      const forbidden=await ctx.request.get(probe);
+      const rejected=isDeniedStatus(forbidden.status());
+      rows.push(result(role,'forbidden_role_read',rejected?'PASS':'FAIL',
+        rejected?'server_denied_unauthorized_route':'unexpected_permission_or_transport'));
+    } catch {
+      rows.push(result(role,'forbidden_role_read','FAIL','permission_probe_unavailable'));
+    }
     for (const route of ROLES[role].routes.filter(p => p !== '/app')) {
       await navigate(page,role,route,rows);
     }
@@ -249,6 +266,9 @@ async function inspectRole(browser,role,user) {
         rows.push(result(role,'demo_guardian_progress_sample','FAIL','guardian_sample_rehearsal_failed'));
       }
     }
+    // Capture the original authenticated cookie ONLY in private process memory.
+    // This is not an artifact and will not be printed.
+    preLogoutCookie=captureSessionCookie(await ctx.cookies(BASE));
     // The following require separate controlled scenarios, and are NEVER
     // promoted merely because route navigation or modal rendering worked.
     rows.push(result(role,'form_submission_validation','BLOCKED','no_mutating_submission_authorized'));
@@ -258,10 +278,13 @@ async function inspectRole(browser,role,user) {
   } finally {
     let cleaned=false;
     if (attempted) {
-      try { cleaned=await logout(ctx); } catch {/* keep cleanup failure */ }
+      try {
+        const didLogout=await logout(ctx);
+        cleaned=didLogout && await verifyRevokedSession(browser,preLogoutCookie);
+      } catch {/* keep cleanup failure */ }
     }
     rows.push(result(role,'session_cleanup',cleaned?'PASS':'FAIL',
-      cleaned?'server_logout_confirmed':'logout_unconfirmed'));
+      cleaned?'server_logout_and_stale_denied':'logout_or_stale_session_unconfirmed'));
     await ctx.close().catch(()=>{});
   }
   return rows;
@@ -285,6 +308,8 @@ export async function run({
   const counts=Object.fromEntries(CHECKS.map(s=>[s,rows.filter(r=>r.status===s).length]));
   const report={
     schema:1,kind:'hosted_synthetic_interactive_readonly',target:ORIGIN,
+    deployedSha:process.env.TB_QA_DEPLOY_SHA??null,
+    protectedRunId:process.env.GITHUB_RUN_ID??null,
     baseline104Unchanged:true,clinicalGatesUnchanged:true,
     generatedAt:new Date().toISOString(),counts,rows
   };

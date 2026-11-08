@@ -1,3 +1,134 @@
+## M4-F03 controlled acceptance/closure — Implementation log (2026-11-08)
+
+Implemented scoped code and regression tests on chatgpt/m4-f03-acceptance-closeout-final. Added executable sanitized two-report 7+3 identity acceptance validator with exact deployed SHA and separate two-valid-tenant/revocation receipt, and negative tests for missing evidence. No protected hosted acceptance run is asserted. Controlled 1,023 workflow-step mapping, historic 75 issue dispositions, #175/#176/#183/#266/#268/#279 and epic #167 remain OPEN until reviewed evidence. Clinical gates NO-GO. No unexecuted acceptance test is marked PASS.
+
+## M4-F02 reliability/QA measurement — Implementation log (2026-11-08)
+
+Implemented scoped code and regression tests on chatgpt/m4-f02-reliability-qa-final. Protected extra therapist QA now writes a mode-0600 temporary sanitized result and atomically replaces stale private report on retry. Regression simulates two runs and asserts safe replacement, perms and no credential disclosure. Measured Istanbul API/Web coverage validator rejects missing/low coverage; actual API/Web 95% measurement and performance/resource proof NOT YET VERIFIED. #181/#182/#269 remain tracked; no clinical activation. No unexecuted acceptance test is marked PASS.
+
+## M4-F01 security/database qualification — Implementation log (2026-11-08)
+
+Implemented scoped code and regression tests on chatgpt/m4-f01-security-db-final. Merged auth atomicity PRs #272/#284/#286 and DB triggers #273/#281 reused. New PostgreSQL synthetic audit concurrency plus PUBLIC TRUNCATE privilege-negative regression in apps/api/test/m4-db-integrity.e2e-spec.ts. Runtime least-privileged DB role, pooled migrations and full security matrix NOT YET VERIFIED; parent #179/#180 and #280 remain evidence-owned. No clinical activation. No unexecuted acceptance test is marked PASS.
+
+## M4-C04 Historical evidence gate — implementation checkpoint
+
+Committed scoped code/test changes in branch `chatgpt/m4-c04-historic-evidence-closeout`. Historic issue validator now emits a conservative 75-row disposition summary and lists independently-evidenced VERIFIED_IMPLEMENTED candidates while explicitly setting automatic closure and M4 milestone closure authorization to false. Negative tests reject false evidence, policy block without proof and misleading completion assertions. No historical issue is auto-closed. #183/#167 remain open and C01–C03 independent qualifications are dependencies. No test outcome is promoted to PASS before exact-head CI evidence.
+
+## M4-C03 Acceptance/traceability — implementation checkpoint
+
+Committed scoped code/test changes in branch `chatgpt/m4-c03-acceptance-traceability`. Protected extra-therapist QA now rejects authenticated-denial 401 as session loss, requires 403 or masked 404, and gates unassigned/wrong-centre negative PASS behind a successful same-session authorized clinical workspace control. A seed-source contract test checks IDs and deterministic namespace against `seed-demo.ts`. NO hosted ten-account success, valid two-tenant test or 1,023-step private source verification is claimed. Workstreams #175/#176 (and prior merged #177) with #266/#268/#269 still need hosted/traceability evidence. No test outcome is promoted to PASS before exact-head CI evidence.
+
+## M4-C02 Database/infra/coverage — implementation checkpoint
+
+Committed scoped code/test changes in branch `chatgpt/m4-c02-database-infra-coverage`. CI suite inventory now verifies pinned Gitleaks version/SHA-256, fail-closed all-ref and tracked-file scans, and standards-compliant TOML syntax via built-in Python `tomllib`; negative Node tests exercise removed safeguards and malformed configuration. No DB migration or runtime query code changed in this tranche. Application-wide 95% coverage, database contention, Render resource and load qualification remain NOT VERIFIED. Parents #180/#181/#182 stay OPEN. No test outcome is promoted to PASS before actual exact-head CI.
+
+## M4-C01 Security closure — implementation checkpoint
+
+Committed scoped code/test changes in branch `chatgpt/m4-c01-security-closure`. Authenticated seven-role forbidden-route QA now rejects 401 as session loss, requiring 403 or masked 404 before an isolation PASS. `hosted-role-guards.test.mjs` adds this negative regression. This is synthetic, read-only QA; no change to the production clinical guards. Broader M4-04/M4-05 matrices and final exact-head six CI jobs/independent review remain PENDING. Parent issues #178/#179 stay OPEN; signed clinical activation remains NO-GO. No test outcome is promoted to PASS before actual exact-head CI.
+
+## 2026-11-08 — M4-05 follow-up PR #286, review P1 remediation
+
+Created ready-for-review PR #286, code HEAD `b932971cb79c578e79d560faec72775a7c1ffded`, adding parameterized synthetic PostgreSQL trigger fault tests for `auth_identity` UPDATE and `session` UPDATE. Tests assert transactional rollback of reset-token consumption, credentials and session revocation, then success using the same token and subsequent replay rejection. Earlier merged PR #284 independently covers terminal `audit_event` INSERT failure and transaction rollback. Codex's initial exact-code-head review identified **P1 missing AGENTS.md Rule 7 evidence files**; this commit updates CURRENT_STATE, WORK_LOG, NEXT_WORK and TEST_RESULTS. The new tests are **NOT YET VERIFIED** on this documentation-update HEAD; initial CI run 42475586207 was still in progress when inspected. No local or hosted test PASS is claimed. Keep #280 and #179 OPEN pending exact-head six-job CI, independent re-review, and all review dispositions. No clinical activation or deploy.
+
+**M4-04 clinical provenance test reconciliation — 2026-11-08:** PR #285 adds synthetic negative tests for #39 session-note provenance and #40 plan author-only draft mutations. Reconciled with merged M4-05 transactional reset and narrow historical secret-scan exception from PR #284; neither production security nor clinical NO-GO changed. New six-job CI/review pending, #39/#40/#178 remain OPEN.
+
+---
+
+**M4-05 atomic reset remediation — 2026-11-08:** PR #284 implements a single PostgreSQL transaction for reset token, password hash, sessions, origin lockouts and audit receipt. Synthetic fault-injection regression and full-history scanner's exact historical fixture exception added. Branch reconciled after M4-08 PR283 merge; new six-job CI and independent exact-HEAD review NOT YET VERIFIED. Issues #280/#179 OPEN; clinical NO-GO unchanged.
+
+---
+
+**M4-08 suite inventory baseline — 2026-11-08:** Added versioned `docs/qa/M4-08-REVIEWED-SUITE-BASELINE.json` enumerated from `main@a43e37bac6c5619f7499d7ff7b49a345f1ef7ac4` (32 API E2E suites, 2 web suites). QA checker now fails on removed/renamed tracked suites, reports new additions, and preserves existing six-job/fingerprint-only coverage gates. New CI and independent review PENDING; 95% *application-wide* coverage remains NOT MEASURED and M4-08 #182 stays OPEN. Clinical NO-GO unchanged.
+
+---
+
+**M4-01 source count verified from PRIVATE owner workbook — 2026-11-08:** `TheraBridge_V1_Exhaustive_Workflows_Step_Screen_Audit.xlsx` from owner Library is 237,877 bytes, SHA-256 `cc7e2d76b15d77853d08d726d4f1aa1e7ade0031ce115372056f1b7c5e15fee4` (matches hash in preserved controlled annex). Exact workbook has 1,023 unique step IDs across 90 V1 workflows; catalogue has 91, with WF-X6 excluded. Design evidence: 108 mapped awaiting verification, 880 lacking exact step-node mapping, 35 QA-only/not executed. This validates historical inventory identity/count only, NOT running code, current Figma review, signed clinical policy, 1,023-step QA PASS or permission to publish source. Row-by-row app/test evidence remains OPEN in #266/#175.
+
+---
+
+**M4 source/historical evidence update — 2026-11-08:** This branch pins accessible PRIVATE V0.9.16 controlled draft source blobs (unsigned, clinical NO-GO), records M4 #177 closed, updates four of 75 historical issue rows (#8 verified; #10 and #21 partial; #35 policy-blocked), and maintains all other issues PENDING_EVIDENCE. Register validator CI and independent review PENDING. No new runtime capability or policy activation.
+
+---
+
+**M4-06 P1 TRUNCATE guard work log — 2026-11-08:** Opened PR #281 for #277 at `92158e7928421a97c864ce267dadcf364bba9bdf`: migration adds BEFORE TRUNCATE statement trigger on audit_event and REVOKE TRUNCATE FROM PUBLIC, while retaining existing UPDATE/DELETE guard. Added `m4-db-integrity` negative TRUNCATE and positive INSERT real-DB test. Updated test helper only: transactional DB-owner DISABLE/ENABLE of TRUNCATE trigger for destructive test fixture cleanup (never runtime). Codex review raised P1 missing Rule 7 records: addressed this exact finding by updating CURRENT_STATE, WORK_LOG, NEXT_WORK and TEST_RESULTS, without claiming new-head PASS. Review/CI rerun pending; runtime DB owner privileges still require audit.
+
+---
+
+**M4-04 clinical read security reconciliation — 2026-11-08:** PR #271 implements active-membership and live-supervisor checks for clinical child, progress and review-queue reads, plus specialty-revocation and suspension negative tests. Reconciled after M4-05/#272 merge. Final new-head six-job CI and independent implementation review NOT YET VERIFIED. The remaining P0 #178 authorization/CAS/browser scope and all clinical NO-GO remain OPEN.
+
+---
+
+**M4-05 partial security implementation — 2026-11-08:** PR #272 / issue #179 now adds origin-based password-reset throttling with generic responses, an API abuse regression, and previously added expiry/no-cache tests. Exact-head CI and independent review are NOT VERIFIED. Recovery UI, unsigned MFA, dirty-form and edit-conflict UX remain OPEN; clinical NO-GO remains in force.
+
+---
+
+**M4-09 historical issue evidence integration — 2026-11-08:** PR #276 tracks 75 frozen historical issues with zero unverified closures, exact snapshot/URL checks and fail-closed evidence requirements. The required CI test job executes its validator and negative regressions alongside merged M4-08 inventory tests. Post-reconciliation six-job CI and final exact-head reviewer acceptance are PENDING; full #266 evidence triage and clinical NO-GO remain unchanged.
+
+---
+
+**M4-07 implementation reconciliation — 2026-11-08:** PR #274 preserves the linear appointment/recipient lookup and explicit date-window/duplicate regressions. This merge checkpoint incorporates #273 database integrity and #275 QA inventory without dropping their source, CI or Rule-7 handover changes. Latest exact-head CI and independent review require requalification after this merge commit. Existing synthetic-only, clinical and real-delivery NO-GO gates remain intact.
+
+---
+
+# M4-08 QA work log — 2026-11-08
+
+Ported structural test-suite inventory and exact six-job mapping validator onto main, preserving earlier demo credential generator job. Corrected JS regex escaping in coverage/CI job checks and newline fixture. Enforces separate fingerprint-only 95/90/95/95 check, but refuses to claim global coverage. New exact-head CI and review pending.
+
+---
+
+# M4-06 DB audit progress — 2026-11-08
+
+Inspected merged migrations and confirmed original M2-H04 already implemented `audit_event_no_mutation`, plan-version center/author FKs and composite scoped indexes. Avoided duplicate migrations. Added `apps/api/test/m4-db-integrity.e2e-spec.ts` with real-Postgres positive append and negative update/delete, FK validation and index existence checks. Existing M1–M3 code preserved. Final-head CI/review still required; broader M4-06 work not completed**M4-03 Codex/P2 findings (2026-11-07):** Review #4503124363 FIX_NOW — local `.seed.lock` covers credential-file read, sidecar creation, DB transaction and verified cleanup to prevent concurrent orphaned extra hashes; overlap regression added. Review #4503124366 FIX_NOW — sanitize malformed protected original/extra JSON errors; negative tests verify no fragment reaches message or log. Earlier demo-journey runner configured 7 secrets only, updated to 7+3 independent generated secrets. Existing scanner caught synthetic malformed-JSON JavaScript expression; maintained full history gitleaks and added one exact historical expression exception, restored valid TOML after JS replacement issue. No review findings deferred. Fresh exact-head CI and independent review still required.
+
+---
+
+# M4-03 work log — 2026-11-07
+
+- Opened draft PR #270 on merged M4-02 main; reviewed PR #166 two P2 issues and current seed/credential code.
+- Changed local secret generator to generate missing seven- and three-account files independently without overwriting files; exclusive 0600 files and no printed secrets.
+- Changed `seed-demo.ts` so local legacy seven-account DB can safely upgrade with a separate protected extra-three credentials file; no silent random unexported hashes, no mutation when only operator-managed seven secrets supplied, existing hash verification and confirmed rollback/unknown commit cleanup.
+- Added unit/CLI tests and real Postgres upgrade/failure-injection cases; CI generator test step added. Await exact-head CI and independent code review; no claim of test PASS yet.
+- Opened isolated **draft** branches/PRs #271–#276 for M4-04…M4-09; ownership boundaries recorded. M4-09 historical-issue closure remains gated by source evidence #175/#266. M4-08 shared CI integration must rebase after #270. No other new unit has been implemented.
+- Preserved seven existing passwords, three extra identity source, all clinical NO-GO, no real data and protected hosted QA settings.
+
+---
+
+**M4-02 Codex P2 remediation — 2026-11-07:** FIX_NOW review #4502930203: capture correct secure `__Host-tb_session` before logout and replay it with an isolated Playwright browser request context, fail closed if missing, validate server rejects old cookie 401; both seven- and three-account scripts changed. FIX_NOW review #4502930209: inspect actor-filtered clinical workspace `child.services` for every assigned child (exact one expected specialty) rather than full multi-clinician child-list team; add wrong-actor-specialty regression. Added `hosted-session-guards.mjs` tests in required CI and protected workflow. Recognized `locked` is a text string in ClinicalService rather than boolean and corrected contract/test. No deferral of these two P2 issues. #268 remains explicit other-scope deferral. Final CI/re-review not yet qualified.
+
+---
+
+# M4-02 implementation work log — 2026-11-07
+
+- Extended protected existing hosted interactive QA instead of introducing any public or credential-carrying endpoint.
+- Added three-therapist account contract and seed-scoped assignment checks; login/session/context, secure cookie, own clinical read, unassigned existing child read denial, nonexistent center denial, logout plus stale-session 401. Result rows allowlisted; no email, passwords, cookies, child UUIDs or clinical content serialized.
+- Enhanced seven-role interactive run with explicit denied GET route per role and post-logout stale session verification; kept other non-mutating checks.
+- Protected GitHub Actions workflow emits sanitized extra+legacy reports independently, even if one test step fails, and cleans private temporary directory; main-only manual approval remains required.
+- Added contract, redaction, mocked failure, workflow and seven-role denial tests to required CI test job. Full-history gitleaks scan preserved with a precisely scoped historic synthetic-fixture allowance.
+- Identified and corrected accidental TOML corruption caused by string-replacement substitution in earlier branch commits. Current config is reconstructed from main; actual secret-scan success must be revalidated on final HEAD.
+- Controlled two-valid-centre, revocation, expiry and live SHA attestation checks cannot be claimed from read-only one-centre demo: deferred as [#268](https://github.com/NTinkicht/TheraBridge-Emergent/issues/268), with owner/acceptance/safety limits.
+- **Actual live ten-account workflow:** NOT RUN. **Final exact-head CI and independent review:** PENDING until new commit validated.
+
+---
+
+# Work log — 2026-11-07 — M4-02 planning checkpoint
+
+M4-01 PR #265 merged after six exact-head CI jobs and Codex no-major-issues review. All Grok/Claude/Codex findings dispositioned; #266 tracks private spec/1,023-step source verification. New M4-02 branch opened from merged main; added ten-account synthetic hosted QA plan. No hosted test run, credential change or clinical authorization performed on this branch. Next: implement scoped private browser assertions and run protected QA with live verified SHA.
+
+---
+
+> **M4-01 review corrections — 2026-11-07:** Assessed both independent reviews. FIX_NOW: Claude P1 feature 39 school integration → V2-DEFERRED (aligned WF-X6); P1 15 owner requirements + 13 workflows formerly routed to M4-01 → explicit implementation owners; P2 cross-register mismatches → owner-based routing, not phase-bucket owners; code-quality items → machine-readable states, strict validator, BOM support, negative-path tests and CI gate. DEFER_ISSUE: code-level reconciliation of private specs, 1,023 workflow steps and 75 historic issue dispositions remains open [#266](https://github.com/NTinkicht/TheraBridge-Emergent/issues/266) / [#175](https://github.com/NTinkicht/TheraBridge-Emergent/issues/175); no clinical activation.
+
+# M4-01 work log — 2026-11-07
+
+- M1–M3 considered owner-closed; started new M4-01 [#175](https://github.com/NTinkicht/TheraBridge-Emergent/issues/175) on `chatgpt/m4-01-canonical-roadmap-reconciliation`.
+- Imported 66 original numbered features to a new M4–M11 crosswalk; extracted all 91 workflow IDs and 55 owner requirement IDs from the 2026-10-22 workbook. Preserved `WF-X6` V2 exclusion.
+- Snapshotted 75 historic open issues before 2026-11-07 and added triage protocol; historical statuses not automatically closed. Added structural CSV check script.
+- Opened ready-for-review PR #265 and requested independent exact-head Codex review; Codex returned P1 missing Rule 7 handover/QA updates. This commit addresses that finding without changing the original M3 logs.
+- Connector-assisted check of files confirmed 66 unique feature IDs, 91 unique workflow IDs, 55 unique owner IDs and `WF-X6` correctly excluded. **Standalone Node script NOT RUN**, six-job CI **IN PROGRESS** on previous head, clinical acceptance **NOT RUN**, real-data activation **NO-GO**.
+- Remaining #175 tasks: source-level proof for each row, controlled 1023 step mapping, signed-spec reconciliation, issue-by-issue evidence-backed closure. Do not mark #175 fully done from this PR.
+
+---
+
 # M3-AI06 implementation checkpoint — 2026-11-02
 
 M3-AI05 PR #158 merged at bfc2a9b. M3-AI06 PR #159 now includes offline heuristic safety gates for fictional draft review and adversarial browser regression. CI and independent review pending.

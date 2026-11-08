@@ -54,7 +54,16 @@ export async function makeApp(env: Record<string, string> = {}, clock = new Fake
 export async function resetDb(prisma: PrismaService): Promise<void> {
   const tables = await prisma.$queryRaw<{ tablename: string }[]>`
     SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'`;
-  await prisma.$executeRawUnsafe(`TRUNCATE ${tables.map((t) => `"${t.tablename}"`).join(', ')} RESTART IDENTITY CASCADE`);
+  // Test-only fixture cleanup: PostgreSQL audit TRUNCATE protection is
+  // deliberately enabled for runtime credentials. Test setup uses the DB
+  // owner to disable only that trigger inside ONE transaction, restoring it
+  // before commit; failed cleanup rolls the trigger state back automatically.
+  // Never copy this owner-only maintenance path into application services.
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRawUnsafe('ALTER TABLE audit_event DISABLE TRIGGER audit_event_no_truncate');
+    await tx.$executeRawUnsafe(`TRUNCATE ${tables.map((t) => `"${t.tablename}"`).join(', ')} RESTART IDENTITY CASCADE`);
+    await tx.$executeRawUnsafe('ALTER TABLE audit_event ENABLE TRIGGER audit_event_no_truncate');
+  });
 }
 
 let userSeq = 0;

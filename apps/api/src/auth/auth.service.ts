@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Inject, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service';
 import { CLOCK, Clock } from '../common/clock';
-import { hmac, normalizeEmail, randomToken, sha256 } from '../common/security';
+import { hmac, ipPrefix, normalizeEmail, randomToken, sha256 } from '../common/security';
 import { AUTH_CONFIG, AuthConfig } from '../config/env';
 import { DevMailboxService } from '../dev-mailbox/dev-mailbox.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -43,27 +43,30 @@ export class AuthService {
       await this.audit.record('auth.rate_limited', { ip: meta.ip });
       throw new HttpException('Too many sign-in attempts. Please wait a few minutes and try again.', HttpStatus.TOO_MANY_REQUESTS);
     }
-    const acctKey = this.accountKey(email);
+    // A targeted attacker must not be able to globally lock another user out:
+    // enforce the account lockout per origin while the separate IP spray
+    // limiter still covers attempts across different account names.
+    const originKey = `${this.accountKey(email)}:origin:${hmac(this.cfg.secret, meta.ip)}`;
     const user = await this.prisma.user.findUnique({
       where: { emailNormalized: normalizeEmail(email) },
       include: { identities: { where: { provider: 'local' } } },
     });
     const identity = user?.identities[0];
-    const locked = await this.limits.isLocked(acctKey, now);
+    const locked = await this.limits.isLocked(originKey, now);
     const valid = await verifyPassword(identity?.passwordHash ?? (await dummyHash()), password);
 
     if (!user || !identity?.passwordHash || !valid || locked || user.status !== 'ACTIVE') {
       await this.limits.hit(ipKey, WINDOW_MS, now);
-      const failures = await this.limits.hit(acctKey, WINDOW_MS, now);
+      const failures = await this.limits.hit(originKey, WINDOW_MS, now);
       if (failures >= ACCOUNT_LIMIT && !locked) {
-        await this.limits.lock(acctKey, new Date(now.getTime() + LOCK_MS));
+        await this.limits.lock(originKey, new Date(now.getTime() + LOCK_MS));
         await this.audit.record('auth.lockout', { subjectUserId: user?.id, ip: meta.ip });
       }
       await this.audit.record('auth.login.failure', { subjectUserId: user?.id, ip: meta.ip, meta: { reason: locked ? 'locked' : 'invalid' } });
       throw new UnauthorizedException(GENERIC_LOGIN_ERROR);
     }
 
-    await this.limits.clear(acctKey);
+    await this.limits.clear(originKey);
     if (needsRehash(identity.passwordHash)) {
       await this.prisma.authIdentity.update({ where: { id: identity.id }, data: { passwordHash: await hashPassword(password) } });
     }
@@ -99,10 +102,20 @@ export class AuthService {
   }
 
   async forgot(email: string, meta: ClientMeta): Promise<void> {
+    // Rate-limit reset requests by origin, not by target account: an attacker
+    // must not be able to lock another user's password-recovery capability.
+    // Keep the public 202 response identical for known and unknown accounts.
+    const now = this.clock.now();
+    const requests = await this.limits.hit(`password-reset-ip:${hmac(this.cfg.secret, meta.ip)}`, WINDOW_MS, now);
+    if (requests > 10) {
+      // Emit the crossing event once per window, not one append-only audit row
+      // per blocked request: otherwise the throttle itself amplifies a flood.
+      if (requests === 11) await this.audit.record('auth.password.reset_rate_limited', { ip: meta.ip });
+      return;
+    }
     const user = await this.prisma.user.findUnique({ where: { emailNormalized: normalizeEmail(email) } });
     await this.audit.record('auth.password.reset_requested', { subjectUserId: user?.id, ip: meta.ip, meta: { known: !!user } });
     if (!user || user.status !== 'ACTIVE') return;
-    const now = this.clock.now();
     const token = randomToken();
     await this.prisma.$transaction([
       this.prisma.verificationToken.updateMany({ where: { userId: user.id, purpose: 'PASSWORD_RESET', usedAt: null }, data: { usedAt: now } }),
@@ -125,12 +138,40 @@ export class AuthService {
     }
     const policy = passwordPolicyError(password, row.user.email);
     if (policy) throw new UnprocessableEntityException(policy);
-    const claimed = await this.prisma.verificationToken.updateMany({ where: { id: row.id, usedAt: null }, data: { usedAt: now } });
-    if (claimed.count !== 1) throw new UnprocessableEntityException('This reset link is invalid or has expired. Request a new one.');
-    await this.setPassword(row.userId, password);
-    await this.sessions.revokeAllForUser(row.userId, 'password_reset');
-    await this.limits.clear(this.accountKey(row.user.email));
-    await this.audit.record('auth.password.reset_completed', { subjectUserId: row.userId, ip: meta.ip });
+    // Compute the expensive hash before opening a database transaction. The
+    // token claim, credential mutation, session revocations, origin-lockout
+    // cleanup and audit receipt must either ALL commit or ALL roll back.
+    // In particular, a crash after claiming the token must not strand users
+    // with an unusable token and the old password still in place.
+    const passwordHash = await hashPassword(password);
+    const accountKey = this.accountKey(row.user.email);
+    const prefix = `${accountKey}:origin:`;
+    await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.verificationToken.updateMany({
+        where: { id: row.id, purpose: 'PASSWORD_RESET', usedAt: null, expiresAt: { gt: now } },
+        data: { usedAt: now },
+      });
+      if (claimed.count !== 1) throw new UnprocessableEntityException('This reset link is invalid or has expired. Request a new one.');
+      const user = await tx.user.findUnique({ where: { id: row.userId }, select: { status: true } });
+      if (user?.status !== 'ACTIVE') throw new UnprocessableEntityException('This reset link is invalid or has expired. Request a new one.');
+      await tx.authIdentity.update({
+        where: { userId_provider: { userId: row.userId, provider: 'local' } },
+        data: { passwordHash, passwordChangedAt: now },
+      });
+      await tx.session.updateMany({
+        where: { userId: row.userId, revokedAt: null },
+        data: { revokedAt: now, revokedReason: 'password_reset' },
+      });
+      // Reset all account-specific counters without recording raw user/IP
+      // information. The account key and its per-origin suffix are HMACs.
+      await tx.rateLimitCounter.deleteMany({ where: { OR: [{ key: accountKey }, { key: { startsWith: prefix } }] } });
+      await tx.authLockout.deleteMany({ where: { OR: [{ key: accountKey }, { key: { startsWith: prefix } }] } });
+      // A failed audit insert must also roll back the password and token.
+      await tx.auditEvent.create({
+        data: { type: 'auth.password.reset_completed', subjectUserId: row.userId,
+          ipPrefix: ipPrefix(meta.ip), meta: {} },
+      });
+    });
   }
 
   async change(auth: AuthState, current: string, next: string, meta: ClientMeta): Promise<string> {
