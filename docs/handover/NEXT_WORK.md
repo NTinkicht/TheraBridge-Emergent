@@ -2,6 +2,10 @@
 
 Run all six exact-head CI jobs and obtain independent final-head review. Fix actionable P0-P2; disposition P3. Protected extra therapist QA now writes a mode-0600 temporary sanitized result and atomically replaces stale private report on retry. Regression simulates two runs and asserts safe replacement, perms and no credential disclosure. Measured Istanbul API/Web coverage validator rejects missing/low coverage; actual API/Web 95% measurement and performance/resource proof NOT YET VERIFIED. #181/#182/#269 remain tracked; no clinical activation. Do not merge or close remaining parent issues based solely on the new test harness.
 
+## M4-F01 security/database qualification — Qualification (2026-11-08)
+
+Run all six exact-head CI jobs and obtain independent final-head review. Fix actionable P0-P2; disposition P3. Merged auth atomicity PRs #272/#284/#286 and DB triggers #273/#281 reused. New PostgreSQL synthetic audit concurrency plus PUBLIC TRUNCATE privilege-negative regression in apps/api/test/m4-db-integrity.e2e-spec.ts. Runtime least-privileged DB role, pooled migrations and full security matrix NOT YET VERIFIED; parent #179/#180 and #280 remain evidence-owned. No clinical activation. Do not merge or close remaining parent issues based solely on the new test harness.
+
 ## M4-C04 Historical evidence gate — next qualification
 
 Verify 75-row evidence summary negative tests and six CI jobs on final HEAD; obtain independent review. Then assess every historic issue individually against merged code/test SHA, review and acceptance, close only verified eligible items, and draft M4 completion dossier after C01–C03 qualified. Never close M4 from candidate counts.
