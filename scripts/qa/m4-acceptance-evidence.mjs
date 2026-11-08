@@ -45,6 +45,7 @@ export function evaluateM4HostedEvidence({legacy,extra,deployedSha,verifiedSha,
  if(!twoTenantEvidence || twoTenantEvidence.schema!==1 ||
   twoTenantEvidence.syntheticOnly!==true ||
   twoTenantEvidence.deployedSha!==deployedSha ||
+  !Number.isInteger(twoTenantEvidence.validTenantCount) ||
   twoTenantEvidence.validTenantCount<2 ||
   twoTenantEvidence.authorizedPositiveControlsPassed!==true ||
   twoTenantEvidence.crossTenantDenied===undefined ||
