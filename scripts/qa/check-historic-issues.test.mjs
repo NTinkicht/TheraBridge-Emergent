@@ -57,3 +57,22 @@ test('verified candidates require real SHA, tested evidence and independent revi
  const blocked=sample.replace('"PENDING_EVIDENCE"','"POLICY_BLOCKED"');
  assert.throws(()=>closureEvidenceSummary(blocked),/Policy blocked without explicit evidence/);
 });
+
+test('summary reads actual disposition column even when evidence mentions VERIFIED_IMPLEMENTED',()=>{
+ const rows=sample.trim().split(/\r?\n/);
+ const prior=rows[1];
+ assert.match(prior,/^"3",/);
+ let modified=prior.replace(',"PENDING_EVIDENCE",',',"PARTIAL",');
+ assert.notEqual(modified,prior);
+ modified=modified.replace(',"PARTIAL","","","","",',',"PARTIAL","","","VERIFIED_IMPLEMENTED","",');
+ assert.notEqual(modified,prior);
+ rows[1]=modified;
+ const summary=closureEvidenceSummary(rows.join('\n')+'\n');
+ assert.equal(summary.counts.PARTIAL,closureEvidenceSummary(sample).counts.PARTIAL+1);
+ assert.equal(summary.verified_candidates.includes(3),false);
+});
+test('summary preserves valid unquoted numeric CSV issue IDs',()=>{
+ const altered=sample.replace(/^"3",/m,'3,');
+ assert.notEqual(altered,sample);
+ assert.deepEqual(closureEvidenceSummary(altered),closureEvidenceSummary(sample));
+});
