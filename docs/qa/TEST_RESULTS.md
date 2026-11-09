@@ -1,3 +1,8 @@
+## M4-08 Web real-route and permission-navigation coverage — NOT YET CI QUALIFIED
+New synthetic source-executing Jest SSR test exercises login, reset/forgot password, unauthorized/404/error routes, form controls and ProductShell role-scoped route visibility (guardian, coordinator, therapist, platform admin, no selected context). This checks markup/permission filtering, not interactive browser behavior, API authorization or clinical release. Final CI, Codex and updated 151-source metrics pending. Target 95% remains unmet.
+
+---
+
 ## M4-08 Web auth/time zone execution wave 3 — UNVERIFIED UNTIL CI
 Added real ts-jest executed tests for preauth CSRF reuse, 401 session invalidation, forbidden stale CSRF mutation, 204 and error handling; Dubai and New York DST appointment date safety tests. No external requests or patient data. Source-wide coverage metrics and exact-head Codex/CI pending. Target 95%, G2/G2b NO-GO.
 
