@@ -1,5 +1,5 @@
 ## 2026-11-10 — API source-executing coverage and hard-deny tests
-Created `apps/api/test/m4-auth-boundaries.e2e-spec.ts` exercising actual policy/permissions, unsigned clinical capabilities, family messaging restrictions, trusted forwarded IP processing, cookies, token comparisons and password rejection. Pure fake data and no services. Qualification pending; no release approval claimed.
+Created `apps/api/test/m4-auth-boundaries.e2e-spec.ts` exercising actual policy/permissions, unsigned clinical capabilities, family messaging restrictions, trusted forwarded IP processing, cookies, token comparisons and password rejection. Pure fake data and no services. First full API CI run surfaced invalid whitespace-only cookie names; parser updated to skip empty names. Requalification pending; no release approval claimed.
 
 ---
 
