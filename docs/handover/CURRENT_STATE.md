@@ -1,3 +1,8 @@
+## 2026-11-09 — COM-02 continuous SBOM per PR/main (in review; CI pending)
+SBOM automation is proposed in a PR: mandatory per-commit CycloneDX source SBOM + tracked asset hash inventory, integrated into all Smart CI modes, with preview-container image SBOM for full mode. On each push to main, the unconditional source SBOM job will publish a fresh source artifact. No root LICENSE adopted; full asset/model/legal rights and production license clearance OPEN. No clinical/business runtime or public GitHub visibility changes. Latest-head CI, actual generated artifacts and Codex review: **NOT YET VERIFIED** at authoring checkpoint. See docs/commercial/continuous-sbom-policy.md.
+
+---
+
 ## 2026-11-09 — COM-01/02 evidence and inventory qualification (PR pending)
 Commercial IP evidence register added without claiming ownership; Node 20 direct dependency inventory contract tests and lightweight dedicated GitHub Actions qualification added. Public GitHub visibility explicitly preserved. Full SBOM, rights-holder determination and real clinical approval remain OPEN/NO-GO. Exact-head CI and independent review PENDING.
 
