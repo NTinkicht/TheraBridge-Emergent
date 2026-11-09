@@ -1,3 +1,8 @@
+## M4-02 remaining protected hosted acceptance — after this regression
+Require six exact-head CI and independent Codex for new two-valid-center child ID isolation. Next external evidence must run authenticated app connected to dedicated disposable two-tenant Neon branch, not shared Render demo; confirm live deployed SHA separately, revoke synthetic roles/guardian link only in isolated fixture, and review ten-account protected HA-01…HA-10. 14 clinical-policy checks remain intentionally BLOCKED. Do not mark those PASS, publish passwords, or close #176/#268 without explicit owner-approved acceptance. G2/G2b NO-GO.
+
+---
+
 ## M4-07 final CI and review gate
 Verify actual new real PostgreSQL 8-way reminder race in required API CI; 10-minute preview workload at concurrency 1/4/8, nonroot UID=1000, 512MiB cgroup peak/zero OOM and numeric-only artifact. Fix failures and address final-head Codex reviews, require six exact-head CI jobs and Smart CI PASS. Record measured data to #181. Keep owner business p95/p99/error budgets, actual authenticated tenant routes + SQL wire query counts, real worker crash/dead-letter recovery and production release as separate acceptance gates; do not retroactively mark them green. G2/G2b NO-GO.
 
