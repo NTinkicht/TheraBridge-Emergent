@@ -10,7 +10,7 @@ if(!file||!['source','image'].includes(kind)||process.argv.length>5){
 let doc;
 try{doc=JSON.parse(readFileSync(file,'utf8'));}
 catch{console.error('SBOM missing or invalid JSON');process.exit(1);}
-if(doc.bomFormat!=='CycloneDX'||!/^1\\.[4-9]$/.test(String(doc.specVersion||''))||
+if(doc.bomFormat!=='CycloneDX'||!/^1\.[4-9]$/.test(String(doc.specVersion||''))||
  !Array.isArray(doc.components)||doc.components.length===0){
  console.error('CycloneDX format/components missing or unsupported');process.exit(1);
 }
@@ -27,10 +27,10 @@ if(kind==='source'){
  }
  const locked=new Set();
  let names=[];
- for(const line of lock.split(/\\r?\\n/)){
-  if(line&&!/^\\s/.test(line)&&line.endsWith(':')){
+ for(const line of lock.split(/\r?\n/)){
+  if(line&&!/^\s/.test(line)&&line.endsWith(':')){
    // Each Yarn v1 header may have several selectors for the same resolved package.
-   names=[...line.slice(0,-1).matchAll(/(?:^|,\\s*)"?((?:@[^/]+\\/)?[^@"\\s,]+)@[^",]+?"?(?=,|$)/g)].map(m=>m[1]);
+   names=[...line.slice(0,-1).matchAll(/(?:^|,\s*)"?((?:@[^/]+\/)?[^@"\s,]+)@[^",]+?"?(?=,|$)/g)].map(m=>m[1]);
   }else if(names.length&&/^  version "/.test(line)){
    const version=line.match(/^  version "([^"]+)"/)?.[1];
    if(version)for(const name of names)locked.add(name+'@'+version);
