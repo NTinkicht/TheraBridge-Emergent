@@ -5,6 +5,7 @@
 import { readFileSync, readdirSync, statSync, mkdirSync, writeFileSync } from 'node:fs';
 import { resolve, relative, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 
 const metrics = ['lines', 'branches', 'functions', 'statements'];
 function listSources(root) {
@@ -27,10 +28,26 @@ function counts(row, metric, allowZero = false) {
       Object.keys(value).some(k => !['total', 'covered', 'skipped', 'pct'].includes(k))) throw Error('invalid_'+metric);
   return { total: value.total, covered: value.covered };
 }
-export function auditWebCoverage({ summary, sourcePaths, webRoot }) {
+// Independent source parser: type-only declarations and directives carry no
+// executable statement coverage; runtime declarations must never be given an
+// all-zero denominator merely to inflate percentages.
+export function executableSource(path) {
+  const text = readFileSync(path, 'utf8');
+  const source = ts.createSourceFile(path, text, ts.ScriptTarget.ES2022, true,
+    path.endsWith('.tsx') ? ts.ScriptKind.TSX : path.endsWith('.jsx') ? ts.ScriptKind.JSX : ts.ScriptKind.TS);
+  return source.statements.some(node =>
+    ts.isVariableStatement(node) || ts.isFunctionDeclaration(node) ||
+    ts.isClassDeclaration(node) || ts.isEnumDeclaration(node) ||
+    ts.isExportAssignment(node) || ts.isForStatement(node) ||
+    ts.isIfStatement(node) || ts.isTryStatement(node) ||
+    (ts.isExpressionStatement(node) && !ts.isStringLiteral(node.expression)));
+}
+export function auditWebCoverage({ summary, sourcePaths, webRoot, executablePaths }) {
   if (!summary?.total || !sourcePaths?.length) throw Error('missing_coverage_or_source');
   const root = resolve(webRoot);
   const expected = new Set(sourcePaths.map(p => resolve(p)));
+  const executable = new Set((executablePaths ?? sourcePaths.filter(executableSource)).map(p => resolve(p)));
+  if ([...executable].some(p => !expected.has(p))) throw Error('executable_outside_source_inventory');
   if (expected.size !== sourcePaths.length) throw Error('duplicate_source_path');
   const keys = Object.keys(summary).filter(k => k !== 'total');
   const actual = new Set();
@@ -42,6 +59,7 @@ export function auditWebCoverage({ summary, sourcePaths, webRoot }) {
     if (!expected.has(path)) throw Error('unexpected_instrumented_source');
     const rel = relative(root, path);
     if (rel.startsWith('..' + sep) || rel === '..') throw Error('source_outside_web_root');
+    if (executable.has(path) && (!Number.isSafeInteger(summary[key]?.statements?.total) || summary[key].statements.total === 0)) throw Error('executable_denominator_zero');
     for (const metric of metrics) {
       const value = counts(summary[key], metric, true);
       totals[metric].total += value.total;
