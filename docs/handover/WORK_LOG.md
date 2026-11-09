@@ -1,5 +1,5 @@
 ## 2026-11-09 — M4-08 Web domain executable coverage implementation
-Implemented typed-module Jest execution for four pure Web domain helpers: plan handoff, progress summary, centre-local goal reviews and Child 360 timeline. Tests cover invalid/revoked-like data boundaries, plan version scope, source provenance and no inferred clinical conclusions. Not tested/accepted on final HEAD yet.
+Implemented typed-module Jest execution for eight Web domain helpers: plan handoff, progress summary, centre-local goal reviews, Child 360 timeline, practice recurrence, plan evidence, clinician journey and evidence suggestions. Also align legacy coverage summary with independently audited Web Istanbul figures. Tests cover invalid/revoked-like data boundaries, plan version scope, source provenance and no inferred clinical conclusions. Not tested/accepted on final HEAD yet.
 
 ---
 
