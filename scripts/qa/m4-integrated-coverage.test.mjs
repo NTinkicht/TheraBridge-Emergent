@@ -42,3 +42,17 @@ test('reject absent exact SHA, run ID and invalid counters',()=>{
  const y=fixture();y.api.total.lines.covered=110;
  assert.throws(()=>integratedReceipt(y),/invalid_coverage/);
 });
+
+test('PR evidence distinguishes actual synthetic checkout SHA from reviewed head and base',()=>{
+ const x=fixture(96);
+ x.eventName='pull_request';x.prHeadSha='b'.repeat(40);x.prBaseSha='c'.repeat(40);
+ const result=integratedReceipt(x);
+ assert.equal(result.testedCheckoutSha,'a'.repeat(40));
+ assert.equal(result.headSha,'b'.repeat(40));
+ assert.equal(result.prBaseSha,'c'.repeat(40));
+ assert.equal(result.testedRefType,'synthetic_pr_merge_checkout');
+ const missing=fixture(96);missing.eventName='pull_request';
+ assert.throws(()=>integratedReceipt(missing),/missing_pr_head_base_provenance/);
+ const invalid=fixture(96);invalid.eventName='workflow_dispatch';
+ assert.throws(()=>integratedReceipt(invalid),/unsupported_coverage_event/);
+});
