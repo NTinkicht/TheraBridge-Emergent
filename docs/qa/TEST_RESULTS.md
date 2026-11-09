@@ -1,3 +1,8 @@
+## M4-08 integrated coverage PR — qualification pending (2026-11-09)
+New Node regression tests cover genuine two-sided measurement, below-threshold reporting, forged Web denominators, invalid counters, provenance gaps and 100%-but-still-unapproved safety. CI will emit short-lived sanitized `m4-08-integrated-coverage-<run_id>` artifact. Actual current percentages, six-job final-head CI and Codex disposition remain NOT VERIFIED until executed. G2/G2b NO-GO unchanged.
+
+---
+
 ## M4-02 two-valid-center real child IDs and tenant revocation (2026-11-09, execution pending)
 New real-Postgres authz.e2e-spec.ts test: distinct active Harbor/Cedar centers with actual child records, two authenticated center admins; assert own-child 200, opposite center and wrong-child-in-own-center both 404 twice, revoked membership denies prior session immediately and subsequent sign-in provides no contexts, other center unaffected. CI evidence pending. Existing hosted protected run 42605446171 retry2 genuinely completed 84 PASS / 0 FAIL / 14 clinical BLOCKED, workflow FAILURE by design; not hosted full acceptance. Isolated Neon branch independently has two valid centers, but authenticated test against that branch not executed. No patient data or clinical activation.
 
