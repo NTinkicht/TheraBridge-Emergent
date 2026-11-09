@@ -6,7 +6,15 @@ Use Node 20 or later from repository root:
 node scripts/commercial/inventory-direct-deps.mjs --output direct-dependency-inventory.json
 ```
 
-This command reads only the three known package manifests and writes JSON to the named local path. Do not commit the generated inventory unless reviewed. **It does not fetch license metadata, verify lockfile resolution, cover transitive dependencies, scan vulnerabilities or constitute an SBOM.**
+This command reads the root manifest and each directory manifest discovered from the supported root `workspaces` patterns and writes JSON to the named local path. Do not commit the generated inventory unless reviewed. **It does not fetch license metadata, verify lockfile resolution, cover transitive dependencies, scan vulnerabilities or constitute an SBOM.**
+
+### Automated qualification
+
+```sh
+node --test scripts/commercial/inventory-direct-deps.test.mjs
+```
+
+The lightweight GitHub Actions workflow `.github/workflows/commercial-inventory.yml` runs contract tests and checks the manifest inventory. It does not supply third-party license metadata or attest legal compliance. Record the exact workflow run and SHA before claiming qualification.
 
 ### Required follow-up
 

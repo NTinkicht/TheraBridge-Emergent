@@ -1,0 +1,27 @@
+name: commercial-inventory-qualification
+on:
+  pull_request:
+    paths:
+      - 'scripts/commercial/**'
+      - 'docs/commercial/**'
+      - '.github/workflows/commercial-inventory.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inventory-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify deterministic inventory and path confinement
+        run: node --test scripts/commercial/inventory-direct-deps.test.mjs
+      - name: Verify actual manifest inventory without implying legal clearance
+        run: |
+          node scripts/commercial/inventory-direct-deps.mjs > /tmp/therabridge-direct-dependencies.json
+          node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("/tmp/therabridge-direct-dependencies.json"));if(!x.totalRecords||x.records.length!==x.totalRecords||!x.records.every(r=>r.licenseStatus==="NOT_VERIFIED"&&r.declaredLicense===null))process.exit(1);console.log("PASS: manifest inventory parsed; licenses remain UNVERIFIED ("+x.totalRecords+" entries)")'
