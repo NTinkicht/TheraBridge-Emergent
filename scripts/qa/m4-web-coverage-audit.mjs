@@ -20,9 +20,9 @@ function listSources(root) {
   walk(root);
   return found.sort();
 }
-function counts(row, metric) {
+function counts(row, metric, allowZero = false) {
   const value = row?.[metric];
-  if (!value || !Number.isSafeInteger(value.total) || value.total <= 0 ||
+  if (!value || !Number.isSafeInteger(value.total) || (allowZero ? value.total < 0 : value.total <= 0) ||
       !Number.isSafeInteger(value.covered) || value.covered < 0 || value.covered > value.total ||
       Object.keys(value).some(k => !['total', 'covered', 'skipped', 'pct'].includes(k))) throw Error('invalid_'+metric);
   return { total: value.total, covered: value.covered };
@@ -43,7 +43,7 @@ export function auditWebCoverage({ summary, sourcePaths, webRoot }) {
     const rel = relative(root, path);
     if (rel.startsWith('..' + sep) || rel === '..') throw Error('source_outside_web_root');
     for (const metric of metrics) {
-      const value = counts(summary[key], metric);
+      const value = counts(summary[key], metric, true);
       totals[metric].total += value.total;
       totals[metric].covered += value.covered;
     }
