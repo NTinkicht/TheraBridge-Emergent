@@ -3,6 +3,11 @@ Read-only Neon verified project aged-fog-03608251 branch br-raspy-sound-baxyuq2a
 
 ---
 
+## 2026-11-09 — COM-01/02 qualification work
+Added privacy-safe IP rights evidence register; tested-by-CI-in-design inventory cases for traversal, absolute/symlink paths, overwrite avoidance, missing workspace manifest, dynamic workspace discovery, unsupported workspace syntax and deterministic output. Added scoped Actions workflow; tests have NOT RUN at this evidence checkpoint. No V1 runtime changes, no license grant, no repository visibility change.
+
+---
+
 ## 2026-11-09 — PR #318 commercial governance and inventory work
 Inspected existing package manifests, `yarn.lock`, preview Dockerfile, brand derivative record, V1 blueprint and CI secret scanner. Added legal readiness, commercialization roadmap, preliminary audit, audit runbook and deliberately **non-binding** proprietary notice with unresolved owner placeholder. Added `scripts/commercial/inventory-direct-deps.mjs`: deterministic manifest-only JSON output, no network dependency and optional local output path; no third-party license values claimed. Repository visibility preserved as PUBLIC at owner's explicit direction. Codex review at commit `430a36972b` found P1 missing required Rule 7 handover/QA evidence files; this update addresses all four. No application/clinical gate or workflow changes. This checkpoint is implementation evidence, not legal or runtime test success. Exact-head CI and reviewer re-evaluation PENDING.
 
