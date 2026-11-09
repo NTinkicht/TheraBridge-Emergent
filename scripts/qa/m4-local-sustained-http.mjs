@@ -4,6 +4,7 @@
 import { performance } from 'node:perf_hooks';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { execFileSync } from 'node:child_process';
 if (process.env.TB_M4_LOCAL_LOAD_CONFIRM !== 'DISPOSABLE_LOOPBACK_ONLY') {
   console.error('BLOCKED: explicit local-only load confirmation required');
   process.exit(2);
@@ -40,8 +41,24 @@ async function runPhase(concurrency, duration) {
 }
 const output={schemaVersion:1,environment:'ci_loopback_compose_synthetic',qualification:'ten_minute_health_route_load_not_production_sla',
   phases:[]};
+function containerEvidence() {
+  // The synthetic preview is a single API+Web non-root container capped at
+  // 512 MiB. Values come from Docker + cgroup, not process.memoryUsage().
+  const docker = (...args) => execFileSync('docker', args, {encoding:'utf8',timeout:15000}).trim();
+  const id = 'tb-preview-ci';
+  const limitBytes = Number(docker('inspect','--format','{{.HostConfig.Memory}}',id));
+  const uid = Number(docker('exec',id,'id','-u'));
+  const peakBytes = Number(docker('exec',id,'cat','/sys/fs/cgroup/memory.peak'));
+  const events = docker('exec',id,'cat','/sys/fs/cgroup/memory.events');
+  const oomKillMatch = events.match(/^oom_kill\\s+(\\d+)$/m);
+  if(limitBytes!==536870912 || uid!==1000 || !Number.isSafeInteger(peakBytes) ||
+     peakBytes<=0 || peakBytes>limitBytes || !oomKillMatch || Number(oomKillMatch[1])!==0)
+    throw Error('512m_nonroot_cgroup_limit_or_oom_verification_failed');
+  return {limitBytes,peakBytes,uid,oomKills:Number(oomKillMatch[1])};
+}
 try {
   for(const [c,d] of phases)output.phases.push(await runPhase(c,d));
+  output.container=containerEvidence();
   const file=resolve('.workspace/m4-performance/m4-07-compose-load.json');
   mkdirSync(resolve('.workspace/m4-performance'),{recursive:true});
   writeFileSync(file,JSON.stringify(output,null,2)+'\n',{mode:0o600});
