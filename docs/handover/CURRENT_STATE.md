@@ -1,3 +1,8 @@
+## 2026-11-10 — M4-08 API branch-safety coverage wave (review pending)
+Added Jest executed-code tests for six-role permission matrix, unsigned clinical/messaging denials, cookie construction and parsing, trusted proxy IP chain resolution, token comparisons and password policy fail-closed paths. Uses synthetic values; no runtime code or clinical release changes. CI and exact-head Codex pending, 95% target NOT QUALIFIED.
+
+---
+
 ## 2026-11-09 — M4-08 Web session/CSRF + timezone test wave 3 (pending qualification)
 Added source-executing synthetic Jest tests for Web authentication transport (pre-auth CSRF concurrency, session revocation on 401, 204, network error and protected mutation) and center-local time handling (missing timezone fail-closed, Dubai conversion, DST skipped/repeated times, preserved original offset). No runtime or clinical changes; 95% goal remains NOT QUALIFIED; exact-head CI/Codex pending.
 
