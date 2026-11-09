@@ -1,3 +1,8 @@
+## 2026-11-09 — M4-06 final qualification work unit
+Independently audited #180 and prior PRs #273/#281/#291/#295/#299/#300/#304 plus Render live deploy dep-dboe7k8u01pc73f0p210. Did not duplicate deployed non-owner DB credentials. Extended scripts/qa/m4-disposable-replay.sh with pg_dump **before** migration upgrade, restore and forward-upgrade of a distinct disposable PostgreSQL database, plus two-process transactional row-lock CAS/timeout, stale-version rejection and new negative safety contracts. Added docs/qa/M4-06-FINAL-DISPOSABLE-QUALIFICATION.md. CI/review evidence PENDING until exact-head execution. External archived snapshot and managed Neon pooled migration race NOT RUN; no silent operational sign-off.
+
+---
+
 ## 2026-11-09 — M4-09 PR #307 evidence reconciliation implementation
 Read all live GitHub issue pages (not PRs), matched exact 75 frozen IDs, 55 OPEN/20 CLOSED. Found stale #114 CSV row; independently verified source PR #145 commit 447d31ec, CI 41243219269 all six successful, browser test scripts/design/check-handover-sessions.mjs and source issue closeout. Promoted #114 to VERIFIED_IMPLEMENTED only; corrected 20 verified/49 pending/5 partial/1 blocked. Added docs/roadmap/M4-09-LIVE-ISSUE-STATE-SNAPSHOT.csv, scripts/qa/m4-historic-state-reconcile.mjs and negative tests; wired required CI test job. No synthetic clinical change or issue closure. Full final-head CI/independent review PENDING at this record.
 
