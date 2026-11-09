@@ -1,3 +1,8 @@
+## 2026-11-09 — M4-07 consolidated qualification implementation
+Reviewed existing PR #305 real 40/80 HTTP/PostgreSQL, #274 notice batching, fake worker fault/retry test; avoided duplicating optimization. Added real database 8-way reminder-sweep reservation race in operations.e2e-spec.ts, with repeat zero-delivery and unique partial index check. Added 10-minute localhost-only health route load at 3 concurrencies in capped nonroot unified preview, cgroup peak/OOM observation, numeric-only report strict validator and negative tests; integrated into existing preview-container required job. Pending six final-head CI jobs and Codex; no production SLA budget approvals or shared Render/Neon mutations.
+
+---
+
 ## 2026-11-09 — M4-06 final qualification work unit
 Independently audited #180 and prior PRs #273/#281/#291/#295/#299/#300/#304 plus Render live deploy dep-dboe7k8u01pc73f0p210. Did not duplicate deployed non-owner DB credentials. Extended scripts/qa/m4-disposable-replay.sh with pg_dump **before** migration upgrade, restore and forward-upgrade of a distinct disposable PostgreSQL database, plus two-process transactional row-lock CAS/timeout, stale-version rejection and new negative safety contracts. Added docs/qa/M4-06-FINAL-DISPOSABLE-QUALIFICATION.md. CI/review evidence PENDING until exact-head execution. External archived snapshot and managed Neon pooled migration race NOT RUN; no silent operational sign-off.
 

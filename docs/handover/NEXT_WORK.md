@@ -1,3 +1,8 @@
+## M4-07 final CI and review gate
+Verify actual new real PostgreSQL 8-way reminder race in required API CI; 10-minute preview workload at concurrency 1/4/8, nonroot UID=1000, 512MiB cgroup peak/zero OOM and numeric-only artifact. Fix failures and address final-head Codex reviews, require six exact-head CI jobs and Smart CI PASS. Record measured data to #181. Keep owner business p95/p99/error budgets, actual authenticated tenant routes + SQL wire query counts, real worker crash/dead-letter recovery and production release as separate acceptance gates; do not retroactively mark them green. G2/G2b NO-GO.
+
+---
+
 ## M4-06 closure qualification — next actions 2026-11-09
 Run the required real CI replay, verify full six exact-head jobs and Smart CI green; repair every failure. Trigger Codex final-head independent review, fix/disposition every finding and requalify after changes. On success attach exact run, reviewed SHA and evidence to #180. Keep parent open until owner-approved decision on external archived historic snapshot, Neon PgBouncer real concurrent migration drill, RTO/RPO and privileged retention policy; M4-07 owns production workload budgets. Clinical approval and ten-account hosted QA are independent gates.
 

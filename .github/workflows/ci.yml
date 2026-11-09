@@ -392,7 +392,7 @@ jobs:
           printf 'DEMO_PASSWORDS_JSON=%s\n' "$(tr -d '\n' < .workspace/local-credentials/render-demo-passwords.json)" >> /tmp/therabridge-preview-ci.env
           printf 'DEMO_EXTRA_PASSWORDS_JSON=%s\n' "$(tr -d '\n' < .workspace/local-credentials/render-demo-extra-passwords.json)" >> /tmp/therabridge-preview-ci.env
           printf 'AUTH_SECRET=%s\n' "$(openssl rand -hex 32)" >> /tmp/therabridge-preview-ci.env
-          docker run -d --name tb-preview-ci --network host --env-file /tmp/therabridge-preview-ci.env tb-synthetic-preview:ci
+          docker run -d --name tb-preview-ci --network host --memory 512m --memory-swap 512m --env-file /tmp/therabridge-preview-ci.env tb-synthetic-preview:ci
           test "$(docker exec tb-preview-ci id -u)" = 1000
           for attempt in $(seq 1 120); do
             if curl -fsS http://127.0.0.1:10000/login >/dev/null 2>&1; then break; fi
@@ -402,6 +402,22 @@ jobs:
           curl -fsS http://127.0.0.1:10000/api/health | python3 -c 'import json,sys; h=json.load(sys.stdin); assert h["database"]["status"]=="up" and h["migrations"]["applied"]>=16'
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:10000/dev/feasibility)" = 404
           docker exec tb-preview-ci node -e "const {PrismaClient}=require('@prisma/client');const p=new PrismaClient();p.center.count({where:{slug:'childrens-home-demo'}}).then(n=>{if(n!==1)process.exitCode=1;else console.log('PASS: one Children Home demo centre seeded')}).finally(()=>p.\$disconnect())"
+      - name: M4-07 reject forged/shortened 512MiB workload receipt
+        run: node --test scripts/qa/m4-sustained-receipt.test.mjs
+      - name: M4-07 sustained 10-minute synthetic API load with real 512MiB non-root preview cgroup
+        timeout-minutes: 13
+        env:
+          TB_M4_LOCAL_LOAD_CONFIRM: DISPOSABLE_LOOPBACK_ONLY
+        run: node scripts/qa/m4-local-sustained-http.mjs
+      - name: Verify measured 10-minute synthetic workload receipt before publishing
+        run: node scripts/qa/m4-sustained-receipt.mjs .workspace/m4-performance/m4-07-compose-load.json
+      - name: Archive numeric-only M4-07 local synthetic load receipt (not production SLA)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-07-512m-sustained-${{ github.run_id }}
+          path: .workspace/m4-performance/m4-07-compose-load.json
+          if-no-files-found: error
+          retention-days: 7
       - name: Diagnose failed preview boot without exporting secrets
         if: failure()
         run: docker logs --tail 150 tb-preview-ci 2>/dev/null || true

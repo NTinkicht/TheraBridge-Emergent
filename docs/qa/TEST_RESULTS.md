@@ -1,3 +1,8 @@
+## M4-07 actual PostgreSQL reservation and 10-minute capped Docker stress (CI pending)
+New test creates synthetic users/roles/guardian/appointment via real HTTP and runs eight overlapping sweeps against real Prisma/PostgreSQL, checks one unique partial-index outbox row/mail and repeat zero-sends. Existing failed-mail and retry DB tests retained. New 600-second loopback /api/health workload against real disposable DB uses 1/4/8 concurrency, quantiles/throughput/errors; real combined preview cgroup memory peak, 512MiB cap, nonroot UID and zero OOM kills. Strict numeric-only receipt and negative tests prevent forged duration or privacy fields. Full CI and Codex outcome PENDING at this writing. Health-only throughput is not full business SLA or direct SQL query trace.
+
+---
+
 ## M4-06 final disposable historical archive and CAS tests — 2026-11-09 (CI PENDING)
 Additional real Docker PostgreSQL 16 test scripts/qa/m4-disposable-replay.sh capture logical pg_dump at the actual historical migration-prefix state, pg_restore to another disposable DB, perform independent Prisma forward upgrade and prove ledger/marker retention. A separate two-process psql transaction holds a center row while another writer must time out; after commit, CAS stale version updates zero and current-version CAS updates one. Static negative contracts pin archive-before-upgrade and lock timeout. Original rollback/advisory lock/post-upgrade restore remain. This is not a managed Neon pooled migration race or archived external recovery. Real final-head PASS/FAIL not yet known at this point; do not claim success until full CI.
 
