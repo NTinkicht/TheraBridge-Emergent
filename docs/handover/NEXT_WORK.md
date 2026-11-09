@@ -1,3 +1,8 @@
+## M4-08 integrated coverage qualification (2026-11-09)
+Run all six original CI jobs on the final PR head; inspect aggregate integrated coverage artifact for actual API/Web deficits. Resolve reviews, then add focused executed-code regression tests based on measured uncovered modules. Keep 95% thresholds and any owner-approved exceptions explicit; do not claim clinical readiness.
+
+---
+
 ## M4-02 remaining protected hosted acceptance — after this regression
 Require six exact-head CI and independent Codex for new two-valid-center child ID isolation. Next external evidence must run authenticated app connected to dedicated disposable two-tenant Neon branch, not shared Render demo; confirm live deployed SHA separately, revoke synthetic roles/guardian link only in isolated fixture, and review ten-account protected HA-01…HA-10. 14 clinical-policy checks remain intentionally BLOCKED. Do not mark those PASS, publish passwords, or close #176/#268 without explicit owner-approved acceptance. G2/G2b NO-GO.
 
