@@ -1,3 +1,8 @@
+## 2026-11-09 — M4-08 UI execution wave 2
+Added source-executing SSR Jest checks for real design/ui.tsx components and a11y-tabs.ts, plus privacy-preserving synthetic dictation.ts tests. Covers disabled clinical actions with visible reasons, metric loading, keyboard click guards and cancellation. No runtime, patient, authorization or real capture changes. Qualification pending.
+
+---
+
 ## 2026-11-09 — M4-08 Web domain executable coverage implementation
 Implemented typed-module Jest execution for eight Web domain helpers: plan handoff, progress summary, centre-local goal reviews, Child 360 timeline, practice recurrence, plan evidence, clinician journey and evidence suggestions. Also align legacy coverage summary with independently audited Web Istanbul figures. Tests cover invalid/revoked-like data boundaries, plan version scope, source provenance and no inferred clinical conclusions. Not tested/accepted on final HEAD yet.
 
