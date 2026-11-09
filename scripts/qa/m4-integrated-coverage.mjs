@@ -40,7 +40,17 @@ export function auditApiScope({api,apiSourcePaths,apiRoot}){
  }
  const actual=Object.keys(api).filter(k=>k!=='total').map(p=>resolve(p));
  if(actual.length!==expected.size||new Set(actual).size!==actual.length||
-    actual.some(p=>!expected.has(p)))throw Error('incomplete_api_source_scope');
+    actual.some(p=>!expected.has(p))){
+   const observed=new Set(actual);
+   const missing=[...expected].filter(p=>!observed.has(p)).map(p=>relative(root,p));
+   const unexpected=actual.filter(p=>!expected.has(p)).map(p=>relative(root,p));
+   console.error('M4_API_SCOPE_DIFF '+JSON.stringify({
+     expectedCount:expected.size,actualCount:actual.length,
+     missingCount:missing.length,unexpectedCount:unexpected.length,
+     missingExamples:missing.slice(0,12),unexpectedExamples:unexpected.slice(0,12)
+   }));
+   throw Error('incomplete_api_source_scope');
+ }
  const sums=Object.fromEntries(metrics.map(m=>[m,{total:0,covered:0}]));
  for(const file of actual){
   for(const metric of metrics){
