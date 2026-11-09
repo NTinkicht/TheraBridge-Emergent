@@ -1,4 +1,4 @@
-## M4-08 executed-code Web wave 1
+## M4-08 executed-code Web wave 1 and measured baseline consistency
 Qualify focused source-executing coverage regressions against existing complete Web instrumenter. Confirm numbers from final-head CI and select further unexecuted source modules on evidence, not static source inspection. All six jobs and independent Codex required; preserve clinical NO-GO and 95% target.
 
 ---
