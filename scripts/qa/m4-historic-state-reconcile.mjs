@@ -21,6 +21,16 @@ function fields(line) {
   if(out.length!==5)throw Error('invalid_github_state_columns');
   return out;
 }
+function parseUtcTimestamp(value) {
+  // GitHub REST emits second-granularity UTC timestamps. Date.parse alone can
+  // normalize impossible dates or accept incomplete strings; round-trip strictly.
+  if(!/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$/.test(value))
+    throw Error('invalid_utc_timestamp');
+  const date=new Date(value);
+  if(!Number.isFinite(date.getTime()) || date.toISOString()!==value.replace('Z','.000Z'))
+    throw Error('impossible_utc_timestamp');
+  return date.getTime();
+}
 export function reconcileHistoricalState(registerCsv,stateCsv) {
   const original=parseHistoricRows(registerCsv);
   if(original.length!==75)throw Error('invalid_historic_register_size');
@@ -33,9 +43,11 @@ export function reconcileHistoricalState(registerCsv,stateCsv) {
     if(!/^\d+$/.test(id)||states.has(id))throw Error('duplicated_or_invalid_snapshot_issue');
     if(url!==ID_URL+id)throw Error('snapshot_issue_url_mismatch');
     if(!['open','closed'].includes(state))throw Error('invalid_github_state');
-    if(state==='closed'&&!/^\d{4}-\d{2}-\d{2}T/.test(closedAt))throw Error('closed_without_timestamp');
+    if(state==='closed'&&!closedAt)throw Error('closed_without_timestamp');
     if(state==='open'&&closedAt!=='')throw Error('open_with_closed_timestamp');
-    if(!/^\d{4}-\d{2}-\d{2}T/.test(updatedAt))throw Error('state_without_update_timestamp');
+    const updatedMs=parseUtcTimestamp(updatedAt);
+    if(state==='closed' && parseUtcTimestamp(closedAt)>updatedMs)
+      throw Error('closed_after_last_update');
     states.set(id,state);
   }
   const dispositions={};
