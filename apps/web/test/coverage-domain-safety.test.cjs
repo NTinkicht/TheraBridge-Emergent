@@ -185,7 +185,7 @@ const {evidenceReferenceHeader,hasEvidenceReferenceBlock,factualReportSuggestion
 describe('M4-08: evidence assistance remains source-bound and non-clinical',()=>{
  it('recognizes both legacy and section-specific evidence markers without duplicates',()=>{
   expect(evidenceReferenceHeader('goals')).toBe('Evidence references (internal draft; goals):');
-  expect(hasEvidenceReferenceBlock('Draft\\n  Evidence references (internal draft; goals):  ','goals')).toBe(true);
+  expect(hasEvidenceReferenceBlock('Draft\n  Evidence references (internal draft; goals):  ','goals')).toBe(true);
   expect(hasEvidenceReferenceBlock('Evidence references (internal draft):','sessions')).toBe(true);
   expect(hasEvidenceReferenceBlock('No evidence references yet','assessment')).toBe(false);
  });
