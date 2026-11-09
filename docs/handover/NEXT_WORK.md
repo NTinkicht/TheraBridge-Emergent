@@ -4,6 +4,12 @@
 3. After green checks, merge PR and verify fresh `main`-commit source SBOM artifact and smart-ci-gate PASS. Do not assert background monitoring or unlimited artifact retention.
 4. Continue full third-party license compatibility, fonts/brand/illustration/AI providers and source ownership rights review under #312/#313. Preserve public repo for Actions; clinical production remains NO-GO.
 
+
+---
+
+## M4-02 remaining protected hosted acceptance — after this regression
+Require six exact-head CI and independent Codex for new two-valid-center child ID isolation. Next external evidence must run authenticated app connected to dedicated disposable two-tenant Neon branch, not shared Render demo; confirm live deployed SHA separately, revoke synthetic roles/guardian link only in isolated fixture, and review ten-account protected HA-01…HA-10. 14 clinical-policy checks remain intentionally BLOCKED. Do not mark those PASS, publish passwords, or close #176/#268 without explicit owner-approved acceptance. G2/G2b NO-GO.
+
 ---
 
 ## COM-01/02 inventory qualification — next actions 2026-11-09
