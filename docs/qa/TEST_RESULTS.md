@@ -1,5 +1,5 @@
 ## M4-08 API source-boundary coverage — NOT YET CI QUALIFIED
-New Jest tests execute API policy, cookie, security and password code on positive and negative branches. No patient or network traffic, production policy modifications or real clinical actions. Source-wide coverage / CI / Codex evidence pending. Target 95% per API/Web metric remains unmet.
+New Jest tests execute API policy, cookie, security and password code on positive and negative branches. No patient or network traffic or clinical actions. The first test job failed 1 of 732 tests on invalid empty cookie name handling; parser corrected and final-head CI pending. Source-wide coverage / CI / Codex evidence pending. Target 95% per API/Web metric remains unmet.
 
 ---
 
