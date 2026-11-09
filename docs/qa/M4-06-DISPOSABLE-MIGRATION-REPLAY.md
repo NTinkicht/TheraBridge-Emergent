@@ -1,6 +1,6 @@
 # M4-06 — Disposable migration replay and rollback qualification
 
-Status: **PLANNING CHECKPOINT — NOT IMPLEMENTED / NOT EXECUTED / NOT ACCEPTED**.
+Status: **IMPLEMENTED IN PR #304 — CI EXECUTION IN PROGRESS; NOT YET ACCEPTED**.
 
 Parent issue: [#180](https://github.com/NTinkicht/TheraBridge-Emergent/issues/180). M4 tracking: [#167](https://github.com/NTinkicht/TheraBridge-Emergent/issues/167).
 Predecessor: Smart CI [#303](https://github.com/NTinkicht/TheraBridge-Emergent/pull/303), merged at `09ce898b768bd0bb8caf1da5dd81688eae7e25ef`.
@@ -29,3 +29,16 @@ These findings **do not** prove a fresh installation, old-to-new migration repla
 - [ ] All clinical G2/G2b, safeguarding, signing, consent, release, actual patient use and real AI/STT remain NO-GO.
 
 No production or shared demo mutation is authorized by this checkpoint. Do not mark #180 or M4 completed solely because this PR opens.
+
+## Implementation evidence (PR #304)
+- `scripts/qa/m4-disposable-replay.sh` launches its own PostgreSQL 16 Docker container, with a dynamically assigned local port; refuses to run without `TB_M4_DISPOSABLE_CONFIRM=I_AUTHORIZE_DISPOSABLE_LOCAL_DOCKER`, discards inherited database URLs, and always tears down the container and temporary dump.
+- A genuine prefix of the repository's published migration folders is applied to an isolated database, followed by the unchanged full chain. Applies again and verifies ledger count and persisted synthetic marker.
+- Verifies PostgreSQL transactional atomicity with an intentionally duplicate-key failure (not a claim of rolling back Prisma DDL migrations), advisory-lock acquisition denial/release, then a `pg_dump`/`pg_restore` drill to a second new disposable database. Verifies migration ledger and marker.
+- `scripts/qa/m4-disposable-replay.test.mjs` pins safety, guard and static negative-path contracts. The six-job CI `test` job executes both the contract and the live Docker drill.
+- Execution receipts are only PASS after an actual passing CI run. A failing or pending run is not qualification; no production/shared Render/Neon test is implied.
+
+## Outstanding beyond this PR
+- A restore from an *independently captured historical* snapshot, not just migration-prefix reconstruction; external pooled Neon advisory-lock behavior and cross-process actual migration race; owner-approved disaster recovery standards.
+- Further M4-06 measured CAS contention/N+1/index benchmarking remains shared with M4-07.
+- M4-02 multi-tenant hosted qualification and the separate M4-08 full API/Web coverage targets are unaffected.
+
