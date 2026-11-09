@@ -1,3 +1,18 @@
+## 2026-11-10 — COM-02 PR #329 non-hoisted workspace audit correction
+Codex P2 identified root-only installed-license package scanning and missing physical workspace-local dependencies. Collector now scans supported root Yarn workspaces and physical workspace node_modules, keeping symlink avoidance; negative/fixture tests added. Historical root-only 669 package / 24 missing-file totals are not asserted as whole-workspace results. Exact-head CI and Codex re-review PENDING. No legal/commercial clearance; public repository and clinical NO-GO unchanged.
+
+---
+
+## 2026-11-09 — COM-02 installed package file inventory extension
+PR #329 now also records exact installed package LICENSE/NOTICE file filenames and SHA-256 hashes from the existing frozen Yarn install in full CI. Source SBOM of 695 components yielded zero license declarations (all UNKNOWN), motivating file-based evidence collection. Legal licenses/redistribution approval remain UNVERIFIED. New tests and final-head CI/Codex NOT VERIFIED at checkpoint. Clinical NO-GO and public GitHub preserved.
+
+---
+
+## 2026-11-09 — COM-02 direct license upstream evidence ledger (in review)
+Added first-pass upstream publisher evidence for 38 declared direct dependencies (16 upstream references, 22 PENDING); none approved or exact-version verified. CI enforcement checks future direct dependency additions/changes have a review entry. This does not complete transitive/OS/fonts/images/model provenance verification or IP ownership. Repository stays public for Actions; clinical production remains NO-GO. PR exact-head CI/review NOT VERIFIED at authoring checkpoint.
+
+---
+
 ## 2026-11-10 — M4-08 real cross-role Web route coverage wave 4 (review pending)
 Added genuine Jest/React SSR execution of authentication and recovery pages, access-denied/not-found/error fallbacks, actual shared form/brand components and cross-role application shell permission-based navigation. Role fixture tests cover guardian, coordinator, therapist, platform administrator and missing active context. The runner resolves real @/ imports; no runtime permissions or clinical gates changed. CI and independent review pending; 95% not qualified.
 
