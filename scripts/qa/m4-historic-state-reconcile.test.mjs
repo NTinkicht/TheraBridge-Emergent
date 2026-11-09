@@ -55,3 +55,19 @@ test('flags open verified issues rather than automatically closing them',()=>{
  const result=evaluate(register,modified);
  assert.deepEqual(result.exceptions,[{issue:114,kind:'IMPLEMENTED_SCOPE_BUT_OPEN'}]);
 });
+
+test('rejects impossible dates and chronology even when all issue IDs and counts match',()=>{
+ const lines=snapshot.trim().split(/\r?\n/);
+ const index=lines.findIndex(x=>x.startsWith('"114",'));
+ assert.ok(index>0);
+ const original=lines[index];
+ lines[index]=original.replace(/,"closed","[^"]+",/,' ,"closed","2026-99-99T99:99:99Z",').replace(' ,"closed"',',"closed"');
+ assert.throws(()=>evaluate(register,lines.join('\n')+'\n'),/invalid_utc_timestamp|impossible_utc_timestamp/);
+ lines[index]=original.replace(/,"closed","[^"]+",/ ,',"closed","2099-01-01T00:00:00Z",');
+ assert.throws(()=>evaluate(register,lines.join('\n')+'\n'),/closed_after_last_update/);
+ lines[index]=original.replace(/,"closed","[^"]+",/ ,',"closed","2026-02-30T00:00:00Z",');
+ assert.throws(()=>evaluate(register,lines.join('\n')+'\n'),/impossible_utc_timestamp/);
+ const withoutUpdated=original.replace(/,"\d{4}-\d{2}-\d{2}T[^"]+"$/ ,',"not-a-date"');
+ lines[index]=withoutUpdated;
+ assert.throws(()=>evaluate(register,lines.join('\n')+'\n'),/invalid_utc_timestamp/);
+});
