@@ -5,6 +5,7 @@ module.exports = {
   rootDir: path.resolve(__dirname, '../../apps/web'),
   testEnvironment: 'node',
   testMatch: ['<rootDir>/test/coverage-*.test.cjs'],
+  moduleNameMapper: { '^@/(.*)$': '<rootDir>/src/$1' },
   transform: {
     '^.+\\.tsx?$': [require.resolve('ts-jest'), {
       isolatedModules: true,

@@ -1,6 +1,12 @@
 ## M4-08 API coverage wave 4
 Qualify source-executing auth/security boundary regression tests and the invalid empty-cookie-name parser correction via six original exact-head CI jobs, SBOM, Smart CI and independent review. Re-measure all API lines/branches/functions/statements against 93 executable-file baseline, track unexecuted source modules, and continue real branch tests across tenant authorization and scheduling. Clinical G2/G2b remain NO-GO.
 
+
+---
+
+## M4-08 consolidated route/role coverage
+Qualify full executable route render, empty/unauthorized fallbacks and permission-limited navigation. Track full 151-module Istanbul denominator and latest four metrics. Next implement real browser-mounted client interactions (forms, session expiry, family/clinician journeys) with reproducible code coverage rather than SSR alone, and target API branch gaps. Require six original CI jobs, SBOM, Smart CI and final-head review. G2/G2b remain NO-GO.
+
 ---
 
 ## M4-08 Web executed code wave 3
