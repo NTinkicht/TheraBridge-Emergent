@@ -78,13 +78,13 @@ test('API inventory excludes only type-erased modules and re-includes runtime ad
  const dir=mkdtempSync(join(tmpdir(),'m4-api-scope-'));
  try{
   const types=join(dir,'viewer.ts'),live=join(dir,'runtime.ts'),decl=join(dir,'ambient.d.ts');
-  writeFileSync(types,"import type { Role } from '@prisma/client';\\nexport interface Viewer { role: Role }\\n");
-  writeFileSync(live,"export function active() { return true; }\\n");
-  writeFileSync(decl,"declare const token: string;\\n");
+  writeFileSync(types,"import type { Role } from '@prisma/client';\nexport interface Viewer { role: Role }\n");
+  writeFileSync(live,"export function active() { return true; }\n");
+  writeFileSync(decl,"declare const token: string;\n");
   assert.equal(executableApiSource(types),false);
   assert.equal(executableApiSource(live),true);
   assert.deepEqual(apiSourceFiles(dir),[live]);
-  writeFileSync(types,"export interface Viewer { role: string }\\nexport const enabled = true;\\n");
+  writeFileSync(types,"export interface Viewer { role: string }\nexport const enabled = true;\n");
   assert.equal(executableApiSource(types),true);
   assert.deepEqual(apiSourceFiles(dir),[live,types].sort());
  } finally {rmSync(dir,{recursive:true,force:true});}
