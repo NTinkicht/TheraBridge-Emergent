@@ -1,3 +1,15 @@
+## 2026-11-09 — COM-02 license classifier PR test plan (NOT RUN)
+- Source CycloneDX classification, risky/unknown flags and no-auto-approval contract tests: NOT RUN.
+- New per-commit license review JSON and notices review artifact: NOT VERIFIED.
+- Existing SBOM lock coverage, secret scan, all six application jobs, Smart CI gate: NOT VERIFIED on proposed head.
+- Independent Codex review: PENDING.
+- Actual license compatibility and commercial owner rights: OPEN; clinical production NO-GO.
+
+
+
+
+---
+
 ## M4-08 Web domain executable regression wave — NOT YET CI QUALIFIED
 Added synthetic Jest tests with positive and negative flows for eight previously unexecuted Web source modules, plus an instrumented Web summary consistency regression. This is incremental genuine instrumented coverage, not a blanket 95% result. Await actual end-to-end run, source-wide coverage file counts, exact-head Codex and six original CI passes; all clinical approvals remain NO-GO.
 
