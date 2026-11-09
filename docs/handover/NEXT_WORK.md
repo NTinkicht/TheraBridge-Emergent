@@ -1,3 +1,13 @@
+## COM-01/02/03 — next actions after PR #318 (2026-11-09)
+1. Verify this latest PR head with required CI checks, including existing full-history gitleaks. Run `node scripts/commercial/inventory-direct-deps.mjs` and verify output contract, manifest count, deterministic ordering and zero license assertions; record command and result. Do not mark PASS without execution evidence.
+2. Obtain exact-head Codex re-review, resolve all findings, then merge the documentation/inventory foundation only after checks and standard reviewer criteria are met.
+3. Independently collect contributor/student/HCT/partner IP agreements in restricted storage; record approval evidence in #312 with no personal/privileged documents in this public repository.
+4. Produce complete lockfile/installed/container/media/model SPDX or CycloneDX SBOM, verify actual LICENSE/NOTICE terms, address public exposure/forks and report classifications in #313.
+5. Obtain UAE legal rights-holder and license wording sign-off for #314 **before** root LICENSE adoption or commercial contracting. Keep GitHub repository public for CI, and do not activate clinical use/billing in V1.
+
+
+---
+
 ## M4-07 final CI and review gate
 Verify actual new real PostgreSQL 8-way reminder race in required API CI; 10-minute preview workload at concurrency 1/4/8, nonroot UID=1000, 512MiB cgroup peak/zero OOM and numeric-only artifact. Fix failures and address final-head Codex reviews, require six exact-head CI jobs and Smart CI PASS. Record measured data to #181. Keep owner business p95/p99/error budgets, actual authenticated tenant routes + SQL wire query counts, real worker crash/dead-letter recovery and production release as separate acceptance gates; do not retroactively mark them green. G2/G2b NO-GO.
 
