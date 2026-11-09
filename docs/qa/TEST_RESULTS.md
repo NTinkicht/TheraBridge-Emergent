@@ -1,3 +1,8 @@
+## M4-08 Web domain executable regression wave — NOT YET CI QUALIFIED
+Added synthetic Jest tests with positive and negative flows for four previously unexecuted Web source modules. This is incremental genuine instrumented coverage, not a blanket 95% result. Await actual end-to-end run, source-wide coverage file counts, exact-head Codex and six original CI passes; all clinical approvals remain NO-GO.
+
+---
+
 ## M4-02 two-valid-center real child IDs and tenant revocation (2026-11-09, execution pending)
 New real-Postgres authz.e2e-spec.ts test: distinct active Harbor/Cedar centers with actual child records, two authenticated center admins; assert own-child 200, opposite center and wrong-child-in-own-center both 404 twice, revoked membership denies prior session immediately and subsequent sign-in provides no contexts, other center unaffected. CI evidence pending. Existing hosted protected run 42605446171 retry2 genuinely completed 84 PASS / 0 FAIL / 14 clinical BLOCKED, workflow FAILURE by design; not hosted full acceptance. Isolated Neon branch independently has two valid centers, but authenticated test against that branch not executed. No patient data or clinical activation.
 
