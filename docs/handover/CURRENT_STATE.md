@@ -1,3 +1,8 @@
+## 2026-11-09 — M4-08 executed Web domain regression wave (review pending)
+Added Jest/ts-jest executed branch tests for planning handoff, goal-review dates, progress bucket isolation and Child 360 timeline provenance; synthetic fixtures only, no API writes. The existing whole-source Web 95% target remains NOT QUALIFIED. Exact-head CI and independent review still required.
+
+---
+
 ## M4-02 two-valid-centre child scope regression — 2026-11-09 (CI pending)
 Protected interactive 10-account run 42605446171 retry 2: 84 PASS, 0 FAIL, 14 policy BLOCKED; not full hosted acceptance. Existing real PostgreSQL two-center summary/role/context and guardian-message revocation tests already passed in CI. Independently read-only checked isolated Neon branch br-raspy-sound-baxyuq2a: two ACTIVE synthetic centers, children 6+1, members 9+1; no mutation. Current implementation PR adds actual two-center cross-child ID isolation, double repetition, live-session membership revocation and unaffected center positive control on disposable PostgreSQL. CI/review pending; protected hosted two-center app and clinical gates not approved.
 
