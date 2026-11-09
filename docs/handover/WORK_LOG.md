@@ -1,3 +1,8 @@
+## 2026-11-10 — M4-08 route-focused coverage wave
+Created `apps/web/test/coverage-real-routes-roles.test.cjs` to render actual Next Web route modules via React SSR, inspect accessible form/brand error fallbacks, and assert navigation isolation across synthetic roles and permission sets. Added @/ module resolution to the existing source-wide Jest runner; no exclusions or application runtime changes. CI/review not yet complete.
+
+---
+
 ## 2026-11-09 — M4-08 security-critical Web adapter and time test implementation
 Implemented Jest tests that exercise real auth/session CSRF transitions with purely synthetic mocked network and center-local time formatting/conversion including nonexistent and repeated DST wall times. All real microphone/clinical release gates unchanged. Not yet accepted; require exact-head CI and review.
 
