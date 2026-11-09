@@ -24,7 +24,7 @@ function fields(line) {
 function parseUtcTimestamp(value) {
   // GitHub REST emits second-granularity UTC timestamps. Date.parse alone can
   // normalize impossible dates or accept incomplete strings; round-trip strictly.
-  if(!/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$/.test(value))
+  if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(value))
     throw Error('invalid_utc_timestamp');
   const date=new Date(value);
   if(!Number.isFinite(date.getTime()) || date.toISOString()!==value.replace('Z','.000Z'))
