@@ -31,14 +31,14 @@ function metricCounts(row,metric,zeroAllowed){
 export function auditApiScope({api,apiSourcePaths,apiRoot}){
  if(!api?.total||!Array.isArray(apiSourcePaths)||!apiSourcePaths.length||
    typeof apiRoot!=='string'||!apiRoot)throw Error('missing_api_source_inventory');
- const root=resolve(apiRoot),expected=new Set(apiSourcePaths.map(resolve));
+ const root=resolve(apiRoot),expected=new Set(apiSourcePaths.map(p=>resolve(p)));
  if(expected.size!==apiSourcePaths.length)throw Error('duplicate_api_source_inventory');
  for(const file of expected){
   const rel=relative(root,file);
   if(rel==='..'||rel.startsWith('..'+sep)||rel.startsWith('/')||!file.endsWith('.ts'))
     throw Error('invalid_api_source_path');
  }
- const actual=Object.keys(api).filter(k=>k!=='total').map(resolve);
+ const actual=Object.keys(api).filter(k=>k!=='total').map(p=>resolve(p));
  if(actual.length!==expected.size||new Set(actual).size!==actual.length||
     actual.some(p=>!expected.has(p)))throw Error('incomplete_api_source_scope');
  const sums=Object.fromEntries(metrics.map(m=>[m,{total:0,covered:0}]));
