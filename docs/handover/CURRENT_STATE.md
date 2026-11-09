@@ -1,3 +1,8 @@
+## M4-09 PR #307 historical issue reconciliation — 2026-11-09 (FINAL CI/REVIEW PENDING)
+Actual REST API enumeration of GitHub issues reconciled all 75 frozen historical IDs: 55 currently OPEN and 20 CLOSED. Canonical evidence register stale only at #114, CLOSED and independently verified by merged PR #145 (447d31ec; six-job run 41243219269, two-session Chromium QA). Updated CSV to 20 VERIFIED_IMPLEMENTED, 49 PENDING_EVIDENCE, 5 PARTIAL, 1 POLICY_BLOCKED; no bulk issue closes. Added frozen GitHub status CSV and fail-closed validator/negative CI tests. Real clinical/policy release gates NO-GO; all outstanding M4-02/06/07/08/09 acceptance OPEN. Latest PR #307 CI and Codex results NOT VERIFIED yet.
+
+---
+
 ## M4-08 PR #306 coverage instrumentation — 2026-11-09 (FINAL CI/REVIEW PENDING)
 Implemented a separate Jest/ts-jest Istanbul Web source-wide measurement runner, actual executed synthetic safety/accessibility Web TS tests, fail-closed per-file source-denominator audit (including unexecuted TS/TSX/JS/JSX/MJS modules), aggregate-only sanitized receipt and CI artifact. API-wide Jest coverage was already measured; no replacement or lowered 95% policy. Current exact-head CI and independent review NOT VERIFIED; M4-08 #182 stays OPEN. No clinical/Render changes.
 

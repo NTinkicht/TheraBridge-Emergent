@@ -1,3 +1,8 @@
+## 2026-11-09 — M4-09 PR #307 evidence reconciliation implementation
+Read all live GitHub issue pages (not PRs), matched exact 75 frozen IDs, 55 OPEN/20 CLOSED. Found stale #114 CSV row; independently verified source PR #145 commit 447d31ec, CI 41243219269 all six successful, browser test scripts/design/check-handover-sessions.mjs and source issue closeout. Promoted #114 to VERIFIED_IMPLEMENTED only; corrected 20 verified/49 pending/5 partial/1 blocked. Added docs/roadmap/M4-09-LIVE-ISSUE-STATE-SNAPSHOT.csv, scripts/qa/m4-historic-state-reconcile.mjs and negative tests; wired required CI test job. No synthetic clinical change or issue closure. Full final-head CI/independent review PENDING at this record.
+
+---
+
 ## 2026-11-09 — M4-08 PR #306 implemented, CI/review pending
 After merged PR #305, added scripts/qa/m4-web-jest.config.cjs, apps/web/test/coverage-web-runtime.test.cjs, scripts/qa/m4-web-coverage-audit.mjs and negative audit tests, CI full-source Istanbul collector and aggregate-only artifact. Real tests execute shipped TypeScript, source inventory prevents omitted zeros and fake aggregate totals. No manufactured coverage percentages, no production Web application acceptance; full 95% API/Web gate remains NOT QUALIFIED pending measured instrumented results. Six exact HEAD CI and Codex are required before merge.
 

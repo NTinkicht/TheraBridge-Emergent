@@ -1,3 +1,8 @@
+## M4-09 PR #307 historical state + disposition tests — 2026-11-09 (FINAL CI PENDING)
+Real GitHub issue enumeration matched 75 frozen IDs (55 OPEN, 20 CLOSED), no missing IDs; only #114 was CLOSED but PENDING_EVIDENCE. Independently established PR #145 merge 447d31ec7265fe0b86fcfc282f558be2823a2552, six successful CI jobs in 41243219269, two-session browser path scripts/design/check-handover-sessions.mjs and original closeout evidence. Corrected #114. Register now 20 VERIFIED_IMPLEMENTED, 49 PENDING_EVIDENCE, 5 PARTIAL, 1 POLICY_BLOCKED; status CSV is a dated snapshot, not live availability. New negative tests reject missing/duplicate issue states, invalid timestamps/URLs, fabricated claims or missing SHA/test/reviewer, policy promotion; CI step runs after canonical CSV validation. **Test CI results NOT YET VERIFIED at this note; milestone acceptance still blocked.**
+
+---
+
 ## 2026-11-09 — M4-08 PR #306 Web Istanbul source measurement (RUN PENDING)
 New test executes production Web TypeScript modules (synthetic-ai-safety, a11y-tabs) under Jest/ts-jest Babel coverage. The collector inventories TS/TSX/JS/JSX/MJS under apps/web/src and audits every module's presence in Istanbul coverage-summary.json, including zero-executed files. Negative tests reject missing modules, denominator manipulation, unexpected files and invalid counters; CI uploads aggregate-only m4-web-coverage-baseline.json if valid. Actual full-head run and figures NOT YET VERIFIED. Existing API measured baseline reported 95.46% lines, 78.83% branches, 93.69% functions, 91.31% statements on earlier commit; no current-head claims. Overall M4 >=95% acceptance remains NOT QUALIFIED.
 
