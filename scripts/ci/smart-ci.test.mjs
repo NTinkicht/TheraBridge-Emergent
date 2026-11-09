@@ -9,11 +9,13 @@ test('documentation changes require only security scan and targeted validation',
  const x=eligible(paths('docs/roadmap/README.md','docs/handover/NEXT_WORK.md'));
  assert.equal(x.execution,'docs');assert.equal(x.required['test'],'skipped');
  assert.equal(x.required['secret-scan'],'success');
+ assert.equal(x.required['sbom'],'success');
  assert.equal(x.required['smart-targeted'],'success');
 });
 test('CSS and public assets change selects Web + browser, not database or Docker',()=>{
  const x=eligible(paths('apps/web/src/app/globals.css','apps/web/public/logo.png'));
  assert.equal(x.execution,'web-style');
+ assert.equal(x.required['sbom'],'success');
  assert.equal(x.required['live-session'],'success');
  assert.equal(x.required['demo-journey'],'success');
  assert.equal(x.required['compose'],'skipped');

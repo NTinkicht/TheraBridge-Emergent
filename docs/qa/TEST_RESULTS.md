@@ -1,6 +1,25 @@
 ## M4-08 Web domain executable regression wave — NOT YET CI QUALIFIED
 Added synthetic Jest tests with positive and negative flows for eight previously unexecuted Web source modules, plus an instrumented Web summary consistency regression. This is incremental genuine instrumented coverage, not a blanket 95% result. Await actual end-to-end run, source-wide coverage file counts, exact-head Codex and six original CI passes; all clinical approvals remain NO-GO.
 
+
+---
+
+## 2026-11-09 — COM-02 SBOM reconciliation qualification pending
+Previous PR-head SBOM job failed with 673 lockfile entries and 666 scanner-discovered; seven missing package name/version pairs, including fsevents, aliases and Playwright. New reconciliation and negative regression added to address that without fabricating licensing metadata. **New-head CI: NOT YET VERIFIED; new-head Codex review: PENDING.** Full commercial rights and vulnerability clearance NOT established; clinical production NO-GO.
+
+---
+
+## 2026-11-09 — COM-02 continuous SBOM PR test plan (NOT RUN at authoring)
+- New SBOM validator negative-path Node tests: NOT RUN.
+- Fresh source CycloneDX scan and package-lock/Yarn discovery: NOT RUN.
+- Per-commit tracked asset hash inventory and artifact upload: NOT RUN.
+- Built preview-container OS/runtime CycloneDX scan and validation: NOT RUN.
+- Smart CI policy and all existing six full jobs: NOT RUN on proposed head.
+- Exact-head independent review: PENDING.
+- Full commercial license compatibility/rights approval: OPEN; clinical production authorization NO-GO.
+Evidence to be upgraded only from workflow results with source SHA and actual artifacts.
+
+
 ---
 
 ## M4-02 two-valid-center real child IDs and tenant revocation (2026-11-09, execution pending)

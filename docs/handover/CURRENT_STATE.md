@@ -1,6 +1,18 @@
 ## 2026-11-09 — M4-08 executed Web domain regression wave (review pending)
 Added Jest/ts-jest executed branch tests for planning handoff, goal-review dates, progress bucket isolation and Child 360 timeline provenance; synthetic fixtures only, no API writes. The existing whole-source Web 95% target remains NOT QUALIFIED. Exact-head CI and independent review still required.
 
+
+---
+
+## 2026-11-09 — COM-02 SBOM lockfile reconciliation review follow-up
+Codex P2 on PR #323 identified incomplete source SBOM coverage checks. Strict Yarn lockfile version comparison exposed seven entries omitted by Syft scan (including platform-optional and alias packages). Added explicit scanner-vs-lockfile reconciliation with source provenance properties and full name/version validation before artifact upload. THIS IS NOT A CLAIM OF INSTALLED PACKAGE OR LICENSE VERIFICATION. CI and Codex re-review PENDING on the new head; retain public repo and clinical NO-GO.
+
+---
+
+## 2026-11-09 — COM-02 continuous SBOM per PR/main (in review; CI pending)
+SBOM automation is proposed in a PR: mandatory per-commit CycloneDX source SBOM + tracked asset hash inventory, integrated into all Smart CI modes, with preview-container image SBOM for full mode. On each push to main, the unconditional source SBOM job will publish a fresh source artifact. No root LICENSE adopted; full asset/model/legal rights and production license clearance OPEN. No clinical/business runtime or public GitHub visibility changes. Latest-head CI, actual generated artifacts and Codex review: **NOT YET VERIFIED** at authoring checkpoint. See docs/commercial/continuous-sbom-policy.md.
+
+
 ---
 
 ## M4-02 two-valid-centre child scope regression — 2026-11-09 (CI pending)
