@@ -1,3 +1,18 @@
+## 2026-11-10 — PR #329 Codex P2 remediation
+Fixed installed license evidence collector to discover physical non-hoisted workspace-local packages (apps/api and apps/web) while skipping symlinks; added fixture covering both paths and unsupported-glob fail-closed. Updated audit report to distinguish historical root-only totals from current full-workspace pending evidence. Final-head tests and independent review NOT YET VERIFIED.
+
+---
+
+## 2026-11-09 — COM-02 scanned source license metadata gap
+Downloaded actual PR workflow source CycloneDX and classification artifacts: 695 components, 0 license declarations, all 695 UNKNOWN_REVIEW, 7 lockfile-only and 0 legally approved. Added read-only installed license-file inventory script and regression tests, running after existing full-CI Yarn install and uploading 30-day evidence artifact. No application changes; requalification pending.
+
+---
+
+## 2026-11-09 — COM-02 upfront evidence and accountability
+Inspected root, API and web package manifests, Dockerfile.preview, SBOM CI and existing license review queue. Checked upstream project/font family license publishers (NestJS MIT, React MIT, Next.js MIT, Prisma Apache-2.0, Lucide ISC, Argon2 MIT, IBM Plex/Plus Jakarta OFL-1.1), but NOT exact npm tarball license files. Added 38-entry evidence index and tests that fail on missing/stale direct declarations or unsupported approval assertions; integrated into unconditional SBOM job. Verification pending. No application or clinical changes.
+
+---
+
 ## 2026-11-10 — M4-08 route-focused coverage wave
 Created `apps/web/test/coverage-real-routes-roles.test.cjs` to render actual Next Web route modules via React SSR, inspect accessible form/brand error fallbacks, and assert navigation isolation across synthetic roles and permission sets. Added @/ module resolution to the existing source-wide Jest runner; no exclusions or application runtime changes. CI/review not yet complete.
 
