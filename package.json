@@ -17,6 +17,6 @@
     "brand:derive": "python3 scripts/brand/derive-logo.py"
   },
   "devDependencies": {
-    "playwright": "1.48.2"
+    "playwright": "1.55.1"
   }
 }
