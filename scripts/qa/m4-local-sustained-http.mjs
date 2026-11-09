@@ -50,7 +50,7 @@ function containerEvidence() {
   const uid = Number(docker('exec',id,'id','-u'));
   const peakBytes = Number(docker('exec',id,'cat','/sys/fs/cgroup/memory.peak'));
   const events = docker('exec',id,'cat','/sys/fs/cgroup/memory.events');
-  const oomKillMatch = events.match(/^oom_kill\\s+(\\d+)$/m);
+  const oomKillMatch = events.match(/^oom_kill\s+(\d+)$/m);
   if(limitBytes!==536870912 || uid!==1000 || !Number.isSafeInteger(peakBytes) ||
      peakBytes<=0 || peakBytes>limitBytes || !oomKillMatch || Number(oomKillMatch[1])!==0)
     throw Error('512m_nonroot_cgroup_limit_or_oom_verification_failed');
