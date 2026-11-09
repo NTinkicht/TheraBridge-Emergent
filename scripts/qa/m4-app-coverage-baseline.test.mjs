@@ -25,3 +25,22 @@ test('missing application scope, invalid percent or missing Web source inventory
  const bad=full();bad.total.lines.covered=101;
  assert.throws(()=>reportBaseline({apiSummary:bad,webSourceCount:1}),/invalid_measured/);
 });
+
+test('uses independently audited Web Istanbul percentages when coverage is actually measured',()=>{
+ const row=Object.fromEntries(['lines','branches','functions','statements'].map(k=>[k,{total:100,covered:5}]));
+ const web={total:row,'/repo/apps/web/src/lib/a.ts':row};
+ const audit={kind:'m4_web_full_source_instrumented_baseline_not_release_gate',
+  sourceFileCount:1,instrumentedFileCount:1,
+  percentages:{lines:5,branches:5,functions:5,statements:5},
+  below95:['lines','branches','functions','statements']};
+ const out=reportBaseline({apiSummary:full(),webSourceCount:1,
+  webInstrumentedPaths:[],webSummary:web,webAudit:audit});
+ assert.equal(out.web.istanbulCoverageMeasured,true);
+ assert.equal(out.web.percentages.statements,5);
+ assert.deepEqual(out.web.below95,['lines','branches','functions','statements']);
+ assert.equal(out.m4_08_gate,'NOT_QUALIFIED');
+ const malformed={...audit,sourceFileCount:2};
+ assert.throws(()=>reportBaseline({apiSummary:full(),webSourceCount:1,webSummary:web,webAudit:malformed}),/unqualified_measured_web_scope/);
+ const fabricated={...audit,percentages:{...audit.percentages,lines:100}};
+ assert.throws(()=>reportBaseline({apiSummary:full(),webSourceCount:1,webSummary:web,webAudit:fabricated}),/web_metric_mismatch/);
+});
