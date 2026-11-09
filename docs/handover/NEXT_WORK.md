@@ -3,6 +3,15 @@ Require six exact-head CI and independent Codex for new two-valid-center child I
 
 ---
 
+## COM-01/02 inventory qualification — next actions 2026-11-09
+1. Review latest PR head; verify dedicated commercial-inventory workflow, full Smart CI and existing six job gates; run and record exact evidence.
+2. Request Codex exact-head review and resolve findings before merging.
+3. Record complete contributor/source/IP authorizations from restricted evidence in #312; do not publish contracts.
+4. Produce comprehensive SBOM and validate third-party software, AI/provider, fonts/logo/illustration and container rights in #313; CLI inventory cannot attest license compatibility.
+5. Keep source repository public by owner's choice and clinical/production gates closed; no authoritative root LICENSE before verified rights holder and counsel clearance.
+
+---
+
 ## COM-01/02/03 — next actions after PR #318 (2026-11-09)
 1. Verify this latest PR head with required CI checks, including existing full-history gitleaks. Run `node scripts/commercial/inventory-direct-deps.mjs` and verify output contract, manifest count, deterministic ordering and zero license assertions; record command and result. Do not mark PASS without execution evidence.
 2. Obtain exact-head Codex re-review, resolve all findings, then merge the documentation/inventory foundation only after checks and standard reviewer criteria are met.
