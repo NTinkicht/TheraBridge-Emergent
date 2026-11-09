@@ -1,3 +1,9 @@
+## 2026-11-09 — COM-02 license classification (PR pending)
+Adds exact-commit scanner license candidate review queue and unapproved third-party notices draft to recurring SBOM job, with flags for copyleft/source-available/noncommercial and unknown terms. Separate assets/containers/fonts/AI rights register OPEN. No component is auto-approved. CI and independent review PENDING; public repo and clinical NO-GO unchanged.
+
+
+---
+
 ## 2026-11-09 — M4-08 integrated API/Web evidence PR (qualification pending)
 Existing full API instrumented Jest report and Web all-source Istanbul audit are reused. A new joint report records exact run/SHA, four-metric coverage, actual API/Web file scope, zero-statement Web files and explicit sub-95% metrics. The receipt is NOT a release approval or a 95% pass. CI, independent review and actual current-head percentages remain pending.
 
