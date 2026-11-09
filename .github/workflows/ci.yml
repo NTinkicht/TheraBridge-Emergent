@@ -402,11 +402,15 @@ jobs:
           curl -fsS http://127.0.0.1:10000/api/health | python3 -c 'import json,sys; h=json.load(sys.stdin); assert h["database"]["status"]=="up" and h["migrations"]["applied"]>=16'
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:10000/dev/feasibility)" = 404
           docker exec tb-preview-ci node -e "const {PrismaClient}=require('@prisma/client');const p=new PrismaClient();p.center.count({where:{slug:'childrens-home-demo'}}).then(n=>{if(n!==1)process.exitCode=1;else console.log('PASS: one Children Home demo centre seeded')}).finally(()=>p.\$disconnect())"
+      - name: M4-07 reject forged/shortened 512MiB workload receipt
+        run: node --test scripts/qa/m4-sustained-receipt.test.mjs
       - name: M4-07 sustained 10-minute synthetic API load with real 512MiB non-root preview cgroup
         timeout-minutes: 13
         env:
           TB_M4_LOCAL_LOAD_CONFIRM: DISPOSABLE_LOOPBACK_ONLY
         run: node scripts/qa/m4-local-sustained-http.mjs
+      - name: Verify measured 10-minute synthetic workload receipt before publishing
+        run: node scripts/qa/m4-sustained-receipt.mjs .workspace/m4-performance/m4-07-compose-load.json
       - name: Archive numeric-only M4-07 local synthetic load receipt (not production SLA)
         uses: actions/upload-artifact@v4
         with:
