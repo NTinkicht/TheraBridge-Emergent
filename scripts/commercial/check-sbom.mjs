@@ -54,7 +54,7 @@ if(kind==='source'){
    discovered:discovered.size,missingCount:missing.length,
    unexpectedCount:unexpected.length,examples:unexpected.slice(0,12)}));process.exit(1);
  }
- if(missing.length)console.error(JSON.stringify({warning:'KNOWN_SANNER_GAPS_NOT_VERIFIED',
+ if(missing.length)console.error(JSON.stringify({warning:'KNOWN_SCANNER_GAPS_NOT_VERIFIED',
   coverage:discovered.size+'/'+locked.size,missing,rights:'NOT_VERIFIED'}));
 }
 console.log(JSON.stringify({result:'PASS',kind,components:doc.components.length,
