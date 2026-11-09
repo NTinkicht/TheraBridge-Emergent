@@ -1,3 +1,8 @@
+## 2026-11-09 — COM-02 Codex P2 remediation
+Read failed CI sbom job (partial scanner output: 666 vs 673 Yarn entries), added reconcile-sbom.mjs and regression, updated workflow to upload only reconciled output, documented difference between Syft-discovered packages and lockfile-only components. Final-head full CI and independent review to be re-verified. No licensing claims or runtime/clinical modifications.
+
+---
+
 ## 2026-11-09 — COM-02 continuous SBOM implementation checkpoint
 Added CycloneDX scanner invocation through Anchore/Syft and structure validator, negative test cases, asset/image tracked checksum inventory, source/artifact upload for every PR/push, preview-container image SBOM and required Smart CI gate wiring. Additions apply to CI/evidence only; no clinical code, entitlement, tenant or repository visibility changes. Automated CI and reviewer outcomes PENDING; actual SPDX/CycloneDX package discovery not yet established at checkpoint. 30-day action artifact retention; permanent release/digest archive separate.
 
