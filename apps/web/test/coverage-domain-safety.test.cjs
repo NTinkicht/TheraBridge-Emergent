@@ -127,3 +127,55 @@ describe('M4-08: Child 360 timeline provenance and filtering',()=>{
   expect(filterChild360Timeline(result,'ALL','ALL')).toHaveLength(result.length);
  });
 });
+
+const {isCalendarDay,scheduleProblem,scheduledDays,scheduleDescription,practiceCalendarMonth}=require('../src/lib/home-schedule');
+const {evidenceForGoal,sourceForGoal,goalEvidenceRows}=require('../src/lib/plan-evidence');
+const {clinicianJourneySummary}=require('../src/lib/clinician-journey');
+
+describe('M4-08: internal practice scheduling never converts to booking or delivery',()=>{
+ const weekly={startsOn:'2026-11-09',endsOn:'2026-11-23',cadence:'WEEKLY',weekdays:[1,3]};
+ it('validates dates, ranges, pattern and unique weekdays',()=>{
+  expect(isCalendarDay('2026-02-30')).toBe(false);
+  expect(isCalendarDay('2026-11-09')).toBe(true);
+  expect(scheduleProblem(weekly)).toBe(null);
+  expect(scheduleProblem({...weekly,endsOn:'2026-11-08'})).toMatch(/end must follow/);
+  expect(scheduleProblem({...weekly,weekdays:[1,1]})).toMatch(/unique weekday/);
+  expect(scheduleProblem({...weekly,weekdays:[]})).toMatch(/weekday/);
+  expect(scheduleProblem({...weekly,cadence:'UNKNOWN'})).toMatch(/valid schedule pattern/);
+ });
+ it('returns only planned days within date window and month; never invents 31 February',()=>{
+  expect(scheduledDays(weekly,3)).toEqual(['2026-11-09','2026-11-11','2026-11-16']);
+  expect(scheduledDays(weekly,0)).toEqual([]);
+  expect(scheduleDescription(weekly)).toContain('Weekly on Mon, Wed');
+  expect(practiceCalendarMonth([{templateId:'t1',goalKey:'g1',schedule:weekly}], '2026-11')
+   .map(x=>x.date)).toEqual(['2026-11-09','2026-11-11','2026-11-16','2026-11-18','2026-11-23']);
+  expect(practiceCalendarMonth([{templateId:'t2',schedule:{
+   startsOn:'2026-02-01',endsOn:'2026-02-28',cadence:'MONTHLY',monthDay:31}}], '2026-02')).toEqual([]);
+  expect(practiceCalendarMonth([], '2026-13')).toEqual([]);
+ });
+});
+
+describe('M4-08: source identity and non-clinical navigation aggregation',()=>{
+ const obs=(id,versionId,goalKey,day='2026-11-09')=>({
+  id,planVersionId:versionId,goalKey,observedOn:day,value:1
+ });
+ it('binds evidence to exact current version and goal, not reused goal key',()=>{
+  const o=[obs('a','v1','g1'),obs('b','v2','g1'),obs('c','v1','g2'),obs('d','v1','g1','2026-11-10')];
+  const e=evidenceForGoal(o,'v1','g1');
+  expect(e.count).toBe(2);expect(e.records.map(x=>x.id)).toEqual(['a','d']);
+  const origin={originalPlanVersionId:'v1',selectedGoals:[{planGoalKey:'g1',sourceGoalKey:'sg1'}]};
+  expect(sourceForGoal(origin,'v2','g1')).toBe(null);
+  expect(sourceForGoal(origin,'v1','g1').sourceGoalKey).toBe('sg1');
+  expect(goalEvidenceRows([goal()],o,'v1',origin)[0]).toMatchObject({count:2});
+  expect(goalEvidenceRows([goal()],o,'v2',origin)[0].source).toBe(null);
+ });
+ it('excludes superseded plan evidence and never fabricates clinical report counts',()=>{
+  const ws={plans:[plan({versions:[
+    version({id:'old',status:'SUPERSEDED',homeActivities:[activity()]}),
+    version({id:'current',status:'DRAFT',homeActivities:[activity(),activity({id:'a2',schedule:undefined})]})
+   ]})],observations:[obs('a','old','g1'),obs('b','current','g1'),obs('c','current','other')]};
+  const r=clinicianJourneySummary(ws);
+  expect(r).toEqual({currentPlanVersions:1,currentGoals:1,
+   currentGoalObservations:1,internalHomeActivities:2,scheduledHomeActivities:1});
+ });
+});
