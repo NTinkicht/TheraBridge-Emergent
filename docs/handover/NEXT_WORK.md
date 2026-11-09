@@ -1,3 +1,8 @@
+## COM-02 SBOM reconciliation — pending verification
+Run exact-head CI, verify source artifact contains complete Yarn lock entries with explicit provenance, image SBOM remains valid and the smart-ci-gate succeeds. Confirm Codex P2 resolved on new head before squash merge; verify post-merge main commit produces a new SBOM. Continue separate legal/asset/model rights reviews for #312/#313.
+
+---
+
 ## COM-02 continuous SBOM — next actions 2026-11-09
 1. Execute PR-head GitHub CI; check Syft's actual lockfile discovery, CycloneDX JSON validation, artifact names, asset checksum inventory and container OS SBOM. Fix errors rather than waiving required SBOM gate.
 2. Verify Smart CI shadow/full mode and newly required `sbom` check; run integration tests; verify exact-head Codex review and resolve every finding.
