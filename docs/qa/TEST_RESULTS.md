@@ -1,3 +1,26 @@
+## 2026-11-10 — PR #329 Codex P2 workspace local dependencies (FIXED IN CODE, QUALIFICATION PENDING)
+- Existing old-head full CI: PASS, but old root-only installed-package artifact is incomplete for non-hoisted packages.
+- New regression: hoisted plus apps/api and apps/web physical installed dependencies, symlink avoidance and unsupported workspace glob: AUTHORED, NOT YET RUN on new head.
+- Whole-workspace installed dependency inventory totals: NOT VERIFIED until exact-head artifact reviewed.
+- Exact-head Codex and CI: PENDING; legal/clinical approval remains OPEN/NO-GO.
+
+---
+
+## 2026-11-09 — COM-02 installed license collector extension (NOT RUN at checkpoint)
+Earlier CycloneDX and classifier artifacts inspected: 695 components; no license fields, 695 unknown; this is a verified scanner limitation, NOT commercial clearance. New collector tests and installed package license-file artifact: NOT RUN / NOT VERIFIED on latest head. Full CI and exact-head Codex: PENDING. Direct evidence ledger count 38 with 16 publisher references/22 pending is only a first-pass source summary, not legal approval.
+
+---
+
+## 2026-11-09 — COM-02 direct evidence ledger validation (NOT RUN)
+- Source publisher license checks: UPSTREAM GENERAL INFO ONLY; exact locked version, tarball text and package hashes NOT VERIFIED.
+- Direct evidence index: 38 declarations; 16 upstream references, 22 pending, 0 legally approved (static authoring count; automated parity checks NOT RUN yet).
+- `check-direct-evidence.mjs` regression suite: NOT RUN.
+- Full CI, SBOM and actual artifacts on proposed PR head: NOT VERIFIED.
+- Independent Codex review: PENDING.
+- Commercial ownership, redistribution/attribution and clinical production approvals: BLOCKED/NO-GO.
+
+---
+
 ## M4-08 Web real-route and permission-navigation coverage — NOT YET CI QUALIFIED
 New synthetic source-executing Jest SSR test exercises login, reset/forgot password, unauthorized/404/error routes, form controls and ProductShell role-scoped route visibility (guardian, coordinator, therapist, platform admin, no selected context). This checks markup/permission filtering, not interactive browser behavior, API authorization or clinical release. Final CI, Codex and updated 151-source metrics pending. Target 95% remains unmet.
 
