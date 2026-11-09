@@ -5,9 +5,27 @@ import {readFileSync,mkdirSync,writeFileSync,readdirSync} from 'node:fs';
 import {resolve,dirname,join,relative,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
+import ts from 'typescript';
 import {measuredCoverage} from './m4-measured-coverage.mjs';
 const metrics=['lines','branches','functions','statements'];
 // Independent API source inventory, not generated from a potentially incomplete Jest summary.
+// TypeScript emits no JavaScript for interface/type-only declarations.
+// Include modules automatically if they acquire runtime statements later.
+export function executableApiSource(file) {
+ const ast=ts.createSourceFile(file,readFileSync(file,'utf8'),ts.ScriptTarget.ES2022,true,ts.ScriptKind.TS);
+ return ast.statements.some(node=>{
+  if(ts.isInterfaceDeclaration(node)||ts.isTypeAliasDeclaration(node)||ts.isEmptyStatement(node))return false;
+  if(ts.canHaveModifiers(node)&&ts.getModifiers(node)?.some(x=>x.kind===ts.SyntaxKind.DeclareKeyword))return false;
+  if(ts.isImportDeclaration(node)){
+   if(node.importClause?.isTypeOnly)return false;
+   if(node.importClause&&!node.importClause.name&&node.importClause.namedBindings&&
+      ts.isNamedImports(node.importClause.namedBindings)&&
+      node.importClause.namedBindings.elements.every(x=>x.isTypeOnly))return false;
+  }
+  if(ts.isExportDeclaration(node)&&node.isTypeOnly)return false;
+  return true;
+ });
+}
 export function apiSourceFiles(root) {
  const files=[];
  function walk(dir){
@@ -15,7 +33,7 @@ export function apiSourceFiles(root) {
    const path=join(dir,entry.name);
    if(entry.isSymbolicLink())throw Error('api_symlink_source_unsupported');
    if(entry.isDirectory())walk(path);
-   else if(entry.isFile()&&path.endsWith('.ts')&&!path.endsWith('.d.ts'))files.push(resolve(path));
+   else if(entry.isFile()&&path.endsWith('.ts')&&!path.endsWith('.d.ts')&&executableApiSource(path))files.push(resolve(path));
   }
  }
  walk(root);
