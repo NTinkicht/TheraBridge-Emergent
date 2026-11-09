@@ -1,3 +1,8 @@
+## M4-08 API source-boundary coverage — NOT YET CI QUALIFIED
+New Jest tests execute API policy, cookie, security and password code on positive and negative branches. No patient or network traffic, production policy modifications or real clinical actions. Source-wide coverage / CI / Codex evidence pending. Target 95% per API/Web metric remains unmet.
+
+---
+
 ## M4-08 Web auth/time zone execution wave 3 — UNVERIFIED UNTIL CI
 Added real ts-jest executed tests for preauth CSRF reuse, 401 session invalidation, forbidden stale CSRF mutation, 204 and error handling; Dubai and New York DST appointment date safety tests. No external requests or patient data. Source-wide coverage metrics and exact-head Codex/CI pending. Target 95%, G2/G2b NO-GO.
 
