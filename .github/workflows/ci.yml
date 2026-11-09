@@ -116,6 +116,10 @@ jobs:
         run: |
           node scripts/qa/check-historic-issues.mjs
           node --test scripts/qa/check-historic-issues.test.mjs
+      - name: M4-09 reconcile all frozen issue IDs against GitHub-state snapshot without auto closure
+        run: |
+          node --test scripts/qa/m4-historic-state-reconcile.test.mjs
+          node scripts/qa/m4-historic-state-reconcile.mjs
       - name: M4-03 independent credential generator and recovery tests
         run: node --test scripts/preview/generate-secrets.test.mjs
       - name: M4-02 private hosted scope and workflow safety regressions
