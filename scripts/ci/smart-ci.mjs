@@ -13,7 +13,7 @@ const DOC=/(^|\/)[^/]+\.mdx?$/i;
 const WEB_STYLE=/^apps\/web\/(?:src\/.*\.css|public\/(?:[^/]+\/)*[^/]+\.(?:png|jpe?g|webp|gif|ico|avif|woff2?|ttf|otf))$/i;
 const HARD_BLOCK=/(^|\/)(?:AGENTS\.md|SECURITY\.md|CODEOWNERS|Dockerfile(?:\.[^/]*)?|render\.yaml)$/i;
 const VALID_STATUS=new Set(['A','M','D','T','U']);
-const jobs=['secret-scan','test','live-session','demo-journey','compose','preview-container','smart-targeted'];
+const jobs=['secret-scan','sbom','test','live-session','demo-journey','compose','preview-container','smart-targeted'];
 
 export function classifyPaths(changes) {
  if(!Array.isArray(changes)||!changes.length||changes.length>300)
@@ -46,8 +46,8 @@ export function decodeNameStatusNul(data){
  return result;
 }
 export function expectedJobs(mode){
- const selected=mode==='docs'?['secret-scan','smart-targeted']:
-   mode==='web-style'?['secret-scan','live-session','demo-journey','smart-targeted']:
+ const selected=mode==='docs'?['secret-scan','sbom','smart-targeted']:
+   mode==='web-style'?['secret-scan','sbom','live-session','demo-journey','smart-targeted']:
    mode==='full'?jobs.filter(x=>x!=='smart-targeted'):null;
  if(!selected)throw Error('invalid_mode');
  return Object.fromEntries(jobs.map(name=>[name,selected.includes(name)?'success':'skipped']));

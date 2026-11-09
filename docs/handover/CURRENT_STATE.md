@@ -1,3 +1,14 @@
+## 2026-11-09 — COM-02 SBOM lockfile reconciliation review follow-up
+Codex P2 on PR #323 identified incomplete source SBOM coverage checks. Strict Yarn lockfile version comparison exposed seven entries omitted by Syft scan (including platform-optional and alias packages). Added explicit scanner-vs-lockfile reconciliation with source provenance properties and full name/version validation before artifact upload. THIS IS NOT A CLAIM OF INSTALLED PACKAGE OR LICENSE VERIFICATION. CI and Codex re-review PENDING on the new head; retain public repo and clinical NO-GO.
+
+---
+
+## 2026-11-09 — COM-02 continuous SBOM per PR/main (in review; CI pending)
+SBOM automation is proposed in a PR: mandatory per-commit CycloneDX source SBOM + tracked asset hash inventory, integrated into all Smart CI modes, with preview-container image SBOM for full mode. On each push to main, the unconditional source SBOM job will publish a fresh source artifact. No root LICENSE adopted; full asset/model/legal rights and production license clearance OPEN. No clinical/business runtime or public GitHub visibility changes. Latest-head CI, actual generated artifacts and Codex review: **NOT YET VERIFIED** at authoring checkpoint. See docs/commercial/continuous-sbom-policy.md.
+
+
+---
+
 ## M4-02 two-valid-centre child scope regression — 2026-11-09 (CI pending)
 Protected interactive 10-account run 42605446171 retry 2: 84 PASS, 0 FAIL, 14 policy BLOCKED; not full hosted acceptance. Existing real PostgreSQL two-center summary/role/context and guardian-message revocation tests already passed in CI. Independently read-only checked isolated Neon branch br-raspy-sound-baxyuq2a: two ACTIVE synthetic centers, children 6+1, members 9+1; no mutation. Current implementation PR adds actual two-center cross-child ID isolation, double repetition, live-session membership revocation and unaffected center positive control on disposable PostgreSQL. CI/review pending; protected hosted two-center app and clinical gates not approved.
 

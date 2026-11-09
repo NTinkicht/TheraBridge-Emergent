@@ -38,6 +38,54 @@ jobs:
           TB_SMART_CI_REQUIRED_GATE_READY: ${{ vars.TB_SMART_CI_REQUIRED_GATE_READY }}
         run: node scripts/ci/smart-ci.mjs
 
+  sbom:
+    name: sbom
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Validate SBOM contract and negative cases
+        run: node --test scripts/commercial/check-sbom.test.mjs scripts/commercial/reconcile-sbom.test.mjs
+      - name: Generate fresh CycloneDX source SBOM for this commit (includes yarn.lock)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          artifact-name: therabridge-source-${{ github.sha }}.cyclonedx.json
+          output-file: /tmp/therabridge-source.cdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          dependency-snapshot: false
+      - name: Reconcile lockfile-only packages and retain scanner provenance
+        run: node scripts/commercial/reconcile-sbom.mjs /tmp/therabridge-source.cdx.json yarn.lock /tmp/therabridge-reconciled.cdx.json
+      - name: Fail closed unless every Yarn resolved name/version is in source SBOM
+        run: node scripts/commercial/check-sbom.mjs /tmp/therabridge-reconciled.cdx.json source
+      - name: Archive reconciled CycloneDX SBOM for PR or main commit
+        uses: actions/upload-artifact@v4
+        with:
+          name: therabridge-source-${{ github.sha }}.cyclonedx.json
+          path: /tmp/therabridge-reconciled.cdx.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Generate tracked brand/media/container asset evidence
+        run: |
+          node scripts/commercial/asset-inventory.mjs > /tmp/therabridge-assets.json
+          node -e 'const a=require("/tmp/therabridge-assets.json");if(!a.total||!a.assets.every(x=>x.licenseStatus==="NOT_VERIFIED"))process.exit(1);console.log("Tracked asset entries:",a.total)'
+      - name: Archive per-commit tracked-asset evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: therabridge-assets-${{ github.sha }}
+          path: /tmp/therabridge-assets.json
+          if-no-files-found: error
+          retention-days: 30
+
   secret-scan:
     timeout-minutes: 10
     runs-on: ubuntu-24.04
@@ -375,6 +423,18 @@ jobs:
           node --check scripts/preview/generate-secrets.mjs
       - name: Build unified preview image
         run: docker build -f Dockerfile.preview -t tb-synthetic-preview:ci .
+      - name: Generate container OS/runtime CycloneDX evidence from built preview image
+        uses: anchore/sbom-action@v0
+        with:
+          image: tb-synthetic-preview:ci
+          format: cyclonedx-json
+          artifact-name: therabridge-preview-image-${{ github.sha }}.cyclonedx.json
+          output-file: /tmp/therabridge-preview-image.cdx.json
+          upload-artifact-retention: 30
+          upload-release-assets: false
+          dependency-snapshot: false
+      - name: Verify preview image SBOM structure
+        run: node scripts/commercial/check-sbom.mjs /tmp/therabridge-preview-image.cdx.json image
       - name: Start isolated preview with disposable test passwords
         run: |
           umask 077
@@ -467,6 +527,7 @@ jobs:
     needs:
       - smart-plan
       - secret-scan
+      - sbom
       - test
       - live-session
       - demo-journey

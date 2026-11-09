@@ -1,3 +1,17 @@
+## COM-02 SBOM reconciliation — pending verification
+Run exact-head CI, verify source artifact contains complete Yarn lock entries with explicit provenance, image SBOM remains valid and the smart-ci-gate succeeds. Confirm Codex P2 resolved on new head before squash merge; verify post-merge main commit produces a new SBOM. Continue separate legal/asset/model rights reviews for #312/#313.
+
+---
+
+## COM-02 continuous SBOM — next actions 2026-11-09
+1. Execute PR-head GitHub CI; check Syft's actual lockfile discovery, CycloneDX JSON validation, artifact names, asset checksum inventory and container OS SBOM. Fix errors rather than waiving required SBOM gate.
+2. Verify Smart CI shadow/full mode and newly required `sbom` check; run integration tests; verify exact-head Codex review and resolve every finding.
+3. After green checks, merge PR and verify fresh `main`-commit source SBOM artifact and smart-ci-gate PASS. Do not assert background monitoring or unlimited artifact retention.
+4. Continue full third-party license compatibility, fonts/brand/illustration/AI providers and source ownership rights review under #312/#313. Preserve public repo for Actions; clinical production remains NO-GO.
+
+
+---
+
 ## M4-02 remaining protected hosted acceptance — after this regression
 Require six exact-head CI and independent Codex for new two-valid-center child ID isolation. Next external evidence must run authenticated app connected to dedicated disposable two-tenant Neon branch, not shared Render demo; confirm live deployed SHA separately, revoke synthetic roles/guardian link only in isolated fixture, and review ten-account protected HA-01…HA-10. 14 clinical-policy checks remain intentionally BLOCKED. Do not mark those PASS, publish passwords, or close #176/#268 without explicit owner-approved acceptance. G2/G2b NO-GO.
 

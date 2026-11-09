@@ -1,3 +1,14 @@
+## 2026-11-09 — COM-02 Codex P2 remediation
+Read failed CI sbom job (partial scanner output: 666 vs 673 Yarn entries), added reconcile-sbom.mjs and regression, updated workflow to upload only reconciled output, documented difference between Syft-discovered packages and lockfile-only components. Final-head full CI and independent review to be re-verified. No licensing claims or runtime/clinical modifications.
+
+---
+
+## 2026-11-09 — COM-02 continuous SBOM implementation checkpoint
+Added CycloneDX scanner invocation through Anchore/Syft and structure validator, negative test cases, asset/image tracked checksum inventory, source/artifact upload for every PR/push, preview-container image SBOM and required Smart CI gate wiring. Additions apply to CI/evidence only; no clinical code, entitlement, tenant or repository visibility changes. Automated CI and reviewer outcomes PENDING; actual SPDX/CycloneDX package discovery not yet established at checkpoint. 30-day action artifact retention; permanent release/digest archive separate.
+
+
+---
+
 ## 2026-11-09 — M4-02 isolated-tenant re-audit and implementation
 Read-only Neon verified project aged-fog-03608251 branch br-raspy-sound-baxyuq2a database therabridge_demo_m3_preview two ACTIVE distinct synthetic centers, 6+1 children, 9+1 active memberships, no primary mutation. Reviewed authz.e2e-spec.ts, auth.e2e-spec.ts, parent-scheduling.e2e-spec.ts and family-release.e2e-spec.ts; avoided duplicate signout/expiry, message removal, release withdrawal tests. Implemented stronger cross-child IDs / cross-tenant route 404 with two valid centers and repeat attempts, one membership revoked and other tenant unaffected. No claim authenticated isolated Neon hosted app tested; clinical NO-GO unchanged.
 

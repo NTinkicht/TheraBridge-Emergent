@@ -23,10 +23,10 @@ test('secret scan remains unconditional and full workloads are conditional',()=>
  assert.match(yaml,/test:\n    needs: smart-plan\n    if: needs\.smart-plan\.outputs\.mode == 'full'/);
  assert.match(yaml,/compose:\n    timeout-minutes: 25\n    runs-on: ubuntu-24\.04\n    needs: \[smart-plan, test\]\n    if: needs\.smart-plan\.outputs\.mode == 'full'/);
 });
-test('always-running gate accounts for all seven possible worker jobs',()=>{
+test('always-running gate accounts for all possible worker jobs',()=>{
  const gate=yaml.slice(yaml.indexOf('\n  smart-ci-gate:'));
  for(const name of ['smart-plan','secret-scan','test','live-session','demo-journey',
-   'compose','preview-container','smart-targeted'])
+   'compose','preview-container','smart-targeted','sbom'])
   assert.match(gate,new RegExp('^      - '+name+'$','m'));
  assert.match(gate,/run: node scripts\/ci\/smart-ci-gate\.mjs/);
 });
