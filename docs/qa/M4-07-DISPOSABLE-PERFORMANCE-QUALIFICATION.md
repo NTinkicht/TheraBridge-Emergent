@@ -1,6 +1,6 @@
 # M4-07 — Synthetic performance, worker reliability and resource qualification
 
-**Status: planning checkpoint; implementation NOT STARTED, performance benchmark NOT EXECUTED, acceptance NOT PASSED.**
+**Status: synthetic CI measurement implementation committed; execution and full M4-07 acceptance pending CI evidence.**
 
 Parent: [M4-07 #181](https://github.com/NTinkicht/TheraBridge-Emergent/issues/181). Epic: [M4 #167](https://github.com/NTinkicht/TheraBridge-Emergent/issues/167).
 Predecessor: [M4-06 PR #304](https://github.com/NTinkicht/TheraBridge-Emergent/pull/304), merge `489428bae9ed636c3d9fe1cd6a6c910dd51448a7`.
@@ -28,3 +28,15 @@ Predecessor: [M4-06 PR #304](https://github.com/NTinkicht/TheraBridge-Emergent/p
 - [ ] No real patient use, shared deployment changes, clinical signing/consent/release, STT/AI or safeguarding gate changes
 
 **Safety:** synthetic fixtures only. Existing clinical G2/G2b and D-NEW-5 NO-GO remain in force. Never represent idle metrics or unexecuted tests as load acceptance. Parent #181 remains OPEN pending actual receipts.
+
+## Implemented in PR #305 (not yet qualification PASS)
+- `apps/api/test/m4-performance.e2e-spec.ts`: real in-process Fastify HTTP GET /api/health against the isolated `*_test` PostgreSQL database; serial 40 and concurrency-8 80 calls, p50/p95/p99, throughput and process RSS; actual PostgreSQL `EXPLAIN (FORMAT JSON)` on bounded centre-scoped appointment query. CI measurement is not a load/SLA guarantee.
+- `apps/api/test/m4-worker-reliability.e2e-spec.ts`: 3 repeat/parallel sweeps on deterministic fake Prisma unique reservations; asserts one synthetic outbound message, five bounded modeled ORM calls per sweep, a first-send exception releases reservation and retry delivers once. **Mocked worker contract only**; not a real production dead-letter queue or real Postgres P2002 race test.
+- 5,000/10,000 synthetic notice selection timing/eligibility measured separately; outcomes asserted, wall-clock durations recorded but not gated by arbitrary environmental timing thresholds.
+- `scripts/qa/m4-performance-evidence.mjs` and negative tests require bounded numeric-only receipt structure with no credentials, cookie values or raw content; CI stores `m4-07-synthetic-api.json` as a short-retention artifact only after validation.
+- Prior idle Render memory/512MiB baseline and existing non-root Docker CI are **not** rewritten as load-resource certification. Node RSS in CI is process-level, not a container under 512MiB.
+
+## Unresolved exit evidence / scope limits
+- This iteration records **source-level** two Prisma raw queries per /api/health request, not a SQL wire trace or full API-wide SQL query counts.
+- Controlled 512 MiB container **under load**, sustained realistic tenant/child workloads, full retry/dead-letter queue, P2002 Postgres race, adaptive query optimization before/after and external p95 under synthetic load remain NOT VERIFIED.
+- Actual execution statuses require the latest exact-head CI run and independent review before merging; the parent issue must remain OPEN for broader qualification.
