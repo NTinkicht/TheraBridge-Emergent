@@ -41,7 +41,7 @@ test('fails closed on wrong format, malformed versions, unsupported lockfile',()
 });
 
 test('no scanner-gap allowlist: even known omissions fail until reconciled',()=>{
- const lock=fixture+'\\n"fsevents@^2.3.3":\\n  version "2.3.3"\\n';
+ const lock=fixture+`\n"fsevents@^2.3.3":\n  version "2.3.3"\n`;
  const p=check(valid,'source',lock);
  assert.equal(p.status,1);
  assert.match(p.stderr,/fsevents@2.3.3/);
