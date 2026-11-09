@@ -1,3 +1,8 @@
+## 2026-11-09 — M4-02 isolated-tenant re-audit and implementation
+Read-only Neon verified project aged-fog-03608251 branch br-raspy-sound-baxyuq2a database therabridge_demo_m3_preview two ACTIVE distinct synthetic centers, 6+1 children, 9+1 active memberships, no primary mutation. Reviewed authz.e2e-spec.ts, auth.e2e-spec.ts, parent-scheduling.e2e-spec.ts and family-release.e2e-spec.ts; avoided duplicate signout/expiry, message removal, release withdrawal tests. Implemented stronger cross-child IDs / cross-tenant route 404 with two valid centers and repeat attempts, one membership revoked and other tenant unaffected. No claim authenticated isolated Neon hosted app tested; clinical NO-GO unchanged.
+
+---
+
 ## 2026-11-09 — COM-01/02 qualification work
 Added privacy-safe IP rights evidence register; tested-by-CI-in-design inventory cases for traversal, absolute/symlink paths, overwrite avoidance, missing workspace manifest, dynamic workspace discovery, unsupported workspace syntax and deterministic output. Added scoped Actions workflow; tests have NOT RUN at this evidence checkpoint. No V1 runtime changes, no license grant, no repository visibility change.
 

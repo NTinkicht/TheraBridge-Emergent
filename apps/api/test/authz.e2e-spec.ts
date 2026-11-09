@@ -54,6 +54,48 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
       await get(s, '/api/centers/not-a-uuid/summary').expect(404);
     });
 
+    it('M4-02: valid children of two real centers remain isolated across revoked and repeated sessions', async () => {
+      await member('hadmin', harbor, ['CENTER_ADMIN']);
+      await member('cadmin', cedar, ['CENTER_ADMIN']);
+      const harborChild = await h.prisma.child.create({ data: {
+        centerId: harbor, firstName: 'Synthetic', lastName: 'Harbor',
+        dateOfBirth: new Date('2019-04-02'), services: ['speech'],
+        createdById: ids.hadmin, createdAt: h.clock.now(),
+      } });
+      const cedarChild = await h.prisma.child.create({ data: {
+        centerId: cedar, firstName: 'Synthetic', lastName: 'Cedar',
+        dateOfBirth: new Date('2020-05-03'), services: ['ot'],
+        createdById: ids.cadmin, createdAt: h.clock.now(),
+      } });
+      const harborSession = await signIn(h, email('hadmin'));
+      const cedarSession = await signIn(h, email('cadmin'));
+      const harborOwn = `/api/centers/${harbor}/children/${harborChild.id}`;
+      const cedarOwn = `/api/centers/${cedar}/children/${cedarChild.id}`;
+      await get(harborSession, harborOwn).expect(200);
+      await get(cedarSession, cedarOwn).expect(200);
+      // Both object IDs are real, existing rows in another valid tenant.
+      // Denials cannot be explained by an invented center/child UUID.
+      for (let attempt = 0; attempt < 2; attempt++) {
+        await get(harborSession, `/api/centers/${harbor}/children/${cedarChild.id}`).expect(404);
+        await get(harborSession, cedarOwn).expect(404);
+        await get(cedarSession, `/api/centers/${cedar}/children/${harborChild.id}`).expect(404);
+        await get(cedarSession, harborOwn).expect(404);
+      }
+      const hm = await h.prisma.membership.findFirstOrThrow({
+        where: { userId: ids.hadmin, centerId: harbor },
+      });
+      await h.prisma.membership.update({ where: { id: hm.id }, data: { status: 'REVOKED' } });
+      await get(harborSession, harborOwn).expect(404);
+      await get(harborSession, cedarOwn).expect(404);
+      // Revocation of one tenant must never revoke an independent tenant.
+      await get(cedarSession, cedarOwn).expect(200);
+      const afterRevocation = await signIn(h, email('hadmin'));
+      expect(afterRevocation.body.contexts).toEqual([]);
+      await get(afterRevocation, harborOwn).expect(404);
+      await get(afterRevocation, cedarOwn).expect(404);
+      await get(cedarSession, cedarOwn).expect(200);
+    });
+
     it('a multi-membership user must choose; switching rotates the session and changes permissions', async () => {
       const hm = await member('multi', harbor, ['THERAPIST']);
       const cm = await member('multi', cedar, ['CENTER_ADMIN']);

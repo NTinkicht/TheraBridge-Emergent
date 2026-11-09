@@ -1,3 +1,8 @@
+## M4-02 two-valid-centre child scope regression — 2026-11-09 (CI pending)
+Protected interactive 10-account run 42605446171 retry 2: 84 PASS, 0 FAIL, 14 policy BLOCKED; not full hosted acceptance. Existing real PostgreSQL two-center summary/role/context and guardian-message revocation tests already passed in CI. Independently read-only checked isolated Neon branch br-raspy-sound-baxyuq2a: two ACTIVE synthetic centers, children 6+1, members 9+1; no mutation. Current implementation PR adds actual two-center cross-child ID isolation, double repetition, live-session membership revocation and unaffected center positive control on disposable PostgreSQL. CI/review pending; protected hosted two-center app and clinical gates not approved.
+
+---
+
 ## 2026-11-09 — COM-01/02 evidence and inventory qualification (PR pending)
 Commercial IP evidence register added without claiming ownership; Node 20 direct dependency inventory contract tests and lightweight dedicated GitHub Actions qualification added. Public GitHub visibility explicitly preserved. Full SBOM, rights-holder determination and real clinical approval remain OPEN/NO-GO. Exact-head CI and independent review PENDING.
 
