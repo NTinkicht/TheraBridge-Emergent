@@ -235,6 +235,9 @@ jobs:
           ./node_modules/.bin/jest --config scripts/qa/m4-web-jest.config.cjs --runInBand
           node scripts/qa/m4-web-coverage-audit.mjs
       - name: M4-08 independently cross-check real API + Web coverage and publish integrated aggregate
+        env:
+          TB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          TB_PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           node --test scripts/qa/m4-integrated-coverage.test.mjs
           node scripts/qa/m4-integrated-coverage.mjs
