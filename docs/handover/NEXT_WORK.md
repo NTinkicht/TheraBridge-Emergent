@@ -1,3 +1,9 @@
+## M4-08 Web executed code wave 3
+Qualify mocked-fetch authentication/CSRF negative paths and center-timezone/DST tests through original six-job CI, SBOM, smart-ci-gate and exact-head Codex. Record measured four-metric API/Web receipt; continue source-wide executable UI coverage without modifying denominators or approval gates.
+
+
+---
+
 ## M4-08 Web UI/interaction executable test wave
 Qualify React SSR, WAI-ARIA tab and synthetic dictation regression tests with all six exact-head CI checks, SBOM and independent Codex review. Record actual updated Web denominator and four coverage percentages before selecting larger pages with dynamic state. Maintain 95% target and clinical NO-GO.
 

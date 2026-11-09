@@ -1,3 +1,9 @@
+## M4-08 Web auth/time zone execution wave 3 — UNVERIFIED UNTIL CI
+Added real ts-jest executed tests for preauth CSRF reuse, 401 session invalidation, forbidden stale CSRF mutation, 204 and error handling; Dubai and New York DST appointment date safety tests. No external requests or patient data. Source-wide coverage metrics and exact-head Codex/CI pending. Target 95%, G2/G2b NO-GO.
+
+
+---
+
 ## M4-08 UI rendering + synthetic dictation tests — NOT YET QUALIFIED
 Web coverage wave 2 adds Jest React SSR presentation regression tests, accessible tab keyboard dispatch and synthetic-only dictation finite-state/protection cases. No DOM browser or patient data needed; no false release result. Final measured coverage figures, six-job CI, SBOM and exact-head Codex pending. Clinical NO-GO remains in force.
 
