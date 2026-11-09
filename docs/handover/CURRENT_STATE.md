@@ -1,3 +1,8 @@
+## M4-08 PR #306 coverage instrumentation — 2026-11-09 (FINAL CI/REVIEW PENDING)
+Implemented a separate Jest/ts-jest Istanbul Web source-wide measurement runner, actual executed synthetic safety/accessibility Web TS tests, fail-closed per-file source-denominator audit (including unexecuted TS/TSX/JS/JSX/MJS modules), aggregate-only sanitized receipt and CI artifact. API-wide Jest coverage was already measured; no replacement or lowered 95% policy. Current exact-head CI and independent review NOT VERIFIED; M4-08 #182 stays OPEN. No clinical/Render changes.
+
+---
+
 ## M4-07 current implementation checkpoint — 2026-11-09 (PR #305; CI AND REVIEW PENDING)
 PR #305 introduces actual **CI-isolated**, in-process Fastify health API measurements against a real disposable PostgreSQL `*_test` DB (40 serial and 80 concurrency-8 GET requests); p50/p95/p99, throughput, RSS and a bounded appointment PostgreSQL query plan. It also adds deterministic worker notification/idempotence/failed-send retry contract tests, and 5,000/10,000 synthetic notice selection measurements. The numeric-only CI artifact guard strictly allowlists every nested field; `.github/workflows/ci.yml` archives `m4-performance-synthetic-<run-id>` only after report validation. See `docs/qa/M4-07-DISPOSABLE-PERFORMANCE-QUALIFICATION.md`. **Latest final-head six-job CI, Codex review and measured results are pending**, so no M4-07 release qualification or merged status may be asserted. Shared Render/Neon unchanged; clinical G2/G2b NO-GO.
 

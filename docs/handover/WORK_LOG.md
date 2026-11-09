@@ -1,3 +1,8 @@
+## 2026-11-09 — M4-08 PR #306 implemented, CI/review pending
+After merged PR #305, added scripts/qa/m4-web-jest.config.cjs, apps/web/test/coverage-web-runtime.test.cjs, scripts/qa/m4-web-coverage-audit.mjs and negative audit tests, CI full-source Istanbul collector and aggregate-only artifact. Real tests execute shipped TypeScript, source inventory prevents omitted zeros and fake aggregate totals. No manufactured coverage percentages, no production Web application acceptance; full 95% API/Web gate remains NOT QUALIFIED pending measured instrumented results. Six exact HEAD CI and Codex are required before merge.
+
+---
+
 ## 2026-11-09 — M4-07 PR #305 performance and reliability measurement implementation
 Following merged M4-06 #304 (merge `489428ba`), added `apps/api/test/m4-performance.e2e-spec.ts` real PostgreSQL-backed health API 40+80 request timing and EXPLAIN, synthetic 5k/10k selection timings, `apps/api/test/m4-worker-reliability.e2e-spec.ts` modeled deduplication/failed-send retries, `scripts/qa/m4-performance-evidence.mjs` strict nested allowlist with negative tests, and CI numeric-only artifact. Codex planning review P2 required benchmark thresholds; added frozen smoke contract (all 120 requests HTTP200; full production SLA/512MiB load acceptance BLOCKED pending owner targets). Codex implementation P2 required nested receipt protection; FIX_NOW. Codex P1 required updates to four mandatory handover records; FIX_NOW in this PR. Actual final-head CI results and final-head independent review remain **PENDING**, not PASS. Synthetic only.
 
