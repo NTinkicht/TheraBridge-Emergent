@@ -15,7 +15,7 @@ module.exports = {
     }],
   },
   collectCoverage: true,
-  collectCoverageFrom: ['<rootDir>/src/**/*.{ts,tsx,js,jsx}', '!<rootDir>/src/**/*.d.ts'],
+  collectCoverageFrom: ['<rootDir>/src/**/*.{ts,tsx,js,jsx,mjs}', '!<rootDir>/src/**/*.d.ts'],
   coverageProvider: 'babel',
   coverageReporters: ['json-summary'],
   coverageDirectory: path.resolve(__dirname, '../../.workspace/m4-coverage/web-istanbul'),
