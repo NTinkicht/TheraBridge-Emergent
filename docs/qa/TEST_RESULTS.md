@@ -1,3 +1,8 @@
+## M4-06 final disposable historical archive and CAS tests — 2026-11-09 (CI PENDING)
+Additional real Docker PostgreSQL 16 test scripts/qa/m4-disposable-replay.sh capture logical pg_dump at the actual historical migration-prefix state, pg_restore to another disposable DB, perform independent Prisma forward upgrade and prove ledger/marker retention. A separate two-process psql transaction holds a center row while another writer must time out; after commit, CAS stale version updates zero and current-version CAS updates one. Static negative contracts pin archive-before-upgrade and lock timeout. Original rollback/advisory lock/post-upgrade restore remain. This is not a managed Neon pooled migration race or archived external recovery. Real final-head PASS/FAIL not yet known at this point; do not claim success until full CI.
+
+---
+
 ## M4-09 PR #307 historical state + disposition tests — 2026-11-09 (FINAL CI PENDING)
 Real GitHub issue enumeration matched 75 frozen IDs (55 OPEN, 20 CLOSED), no missing IDs; only #114 was CLOSED but PENDING_EVIDENCE. Independently established PR #145 merge 447d31ec7265fe0b86fcfc282f558be2823a2552, six successful CI jobs in 41243219269, two-session browser path scripts/design/check-handover-sessions.mjs and original closeout evidence. Corrected #114. Register now 20 VERIFIED_IMPLEMENTED, 49 PENDING_EVIDENCE, 5 PARTIAL, 1 POLICY_BLOCKED; status CSV is a dated snapshot, not live availability. New negative tests reject missing/duplicate issue states, invalid timestamps/URLs, fabricated claims or missing SHA/test/reviewer, policy promotion; CI step runs after canonical CSV validation. **Test CI results NOT YET VERIFIED at this note; milestone acceptance still blocked.**
 

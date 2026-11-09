@@ -1,3 +1,8 @@
+## M4-06 final disposable qualification PR — 2026-11-09 (CI/review pending)
+Merged #273/#281/#291/#295 protect audit FK/index/UPDATE/DELETE/TRUNCATE and atomic rollback. Merged #299/#300 deployed non-owner runtime and owner-only migration credentials to synthetic Render/Neon; #304 passed disposable historical-prefix replay, transaction rollback, advisory contention and restore. New consolidated M4-06 qualification extends the existing CI-only script: archive actual pre-upgrade synthetic DB, restore/upgrade an independent DB, cross-session row CAS with bounded PostgreSQL lock timeout. Required CI and exact-head Codex not yet attested at this checkpoint. This is NOT a real external archived snapshot or Neon PgBouncer race; business performance/DR budgets and retention policy sign-off remain open. Clinical G2/G2b NO-GO.
+
+---
+
 ## M4-09 PR #307 historical issue reconciliation — 2026-11-09 (FINAL CI/REVIEW PENDING)
 Actual REST API enumeration of GitHub issues reconciled all 75 frozen historical IDs: 55 currently OPEN and 20 CLOSED. Canonical evidence register stale only at #114, CLOSED and independently verified by merged PR #145 (447d31ec; six-job run 41243219269, two-session Chromium QA). Updated CSV to 20 VERIFIED_IMPLEMENTED, 49 PENDING_EVIDENCE, 5 PARTIAL, 1 POLICY_BLOCKED; no bulk issue closes. Added frozen GitHub status CSV and fail-closed validator/negative CI tests. Real clinical/policy release gates NO-GO; all outstanding M4-02/06/07/08/09 acceptance OPEN. Latest PR #307 CI and Codex results NOT VERIFIED yet.
 

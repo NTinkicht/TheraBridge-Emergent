@@ -34,3 +34,20 @@ test('replay performs actual upgrade, rollback, contention and restore', () => {
     assert.ok(source.includes(proof), 'Missing replay stage: ' + proof);
   }
 });
+
+test('historical logical backup is taken before main forward upgrade and independently restored', () => {
+  const backup = source.indexOf('historical-before-upgrade.dump');
+  const upgrade = source.indexOf('prisma migrate deploy --schema apps/api/prisma/schema.prisma');
+  assert.ok(backup > 0 && upgrade > backup, 'Archive must precede main upgrade');
+  for (const proof of ['therabridge_m4_historical_restore', 'historical_sql', 'pre-upgrade logical archive restored independently', 'historical_restore_url']) {
+    assert.ok(source.includes(proof), 'Missing independent historical restore proof: ' + proof);
+  }
+  assert.match(source, /pg_restore -e/);
+});
+test('real PostgreSQL CAS race fails closed on lock timeout and stale version', () => {
+  for(const proof of ['coproc M4_CAS_HOLDER','CAS_HELD','lock_timeout=200ms','AND version=1','AND version=2','SELECT version FROM center']) {
+    assert.ok(source.includes(proof), 'Missing database CAS qualification: ' + proof);
+  }
+  assert.match(source, /wait "\$M4_CAS_HOLDER_PID"/);
+  assert.match(source, /stale CAS unexpectedly overwrote/);
+});

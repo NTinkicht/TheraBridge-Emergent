@@ -1,3 +1,8 @@
+## M4-06 closure qualification — next actions 2026-11-09
+Run the required real CI replay, verify full six exact-head jobs and Smart CI green; repair every failure. Trigger Codex final-head independent review, fix/disposition every finding and requalify after changes. On success attach exact run, reviewed SHA and evidence to #180. Keep parent open until owner-approved decision on external archived historic snapshot, Neon PgBouncer real concurrent migration drill, RTO/RPO and privileged retention policy; M4-07 owns production workload budgets. Clinical approval and ten-account hosted QA are independent gates.
+
+---
+
 ## M4-09 PR #307 immediate next action (2026-11-09)
 1. Run exact-head six CI and Smart CI gate, repair any failing snapshot validator/negative test; obtain exact-head Codex review after stable head, disposition all findings before merge.
 2. After verified merge, leave 49 PENDING_EVIDENCE, 5 PARTIAL and safeguarding-policy-blocked #35 open for future independently sourced evidence tranches. Do not promote these from issue CLOSED or filename only; no automatic close.
