@@ -1,6 +1,25 @@
 ## M4-08 integrated coverage PR — qualification pending (2026-11-09)
 New Node regression tests cover genuine two-sided measurement, below-threshold reporting, forged Web denominators, invalid counters, provenance gaps and 100%-but-still-unapproved safety. CI will emit short-lived sanitized `m4-08-integrated-coverage-<run_id>` artifact. Actual current percentages, six-job final-head CI and Codex disposition remain NOT VERIFIED until executed. G2/G2b NO-GO unchanged.
 
+
+---
+
+## 2026-11-09 — COM-02 SBOM reconciliation qualification pending
+Previous PR-head SBOM job failed with 673 lockfile entries and 666 scanner-discovered; seven missing package name/version pairs, including fsevents, aliases and Playwright. New reconciliation and negative regression added to address that without fabricating licensing metadata. **New-head CI: NOT YET VERIFIED; new-head Codex review: PENDING.** Full commercial rights and vulnerability clearance NOT established; clinical production NO-GO.
+
+---
+
+## 2026-11-09 — COM-02 continuous SBOM PR test plan (NOT RUN at authoring)
+- New SBOM validator negative-path Node tests: NOT RUN.
+- Fresh source CycloneDX scan and package-lock/Yarn discovery: NOT RUN.
+- Per-commit tracked asset hash inventory and artifact upload: NOT RUN.
+- Built preview-container OS/runtime CycloneDX scan and validation: NOT RUN.
+- Smart CI policy and all existing six full jobs: NOT RUN on proposed head.
+- Exact-head independent review: PENDING.
+- Full commercial license compatibility/rights approval: OPEN; clinical production authorization NO-GO.
+Evidence to be upgraded only from workflow results with source SHA and actual artifacts.
+
+
 ---
 
 ## M4-02 two-valid-center real child IDs and tenant revocation (2026-11-09, execution pending)
