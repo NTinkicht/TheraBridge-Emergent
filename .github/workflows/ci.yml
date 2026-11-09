@@ -67,6 +67,19 @@ jobs:
         run: node scripts/commercial/reconcile-sbom.mjs /tmp/therabridge-source.cdx.json yarn.lock /tmp/therabridge-reconciled.cdx.json
       - name: Fail closed unless every Yarn resolved name/version is in source SBOM
         run: node scripts/commercial/check-sbom.mjs /tmp/therabridge-reconciled.cdx.json source
+      - name: Validate license risk classifier and review queue invariants
+        run: node --test scripts/commercial/classify-sbom.test.mjs
+      - name: Classify all source components with approval fail-closed
+        run: node scripts/commercial/classify-sbom.mjs /tmp/therabridge-reconciled.cdx.json /tmp/therabridge-license-review.json /tmp/therabridge-third-party-notices-REVIEW.md
+      - name: Archive per-commit license review queue (not a legal clearance)
+        uses: actions/upload-artifact@v4
+        with:
+          name: therabridge-license-review-${{ github.sha }}
+          path: |
+            /tmp/therabridge-license-review.json
+            /tmp/therabridge-third-party-notices-REVIEW.md
+          if-no-files-found: error
+          retention-days: 30
       - name: Archive reconciled CycloneDX SBOM for PR or main commit
         uses: actions/upload-artifact@v4
         with:
