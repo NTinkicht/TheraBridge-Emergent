@@ -1,46 +1,73 @@
 #!/usr/bin/env node
-// Numeric-only CI receipt guard: no HTTP bodies, cookies, names or raw SQL.
+// Strictly allowlisted numeric-only synthetic CI receipt. Reject untrusted
+// nested structures before any upload; never print received values.
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
+
+function exactKeys(input, allowed) {
+  return input !== null && typeof input === 'object' && !Array.isArray(input) &&
+    Object.keys(input).length === allowed.length &&
+    allowed.every(key => Object.hasOwn(input, key));
+}
+function finiteNonnegative(n) { return typeof n === 'number' && Number.isFinite(n) && n >= 0; }
+const sqlEvidence = 'health.service.ts has two sequential prisma.$queryRaw queries; source-level count, not SQL trace';
+
 export function validateM4Performance(report) {
   const errors = [];
-  if (!report || report.schemaVersion !== 1 ||
-      report.environment !== 'ci_disposable_postgres_only' ||
-      report.qualification !== 'measurement_not_production_capacity') {
-    errors.push('Unqualified or non-disposable source'); return errors;
+  if (!exactKeys(report, ['schemaVersion', 'environment', 'qualification', 'api', 'apiResponseSqlCalls', 'database', 'process'])) {
+    return ['Unexpected top-level or missing keys'];
   }
-  const keys = Object.keys(report).sort();
-  if (keys.join(',') !== ['api','apiResponseSqlCalls','database','environment','process','qualification','schemaVersion'].sort().join(',')) errors.push('Unexpected top-level keys');
-  for (const name of ['serial', 'concurrent8']) {
-    const row = report.api?.[name];
-    if (!row) { errors.push('Missing workload ' + name); continue; }
-    for (const field of ['requests','p50Ms','p95Ms','p99Ms','throughputPerSecond']) {
-      if (!Number.isFinite(row[field]) || row[field] < 0) errors.push('Invalid ' + name + '.' + field);
+  if (report.schemaVersion !== 1 || report.environment !== 'ci_disposable_postgres_only' ||
+      report.qualification !== 'measurement_not_production_capacity') errors.push('Wrong synthetic-only source');
+  if (!exactKeys(report.api, ['serial', 'concurrent8'])) {
+    errors.push('Unexpected or missing workload keys');
+  } else {
+    for (const [label, count] of [['serial', 40], ['concurrent8', 80]]) {
+      const row = report.api[label];
+      if (!exactKeys(row, ['requests', 'p50Ms', 'p95Ms', 'p99Ms', 'throughputPerSecond'])) {
+        errors.push('Unexpected or missing metric fields: ' + label); continue;
+      }
+      if (row.requests !== count || !Number.isInteger(row.requests)) errors.push('Invalid workload count');
+      for (const field of ['p50Ms', 'p95Ms', 'p99Ms', 'throughputPerSecond']) {
+        if (!finiteNonnegative(row[field])) errors.push('Invalid metric type or range');
+      }
+      if (!(row.p50Ms <= row.p95Ms && row.p95Ms <= row.p99Ms)) errors.push('Invalid ordered percentiles');
     }
-    if (row.p50Ms > row.p95Ms || row.p95Ms > row.p99Ms) errors.push('Invalid percentiles');
-    if (Object.keys(row).length !== 5) errors.push('Unexpected workload keys');
   }
-  if (report.api?.serial?.requests !== 40 || report.api?.concurrent8?.requests !== 80) errors.push('Incomplete workload requests');
-  if (report.apiResponseSqlCalls?.perRequest !== 2 || report.apiResponseSqlCalls?.evidence !== 'health.service.ts has two sequential prisma.$queryRaw queries; source-level count, not SQL trace') errors.push('Unverified SQL count declaration');
-  if (report.database?.queryPlanPresent !== true ||
-    report.database?.scope !== 'appointment scoped, bounded, time-ordered SELECT' ||
-    !['Limit','Sort','Index Scan','Index Only Scan','Bitmap Heap Scan','Seq Scan'].includes(report.database?.planNode)) errors.push('Invalid PostgreSQL plan receipt');
-  if (!Number.isInteger(report.process?.rssStartBytes) || !Number.isInteger(report.process?.observedRssPeakBytes) ||
-      report.process.rssStartBytes <= 0 ||
+  if (!exactKeys(report.apiResponseSqlCalls, ['perRequest', 'evidence']) ||
+      report.apiResponseSqlCalls.perRequest !== 2 || report.apiResponseSqlCalls.evidence !== sqlEvidence) {
+    errors.push('Unexpected or unverified SQL count metadata');
+  }
+  if (!exactKeys(report.database, ['queryPlanPresent', 'scope', 'planNode']) ||
+      report.database.queryPlanPresent !== true ||
+      report.database.scope !== 'appointment scoped, bounded, time-ordered SELECT' ||
+      !['Limit', 'Sort', 'Index Scan', 'Index Only Scan', 'Bitmap Heap Scan', 'Seq Scan'].includes(report.database.planNode)) {
+    errors.push('Unexpected or invalid query plan metadata');
+  }
+  if (!exactKeys(report.process, ['rssStartBytes', 'observedRssPeakBytes', 'nodeMajor']) ||
+      !Number.isSafeInteger(report.process.rssStartBytes) || report.process.rssStartBytes <= 0 ||
+      !Number.isSafeInteger(report.process.observedRssPeakBytes) ||
       report.process.observedRssPeakBytes < report.process.rssStartBytes ||
-      report.process.nodeMajor !== 20) errors.push('Invalid resource/runtime receipt');
-  if (JSON.stringify(report).match(/password|authorization|bearer|cookie|postgresql:\/\//i)) errors.push('Forbidden receipt content');
+      report.process.nodeMajor !== 20) {
+    errors.push('Unexpected or invalid process metadata');
+  }
   return errors;
 }
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
-    const path = process.argv[2];
-    if (path !== '.workspace/m4-performance/m4-07-synthetic-api.json') throw Error('Expected repository-local numeric-only report');
-    const errors = validateM4Performance(JSON.parse(readFileSync(path, 'utf8')));
-    if (errors.length) { console.error('FAIL: synthetic performance receipt invalid:', errors.join('; ')); process.exitCode = 1; }
-    else console.log('PASS: isolated synthetic API measurement receipt schema valid (not production load qualification)');
+    const file = process.argv[2];
+    if (file !== '.workspace/m4-performance/m4-07-synthetic-api.json') throw Error('Disallowed path');
+    const report = JSON.parse(readFileSync(file, 'utf8'));
+    const errors = validateM4Performance(report);
+    if (errors.length) {
+      console.error('FAIL: synthetic performance receipt rejected:', errors.join('; '));
+      process.exitCode = 1;
+    } else {
+      console.log('PASS: synthetic-only numeric receipt schema validated (NOT production capacity)');
+    }
   } catch {
-    console.error('FAIL: synthetic measurement receipt missing or invalid');
+    console.error('FAIL: synthetic performance receipt missing or invalid');
     process.exitCode = 1;
   }
 }
