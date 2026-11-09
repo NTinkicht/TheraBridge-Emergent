@@ -1,5 +1,5 @@
 ## 2026-11-10 — M4-08 API branch-safety coverage wave (review pending)
-Added Jest executed-code tests for six-role permission matrix, unsigned clinical/messaging denials, cookie construction and parsing, trusted proxy IP chain resolution, token comparisons and password policy fail-closed paths. Uses synthetic values; no runtime code or clinical release changes. CI and exact-head Codex pending, 95% target NOT QUALIFIED.
+Added Jest executed-code tests for six-role permission matrix, unsigned clinical/messaging denials, cookie construction and parsing, trusted proxy IP chain resolution, token comparisons and password policy fail-closed paths. Uses synthetic values; one production-safe parser correction now skips whitespace-only invalid cookie names; no clinical release change. CI and exact-head Codex pending, 95% target NOT QUALIFIED.
 
 ---
 
