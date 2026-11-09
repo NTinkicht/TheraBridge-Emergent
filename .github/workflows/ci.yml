@@ -186,6 +186,17 @@ jobs:
           node --test scripts/qa/m4-web-coverage-audit.test.mjs scripts/qa/m4-measured-coverage.test.mjs
           ./node_modules/.bin/jest --config scripts/qa/m4-web-jest.config.cjs --runInBand
           node scripts/qa/m4-web-coverage-audit.mjs
+      - name: M4-08 independently cross-check real API + Web coverage and publish integrated aggregate
+        run: |
+          node --test scripts/qa/m4-integrated-coverage.test.mjs
+          node scripts/qa/m4-integrated-coverage.mjs
+      - name: Archive exact-run M4-08 integrated aggregate (NOT release approval)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-08-integrated-coverage-${{ github.run_id }}
+          path: .workspace/m4-coverage/m4-08-integrated-coverage.json
+          if-no-files-found: error
+          retention-days: 7
       - name: Archive aggregate-only M4 Web coverage receipt (NOT release gate)
         uses: actions/upload-artifact@v4
         with:
