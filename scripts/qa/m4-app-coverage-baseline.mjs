@@ -16,18 +16,32 @@ function sourceFiles(dir) {
   for(const e of readdirSync(dir,{withFileTypes:true})){
     const p=join(dir,e.name);
     if(e.isDirectory()) out=out.concat(sourceFiles(p));
-    else if(e.isFile()&&/\.(ts|tsx|js|jsx)$/.test(e.name)&&
+    else if(e.isFile()&&/\.(ts|tsx|js|jsx|mjs)$/.test(e.name)&&
       !/\.d\.ts$/.test(e.name))out.push(p);
   }
   return out;
 }
-export function reportBaseline({apiSummary,webSourceCount,webInstrumentedPaths=[]}) {
+export function reportBaseline({apiSummary,webSourceCount,webInstrumentedPaths=[],webSummary=null,webAudit=null}) {
   if(!apiSummary?.total || !Number.isInteger(webSourceCount)||webSourceCount<1 ||
      !Array.isArray(webInstrumentedPaths))throw Error('missing_coverage_inputs');
   const files=Object.keys(apiSummary).filter(x=>x!=='total');
   if(!files.length)throw Error('missing_api_source_instrumentation');
   const observed=Object.fromEntries(metrics.map(k=>[k,percent(apiSummary.total[k])]));
   const webObserved=new Set(webInstrumentedPaths);
+  const measuredWeb=webSummary!==null || webAudit!==null;
+  let webMetrics=null,webGap=null;
+  if(measuredWeb){
+    if(!webSummary?.total||webAudit?.kind!=='m4_web_full_source_instrumented_baseline_not_release_gate'||
+       webAudit.sourceFileCount!==webSourceCount||webAudit.instrumentedFileCount!==webSourceCount||
+       Object.keys(webSummary).filter(x=>x!=='total').length!==webSourceCount)
+      throw Error('unqualified_measured_web_scope');
+    webMetrics=Object.fromEntries(metrics.map(k=>[k,percent(webSummary.total[k])]));
+    for(const metric of metrics){
+      if(webAudit.percentages?.[metric]!==webMetrics[metric])throw Error('web_metric_mismatch_'+metric);
+    }
+    webGap=metrics.filter(k=>webSummary.total[k].covered/webSummary.total[k].total*100<95);
+    if(JSON.stringify(webGap)!==JSON.stringify(webAudit.below95))throw Error('web_gap_mismatch');
+  }
   return {
     schemaVersion:1,kind:'m4_application_coverage_baseline_not_release_gate',
     api:{sourceScope:'apps/api/src/**/*.ts',instrumentedFileCount:files.length,
@@ -35,9 +49,9 @@ export function reportBaseline({apiSummary,webSourceCount,webInstrumentedPaths=[
     web:{sourceScope:'apps/web/src/**/*.{ts,tsx,js,jsx}',
       applicationSourceFileCount:webSourceCount,
       observedRuntimeModuleCount:webObserved.size,
-      istanbulCoverageMeasured:false,percentages:null},
+      istanbulCoverageMeasured:measuredWeb,percentages:webMetrics,below95:webGap},
     m4_08_gate:'NOT_QUALIFIED',
-    reason:'web_application_coverage_not_instrumented_and_api_threshold_not_proven',
+    reason:measuredWeb?'API_and_Web_measured_but_95percent_acceptance_not_qualified':'web_application_coverage_not_instrumented_and_api_threshold_not_proven',
     note:'A passing CI baseline does not satisfy >=95% API/Web lines,branches,functions,statements.'
   };
 }
@@ -61,7 +75,9 @@ if(process.argv[1]?.endsWith('/m4-app-coverage-baseline.mjs')){
    if(!statSync(webRoot).isDirectory())throw Error('web_source_missing');
    const instrumented=observedWebPaths({directory:join(root,'.workspace/m4-coverage/web-v8'),webPrefix:'/apps/web/src/'});
    const report=reportBaseline({apiSummary:api,
-     webSourceCount:sourceFiles(webRoot).length,webInstrumentedPaths:instrumented});
+     webSourceCount:sourceFiles(webRoot).length,webInstrumentedPaths:instrumented,
+    webSummary:JSON.parse(readFileSync(join(root,'.workspace/m4-coverage/web-istanbul/coverage-summary.json'),'utf8')),
+    webAudit:JSON.parse(readFileSync(join(root,'.workspace/m4-coverage/m4-web-coverage-baseline.json'),'utf8'))});
    const out=join(root,'.workspace/m4-coverage');
    mkdirSync(out,{recursive:true});
    writeFileSync(join(out,'m4-coverage-baseline.json'),JSON.stringify(report,null,2)+'\n',{mode:0o600});
