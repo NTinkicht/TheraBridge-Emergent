@@ -14,7 +14,7 @@ function listSources(root) {
       const path = join(dir, entry.name);
       if (entry.isSymbolicLink()) throw Error('symlink_source_not_supported');
       if (entry.isDirectory()) walk(path);
-      else if (entry.isFile() && /\.(?:ts|tsx|js|jsx)$/.test(entry.name) && !entry.name.endsWith('.d.ts')) found.push(resolve(path));
+      else if (entry.isFile() && /\.(?:ts|tsx|js|jsx|mjs)$/.test(entry.name) && !entry.name.endsWith('.d.ts')) found.push(resolve(path));
     }
   }
   walk(root);
@@ -63,7 +63,7 @@ export function auditWebCoverage({ summary, sourcePaths, webRoot }) {
   return {
     schemaVersion: 1,
     kind: 'm4_web_full_source_instrumented_baseline_not_release_gate',
-    sourceScope: 'apps/web/src/**/*.{ts,tsx,js,jsx}',
+    sourceScope: 'apps/web/src/**/*.{ts,tsx,js,jsx,mjs}',
     sourceFileCount: expected.size,
     instrumentedFileCount: actual.size,
     zeroStatementCoverageFiles: unexecuted,
