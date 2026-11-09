@@ -1,3 +1,8 @@
+## 2026-11-09 — M4-08 security-critical Web adapter and time test implementation
+Implemented Jest tests that exercise real auth/session CSRF transitions with purely synthetic mocked network and center-local time formatting/conversion including nonexistent and repeated DST wall times. All real microphone/clinical release gates unchanged. Not yet accepted; require exact-head CI and review.
+
+---
+
 ## 2026-11-09 — COM-02 commercial license triage implementation
 Created scripts/commercial/classify-sbom.mjs and negative tests; integrated per-PR/main workflow artifact. Generated notice is explicitly REVIEW DRAFT, not legal notices or a root LICENSE. Added non-package rights review matrix. No application, tenant, signing, safeguarding, billing, repository-visibility changes. Execution evidence NOT YET VERIFIED.
 
