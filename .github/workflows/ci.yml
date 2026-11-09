@@ -177,6 +177,18 @@ jobs:
         run: |
           mkdir -p "$GITHUB_WORKSPACE/.workspace/m4-coverage/web-v8"
           NODE_V8_COVERAGE="$GITHUB_WORKSPACE/.workspace/m4-coverage/web-v8" yarn workspace @therabridge/web test
+      - name: Generate genuine full-scope Web Istanbul coverage and audit denominator
+        run: |
+          node --test scripts/qa/m4-web-coverage-audit.test.mjs scripts/qa/m4-measured-coverage.test.mjs
+          ./node_modules/.bin/jest --config scripts/qa/m4-web-jest.config.cjs --runInBand
+          node scripts/qa/m4-web-coverage-audit.mjs
+      - name: Archive aggregate-only M4 Web coverage receipt (NOT release gate)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-web-instrumented-baseline-${{ github.run_id }}
+          path: .workspace/m4-coverage/m4-web-coverage-baseline.json
+          if-no-files-found: error
+          retention-days: 7
       - name: Publish honest M4 application coverage measurement and Web gap
         run: |
           node --test scripts/qa/m4-app-coverage-baseline.test.mjs
