@@ -19,7 +19,7 @@ test('explicit synthetic-only guard rejects run without confirmation', () => {
 test('no caller connection URI is honored and cleanup is guaranteed', () => {
  assert.match(source, /unset DATABASE_URL MIGRATION_DATABASE_URL DIRECT_URL/);
  assert.match(source, /trap cleanup EXIT/);
- assert.match(source, /docker rm -f/);
+ assert.match(source, /docker rm -fv/);\n assert.match(source, /-p 127\\.0\\.0\\.1::5432/);\n assert.doesNotMatch(source, /docker run[^\\n]* -P(?: |$)/);\n assert.match(source, /coproc M4_LOCK_HOLDER/);\n assert.match(source, /LOCK_HELD/);
  assert.match(source, /postgres:16-bookworm/);
  assert.doesNotMatch(source, /docker exec[^\n]*(dropdb|pg_terminate_backend)/);
  assert.doesNotMatch(source, /force=true|DISABLE_ADVISORY_LOCK=1/);
