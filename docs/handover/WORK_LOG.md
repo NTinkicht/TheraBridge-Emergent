@@ -1,3 +1,8 @@
+## 2026-11-09 — M4-08 Web domain executable coverage implementation
+Implemented typed-module Jest execution for four pure Web domain helpers: plan handoff, progress summary, centre-local goal reviews and Child 360 timeline. Tests cover invalid/revoked-like data boundaries, plan version scope, source provenance and no inferred clinical conclusions. Not tested/accepted on final HEAD yet.
+
+---
+
 ## 2026-11-09 — M4-02 isolated-tenant re-audit and implementation
 Read-only Neon verified project aged-fog-03608251 branch br-raspy-sound-baxyuq2a database therabridge_demo_m3_preview two ACTIVE distinct synthetic centers, 6+1 children, 9+1 active memberships, no primary mutation. Reviewed authz.e2e-spec.ts, auth.e2e-spec.ts, parent-scheduling.e2e-spec.ts and family-release.e2e-spec.ts; avoided duplicate signout/expiry, message removal, release withdrawal tests. Implemented stronger cross-child IDs / cross-tenant route 404 with two valid centers and repeat attempts, one membership revoked and other tenant unaffected. No claim authenticated isolated Neon hosted app tested; clinical NO-GO unchanged.
 
