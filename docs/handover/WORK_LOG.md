@@ -1,3 +1,8 @@
+## 2026-11-09 — M4-08 evidence integration
+Added deterministic integrated API/Web source-coverage receipt and negative tests. Coupled source-wide Web Istanbul audit to API coverage percentages; exact-run SHA and run ID required; no release PASS emitted even when measured metrics reach 95%. CI artifacts are aggregate-only; no patient or credential values. Final tests/review pending.
+
+---
+
 ## 2026-11-09 — M4-02 isolated-tenant re-audit and implementation
 Read-only Neon verified project aged-fog-03608251 branch br-raspy-sound-baxyuq2a database therabridge_demo_m3_preview two ACTIVE distinct synthetic centers, 6+1 children, 9+1 active memberships, no primary mutation. Reviewed authz.e2e-spec.ts, auth.e2e-spec.ts, parent-scheduling.e2e-spec.ts and family-release.e2e-spec.ts; avoided duplicate signout/expiry, message removal, release withdrawal tests. Implemented stronger cross-child IDs / cross-tenant route 404 with two valid centers and repeat attempts, one membership revoked and other tenant unaffected. No claim authenticated isolated Neon hosted app tested; clinical NO-GO unchanged.
 
