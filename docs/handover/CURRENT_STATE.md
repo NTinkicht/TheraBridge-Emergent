@@ -1,3 +1,8 @@
+## 2026-11-09 — M4-08 Web UI execution wave 2 (PR pending)
+Created real React server-rendered component tests for accessible locked actions, family/clinical UI states, metric loading and guard-preserving keyboard tab navigation; added synthetic-only dictation state, cancellation, provider failure and disabled real-microphone tests. No 95% acceptance claim. CI/Codex not yet qualified; clinical G2/G2b NO-GO unchanged.
+
+---
+
 ## 2026-11-09 — M4-08 executed Web domain regression wave (review pending)
 Added Jest/ts-jest executed branch tests for planning handoff, goal-review dates, progress bucket isolation and Child 360 timeline provenance; synthetic fixtures only, no API writes. The existing whole-source Web 95% target remains NOT QUALIFIED. Exact-head CI and independent review still required.
 
