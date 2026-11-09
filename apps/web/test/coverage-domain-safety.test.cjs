@@ -179,3 +179,43 @@ describe('M4-08: source identity and non-clinical navigation aggregation',()=>{
    currentGoalObservations:1,internalHomeActivities:2,scheduledHomeActivities:1});
  });
 });
+
+const {evidenceReferenceHeader,hasEvidenceReferenceBlock,factualReportSuggestions,draftHomeActivitySuggestions}=require('../src/lib/evidence-assist');
+
+describe('M4-08: evidence assistance remains source-bound and non-clinical',()=>{
+ it('recognizes both legacy and section-specific evidence markers without duplicates',()=>{
+  expect(evidenceReferenceHeader('goals')).toBe('Evidence references (internal draft; goals):');
+  expect(hasEvidenceReferenceBlock('Draft\\n  Evidence references (internal draft; goals):  ','goals')).toBe(true);
+  expect(hasEvidenceReferenceBlock('Evidence references (internal draft):','sessions')).toBe(true);
+  expect(hasEvidenceReferenceBlock('No evidence references yet','assessment')).toBe(false);
+ });
+ it('never turns observations into invented treatment outcomes',()=>{
+  const report={report:{id:'r1'},evidence:{
+   plan:{id:'p1'},period:{from:'2026-11-01',to:'2026-11-30'},
+   assessments:[{id:'as1',assessedOn:'2026-11-03',summary:'Synthetic recorded note'}],
+   goals:[{key:'g1',title:'Synthetic goal',baseline:1,target:3,measure:'count',
+    planVersionId:'v1',points:[
+     {date:'2026-11-05',value:1,observationId:'o1'},
+     {date:'2026-11-15',value:2,observationId:'o2'}
+    ]}],
+   sessions:{drafts:2,completedVisits:1}
+  }};
+  const out=factualReportSuggestions(report);
+  expect(out.map(x=>x.section)).toEqual(['assessment','goals','sessions']);
+  expect(out[1].text).toContain('No clinical conclusion inferred.');
+  expect(out[1].sources).toEqual(expect.arrayContaining([
+   'Plan version v1 / goal g1','Observation o1 / 2026-11-05 / 1 count']));
+  expect(out[2].text).toContain('Counts do not represent outcomes.');
+ });
+ it('only proposes matching unchosen centre templates as unverified drafts',()=>{
+  const ws={templates:[
+   {id:'t3',title:'C',service:'speech',library:'center'},
+   {id:'t1',title:'A',service:'speech',library:'center'},
+   {id:'t2',title:'B',service:'ot',library:'center'},
+   {id:'t4',title:'D',service:'speech',library:'system'}]};
+  const out=draftHomeActivitySuggestions(ws,'speech',[{templateId:'t3'}]);
+  expect(out.map(x=>x.templateId)).toEqual(['t1']);
+  expect(out[0].reason).toMatch(/Therapist must verify/);
+  expect(out[0].proposed.note).toMatch(/not verified or released/);
+ });
+});
