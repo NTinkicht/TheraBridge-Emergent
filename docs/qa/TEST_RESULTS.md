@@ -1,5 +1,5 @@
 ## M4-08 Web domain executable regression wave — NOT YET CI QUALIFIED
-Added synthetic Jest tests with positive and negative flows for four previously unexecuted Web source modules. This is incremental genuine instrumented coverage, not a blanket 95% result. Await actual end-to-end run, source-wide coverage file counts, exact-head Codex and six original CI passes; all clinical approvals remain NO-GO.
+Added synthetic Jest tests with positive and negative flows for eight previously unexecuted Web source modules, plus an instrumented Web summary consistency regression. This is incremental genuine instrumented coverage, not a blanket 95% result. Await actual end-to-end run, source-wide coverage file counts, exact-head Codex and six original CI passes; all clinical approvals remain NO-GO.
 
 ---
 
