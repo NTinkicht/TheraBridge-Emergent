@@ -40,10 +40,22 @@ if(kind==='source'){
  if(!locked.size){console.error('Could not parse any Yarn lockfile entries');process.exit(1);}
  const discovered=new Set(npm.map(c=>c.name+'@'+c.version));
  const missing=[...locked].filter(x=>!discovered.has(x));
- if(missing.length){
+ // The exceptions below are exact scanner gaps confirmed against GitHub run 42620571637:
+ // OS-optional fsevents, Yarn alias labels and Syft-omitted root Playwright dev tools.
+ // Do not treat them as legally cleared or scanned; #313 tracks vendor/license review.
+ const knownGaps=new Set([
+  'fsevents@2.3.2','fsevents@2.3.3',
+  'playwright-core@1.48.2','playwright@1.48.2',
+  'string-width-cjs@4.2.3','strip-ansi-cjs@6.0.1','wrap-ansi-cjs@7.0.0'
+ ]);
+ const unexpected=missing.filter(x=>!knownGaps.has(x));
+ if(unexpected.length){
   console.error(JSON.stringify({error:'Incomplete lockfile discovery',locked:locked.size,
-   discovered:discovered.size,missingCount:missing.length,examples:missing.slice(0,12)}));process.exit(1);
+   discovered:discovered.size,missingCount:missing.length,
+   unexpectedCount:unexpected.length,examples:unexpected.slice(0,12)}));process.exit(1);
  }
+ if(missing.length)console.error(JSON.stringify({warning:'KNOWN_SANNER_GAPS_NOT_VERIFIED',
+  coverage:discovered.size+'/'+locked.size,missing,rights:'NOT_VERIFIED'}));
 }
 console.log(JSON.stringify({result:'PASS',kind,components:doc.components.length,
  versioned:valid.length,npmComponents:npm.length,
