@@ -1,3 +1,8 @@
+## 2026-11-09 — M4-02 isolated-tenant re-audit and implementation
+Read-only Neon verified project aged-fog-03608251 branch br-raspy-sound-baxyuq2a database therabridge_demo_m3_preview two ACTIVE distinct synthetic centers, 6+1 children, 9+1 active memberships, no primary mutation. Reviewed authz.e2e-spec.ts, auth.e2e-spec.ts, parent-scheduling.e2e-spec.ts and family-release.e2e-spec.ts; avoided duplicate signout/expiry, message removal, release withdrawal tests. Implemented stronger cross-child IDs / cross-tenant route 404 with two valid centers and repeat attempts, one membership revoked and other tenant unaffected. No claim authenticated isolated Neon hosted app tested; clinical NO-GO unchanged.
+
+---
+
 ## 2026-11-09 — M4-07 consolidated qualification implementation
 Reviewed existing PR #305 real 40/80 HTTP/PostgreSQL, #274 notice batching, fake worker fault/retry test; avoided duplicating optimization. Added real database 8-way reminder-sweep reservation race in operations.e2e-spec.ts, with repeat zero-delivery and unique partial index check. Added 10-minute localhost-only health route load at 3 concurrencies in capped nonroot unified preview, cgroup peak/OOM observation, numeric-only report strict validator and negative tests; integrated into existing preview-container required job. Pending six final-head CI jobs and Codex; no production SLA budget approvals or shared Render/Neon mutations.
 
