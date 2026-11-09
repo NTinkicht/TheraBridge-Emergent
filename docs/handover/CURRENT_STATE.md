@@ -1,6 +1,13 @@
 ## 2026-11-09 — M4-08 Web session/CSRF + timezone test wave 3 (pending qualification)
 Added source-executing synthetic Jest tests for Web authentication transport (pre-auth CSRF concurrency, session revocation on 401, 204, network error and protected mutation) and center-local time handling (missing timezone fail-closed, Dubai conversion, DST skipped/repeated times, preserved original offset). No runtime or clinical changes; 95% goal remains NOT QUALIFIED; exact-head CI/Codex pending.
 
+
+---
+
+## 2026-11-09 — M4-08 Web UI execution wave 2 (PR pending)
+Created real React server-rendered component tests for accessible locked actions, family/clinical UI states, metric loading and guard-preserving keyboard tab navigation; added synthetic-only dictation state, cancellation, provider failure and disabled real-microphone tests. No 95% acceptance claim. CI/Codex not yet qualified; clinical G2/G2b NO-GO unchanged.
+
+
 ---
 
 ## 2026-11-09 — COM-02 license classification (PR pending)

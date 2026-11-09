@@ -1,6 +1,13 @@
 ## 2026-11-09 — M4-08 security-critical Web adapter and time test implementation
 Implemented Jest tests that exercise real auth/session CSRF transitions with purely synthetic mocked network and center-local time formatting/conversion including nonexistent and repeated DST wall times. All real microphone/clinical release gates unchanged. Not yet accepted; require exact-head CI and review.
 
+
+---
+
+## 2026-11-09 — M4-08 UI execution wave 2
+Added source-executing SSR Jest checks for real design/ui.tsx components and a11y-tabs.ts, plus privacy-preserving synthetic dictation.ts tests. Covers disabled clinical actions with visible reasons, metric loading, keyboard click guards and cancellation. No runtime, patient, authorization or real capture changes. Qualification pending.
+
+
 ---
 
 ## 2026-11-09 — COM-02 commercial license triage implementation
