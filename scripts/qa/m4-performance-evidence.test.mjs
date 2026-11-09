@@ -30,3 +30,19 @@ test('rejects credential-looking values and unexpected fields', () => {
  const b = good(); b.database.planNode = 'Unexpected';
  assert.ok(validateM4Performance(b).length);
 });
+
+test('rejects unexpected fields at every nested level even without suspicious keywords', () => {
+  const modifications = [
+    x => { x.api.extra = { body: 'private note' }; },
+    x => { x.database.rawRows = [{ email: 'a@b.com' }]; },
+    x => { x.process.env = { AUTH_SECRET: 'x' }; },
+    x => { x.api.serial.note = 'hello'; },
+    x => { x.apiResponseSqlCalls.rawQuery = 'select pii'; },
+    x => { x.api.concurrent8 = [80, 4, 5]; },
+  ];
+  for (const modify of modifications) {
+    const x = good();
+    modify(x);
+    assert.ok(validateM4Performance(x).length, 'Expected rejection of nested field');
+  }
+});
