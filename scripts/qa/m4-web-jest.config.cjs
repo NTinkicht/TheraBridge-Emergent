@@ -5,25 +5,7 @@ module.exports = {
   rootDir: path.resolve(__dirname, '../../apps/web'),
   testEnvironment: 'node',
   testMatch: ['<rootDir>/test/coverage-*.test.cjs'],
-  moduleNameMapper: { '^@/(.*)
-  transform: {
-    '^.+\\.tsx?$': [require.resolve('ts-jest'), {
-      isolatedModules: true,
-      tsconfig: {
-        target: 'ES2022', module: 'CommonJS', moduleResolution: 'Node',
-        esModuleInterop: true, jsx: 'react-jsx', allowJs: false,
-      },
-    }],
-  },
-  collectCoverage: true,
-  collectCoverageFrom: ['<rootDir>/src/**/*.{ts,tsx,js,jsx,mjs}', '!<rootDir>/src/**/*.d.ts'],
-  coverageProvider: 'babel',
-  coverageReporters: ['json-summary'],
-  coverageDirectory: path.resolve(__dirname, '../../.workspace/m4-coverage/web-istanbul'),
-  clearMocks: true,
-  verbose: false,
-};
-: '<rootDir>/src/$1' },
+  moduleNameMapper: { '^@/(.*)$': '<rootDir>/src/$1' },
   transform: {
     '^.+\\.tsx?$': [require.resolve('ts-jest'), {
       isolatedModules: true,
