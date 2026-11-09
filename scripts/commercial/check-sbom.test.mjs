@@ -39,3 +39,13 @@ test('fails closed on wrong format, malformed versions, unsupported lockfile',()
   assert.equal(check(x).status,1);
  assert.equal(check(valid,'source','invalid lockfile').status,1);
 });
+
+test('known scanner exclusions are exact and disclosed; adjacent versions fail',()=>{
+ const lock=fixture+'\\n"fsevents@^2.3.3":\\n  version "2.3.3"\\n';
+ const ok=check(valid,'source',lock);
+ assert.equal(ok.status,0,ok.stderr);
+ assert.match(ok.stderr,/KNOWN_SCANNER_GAPS_NOT_VERIFIED/);
+ const bad=check(valid,'source',lock+'\\n"fsevents@^9.9.9":\\n  version "9.9.9"\\n');
+ assert.equal(bad.status,1);
+ assert.match(bad.stderr,/fsevents@9.9.9/);
+});
