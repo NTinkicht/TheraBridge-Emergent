@@ -1,3 +1,8 @@
+## M4-08 Web UI/interaction executable test wave
+Qualify React SSR, WAI-ARIA tab and synthetic dictation regression tests with all six exact-head CI checks, SBOM and independent Codex review. Record actual updated Web denominator and four coverage percentages before selecting larger pages with dynamic state. Maintain 95% target and clinical NO-GO.
+
+---
+
 ## M4-08 executed-code Web wave 1 and measured baseline consistency
 Qualify focused source-executing coverage regressions against existing complete Web instrumenter. Confirm numbers from final-head CI and select further unexecuted source modules on evidence, not static source inspection. All six jobs and independent Codex required; preserve clinical NO-GO and 95% target.
 
