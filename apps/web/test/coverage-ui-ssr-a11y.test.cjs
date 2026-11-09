@@ -4,7 +4,7 @@ const {renderToStaticMarkup}=require('react-dom/server');
 const {Button,LockedAction,Pill,SpecialtyTag,Card,CardHeader,Avatar,Meter,Metric,btn}=require('../src/components/design/ui');
 const {navigateTabs}=require('../src/lib/a11y-tabs');
 const h=React.createElement;
-const render=(Component,props={},children)=>renderToStaticMarkup(h(Component,props,children));
+const render=(Component,props={},children)=>renderToStaticMarkup(children === undefined ? h(Component,props) : h(Component,props,children));
 const Icon=()=>h('svg',{'aria-hidden':'true'},h('title',null,'Synthetic icon'));
 
 describe('M4-08: render real UI surfaces with safety and accessibility semantics',()=>{
