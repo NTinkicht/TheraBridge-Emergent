@@ -1,3 +1,8 @@
+## M4-02 two-valid-centre child scope regression — 2026-11-09 (CI pending)
+Protected interactive 10-account run 42605446171 retry 2: 84 PASS, 0 FAIL, 14 policy BLOCKED; not full hosted acceptance. Existing real PostgreSQL two-center summary/role/context and guardian-message revocation tests already passed in CI. Independently read-only checked isolated Neon branch br-raspy-sound-baxyuq2a: two ACTIVE synthetic centers, children 6+1, members 9+1; no mutation. Current implementation PR adds actual two-center cross-child ID isolation, double repetition, live-session membership revocation and unaffected center positive control on disposable PostgreSQL. CI/review pending; protected hosted two-center app and clinical gates not approved.
+
+---
+
 ## M4-07 final synthetic qualification PR — 2026-11-09 (CI/review pending)
 Re-audited issue #181: #274, #288/#292 and #305 already implemented notice batching, worker mocked failure/replay, real disposable API 120-request latency/throughput baselines and non-root CI. This consolidated PR adds actual PostgreSQL eight-way reminder reservation contention and three replays, plus a 600-second (200s each concurrency 1/4/8) loopback API+Postgres workload in the unified nonroot 512MiB preview with cgroup peak and OOM observation, validated sanitized receipt. Execution and exact-head independent review not yet verified at this record. Does not certify tenant-wide workloads, SQL trace, durable worker dead-letter, owner-defined SLA targets or clinical release.
 
