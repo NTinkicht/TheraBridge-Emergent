@@ -1,3 +1,8 @@
+## 2026-11-09 — M4-08 Web session/CSRF + timezone test wave 3 (pending qualification)
+Added source-executing synthetic Jest tests for Web authentication transport (pre-auth CSRF concurrency, session revocation on 401, 204, network error and protected mutation) and center-local time handling (missing timezone fail-closed, Dubai conversion, DST skipped/repeated times, preserved original offset). No runtime or clinical changes; 95% goal remains NOT QUALIFIED; exact-head CI/Codex pending.
+
+---
+
 ## 2026-11-09 — COM-02 license classification (PR pending)
 Adds exact-commit scanner license candidate review queue and unapproved third-party notices draft to recurring SBOM job, with flags for copyleft/source-available/noncommercial and unknown terms. Separate assets/containers/fonts/AI rights register OPEN. No component is auto-approved. CI and independent review PENDING; public repo and clinical NO-GO unchanged.
 
