@@ -1,3 +1,9 @@
+## M4-08 Web UI/interaction executable test wave
+Qualify React SSR, WAI-ARIA tab and synthetic dictation regression tests with all six exact-head CI checks, SBOM and independent Codex review. Record actual updated Web denominator and four coverage percentages before selecting larger pages with dynamic state. Maintain 95% target and clinical NO-GO.
+
+
+---
+
 ## COM-02 license classification — next actions (2026-11-09)
 1. Run exact-head license classifier tests and full CI; inspect generated component report and review-only notices artifact.
 2. Obtain exact-head Codex review; disposition and fix findings, requalify CI before merge.
