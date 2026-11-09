@@ -52,7 +52,7 @@ jobs:
         with:
           node-version-file: .nvmrc
       - name: Validate SBOM contract and negative cases
-        run: node --test scripts/commercial/check-sbom.test.mjs
+        run: node --test scripts/commercial/check-sbom.test.mjs scripts/commercial/reconcile-sbom.test.mjs
       - name: Generate fresh CycloneDX source SBOM for this commit (includes yarn.lock)
         uses: anchore/sbom-action@v0
         with:
@@ -60,11 +60,20 @@ jobs:
           format: cyclonedx-json
           artifact-name: therabridge-source-${{ github.sha }}.cyclonedx.json
           output-file: /tmp/therabridge-source.cdx.json
-          upload-artifact-retention: 30
+          upload-artifact: false
           upload-release-assets: false
           dependency-snapshot: false
-      - name: Fail closed if source SBOM has no npm components
-        run: node scripts/commercial/check-sbom.mjs /tmp/therabridge-source.cdx.json source
+      - name: Reconcile lockfile-only packages and retain scanner provenance
+        run: node scripts/commercial/reconcile-sbom.mjs /tmp/therabridge-source.cdx.json yarn.lock /tmp/therabridge-reconciled.cdx.json
+      - name: Fail closed unless every Yarn resolved name/version is in source SBOM
+        run: node scripts/commercial/check-sbom.mjs /tmp/therabridge-reconciled.cdx.json source
+      - name: Archive reconciled CycloneDX SBOM for PR or main commit
+        uses: actions/upload-artifact@v4
+        with:
+          name: therabridge-source-${{ github.sha }}.cyclonedx.json
+          path: /tmp/therabridge-reconciled.cdx.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Generate tracked brand/media/container asset evidence
         run: |
           node scripts/commercial/asset-inventory.mjs > /tmp/therabridge-assets.json
