@@ -1,3 +1,13 @@
+## 2026-11-09 — COM-02 scanned source license metadata gap
+Downloaded actual PR workflow source CycloneDX and classification artifacts: 695 components, 0 license declarations, all 695 UNKNOWN_REVIEW, 7 lockfile-only and 0 legally approved. Added read-only installed license-file inventory script and regression tests, running after existing full-CI Yarn install and uploading 30-day evidence artifact. No application changes; requalification pending.
+
+---
+
+## 2026-11-09 — COM-02 upfront evidence and accountability
+Inspected root, API and web package manifests, Dockerfile.preview, SBOM CI and existing license review queue. Checked upstream project/font family license publishers (NestJS MIT, React MIT, Next.js MIT, Prisma Apache-2.0, Lucide ISC, Argon2 MIT, IBM Plex/Plus Jakarta OFL-1.1), but NOT exact npm tarball license files. Added 38-entry evidence index and tests that fail on missing/stale direct declarations or unsupported approval assertions; integrated into unconditional SBOM job. Verification pending. No application or clinical changes.
+
+---
+
 ## 2026-11-09 — M4-08 UI execution wave 2
 Added source-executing SSR Jest checks for real design/ui.tsx components and a11y-tabs.ts, plus privacy-preserving synthetic dictation.ts tests. Covers disabled clinical actions with visible reasons, metric loading, keyboard click guards and cancellation. No runtime, patient, authorization or real capture changes. Qualification pending.
 
