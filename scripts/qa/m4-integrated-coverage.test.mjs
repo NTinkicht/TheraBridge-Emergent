@@ -11,6 +11,7 @@ function fixture(covered=90){
   sourceFileCount:1,instrumentedFileCount:1,zeroStatementCoverageFiles:covered?0:1,
   percentages:Object.fromEntries(metrics.map(x=>[x,covered])),
   below95:covered<95?[...metrics]:[]},
+ apiRoot:'/repo/apps/api/src',apiSourcePaths:['/repo/apps/api/src/a.ts'],
  runId:'12345',sha};
 }
 test('publishes honest measured shortfalls for both APIs and Web, never autoapproves release',()=>{
@@ -40,7 +41,7 @@ test('reject absent exact SHA, run ID and invalid counters',()=>{
  const x=fixture();x.sha='not-a-sha';
  assert.throws(()=>integratedReceipt(x),/missing_exact_execution_provenance/);
  const y=fixture();y.api.total.lines.covered=110;
- assert.throws(()=>integratedReceipt(y),/invalid_coverage/);
+ assert.throws(()=>integratedReceipt(y),/invalid_api_lines/);
 });
 
 test('PR evidence distinguishes actual synthetic checkout SHA from reviewed head and base',()=>{
@@ -55,4 +56,17 @@ test('PR evidence distinguishes actual synthetic checkout SHA from reviewed head
  assert.throws(()=>integratedReceipt(missing),/missing_pr_head_base_provenance/);
  const invalid=fixture(96);invalid.eventName='workflow_dispatch';
  assert.throws(()=>integratedReceipt(invalid),/unsupported_coverage_event/);
+});
+
+test('fails closed on omitted API source, fake API summary and aggregate manipulation',()=>{
+ const missing=fixture();delete missing.api['/repo/apps/api/src/a.ts'];
+ assert.throws(()=>integratedReceipt(missing),/incomplete_api_source_scope/);
+ const forged=fixture();forged.api['/repo/apps/api/src/a.ts']=null;
+ assert.throws(()=>integratedReceipt(forged),/invalid_api_lines/);
+ const inflated=fixture();inflated.api.total.statements.covered=96;
+ assert.throws(()=>integratedReceipt(inflated),/api_aggregate_mismatch_statements/);
+ const duplicated=fixture();duplicated.apiSourcePaths.push('/repo/apps/api/src/a.ts');
+ assert.throws(()=>integratedReceipt(duplicated),/duplicate_api_source_inventory/);
+ const unexpected=fixture();unexpected.api['/repo/apps/api/src/fake.ts']=structuredClone(unexpected.api['/repo/apps/api/src/a.ts']);
+ assert.throws(()=>integratedReceipt(unexpected),/incomplete_api_source_scope/);
 });
