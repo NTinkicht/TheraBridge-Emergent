@@ -46,7 +46,7 @@ export function reportBaseline({apiSummary,webSourceCount,webInstrumentedPaths=[
     schemaVersion:1,kind:'m4_application_coverage_baseline_not_release_gate',
     api:{sourceScope:'apps/api/src/**/*.ts',instrumentedFileCount:files.length,
       percentages:observed,below95:metrics.filter(k=>observed[k]<95)},
-    web:{sourceScope:'apps/web/src/**/*.{ts,tsx,js,jsx}',
+    web:{sourceScope:'apps/web/src/**/*.{ts,tsx,js,jsx,mjs}',
       applicationSourceFileCount:webSourceCount,
       observedRuntimeModuleCount:webObserved.size,
       istanbulCoverageMeasured:measuredWeb,percentages:webMetrics,below95:webGap},
