@@ -1,3 +1,9 @@
+## 2026-11-09 — M4-08 integrated API/Web evidence PR (qualification pending)
+Existing full API instrumented Jest report and Web all-source Istanbul audit are reused. A new joint report records exact run/SHA, four-metric coverage, actual API/Web file scope, zero-statement Web files and explicit sub-95% metrics. The receipt is NOT a release approval or a 95% pass. CI, independent review and actual current-head percentages remain pending.
+
+
+---
+
 ## 2026-11-09 — COM-02 SBOM lockfile reconciliation review follow-up
 Codex P2 on PR #323 identified incomplete source SBOM coverage checks. Strict Yarn lockfile version comparison exposed seven entries omitted by Syft scan (including platform-optional and alias packages). Added explicit scanner-vs-lockfile reconciliation with source provenance properties and full name/version validation before artifact upload. THIS IS NOT A CLAIM OF INSTALLED PACKAGE OR LICENSE VERIFICATION. CI and Codex re-review PENDING on the new head; retain public repo and clinical NO-GO.
 

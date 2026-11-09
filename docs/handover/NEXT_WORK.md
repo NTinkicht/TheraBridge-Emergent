@@ -1,3 +1,9 @@
+## M4-08 integrated coverage qualification (2026-11-09)
+Run all six original CI jobs on the final PR head; inspect aggregate integrated coverage artifact for actual API/Web deficits. Resolve reviews, then add focused executed-code regression tests based on measured uncovered modules. Keep 95% thresholds and any owner-approved exceptions explicit; do not claim clinical readiness.
+
+
+---
+
 ## COM-02 SBOM reconciliation — pending verification
 Run exact-head CI, verify source artifact contains complete Yarn lock entries with explicit provenance, image SBOM remains valid and the smart-ci-gate succeeds. Confirm Codex P2 resolved on new head before squash merge; verify post-merge main commit produces a new SBOM. Continue separate legal/asset/model rights reviews for #312/#313.
 

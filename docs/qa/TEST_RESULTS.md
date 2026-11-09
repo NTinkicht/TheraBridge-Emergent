@@ -1,3 +1,9 @@
+## M4-08 integrated coverage PR — qualification pending (2026-11-09)
+New Node regression tests cover genuine two-sided measurement, below-threshold reporting, forged Web denominators, invalid counters, provenance gaps and 100%-but-still-unapproved safety. CI will emit short-lived sanitized `m4-08-integrated-coverage-<run_id>` artifact. Actual current percentages, six-job final-head CI and Codex disposition remain NOT VERIFIED until executed. G2/G2b NO-GO unchanged.
+
+
+---
+
 ## 2026-11-09 — COM-02 SBOM reconciliation qualification pending
 Previous PR-head SBOM job failed with 673 lockfile entries and 666 scanner-discovered; seven missing package name/version pairs, including fsevents, aliases and Playwright. New reconciliation and negative regression added to address that without fabricating licensing metadata. **New-head CI: NOT YET VERIFIED; new-head Codex review: PENDING.** Full commercial rights and vulnerability clearance NOT established; clinical production NO-GO.
 
