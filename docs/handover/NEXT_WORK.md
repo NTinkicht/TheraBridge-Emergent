@@ -2,6 +2,13 @@
 Qualify focused source-executing coverage regressions against existing complete Web instrumenter. Confirm numbers from final-head CI and select further unexecuted source modules on evidence, not static source inspection. All six jobs and independent Codex required; preserve clinical NO-GO and 95% target.
 
 
+
+---
+
+## M4-08 integrated coverage qualification (2026-11-09)
+Run all six original CI jobs on the final PR head; inspect aggregate integrated coverage artifact for actual API/Web deficits. Resolve reviews, then add focused executed-code regression tests based on measured uncovered modules. Keep 95% thresholds and any owner-approved exceptions explicit; do not claim clinical readiness.
+
+
 ---
 
 ## COM-02 SBOM reconciliation — pending verification

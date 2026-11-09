@@ -2,6 +2,13 @@
 Added synthetic Jest tests with positive and negative flows for eight previously unexecuted Web source modules, plus an instrumented Web summary consistency regression. This is incremental genuine instrumented coverage, not a blanket 95% result. Await actual end-to-end run, source-wide coverage file counts, exact-head Codex and six original CI passes; all clinical approvals remain NO-GO.
 
 
+
+---
+
+## M4-08 integrated coverage PR — qualification pending (2026-11-09)
+New Node regression tests cover genuine two-sided measurement, below-threshold reporting, forged Web denominators, invalid counters, provenance gaps and 100%-but-still-unapproved safety. CI will emit short-lived sanitized `m4-08-integrated-coverage-<run_id>` artifact. Actual current percentages, six-job final-head CI and Codex disposition remain NOT VERIFIED until executed. G2/G2b NO-GO unchanged.
+
+
 ---
 
 ## 2026-11-09 — COM-02 SBOM reconciliation qualification pending
