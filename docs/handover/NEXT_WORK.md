@@ -1,3 +1,12 @@
+## COM-02 license classification — next actions (2026-11-09)
+1. Run exact-head license classifier tests and full CI; inspect generated component report and review-only notices artifact.
+2. Obtain exact-head Codex review; disposition and fix findings, requalify CI before merge.
+3. For #313, verify published license texts, copyright notices, OS/container packages, font/logo/illustration/model and external service rights; document legal reviewer approvals separately. Generate final customer THIRD_PARTY_NOTICES.md only from verified evidence.
+4. Keep #312 IP ownership OPEN and do not adopt final proprietary root LICENSE or activate clinical production.
+
+
+---
+
 ## M4-08 integrated coverage qualification (2026-11-09)
 Run all six original CI jobs on the final PR head; inspect aggregate integrated coverage artifact for actual API/Web deficits. Resolve reviews, then add focused executed-code regression tests based on measured uncovered modules. Keep 95% thresholds and any owner-approved exceptions explicit; do not claim clinical readiness.
 
