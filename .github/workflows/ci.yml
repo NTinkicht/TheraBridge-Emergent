@@ -160,6 +160,17 @@ jobs:
         run: |
           mkdir -p "$GITHUB_WORKSPACE/.workspace/m4-coverage/api"
           yarn workspace @therabridge/api test --coverage --collectCoverageFrom='src/**/*.ts' --coverageReporters=json-summary --coverageDirectory="$GITHUB_WORKSPACE/.workspace/m4-coverage/api"
+      - name: Validate M4-07 reproducible synthetic measurement and sanitized receipt
+        run: |
+          node --test scripts/qa/m4-performance-evidence.test.mjs
+          node scripts/qa/m4-performance-evidence.mjs .workspace/m4-performance/m4-07-synthetic-api.json
+      - name: Archive M4-07 numeric-only CI measurement (NOT production acceptance)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-performance-synthetic-${{ github.run_id }}
+          path: .workspace/m4-performance/m4-07-synthetic-api.json
+          if-no-files-found: error
+          retention-days: 7
       - name: Gate measured API fingerprint-core coverage (95/90/95/95)
         run: yarn workspace @therabridge/api test:coverage:core
       - name: Web configuration unit tests with observed V8 instrumentation
