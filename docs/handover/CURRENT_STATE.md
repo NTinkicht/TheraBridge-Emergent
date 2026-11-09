@@ -3,6 +3,11 @@ Protected interactive 10-account run 42605446171 retry 2: 84 PASS, 0 FAIL, 14 po
 
 ---
 
+## 2026-11-09 — COM-01/02 evidence and inventory qualification (PR pending)
+Commercial IP evidence register added without claiming ownership; Node 20 direct dependency inventory contract tests and lightweight dedicated GitHub Actions qualification added. Public GitHub visibility explicitly preserved. Full SBOM, rights-holder determination and real clinical approval remain OPEN/NO-GO. Exact-head CI and independent review PENDING.
+
+---
+
 ## 2026-11-09 — COM-01/02/03 commercialization governance foundation (PR #318, review pending)
 PR #318 adds a conditional legal readiness register, hybrid SaaS/enterprise roadmap, preliminary dependency/asset evidence, dependency audit runbook, **non-binding** proposed proprietary notice, and Node 20 direct-manifest inventory script. User explicitly keeps GitHub repository **public** for GitHub Actions/CI constraints. This change does not amend clinical access, billing, tenant behavior, repository visibility, deployment or actual commercial licensing. **Unresolved:** institution/student/contributor/partner IP rights #312; full direct/transitive/container/asset/model license inventory and public exposure #313; lawyer-approved rights holder and final root LICENSE #314. A final repository license is NOT adopted. V1 clinical approvals remain NO-GO. Inventory execution, exact-head CI, secret scan, and independent post-fix review NOT RUN/NOT VERIFIED at this checkpoint.
 
