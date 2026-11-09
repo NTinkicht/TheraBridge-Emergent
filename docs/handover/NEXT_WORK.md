@@ -1,3 +1,8 @@
+## M4-08 executed-code Web wave 1
+Qualify focused source-executing coverage regressions against existing complete Web instrumenter. Confirm numbers from final-head CI and select further unexecuted source modules on evidence, not static source inspection. All six jobs and independent Codex required; preserve clinical NO-GO and 95% target.
+
+---
+
 ## M4-02 remaining protected hosted acceptance — after this regression
 Require six exact-head CI and independent Codex for new two-valid-center child ID isolation. Next external evidence must run authenticated app connected to dedicated disposable two-tenant Neon branch, not shared Render demo; confirm live deployed SHA separately, revoke synthetic roles/guardian link only in isolated fixture, and review ten-account protected HA-01…HA-10. 14 clinical-policy checks remain intentionally BLOCKED. Do not mark those PASS, publish passwords, or close #176/#268 without explicit owner-approved acceptance. G2/G2b NO-GO.
 
