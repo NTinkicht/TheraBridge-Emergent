@@ -3,6 +3,15 @@ New real-Postgres authz.e2e-spec.ts test: distinct active Harbor/Cedar centers w
 
 ---
 
+## 2026-11-09 — COM-01/02 inventory qualification PR (PENDING EXECUTION)
+- Node test contract suite authored for inventory discovery, deterministic output, output path confinement, missing manifests, overwrite prevention and unsupported globs: **NOT RUN** at authoring checkpoint.
+- Dedicated GitHub Actions workflow created: **NOT RUN** at authoring checkpoint; verify run ID, SHA and jobs before PASS claim.
+- Existing full Smart CI, secret scan and synthetic tests on new PR head: **NOT VERIFIED**.
+- Full transitive SBOM + asset and model rights clearance: **NOT RUN / BLOCKED** by third-party evidence.
+- Commercial IP ownership/legal rights-holder determination: **OPEN**. Clinical production: **NO-GO**.
+
+---
+
 ## 2026-11-09 — PR #318 COM governance evidence (corrective Rule 7 update)
 Scope: documentation plus optional Node 20 direct-manifest inventory CLI. Review observation: Codex P1 flagged absence of these four canonical evidence entries; changes now address documentation coverage. **No application source, clinical policy, runtime authorization, CI workflow or repository visibility changes.**
 
