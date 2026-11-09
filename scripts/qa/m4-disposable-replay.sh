@@ -113,6 +113,37 @@ wait "$M4_LOCK_HOLDER_PID" || { echo "FAIL: advisory-lock holder errored" >&2; e
 [[ "$(sql 'SELECT pg_try_advisory_lock(72707369)')" == t ]] ||
   { echo "FAIL: advisory lock did not release" >&2; exit 1; }
 echo "PASS: advisory-lock contention denies competing acquisition and later releases"
+# Real PostgreSQL optimistic-concurrency (CAS) race on the existing center table.
+# Separate sessions hold the row lock and prove a second writer cannot commit a
+# stale version. This is a DB-level contract, not full application route E2E.
+sql "INSERT INTO center (id, slug, name, timezone, specialties) VALUES ('123e4567-e89b-12d3-a456-426614174060', 'm4-cas-disposable', 'Synthetic CAS', 'UTC', ARRAY['speech']::varchar(32)[])" >/dev/null
+coproc M4_CAS_HOLDER {
+  docker exec -i "$container" psql -X -qAt -v ON_ERROR_STOP=1 \
+    -U tb_m4_owner -d therabridge_m4 2>"$root/cas-stderr"
+}
+printf "BEGIN;\nUPDATE center SET version=version+1 WHERE slug='m4-cas-disposable' AND version=1;\nSELECT 'CAS_HELD';\n" >&"${M4_CAS_HOLDER[1]}"
+cas_marker=""
+if ! IFS= read -r -t 20 cas_marker <&"${M4_CAS_HOLDER[0]}" || [[ "$cas_marker" != CAS_HELD ]]; then
+  echo "FAIL: CAS row-lock holder was not synchronized" >&2; exit 1
+fi
+# The second process must be denied by lock timeout; never bypass lock safety.
+if docker exec -e PGOPTIONS='-c lock_timeout=200ms' "$container" psql -X -q -v ON_ERROR_STOP=1 \
+   -U tb_m4_owner -d therabridge_m4 -c "UPDATE center SET version=version+1 WHERE slug='m4-cas-disposable' AND version=1" >/dev/null 2>&1; then
+  echo "FAIL: concurrent CAS writer bypassed held row lock" >&2; exit 1
+fi
+printf "COMMIT;\n\\q\n" >&"${M4_CAS_HOLDER[1]}"
+cas_writer_fd="${M4_CAS_HOLDER[1]}"
+exec {cas_writer_fd}>&-
+wait "$M4_CAS_HOLDER_PID" || { echo "FAIL: CAS holder failed to commit" >&2; exit 1; }
+[[ "$(sql "SELECT version FROM center WHERE slug='m4-cas-disposable'")" == 2 ]] ||
+  { echo "FAIL: first CAS transaction did not commit exactly once" >&2; exit 1; }
+[[ "$(sql "WITH changed AS (UPDATE center SET version=version+1 WHERE slug='m4-cas-disposable' AND version=1 RETURNING id) SELECT count(*) FROM changed")" == 0 ]] ||
+  { echo "FAIL: stale CAS unexpectedly overwrote current version" >&2; exit 1; }
+[[ "$(sql "WITH changed AS (UPDATE center SET version=version+1 WHERE slug='m4-cas-disposable' AND version=2 RETURNING id) SELECT count(*) FROM changed")" == 1 ]] ||
+  { echo "FAIL: fresh CAS did not succeed" >&2; exit 1; }
+[[ "$(sql "SELECT version FROM center WHERE slug='m4-cas-disposable'")" == 3 ]] ||
+  { echo "FAIL: CAS version did not advance exactly twice" >&2; exit 1; }
+echo "PASS: distinct PostgreSQL sessions enforce blocked concurrent writer, stale CAS rejection and fresh CAS"
 # Verify backup/restore into a NEW separate disposable DB without altering source.
 docker exec "$container" pg_dump -Fc -U tb_m4_owner -d therabridge_m4 > "$root/replay.dump"
 docker exec "$container" createdb -U tb_m4_owner therabridge_m4_restore
