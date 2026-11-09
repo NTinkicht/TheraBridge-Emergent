@@ -1,3 +1,9 @@
+## 2026-11-09 — COM-02 commercial license triage implementation
+Created scripts/commercial/classify-sbom.mjs and negative tests; integrated per-PR/main workflow artifact. Generated notice is explicitly REVIEW DRAFT, not legal notices or a root LICENSE. Added non-package rights review matrix. No application, tenant, signing, safeguarding, billing, repository-visibility changes. Execution evidence NOT YET VERIFIED.
+
+
+---
+
 ## 2026-11-09 — M4-08 evidence integration
 Added deterministic integrated API/Web source-coverage receipt and negative tests. Coupled source-wide Web Istanbul audit to API coverage percentages; exact-run SHA and run ID required; no release PASS emitted even when measured metrics reach 95%. CI artifacts are aggregate-only; no patient or credential values. Final tests/review pending.
 
