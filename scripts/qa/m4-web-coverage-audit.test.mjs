@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { auditWebCoverage, executableSource } from './m4-web-coverage-audit.mjs';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 const root = '/repo/apps/web/src';
 const paths = [root+'/lib/a.ts', root+'/app/page.tsx'];
 const fields = (total=10,covered=10) => Object.fromEntries(['lines','branches','functions','statements'].map(m=>[m,{total,covered,pct:covered*100/total,skipped:0}]));
@@ -29,7 +32,7 @@ test('aggregate totals cannot be manipulated independently',()=>{
 test('unexpected instrumented sources, duplicate source paths, empty inputs fail closed',()=>{
  const s=fixture();s[root+'/lib/unknown.ts']=fields(10,0);
  assert.throws(()=>inspect(s),/unexpected_instrumented_source/);
- assert.throws(()=>auditWebCoverage({summary:fixture(),sourcePaths:[paths[0],paths[0]],webRoot:root,executablePaths:paths}),/duplicate_source_path/);
+ assert.throws(()=>auditWebCoverage({summary:fixture(),sourcePaths:[paths[0],paths[0]],webRoot:root,executablePaths:[paths[0]]}),/duplicate_source_path/);
  assert.throws(()=>inspect({total:fields(20,10)}),/source_denominator_missing/);
 });
 test('invalid counters and zero denominator fail closed',()=>{
@@ -55,9 +58,6 @@ test('reject all-zero executable source despite matching forged aggregate',()=>{
  assert.throws(()=>inspect(s),/executable_denominator_zero/);
 });
 test('independent TS source parser distinguishes type-only and executable declarations',()=>{
- const { mkdtempSync, writeFileSync, rmSync } = require('node:fs');
- const { tmpdir } = require('node:os');
- const { join } = require('node:path');
  const dir=mkdtempSync(join(tmpdir(),'tb-m4-coverage-'));
  try {
   const typed=join(dir,'types.ts');
