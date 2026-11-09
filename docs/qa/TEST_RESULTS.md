@@ -1,3 +1,8 @@
+## M4-08 Web auth/time zone execution wave 3 — UNVERIFIED UNTIL CI
+Added real ts-jest executed tests for preauth CSRF reuse, 401 session invalidation, forbidden stale CSRF mutation, 204 and error handling; Dubai and New York DST appointment date safety tests. No external requests or patient data. Source-wide coverage metrics and exact-head Codex/CI pending. Target 95%, G2/G2b NO-GO.
+
+---
+
 ## 2026-11-09 — COM-02 license classifier PR test plan (NOT RUN)
 - Source CycloneDX classification, risky/unknown flags and no-auto-approval contract tests: NOT RUN.
 - New per-commit license review JSON and notices review artifact: NOT VERIFIED.
