@@ -71,6 +71,7 @@ coproc M4_LOCK_HOLDER {
     -U tb_m4_owner -d therabridge_m4 2>"$root/lock-stderr"
 }
 printf "SELECT 'LOCK_HELD' FROM pg_advisory_lock(72707369);\n" >&"${M4_LOCK_HOLDER[1]}"
+lock_marker=""
 if ! IFS= read -r -t 20 lock_marker <&"${M4_LOCK_HOLDER[0]}" || [[ "$lock_marker" != LOCK_HELD ]]; then
   echo "FAIL: lock holder did not confirm acquisition" >&2; exit 1
 fi
@@ -78,7 +79,8 @@ fi
   { echo "FAIL: competing advisory lock unexpectedly acquired" >&2; exit 1; }
 printf "SELECT pg_advisory_unlock(72707369);\n\\q\n" >&"${M4_LOCK_HOLDER[1]}"
 # Closing the writer ensures termination even if the meta-command is ignored.
-lock_writer_fd="${M4_LOCK_HOLDER[1]}"\nexec {lock_writer_fd}>&-
+lock_writer_fd="${M4_LOCK_HOLDER[1]}"
+exec {lock_writer_fd}>&-
 wait "$M4_LOCK_HOLDER_PID" || { echo "FAIL: advisory-lock holder errored" >&2; exit 1; }
 [[ "$(sql 'SELECT pg_try_advisory_lock(72707369)')" == t ]] ||
   { echo "FAIL: advisory lock did not release" >&2; exit 1; }
