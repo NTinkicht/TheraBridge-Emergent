@@ -14,11 +14,11 @@ unset DATABASE_URL MIGRATION_DATABASE_URL DIRECT_URL PRISMA_SCHEMA_DISABLE_ADVIS
 root="$(mktemp -d)"
 container="tb-m4-replay-$(node -e 'process.stdout.write(require("crypto").randomBytes(6).toString("hex"))')"
 cleanup() {
-  docker rm -f "$container" >/dev/null 2>&1 || true
+  docker rm -fv "$container" >/dev/null 2>&1 || true
   rm -rf "$root"
 }
 trap cleanup EXIT
-docker run -d --name "$container" -P -e POSTGRES_DB=therabridge_m4 -e POSTGRES_USER=tb_m4_owner \
+docker run -d --name "$container" -p 127.0.0.1::5432 -e POSTGRES_DB=therabridge_m4 -e POSTGRES_USER=tb_m4_owner \
   -e POSTGRES_PASSWORD=synthetic_disposable_only postgres:16-bookworm >/dev/null
 for _ in {1..40}; do
   if docker exec "$container" pg_isready -U tb_m4_owner -d therabridge_m4 >/dev/null 2>&1; then break; fi
@@ -63,15 +63,25 @@ if docker exec "$container" psql -X -q -v ON_ERROR_STOP=1 -U tb_m4_owner -d ther
 fi
 [[ "$(sql 'SELECT count(*) FROM m4_replay_marker')" == 1 ]] || { echo "FAIL: rollback left partial synthetic data" >&2; exit 1; }
 echo "PASS: failed synthetic transaction rolls back atomically"
-# A separately held advisory lock proves conflicts deny access, without killing sessions.
-docker exec "$container" psql -X -qAt -v ON_ERROR_STOP=1 -U tb_m4_owner -d therabridge_m4 \
-  -c 'SELECT pg_advisory_lock(72707369); SELECT pg_sleep(4);' >/dev/null &
-lock_pid=$!
-sleep 1
+# Keep the lock holder session alive via a Bash coprocess: no timing guesses.
+# The holder emits a marker only AFTER pg_advisory_lock succeeds; a query in
+# a separate session must then fail to acquire the same lock.
+coproc M4_LOCK_HOLDER {
+  docker exec -i "$container" psql -X -qAt -v ON_ERROR_STOP=1 \
+    -U tb_m4_owner -d therabridge_m4 2>"$root/lock-stderr"
+}
+printf "SELECT 'LOCK_HELD' FROM pg_advisory_lock(72707369);\n" >&"${M4_LOCK_HOLDER[1]}"
+if ! IFS= read -r -t 20 lock_marker <&"${M4_LOCK_HOLDER[0]}" || [[ "$lock_marker" != LOCK_HELD ]]; then
+  echo "FAIL: lock holder did not confirm acquisition" >&2; exit 1
+fi
 [[ "$(sql 'SELECT pg_try_advisory_lock(72707369)')" == f ]] ||
- { echo "FAIL: advisory lock unexpectedly acquired" >&2; wait "$lock_pid" || true; exit 1; }
-wait "$lock_pid"
-[[ "$(sql 'SELECT pg_try_advisory_lock(72707369)')" == t ]] || { echo "FAIL: advisory lock did not release" >&2; exit 1; }
+  { echo "FAIL: competing advisory lock unexpectedly acquired" >&2; exit 1; }
+printf "SELECT pg_advisory_unlock(72707369);\n\\q\n" >&"${M4_LOCK_HOLDER[1]}"
+# Closing the writer ensures termination even if the meta-command is ignored.
+lock_writer_fd="${M4_LOCK_HOLDER[1]}"\nexec {lock_writer_fd}>&-
+wait "$M4_LOCK_HOLDER_PID" || { echo "FAIL: advisory-lock holder errored" >&2; exit 1; }
+[[ "$(sql 'SELECT pg_try_advisory_lock(72707369)')" == t ]] ||
+  { echo "FAIL: advisory lock did not release" >&2; exit 1; }
 echo "PASS: advisory-lock contention denies competing acquisition and later releases"
 # Verify backup/restore into a NEW separate disposable DB without altering source.
 docker exec "$container" pg_dump -Fc -U tb_m4_owner -d therabridge_m4 > "$root/replay.dump"
