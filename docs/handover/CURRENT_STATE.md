@@ -1,3 +1,8 @@
+## M4-07 final synthetic qualification PR — 2026-11-09 (CI/review pending)
+Re-audited issue #181: #274, #288/#292 and #305 already implemented notice batching, worker mocked failure/replay, real disposable API 120-request latency/throughput baselines and non-root CI. This consolidated PR adds actual PostgreSQL eight-way reminder reservation contention and three replays, plus a 600-second (200s each concurrency 1/4/8) loopback API+Postgres workload in the unified nonroot 512MiB preview with cgroup peak and OOM observation, validated sanitized receipt. Execution and exact-head independent review not yet verified at this record. Does not certify tenant-wide workloads, SQL trace, durable worker dead-letter, owner-defined SLA targets or clinical release.
+
+---
+
 ## M4-06 final disposable qualification PR — 2026-11-09 (CI/review pending)
 Merged #273/#281/#291/#295 protect audit FK/index/UPDATE/DELETE/TRUNCATE and atomic rollback. Merged #299/#300 deployed non-owner runtime and owner-only migration credentials to synthetic Render/Neon; #304 passed disposable historical-prefix replay, transaction rollback, advisory contention and restore. New consolidated M4-06 qualification extends the existing CI-only script: archive actual pre-upgrade synthetic DB, restore/upgrade an independent DB, cross-session row CAS with bounded PostgreSQL lock timeout. Required CI and exact-head Codex not yet attested at this checkpoint. This is NOT a real external archived snapshot or Neon PgBouncer race; business performance/DR budgets and retention policy sign-off remain open. Clinical G2/G2b NO-GO.
 
