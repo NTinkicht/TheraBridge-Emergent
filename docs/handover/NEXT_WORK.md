@@ -1,3 +1,8 @@
+## M4-08 PR #306 next verification
+Check the new full-scope Web Jest Istanbul collector and source-denominator audit on actual CI; fix all runner/denominator/review findings. Record actual four-metric Web measurements and fresh API coverage deficits; do not claim 95% unless fully measured and threshold passed. Obtain six green exact-head jobs and Codex review, resolve every comment before merge. Continue targeted tests in M4-08 until owner-approved exceptions/coverage gates are genuinely qualified. M4-02/M4-06/M4-07/M4-09 remain separately OPEN, all clinical NO-GO.
+
+---
+
 ## M4-07 PR #305 — immediate verification and remaining work (2026-11-09)
 1. Inspect all six exact-final-HEAD CI jobs plus Smart CI gate; repair any failing test. Confirm receipt validator, real DB health benchmarks, negative worker retries, and numeric-only artifact upload actually PASS. Record run SHA and artifact id.
 2. Obtain final exact-HEAD independent Codex review, disposition all P0–P3 findings and resolve threads, rerun checks after each code edit. Do NOT merge until AGENTS.md Rule 16 met.
