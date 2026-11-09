@@ -133,6 +133,13 @@ jobs:
       - run: yarn workspace @therabridge/api prisma generate
       - name: M4-06 staged migration/runtime database-role separation contract
         run: node --test scripts/preview/db-role-config.test.mjs scripts/preview/verify-runtime-db-role.test.mjs
+      - name: M4-06 disposable migration replay safety contracts
+        run: node --test scripts/qa/m4-disposable-replay.test.mjs
+      - name: M4-06 fresh/historical migration replay, rollback, contention and restore
+        timeout-minutes: 8
+        env:
+          TB_M4_DISPOSABLE_CONFIRM: I_AUTHORIZE_DISPOSABLE_LOCAL_DOCKER
+        run: bash scripts/qa/m4-disposable-replay.sh
       - name: Check additive migration after TB-EM-012 was already applied
         run: |
           # Migrate the CI database using the original through-012 chain first,
