@@ -1,3 +1,9 @@
+## 2026-11-09 — PR #318 commercial governance and inventory work
+Inspected existing package manifests, `yarn.lock`, preview Dockerfile, brand derivative record, V1 blueprint and CI secret scanner. Added legal readiness, commercialization roadmap, preliminary audit, audit runbook and deliberately **non-binding** proprietary notice with unresolved owner placeholder. Added `scripts/commercial/inventory-direct-deps.mjs`: deterministic manifest-only JSON output, no network dependency and optional local output path; no third-party license values claimed. Repository visibility preserved as PUBLIC at owner's explicit direction. Codex review at commit `430a36972b` found P1 missing required Rule 7 handover/QA evidence files; this update addresses all four. No application/clinical gate or workflow changes. This checkpoint is implementation evidence, not legal or runtime test success. Exact-head CI and reviewer re-evaluation PENDING.
+
+
+---
+
 ## 2026-11-09 — M4-07 consolidated qualification implementation
 Reviewed existing PR #305 real 40/80 HTTP/PostgreSQL, #274 notice batching, fake worker fault/retry test; avoided duplicating optimization. Added real database 8-way reminder-sweep reservation race in operations.e2e-spec.ts, with repeat zero-delivery and unique partial index check. Added 10-minute localhost-only health route load at 3 concurrencies in capped nonroot unified preview, cgroup peak/OOM observation, numeric-only report strict validator and negative tests; integrated into existing preview-container required job. Pending six final-head CI jobs and Codex; no production SLA budget approvals or shared Render/Neon mutations.
 

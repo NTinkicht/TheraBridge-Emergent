@@ -1,3 +1,9 @@
+## 2026-11-09 — COM-01/02/03 commercialization governance foundation (PR #318, review pending)
+PR #318 adds a conditional legal readiness register, hybrid SaaS/enterprise roadmap, preliminary dependency/asset evidence, dependency audit runbook, **non-binding** proposed proprietary notice, and Node 20 direct-manifest inventory script. User explicitly keeps GitHub repository **public** for GitHub Actions/CI constraints. This change does not amend clinical access, billing, tenant behavior, repository visibility, deployment or actual commercial licensing. **Unresolved:** institution/student/contributor/partner IP rights #312; full direct/transitive/container/asset/model license inventory and public exposure #313; lawyer-approved rights holder and final root LICENSE #314. A final repository license is NOT adopted. V1 clinical approvals remain NO-GO. Inventory execution, exact-head CI, secret scan, and independent post-fix review NOT RUN/NOT VERIFIED at this checkpoint.
+
+
+---
+
 ## M4-07 final synthetic qualification PR — 2026-11-09 (CI/review pending)
 Re-audited issue #181: #274, #288/#292 and #305 already implemented notice batching, worker mocked failure/replay, real disposable API 120-request latency/throughput baselines and non-root CI. This consolidated PR adds actual PostgreSQL eight-way reminder reservation contention and three replays, plus a 600-second (200s each concurrency 1/4/8) loopback API+Postgres workload in the unified nonroot 512MiB preview with cgroup peak and OOM observation, validated sanitized receipt. Execution and exact-head independent review not yet verified at this record. Does not certify tenant-wide workloads, SQL trace, durable worker dead-letter, owner-defined SLA targets or clinical release.
 
