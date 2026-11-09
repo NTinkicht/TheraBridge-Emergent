@@ -1,3 +1,19 @@
+## COM-02 exact-installed package license evidence — pending
+1. Run full PR-head CI and verify installed package evidence collector sees actual package.json versions plus LICENSE/NOTICE SHA-256 checksums; review missing-file count.
+2. Have Codex review exact green head. Resolve all comments and preserve concurrent V1 handover updates.
+3. Compare captured license file hashes/text and upstream sources with resolved package versions and SaaS vs enterprise redistribution obligations. Open individual remediation issues for unknown/restrictive cases rather than treating unknown as green.
+4. Brand, catalogue images, AI models, company/copyright ownership remain separately OPEN and need written rights evidence. Clinical activation remains NO-GO.
+
+---
+
+## COM-02 upstream license audit — immediate qualification
+1. Execute exact-head CI and new direct evidence contract tests; verify fresh source/asset/image SBOM and license review artifacts, Codex review and no unaddressed blockers.
+2. After approved merge, verify main push SBOM output when available, but do not infer absent results.
+3. Retrieve exact locked npm tarball LICENSE/NOTICE texts with checksums, compare transitive labels; audit OS/image digests, font binaries, original logo and AI/data service terms.
+4. Owner/qualified counsel to sign rights register privately for COM-01, and review SaaS and enterprise redistribution obligations separately. Keep proprietary LICENSE and clinical activation blocked.
+
+---
+
 ## M4-08 Web executed code wave 3
 Qualify mocked-fetch authentication/CSRF negative paths and center-timezone/DST tests through original six-job CI, SBOM, smart-ci-gate and exact-head Codex. Record measured four-metric API/Web receipt; continue source-wide executable UI coverage without modifying denominators or approval gates.
 
