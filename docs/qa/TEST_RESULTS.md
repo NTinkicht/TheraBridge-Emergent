@@ -1,3 +1,20 @@
+## 2026-11-09 — PR #318 COM governance evidence (corrective Rule 7 update)
+Scope: documentation plus optional Node 20 direct-manifest inventory CLI. Review observation: Codex P1 flagged absence of these four canonical evidence entries; changes now address documentation coverage. **No application source, clinical policy, runtime authorization, CI workflow or repository visibility changes.**
+
+| Check | Result | Evidence / limits |
+|---|---|---|
+| Static inspection of repository package manifests / yarn.lock / Dockerfile / font imports / logo provenance | PERFORMED (partial inventory) | Preliminary file inspection, not comprehensive SBOM or license compatibility clearance |
+| All four mandatory handover/QA documents updated | IMPLEMENTED, not independently checked | PR #318 revision; requires independent reviewer verification |
+| Dependency CLI invocation and JSON contract | NOT RUN | Execute Node 20 command in CI/local reproducible checkout before asserting PASS |
+| Full direct/transitive license, OS/container, font/logo/model audit | NOT RUN | #313 |
+| CI required checks / history secret scan on latest PR head | NOT VERIFIED | Await exact-head status |
+| Independent Codex review of latest PR head | PENDING | Initial P1 finding addressed in revision, no re-review receipt yet |
+| Ownership verification / commercial counsel approval | NOT RUN | #312 and #314 |
+| Clinical production authorization | BLOCKED | Existing G2/G2b NO-GO unchanged |
+
+
+---
+
 ## M4-07 actual PostgreSQL reservation and 10-minute capped Docker stress (CI pending)
 New test creates synthetic users/roles/guardian/appointment via real HTTP and runs eight overlapping sweeps against real Prisma/PostgreSQL, checks one unique partial-index outbox row/mail and repeat zero-sends. Existing failed-mail and retry DB tests retained. New 600-second loopback /api/health workload against real disposable DB uses 1/4/8 concurrency, quantiles/throughput/errors; real combined preview cgroup memory peak, 512MiB cap, nonroot UID and zero OOM kills. Strict numeric-only receipt and negative tests prevent forged duration or privacy fields. Full CI and Codex outcome PENDING at this writing. Health-only throughput is not full business SLA or direct SQL query trace.
 
