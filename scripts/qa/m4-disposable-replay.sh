@@ -50,6 +50,34 @@ prisma migrate deploy --schema "$root/historical/schema.prisma"
 echo "PASS: actual published historical prefix applied"
 # A synthetic marker must survive the forward upgrade.
 sql "CREATE TABLE m4_replay_marker (id integer PRIMARY KEY, marker text NOT NULL); INSERT INTO m4_replay_marker VALUES (1, 'synthetic-only')" >/dev/null
+# Historical restore drill: capture a real pre-upgrade logical archive on the
+# older migration chain, then restore and upgrade a DISTINCT disposable database.
+# This is not an external archived snapshot or an operational RTO/RPO guarantee.
+docker exec "$container" pg_dump -Fc -U tb_m4_owner -d therabridge_m4 > "$root/historical-before-upgrade.dump"
+[[ -s "$root/historical-before-upgrade.dump" ]] || { echo "FAIL: historical archive missing" >&2; exit 1; }
+docker exec "$container" createdb -U tb_m4_owner therabridge_m4_historical_restore
+docker exec -i "$container" pg_restore -e -U tb_m4_owner -d therabridge_m4_historical_restore \
+  < "$root/historical-before-upgrade.dump" > /dev/null
+historical_sql() {
+  docker exec "$container" psql -X -qAt -v ON_ERROR_STOP=1 -U tb_m4_owner \
+    -d therabridge_m4_historical_restore -c "$1"
+}
+[[ "$(historical_sql 'SELECT count(*) FROM _prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL')" == "$old_expected" ]] ||
+  { echo "FAIL: historical restored ledger mismatch" >&2; exit 1; }
+[[ "$(historical_sql 'SELECT marker FROM m4_replay_marker WHERE id=1')" == synthetic-only ]] ||
+  { echo "FAIL: historical restored marker mismatch" >&2; exit 1; }
+# Never use shared or externally supplied credentials, even for this second
+# Prisma process: the only permitted target is our disposable loopback DB.
+historical_restore_url="postgresql://tb_m4_owner:synthetic_disposable_only@127.0.0.1:${port}/therabridge_m4_historical_restore?schema=public"
+(
+  export DATABASE_URL="$historical_restore_url" MIGRATION_DATABASE_URL="$historical_restore_url"
+  prisma migrate deploy --schema apps/api/prisma/schema.prisma
+)
+[[ "$(historical_sql 'SELECT count(*) FROM _prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL')" == "$expected" ]] ||
+  { echo "FAIL: historical restore forward-upgrade mismatch" >&2; exit 1; }
+[[ "$(historical_sql 'SELECT marker FROM m4_replay_marker WHERE id=1')" == synthetic-only ]] ||
+  { echo "FAIL: historical restore marker lost during upgrade" >&2; exit 1; }
+echo "PASS: pre-upgrade logical archive restored independently and migrated forward"
 prisma migrate deploy --schema apps/api/prisma/schema.prisma
 [[ "$(count_migrations)" == "$expected" ]] || { echo "FAIL: forward upgrade count" >&2; exit 1; }
 [[ "$(sql 'SELECT count(*) FROM m4_replay_marker WHERE id=1')" == 1 ]] || { echo "FAIL: synthetic marker lost" >&2; exit 1; }
