@@ -1,3 +1,8 @@
+## M4-07 current implementation checkpoint — 2026-11-09 (PR #305; CI AND REVIEW PENDING)
+PR #305 introduces actual **CI-isolated**, in-process Fastify health API measurements against a real disposable PostgreSQL `*_test` DB (40 serial and 80 concurrency-8 GET requests); p50/p95/p99, throughput, RSS and a bounded appointment PostgreSQL query plan. It also adds deterministic worker notification/idempotence/failed-send retry contract tests, and 5,000/10,000 synthetic notice selection measurements. The numeric-only CI artifact guard strictly allowlists every nested field; `.github/workflows/ci.yml` archives `m4-performance-synthetic-<run-id>` only after report validation. See `docs/qa/M4-07-DISPOSABLE-PERFORMANCE-QUALIFICATION.md`. **Latest final-head six-job CI, Codex review and measured results are pending**, so no M4-07 release qualification or merged status may be asserted. Shared Render/Neon unchanged; clinical G2/G2b NO-GO.
+
+---
+
 **CI regression FIX_NOW:** Existing M4-08 secret-scan negative test incorrectly modified the first `fetch-depth: 0` in the workflow after adding `smart-plan`, rather than the actual scanner job. Corrected `scripts/qa/check-ci-test-inventory.test.mjs` to mutate the scoped `secret-scan` block and continue proving scanner fail-closed behavior. No secret scanner bypass; fresh exact-head six-job CI and final review pending.
 
 **Additional static-asset safety tightening:** Smart CI now forces FULL CI for potentially executable Web public SVG/HTML/JS/JSON, as well as unknown assets. Only CSS and known non-executable image/font file types may be classified web-style in the simulation; the Rule16 owner-policy lock still prevents any actual job skipping. Regression tests updated; final-head CI/re-review pending.

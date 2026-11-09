@@ -1,3 +1,11 @@
+## M4-07 PR #305 — immediate verification and remaining work (2026-11-09)
+1. Inspect all six exact-final-HEAD CI jobs plus Smart CI gate; repair any failing test. Confirm receipt validator, real DB health benchmarks, negative worker retries, and numeric-only artifact upload actually PASS. Record run SHA and artifact id.
+2. Obtain final exact-HEAD independent Codex review, disposition all P0–P3 findings and resolve threads, rerun checks after each code edit. Do NOT merge until AGENTS.md Rule 16 met.
+3. Owner-defined p95/p99, error budget, SQL query ceiling, 10-minute sustained load, 512MiB container resource and real P2002/dead-letter tests are **OPEN**. CI smoke is evidence only; do not close M4-07 #181 or M4 #167 on it. Continue other M4 open items only after qualified merge.
+4. Preserve hosted demo, private ten-account authorization and all G2/G2b/safeguarding/clinical NO-GO controls.
+
+---
+
 **CI regression FIX_NOW:** Existing M4-08 secret-scan negative test incorrectly modified the first `fetch-depth: 0` in the workflow after adding `smart-plan`, rather than the actual scanner job. Corrected `scripts/qa/check-ci-test-inventory.test.mjs` to mutate the scoped `secret-scan` block and continue proving scanner fail-closed behavior. No secret scanner bypass; fresh exact-head six-job CI and final review pending.
 
 **Additional static-asset safety tightening:** Smart CI now forces FULL CI for potentially executable Web public SVG/HTML/JS/JSON, as well as unknown assets. Only CSS and known non-executable image/font file types may be classified web-style in the simulation; the Rule16 owner-policy lock still prevents any actual job skipping. Regression tests updated; final-head CI/re-review pending.

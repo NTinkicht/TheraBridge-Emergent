@@ -1,3 +1,8 @@
+## 2026-11-09 — M4-07 PR #305 performance and reliability measurement implementation
+Following merged M4-06 #304 (merge `489428ba`), added `apps/api/test/m4-performance.e2e-spec.ts` real PostgreSQL-backed health API 40+80 request timing and EXPLAIN, synthetic 5k/10k selection timings, `apps/api/test/m4-worker-reliability.e2e-spec.ts` modeled deduplication/failed-send retries, `scripts/qa/m4-performance-evidence.mjs` strict nested allowlist with negative tests, and CI numeric-only artifact. Codex planning review P2 required benchmark thresholds; added frozen smoke contract (all 120 requests HTTP200; full production SLA/512MiB load acceptance BLOCKED pending owner targets). Codex implementation P2 required nested receipt protection; FIX_NOW. Codex P1 required updates to four mandatory handover records; FIX_NOW in this PR. Actual final-head CI results and final-head independent review remain **PENDING**, not PASS. Synthetic only.
+
+---
+
 **CI regression FIX_NOW:** Existing M4-08 secret-scan negative test incorrectly modified the first `fetch-depth: 0` in the workflow after adding `smart-plan`, rather than the actual scanner job. Corrected `scripts/qa/check-ci-test-inventory.test.mjs` to mutate the scoped `secret-scan` block and continue proving scanner fail-closed behavior. No secret scanner bypass; fresh exact-head six-job CI and final review pending.
 
 **Additional static-asset safety tightening:** Smart CI now forces FULL CI for potentially executable Web public SVG/HTML/JS/JSON, as well as unknown assets. Only CSS and known non-executable image/font file types may be classified web-style in the simulation; the Rule16 owner-policy lock still prevents any actual job skipping. Regression tests updated; final-head CI/re-review pending.
