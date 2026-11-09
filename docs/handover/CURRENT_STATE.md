@@ -1,3 +1,13 @@
+## 2026-11-09 — COM-02 installed package file inventory extension
+PR #329 now also records exact installed package LICENSE/NOTICE file filenames and SHA-256 hashes from the existing frozen Yarn install in full CI. Source SBOM of 695 components yielded zero license declarations (all UNKNOWN), motivating file-based evidence collection. Legal licenses/redistribution approval remain UNVERIFIED. New tests and final-head CI/Codex NOT VERIFIED at checkpoint. Clinical NO-GO and public GitHub preserved.
+
+---
+
+## 2026-11-09 — COM-02 direct license upstream evidence ledger (in review)
+Added first-pass upstream publisher evidence for 38 declared direct dependencies (16 upstream references, 22 PENDING); none approved or exact-version verified. CI enforcement checks future direct dependency additions/changes have a review entry. This does not complete transitive/OS/fonts/images/model provenance verification or IP ownership. Repository stays public for Actions; clinical production remains NO-GO. PR exact-head CI/review NOT VERIFIED at authoring checkpoint.
+
+---
+
 ## 2026-11-09 — M4-08 Web UI execution wave 2 (PR pending)
 Created real React server-rendered component tests for accessible locked actions, family/clinical UI states, metric loading and guard-preserving keyboard tab navigation; added synthetic-only dictation state, cancellation, provider failure and disabled real-microphone tests. No 95% acceptance claim. CI/Codex not yet qualified; clinical G2/G2b NO-GO unchanged.
 
