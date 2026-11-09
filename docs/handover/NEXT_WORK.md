@@ -1,3 +1,8 @@
+## M4-08 Web executed code wave 3
+Qualify mocked-fetch authentication/CSRF negative paths and center-timezone/DST tests through original six-job CI, SBOM, smart-ci-gate and exact-head Codex. Record measured four-metric API/Web receipt; continue source-wide executable UI coverage without modifying denominators or approval gates.
+
+---
+
 ## COM-02 license classification — next actions (2026-11-09)
 1. Run exact-head license classifier tests and full CI; inspect generated component report and review-only notices artifact.
 2. Obtain exact-head Codex review; disposition and fix findings, requalify CI before merge.
