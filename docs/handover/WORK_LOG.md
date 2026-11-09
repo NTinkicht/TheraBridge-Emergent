@@ -1,3 +1,8 @@
+## 2026-11-09 — COM-02 continuous SBOM implementation checkpoint
+Added CycloneDX scanner invocation through Anchore/Syft and structure validator, negative test cases, asset/image tracked checksum inventory, source/artifact upload for every PR/push, preview-container image SBOM and required Smart CI gate wiring. Additions apply to CI/evidence only; no clinical code, entitlement, tenant or repository visibility changes. Automated CI and reviewer outcomes PENDING; actual SPDX/CycloneDX package discovery not yet established at checkpoint. 30-day action artifact retention; permanent release/digest archive separate.
+
+---
+
 ## 2026-11-09 — COM-01/02 qualification work
 Added privacy-safe IP rights evidence register; tested-by-CI-in-design inventory cases for traversal, absolute/symlink paths, overwrite avoidance, missing workspace manifest, dynamic workspace discovery, unsupported workspace syntax and deterministic output. Added scoped Actions workflow; tests have NOT RUN at this evidence checkpoint. No V1 runtime changes, no license grant, no repository visibility change.
 
