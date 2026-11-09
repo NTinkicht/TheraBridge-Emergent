@@ -1,3 +1,15 @@
+## 2026-11-09 — COM-02 continuous SBOM PR test plan (NOT RUN at authoring)
+- New SBOM validator negative-path Node tests: NOT RUN.
+- Fresh source CycloneDX scan and package-lock/Yarn discovery: NOT RUN.
+- Per-commit tracked asset hash inventory and artifact upload: NOT RUN.
+- Built preview-container OS/runtime CycloneDX scan and validation: NOT RUN.
+- Smart CI policy and all existing six full jobs: NOT RUN on proposed head.
+- Exact-head independent review: PENDING.
+- Full commercial license compatibility/rights approval: OPEN; clinical production authorization NO-GO.
+Evidence to be upgraded only from workflow results with source SHA and actual artifacts.
+
+---
+
 ## 2026-11-09 — COM-01/02 inventory qualification PR (PENDING EXECUTION)
 - Node test contract suite authored for inventory discovery, deterministic output, output path confinement, missing manifests, overwrite prevention and unsupported globs: **NOT RUN** at authoring checkpoint.
 - Dedicated GitHub Actions workflow created: **NOT RUN** at authoring checkpoint; verify run ID, SHA and jobs before PASS claim.
