@@ -1,3 +1,11 @@
+## COM-02 continuous SBOM — next actions 2026-11-09
+1. Execute PR-head GitHub CI; check Syft's actual lockfile discovery, CycloneDX JSON validation, artifact names, asset checksum inventory and container OS SBOM. Fix errors rather than waiving required SBOM gate.
+2. Verify Smart CI shadow/full mode and newly required `sbom` check; run integration tests; verify exact-head Codex review and resolve every finding.
+3. After green checks, merge PR and verify fresh `main`-commit source SBOM artifact and smart-ci-gate PASS. Do not assert background monitoring or unlimited artifact retention.
+4. Continue full third-party license compatibility, fonts/brand/illustration/AI providers and source ownership rights review under #312/#313. Preserve public repo for Actions; clinical production remains NO-GO.
+
+---
+
 ## COM-01/02 inventory qualification — next actions 2026-11-09
 1. Review latest PR head; verify dedicated commercial-inventory workflow, full Smart CI and existing six job gates; run and record exact evidence.
 2. Request Codex exact-head review and resolve findings before merging.
