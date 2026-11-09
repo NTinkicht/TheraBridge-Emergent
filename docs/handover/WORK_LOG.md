@@ -1,3 +1,8 @@
+## 2026-11-10 — API source-executing coverage and hard-deny tests
+Created `apps/api/test/m4-auth-boundaries.e2e-spec.ts` exercising actual policy/permissions, unsigned clinical capabilities, family messaging restrictions, trusted forwarded IP processing, cookies, token comparisons and password rejection. Pure fake data and no services. Qualification pending; no release approval claimed.
+
+---
+
 ## 2026-11-09 — M4-08 security-critical Web adapter and time test implementation
 Implemented Jest tests that exercise real auth/session CSRF transitions with purely synthetic mocked network and center-local time formatting/conversion including nonexistent and repeated DST wall times. All real microphone/clinical release gates unchanged. Not yet accepted; require exact-head CI and review.
 
