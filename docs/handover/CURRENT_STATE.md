@@ -1,3 +1,10 @@
+## 2026-11-09 — M4-08 executed Web domain regression wave (review pending)
+Added Jest/ts-jest executed branch tests for planning handoff, goal-review dates, progress bucket isolation and Child 360 timeline provenance; synthetic fixtures only, no API writes. The existing whole-source Web 95% target remains NOT QUALIFIED. Exact-head CI and independent review still required.
+
+
+
+---
+
 ## 2026-11-09 — M4-08 integrated API/Web evidence PR (qualification pending)
 Existing full API instrumented Jest report and Web all-source Istanbul audit are reused. A new joint report records exact run/SHA, four-metric coverage, actual API/Web file scope, zero-statement Web files and explicit sub-95% metrics. The receipt is NOT a release approval or a 95% pass. CI, independent review and actual current-head percentages remain pending.
 
