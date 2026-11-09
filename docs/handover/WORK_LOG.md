@@ -1,3 +1,10 @@
+## 2026-11-09 — COM-02 commercial license triage implementation
+Created scripts/commercial/classify-sbom.mjs and negative tests; integrated per-PR/main workflow artifact. Generated notice is explicitly REVIEW DRAFT, not legal notices or a root LICENSE. Added non-package rights review matrix. No application, tenant, signing, safeguarding, billing, repository-visibility changes. Execution evidence NOT YET VERIFIED.
+
+
+
+---
+
 ## 2026-11-09 — M4-08 Web domain executable coverage implementation
 Implemented typed-module Jest execution for eight Web domain helpers: plan handoff, progress summary, centre-local goal reviews, Child 360 timeline, practice recurrence, plan evidence, clinician journey and evidence suggestions. Also align legacy coverage summary with independently audited Web Istanbul figures. Tests cover invalid/revoked-like data boundaries, plan version scope, source provenance and no inferred clinical conclusions. Not tested/accepted on final HEAD yet.
 
