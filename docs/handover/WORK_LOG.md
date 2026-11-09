@@ -1,6 +1,14 @@
 ## 2026-11-09 — M4-08 UI execution wave 2
 Added source-executing SSR Jest checks for real design/ui.tsx components and a11y-tabs.ts, plus privacy-preserving synthetic dictation.ts tests. Covers disabled clinical actions with visible reasons, metric loading, keyboard click guards and cancellation. No runtime, patient, authorization or real capture changes. Qualification pending.
 
+
+---
+
+## 2026-11-09 — COM-02 commercial license triage implementation
+Created scripts/commercial/classify-sbom.mjs and negative tests; integrated per-PR/main workflow artifact. Generated notice is explicitly REVIEW DRAFT, not legal notices or a root LICENSE. Added non-package rights review matrix. No application, tenant, signing, safeguarding, billing, repository-visibility changes. Execution evidence NOT YET VERIFIED.
+
+
+
 ---
 
 ## 2026-11-09 — M4-08 Web domain executable coverage implementation

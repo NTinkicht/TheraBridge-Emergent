@@ -1,6 +1,14 @@
 ## 2026-11-09 — M4-08 Web UI execution wave 2 (PR pending)
 Created real React server-rendered component tests for accessible locked actions, family/clinical UI states, metric loading and guard-preserving keyboard tab navigation; added synthetic-only dictation state, cancellation, provider failure and disabled real-microphone tests. No 95% acceptance claim. CI/Codex not yet qualified; clinical G2/G2b NO-GO unchanged.
 
+
+---
+
+## 2026-11-09 — COM-02 license classification (PR pending)
+Adds exact-commit scanner license candidate review queue and unapproved third-party notices draft to recurring SBOM job, with flags for copyleft/source-available/noncommercial and unknown terms. Separate assets/containers/fonts/AI rights register OPEN. No component is auto-approved. CI and independent review PENDING; public repo and clinical NO-GO unchanged.
+
+
+
 ---
 
 ## 2026-11-09 — M4-08 executed Web domain regression wave (review pending)

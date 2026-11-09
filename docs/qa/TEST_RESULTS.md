@@ -1,6 +1,18 @@
 ## M4-08 UI rendering + synthetic dictation tests — NOT YET QUALIFIED
 Web coverage wave 2 adds Jest React SSR presentation regression tests, accessible tab keyboard dispatch and synthetic-only dictation finite-state/protection cases. No DOM browser or patient data needed; no false release result. Final measured coverage figures, six-job CI, SBOM and exact-head Codex pending. Clinical NO-GO remains in force.
 
+
+---
+
+## 2026-11-09 — COM-02 license classifier PR test plan (NOT RUN)
+- Source CycloneDX classification, risky/unknown flags and no-auto-approval contract tests: NOT RUN.
+- New per-commit license review JSON and notices review artifact: NOT VERIFIED.
+- Existing SBOM lock coverage, secret scan, all six application jobs, Smart CI gate: NOT VERIFIED on proposed head.
+- Independent Codex review: PENDING.
+- Actual license compatibility and commercial owner rights: OPEN; clinical production NO-GO.
+
+
+
 ---
 
 ## M4-08 Web domain executable regression wave — NOT YET CI QUALIFIED

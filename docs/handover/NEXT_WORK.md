@@ -1,6 +1,17 @@
 ## M4-08 Web UI/interaction executable test wave
 Qualify React SSR, WAI-ARIA tab and synthetic dictation regression tests with all six exact-head CI checks, SBOM and independent Codex review. Record actual updated Web denominator and four coverage percentages before selecting larger pages with dynamic state. Maintain 95% target and clinical NO-GO.
 
+
+---
+
+## COM-02 license classification — next actions (2026-11-09)
+1. Run exact-head license classifier tests and full CI; inspect generated component report and review-only notices artifact.
+2. Obtain exact-head Codex review; disposition and fix findings, requalify CI before merge.
+3. For #313, verify published license texts, copyright notices, OS/container packages, font/logo/illustration/model and external service rights; document legal reviewer approvals separately. Generate final customer THIRD_PARTY_NOTICES.md only from verified evidence.
+4. Keep #312 IP ownership OPEN and do not adopt final proprietary root LICENSE or activate clinical production.
+
+
+
 ---
 
 ## M4-08 executed-code Web wave 1 and measured baseline consistency
