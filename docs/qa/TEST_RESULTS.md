@@ -1,3 +1,8 @@
+## 2026-11-09 — COM-02 SBOM reconciliation qualification pending
+Previous PR-head SBOM job failed with 673 lockfile entries and 666 scanner-discovered; seven missing package name/version pairs, including fsevents, aliases and Playwright. New reconciliation and negative regression added to address that without fabricating licensing metadata. **New-head CI: NOT YET VERIFIED; new-head Codex review: PENDING.** Full commercial rights and vulnerability clearance NOT established; clinical production NO-GO.
+
+---
+
 ## 2026-11-09 — COM-02 continuous SBOM PR test plan (NOT RUN at authoring)
 - New SBOM validator negative-path Node tests: NOT RUN.
 - Fresh source CycloneDX scan and package-lock/Yarn discovery: NOT RUN.
