@@ -1,3 +1,8 @@
+## M4-08 consolidated route/role coverage
+Qualify full executable route render, empty/unauthorized fallbacks and permission-limited navigation. Track full 151-module Istanbul denominator and latest four metrics. Next implement real browser-mounted client interactions (forms, session expiry, family/clinician journeys) with reproducible code coverage rather than SSR alone, and target API branch gaps. Require six original CI jobs, SBOM, Smart CI and final-head review. G2/G2b remain NO-GO.
+
+---
+
 ## M4-08 Web executed code wave 3
 Qualify mocked-fetch authentication/CSRF negative paths and center-timezone/DST tests through original six-job CI, SBOM, smart-ci-gate and exact-head Codex. Record measured four-metric API/Web receipt; continue source-wide executable UI coverage without modifying denominators or approval gates.
 

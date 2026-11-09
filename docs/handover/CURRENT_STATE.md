@@ -1,3 +1,8 @@
+## 2026-11-10 — M4-08 real cross-role Web route coverage wave 4 (review pending)
+Added genuine Jest/React SSR execution of authentication and recovery pages, access-denied/not-found/error fallbacks, actual shared form/brand components and cross-role application shell permission-based navigation. Role fixture tests cover guardian, coordinator, therapist, platform administrator and missing active context. The runner resolves real @/ imports; no runtime permissions or clinical gates changed. CI and independent review pending; 95% not qualified.
+
+---
+
 ## 2026-11-09 — M4-08 Web session/CSRF + timezone test wave 3 (pending qualification)
 Added source-executing synthetic Jest tests for Web authentication transport (pre-auth CSRF concurrency, session revocation on 401, 204, network error and protected mutation) and center-local time handling (missing timezone fail-closed, Dubai conversion, DST skipped/repeated times, preserved original offset). No runtime or clinical changes; 95% goal remains NOT QUALIFIED; exact-head CI/Codex pending.
 
