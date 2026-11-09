@@ -1,5 +1,5 @@
 ## M4-08 API coverage wave 4
-Qualify source-executing auth/security boundary regression tests via six original exact-head CI jobs, SBOM, Smart CI and independent review. Re-measure all API lines/branches/functions/statements against 93 executable-file baseline, track unexecuted source modules, and continue real branch tests across tenant authorization and scheduling. Clinical G2/G2b remain NO-GO.
+Qualify source-executing auth/security boundary regression tests and the invalid empty-cookie-name parser correction via six original exact-head CI jobs, SBOM, Smart CI and independent review. Re-measure all API lines/branches/functions/statements against 93 executable-file baseline, track unexecuted source modules, and continue real branch tests across tenant authorization and scheduling. Clinical G2/G2b remain NO-GO.
 
 ---
 
