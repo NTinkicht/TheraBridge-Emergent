@@ -1,3 +1,8 @@
+## 2026-11-10 — M4-08 Stage 2 #345 source-executed Web coverage VERIFIED BELOW TARGET
+Focused Actions [run #42887887583](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42887887583) on `684565cb64c7cbcfa07266f14893a0591fcfb426`: **PASS 45/45 Web Jest suites, 402/402 tests**, plus prior node-test contract and real audited Istanbul full-source coverage. 154/154 Web source files, no excluded modules; 17 files with zero executed statements. Lines **68.59%**, branches **56.54%**, functions **49.89%**, statements **63.15%**. Stage 1 60% was met and merged in #339; Stage 2 >=80% **NOT MET (11.41 points short)**. New tests execute mounted React actions and API-boundary negative states, with a production fix to stale prior-center summary requests. This focused run is NOT a complete original final-HEAD CI, security-critical 95% branch qualification, clinical acceptance, commercial authorization, hosted multi-role QA, real patient use or release. G2/G2b NO-GO remains enforced.
+
+---
+
 ## 2026-11-10 Web M4-08 PR #339 Stage 1 source-wide line coverage: focused CI #42873722265 PASS, head ed3a750946f5a2f1ec38355daa5cb64aabc11b33. 154 / 154 source modules instrumented (no exclusions): 60.08% lines; 48.75% branches; 40.33% functions; 54.24% statements. 18 modules have zero executed statements. Stage 1 owner-approved ≥60% all-source Web LINE target: MET. This is not 95% application coverage, nor 95% security branch coverage, nor final M4 acceptance. Full original exact-head CI and independent review are still required. Commercial SBOM new renderer evidence now records PENDING_UPSTREAM_REVIEW with no license approval. No clinical authorizations changed.
 
 ---
