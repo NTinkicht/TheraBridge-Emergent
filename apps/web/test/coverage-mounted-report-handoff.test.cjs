@@ -4,6 +4,10 @@ const React=require('react');
 const Renderer=require('react-test-renderer');
 const {act,create}=Renderer;
 const h=React.createElement;
+jest.mock('next/link',()=>({
+ __esModule:true,
+ default:({href,children,...props})=>React.createElement('a',{...props,href},children)
+}));
 const push=jest.fn();
 jest.mock('next/navigation',()=>({useRouter:()=>({push,replace:jest.fn(),refresh:jest.fn()}),
  usePathname:()=>'/app',useSearchParams:()=>new URLSearchParams()}));
