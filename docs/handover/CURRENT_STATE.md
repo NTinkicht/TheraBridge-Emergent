@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #352 measured candidate collection (code HEAD PASSED; doc-only HEAD pending)
+**Verified on code HEAD `e0ee645ced29bbe2d603c125e013646a343c1a02`:** full CI run [42908445420](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42908445420) SUCCESS, six new exact-version registry metadata adversarial tests PASS, **53/53 exact-version registry metadata responses**, 0 missing/invalid candidate manifests, 0 authoritative upstream LICENSE-text proofs, 0 legally approved packages. SBOM, gitleaks, live-session, demo-journey, Compose, 10-minute preview and Smart CI all green on code head. Codex earlier P1 incorrect test digest linkage fixed; later P2 correctly requires updating Rule 7 files with this evidence. This documentation update creates a NEW HEAD requiring its own exact-head CI/Codex review before merge. 91 tracked assets, upstream copyrights, SaaS and enterprise distribution rights still OPEN; public repository unchanged and G2/G2b NO-GO.
+
+---
+
 ## 2026-11-11 — COM-02 PR #352 registry authority candidate collector (IMPLEMENTED; CI/REVIEW PENDING)
 Added bounded `collect-upstream-license-candidates.mjs` and negative-path tests for exact npm registry name/version metadata, SHA-256 manifest bytes, and per-version failure states. Every unresolved exception remains in output even when registry evidence is missing; no registry manifest field substitutes for authoritative exact-version source LICENSE text or legal permission. CI artifact generation is wired, **not yet verified** on implementation SHA. 53 package-version exceptions and 91 non-package assets remain review scope from merged #350. Legal approvals 0; SaaS vs enterprise redistribution and clinical G2/G2b NO-GO unchanged.
 
