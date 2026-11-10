@@ -67,6 +67,10 @@ jobs:
         run: node scripts/commercial/reconcile-sbom.mjs /tmp/therabridge-source.cdx.json yarn.lock /tmp/therabridge-reconciled.cdx.json
       - name: Fail closed unless every Yarn resolved name/version is in source SBOM
         run: node scripts/commercial/check-sbom.mjs /tmp/therabridge-reconciled.cdx.json source
+      - name: Verify upstream evidence ledger covers every direct dependency
+        run: |
+          node --test scripts/commercial/check-direct-evidence.test.mjs
+          node scripts/commercial/check-direct-evidence.mjs
       - name: Validate license risk classifier and review queue invariants
         run: node --test scripts/commercial/classify-sbom.test.mjs
       - name: Classify all source components with approval fail-closed
@@ -186,6 +190,17 @@ jobs:
       - name: M4-02 private hosted scope and workflow safety regressions
         run: node --test scripts/qa/hosted-extra-contracts.test.mjs scripts/qa/hosted-role-guards.test.mjs scripts/qa/hosted-session-guards.test.mjs scripts/qa/hosted-private-workflow.test.mjs scripts/qa/prepare-hosted-run.test.mjs
       - run: yarn install --frozen-lockfile
+      - name: Verify exact-installed package license file inventory tooling
+        run: node --test scripts/commercial/collect-installed-licenses.test.mjs
+      - name: Collect installed package license-file hashes (review evidence only)
+        run: node scripts/commercial/collect-installed-licenses.mjs . /tmp/therabridge-installed-licenses.json
+      - name: Archive installed license evidence for full CI
+        uses: actions/upload-artifact@v4
+        with:
+          name: therabridge-installed-license-files-${{ github.sha }}
+          path: /tmp/therabridge-installed-licenses.json
+          if-no-files-found: error
+          retention-days: 30
       - name: M4-02 private QA runtime redaction and fail-closed tests
         run: node --test scripts/qa/hosted-extra-runtime.test.mjs
       - name: Verify migration guard negative-path tests

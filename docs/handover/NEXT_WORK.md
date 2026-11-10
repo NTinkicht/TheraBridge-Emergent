@@ -1,3 +1,27 @@
+## COM-02 P2 workspace license scanner correction — verification needed
+1. Confirm exact-head CI passes new non-hoisted workspace fixture, frozen-Yarn installed license evidence collector, SBOM, tests, previews and Smart CI gate.
+2. Download updated exact-run installed license artifact, recompute whole-workspace count, reconcile remaining missing-license cases and triage.
+3. Obtain new-head Codex clearance for P2 and resolve review thread, then merge only with green CI.
+4. Continue private IP ownership, third-party assets/models and SaaS vs enterprise legal clearance. No root commercial LICENSE or clinical activation.
+
+---
+
+## COM-02 exact-installed package license evidence — pending
+1. Run full PR-head CI and verify installed package evidence collector sees actual package.json versions plus LICENSE/NOTICE SHA-256 checksums; review missing-file count.
+2. Have Codex review exact green head. Resolve all comments and preserve concurrent V1 handover updates.
+3. Compare captured license file hashes/text and upstream sources with resolved package versions and SaaS vs enterprise redistribution obligations. Open individual remediation issues for unknown/restrictive cases rather than treating unknown as green.
+4. Brand, catalogue images, AI models, company/copyright ownership remain separately OPEN and need written rights evidence. Clinical activation remains NO-GO.
+
+---
+
+## COM-02 upstream license audit — immediate qualification
+1. Execute exact-head CI and new direct evidence contract tests; verify fresh source/asset/image SBOM and license review artifacts, Codex review and no unaddressed blockers.
+2. After approved merge, verify main push SBOM output when available, but do not infer absent results.
+3. Retrieve exact locked npm tarball LICENSE/NOTICE texts with checksums, compare transitive labels; audit OS/image digests, font binaries, original logo and AI/data service terms.
+4. Owner/qualified counsel to sign rights register privately for COM-01, and review SaaS and enterprise redistribution obligations separately. Keep proprietary LICENSE and clinical activation blocked.
+
+---
+
 ## M4-08 big-batch execution plan — stop the helper-only PR cadence
 Stage A: qualify real role-targeted pages across 15 operational routes with multiple data states on source-wide Istanbul; fix failures and track measured delta. Stage B: one broader client-side/browser-coverage PR spanning login/context, scheduling, clinical drafts, family practice and governance, with reliable browser-to-source Istanbul provenance and no hidden denominator. Stage C: one API tenant/clinical branch coverage PR across role, cross-tenant, concurrency, scheduling and protected release negatives. Do not claim 95% until actual 4-metric gate passes. Maintain Codex, original CI jobs, SBOM, Smart CI and clinical NO-GO.
 
