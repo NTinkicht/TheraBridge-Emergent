@@ -8,6 +8,14 @@ Run exact-head CI on source-correspondence candidate collector, examine actual 5
 
 ---
 
+## 2026-11-11 — M4-08 Stage 3 PR #353 exact-head qualification and merge
+1. Verify the history-wide Gitleaks result on the narrow deterministic fictional mismatched-password test fixture exception; if any finding persists, investigate securely, do not hide/disable real findings. After documentation updates, require NEW exact-head full CI: secret-scan, SBOM, application test, seven-role demo-journey, live-session, Compose, non-root 512MiB ten-minute preview, Smart CI, source-covered focused Web audit.
+2. Preserve focused run [#42913539171](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42913539171) on code HEAD `96941265146be1803a32d96c7d1124f57e207cb4`: 88/88 Jest suites, 832/832 Web tests PASS, 154/154 instrumented production modules, 9 modules with no executed statements, 90.13% lines / 81.04% branches / 79.24% functions / 86.62% statements. Never collapse line coverage into all-four-metric M4 approval: branches 81.04%, functions 79.24%, statements 86.62%, nine wholly unexecuted modules and distinct ≥95% security-critical branch goal remain open.
+3. When final-head CI green, mark PR #353 ready for review, trigger one independent Codex review, disposition every P1/P2 and newly created head CI, then merge with exact-head SHA. Close Stage 3 issue #348 only upon qualified merge and record the merge commit.
+4. Continue M4 parent #182 all-four-metric API/Web ≥95% and security-critical ≥95% branches, hosted ten-account synthetic acceptance (#176), audit reconciliation (#183), source inventory (#266); clinical G2/G2b, real AI/STT, guardian release and commercial approvals remain closed/NO-GO.
+
+---
+
 ## 2026-11-11 — COM-02 #355 qualification after P2 and all-ref synthetic finding
 Qualify HEAD including added absolute request timeout tests; validate .gitleaks global exact synthetic fixture allowlist eliminates only known false positive, not real credentials. Inspect full original `test`, `secret-scan`, `live-session`, `demo-journey`, `preview-container`, `compose` and Smart CI on exact final HEAD. Then obtain final Codex independent review after stable CI, disposition all findings, merge only if Rule 16 gates pass. The 53 exact package/version source-to-revision mappings remain fully unresolved until independently corroborated, with 91 assets, SaaS/on-prem rights, and G2/G2b legal/clinical gates still open.
 
