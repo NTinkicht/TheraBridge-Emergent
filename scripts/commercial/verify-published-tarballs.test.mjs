@@ -53,12 +53,55 @@ test('rejects fabricated commercial approval in previous evidence',async()=>{
  await assert.rejects(()=>audit(f,{fetchBuffer:async()=>f.bytes}),/FALSE_APPROVAL/);
 });
 
-test('rejects PAX and GNU extended path headers instead of mislabeling effective LICENSE files',()=>{
- const f=fixture();const tar=gunzipSync(f.bytes);
- for(const code of [120,103,76,75]){
-  const changed=Buffer.from(tar);changed[156]=code;
-  assert.throws(()=>extractLicenseHashes(gzipSync(changed)),/UNSUPPORTED_TAR_EXTENDED_HEADER/);
+function paxRecord(key,value){
+ const payload=key+'='+value+'\n';let n=payload.length+3;
+ while(true){const record=n+' '+payload;if(Buffer.byteLength(record)===n)return record;n=Buffer.byteLength(record);}
+}
+test('PAX entry-local path identifies real package-root LICENSE while metadata itself is ignored',()=>{
+ const p=paxRecord('path','package/LICENSE');
+ const ext=file('PaxHeader',p),header=file('package/placeholder','synthetic license');
+ const tar=gzipSync(Buffer.concat([ext.subarray(0,156),Buffer.from('x'),ext.subarray(157),header,Buffer.alloc(1024)]));
+ const hashes=extractLicenseHashes(tar);
+ assert.equal(hashes.length,1);
+ assert.equal(hashes[0].file,'LICENSE');
+ assert.equal(hashes[0].sha256,createHash('sha256').update('synthetic license').digest('hex'));
+});
+test('PAX path cannot disguise nested file as root LICENSE or leak to following entry',()=>{
+ const ext=file('PaxHeader',paxRecord('path','package/nested/LICENSE'));
+ const changed=Buffer.from(ext);changed[156]=120;
+ const tar=gzipSync(Buffer.concat([changed,file('package/placeholder','ignored'),file('package/LICENSE','real'),Buffer.alloc(1024)]));
+ const hashes=extractLicenseHashes(tar);
+ assert.equal(hashes.length,1);
+ assert.equal(hashes[0].sha256,createHash('sha256').update('real').digest('hex'));
+});
+test('GNU longname is scoped to one actual file header',()=>{
+ const ext=Buffer.from(file('././@LongLink','package/LICENSE\0'));ext[156]=76;
+ const hashes=extractLicenseHashes(gzipSync(Buffer.concat([ext,file('package/placeholder','gnu'),Buffer.alloc(1024)])));
+ assert.deepEqual(hashes.map(x=>x.file),['LICENSE']);
+});
+test('P2: never hash a raw ustar size when PAX overrides effective size',()=>{
+ const pax=Buffer.from(file('PaxHeader',paxRecord('size','1')));pax[156]=120;
+ const tar=gzipSync(Buffer.concat([pax,file('package/LICENSE','abc'),Buffer.alloc(1024)]));
+ assert.throws(()=>extractLicenseHashes(tar),/UNSUPPORTED_PAX_SEMANTICS/);
+});
+test('P2: GNU sparse metadata cannot disguise a nested license as package-root',()=>{
+ const attrs=paxRecord('GNU.sparse.map','0,3')+paxRecord('GNU.sparse.size','3')+
+  paxRecord('GNU.sparse.name','package/nested/LICENSE');
+ const pax=Buffer.from(file('PaxHeader',attrs));pax[156]=120;
+ const tar=gzipSync(Buffer.concat([pax,file('package/LICENSE','abc'),Buffer.alloc(1024)]));
+ assert.throws(()=>extractLicenseHashes(tar),/UNSUPPORTED_PAX_SEMANTICS/);
+});
+test('malformed and dangerous PAX/GNU extensions fail closed',()=>{
+ const base=file('package/placeholder','x');
+ const archive=(meta,type,following=[base])=>{const h=Buffer.from(file('PaxHeader',meta));h[156]=type;return gzipSync(Buffer.concat([h,...following,Buffer.alloc(1024)]));};
+ for(const broken of ['bad','7 a=b\n',paxRecord('path','package/../LICENSE'),paxRecord('path','package/LICENSE')+paxRecord('path','package/NOTICE')]){
+  assert.throws(()=>extractLicenseHashes(archive(broken,120)),/MALFORMED_PAX_RECORD|UNSAFE_TAR_PATH/);
  }
+ assert.throws(()=>extractLicenseHashes(archive(paxRecord('path','package/LICENSE'),103)),/UNSAFE_GLOBAL_PAX_PATH|UNSUPPORTED_PAX_SEMANTICS/);
+ assert.throws(()=>extractLicenseHashes(archive('package/LICENSE\0',75)),/UNSUPPORTED_GNU_LONG_LINK/);
+ assert.throws(()=>extractLicenseHashes(archive(paxRecord('path','package/LICENSE'),120,[])),/ORPHAN_TAR_EXTENSION/);
+ const huge=paxRecord('comment','x'.repeat(65536));
+ assert.throws(()=>extractLicenseHashes(archive(huge,120)),/OVERSIZED_TAR_EXTENSION/);
 });
 
 test('compares publisher-to-installed license SHA256 and detects silent modifications',async()=>{
