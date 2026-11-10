@@ -56,7 +56,7 @@ describe('real scoped synthetic grant revocation and withdrawal recovery',()=>{
    'REVOKED','Synthetic family release correction');
   expect(familyReleaseApi.recoverGrants).toHaveBeenCalledTimes(2);
   expect(html()).toContain('Grant revoked.');
-  expect(html()).toContain('(revoked)');
+  expect(tree.root.findAllByType('p').flatMap(p=>Array.isArray(p.props.children)?p.props.children:[])).toContain('revoked');
  });
  it('withdraws existing grant without any new approval or release mutation',async()=>{
   familyReleaseApi.recoverGrants.mockResolvedValueOnce({items:[grant()]})
@@ -65,7 +65,7 @@ describe('real scoped synthetic grant revocation and withdrawal recovery',()=>{
   expect(familyReleaseApi.change).toHaveBeenCalledWith('center-a','grant-fictional',
    'WITHDRAWN','Synthetic family release correction');
   expect(html()).toContain('Grant withdrawn.');
-  expect(html()).toContain('(withdrawn)');
+  expect(tree.root.findAllByType('p').flatMap(p=>Array.isArray(p.props.children)?p.props.children:[])).toContain('withdrawn');
  });
  it('preserves evidence and error notice after rejected withdrawal',async()=>{
   familyReleaseApi.change.mockRejectedValue(new Error('Synthetic 403'));
