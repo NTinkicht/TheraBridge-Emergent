@@ -13,6 +13,12 @@ Inspected root, API and web package manifests, Dockerfile.preview, SBOM CI and e
 
 ---
 
+## 2026-11-10 — API source-executing coverage and hard-deny tests
+Created `apps/api/test/m4-auth-boundaries.e2e-spec.ts` exercising actual policy/permissions, unsigned clinical capabilities, family messaging restrictions, trusted forwarded IP processing, cookies, token comparisons and password rejection. Pure fake data and no services. First full API CI run surfaced invalid whitespace-only cookie names; parser updated to skip empty names. Requalification pending; no release approval claimed.
+
+
+---
+
 ## 2026-11-10 — M4-08 route-focused coverage wave
 Created `apps/web/test/coverage-real-routes-roles.test.cjs` to render actual Next Web route modules via React SSR, inspect accessible form/brand error fallbacks, and assert navigation isolation across synthetic roles and permission sets. Added @/ module resolution to the existing source-wide Jest runner; no exclusions or application runtime changes. CI/review not yet complete.
 
