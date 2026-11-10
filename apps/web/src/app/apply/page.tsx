@@ -13,7 +13,7 @@ const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 type Form = Record<'organizationName' | 'contactName' | 'contactEmail' | 'contactPhone' | 'country' | 'city' | 'timezone' | 'therapistEstimate' | 'childEstimate' | 'message', string>;
 
-function validate(f: Form, specialties: string[], ack: boolean): Record<string, string> {
+export function validate(f: Form, specialties: string[], ack: boolean): Record<string, string> {
   const e: Record<string, string> = {};
   if (f.organizationName.trim().length < 2) e.organizationName = 'Enter your center’s name.';
   if (f.contactName.trim().length < 2) e.contactName = 'Enter the name of the person we should contact.';
