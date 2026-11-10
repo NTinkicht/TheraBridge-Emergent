@@ -49,7 +49,7 @@ test('root matching evidence does not itself attest npm release provenance, text
  assert.equal(out.unresolvedNonPackageAssets,91);
 });
 test('missing Git head, untrusted repository and wrong source version remain visible',async()=>{
- const r=fixture();r.records[0].candidateRepositoryUrl='https://github.com/evil.org/repo';
+ const r=fixture();r.records[0].candidateRepositoryUrl='https://github.com.evil.org/org/repo';
  const out=await sourceCorrespondenceCandidates(r,{fetcher:async()=>Buffer.from('{}')});
  assert.equal(out.records.find(x=>x.name==='alpha').evidenceStatus,'UNTRUSTED_REPOSITORY');
  assert.equal(out.records.find(x=>x.name==='@scope/beta').evidenceStatus,'SOURCE_REVISION_CANDIDATE_UNAVAILABLE');
