@@ -27,7 +27,7 @@ jest.mock('@/components/clinical/HomePlanSyntheticAssist',()=>({
 jest.mock('@/lib/clinical',()=>{
  const real=jest.requireActual('@/lib/clinical');
  return {...real,clinicalApi:{...real.clinicalApi,saveVersion:jest.fn(),
-  submit:jest.fn(),templates:jest.fn(),newVersion:jest.fn()}};
+  submit:jest.fn(),templates:jest.fn(),newVersion:jest.fn(),giveBack:jest.fn(),familyPreview:jest.fn()}};
 });
 const {clinicalApi}=require('../src/lib/clinical');
 const {VersionEditor}=require('../src/components/clinical/PlanEditor');
@@ -47,7 +47,7 @@ const ws=(more={})=>({
  templates:[template],...more
 });
 let tree=null,run=null,pending=null;
-beforeEach(()=>{jest.clearAllMocks();for(const key of ['templates','saveVersion','submit','newVersion']) clinicalApi[key].mockReset();run=jest.fn(async(fn)=>{await fn();return true;});
+beforeEach(()=>{jest.clearAllMocks();for(const key of ['templates','saveVersion','submit','newVersion','giveBack','familyPreview']) clinicalApi[key].mockReset();run=jest.fn(async(fn)=>{await fn();return true;});
  pending=jest.fn();});
 afterEach(async()=>{if(tree){await act(async()=>tree.unmount());tree=null;}});
 const get=id=>tree.root.findByProps({'data-testid':id});
@@ -178,6 +178,65 @@ describe('M4-08 real clinician plan version draft controls',()=>{
   await mount(version({status:'WITHDRAWN'}));
   await click('plan-new-version');
   expect(clinicalApi.newVersion).toHaveBeenCalledWith('c1','plan-1');
+  expect(clinicalApi.saveVersion).not.toHaveBeenCalled();
+  expect(clinicalApi.submit).not.toHaveBeenCalled();
+ });
+ it('persists goal planning horizon and dates on exact optimistic version',async()=>{
+  clinicalApi.saveVersion.mockResolvedValue({version:4});
+  await mount();
+  await change('goal-horizon-0','LONG_TERM');
+  await change('goal-target-date-0','2030-03-15');
+  await change('goal-review-date-0','2030-02-15');
+  await change('goal-measure-0','percent');
+  await change('goal-baseline-0','30');
+  await click('plan-save');
+  expect(clinicalApi.saveVersion).toHaveBeenCalledWith('c1','v1',
+   expect.objectContaining({version:3,goals:[expect.objectContaining({
+    horizon:'LONG_TERM',targetOn:'2030-03-15',reviewOn:'2030-02-15',
+    measure:'percent',baseline:30
+   })]}));
+ });
+ it('ignores an empty freshly-added goal rather than submitting invalid definitions',async()=>{
+  clinicalApi.saveVersion.mockResolvedValue({version:4});
+  await mount();
+  await click('goal-add');
+  expect(get('goal-1')).toBeTruthy();
+  expect(get('goal-title-1').props.value).toBe('');
+  await click('plan-save');
+  const saved=clinicalApi.saveVersion.mock.calls[0][2];
+  expect(saved.goals).toHaveLength(1);
+  expect(saved.goals[0].key).toBe('g1');
+  expect(saved.goals[0].title).toBe('Turn-taking');
+ });
+ it('removes an existing goal without carrying it into the saved draft',async()=>{
+  clinicalApi.saveVersion.mockResolvedValue({version:4});
+  await mount();
+  await click('goal-remove-0');
+  expect(get('goals-empty')).toBeTruthy();
+  await click('plan-save');
+  expect(clinicalApi.saveVersion).toHaveBeenCalledWith('c1','v1',
+   expect.objectContaining({version:3,goals:[]}));
+ });
+ it('gets an immutable internal family preview but never triggers approval or release',async()=>{
+  clinicalApi.familyPreview.mockResolvedValue({notice:'Synthetic internal-only preview',
+   activities:[],snapshotId:'snapshot-a',fingerprint:'fictional-sha256'});
+  await mount();
+  await click('plan-family-preview');
+  expect(clinicalApi.familyPreview).toHaveBeenCalledWith('c1','v1');
+  expect(get('family-preview')).toBeTruthy();
+  expect(JSON.stringify(tree.toJSON())).toContain('Synthetic internal-only preview');
+  await click('plan-family-preview');
+  expect(find('family-preview')).toHaveLength(0);
+  expect(clinicalApi.submit).not.toHaveBeenCalled();
+ });
+ it('returns only a supervisor-review draft with exact comment and version',async()=>{
+  clinicalApi.giveBack.mockResolvedValue({version:4});
+  await mount(version({status:'IN_REVIEW',mine:false}),
+   ws({canEdit:false,canReview:true}));
+  await change('review-comment','  Additional synthetic documentation required  ');
+  await click('review-return');
+  expect(clinicalApi.giveBack).toHaveBeenCalledWith('c1','v1',
+   'Additional synthetic documentation required',3);
   expect(clinicalApi.saveVersion).not.toHaveBeenCalled();
   expect(clinicalApi.submit).not.toHaveBeenCalled();
  });
