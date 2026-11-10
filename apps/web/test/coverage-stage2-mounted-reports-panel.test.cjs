@@ -99,6 +99,29 @@ describe('Stage 2 source-scoped reports panel history and creation',()=>{
   await click('reports-load-more');
   expect(reportsApi.list).toHaveBeenCalledTimes(2);
  });
+ it.each([
+  ['another child','c1','fictional-child-2'],
+  ['another center','c2','fictional-child']
+ ])('discards paginated history immediately on switching to %s',async(_label,centerId,childId)=>{
+  mockData={items:[row('old-current')],hasMore:true,nextOffset:1};
+  reportsApi.list.mockResolvedValueOnce({items:[row('old-history')],hasMore:false,nextOffset:null});
+  await mount();
+  await click('reports-load-more');
+  expect(get('report-row-old-history')).toBeTruthy();
+  mockData={items:[row('new-current')],hasMore:false,nextOffset:null};
+  await act(async()=>tree.update(h(ReportsPanel,{
+    centerId,ws:child({child:{id:childId,name:'Fictional B',services:['ot']}}),run,onError
+  })));
+  expect(find('report-row-old-history')).toHaveLength(0);
+  expect(find('report-row-old-current')).toHaveLength(0);
+  expect(get('report-row-new-current')).toBeTruthy();
+  expect(find('reports-load-more')).toHaveLength(0);
+  // A fresh draft must be scoped to the new child AND center, not old form state.
+  await change('report-service','ot');
+  await click('report-create');
+  expect(reportsApi.create).toHaveBeenCalledWith(centerId,childId,
+    expect.objectContaining({service:'ot'}));
+ });
  it('distinguishes fetch error from loading and avoids creating default results',async()=>{
   mockData=null;await mount();
   expect(get('reports-loading')).toBeTruthy();
