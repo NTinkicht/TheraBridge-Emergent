@@ -13,6 +13,13 @@ After 60% is verified, obtain exact final-head six original CI jobs, Smart CI, S
 2. Run the original full-source Istanbul Web measurement (all four metrics and zero-statement file count, exact head); **prove ≥60% lines** before Stage 1 merge. Maintain separate security-critical branches ≥95% target and complete critical E2E scenario checks.
 3. Resolve Codex P1 Rule 7 handover sync, any subsequent P1/P2 findings, and require six original CI jobs, Smart CI, SBOM, secret scan and final-head independent review. Keep #182 / #167 open until all true acceptance requirements complete.
 4. Only after #339 passes and merges, implement separate Stage 2 #338 ≥80% Web line coverage in one mega PR. No clinical/production release; G2/G2b remain NO-GO.
+## COM-02 complete transitive and rights review
+1. Qualify Next.js 14.2.35 size-exception output, initial 160 non-direct publisher tarball sample, installed per-copy license hashes and artifact retention under exact-head CI and Codex.
+2. Expand verified coverage to all remaining non-direct names/versions; resolve `@types` license provenance, missing top-level license texts and lockfile/OS/platform exceptions.
+3. Review container/OS/runtime/font/logo/model/dataset rights plus package-specific SaaS network and enterprise redistribution obligations with qualified counsel. No proprietary root LICENSE, signed contract or clinical activation without approvals.
+
+---
+
 ## COM-02 comprehensive evidence qualification
 Qualify exact-head CI, Codex and artifacts; inspect any direct-version download failures and installed-license SHA256 mismatches. Then separately verify transitive/optional/platform package publisher bytes, OS/container images and external fonts/logos/models/datasets. Obtain rights-holder and qualified legal review before any SaaS/enterprise distribution notices, signed contracts, or root proprietary LICENSE. Clinical gates stay NO-GO.
 

@@ -9,6 +9,11 @@ Confirmed focused Jest/Istanbul run #42867251775 on commit 2d3839b8: Web full-so
 
 ## 2026-11-10 — M4-08 Stage 1 Web mega-coverage PR #339 (IN PROGRESS, NOT QUALIFIED)
 Owner approved replacing the blanket 95% Web coverage acceptance with staged **≥60% then ≥80% all-source Web line** gates (#337 then #338). Safety-critical Web auth/session/CSRF/access/release control has a separate ≥95% **branch** target; API, 100% defined critical journeys and all clinical NO-GO controls remain unchanged. The existing 151-file/full-production-source Istanbul denominator and all four measured metrics remain mandatory. PR #339 adds executable Jest regressions for versioned evidence, saved-plan projections, strict clinical/administrative/report transport paths and no-release boundaries. Tests are AUTHORED; exact-head CI, actual new coverage delta, final-head Codex, and Stage 1 ≥60% qualification PENDING. This is NOT a deployment, clinical authorization, release or 60%-coverage claim. Stage 2 #338 remains BLOCKED until Stage 1 measures ≥60% and merges.
+## 2026-11-10 — COM-02 transitive publisher verification wave + pinned Next.js exception (in review)
+Added first 160 bounded exact installed non-direct name/version publisher tarball checks with SRI and installed license SHA256 comparisons, plus a fixed-version Next.js 14.2.35 48-MiB compressed/256-MiB expanded exception. No other version gains higher bounds. Full CI artifact, security tests and Codex qualification pending. Approval 0; legal/SaaS/enterprise and clinical gates remain closed.
+
+---
+
 ## 2026-11-10 — COM-02 full direct publisher verification and rights inventory (qualification pending)
 A consolidated audit change extends bounded concurrent exact-tarball/SRI downloads across installed direct names/versions, performs publisher-to-installed LICENSE/NOTICE hash comparisons, and produces a transitive + tracked-asset legal-review queue. No published license or distribution legally approved; technical CI/Codex pending.
 

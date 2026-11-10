@@ -16,6 +16,11 @@
 - NEW TEST EXECUTION: NOT VERIFIED on final head yet. Baseline before #334: 151 Web production source modules; lines 10.63%, branches 7.05%, functions 7.86%, statements 9.89%; 123 unexecuted. Re-measure at #339 final head; do not cite previous baseline as current.
 - Stage 1 >=60% measured Web line acceptance: **NOT QUALIFIED**. Stage 2 80% **NOT STARTED**. No changes to API/clinical approval; G2/G2b NO-GO.
 - Mandatory six-job CI / Smart CI / SBOM / gitleaks / Codex final HEAD: IN PROGRESS, not asserted green. Codex initial P1 Rule 7 handover sync addressed in this update; final-head re-review pending.
+## 2026-11-10 — COM-02 next and transitive evidence qualification PENDING
+Authored offline test cases for transitive-only selection, source/SRI integrity, installed license matching/mismatch, false approvals and missing lock integrity, plus pinned-version archive limit tests and mandatory SRI for Next.js. Exact-head GitHub tests, network sampling and Codex pending. No real clinical data, legal clearance or signed contract flows tested/authorized.
+
+---
+
 ## 2026-11-10 — COM-02 expanded publisher and transitive asset evidence (PENDING QUALIFICATION)
 Added regression tests covering installed LICENSE/NOTICE matches/mismatches, false approval rejection, and transitive/asset matrix isolation. Exact-head GitHub test execution and Codex independent review pending. CI must fail on authentic publisher integrity or installed-file hash mismatches and preserve audit artifacts; downloaded publisher text is not copied to repository.
 

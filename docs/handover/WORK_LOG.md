@@ -9,6 +9,11 @@ PR #339 expanded high-value executed-source tests: access/center/member provisio
 
 ## 2026-11-10 — M4-08 staged Web coverage and initial executable test batch
 Owner changed general-Web qualification from universal 95% to Stage 1 #337 ≥60% all-source lines followed by Stage 2 #338 ≥80%; retained four metrics, unchanged production source denominator and ≥95% branch target on security-critical client logic. Opened PR #339 with executable tests for checkpoint reference sets, same-key cross-version isolation, source drift/identity, saved snapshot precedence, center-member/invite actions, clinical child/plan/session routing and report review/family read-only boundaries. Web tests and coverage NOT YET measured on final head; full Stage 1 gate NOT QUALIFIED. Codex P1 requested synchronization of Rule 7 handover files; this commit addresses those four files. No runtime/clinical changes, no actual credentials or patient data.
+## 2026-11-10 — COM-02 transitive publisher evidence and Next.js bounded exception
+Implemented a separate exact locked non-direct npm tarball verifier with first-wave cap 160, existing SRI/installed-license SHA256 fail-closed requirements, explicit deferred queue, negative regression tests, additional CI artifact and technical guide. Added exact `next@14.2.35` compressed/decompressed limits without weakening other packages, download timing, strict hosts or legal gates. Await CI and independent review.
+
+---
+
 ## 2026-11-10 — COM-02 consolidated direct/transitive/assets work
 Implemented six-worker bounded exact npm publisher verification for all installed direct versions, per-file installed versus publisher SHA256 comparison, unresolved failure classification, and a consolidated transitive package and tracked-asset rights queue. New synthetic negative tests and CI evidence archive integration; legal approval false; full PR CI and independent Codex pending.
 
