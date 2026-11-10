@@ -119,7 +119,9 @@ describe('M4-08 mounted clinical report editor refuses unacknowledged revisions'
   const ref={current:null};
   await mount({...rootProps(),handoffGateRef:ref});
   await edit('Synthetic pending handoff');
-  await expect(act(async()=>ref.current())).rejects.toThrow('could not be saved');
+  let failure;
+  await act(async()=>{try{await ref.current();}catch(e){failure=e;}});
+  expect(failure).toEqual(expect.objectContaining({message:expect.stringContaining('could not be saved')}));
   expect(find('report-handoff-edit-lock')).toHaveLength(0);
   expect(get('report-section-summary').props.disabled).toBe(false);
  });
