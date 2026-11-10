@@ -47,7 +47,7 @@ const ws=(more={})=>({
  templates:[template],...more
 });
 let tree=null,run=null,pending=null;
-beforeEach(()=>{jest.clearAllMocks();run=jest.fn(async(fn)=>{await fn();return true;});
+beforeEach(()=>{jest.clearAllMocks();for(const key of ['templates','saveVersion','submit','newVersion']) clinicalApi[key].mockReset();run=jest.fn(async(fn)=>{await fn();return true;});
  pending=jest.fn();});
 afterEach(async()=>{if(tree){await act(async()=>tree.unmount());tree=null;}});
 const get=id=>tree.root.findByProps({'data-testid':id});
@@ -58,7 +58,7 @@ const mount=async(v=version(),workspace=ws())=>act(async()=>{
   onDirtyChange:pending,otherPlanDirty:false}));
 });
 const change=async(id,value)=>act(async()=>get(id).props.onChange({target:{value}}));
-const click=async id=>act(async()=>get(id).props.onClick());
+const click=async id=>act(async()=>{get(id).props.onClick();await new Promise(resolve=>setImmediate(resolve));});
 describe('M4-08 real clinician plan version draft controls',()=>{
  it('saves edited goal/title against exact optimistic version, never approves release',async()=>{
   clinicalApi.saveVersion.mockResolvedValue({version:4});
@@ -116,7 +116,7 @@ describe('M4-08 real clinician plan version draft controls',()=>{
   expect(clinicalApi.templates).toHaveBeenCalledWith('c1',{
    service:'speech',search:'practice',offset:0,limit:50
   });
-  expect(find('plan-template-more')).toHaveLength(1);
+  expect(get('plan-template-more')).toBeTruthy();
   await click('plan-template-more');
   expect(clinicalApi.templates).toHaveBeenLastCalledWith('c1',{
    service:'speech',search:'practice',offset:50,limit:50
@@ -163,7 +163,7 @@ describe('M4-08 real clinician plan version draft controls',()=>{
  it('allows a returned-for-revision author to edit but not a withdrawn version',async()=>{
   await mount(version({status:'RETURNED_FOR_REVISION'}));
   expect(get('plan-summary').props.disabled).toBe(false);
-  expect(find('plan-save')).toHaveLength(1);
+  expect(get('plan-save')).toBeTruthy();
   await act(async()=>tree.update(h(VersionEditor,{
    centerId:'c1',ws:ws(),planId:'plan-1',planTitle:'Synthetic plan',
    service:'speech',v:version({status:'WITHDRAWN'}),run,onDirtyChange:pending,
@@ -171,7 +171,7 @@ describe('M4-08 real clinician plan version draft controls',()=>{
   })));
   expect(get('plan-summary').props.disabled).toBe(true);
   expect(find('plan-save')).toHaveLength(0);
-  expect(find('plan-new-version')).toHaveLength(1);
+  expect(get('plan-new-version')).toBeTruthy();
  });
  it('creates a new draft from withdrawn provenance without mutating frozen evidence',async()=>{
   clinicalApi.newVersion.mockResolvedValue({id:'v2'});
