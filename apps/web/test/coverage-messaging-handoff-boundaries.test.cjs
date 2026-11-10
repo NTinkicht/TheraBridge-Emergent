@@ -87,10 +87,11 @@ describe('M4-08 report-to-plan prerequisites never imply plan publication',()=>{
   const detail={...rep(),versions:[{id:'saved-1',number:1}]};
   const out=draw(ReportToPlanHandoff,{centerId:'c',detail,
    prepare:async()=>({revision:1,release:()=>{}})});
-  expect(out).toContain('data-testid="report-to-plan-create"');
-  expect(out).toContain('disabled=""');
+  expect(out).toContain('data-testid="report-to-plan-toggle"');
+  expect(out).toContain('aria-expanded="false"');
+  expect(out).not.toContain('data-testid="report-to-plan-create"');
   expect(out).not.toContain('report-to-plan-completed');
-  expect(out).toContain('DRAFT');
+  expect(out).toContain('nothing is approved or shared with families');
  });
 });
 
