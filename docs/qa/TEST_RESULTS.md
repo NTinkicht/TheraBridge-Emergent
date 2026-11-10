@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #357 measured source correspondence QA (DEDICATED TEST PASS)
+**PASS** 7/7 `node --test scripts/commercial/corroborate-source-revisions.test.mjs` on code SHA `8c645d0feb79ddd7fc8cea24425aa6c722e2631b`, CI [42923019170](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42923019170). Positive root package identity, strict GitHub host/full SHA, wrong name/version, invalid bytes/UTF-8, unavailable GitHead, spoofed hostname, publisher/lock mismatch, tampered approvals and bounded concurrency covered. Generated report counts `{exceptions:53,sourceRootManifestMatches:15,stillRequiresIndependentAttestation:53,authoritativeLicenseTextsVerified:0,legallyApproved:0}`. Earlier initial HEAD 4ee9a2 had **FAIL** on wrong test fixture; fixed in 6a8c960 with reviewed P1 disposition. At writing time full integration/preview job on code SHA remained incomplete, so this is **not a full-CI pass claim**. Documentation-only HEAD now must be requalified. Clinical G2/G2b NO-GO.
+
+---
+
 ## 2026-11-11 — COM-02 #357 source correspondence collector tests (NOT YET RUN)
 Added offline tests for strict exact GitHub origin (no credentials, subdomain spoofing, SSH, queries or traversal), 40-hex commit, immutable root `package.json` name/version and SHA-256, invalid JSON/UTF8/size, preserved missing GitHead and 404/untrusted states, zero authorization and tampered scope. CI runs `node --test scripts/commercial/corroborate-source-revisions.test.mjs` and archives `therabridge-com02-source-correspondence-candidates.json`. Required exact-head CI is pending. No publisher/source correspondence independently attested, no authoritative LICENSE text approval or commercial grant, no G2/G2b activation.
 
