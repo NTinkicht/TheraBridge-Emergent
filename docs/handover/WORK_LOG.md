@@ -9,6 +9,23 @@ PR #339 expanded high-value executed-source tests: access/center/member provisio
 
 ## 2026-11-10 — M4-08 staged Web coverage and initial executable test batch
 Owner changed general-Web qualification from universal 95% to Stage 1 #337 ≥60% all-source lines followed by Stage 2 #338 ≥80%; retained four metrics, unchanged production source denominator and ≥95% branch target on security-critical client logic. Opened PR #339 with executable tests for checkpoint reference sets, same-key cross-version isolation, source drift/identity, saved snapshot precedence, center-member/invite actions, clinical child/plan/session routing and report review/family read-only boundaries. Web tests and coverage NOT YET measured on final head; full Stage 1 gate NOT QUALIFIED. Codex P1 requested synchronization of Rule 7 handover files; this commit addresses those four files. No runtime/clinical changes, no actual credentials or patient data.
+## 2026-11-10 — COM-02 consolidated direct/transitive/assets work
+Implemented six-worker bounded exact npm publisher verification for all installed direct versions, per-file installed versus publisher SHA256 comparison, unresolved failure classification, and a consolidated transitive package and tracked-asset rights queue. New synthetic negative tests and CI evidence archive integration; legal approval false; full PR CI and independent Codex pending.
+
+---
+
+## 2026-11-10 — COM-02 artifact byte verification wave 4
+Implemented bounded, strict HTTPS allowlisted exact published npm tarball downloads; Yarn SRI verification, whole-archive SHA-256 and top-level packaged LICENSE/NOTICE SHA-256; network failures unresolved and integrity mismatch stops CI. Added offline adversarial fixtures, artifact integration and legal-gap runbook. This is not legal authorization or complete dependency coverage. Await exact-head CI and Codex review.
+
+---
+
+## 2026-11-10 — COM-02 version-locked metadata reconciliation
+Implemented standalone Yarn v1 lockfile metadata-to-installed-package audit, negative tests, CI archive integration and technical scope guide. Reports missing and ambiguous resolved versions instead of silently accepting them; records declared integrity without claiming verified tarball bytes or granting commercial rights. CI/review pending.
+
+---
+
+## 2026-11-10 — COM-02 review queue wave 2
+Added scripts/commercial/build-installed-license-review.mjs and negative tests, full-CI integration and docs/commercial/installed-license-review-wave2.md. Derives cautious per-installed-version triage from on-disk LICENSE/NOTICE SHA-256 evidence and preserves all commercial-approval gates as false. No third-party license text verified or rights granted. Qualification pending.
 
 ---
 

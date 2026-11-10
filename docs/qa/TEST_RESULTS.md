@@ -16,6 +16,25 @@
 - NEW TEST EXECUTION: NOT VERIFIED on final head yet. Baseline before #334: 151 Web production source modules; lines 10.63%, branches 7.05%, functions 7.86%, statements 9.89%; 123 unexecuted. Re-measure at #339 final head; do not cite previous baseline as current.
 - Stage 1 >=60% measured Web line acceptance: **NOT QUALIFIED**. Stage 2 80% **NOT STARTED**. No changes to API/clinical approval; G2/G2b NO-GO.
 - Mandatory six-job CI / Smart CI / SBOM / gitleaks / Codex final HEAD: IN PROGRESS, not asserted green. Codex initial P1 Rule 7 handover sync addressed in this update; final-head re-review pending.
+## 2026-11-10 — COM-02 expanded publisher and transitive asset evidence (PENDING QUALIFICATION)
+Added regression tests covering installed LICENSE/NOTICE matches/mismatches, false approval rejection, and transitive/asset matrix isolation. Exact-head GitHub test execution and Codex independent review pending. CI must fail on authentic publisher integrity or installed-file hash mismatches and preserve audit artifacts; downloaded publisher text is not copied to repository.
+
+---
+
+## 2026-11-10 — COM-02 publisher tarball evidence (NOT YET CI-QUALIFIED)
+Authored tests verifying synthetic tarball SRI, top-level license hashes, tampering rejection, strict registry host validation, invalid archives/lockfile and false approval gates. Local fixtures passed (6/6) before GitHub submission; GitHub CI and exact-head Codex PENDING. The real registry evidence sample is capped and is NOT the entire dependency population or legal clearance.
+
+---
+
+## 2026-11-10 — COM-02 installed-to-Yarn-lock provenance evidence (NOT YET QUALIFIED)
+Authored Node tests for version matching, missing versions, false legal approval, duplicate paths, malformed/missing lock entries and untrusted resolved sources. Local fixture tests passed before submission; exact GitHub head full CI, new artifact and Codex review PENDING. No real patient data, billing, licensing activation or clinical NO-GO changes.
+
+---
+
+## 2026-11-10 — COM-02 installed license triage wave 2 (NOT QUALIFIED)
+- New tests cover normal triage, forged approvals, malformed hashes/byte lengths, duplicate paths, file-count contradictions, path escapes and compound license candidates. Authored, not yet CI-run on this head.
+- Full-CI artifact will include installed-license review queue; no legal/redistribution/clinical approval is implied.
+- Full six-job CI, SBOM and Codex final-head review: PENDING.
 
 ---
 

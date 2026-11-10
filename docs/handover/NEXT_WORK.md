@@ -13,6 +13,30 @@ After 60% is verified, obtain exact final-head six original CI jobs, Smart CI, S
 2. Run the original full-source Istanbul Web measurement (all four metrics and zero-statement file count, exact head); **prove ≥60% lines** before Stage 1 merge. Maintain separate security-critical branches ≥95% target and complete critical E2E scenario checks.
 3. Resolve Codex P1 Rule 7 handover sync, any subsequent P1/P2 findings, and require six original CI jobs, Smart CI, SBOM, secret scan and final-head independent review. Keep #182 / #167 open until all true acceptance requirements complete.
 4. Only after #339 passes and merges, implement separate Stage 2 #338 ≥80% Web line coverage in one mega PR. No clinical/production release; G2/G2b remain NO-GO.
+## COM-02 comprehensive evidence qualification
+Qualify exact-head CI, Codex and artifacts; inspect any direct-version download failures and installed-license SHA256 mismatches. Then separately verify transitive/optional/platform package publisher bytes, OS/container images and external fonts/logos/models/datasets. Obtain rights-holder and qualified legal review before any SaaS/enterprise distribution notices, signed contracts, or root proprietary LICENSE. Clinical gates stay NO-GO.
+
+---
+
+## COM-02 published tarball audit acceptance and expansion
+1. Pass offline published-tarball fixture tests, exact-head CI SBOM/secrets/full preview, independent Codex, examine per-commit integrity outcomes. Confirm no integrity mismatch, no fabricated legal approvals.
+2. Expand direct dependency sampling and all transitive/optional/OS/image, icon/font/logo/illustration/model/data rights using protected provenance records and defensible reviewer ownership.
+3. Obtain publisher notices and counsel-signed SaaS versus enterprise redistribution obligations. No root proprietary LICENSE or commercial/clinical activation without legal/IP and governance approvals.
+
+---
+
+## COM-02 exact locked-package provenance verification
+1. Qualify lock metadata reconciliation script and negative tests with exact-head CI/SBOM/secret scan, sustained preview, Smart CI and Codex.
+2. Review missing, ambiguous, no-integrity and nonstandard-source rows from installed artifact; verify registry-published exact tarball integrity before claiming source authenticity.
+3. Retrieve LICENSE/NOTICE bytes and copyright for precise version; distinguish SaaS versus enterprise redistribution, OS/image, fonts, illustrations, models and datasets. Legal/IP approval remains open.
+
+---
+
+## COM-02 wave 2 final-head qualification and legal evidence
+1. Check installed license triage unit/negative tests, exact-head SBOM, six CI jobs, Smart CI and fresh Codex; inspect artifact and reconcile counts without treating metadata as clearance.
+2. Next wave: verify exact locked npm tarball LICENSE/NOTICE digests and published URLs; reconcile package aliases, platform-optional and dev/runtime differences; add tamper/unknown tests.
+3. Audit OS/container images, font binaries, artwork, logos, model and dataset terms and public code provenance; assign private legal review and prepare approved third-party notices.
+4. No automatic legal approval, final LICENSE, real-data clinical operation or billing activation.
 
 ---
 

@@ -9,6 +9,23 @@ Confirmed focused Jest/Istanbul run #42867251775 on commit 2d3839b8: Web full-so
 
 ## 2026-11-10 — M4-08 Stage 1 Web mega-coverage PR #339 (IN PROGRESS, NOT QUALIFIED)
 Owner approved replacing the blanket 95% Web coverage acceptance with staged **≥60% then ≥80% all-source Web line** gates (#337 then #338). Safety-critical Web auth/session/CSRF/access/release control has a separate ≥95% **branch** target; API, 100% defined critical journeys and all clinical NO-GO controls remain unchanged. The existing 151-file/full-production-source Istanbul denominator and all four measured metrics remain mandatory. PR #339 adds executable Jest regressions for versioned evidence, saved-plan projections, strict clinical/administrative/report transport paths and no-release boundaries. Tests are AUTHORED; exact-head CI, actual new coverage delta, final-head Codex, and Stage 1 ≥60% qualification PENDING. This is NOT a deployment, clinical authorization, release or 60%-coverage claim. Stage 2 #338 remains BLOCKED until Stage 1 measures ≥60% and merges.
+## 2026-11-10 — COM-02 full direct publisher verification and rights inventory (qualification pending)
+A consolidated audit change extends bounded concurrent exact-tarball/SRI downloads across installed direct names/versions, performs publisher-to-installed LICENSE/NOTICE hash comparisons, and produces a transitive + tracked-asset legal-review queue. No published license or distribution legally approved; technical CI/Codex pending.
+
+---
+
+## 2026-11-10 — COM-02 bounded exact npm publisher tarball evidence (PR qualification pending)
+Created authenticated HTTPS npm-registry-only tarball verifier with exact Yarn SRI check and top-level LICENSE/NOTICE digest inventory. Bounded sample (8 packages) and explicit unresolved statuses; no text or tarballs published. Unit and negative fixtures authored, CI and Codex still pending. NOT legal approval or full package coverage; public repo and G2/G2b NO-GO retained.
+
+---
+
+## 2026-11-10 — COM-02 lockfile-to-installed evidence reconciliation (in review)
+Added an offline evidence join from installed LICENSE/NOTICE queue to exact Yarn v1 name/version/declared integrity and resolved-source hashes. Missing/ambiguous packages stay UNRESOLVED. No published tarball bytes or legal license texts verified. Full CI and Codex final head pending; no commercial/clinical approvals.
+
+---
+
+## 2026-11-10 — COM-02 installed-license triage wave 2 (review pending)
+Authoring: a deterministic fail-closed installed license review report from the frozen Yarn install inventory, including exact name/version/path and LICENSE/NOTICE hashes, with separate restrictive/missing/compound categories. All records remain UNRESOLVED and legally unapproved; COM-01/02/03 clearance and clinical NO-GO unchanged. Full CI and Codex are pending.
 
 ---
 
