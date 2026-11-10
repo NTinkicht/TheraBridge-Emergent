@@ -3,6 +3,16 @@
 
 ---
 
+## 2026-11-11 — COM-02 #352 registry metadata candidate QA (CODE HEAD PASS; DOC HEAD PENDING)
+**PASS** on implementation SHA `e0ee645ced29bbe2d603c125e013646a343c1a02`, full CI [42908445420](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42908445420): 6/6 `collect-upstream-license-candidates.test.mjs` tests PASS, malformed response/wrong version/unsafe selector/unavailable HTTP state/fabricated legal approval/duplicate missing row/bounded concurrency regressions exercised. The collector generated `{exceptions:53, exactVersionMetadata:53, missingOrInvalidMetadata:0, authoritativeLicenseTextsVerified:0, legallyApproved:0}`. Required test, secret-scan, live-session, preview-container, demo-journey, Compose and Smart CI passed on SHA. Prior P1 fixture-hash comparison FIXED and resolved; Codex P2 Rule 7 synchronization FIX_NOW in this docs commit. **New documentation HEAD CI and final exact-head review NOT YET RUN**, and this previous success cannot qualify subsequent HEAD. Registry manifest license strings remain candidates only; 0 authoritative exact-version upstream license texts, 0 commercial permission grants, G2/G2b NO-GO.
+
+---
+
+## 2026-11-11 — COM-02 PR #352 exact-version registry candidate tests (NOT YET RUN)
+Added offline Node tests for exact scoped package/version URL encoding, invalid/ambiguous versions, mismatched registry manifest identity, byte and parse bounds, registry 404/invalid states, no silent exception loss, fabricated approvals, immutable manifest digest and limited concurrency. CI executes `node --test scripts/commercial/collect-upstream-license-candidates.test.mjs` then generates per-run evidence JSON. **PASS/FAIL pending actual GitHub Actions execution**; prior merged #350 results (53 package-version exceptions, 91 assets, 0 approvals) are baseline only, not evidence of this PR passing. No authoritative upstream license text, sublicense or clinical approvals inferred.
+
+---
+
 ## 2026-11-10 — COM-02 exact-version rights register QA (PR #350)
 **PASS on prior implementation HEAD `0cf822ace6195d43b281e0a056fcc85d64f5b7d6`**: full GitHub CI [42901575999](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42901575999), including application/test, SBOM, secret scan, live-session, demo-journey, Compose, sustained 10-minute preview and Smart CI. `node --test scripts/commercial/build-license-exception-register.test.mjs` PASS, with positive deterministic per-version evidence and negative tests for duplicate package versions, fabricated commercial approval, inconsistent publisher-license matches, missing installed evidence, phantom publisher records and 0 inferred legal clearance. CI generated: 42 direct; 621 non-direct; 52 without recognized publisher-root LICENSE/NOTICE; 1 unsupported PAX semantics; 53 exception rows; 91 tracked non-package assets; 0 legal approvals. Codex P2 missing-installed-version finding FIXED/RESOLVED; subsequent P1 handover-evidence synchronization FIX_NOW in this documentation update. **New HEAD full CI and final independent review NOT YET RUN**, so do not claim PR merge qualification from the prior success. No upstream license rights, SaaS/enterprise resale permissions, clinical activation or release clearance were tested/approved.
 
