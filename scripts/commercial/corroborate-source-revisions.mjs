@@ -54,6 +54,7 @@ async function sourceCorrespondenceCandidates(candidates,{fetcher=fetchRaw,concu
   const k=key(p);if(seen.has(k))throw Error('DUPLICATE_CANDIDATE');seen.add(k);
   return {
    name:p.name,version:p.version,registryManifestSha256:p.registryManifestSha256??null,
+   registryManifestEvidenceStatus:p.manifestEvidenceStatus??null,
    publisherEvidenceStatus:p.publisherEvidenceStatus,
    candidateGitHead:p.candidateGitHead??null,candidateRepositoryUrl:p.candidateRepositoryUrl??null,
    lockedIntegrityMatchesRegistry:p.manifestMatchesLockedIntegrity===true,
@@ -69,6 +70,12 @@ async function sourceCorrespondenceCandidates(candidates,{fetcher=fetchRaw,concu
  async function worker(){
   while(next<records.length){
    const row=records[next++];
+   if(row.registryManifestEvidenceStatus!=='REGISTRY_EXACT_VERSION_METADATA_ONLY'||
+      !/^[a-f0-9]{64}$/.test(row.registryManifestSha256??'')||
+      !row.lockedIntegrityMatchesRegistry){
+    row.evidenceStatus='REGISTRY_MANIFEST_OR_LOCK_INTEGRITY_UNCONFIRMED';
+    continue;
+   }
    if(!row.candidateGitHead||!row.candidateRepositoryUrl)continue;
    try{
     const url=sourcePackageUrl(row.candidateRepositoryUrl,row.candidateGitHead);
