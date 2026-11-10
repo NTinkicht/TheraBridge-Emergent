@@ -1,3 +1,9 @@
+## M4-08 PR #339 immediate next action — close Web ≥60% line target
+Owner-approved Stage 1 remains open: latest completed focused source-wide Istanbul run 42867251775 on 2d3839b8 measured 51.61% Web lines, 39.18% branches, 31.28% functions, 45.34% statements over 151 modules; 25 files unexecuted. Need another **8.39 percentage points genuine lines**, no denominator reduction. Focus on remaining high-risk interactive work: ReportEditor, SessionEditor, PlanEditor, messaging, clinical/child detail, scheduling; capture real mounted or browser transitions (success, failure, stale sessions, retry/rollback, unauthorized and cross-role) rather than snapshots/helper-only tests. Preserve separate security-critical ≥95% branch goal and API safety gates.
+After 60% is verified, obtain exact final-head six original CI jobs, Smart CI, SBOM, gitleaks, Codex review, Rule7 evidence; resolve all findings, then merge Stage 1 and start separate #338 to 80%. Do not merge with red/unknown CI; G2/G2b clinical NO-GO, M4-02 hosted credentials and audit evidence remain distinct.
+
+---
+
 ## M4-08 Stage 1 — PR #339 Web mega suite to ≥60% all-source lines (MUST COMPLETE BEFORE MERGE)
 1. Grow source-executing high-quality tests across actual mounted Web auth/context, onboarding, children/team, schedules, clinical notes/reports, progress, family practice/feedback, accessibility and failure/retry/permission revocation. Do not game coverage with snapshot-only/mocks of tested units or reduce denominator.
 2. Run the original full-source Istanbul Web measurement (all four metrics and zero-statement file count, exact head); **prove ≥60% lines** before Stage 1 merge. Maintain separate security-critical branches ≥95% target and complete critical E2E scenario checks.
