@@ -120,7 +120,7 @@ describe('M4-08 real session-note editor honors workflow status without signing'
  it('renders an in-progress synthetic note with save/complete and locked signing',()=>{
   const workspace=ws({notes:[note()]});
   const out=draw(SessionEditor,sessionProps(workspace,workspace.notes[0]));
-  expect(out).toContain('Fictional note');
+  expect(out).toContain('In progress · unsigned');
   expect(out).toContain('Save draft');
   expect(out).toContain('Review and complete session');
   expect(out).toContain('Sign note');
