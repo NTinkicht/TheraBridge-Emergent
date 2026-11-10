@@ -1,3 +1,13 @@
+## 2026-11-11 — COM-02 #355 security follow-up
+Fixed P2 absolute HTTPS deadline, rejected redirect draining and added fake HTTP trickle and non-200 response tests in commits `4ce0784`, `5da64c0`, `b5f4ba6`; review thread resolved. Subsequent required `secret-scan` exposed historic synthetic password-reset fixture on unrelated Web stage3 branch through `gitleaks --all`; minimal AND-scoped test-path/exact-literal allowlist added in commit `22ad663`, maintaining repository-wide scanning. Full latest-head CI and independent review NOT YET QUALIFIED. No verified exact-version upstream mapping or license grant.
+
+---
+
+## 2026-11-11 — COM-02 #355 immutable Git revision evidence implementation
+Implemented `scripts/commercial/verify-immutable-license-texts.mjs`, its offline adversarial tests, zero-approval `docs/commercial/immutable-upstream-source-mappings.json`, and per-run CI JSON. The tool requires 40-byte hex commits, safe GitHub raw LICENSE/NOTICE paths, HTTPS host allowlist, zero redirects, bounded UTF8 text, actual SHA256. Even an immutable text hash remains UNVERIFIED for package-version correspondence and legal rights. No tests claimed PASS until GitHub CI executes.
+
+---
+
 ## 2026-11-11 — COM-02 #352 CI-qualified candidate metadata checkpoint
 Full CI run [42908445420](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42908445420) PASS at `e0ee645ced29bbe2d603c125e013646a343c1a02`. The corrected digest test links immutable fixture bytes to their exact package version, 6/6 new regressions pass, and the new registry collector recorded 53 exact-version npm manifest candidates / 0 unavailable. All six Rule 16 CI gates green. Codex P1 test finding resolved; subsequent P2 evidence file synchronization FIX_NOW via this change. The follow-up documentation HEAD will require a new CI and final-head independent review; this prior CI result does not qualify later HEAD. No authoritative upstream license text verified, no commercial legal approval, and no clinical release activated.
 

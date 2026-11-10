@@ -50,3 +50,19 @@ regexes = [
   '''^ci_only_[a-z_]+$''',
   '''^\$\{?[A-Z_][A-Z0-9_]*''',
 ]
+
+# Narrow Git-history exception: Stage 3 Web synthetic reset-flow test fixture
+# was present on an unrelated coverage branch when global --all scanning ran.
+# Match BOTH exact test file AND known non-credential literals; no generic
+# suppression or path-wide exemption. Keep all other refs/rules scanned.
+[[allowlists]]
+description = "Explicit fictional reset tokens in M4-08 synthetic coverage test only"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''^apps/web/test/coverage-stage3-mounted-recovery-and-feasibility\.test\.cjs$''']
+regexes = [
+  '''^fictional-reset-token$''',
+  '''^synthetic-strong-password$''',
+  '''^synthetic-strong-1$''',
+  '''^synthetic-strong-2$''',
+]
