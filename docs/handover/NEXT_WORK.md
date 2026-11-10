@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #357 qualification and independent evidence follow-up
+Run exact-head CI on source-correspondence candidate collector, examine actual 53-version GitHead/immutable-source match distribution, correct failures, and update evidence files with measured SHA/run results. Require final Codex review on stable green HEAD, resolve all findings and merge only when all six Rule 16 jobs green. Independently prove actual upstream release-to-npm tarball lineage before approving any mapping; a matching `gitHead`/root package.json is not that proof. Maintain 91 unresolved nonpackage assets, separate SaaS vs enterprise licensing obligations, PAX exception, and G2/G2b clinical NO-GO.
+
+---
+
 ## 2026-11-11 — COM-02 #355 qualification after P2 and all-ref synthetic finding
 Qualify HEAD including added absolute request timeout tests; validate .gitleaks global exact synthetic fixture allowlist eliminates only known false positive, not real credentials. Inspect full original `test`, `secret-scan`, `live-session`, `demo-journey`, `preview-container`, `compose` and Smart CI on exact final HEAD. Then obtain final Codex independent review after stable CI, disposition all findings, merge only if Rule 16 gates pass. The 53 exact package/version source-to-revision mappings remain fully unresolved until independently corroborated, with 91 assets, SaaS/on-prem rights, and G2/G2b legal/clinical gates still open.
 
