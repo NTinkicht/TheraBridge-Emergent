@@ -52,3 +52,19 @@ test('exact version without declared lock source never becomes verified',async()
  const r=await auditTransitive(f,{fetchBuffer:async()=>f.tar});
  assert.equal(r.records[0].status,'UNRESOLVED_INTEGRITY_UNSUPPORTED');
 });
+
+test('complete installed non-direct scope is classified without sample deferrals',async()=>{
+ const f=fixture();delete f.maxFetch;
+ const report=await auditTransitive(f,{fetchBuffer:async()=>f.tar});
+ assert.equal(report.maxFetch,768);
+ assert.equal(report.counts.deferred,0);
+ assert.equal(report.status,'ALL_INSTALLED_NON_DIRECT_VERSIONS_CLASSIFIED_NOT_LEGAL_APPROVAL');
+ assert.equal(report.counts.legallyApproved,0);
+});
+test('unmatched lock evidence remains unresolved even under exhaustive classification',async()=>{
+ const f=fixture();delete f.maxFetch;f.lockText=f.lockText.replace('transitive@^1.0.0','unrelated@^1.0.0');
+ const report=await auditTransitive(f,{fetchBuffer:async()=>f.tar});
+ assert.equal(report.counts.deferred,0);
+ assert.equal(report.records[0].status,'NO_LOCK_MATCH');
+ assert.equal(report.counts.verifiedMatchingInstalledLicense,0);
+});

@@ -212,7 +212,7 @@ jobs:
         run: node scripts/commercial/build-com02-obligations-queue.mjs docs/commercial/direct-license-evidence.json /tmp/therabridge-installed-licenses.json /tmp/therabridge-publisher-tarball-evidence.json /tmp/therabridge-com02-obligations-queue.json
       - name: Validate bounded transitive publisher tarball audit safeguards
         run: node --test scripts/commercial/verify-transitive-tarballs.test.mjs
-      - name: Audit exact transitive package tarballs and installed license-file hashes (sample, not clearance)
+      - name: Classify every installed non-direct npm version and verify tarball hashes (not license clearance)
         run: node scripts/commercial/verify-transitive-tarballs.mjs /tmp/therabridge-installed-lock-provenance.json yarn.lock docs/commercial/direct-license-evidence.json /tmp/therabridge-installed-licenses.json /tmp/therabridge-transitive-tarball-evidence.json
       - name: Archive installed license evidence for full CI
         if: ${{ !cancelled() }}

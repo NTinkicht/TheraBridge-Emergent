@@ -6,13 +6,13 @@ import {createHash} from 'node:crypto';
 import {audit} from './verify-published-tarballs.mjs';
 
 const sha=b=>createHash('sha256').update(b).digest('hex');
-async function auditTransitive({installed,lockText,direct,installedFiles,maxFetch=160},options={}){
+async function auditTransitive({installed,lockText,direct,installedFiles,maxFetch=768},options={}){
  if(direct.schema!=='therabridge-direct-license-evidence-v1'||
  direct.status!=='NOT_LEGAL_CLEARANCE'||!Array.isArray(direct.records)||direct.records.some(x=>typeof x.name!=='string'||!x.name||x.commercialApproval!==false))throw Error('BAD_DIRECT_DECLARATIONS');
  if(installedFiles.schema!=='therabridge-installed-license-file-inventory-v1'||installedFiles.approved!==0||
  !Array.isArray(installedFiles.packages)||installedFiles.count!==installedFiles.packages.length||
  installedFiles.packages.some(x=>x.commercialApproval!==false||x.actualLicenseTextReviewed!==false))throw Error('BAD_INSTALLED_EVIDENCE');
- if(!Number.isInteger(maxFetch)||maxFetch<1||maxFetch>512)throw Error('BAD_SAMPLE_CAP');
+ if(!Number.isInteger(maxFetch)||maxFetch<1||maxFetch>1024)throw Error('BAD_SAMPLE_CAP');
  const directNames=new Set(direct.records.map(x=>x.name));
  const others=installedFiles.packages.filter(x=>!directNames.has(x.name));
  if(!others.length)throw Error('EMPTY_TRANSITIVE_SCOPE');
@@ -27,7 +27,7 @@ async function auditTransitive({installed,lockText,direct,installedFiles,maxFetc
   verifiedMatchingInstalledLicense:report.records.filter(x=>x.installedLicenseComparison==='EXACT_SHA256_MATCH'&&x.status==='TARBALL_INTEGRITY_VERIFIED_LICENSE_FILES_HASHED').length,
   unresolved:report.records.filter(x=>x.status!=='TARBALL_INTEGRITY_VERIFIED_LICENSE_FILES_HASHED').length,
   legallyApproved:0};
- return {schema:'therabridge-transitive-tarball-wave-v1',status:'SAMPLED_TECHNICAL_EVIDENCE_NOT_LEGAL_APPROVAL',
+ return {schema:'therabridge-transitive-tarball-wave-v1',status:counts.deferred===0?'ALL_INSTALLED_NON_DIRECT_VERSIONS_CLASSIFIED_NOT_LEGAL_APPROVAL':'SAMPLED_TECHNICAL_EVIDENCE_NOT_LEGAL_APPROVAL',
   scope:'INSTALLED_NON_DIRECT_NAMES_AND_VERSIONS',lockSha256:sha(lockText),
   installedEvidenceSha256:sha(JSON.stringify(installedFiles)),maxFetch,counts,
   summary:report.summary,records:report.records};

@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 full transitive verifier and SWC size exceptions
+Prepared follow-up source patch to raise installed non-direct exact-version audit attempt budget from 160 to 768, preserve safe per-download bound and detailed unresolved statuses, and allow only exact oversized @next/swc-linux-x64-{gnu,musl}@14.2.33 larger compressed/decompressed limits. Negative tests cover pinned version isolation and complete population classification. No commercial or clinical authorization; qualification pending.
+
+---
+
 ## 2026-11-10 M4-08 PR #339 real-source Web mega QA: established 60.08% line coverage with 154 source files counted in focused CI run 42873722265 at ed3a750. Added real mounted therapist handover (eligible alternate staff, duplicate prohibition, readiness/cancellation no clinical access), appointment booking (assigned therapists, single vs recurring, conflict skip, denied booking, DST-aware local clock), clinical plan goal/activity validation, operational platform report/child/center routes, and synthetic preview no-release cases. Exact-source covered lines 60.08%, branches 48.75%, functions 40.33%, statements 54.24%; 18 modules fully unexecuted. Goal achieved on Web lines only; maintain issue #337 open until original full CI and final-head Codex agree.
 
 ---

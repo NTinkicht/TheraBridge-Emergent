@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 non-direct exhaustive evidence (PENDING CI QUALIFICATION)
+Added tests proving only exactly pinned SWC 14.2.33 variants gain higher archive caps; unrelated names/versions remain on original caps. Added tests for full observed non-direct population with zero sample deferrals and fail-closed missing-lock cases. Exact-head CI, full publisher artifact and independent Codex review PENDING. The audit result is technical hash provenance, not package legal clearance or redistribution rights.
+
+---
+
 ## 2026-11-10 Web M4-08 PR #339 Stage 1 source-wide line coverage: focused CI #42873722265 PASS, head ed3a750946f5a2f1ec38355daa5cb64aabc11b33. 154 / 154 source modules instrumented (no exclusions): 60.08% lines; 48.75% branches; 40.33% functions; 54.24% statements. 18 modules have zero executed statements. Stage 1 owner-approved ≥60% all-source Web LINE target: MET. This is not 95% application coverage, nor 95% security branch coverage, nor final M4 acceptance. Full original exact-head CI and independent review are still required. Commercial SBOM new renderer evidence now records PENDING_UPSTREAM_REVIEW with no license approval. No clinical authorizations changed.
 
 ---

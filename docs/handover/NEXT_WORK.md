@@ -1,3 +1,8 @@
+## COM-02 full non-direct technical coverage and license rights
+Qualify exact-head full CI artifacts/Codex: compare all non-direct name/version statuses to installed physical copies, inspect any lock/source/size/header/file mismatches, retain unresolved items without auto approval. Then conduct manual upstream license/copyright obligations for @types and transitive packages, native runtime/container/OS layers, logos/fonts/models/datasets and SaaS vs on-prem enterprise rights. Keep COM-01/02 unresolved until qualified signoffs.
+
+---
+
 ## 2026-11-10 Stage 1 threshold MET on SHA ed3a750: Web all-source 154 files, lines 60.08% (run 42873722265 PASS), branches 48.75%, functions 40.33%, statements 54.24%. The branch remains UNMERGED. Priority: fix independent full CI failure at M4-06 database replay (do not weaken requirement); run original exact-head CI, SBOM, secret scan and Codex; adjudicate comments, update evidence. Only then merge #339, close #337, begin separate Stage 2 #338 to ≥80% Web lines. Keep explicit >95% security-sensitive branch qualification distinct, not satisfied by 60% lines. G2/G2b NO-GO and protected hosted M4-02 gates persist.
 
 ---

@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 complete installed non-direct publisher classification (review pending)
+Prepared full-CI exact name/version verification for all observed 620 non-direct installed-version rows, with cap 768, distinct physical copy tracking and pinned SWC Linux 14.2.33 48/256-MiB archive exceptions. Other packages keep 16/64-MiB limits; integrity, per-copy LICENSE/NOTICE matches and zero legal approvals fail closed. Independent CI/review pending; clinical G2/G2b NO-GO unchanged.
+
+---
+
 ## 2026-11-10 Stage 1 M4-08 source-wide Web line target MET, but PR #339 UNMERGED. Focused CI run 42873722265 PASS on ed3a750946f5a2f1ec38355daa5cb64aabc11b33: 154 source files; lines 60.08%, branches 48.75%, functions 40.33%, statements 54.24%, 18 zero-statement modules. All-source instrumentation unchanged. Does NOT constitute the security-critical 95% branch goal, M4 final acceptance, a full-CI green head or Codex review. Clinical G2/G2b NO-GO persists; no family clinical release, no real data.
 
 ---
