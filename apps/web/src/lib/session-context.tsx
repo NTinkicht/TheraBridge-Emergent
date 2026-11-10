@@ -33,6 +33,8 @@ export function useSessionController(enabled: boolean): SessionController {
     setCenterTz(undefined);
     try {
       const session = await authApi.session();
+      // A stale response must not trigger even a read against a superseded tenant.
+      if (revision !== latest.current) return;
       if (session.activeContext?.type === 'center' && session.permissions.includes('center.summary.read')) {
         const summary = await authApi.centerSummary(session.activeContext.centerId);
         if (revision !== latest.current) return;

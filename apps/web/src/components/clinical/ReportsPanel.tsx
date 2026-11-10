@@ -13,7 +13,16 @@ import { daysAgo, isoDay, reportsApi, type ReportRow } from '@/lib/reports';
 
 type Run = (fn: () => Promise<unknown>, ok: string) => Promise<boolean>;
 
-export function ReportsPanel({ centerId, ws, run, onError }: { centerId: string; ws: Workspace; run: Run; onError: (e: unknown) => void }) {
+type ReportsProps = { centerId: string; ws: Workspace; run: Run; onError: (e: unknown) => void };
+
+// A scoped remount is intentional: useLoad retains data until its next fetch,
+// and the history pager holds older rows in local state. Neither must survive
+// a child or tenant switch, even for one render before the new request resolves.
+export function ReportsPanel(props: ReportsProps) {
+  return <ScopedReportsPanel key={JSON.stringify([props.centerId, props.ws.child.id])} {...props} />;
+}
+
+function ScopedReportsPanel({ centerId, ws, run, onError }: ReportsProps) {
   const fetcher = useCallback(() => reportsApi.list(centerId, ws.child.id), [centerId, ws.child.id]);
   const { data, failed, reload } = useLoad(fetcher, onError);
   const [older, setOlder] = useState<{ items: ReportRow[]; nextOffset: number | null; hasMore: boolean } | null>(null);

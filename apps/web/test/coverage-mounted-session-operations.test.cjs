@@ -13,6 +13,7 @@ jest.mock('@/lib/clinical',()=>{
  return {...real,clinicalApi:{...real.clinicalApi,saveSession:jest.fn(),workspace:jest.fn()}};
 });
 const {clinicalApi}=require('../src/lib/clinical');
+const {ApiError}=require('../src/lib/api');
 const {SessionEditor}=require('../src/components/clinical/SessionEditor');
 const note=(changes={})=>({
  id:'synthetic-session',service:'speech',sessionDate:'2026-11-10',
@@ -88,6 +89,51 @@ describe('M4-08 session persistence and completion remain unsigned',()=>{
    expect.objectContaining({executionStatus:'COMPLETED'}));
   expect(out()).toContain('Completed · unsigned');
   expect(button('Save draft')).toBeUndefined();
+ });
+ it('re-fetches authoritative evidence after 409 without overwriting local changes',async()=>{
+  clinicalApi.saveSession.mockRejectedValueOnce(new ApiError(409,'Synthetic concurrent edit'));
+  clinicalApi.workspace.mockResolvedValue(workspace({notes:[
+   note({version:4,sections:{focus:'New server evidence',response:'',activities:'',nextSteps:''}})
+  ]}));
+  await mount();
+  const focus=tree.root.findByProps({'aria-label':'Session focus'});
+  await act(async()=>focus.props.onChange({target:{value:'Local unsaved clinical evidence'}}));
+  await click('Save draft');
+  expect(clinicalApi.saveSession).toHaveBeenCalledTimes(1);
+  expect(clinicalApi.workspace).toHaveBeenCalledWith('fictional-center','fictional-child');
+  expect(out()).toContain('Resolve conflicting session evidence');
+  expect(out()).toContain('Local unsaved clinical evidence');
+  expect(out()).toContain('New server evidence');
+  expect(out()).toContain('version 4');
+  expect(button('Retry save').props.disabled).toBe(true);
+  expect(clinicalApi.saveSession).toHaveBeenCalledTimes(1);
+ });
+ it('retains local evidence and refuses reconciliation after access revocation',async()=>{
+  clinicalApi.saveSession.mockRejectedValueOnce(new ApiError(409,'Synthetic concurrent edit'));
+  clinicalApi.workspace.mockResolvedValue(workspace({canEdit:false,notes:[
+   note({version:4})
+  ]}));
+  await mount();
+  const focus=tree.root.findByProps({'aria-label':'Session focus'});
+  await act(async()=>focus.props.onChange({target:{value:'Local draft retained after revocation'}}));
+  await click('Save draft');
+  expect(clinicalApi.workspace).toHaveBeenCalledTimes(1);
+  expect(out()).toContain('Editing authorization is unavailable');
+  expect(out()).toContain('Local draft retained after revocation');
+  expect(out()).not.toContain('Save reviewed reconciliation as draft');
+  expect(clinicalApi.saveSession).toHaveBeenCalledTimes(1);
+ });
+ it('does not reuse rejected mutation key on a 422 validation failure',async()=>{
+  clinicalApi.saveSession.mockRejectedValueOnce(new ApiError(422,'Synthetic invalid session'))
+   .mockResolvedValueOnce({version:4,updatedAt:'2026-11-10T10:00:00Z'});
+  await mount();
+  await click('Save draft');
+  expect(out()).toContain('Correct the input and try again');
+  expect(out()).not.toContain('Outcome unknown');
+  const original=clinicalApi.saveSession.mock.calls[0][2].mutationKey;
+  await click('Retry save');
+  expect(clinicalApi.saveSession).toHaveBeenCalledTimes(2);
+  expect(clinicalApi.saveSession.mock.calls[1][2].mutationKey).not.toBe(original);
  });
  it('displays already completed or read-only session without save or complete options',async()=>{
   await mount(note({executionStatus:'COMPLETED'}),workspace());
