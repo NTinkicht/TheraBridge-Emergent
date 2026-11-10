@@ -60,3 +60,53 @@ test('rejects PAX and GNU extended path headers instead of mislabeling effective
   assert.throws(()=>extractLicenseHashes(gzipSync(changed)),/UNSUPPORTED_TAR_EXTENDED_HEADER/);
  }
 });
+
+test('compares publisher-to-installed license SHA256 and detects silent modifications',async()=>{
+ const f=fixture();
+ const license=createHash('sha256').update('MIT synthetic test document').digest('hex');
+ const notice=createHash('sha256').update('Synthetic copyright').digest('hex');
+ f.installedFiles={schema:'therabridge-installed-license-file-inventory-v1',approved:0,count:1,packages:[
+  {name:'alpha',version:'1.0.0',installedPath:'node_modules/alpha',commercialApproval:false,actualLicenseTextReviewed:false,foundLicenseFiles:[{file:'LICENSE',sha256:license},{file:'NOTICE',sha256:notice}]}
+ ]};
+ const pass=await audit(f,{fetchBuffer:async()=>f.bytes});
+ assert.equal(pass.records[0].installedLicenseComparison,'EXACT_SHA256_MATCH');
+ assert.equal(pass.records[0].status,'TARBALL_INTEGRITY_VERIFIED_LICENSE_FILES_HASHED');
+ f.installedFiles.packages[0].foundLicenseFiles[0].sha256='0'.repeat(64);
+ const fail=await audit(f,{fetchBuffer:async()=>f.bytes});
+ assert.equal(fail.records[0].status,'UNRESOLVED_INSTALLED_LICENSE_HASH_MISMATCH');
+});
+test('bounded concurrent verification visits all direct installed versions',async()=>{
+ const f=fixture();
+ const count=41;
+ f.installed.records=Array.from({length:count},(_,i)=>({name:'alpha',version:'1.0.0',installedPath:'node_modules/d'+i,legalApproval:false,decision:'UNRESOLVED'}));
+ const result=await audit(f,{fetchBuffer:async()=>f.bytes});
+ assert.equal(result.fetched,1);
+ assert.equal(result.total,1);
+ assert.equal(result.legallyApproved,0);
+});
+test('rejects fabricated approval in installed-license file inventory',async()=>{
+ const f=fixture();
+ f.installedFiles={schema:'therabridge-installed-license-file-inventory-v1',approved:0,count:1,packages:[{name:'alpha',version:'1.0.0',commercialApproval:true,actualLicenseTextReviewed:false,foundLicenseFiles:[]}]};
+ await assert.rejects(()=>audit(f,{fetchBuffer:async()=>f.bytes}),/FALSE_INSTALLED_APPROVAL/);
+});
+
+test('never masks missing published LICENSE/NOTICE in one of multiple installed copies',async()=>{
+ const f=fixture();
+ const license=createHash('sha256').update('MIT synthetic test document').digest('hex');
+ const notice=createHash('sha256').update('Synthetic copyright').digest('hex');
+ const make=(path,files)=>({name:'alpha',version:'1.0.0',installedPath:path,commercialApproval:false,actualLicenseTextReviewed:false,foundLicenseFiles:files});
+ f.installedFiles={schema:'therabridge-installed-license-file-inventory-v1',approved:0,count:2,packages:[
+  make('node_modules/alpha',[{file:'LICENSE',sha256:license},{file:'NOTICE',sha256:notice}]),
+  make('apps/api/node_modules/alpha',[{file:'LICENSE',sha256:license}])
+ ]};
+ const r=await audit(f,{fetchBuffer:async()=>f.bytes});
+ assert.equal(r.records[0].installedLicenseComparison,'EXPECTED_LICENSE_FILE_MISSING');
+ assert.equal(r.records[0].status,'UNRESOLVED_INSTALLED_LICENSE_FILES_MISSING');
+ assert(r.records[0].installedLicenseMatches.some(x=>x.status==='EXPECTED_FILE_MISSING'&&x.installedPath==='apps/api/node_modules/alpha'));
+});
+test('missing direct installed dependency is a legal-unresolved row with no implied clearance',async()=>{
+ const f=fixture();f.direct.records.push({name:'not-installed'});
+ const r=await audit(f,{fetchBuffer:async()=>f.bytes});
+ const x=r.records.find(x=>x.name==='not-installed');
+ assert.equal(x.status,'DIRECT_DEPENDENCY_NOT_INSTALLED');assert.equal(x.licenseObligationsReviewed,false);
+});

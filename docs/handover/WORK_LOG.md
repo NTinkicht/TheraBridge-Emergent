@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 consolidated direct/transitive/assets work
+Implemented six-worker bounded exact npm publisher verification for all installed direct versions, per-file installed versus publisher SHA256 comparison, unresolved failure classification, and a consolidated transitive package and tracked-asset rights queue. New synthetic negative tests and CI evidence archive integration; legal approval false; full PR CI and independent Codex pending.
+
+---
+
 ## 2026-11-10 — COM-02 artifact byte verification wave 4
 Implemented bounded, strict HTTPS allowlisted exact published npm tarball downloads; Yarn SRI verification, whole-archive SHA-256 and top-level packaged LICENSE/NOTICE SHA-256; network failures unresolved and integrity mismatch stops CI. Added offline adversarial fixtures, artifact integration and legal-gap runbook. This is not legal authorization or complete dependency coverage. Await exact-head CI and Codex review.
 
