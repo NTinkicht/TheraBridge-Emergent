@@ -22,7 +22,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function validate(f: Form, specialties: string[]) {
+export function validate(f: Form, specialties: string[]) {
   const e: Record<string, string> = {};
   if (f.name.trim().length < 2) e.name = 'Enter the center’s name.';
   if (f.slug && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(f.slug)) e.slug = 'Use lowercase letters, numbers and single dashes.';
