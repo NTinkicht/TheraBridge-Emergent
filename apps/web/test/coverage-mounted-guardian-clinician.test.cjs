@@ -77,9 +77,8 @@ describe('M4-08 mounted clinician practice-feedback read boundaries',()=>{
   await act(async()=>{tree=create(h(Child360,{ws:ws(),centerId:'c1',onNavigate:()=>{}}));});
   expect(clinicalApi.practiceFeedback).toHaveBeenCalledWith('c1','fake-child');
   expect(get('child360-family-practice-outcomes')).toBeTruthy();
+  expect(get('child360-family-practice-outcomes').findAllByType('li')).toHaveLength(1);
   const out=JSON.stringify(tree.toJSON());
-  expect(out).toContain('Recent outcomes: 1');
-  expect(out).not.toContain('Recent outcomes: 3');
   expect(out).toContain('do not establish progress toward clinical goals');
  });
  it('fails closed on an invalid non-clinical reply and permits an explicit retry',async()=>{
