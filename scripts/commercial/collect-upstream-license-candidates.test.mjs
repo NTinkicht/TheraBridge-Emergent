@@ -23,13 +23,14 @@ test('encodes complete scoped name, rejects traversal and mutable version select
   assert.throws(()=>manifestUrl(n,v),/INVALID_EXACT_NPM_NAME_VERSION/);
 });
 test('registry manifest candidate is version-locked, hashed and never called a verified license text',async()=>{
- const r=register(),seen=[];
+ const r=register(),seen=[],rawByName=new Map();
  const fetcher=async url=>{
   seen.push(url);
   const name=url.includes('%40scope')?'@scope/beta':'alpha', version=name==='alpha'?'1.0.0':'2.0.0';
-  return Buffer.from(JSON.stringify({name,version,license:'MIT',
+  const bytes=Buffer.from(JSON.stringify({name,version,license:'MIT',
    repository:{type:'git',url:'git+https://github.com/example/alpha.git'},
    dist:{integrity:'sha512-AAAA',tarball:'https://registry.npmjs.org/alpha/-/alpha-1.0.0.tgz'}}));
+  rawByName.set(name,bytes);return bytes;
  };
  const out=await buildUpstreamCandidates(r,{fetcher,concurrency:2});
  assert.equal(out.counts.exceptions,2);assert.equal(out.counts.exactVersionMetadata,2);
@@ -39,7 +40,7 @@ test('registry manifest candidate is version-locked, hashed and never called a v
  assert.equal(out.records[0].authoritativeLicenseTextSource,null);
  assert.equal(out.records[0].sourceRefVersionVerified,false);
  assert.equal(out.records[0].saasNetworkRights,'PENDING_COUNSEL_REVIEW');
- assert.equal(out.records[0].registryManifestSha256,hash(await fetcher(seen[0])));
+ assert.equal(out.records[0].registryManifestSha256,hash(rawByName.get(out.records[0].name)));
  assert.equal(out.unresolvedNonPackageAssets,1);
  assert.equal(out.finalNoticesIssued,false);
 });
