@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 expanded publisher and transitive asset evidence (PENDING QUALIFICATION)
+Added regression tests covering installed LICENSE/NOTICE matches/mismatches, false approval rejection, and transitive/asset matrix isolation. Exact-head GitHub test execution and Codex independent review pending. CI must fail on authentic publisher integrity or installed-file hash mismatches and preserve audit artifacts; downloaded publisher text is not copied to repository.
+
+---
+
 ## 2026-11-10 — COM-02 publisher tarball evidence (NOT YET CI-QUALIFIED)
 Authored tests verifying synthetic tarball SRI, top-level license hashes, tampering rejection, strict registry host validation, invalid archives/lockfile and false approval gates. Local fixtures passed (6/6) before GitHub submission; GitHub CI and exact-head Codex PENDING. The real registry evidence sample is capped and is NOT the entire dependency population or legal clearance.
 

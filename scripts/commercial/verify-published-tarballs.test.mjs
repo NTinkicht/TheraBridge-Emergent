@@ -60,3 +60,31 @@ test('rejects PAX and GNU extended path headers instead of mislabeling effective
   assert.throws(()=>extractLicenseHashes(gzipSync(changed)),/UNSUPPORTED_TAR_EXTENDED_HEADER/);
  }
 });
+
+test('compares publisher-to-installed license SHA256 and detects silent modifications',async()=>{
+ const f=fixture();
+ const license=createHash('sha256').update('MIT synthetic test document').digest('hex');
+ f.installedFiles={schema:'therabridge-installed-license-file-inventory-v1',approved:0,count:1,packages:[
+  {name:'alpha',version:'1.0.0',installedPath:'node_modules/alpha',commercialApproval:false,actualLicenseTextReviewed:false,foundLicenseFiles:[{file:'LICENSE',sha256:license}]}
+ ]};
+ const pass=await audit(f,{fetchBuffer:async()=>f.bytes});
+ assert.equal(pass.records[0].installedLicenseComparison,'EXACT_SHA256_MATCH');
+ assert.equal(pass.records[0].status,'TARBALL_INTEGRITY_VERIFIED_LICENSE_FILES_HASHED');
+ f.installedFiles.packages[0].foundLicenseFiles[0].sha256='0'.repeat(64);
+ const fail=await audit(f,{fetchBuffer:async()=>f.bytes});
+ assert.equal(fail.records[0].status,'UNRESOLVED_INSTALLED_LICENSE_HASH_MISMATCH');
+});
+test('bounded concurrent verification visits all direct installed versions',async()=>{
+ const f=fixture();
+ const count=41;
+ f.installed.records=Array.from({length:count},(_,i)=>({name:'alpha',version:'1.0.0',installedPath:'node_modules/d'+i,legalApproval:false,decision:'UNRESOLVED'}));
+ const result=await audit(f,{fetchBuffer:async()=>f.bytes});
+ assert.equal(result.fetched,1);
+ assert.equal(result.total,1);
+ assert.equal(result.legallyApproved,0);
+});
+test('rejects fabricated approval in installed-license file inventory',async()=>{
+ const f=fixture();
+ f.installedFiles={schema:'therabridge-installed-license-file-inventory-v1',approved:0,count:1,packages:[{name:'alpha',version:'1.0.0',commercialApproval:true,actualLicenseTextReviewed:false,foundLicenseFiles:[]}]};
+ await assert.rejects(()=>audit(f,{fetchBuffer:async()=>f.bytes}),/FALSE_INSTALLED_APPROVAL/);
+});

@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 full direct publisher verification and rights inventory (qualification pending)
+A consolidated audit change extends bounded concurrent exact-tarball/SRI downloads across installed direct names/versions, performs publisher-to-installed LICENSE/NOTICE hash comparisons, and produces a transitive + tracked-asset legal-review queue. No published license or distribution legally approved; technical CI/Codex pending.
+
+---
+
 ## 2026-11-10 — COM-02 bounded exact npm publisher tarball evidence (PR qualification pending)
 Created authenticated HTTPS npm-registry-only tarball verifier with exact Yarn SRI check and top-level LICENSE/NOTICE digest inventory. Bounded sample (8 packages) and explicit unresolved statuses; no text or tarballs published. Unit and negative fixtures authored, CI and Codex still pending. NOT legal approval or full package coverage; public repo and G2/G2b NO-GO retained.
 

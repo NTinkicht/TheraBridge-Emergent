@@ -1,3 +1,8 @@
+## COM-02 comprehensive evidence qualification
+Qualify exact-head CI, Codex and artifacts; inspect any direct-version download failures and installed-license SHA256 mismatches. Then separately verify transitive/optional/platform package publisher bytes, OS/container images and external fonts/logos/models/datasets. Obtain rights-holder and qualified legal review before any SaaS/enterprise distribution notices, signed contracts, or root proprietary LICENSE. Clinical gates stay NO-GO.
+
+---
+
 ## COM-02 published tarball audit acceptance and expansion
 1. Pass offline published-tarball fixture tests, exact-head CI SBOM/secrets/full preview, independent Codex, examine per-commit integrity outcomes. Confirm no integrity mismatch, no fabricated legal approvals.
 2. Expand direct dependency sampling and all transitive/optional/OS/image, icon/font/logo/illustration/model/data rights using protected provenance records and defensible reviewer ownership.

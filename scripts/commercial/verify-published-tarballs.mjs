@@ -90,12 +90,13 @@ async function fetchTarball(url){
   req.on('timeout',()=>req.destroy(Error('TIMEOUT')));req.on('error',reject);
  });
 }
-async function audit({installed,lockText,direct,maxFetch=8},{fetchBuffer=fetchTarball}={}){
+async function audit({installed,lockText,direct,installedFiles=null,maxFetch=256},{fetchBuffer=fetchTarball}={}){
  if(installed.schema!=='therabridge-installed-lock-provenance-v1'||
   installed.status!=='LOCK_METADATA_ONLY_NOT_TARBALL_OR_LICENSE_VERIFICATION'||
   installed.legallyApproved!==0||!Array.isArray(installed.records))throw Error('BAD_INSTALLED_PROVENANCE');
  if(direct.schema!=='therabridge-direct-license-evidence-v1'||direct.status!=='NOT_LEGAL_CLEARANCE'||!Array.isArray(direct.records))throw Error('BAD_DIRECT_EVIDENCE');
- if(!Number.isInteger(maxFetch)||maxFetch<1||maxFetch>30)throw Error('BAD_FETCH_LIMIT');
+ if(!Number.isInteger(maxFetch)||maxFetch<1||maxFetch>512)throw Error('BAD_FETCH_LIMIT');
+ if(installedFiles&&(installedFiles.schema!=='therabridge-installed-license-file-inventory-v1'||installedFiles.approved!==0||!Array.isArray(installedFiles.packages)||installedFiles.count!==installedFiles.packages.length))throw Error('BAD_INSTALLED_FILE_EVIDENCE');
  const lock=parseLock(lockText),names=[...new Set(direct.records.map(x=>x.name))].sort();
  const versions=new Map();
  for(const p of installed.records){
@@ -103,41 +104,72 @@ async function audit({installed,lockText,direct,maxFetch=8},{fetchBuffer=fetchTa
   if(!versions.has(p.name))versions.set(p.name,new Set());
   versions.get(p.name).add(p.version);
  }
- const records=[];let fetched=0;
+ const records=[],jobs=[];let fetched=0;
+ const installedByKey=new Map();
+ for(const pkg of installedFiles?.packages??[]){
+  if(pkg.commercialApproval!==false||pkg.actualLicenseTextReviewed!==false||!Array.isArray(pkg.foundLicenseFiles))throw Error('FALSE_INSTALLED_APPROVAL');
+  const key=JSON.stringify([pkg.name,pkg.version]);
+  if(!installedByKey.has(key))installedByKey.set(key,[]);
+  installedByKey.get(key).push(pkg);
+ }
  for(const name of names){
   const available=[...(versions.get(name)||[])].sort();
   if(!available.length){records.push({name,version:null,status:'DIRECT_DEPENDENCY_NOT_INSTALLED',legalApproval:false});continue;}
   for(const version of available){
    const candidates=lock.get(JSON.stringify([name,version]))||[];
-   const row={name,version,status:'PENDING',tarballSha256:null,verifiedIntegrityAlgorithm:null,publishedLicenseFiles:[],legalApproval:false,licenseObligationsReviewed:false};
-   if(candidates.length!==1){row.status=candidates.length?'AMBIGUOUS_LOCK_SOURCES':'NO_LOCK_MATCH';records.push(row);continue;}
-   if(fetched>=maxFetch){row.status='DEFERRED_BY_BOUNDED_SAMPLE';records.push(row);continue;}
-   fetched++;
-   try{
-    const url=validatedUrl(candidates[0].resolved),bytes=await fetchBuffer(url);
-    if(!Buffer.isBuffer(bytes)||bytes.length>MAX_GZIP)throw Error('INVALID_OR_OVERSIZED_TARBALL');
-    row.verifiedIntegrityAlgorithm=verifyIntegrity(bytes,candidates[0].integrity);
-    row.tarballSha256=createHash('sha256').update(bytes).digest('hex');
-    row.publishedLicenseFiles=extractLicenseHashes(bytes);
-    row.status=row.publishedLicenseFiles.length?'TARBALL_INTEGRITY_VERIFIED_LICENSE_FILES_HASHED':'TARBALL_INTEGRITY_VERIFIED_NO_TOP_LEVEL_LICENSE';
-   }catch(e){row.status='UNRESOLVED_'+String(e.message).replace(/[^A-Z0-9_]/g,'_').slice(0,70);}
+   const row={name,version,status:'PENDING',tarballSha256:null,verifiedIntegrityAlgorithm:null,publishedLicenseFiles:[],installedLicenseComparison:'NOT_YET_CHECKED',legalApproval:false,licenseObligationsReviewed:false};
    records.push(row);
+   if(candidates.length!==1){row.status=candidates.length?'AMBIGUOUS_LOCK_SOURCES':'NO_LOCK_MATCH';continue;}
+   if(fetched>=maxFetch){row.status='DEFERRED_BY_BOUNDED_SAMPLE';continue;}
+   fetched++;
+   jobs.push(async()=>{
+    try{
+     const url=validatedUrl(candidates[0].resolved),bytes=await fetchBuffer(url);
+     if(!Buffer.isBuffer(bytes)||bytes.length>MAX_GZIP)throw Error('INVALID_OR_OVERSIZED_TARBALL');
+     row.verifiedIntegrityAlgorithm=verifyIntegrity(bytes,candidates[0].integrity);
+     row.tarballSha256=createHash('sha256').update(bytes).digest('hex');
+     row.publishedLicenseFiles=extractLicenseHashes(bytes);
+     row.status=row.publishedLicenseFiles.length?'TARBALL_INTEGRITY_VERIFIED_LICENSE_FILES_HASHED':'TARBALL_INTEGRITY_VERIFIED_NO_TOP_LEVEL_LICENSE';
+     if(installedFiles){
+      const copies=installedByKey.get(JSON.stringify([name,version]))??[];
+      if(!copies.length){row.installedLicenseComparison='INSTALLED_PACKAGE_NOT_IN_FILE_INVENTORY';return;}
+      if(!row.publishedLicenseFiles.length){row.installedLicenseComparison='PUBLISHER_HAS_NO_TOP_LEVEL_LICENSE';return;}
+      const result=[];
+      for(const copy of copies){
+       for(const pub of row.publishedLicenseFiles){
+        const matching=copy.foundLicenseFiles.find(f=>f.file.toLowerCase()===pub.file.toLowerCase());
+        if(matching)result.push({installedPath:copy.installedPath,file:pub.file,status:matching.sha256===pub.sha256?'EXACT_SHA256_MATCH':'SHA256_MISMATCH'});
+       }
+      }
+      row.installedLicenseComparison=!result.length?'NO_MATCHING_TOP_LEVEL_LICENSE_FILENAME':result.some(x=>x.status==='SHA256_MISMATCH')?'SHA256_MISMATCH':'EXACT_SHA256_MATCH';
+      row.installedLicenseMatches=result;
+      if(row.installedLicenseComparison==='SHA256_MISMATCH')row.status='UNRESOLVED_INSTALLED_LICENSE_HASH_MISMATCH';
+     }
+    }catch(e){row.status='UNRESOLVED_'+String(e.message).replace(/[^A-Z0-9_]/g,'_').slice(0,70);}
+   });
   }
  }
+ // Controlled parallelism (at most six requests) avoids CI-long sequential fetches.
+ let cursor=0;
+ await Promise.all(Array.from({length:Math.min(6,jobs.length)},async()=>{
+  while(cursor<jobs.length){const job=jobs[cursor++];await job();}
+ }));
+ records.sort((a,b)=>a.name.localeCompare(b.name,'en')||String(a.version).localeCompare(String(b.version),'en'));
  const summary={};for(const row of records)summary[row.status]=(summary[row.status]||0)+1;
  return {schema:'therabridge-publisher-tarball-evidence-v1',qualification:'BOUNDED VERIFIED TARBALL BYTES; NOT LEGAL CLEARANCE',
   lockSha256:createHash('sha256').update(lockText).digest('hex'),
   installedReviewSha256:createHash('sha256').update(JSON.stringify(installed)).digest('hex'),
+  installedFilesPresent:Boolean(installedFiles),
   maxFetch,fetched,total:records.length,legallyApproved:0,summary,records};
 }
 if(import.meta.url===new URL('file://'+process.argv[1]).href){
- const [installedPath,lockPath,directPath,outPath]=process.argv.slice(2);
- if(process.argv.length!==6||new Set([installedPath,lockPath,directPath,outPath]).size!==4){console.error('Usage: verify-published-tarballs.mjs installed-provenance.json yarn.lock direct-evidence.json output.json');process.exit(2);}
+ const [installedPath,lockPath,directPath,filesPath,outPath]=process.argv.slice(2);
+ if(process.argv.length!==7||new Set([installedPath,lockPath,directPath,filesPath,outPath]).size!==5){console.error('Usage: verify-published-tarballs.mjs installed-provenance.json yarn.lock direct-evidence.json installed-license-files.json output.json');process.exit(2);}
  try{
-  const result=await audit({installed:JSON.parse(readFileSync(installedPath,'utf8')),lockText:readFileSync(lockPath,'utf8'),direct:JSON.parse(readFileSync(directPath,'utf8'))});
+  const result=await audit({installed:JSON.parse(readFileSync(installedPath,'utf8')),lockText:readFileSync(lockPath,'utf8'),direct:JSON.parse(readFileSync(directPath,'utf8')),installedFiles:JSON.parse(readFileSync(filesPath,'utf8'))});
   writeFileSync(outPath,JSON.stringify(result,null,2)+'\n',{flag:'wx'});
   console.log(JSON.stringify({total:result.total,fetched:result.fetched,summary:result.summary,legallyApproved:0}));
-  if(result.summary.UNRESOLVED_INTEGRITY_MISMATCH){console.error('Verified integrity mismatch; blocking CI');process.exitCode=1;}
+  if(result.summary.UNRESOLVED_INTEGRITY_MISMATCH||result.summary.UNRESOLVED_INSTALLED_LICENSE_HASH_MISMATCH){console.error('Verified integrity mismatch; blocking CI');process.exitCode=1;}
  }catch(e){console.error(String(e.message));process.exitCode=1;}
 }
 export {audit,parseLock,verifyIntegrity,extractLicenseHashes,validatedUrl};
