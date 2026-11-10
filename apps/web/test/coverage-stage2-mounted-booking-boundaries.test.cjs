@@ -32,7 +32,7 @@ jest.mock('@/lib/operations',()=>{
   children:jest.fn(),child:jest.fn(),book:jest.fn(),
   createSeries:jest.fn(),reschedule:jest.fn()}};
 });
-const {opsApi}=require('../src/lib/operations');
+const {opsApi,setCenterTz}=require('../src/lib/operations');
 const {ApiError}=require('../src/lib/api');
 const {BookDialog}=require('../src/components/operations/BookDialog');
 const person={id:'child-fictional',firstName:'Alex',lastName:'Fictional',preferredName:'Alex'};
@@ -56,6 +56,7 @@ const mount=async(opts={})=>act(async()=>{tree=create(h(BookDialog,{
  initial:{date:'2035-12-15',start:'09:00'},childId:'child-fictional',...opts
 }));});
 beforeEach(()=>{
+ setCenterTz('Asia/Dubai');
  jest.clearAllMocks();
  for(const k of ['children','child','book','createSeries','reschedule'])opsApi[k].mockReset();
  opsApi.children.mockResolvedValue({items:[person]});
