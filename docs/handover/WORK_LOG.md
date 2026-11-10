@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #357 first implementation checkpoint
+Implemented registry exact-version `gitHead` candidate capture, trusted-host GitHub repository parsing, immutable commit `package.json` fetch using existing absolute-deadline HTTPS reader, identity SHA-256, and explicit untrusted correspondence classification. Added adversarial tests for mutable commits, spoofed domains, wrong version/name, oversized/non-UTF8 source, forged approvals, duplicate inputs and unavailable network states. CI wired to publish correspondence candidate JSON. No tests have been marked PASS yet; correspondence is not established by npm publisher claims alone.
+
+---
+
 ## 2026-11-11 — COM-02 #355 security follow-up
 Fixed P2 absolute HTTPS deadline, rejected redirect draining and added fake HTTP trickle and non-200 response tests in commits `4ce0784`, `5da64c0`, `b5f4ba6`; review thread resolved. Subsequent required `secret-scan` exposed historic synthetic password-reset fixture on unrelated Web stage3 branch through `gitleaks --all`; minimal AND-scoped test-path/exact-literal allowlist added in commit `22ad663`, maintaining repository-wide scanning. Full latest-head CI and independent review NOT YET QUALIFIED. No verified exact-version upstream mapping or license grant.
 
