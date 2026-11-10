@@ -1,5 +1,5 @@
 'use client';
-import { validateCenter } from '@/center-validation';
+import { validateCenter, type Form } from '@/center-validation';
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import Link from 'next/link';
