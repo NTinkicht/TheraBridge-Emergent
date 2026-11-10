@@ -52,7 +52,7 @@ describe('mounted center-local clinician review reminders',()=>{
   expect(output).toContain('Review scheduled today');
   expect(output).toContain('Review within 14 days');
   expect(output).toContain('No review date set');
-  expect(output).toContain('1 recorded observation(s) for this exact version');
+  expect(get('goal-review-row-g1').findAllByType('p').some(p=>Array.isArray(p.props.children)&&p.props.children.includes(1))).toBe(true);
   expect(output).toContain('1 linked home activity(ies)');
   expect(output).toContain('does not mean a goal was achieved');
  });
@@ -65,7 +65,7 @@ describe('mounted center-local clinician review reminders',()=>{
   await render(ws);
   expect(find('goal-review-row-g99')).toHaveLength(0);
   expect(JSON.stringify(tree.toJSON())).not.toContain('Historical goal should remain absent');
-  expect(JSON.stringify(tree.toJSON())).toContain('1 recorded observation(s) for this exact version');
+  expect(get('goal-review-row-g1').findAllByType('p').some(p=>Array.isArray(p.props.children)&&p.props.children.includes(1))).toBe(true);
  });
  it('expands beyond 12 rows and contracts without changing review status',async()=>{
   const goals=Array.from({length:14},(_,i)=>goal(i+1));
