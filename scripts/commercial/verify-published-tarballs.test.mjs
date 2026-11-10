@@ -79,6 +79,18 @@ test('GNU longname is scoped to one actual file header',()=>{
  const hashes=extractLicenseHashes(gzipSync(Buffer.concat([ext,file('package/placeholder','gnu'),Buffer.alloc(1024)])));
  assert.deepEqual(hashes.map(x=>x.file),['LICENSE']);
 });
+test('P2: never hash a raw ustar size when PAX overrides effective size',()=>{
+ const pax=Buffer.from(file('PaxHeader',paxRecord('size','1')));pax[156]=120;
+ const tar=gzipSync(Buffer.concat([pax,file('package/LICENSE','abc'),Buffer.alloc(1024)]));
+ assert.throws(()=>extractLicenseHashes(tar),/UNSUPPORTED_PAX_SEMANTICS/);
+});
+test('P2: GNU sparse metadata cannot disguise a nested license as package-root',()=>{
+ const attrs=paxRecord('GNU.sparse.map','0,3')+paxRecord('GNU.sparse.size','3')+
+  paxRecord('GNU.sparse.name','package/nested/LICENSE');
+ const pax=Buffer.from(file('PaxHeader',attrs));pax[156]=120;
+ const tar=gzipSync(Buffer.concat([pax,file('package/LICENSE','abc'),Buffer.alloc(1024)]));
+ assert.throws(()=>extractLicenseHashes(tar),/UNSUPPORTED_PAX_SEMANTICS/);
+});
 test('malformed and dangerous PAX/GNU extensions fail closed',()=>{
  const base=file('package/placeholder','x');
  const archive=(meta,type,following=[base])=>{const h=Buffer.from(file('PaxHeader',meta));h[156]=type;return gzipSync(Buffer.concat([h,...following,Buffer.alloc(1024)]));};
