@@ -51,16 +51,13 @@ regexes = [
   '''^\$\{?[A-Z_][A-Z0-9_]*''',
 ]
 
-# M4-08 Stage 3: exact fictional mismatched-new-password fixture, not a credential.
-# The whole-history scan captures an earlier test commit; editing the latest
-# source alone cannot make that historical fixture disappear. This exception
-# is restricted to ONE default rule, ONE full path and ONE exact value.
-# No file-wide exclusion, token prefix wildcard or other rule is disabled.
+# M4-08 Stage 3: one historic fictional password-mismatch input, NOT a credential.
+# This applies solely to the generic-api-key rule, the exact test source
+# path and the exact literal. Other secret rules and values still scan.
 [[allowlists]]
 targetRules = ["generic-api-key"]
-description = "Exact noncredential mismatched-password fixture in synthetic credential recovery test history only"
+description = "Single synthetic mismatched-password fixture in full-history scan"
 condition = "AND"
 regexTarget = "secret"
-paths = ['''^apps/web/test/coverage-stage3-mounted-recovery-and-feasibility\\.test\\.cjs$''']
-regexes = ['''^synthetic-strong-1
-'']
+paths = ['''^apps/web/test/coverage-stage3-mounted-recovery-and-feasibility\.test\.cjs$''']
+regexes = ['''^synthetic-strong-1$''']
