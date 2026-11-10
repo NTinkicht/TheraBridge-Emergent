@@ -87,7 +87,8 @@ describe('Stage 2 released-document UI cannot bypass dual server flags',()=>{
   familyReleaseApi.read.mockResolvedValue({childName:'Fictional Alex',replaced:true,
    rendering:{kind:'REPORT',title:'Fictional report',familySummary:'Superseded fictional wording'}});
   await mount();await click('View report');
-  expect(view()).toContain('Fictional report — replaced');
+  const heading=get('family-released-rendering').findByType('h3');
+  expect(heading.props.children.flat(Infinity).join('')).toContain('Fictional report — replaced');
   expect(view()).toContain('Superseded fictional wording');
   expect(button('Download')).toBeUndefined();
  });
