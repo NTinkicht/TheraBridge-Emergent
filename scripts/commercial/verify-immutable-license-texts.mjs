@@ -21,20 +21,38 @@ function validatedRawUrl(mapping){
  if(uri.protocol!=='https:'||uri.hostname!=='raw.githubusercontent.com'||uri.search||uri.hash)throw Error('INVALID_SOURCE_URL');
  return uri.toString();
 }
-function fetchRaw(url){
+function fetchRaw(url,{deadlineMs=7000}={}){
  const uri=new URL(url);
  if(uri.protocol!=='https:'||uri.hostname!=='raw.githubusercontent.com'||uri.port||uri.username||uri.password||uri.search||uri.hash)
  return Promise.reject(Error('SOURCE_NOT_ALLOWLISTED'));
+ if(!Number.isSafeInteger(deadlineMs)||deadlineMs<1||deadlineMs>15000)return Promise.reject(Error('BAD_DEADLINE'));
  return new Promise((resolve,reject)=>{
-  const req=https.get(uri,{timeout:7000,headers:{'user-agent':'TheraBridge-LegalEvidence/1.0'}},res=>{
-   // Never follow redirects, including redirects to internal/third-party hosts.
-   if(res.statusCode!==200){res.resume();reject(Error('UPSTREAM_HTTP_'+res.statusCode));return;}
+  let settled=false;
+  let req;
+  // Unlike socket inactivity timeout, this deadline is absolute from request start.
+  const deadline=setTimeout(()=>req.destroy(Error('UPSTREAM_TIMEOUT')),deadlineMs);
+  const complete=(err,value)=>{
+   if(settled)return;
+   settled=true;clearTimeout(deadline);
+   if(err)reject(err);else resolve(value);
+  };
+  req=https.get(uri,{timeout:deadlineMs,headers:{'user-agent':'TheraBridge-LegalEvidence/1.0'}},res=>{
+   // Never follow redirects or drain unbounded error bodies.
+   if(res.statusCode!==200){
+    const err=Error('UPSTREAM_HTTP_'+res.statusCode);
+    complete(err);res.destroy();req.destroy();return;
+   }
    const pieces=[];let len=0;
-   res.on('data',b=>{len+=b.length;if(len>MAX_FILE)req.destroy(Error('TEXT_TOO_LARGE'));else pieces.push(b);});
-   res.on('end',()=>resolve(Buffer.concat(pieces)));
-   res.on('error',reject);
+   res.on('data',b=>{
+    len+=b.length;
+    if(len>MAX_FILE){const err=Error('TEXT_TOO_LARGE');complete(err);res.destroy();req.destroy();return;}
+    pieces.push(b);
+   });
+   res.on('end',()=>complete(null,Buffer.concat(pieces)));
+   res.on('error',complete);
   });
-  req.on('timeout',()=>req.destroy(Error('UPSTREAM_TIMEOUT')));req.on('error',reject);
+  req.on('timeout',()=>req.destroy(Error('UPSTREAM_TIMEOUT')));
+  req.on('error',complete);
  });
 }
 function validateText(bytes){
