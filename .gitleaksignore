@@ -11,3 +11,9 @@ fe61fe12df2d4ca4c8f9b98d9d4f273c0357417b:apps/api/test/auth.e2e-spec.ts:therabri
 # Exact commit/file/rule/line fingerprints only; no rule or path suppression. 2026-11-10.
 5e3b06e1ba7572201b9985fd564e5bcdeecc0a06:apps/web/test/coverage-workspace-matrix.test.cjs:therabridge-credential-assignment:10
 5e3b06e1ba7572201b9985fd564e5bcdeecc0a06:apps/web/test/coverage-workspace-matrix.test.cjs:therabridge-credential-assignment:60
+
+# Historical Web coverage fixture in unmerged synthetic-only test branch.
+# Earlier version assigned the literal 'nonsecret' as a mock invitation password;
+# current branch changed the test to an invalid empty password. No credential exists.
+# Exact commit/file/rule/line fingerprint; do not disable any scanning rules.
+5dcccc30b67abb1bd626df199695c2586341897a:apps/web/test/coverage-transport-permissions.test.cjs:therabridge-credential-assignment:59
