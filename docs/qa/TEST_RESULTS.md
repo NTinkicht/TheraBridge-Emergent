@@ -1,3 +1,11 @@
+## 2026-11-10 — COM-04 contract draft qualification (NOT RUN)
+- Public draft clause completeness/contract-stack review: AUTHORING ONLY; not external counsel review.
+- Exact-head CI, source SBOM, secret scan, Codex: NOT YET RUN on this PR head.
+- Legal/IP/third-party licensing, UAE health/child data and clinical release: OPEN / NO-GO.
+- No runtime, migration, payments or clinical feature changes.
+
+---
+
 ## M4-08 API source-boundary coverage — NOT YET CI QUALIFIED
 New Jest tests execute API policy, cookie, security and password code on positive and negative branches. No patient or network traffic or clinical actions. The first test job failed 1 of 732 tests on invalid empty cookie name handling; parser corrected and final-head CI pending. Source-wide coverage / CI / Codex evidence pending. Target 95% per API/Web metric remains unmet.
 

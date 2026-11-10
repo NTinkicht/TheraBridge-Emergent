@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-04 non-binding customer agreement drafts
+Prepared a consolidated contract pack under docs/commercial/contracts/: draft MSA, SaaS and enterprise schedules, DPA, security, service levels/support, acceptable-use, and order-form fields plus legal/ownership approval matrix. Kept all terms conditional and the public repo free from executed agreements, private identities and medical data. No new licensing runtime, billing or clinical behavior. CI and Codex pending.
+
+---
+
 ## 2026-11-10 — API source-executing coverage and hard-deny tests
 Created `apps/api/test/m4-auth-boundaries.e2e-spec.ts` exercising actual policy/permissions, unsigned clinical capabilities, family messaging restrictions, trusted forwarded IP processing, cookies, token comparisons and password rejection. Pure fake data and no services. First full API CI run surfaced invalid whitespace-only cookie names; parser updated to skip empty names. Requalification pending; no release approval claimed.
 

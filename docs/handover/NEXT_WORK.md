@@ -1,3 +1,11 @@
+## COM-04 contract suite qualification
+1. Run exact-head source SBOM/secret scan/full CI and Codex; resolve review findings on contract drafts and ensure no protected personal data or privileged material appears.
+2. Rights-holder and UAE counsel must verify MSA, SaaS/Enterprise grants, DPA and liability/termination clauses before any customer use.
+3. Product/privacy/security/clinical/finance owners must determine and sign blank business fields, service levels, hosting, regulatory requirements and clinical release boundaries.
+4. Store executed agreements and legal evidence privately; keep public draft NON-BINDING. V1 runtime and G2/G2b NO-GO unchanged.
+
+---
+
 ## M4-08 API coverage wave 4
 Qualify source-executing auth/security boundary regression tests and the invalid empty-cookie-name parser correction via six original exact-head CI jobs, SBOM, Smart CI and independent review. Re-measure all API lines/branches/functions/statements against 93 executable-file baseline, track unexecuted source modules, and continue real branch tests across tenant authorization and scheduling. Clinical G2/G2b remain NO-GO.
 

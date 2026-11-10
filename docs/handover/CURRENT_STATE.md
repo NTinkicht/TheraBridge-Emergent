@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-04 contract suite draft (review pending)
+Added public, non-binding draft MSA/SaaS/Enterprise/DPA/Security/SLA/AUP/Order Form clauses and an approval-control index under docs/commercial/contracts/. No contracting entity, legal rights, tax, price, service guarantee, data residency or clinical permission is asserted. COM-01/02/03 and UAE counsel approval remain mandatory. PR exact-head CI/review NOT YET QUALIFIED.
+
+---
+
 ## 2026-11-10 — M4-08 API branch-safety coverage wave (review pending)
 Added Jest executed-code tests for six-role permission matrix, unsigned clinical/messaging denials, cookie construction and parsing, trusted proxy IP chain resolution, token comparisons and password policy fail-closed paths. Uses synthetic values; one production-safe parser correction now skips whitespace-only invalid cookie names; no clinical release change. CI and exact-head Codex pending, 95% target NOT QUALIFIED.
 
