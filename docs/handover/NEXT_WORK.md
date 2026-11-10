@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #355 qualification after P2 and all-ref synthetic finding
+Qualify HEAD including added absolute request timeout tests; validate .gitleaks global exact synthetic fixture allowlist eliminates only known false positive, not real credentials. Inspect full original `test`, `secret-scan`, `live-session`, `demo-journey`, `preview-container`, `compose` and Smart CI on exact final HEAD. Then obtain final Codex independent review after stable CI, disposition all findings, merge only if Rule 16 gates pass. The 53 exact package/version source-to-revision mappings remain fully unresolved until independently corroborated, with 91 assets, SaaS/on-prem rights, and G2/G2b legal/clinical gates still open.
+
+---
+
 ## 2026-11-11 — COM-02 #355 qualify before expanding source authority
 Qualify exact HEAD with original full CI (including new immutable verifier regression tests), obtain full preview/Compose/Smart CI and commercial inventory results, then mark ready and request final Codex independent review on stable SHA; resolve all findings and update Rule 7 test evidence based on actual CI. Following merge, perform independently corroborated exact npm version-to-Git-commit proof before adding mappings; review upstream LICENSE/NOTICE text hashes, 91 non-package assets and SaaS-vs-enterprise distribution with authorized counsel. No automatic licenses, final notices or clinical G2/G2b authorization.
 
