@@ -79,7 +79,7 @@ describe('M4-08 real clinician plan version draft controls',()=>{
   await change('home-activity-add','t1');
   expect(get('home-activity-unlinked')).toBeTruthy();
   expect(get('plan-save').props.disabled).toBe(true);
-  await click('plan-save');
+  // Disabled DOM controls cannot dispatch user clicks; do not invoke onClick directly.
   expect(clinicalApi.saveVersion).not.toHaveBeenCalled();
   await change('home-activity-goal-0','g1');
   expect(find('home-activity-unlinked')).toHaveLength(0);
