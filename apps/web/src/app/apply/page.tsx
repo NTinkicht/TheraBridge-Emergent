@@ -1,4 +1,5 @@
 'use client';
+import { validateApplication } from '@/apply-validation';
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import Link from 'next/link';
@@ -9,27 +10,8 @@ import { ApiError } from '@/lib/api';
 import { SPECIALTY_OPTIONS, authApi } from '@/lib/auth';
 
 const ZONES = ['America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'America/Phoenix', 'America/Anchorage', 'Pacific/Honolulu', 'America/Toronto', 'Europe/London', 'Europe/Paris', 'Africa/Casablanca', 'Asia/Dubai', 'Australia/Sydney', 'UTC'];
-const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-type Form = Record<'organizationName' | 'contactName' | 'contactEmail' | 'contactPhone' | 'country' | 'city' | 'timezone' | 'therapistEstimate' | 'childEstimate' | 'message', string>;
 
-export function validate(f: Form, specialties: string[], ack: boolean): Record<string, string> {
-  const e: Record<string, string> = {};
-  if (f.organizationName.trim().length < 2) e.organizationName = 'Enter your center’s name.';
-  if (f.contactName.trim().length < 2) e.contactName = 'Enter the name of the person we should contact.';
-  if (!EMAIL.test(f.contactEmail.trim())) e.contactEmail = 'Enter a valid email address.';
-  if (f.contactPhone && !/^[+()0-9 .-]{6,40}$/.test(f.contactPhone.trim())) e.contactPhone = 'Use digits, spaces and + ( ) - only.';
-  if (f.country.trim().length < 2) e.country = 'Enter the country.';
-  if (f.city.trim().length < 2) e.city = 'Enter the city.';
-  const t = Number(f.therapistEstimate);
-  if (!Number.isInteger(t) || t < 1 || t > 500) e.therapistEstimate = 'Enter a whole number from 1 to 500.';
-  const c = Number(f.childEstimate);
-  if (f.childEstimate === '' || !Number.isInteger(c) || c < 0 || c > 5000) e.childEstimate = 'Enter a whole number from 0 to 5000.';
-  if (!specialties.length) e.specialties = 'Choose at least one service.';
-  if (f.message.length > 2000) e.message = 'Keep the message under 2000 characters.';
-  if (!ack) e.ack = 'Please confirm to continue.';
-  return e;
-}
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -58,7 +40,7 @@ export default function ApplyPage() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    const found = validate(f, specialties, ack);
+    const found = validateApplication(f, specialties, ack);
     setErrors(found);
     setFailure(null);
     if (Object.keys(found).length) {
