@@ -157,7 +157,7 @@ describe('real preview visual journeys and honest data-state transitions',()=>{
  });
  it('only announces unavailable navigation in a preview rather than fabricating a route',async()=>{
   await mount(CenterPreview);
-  await click('nav-team');
+  await click('nav-invitations');
   expect(get('preview-notice')).toBeTruthy();
   expect(JSON.stringify(tree.toJSON())).toContain('outside this design preview');
   expect(find('account-panel')).toHaveLength(0);
