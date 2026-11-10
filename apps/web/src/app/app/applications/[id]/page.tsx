@@ -17,6 +17,15 @@ import { SPECIALTY_OPTIONS, STATUS_LABELS, authApi, type ApplicationDetail } fro
 const EVENT_LABELS: Record<string, string> = { submitted: 'Application submitted', review_started: 'Review started', approved: 'Approved', rejected: 'Rejected', provisioned: 'Center provisioned' };
 const specialtyLabel = (v: string) => SPECIALTY_OPTIONS.find((s) => s.value === v)?.label ?? v;
 
+function Row({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="grid grid-cols-1 gap-0.5 py-2 sm:grid-cols-[180px_minmax(0,1fr)] sm:gap-4">
+      <dt className="text-[13px] font-medium text-brand-inkMuted">{label}</dt>
+      <dd className="min-w-0 break-words text-[15px]">{children}</dd>
+    </div>
+  );
+}
+
 function Detail({ id, canDecide, onError }: { id: string; canDecide: boolean; onError: (e: unknown) => void }) {
   const [app, setApp] = useState<ApplicationDetail | null>(null);
   const [failed, setFailed] = useState(false);
