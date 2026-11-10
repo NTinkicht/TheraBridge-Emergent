@@ -59,35 +59,83 @@ function verifyIntegrity(bytes,integrity){
  if(expected.length!==actual.length||!timingSafeEqual(expected,actual))throw Error('INTEGRITY_MISMATCH');
  return choice[1];
 }
+// PAX metadata is interpreted only for the next real entry; global path overrides
+// are rejected. A malformed extension must never silently become license evidence.
+function readPax(bytes){
+ if(bytes.length>65536)throw Error('OVERSIZED_TAR_EXTENSION');
+ const attrs={};let pos=0;
+ while(pos<bytes.length){
+  const space=bytes.indexOf(32,pos);
+  if(space<0||space-pos>10)throw Error('MALFORMED_PAX_RECORD');
+  const digits=bytes.subarray(pos,space).toString('ascii');
+  if(!/^[1-9][0-9]*$/.test(digits))throw Error('MALFORMED_PAX_RECORD');
+  const count=Number(digits),end=pos+count;
+  if(!Number.isSafeInteger(count)||end>bytes.length||end<=space+2||bytes[end-1]!==10)throw Error('MALFORMED_PAX_RECORD');
+  const raw=bytes.subarray(space+1,end-1),eq=raw.indexOf(61);
+  if(eq<=0)throw Error('MALFORMED_PAX_RECORD');
+  const key=raw.subarray(0,eq).toString('utf8');
+  const value=raw.subarray(eq+1).toString('utf8');
+  if(!/^[A-Za-z0-9_.-]+$/.test(key)||Object.hasOwn(attrs,key)||value.includes('\u0000')||value.includes('\ufffd'))throw Error('MALFORMED_PAX_RECORD');
+  attrs[key]=value;pos=end;
+ }
+ return attrs;
+}
 function extractLicenseHashes(gzip,{tarBytes=MAX_TAR}={}){
  if(!Number.isSafeInteger(tarBytes)||tarBytes<1||tarBytes>NEXT_EXCEPTION.tarBytes)throw Error('INVALID_TAR_LIMIT');
  let tar;try{tar=gunzipSync(gzip,{maxOutputLength:tarBytes});}catch{throw Error('UNSAFE_OR_INVALID_GZIP');}
- const files=[];let offset=0;
+ const files=[];let offset=0,pending=null,globalSeen=false;
  while(offset+512<=tar.length){
-  const h=tar.subarray(offset,offset+512);if(h.every(x=>x===0))break;
-  // PAX/GNU path overrides can change what a raw header filename means.
-  // Reject instead of claiming license evidence for an effective different path.
-  if([120,103,76,75].includes(h[156]))throw Error('UNSUPPORTED_TAR_EXTENDED_HEADER');
+  const h=tar.subarray(offset,offset+512);
+  if(h.every(x=>x===0))break;
   const field=h.subarray(124,136).toString('utf8').replace(/\0.*$/,'').trim();
   if(!/^[0-7]+$/.test(field))throw Error('UNSUPPORTED_TAR_SIZE');
   const size=parseInt(field,8);
   if(!Number.isSafeInteger(size)||offset+512+size>tar.length)throw Error('TRUNCATED_TAR_ENTRY');
+  const type=h[156],data=tar.subarray(offset+512,offset+512+size);
   const path=h.subarray(0,100).toString('utf8').replace(/\0.*$/,'');
   const prefix=h.subarray(345,500).toString('utf8').replace(/\0.*$/,'');
-  const full=prefix?prefix+'/'+path:path;
-  if((h[156]===0||h[156]===48)&&/^package\/[^/]+$/.test(full)){
-   const name=full.slice(8);
-   if(LICENSE.test(name)){
-    if(size>MAX_TEXT)throw Error('OVERSIZED_LICENSE_FILE');
-    const bytes=tar.subarray(offset+512,offset+512+size);
-    files.push({file:name,bytes:size,sha256:createHash('sha256').update(bytes).digest('hex')});
+  let full=prefix?prefix+'/'+path:path;
+  if(type===120||type===103){
+   const attrs=readPax(data);
+   if(type===103){
+    // Global PAX path/linkpath would affect unrelated entries and must be reviewed.
+    if(globalSeen||'path' in attrs||'linkpath' in attrs)throw Error('UNSAFE_GLOBAL_PAX_PATH');
+    globalSeen=true;
+   }else{
+    if(pending)throw Error('AMBIGUOUS_TAR_EXTENSION');
+    pending=attrs;
+   }
+  }else if(type===76){
+   // GNU longname is a single entry-local path, never an independent file.
+   if(pending||size>65536||!size||data[data.length-1]!==0)throw Error('MALFORMED_GNU_LONGNAME');
+   const raw=data.subarray(0,-1);
+   if(raw.includes(0))throw Error('MALFORMED_GNU_LONGNAME');
+   pending={path:raw.toString('utf8')};
+  }else if(type===75){
+   // GNU long link target is not needed for regular-file evidence; fail closed.
+   throw Error('UNSUPPORTED_GNU_LONG_LINK');
+  }else{
+   if(pending?.linkpath)throw Error('UNSUPPORTED_PAX_LINK_OVERRIDE');
+   if(pending?.path!==undefined)full=pending.path;
+   pending=null;
+   // Reject alternate separators, traversal, invalid UTF-8 and path ambiguity.
+   if(full.includes('\\')||full.includes('\u0000')||full.includes('\ufffd')||full.split('/').some(x=>x==='.'||x==='..'))throw Error('UNSAFE_TAR_PATH');
+   if((type===0||type===48)&&/^package\/[^/]+$/.test(full)){
+    const name=full.slice(8);
+    if(LICENSE.test(name)){
+     if(size>MAX_TEXT)throw Error('OVERSIZED_LICENSE_FILE');
+     if(files.some(f=>f.file.toLowerCase()===name.toLowerCase()))throw Error('DUPLICATE_LICENSE_ENTRY');
+     files.push({file:name,bytes:size,sha256:createHash('sha256').update(data).digest('hex')});
+    }
    }
   }
   offset+=512+Math.ceil(size/512)*512;
  }
  if(offset+512>tar.length)throw Error('TRUNCATED_TAR_ARCHIVE');
+ if(pending)throw Error('ORPHAN_TAR_EXTENSION');
  files.sort((a,b)=>a.file.localeCompare(b.file,'en'));return files;
 }
+
 async function fetchTarball(url,{gzipBytes=MAX_GZIP}={}){
  if(!Number.isSafeInteger(gzipBytes)||gzipBytes<1||gzipBytes>NEXT_EXCEPTION.gzipBytes)throw Error('INVALID_DOWNLOAD_LIMIT');
  return await new Promise((resolve,reject)=>{
