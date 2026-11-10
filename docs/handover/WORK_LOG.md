@@ -1,3 +1,8 @@
+## 2026-11-10 — M4-08 staged Web coverage and initial executable test batch
+Owner changed general-Web qualification from universal 95% to Stage 1 #337 ≥60% all-source lines followed by Stage 2 #338 ≥80%; retained four metrics, unchanged production source denominator and ≥95% branch target on security-critical client logic. Opened PR #339 with executable tests for checkpoint reference sets, same-key cross-version isolation, source drift/identity, saved snapshot precedence, center-member/invite actions, clinical child/plan/session routing and report review/family read-only boundaries. Web tests and coverage NOT YET measured on final head; full Stage 1 gate NOT QUALIFIED. Codex P1 requested synchronization of Rule 7 handover files; this commit addresses those four files. No runtime/clinical changes, no actual credentials or patient data.
+
+---
+
 ## 2026-11-10 — COM-04 non-binding customer agreement drafts
 Prepared a consolidated contract pack under docs/commercial/contracts/: draft MSA, SaaS and enterprise schedules, DPA, security, service levels/support, acceptable-use, and order-form fields plus legal/ownership approval matrix. Kept all terms conditional and the public repo free from executed agreements, private identities and medical data. No new licensing runtime, billing or clinical behavior. CI and Codex pending.
 
