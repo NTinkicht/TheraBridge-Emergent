@@ -29,3 +29,12 @@ test('invalid asset digests are not accepted as provenance',()=>{
  const e=evidence();e.assets[0].sha256='not-a-hash';
  assert.throws(()=>buildReview(e.direct,e.installed,e.publisher,e.assets),/INVALID_ASSET/);
 });
+
+test('accepts missing direct dependency only as explicit unresolved record',()=>{
+ const e=evidence();
+ e.direct.records.push({name:'not-installed'});
+ e.publisher.records.push({name:'not-installed',version:null,status:'DIRECT_DEPENDENCY_NOT_INSTALLED',legalApproval:false,licenseObligationsReviewed:false,installedLicenseComparison:'NOT_EVALUATED'});
+ const r=buildReview(e.direct,e.installed,e.publisher,e.assets);
+ assert.equal(r.direct.find(x=>x.name==='not-installed').technicalStatus,'DIRECT_DEPENDENCY_NOT_INSTALLED');
+ assert.equal(r.direct.find(x=>x.name==='not-installed').approval,false);
+});

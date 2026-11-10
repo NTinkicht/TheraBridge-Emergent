@@ -114,7 +114,7 @@ async function audit({installed,lockText,direct,installedFiles=null,maxFetch=256
  }
  for(const name of names){
   const available=[...(versions.get(name)||[])].sort();
-  if(!available.length){records.push({name,version:null,status:'DIRECT_DEPENDENCY_NOT_INSTALLED',legalApproval:false});continue;}
+  if(!available.length){records.push({name,version:null,status:'DIRECT_DEPENDENCY_NOT_INSTALLED',legalApproval:false,licenseObligationsReviewed:false,installedLicenseComparison:'NOT_EVALUATED'});continue;}
   for(const version of available){
    const candidates=lock.get(JSON.stringify([name,version]))||[];
    const row={name,version,status:'PENDING',tarballSha256:null,verifiedIntegrityAlgorithm:null,publishedLicenseFiles:[],installedLicenseComparison:'NOT_YET_CHECKED',legalApproval:false,licenseObligationsReviewed:false};
@@ -138,12 +138,13 @@ async function audit({installed,lockText,direct,installedFiles=null,maxFetch=256
       for(const copy of copies){
        for(const pub of row.publishedLicenseFiles){
         const matching=copy.foundLicenseFiles.find(f=>f.file.toLowerCase()===pub.file.toLowerCase());
-        if(matching)result.push({installedPath:copy.installedPath,file:pub.file,status:matching.sha256===pub.sha256?'EXACT_SHA256_MATCH':'SHA256_MISMATCH'});
+        result.push({installedPath:copy.installedPath,file:pub.file,status:!matching?'EXPECTED_FILE_MISSING':matching.sha256===pub.sha256?'EXACT_SHA256_MATCH':'SHA256_MISMATCH'});
        }
       }
-      row.installedLicenseComparison=!result.length?'NO_MATCHING_TOP_LEVEL_LICENSE_FILENAME':result.some(x=>x.status==='SHA256_MISMATCH')?'SHA256_MISMATCH':'EXACT_SHA256_MATCH';
+      row.installedLicenseComparison=!result.length?'NO_MATCHING_TOP_LEVEL_LICENSE_FILENAME':result.some(x=>x.status==='SHA256_MISMATCH')?'SHA256_MISMATCH':result.some(x=>x.status==='EXPECTED_FILE_MISSING')?'EXPECTED_LICENSE_FILE_MISSING':'EXACT_SHA256_MATCH';
       row.installedLicenseMatches=result;
       if(row.installedLicenseComparison==='SHA256_MISMATCH')row.status='UNRESOLVED_INSTALLED_LICENSE_HASH_MISMATCH';
+      if(row.installedLicenseComparison==='EXPECTED_LICENSE_FILE_MISSING')row.status='UNRESOLVED_INSTALLED_LICENSE_FILES_MISSING';
      }
     }catch(e){row.status='UNRESOLVED_'+String(e.message).replace(/[^A-Z0-9_]/g,'_').slice(0,70);}
    });
