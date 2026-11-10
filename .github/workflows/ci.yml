@@ -262,6 +262,17 @@ jobs:
           node --test scripts/qa/m4-web-coverage-audit.test.mjs scripts/qa/m4-measured-coverage.test.mjs
           ./node_modules/.bin/jest --config scripts/qa/m4-web-jest.config.cjs --runInBand
           node scripts/qa/m4-web-coverage-audit.mjs
+      - name: M4-08 audited Web coverage hotspots for high-value tests (diagnostic only)
+        run: |
+          node --test scripts/qa/m4-web-coverage-hotspots.test.mjs
+          node scripts/qa/m4-web-coverage-hotspots.mjs
+      - name: Archive sanitized Web hotspot diagnostics (never clinical approval)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-web-hotspots-${{ github.run_id }}
+          path: .workspace/m4-coverage/m4-web-hotspots.json
+          if-no-files-found: error
+          retention-days: 7
       - name: M4-08 independently cross-check real API + Web coverage and publish integrated aggregate
         env:
           TB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
