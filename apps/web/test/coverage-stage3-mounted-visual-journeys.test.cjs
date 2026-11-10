@@ -134,6 +134,46 @@ describe('real preview visual journeys and honest data-state transitions',()=>{
   expect(get('screen-card-therapist-daily-view').props.href).toBe('/design-preview/therapist');
   expect(JSON.stringify(tree.toJSON())).toContain('Release to guardian');
  });
+ it('renders the family preview shell with a local-only dark theme toggle',async()=>{
+  await mount(()=>h(AppShell,{workspace:'family',active:'home',title:'Fictional family home'},
+   h('p',null,'Synthetic family content')));
+  expect(get('shell-family').props['data-theme']).toBe('light');
+  expect(get('theme-toggle').props['aria-pressed']).toBe(false);
+  await click('theme-toggle');
+  expect(get('shell-family').props['data-theme']).toBe('dark');
+  expect(get('theme-toggle').props['aria-pressed']).toBe(true);
+  expect(global.document.documentElement.dataset.familyTheme).toBe('dark');
+  expect(global.localStorage.setItem).toHaveBeenCalledWith('tb-family-theme','dark');
+  await click('theme-toggle');
+  expect(get('shell-family').props['data-theme']).toBe('light');
+ });
+ it('opens and closes synthetic account menu without issuing real logout',async()=>{
+  await mount();
+  await click('account-button');
+  expect(get('account-panel')).toBeTruthy();
+  expect(get('sign-out-locked')).toBeTruthy();
+  await click('account-button');
+  expect(find('account-panel')).toHaveLength(0);
+ });
+ it('only announces unavailable navigation in a preview rather than fabricating a route',async()=>{
+  await mount(CenterPreview);
+  await click('nav-team');
+  expect(get('preview-notice')).toBeTruthy();
+  expect(JSON.stringify(tree.toJSON())).toContain('outside this design preview');
+  expect(find('account-panel')).toHaveLength(0);
+ });
+ it('keeps mobile More navigation accessible and closes it without replacing page content',async()=>{
+  global.window.innerWidth=390;
+  await mount();
+  expect(get('sidebar-toggle').props['aria-label']).toBe('Expand sidebar');
+  await click('bottom-nav-more');
+  expect(get('more-sheet')).toBeTruthy();
+  expect(get('more-sheet').props['aria-modal']).toBe('true');
+  await click('more-sheet-close');
+  expect(find('more-sheet')).toHaveLength(0);
+  expect(get('agenda-card')).toBeTruthy();
+  global.window.innerWidth=1440;
+ });
  it('opens and closes the real design direction confirmation UI',async()=>{
   await mount(DirectionPage,false);
   await click('demo-dialog-open');
