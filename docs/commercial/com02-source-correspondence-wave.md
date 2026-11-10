@@ -1,6 +1,6 @@
 # COM-02 — corroborate publisher versions to immutable source revisions
 
-**Status: DRAFT OPENING CHECKPOINT ONLY — NOT IMPLEMENTED, NOT TESTED, NOT APPROVED.**
+**Status: Candidate source-correspondence collector implemented; exact-head CI and independent review pending — NOT LEGALLY APPROVED.**
 
 Predecessor: [PR #355](https://github.com/NTinkicht/TheraBridge-Emergent/pull/355), merged at `25cd4382247b6d5bc811840b6990f29b2240296e`. Tracks [#356](https://github.com/NTinkicht/TheraBridge-Emergent/issues/356) and parent #354.
 
@@ -21,3 +21,11 @@ Predecessor: [PR #355](https://github.com/NTinkicht/TheraBridge-Emergent/pull/35
 6. Preserve public repository visibility and clinical G2/G2b NO-GO.
 
 The existence of this draft is not authority to license or deploy TheraBridge commercially.
+
+## Implementation checkpoint
+
+`scripts/commercial/collect-upstream-license-candidates.mjs` records exact-version npm registry `gitHead` only when it is a syntactically valid full Git object ID. `scripts/commercial/corroborate-source-revisions.mjs` strictly parses an exact `github.com/owner/repo` repository claim; only when a 40-byte hex `gitHead` is present does it fetch `package.json` through the existing bounded, no-redirect `raw.githubusercontent.com` HTTPS reader at that immutable commit. It records raw SHA-256 and only marks `REGISTRY_GITHEAD_MATCHES_IMMUTABLE_SOURCE_ROOT_MANIFEST_ONLY` when the exact package name and version match.
+
+**This is a candidate discovery mechanism, not independent upstream release-to-package attestation.** An npm publisher can claim `repository` and `gitHead` fields; matching those against a root source manifest alone cannot prove that npm distribution came from the stated commit. Monorepo subpackages (root manifest mismatch) remain unresolved until correct package-path lineage is independently established. All 53 exceptions remain in the output regardless of missing or rejected metadata. The output includes zero authoritative LICENSE text verifications, zero legal approvals, zero source-version independent attestations and still reports all 91 separately unresolved assets.
+
+The collector emits an exact-commit metadata candidate queue and does not mutate the empty, signed-source-approval mapping register. There is no automatic transition to commercial licensing.
