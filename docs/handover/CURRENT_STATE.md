@@ -1,3 +1,7 @@
+## 2026-11-10 Stage 1 M4-08 source-wide Web line target MET, but PR #339 UNMERGED. Focused CI run 42873722265 PASS on ed3a750946f5a2f1ec38355daa5cb64aabc11b33: 154 source files; lines 60.08%, branches 48.75%, functions 40.33%, statements 54.24%, 18 zero-statement modules. All-source instrumentation unchanged. Does NOT constitute the security-critical 95% branch goal, M4 final acceptance, a full-CI green head or Codex review. Clinical G2/G2b NO-GO persists; no family clinical release, no real data.
+
+---
+
 ## 2026-11-10 — M4-08 PR #339 staged Web coverage measured checkpoint (NOT QUALIFIED)
 Confirmed focused Jest/Istanbul run #42867251775 on commit 2d3839b8: Web full-source 151 modules, **51.61% lines, 39.18% branches, 31.28% functions, 45.34% statements**, 25 modules with zero executed statements. Stage 1 owner-approved 60% line target still SHORT by 8.39 percentage points; Stage 2 80% not started. New mounted React test renderer (pinned 18.3.1) executes real report-to-plan idempotent retry, clinician checkpoint selection, guardian reminder rollback, clinician scoped feedback and report autosave revision/error paths. Supplementary focused Web test green, not full M4 acceptance or clinical approval; exact final head CI/Codex remain pending. G2/G2b NO-GO preserved.
 
