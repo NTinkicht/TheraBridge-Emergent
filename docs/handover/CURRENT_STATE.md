@@ -1,3 +1,8 @@
+## 2026-11-10 — M4-08 Stage 1 Web mega-coverage PR #339 (IN PROGRESS, NOT QUALIFIED)
+Owner approved replacing the blanket 95% Web coverage acceptance with staged **≥60% then ≥80% all-source Web line** gates (#337 then #338). Safety-critical Web auth/session/CSRF/access/release control has a separate ≥95% **branch** target; API, 100% defined critical journeys and all clinical NO-GO controls remain unchanged. The existing 151-file/full-production-source Istanbul denominator and all four measured metrics remain mandatory. PR #339 adds executable Jest regressions for versioned evidence, saved-plan projections, strict clinical/administrative/report transport paths and no-release boundaries. Tests are AUTHORED; exact-head CI, actual new coverage delta, final-head Codex, and Stage 1 ≥60% qualification PENDING. This is NOT a deployment, clinical authorization, release or 60%-coverage claim. Stage 2 #338 remains BLOCKED until Stage 1 measures ≥60% and merges.
+
+---
+
 ## 2026-11-10 — COM-04 contract suite draft (review pending)
 Added public, non-binding draft MSA/SaaS/Enterprise/DPA/Security/SLA/AUP/Order Form clauses and an approval-control index under docs/commercial/contracts/. No contracting entity, legal rights, tax, price, service guarantee, data residency or clinical permission is asserted. COM-01/02/03 and UAE counsel approval remain mandatory. PR exact-head CI/review NOT YET QUALIFIED.
 
