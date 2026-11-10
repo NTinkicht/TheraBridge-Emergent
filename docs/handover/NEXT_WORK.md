@@ -1,3 +1,8 @@
+## COM-02 full non-direct technical coverage and license rights
+Qualify exact-head full CI artifacts/Codex: compare all non-direct name/version statuses to installed physical copies, inspect any lock/source/size/header/file mismatches, retain unresolved items without auto approval. Then conduct manual upstream license/copyright obligations for @types and transitive packages, native runtime/container/OS layers, logos/fonts/models/datasets and SaaS vs on-prem enterprise rights. Keep COM-01/02 unresolved until qualified signoffs.
+
+---
+
 ## COM-02 complete transitive and rights review
 1. Qualify Next.js 14.2.35 size-exception output, initial 160 non-direct publisher tarball sample, installed per-copy license hashes and artifact retention under exact-head CI and Codex.
 2. Expand verified coverage to all remaining non-direct names/versions; resolve `@types` license provenance, missing top-level license texts and lockfile/OS/platform exceptions.

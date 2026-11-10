@@ -132,3 +132,16 @@ test('pinned limit exception still requires exact publisher integrity',async()=>
  assert.equal(report.records[0].status,'UNRESOLVED_INTEGRITY_MISMATCH');
  assert.equal(report.legallyApproved,0);
 });
+
+test('only the two pinned SWC Linux 14.2.33 artifacts gain expanded archive limits',()=>{
+ const names=['@next/swc-linux-x64-gnu','@next/swc-linux-x64-musl'];
+ for(const name of names){
+  const budget=packageLimits(name,'14.2.33');
+  assert.equal(budget.gzipBytes,48*1024*1024);
+  assert.equal(budget.tarBytes,256*1024*1024);
+  assert.equal(budget.exception,'PINNED_NEXT_SWC_LINUX_14_2_33');
+  assert.equal(packageLimits(name,'14.2.34').gzipBytes,16*1024*1024);
+ }
+ assert.equal(packageLimits('@next/swc-darwin-x64','14.2.33').gzipBytes,16*1024*1024);
+ assert.equal(packageLimits('unrelated','14.2.33').gzipBytes,16*1024*1024);
+});

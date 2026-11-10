@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 full transitive verifier and SWC size exceptions
+Prepared follow-up source patch to raise installed non-direct exact-version audit attempt budget from 160 to 768, preserve safe per-download bound and detailed unresolved statuses, and allow only exact oversized @next/swc-linux-x64-{gnu,musl}@14.2.33 larger compressed/decompressed limits. Negative tests cover pinned version isolation and complete population classification. No commercial or clinical authorization; qualification pending.
+
+---
+
 ## 2026-11-10 — COM-02 transitive publisher evidence and Next.js bounded exception
 Implemented a separate exact locked non-direct npm tarball verifier with first-wave cap 160, existing SRI/installed-license SHA256 fail-closed requirements, explicit deferred queue, negative regression tests, additional CI artifact and technical guide. Added exact `next@14.2.35` compressed/decompressed limits without weakening other packages, download timing, strict hosts or legal gates. Await CI and independent review.
 

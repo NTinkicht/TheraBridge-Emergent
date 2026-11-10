@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 complete installed non-direct publisher classification (review pending)
+Prepared full-CI exact name/version verification for all observed 620 non-direct installed-version rows, with cap 768, distinct physical copy tracking and pinned SWC Linux 14.2.33 48/256-MiB archive exceptions. Other packages keep 16/64-MiB limits; integrity, per-copy LICENSE/NOTICE matches and zero legal approvals fail closed. Independent CI/review pending; clinical G2/G2b NO-GO unchanged.
+
+---
+
 ## 2026-11-10 — COM-02 transitive publisher verification wave + pinned Next.js exception (in review)
 Added first 160 bounded exact installed non-direct name/version publisher tarball checks with SRI and installed license SHA256 comparisons, plus a fixed-version Next.js 14.2.35 48-MiB compressed/256-MiB expanded exception. No other version gains higher bounds. Full CI artifact, security tests and Codex qualification pending. Approval 0; legal/SaaS/enterprise and clinical gates remain closed.
 
