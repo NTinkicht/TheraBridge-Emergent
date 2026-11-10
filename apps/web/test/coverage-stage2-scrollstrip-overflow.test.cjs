@@ -37,7 +37,7 @@ describe('real horizontal scroll visibility and resize behavior',()=>{
   expect(get('test-scroller').props['data-overflow-left']).toBe(false);
   expect(get('test-scroller').props['data-overflow-right']).toBe(true);
   expect(get('test-scroller-scroll-right')).toBeTruthy();
-  const strip=tree.root.findByProps({role:'navigation'});
+  const strip=tree.root.findAllByType('div').find(node=>node.props.role==='navigation');
   expect(strip.props['aria-label']).toBe('Synthetic navigation');
   expect(strip.props.style.maskImage).toContain('linear-gradient');
   expect(scrollEl.addEventListener).toHaveBeenCalledWith('scroll',expect.any(Function),{passive:true});
@@ -73,7 +73,7 @@ describe('real horizontal scroll visibility and resize behavior',()=>{
  });
  it('focus reveals a partly clipped child with no document scroll',async()=>{
   await mount();
-  const strip=tree.root.findByProps({role:'navigation'});
+  const strip=tree.root.findAllByType('div').find(node=>node.props.role==='navigation');
   const target={getBoundingClientRect:()=>box(110,150)};
   await act(async()=>strip.props.onFocusCapture({target}));
   expect(scrollEl.scrollLeft).toBeGreaterThan(0);
@@ -88,7 +88,7 @@ describe('real horizontal scroll visibility and resize behavior',()=>{
  });
  it('allows the caller to hide focus-driven reveal behavior',async()=>{
   await mount({activeItemKey:undefined});
-  expect(tree.root.findByProps({role:'navigation'}).props.onFocusCapture).toBeUndefined();
+  expect(tree.root.findAllByType('div').find(node=>node.props.role==='navigation').props.onFocusCapture).toBeUndefined();
   expect(observerInstances.length).toBe(1);
  });
 });
