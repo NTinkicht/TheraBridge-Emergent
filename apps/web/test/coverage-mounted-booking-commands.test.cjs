@@ -14,10 +14,14 @@ jest.mock('@/components/centers/kit',()=>{
   options.map(o=>h('option',{key:o.value,value:o.value},o.label)))};
 });
 jest.mock('@/components/operations/RepeatFields',()=>({
- RepeatFields:({value,onChange})=>h('button',{
-  type:'button','data-testid':'make-weekly-synthetic',
-  onClick:()=>onChange({...value,mode:'weekly',weekdays:[2],
-   end:'count',count:'4'})},'Use four weekly visits')
+ RepeatFields:({value,onChange})=>h('div',null,
+  h('button',{type:'button','data-testid':'make-weekly-synthetic',
+   onClick:()=>onChange({...value,mode:'weekly',weekdays:[2],end:'count',count:'4'})},'Four weekly visits'),
+  h('button',{type:'button','data-testid':'make-biweekly-until-synthetic',
+   onClick:()=>onChange({...value,mode:'biweekly',weekdays:[1,3],
+     end:'until',until:'2026-12-14'})},'Biweekly until date'),
+  h('button',{type:'button','data-testid':'make-weekly-empty-synthetic',
+   onClick:()=>onChange({...value,mode:'weekly',weekdays:[]})},'No weekdays'))
 }));
 jest.mock('@/lib/operations',()=>{
  const actual=jest.requireActual('@/lib/operations');
@@ -112,6 +116,25 @@ describe('M4-08 booking refuses unauthorized/unassigned therapist choices',()=>{
   expect(opsApi.book).toHaveBeenCalledTimes(1);
   // The shared error handler owns the user-visible alert in this workflow.
   expect(onError).toHaveBeenCalledWith(expect.objectContaining({status:403}));
+ });
+ it('rejects recurrence without weekdays instead of silently booking any dates',async()=>{
+  await mount();
+  await choose('book-child-select','kid');
+  await click('make-weekly-empty-synthetic');
+  await click('book-save');
+  expect(get('book-error')).toBeTruthy();
+  expect(opsApi.createSeries).not.toHaveBeenCalled();
+ });
+ it('preserves alternate-week and explicit-until date semantics in a series command',async()=>{
+  await mount();
+  await choose('book-child-select','kid');
+  await click('make-biweekly-until-synthetic');
+  await click('book-save');
+  expect(opsApi.createSeries).toHaveBeenCalledWith('center-1',expect.objectContaining({
+   childId:'kid',membershipId:'therapist-1',intervalWeeks:2,
+   weekdays:[1,3],untilDate:'2026-12-14',skipConflicts:false
+  }));
+  expect(opsApi.book).not.toHaveBeenCalled();
  });
  it('moves one existing visit without changing sibling series visits',async()=>{
   const editing={id:'appointment-1',childId:'kid',membershipId:'therapist-1',
