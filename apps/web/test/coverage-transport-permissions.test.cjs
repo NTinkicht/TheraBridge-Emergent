@@ -54,9 +54,9 @@ describe('M4-08 protected center administration transport',()=>{
  });
  it('accepts invitation only through the intended public vs protected route',async()=>{
   rest.publicPost.mockResolvedValueOnce({csrfToken:'fake-only'});
-  await centersApi.acceptNew('fake-token','Synthetic Person','nonsecret');
+  await centersApi.acceptNew('fake-token','Synthetic Person','');
   expect(rest.publicPost).toHaveBeenCalledWith('/api/invitations/accept-new',
-   {token:'fake-token',displayName:'Synthetic Person',password:'nonsecret'});
+   {token:'fake-token',displayName:'Synthetic Person',password:''});
   expect(rest.remember).toHaveBeenCalledTimes(1);
   await centersApi.acceptExisting('fake-token');
   expect(rest.send).toHaveBeenCalledWith('POST','/api/invitations/accept',
