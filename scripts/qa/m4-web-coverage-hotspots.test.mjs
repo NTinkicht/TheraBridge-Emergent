@@ -29,7 +29,7 @@ test('fails closed on total tampering, duplicates, traversal and path outside We
  make(v=>{v['apps/web/src/lib/a.ts']=entry();v.total=entry(30,12);},/duplicate source path/);
  make(v=>{v['/tmp/outside.ts']=entry();v.total=entry(30,12);},/invalid source path/);
  make(v=>{v['apps/web/src/../secret.ts']=entry();v.total=entry(30,12);},/invalid source path/);
- make(v=>{v['apps/web/src/lib/a.ts'].lines.covered=11;},/malformed metric/);
+ make(v=>{v['/home/runner/work/TheraBridge/apps/web/src/lib/a.ts'].lines.covered=11;},/malformed metric/);
 });
 test('requires nonempty complete counters and valid source scope',()=>{
  assert.throws(()=>report({total:entry()}),/empty denominator/);
