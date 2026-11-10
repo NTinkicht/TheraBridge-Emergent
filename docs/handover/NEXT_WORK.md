@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 PR #350 immediate qualification then rights review
+First complete Rule 7 evidence synchronization for the verified exact-version register and prior CI run 42901575999 (code SHA `0cf822a`, success); resolve Codex P1 handover gap. After documentation commits, require a NEW full exact-head CI green on latest HEAD, inspect generated rights JSON and any changed dependency baseline, and request exactly one final independent Codex review once CI green; explicitly disposition all review comments before Rule 16 merge. Thereafter pursue #349 exact-version authoritative upstream published LICENSE/NOTICE text and copyright for 52 no-root-license package versions, investigation of 1 unsupported-PAX archive, rights-holder authority, 91 tracked assets plus OS/container/native/service/model/dataset evidence. Both SaaS/network-use and enterprise redistribution must be independently reviewed by authorized counsel; zero automatic legal approvals. Keep root proprietary LICENSE and customer contracts unsigned and G2/G2b clinical NO-GO; no live patient data.
+
+---
+
 ## COM-02 full non-direct technical coverage and license rights
 Qualify exact-head full CI artifacts/Codex: compare all non-direct name/version statuses to installed physical copies, inspect any lock/source/size/header/file mismatches, retain unresolved items without auto approval. Then conduct manual upstream license/copyright obligations for @types and transitive packages, native runtime/container/OS layers, logos/fonts/models/datasets and SaaS vs on-prem enterprise rights. Keep COM-01/02 unresolved until qualified signoffs.
 
