@@ -24,6 +24,12 @@ function buildExceptionRegister({direct,transitive,installed,lockText,assets}){
   if(list.some(x=>x.installedPath===p.installedPath))throw Error('DUPLICATE_INSTALLED_COPY');
   list.push(p);copies.set(key,list);
  }
+ // Independent installed physical-copy inventory is the coverage authority.
+ // Publisher arrays and their claimed counts must not silently omit versions.
+ const publisherKeys=new Set(all.map(KEY));
+ const installedKeys=new Set(installed.packages.map(KEY));
+ for(const key of installedKeys)if(!publisherKeys.has(key))throw Error('INSTALLED_VERSION_MISSING_PUBLISHER_EVIDENCE');
+ for(const key of publisherKeys)if(!installedKeys.has(key))throw Error('PUBLISHER_VERSION_NOT_INSTALLED');
  const exceptions=[];
  for(const row of all){
   if(typeof row.name!=='string'||!row.name||typeof row.version!=='string'||!row.version||
