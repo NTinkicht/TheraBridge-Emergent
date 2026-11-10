@@ -11,3 +11,7 @@ fe61fe12df2d4ca4c8f9b98d9d4f273c0357417b:apps/api/test/auth.e2e-spec.ts:therabri
 # Exact commit/file/rule/line fingerprints only; no rule or path suppression. 2026-11-10.
 5e3b06e1ba7572201b9985fd564e5bcdeecc0a06:apps/web/test/coverage-workspace-matrix.test.cjs:therabridge-credential-assignment:10
 5e3b06e1ba7572201b9985fd564e5bcdeecc0a06:apps/web/test/coverage-workspace-matrix.test.cjs:therabridge-credential-assignment:60
+
+# PR #339 initial synthetic-only invite test string, corrected in current source.
+# Exact historic fingerprint only: the all-ref scan still checks every other match.
+5dcccc30b67abb1bd626df199695c2586341897a:apps/web/test/coverage-transport-permissions.test.cjs:therabridge-credential-assignment:59
