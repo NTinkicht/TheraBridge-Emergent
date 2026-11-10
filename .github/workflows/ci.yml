@@ -218,6 +218,10 @@ jobs:
         run: node --test scripts/commercial/build-license-exception-register.test.mjs
       - name: Generate per-version unresolved license and SaaS/enterprise obligations register
         run: node scripts/commercial/build-license-exception-register.mjs /tmp/therabridge-publisher-tarball-evidence.json /tmp/therabridge-transitive-tarball-evidence.json /tmp/therabridge-installed-licenses.json yarn.lock /tmp/therabridge-com02-obligations-queue.json /tmp/therabridge-com02-exact-version-rights-queue.json
+      - name: Validate exact npm registry manifest metadata candidates fail-closed
+        run: node --test scripts/commercial/collect-upstream-license-candidates.test.mjs
+      - name: Collect immutable exact-version registry metadata candidates (never legal clearance)
+        run: node scripts/commercial/collect-upstream-license-candidates.mjs /tmp/therabridge-com02-exact-version-rights-queue.json /tmp/therabridge-com02-upstream-candidates.json
       - name: Archive installed license evidence for full CI
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -231,6 +235,7 @@ jobs:
             /tmp/therabridge-com02-obligations-queue.json
             /tmp/therabridge-transitive-tarball-evidence.json
             /tmp/therabridge-com02-exact-version-rights-queue.json
+            /tmp/therabridge-com02-upstream-candidates.json
           if-no-files-found: error
           retention-days: 30
       - name: M4-02 private QA runtime redaction and fail-closed tests
