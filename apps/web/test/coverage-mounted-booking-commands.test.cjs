@@ -65,6 +65,24 @@ describe('M4-08 booking refuses unauthorized/unassigned therapist choices',()=>{
   expect(opsApi.book).not.toHaveBeenCalled();
   expect(get('book-error')).toBeTruthy();
  });
+ it('shows missing assigned care team rather than inventing an eligible booking target',async()=>{
+  opsApi.child.mockResolvedValue({id:'kid',assignments:[]});
+  await mount();
+  await choose('book-child-select','kid');
+  expect(get('book-no-team')).toBeTruthy();
+  expect(get('book-therapist-select').findAllByType('option').map(x=>x.props.value))
+   .toEqual(['']);
+  await click('book-save');
+  expect(opsApi.book).not.toHaveBeenCalled();
+ });
+ it('reports child-assignment lookup failure without creating an appointment',async()=>{
+  opsApi.child.mockRejectedValue(new ApiError(403,'Not assigned to child'));
+  await mount();
+  await choose('book-child-select','kid');
+  expect(onError).toHaveBeenCalledWith(expect.objectContaining({status:403}));
+  await click('book-save');
+  expect(opsApi.book).not.toHaveBeenCalled();
+ });
  it('books an exact selected assigned child and service in center local time',async()=>{
   await mount();
   await choose('book-child-select','kid');
