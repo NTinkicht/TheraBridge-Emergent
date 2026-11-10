@@ -27,6 +27,7 @@ jest.mock('@/lib/operations',()=>{
 });
 const {opsApi,setCenterTz}=require('../src/lib/operations');
 const {BookDialog}=require('../src/components/operations/BookDialog');
+const {ApiError}=require('../src/lib/api');
 let tree=null,onDone,onError,onClose;
 beforeAll(()=>setCenterTz('Asia/Dubai'));
 afterAll(()=>setCenterTz(undefined));
@@ -84,6 +85,32 @@ describe('M4-08 booking refuses unauthorized/unassigned therapist choices',()=>{
    expect.objectContaining({childId:'kid',membershipId:'therapist-1',
     weekdays:[2],count:4,intervalWeeks:1,skipConflicts:false}));
   expect(onDone).toHaveBeenCalledWith('4 repeating visits booked.');
+ });
+ it('shows server-detected conflicts and retries a series with explicit skip confirmation',async()=>{
+  opsApi.createSeries.mockRejectedValueOnce(new ApiError(409,'Synthetic scheduling clash',{
+   conflicts:[{date:'2026-11-24',reason:'Fictional room already booked'}]}))
+   .mockResolvedValueOnce({created:3,skipped:['2026-11-24']});
+  await mount();
+  await choose('book-child-select','kid');
+  await click('make-weekly-synthetic');
+  await click('book-save');
+  expect(get('book-clashes')).toBeTruthy();
+  expect(get('book-clash-2026-11-24')).toBeTruthy();
+  expect(opsApi.createSeries).toHaveBeenCalledWith('center-1',
+   expect.objectContaining({skipConflicts:false}));
+  await click('book-skip-clashes');
+  expect(opsApi.createSeries).toHaveBeenLastCalledWith('center-1',
+   expect.objectContaining({skipConflicts:true}));
+  expect(onDone).toHaveBeenCalledWith('3 repeating visits booked, 1 skipped because of clashes.');
+ });
+ it('does not falsely acknowledge booking on an API authorization rejection',async()=>{
+  opsApi.book.mockRejectedValue(new ApiError(403,'Synthetic booking denied'));
+  await mount();
+  await choose('book-child-select','kid');
+  await click('book-save');
+  expect(onDone).not.toHaveBeenCalled();
+  expect(opsApi.book).toHaveBeenCalledTimes(1);
+  expect(get('book-error')).toBeTruthy();
  });
  it('moves one existing visit without changing sibling series visits',async()=>{
   const editing={id:'appointment-1',childId:'kid',membershipId:'therapist-1',
