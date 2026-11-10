@@ -214,6 +214,10 @@ jobs:
         run: node --test scripts/commercial/verify-transitive-tarballs.test.mjs
       - name: Classify every installed non-direct npm version and verify tarball hashes (not license clearance)
         run: node scripts/commercial/verify-transitive-tarballs.mjs /tmp/therabridge-installed-lock-provenance.json yarn.lock docs/commercial/direct-license-evidence.json /tmp/therabridge-installed-licenses.json /tmp/therabridge-transitive-tarball-evidence.json
+      - name: Validate exact-version license exception register fail-closed semantics
+        run: node --test scripts/commercial/build-license-exception-register.test.mjs
+      - name: Generate per-version unresolved license and SaaS/enterprise obligations register
+        run: node scripts/commercial/build-license-exception-register.mjs /tmp/therabridge-publisher-tarball-evidence.json /tmp/therabridge-transitive-tarball-evidence.json /tmp/therabridge-installed-licenses.json yarn.lock /tmp/therabridge-com02-obligations-queue.json /tmp/therabridge-com02-exact-version-rights-queue.json
       - name: Archive installed license evidence for full CI
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -226,6 +230,7 @@ jobs:
             /tmp/therabridge-publisher-tarball-evidence.json
             /tmp/therabridge-com02-obligations-queue.json
             /tmp/therabridge-transitive-tarball-evidence.json
+            /tmp/therabridge-com02-exact-version-rights-queue.json
           if-no-files-found: error
           retention-days: 30
       - name: M4-02 private QA runtime redaction and fail-closed tests
