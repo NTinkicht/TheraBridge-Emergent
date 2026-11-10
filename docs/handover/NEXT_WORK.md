@@ -1,3 +1,10 @@
+## COM-02 complete transitive and rights review
+1. Qualify Next.js 14.2.35 size-exception output, initial 160 non-direct publisher tarball sample, installed per-copy license hashes and artifact retention under exact-head CI and Codex.
+2. Expand verified coverage to all remaining non-direct names/versions; resolve `@types` license provenance, missing top-level license texts and lockfile/OS/platform exceptions.
+3. Review container/OS/runtime/font/logo/model/dataset rights plus package-specific SaaS network and enterprise redistribution obligations with qualified counsel. No proprietary root LICENSE, signed contract or clinical activation without approvals.
+
+---
+
 ## COM-02 comprehensive evidence qualification
 Qualify exact-head CI, Codex and artifacts; inspect any direct-version download failures and installed-license SHA256 mismatches. Then separately verify transitive/optional/platform package publisher bytes, OS/container images and external fonts/logos/models/datasets. Obtain rights-holder and qualified legal review before any SaaS/enterprise distribution notices, signed contracts, or root proprietary LICENSE. Clinical gates stay NO-GO.
 

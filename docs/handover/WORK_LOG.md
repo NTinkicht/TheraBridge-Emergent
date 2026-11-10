@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 transitive publisher evidence and Next.js bounded exception
+Implemented a separate exact locked non-direct npm tarball verifier with first-wave cap 160, existing SRI/installed-license SHA256 fail-closed requirements, explicit deferred queue, negative regression tests, additional CI artifact and technical guide. Added exact `next@14.2.35` compressed/decompressed limits without weakening other packages, download timing, strict hosts or legal gates. Await CI and independent review.
+
+---
+
 ## 2026-11-10 — COM-02 consolidated direct/transitive/assets work
 Implemented six-worker bounded exact npm publisher verification for all installed direct versions, per-file installed versus publisher SHA256 comparison, unresolved failure classification, and a consolidated transitive package and tracked-asset rights queue. New synthetic negative tests and CI evidence archive integration; legal approval false; full PR CI and independent Codex pending.
 

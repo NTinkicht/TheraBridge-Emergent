@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 next and transitive evidence qualification PENDING
+Authored offline test cases for transitive-only selection, source/SRI integrity, installed license matching/mismatch, false approvals and missing lock integrity, plus pinned-version archive limit tests and mandatory SRI for Next.js. Exact-head GitHub tests, network sampling and Codex pending. No real clinical data, legal clearance or signed contract flows tested/authorized.
+
+---
+
 ## 2026-11-10 — COM-02 expanded publisher and transitive asset evidence (PENDING QUALIFICATION)
 Added regression tests covering installed LICENSE/NOTICE matches/mismatches, false approval rejection, and transitive/asset matrix isolation. Exact-head GitHub test execution and Codex independent review pending. CI must fail on authentic publisher integrity or installed-file hash mismatches and preserve audit artifacts; downloaded publisher text is not copied to repository.
 

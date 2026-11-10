@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 transitive publisher verification wave + pinned Next.js exception (in review)
+Added first 160 bounded exact installed non-direct name/version publisher tarball checks with SRI and installed license SHA256 comparisons, plus a fixed-version Next.js 14.2.35 48-MiB compressed/256-MiB expanded exception. No other version gains higher bounds. Full CI artifact, security tests and Codex qualification pending. Approval 0; legal/SaaS/enterprise and clinical gates remain closed.
+
+---
+
 ## 2026-11-10 — COM-02 full direct publisher verification and rights inventory (qualification pending)
 A consolidated audit change extends bounded concurrent exact-tarball/SRI downloads across installed direct names/versions, performs publisher-to-installed LICENSE/NOTICE hash comparisons, and produces a transitive + tracked-asset legal-review queue. No published license or distribution legally approved; technical CI/Codex pending.
 
