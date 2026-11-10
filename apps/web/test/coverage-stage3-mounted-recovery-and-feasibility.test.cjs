@@ -48,7 +48,9 @@ beforeEach(()=>{
  jest.clearAllMocks();authApi.forgot.mockReset();authApi.reset.mockReset();apiFetch.mockReset();
  authApi.forgot.mockResolvedValue({message:'Synthetic check your inbox'});
  authApi.reset.mockResolvedValue({});
- apiFetch.mockResolvedValue({status:'ok',version:'fictional'});
+ apiFetch.mockResolvedValue({status:'ok',framework:'NestJS Fastify (synthetic)',
+  database:{status:'up',version:'16',latencyMs:2},
+  migrations:{applied:4,latest:'fictional-demo-v4'}});
  router={replace:jest.fn()};global.window.location.hash='';
  process.env.ENABLE_FEASIBILITY_DIAGNOSTICS='false';process.env.DEPLOYMENT_ENV='production';
 });
