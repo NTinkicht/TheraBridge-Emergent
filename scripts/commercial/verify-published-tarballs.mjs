@@ -97,6 +97,11 @@ function extractLicenseHashes(gzip,{tarBytes=MAX_TAR}={}){
   let full=prefix?prefix+'/'+path:path;
   if(type===120||type===103){
    const attrs=readPax(data);
+   // PAX size and GNU sparse keys can redefine file boundaries, content,
+   // and effective path. Do not claim root-license evidence for unsupported
+   // transformations. Reject even if the raw ustar header looks benign.
+   if(Object.keys(attrs).some(key=>key==='size'||key==='path'&&type===103||key.startsWith('GNU.sparse.')||key.startsWith('SCHILY.realsize')||key==='SCHILY.filetype'||key==='LIBARCHIVE.xattr.com.apple.ResourceFork'))
+    throw Error('UNSUPPORTED_PAX_SEMANTICS');
    if(type===103){
     // Global PAX path/linkpath would affect unrelated entries and must be reviewed.
     if(globalSeen||'path' in attrs||'linkpath' in attrs)throw Error('UNSAFE_GLOBAL_PAX_PATH');
