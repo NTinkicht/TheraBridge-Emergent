@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   reconcile:
-    if: ${{ github.event.head_commit.message == 'chore(qa): stage1 one-shot main reconciliation' }}
+    if: "${{ github.event.head_commit.message == 'chore(qa): stage1 one-shot main reconciliation' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
