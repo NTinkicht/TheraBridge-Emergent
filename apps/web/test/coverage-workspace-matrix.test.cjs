@@ -49,7 +49,7 @@ const pages=[
   ['centers','platform.centers.read',require('../src/app/app/centers/page').default],
   ['center','center.settings.read',require('../src/app/app/center/page').default],
   ['profile','center.profile.self',require('../src/app/app/profile/page').default],
-  ['activities','center.activities.read',require('../src/app/app/activities/page').default],
+  ['activities','center.activities.read|family.activities.read',require('../src/app/app/activities/page').default],
 ];
 const render=(Page)=>renderToStaticMarkup(h(Page));
 beforeAll(()=>setCenterTz('Asia/Dubai'));
