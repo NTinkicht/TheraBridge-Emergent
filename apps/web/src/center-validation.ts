@@ -1,5 +1,5 @@
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-type Form = { name: string; slug: string; city: string; country: string; timezone: string; adminName: string; adminEmail: string };
+export type Form = { name: string; slug: string; city: string; country: string; timezone: string; adminName: string; adminEmail: string };
 export function validateCenter(f: Form, specialties: string[]) {
   const e: Record<string, string> = {};
   if (f.name.trim().length < 2) e.name = 'Enter the center’s name.';
