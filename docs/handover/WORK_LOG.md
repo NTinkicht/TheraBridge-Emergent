@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 PR #352 implementation checkpoint
+Built bounded registry metadata fetcher (no redirects, strict npm hostname HTTPS, exact source version, cap 256KiB, ≤6 workers), candidate provenance SHA-256 and per-exception review output; added offline adversarial tests for wrong package/version, malformed responses, source traversal, forged approval, duplicate/missing exceptions and bounded concurrency. Wired `.github/workflows/ci.yml` to run regressions and archive generated candidate JSON alongside publisher and installed evidence. **Code implemented, no CI green-head claim until workflow concludes**; upstream license text authority/notice and rights-holder sign-off are still OPEN.
+
+---
+
 ## 2026-11-10 — COM-02 PR #350 exact-version exception evidence pipeline
 Implemented `scripts/commercial/build-license-exception-register.mjs` and regression tests; wired new job output into `.github/workflows/ci.yml` installed evidence artifact. Corrected Codex P2 silent coverage omission by comparing union of publisher name/version keys to independently installed physical-package keys, with new missing/phantom/drift negative tests (commits `5cd99f2`, `0cf822a`). Prior exact implementation HEAD `0cf822a` full CI [42901575999](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42901575999) SUCCESS and per-commit JSON contained 53 exact-version exceptions and 91 assets, all non-approved. Codex subsequently found P1: Rule 7 handover files missing; FIX_NOW by updating CURRENT_STATE, WORK_LOG, NEXT_WORK, TEST_RESULTS in this PR. Subsequent documentation HEAD will need new exact-head tests + final Codex review before merge. No authoritative upstream legal adjudication, final notices, licensing grant, patient data or clinical release.
 
