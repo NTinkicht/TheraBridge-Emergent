@@ -64,8 +64,9 @@ test('rejects PAX and GNU extended path headers instead of mislabeling effective
 test('compares publisher-to-installed license SHA256 and detects silent modifications',async()=>{
  const f=fixture();
  const license=createHash('sha256').update('MIT synthetic test document').digest('hex');
+ const notice=createHash('sha256').update('Synthetic copyright').digest('hex');
  f.installedFiles={schema:'therabridge-installed-license-file-inventory-v1',approved:0,count:1,packages:[
-  {name:'alpha',version:'1.0.0',installedPath:'node_modules/alpha',commercialApproval:false,actualLicenseTextReviewed:false,foundLicenseFiles:[{file:'LICENSE',sha256:license}]}
+  {name:'alpha',version:'1.0.0',installedPath:'node_modules/alpha',commercialApproval:false,actualLicenseTextReviewed:false,foundLicenseFiles:[{file:'LICENSE',sha256:license},{file:'NOTICE',sha256:notice}]}
  ]};
  const pass=await audit(f,{fetchBuffer:async()=>f.bytes});
  assert.equal(pass.records[0].installedLicenseComparison,'EXACT_SHA256_MATCH');
