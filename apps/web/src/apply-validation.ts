@@ -1,5 +1,5 @@
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-type Form = Record<'organizationName' | 'contactName' | 'contactEmail' | 'contactPhone' | 'country' | 'city' | 'timezone' | 'therapistEstimate' | 'childEstimate' | 'message', string>;
+export type Form = Record<'organizationName' | 'contactName' | 'contactEmail' | 'contactPhone' | 'country' | 'city' | 'timezone' | 'therapistEstimate' | 'childEstimate' | 'message', string>;
 export function validateApplication(f: Form, specialties: string[], ack: boolean): Record<string, string> {
   const e: Record<string, string> = {};
   if (f.organizationName.trim().length < 2) e.organizationName = 'Enter your center’s name.';
