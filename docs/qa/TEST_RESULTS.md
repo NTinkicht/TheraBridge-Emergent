@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 installed-to-Yarn-lock provenance evidence (NOT YET QUALIFIED)
+Authored Node tests for version matching, missing versions, false legal approval, duplicate paths, malformed/missing lock entries and untrusted resolved sources. Local fixture tests passed before submission; exact GitHub head full CI, new artifact and Codex review PENDING. No real patient data, billing, licensing activation or clinical NO-GO changes.
+
+---
+
 ## 2026-11-10 — COM-02 installed license triage wave 2 (NOT QUALIFIED)
 - New tests cover normal triage, forged approvals, malformed hashes/byte lengths, duplicate paths, file-count contradictions, path escapes and compound license candidates. Authored, not yet CI-run on this head.
 - Full-CI artifact will include installed-license review queue; no legal/redistribution/clinical approval is implied.

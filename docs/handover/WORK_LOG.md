@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 version-locked metadata reconciliation
+Implemented standalone Yarn v1 lockfile metadata-to-installed-package audit, negative tests, CI archive integration and technical scope guide. Reports missing and ambiguous resolved versions instead of silently accepting them; records declared integrity without claiming verified tarball bytes or granting commercial rights. CI/review pending.
+
+---
+
 ## 2026-11-10 — COM-02 review queue wave 2
 Added scripts/commercial/build-installed-license-review.mjs and negative tests, full-CI integration and docs/commercial/installed-license-review-wave2.md. Derives cautious per-installed-version triage from on-disk LICENSE/NOTICE SHA-256 evidence and preserves all commercial-approval gates as false. No third-party license text verified or rights granted. Qualification pending.
 
