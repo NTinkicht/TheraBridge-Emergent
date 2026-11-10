@@ -43,7 +43,7 @@ describe('M4-08 protected center administration transport',()=>{
   expect(rest.send.mock.calls.at(-1)[1]).toBe('/api/platform/centers/c1/admin-invitations/invite1/replace');
   await centersApi.staffInvitation('c1','i1','revoke');
   expect(rest.send).toHaveBeenLastCalledWith('POST',
-   '/api/centers/c1/invitations/i1/revoke',undefined);
+   '/api/centers/c1/invitations/i1/revoke');
  });
  it('preserves member revocation reason and supports explicitly empty reason',async()=>{
   await centersApi.memberStatus('c1','m1','revoke','Fictional reason');
