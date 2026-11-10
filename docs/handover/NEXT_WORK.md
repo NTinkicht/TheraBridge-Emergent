@@ -1,3 +1,11 @@
+## COM-02 wave 2 final-head qualification and legal evidence
+1. Check installed license triage unit/negative tests, exact-head SBOM, six CI jobs, Smart CI and fresh Codex; inspect artifact and reconcile counts without treating metadata as clearance.
+2. Next wave: verify exact locked npm tarball LICENSE/NOTICE digests and published URLs; reconcile package aliases, platform-optional and dev/runtime differences; add tamper/unknown tests.
+3. Audit OS/container images, font binaries, artwork, logos, model and dataset terms and public code provenance; assign private legal review and prepare approved third-party notices.
+4. No automatic legal approval, final LICENSE, real-data clinical operation or billing activation.
+
+---
+
 ## COM-02 P2 workspace license scanner correction — verification needed
 1. Confirm exact-head CI passes new non-hoisted workspace fixture, frozen-Yarn installed license evidence collector, SBOM, tests, previews and Smart CI gate.
 2. Download updated exact-run installed license artifact, recompute whole-workspace count, reconcile remaining missing-license cases and triage.

@@ -1,3 +1,10 @@
+## 2026-11-10 — COM-02 installed license triage wave 2 (NOT QUALIFIED)
+- New tests cover normal triage, forged approvals, malformed hashes/byte lengths, duplicate paths, file-count contradictions, path escapes and compound license candidates. Authored, not yet CI-run on this head.
+- Full-CI artifact will include installed-license review queue; no legal/redistribution/clinical approval is implied.
+- Full six-job CI, SBOM and Codex final-head review: PENDING.
+
+---
+
 ## 2026-11-10 — PR #329 Codex P2 workspace local dependencies (FIXED IN CODE, QUALIFICATION PENDING)
 - Existing old-head full CI: PASS, but old root-only installed-package artifact is incomplete for non-hoisted packages.
 - New regression: hoisted plus apps/api and apps/web physical installed dependencies, symlink avoidance and unsupported workspace glob: AUTHORED, NOT YET RUN on new head.

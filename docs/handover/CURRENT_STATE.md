@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 installed-license triage wave 2 (review pending)
+Authoring: a deterministic fail-closed installed license review report from the frozen Yarn install inventory, including exact name/version/path and LICENSE/NOTICE hashes, with separate restrictive/missing/compound categories. All records remain UNRESOLVED and legally unapproved; COM-01/02/03 clearance and clinical NO-GO unchanged. Full CI and Codex are pending.
+
+---
+
 ## 2026-11-10 — COM-02 PR #329 non-hoisted workspace audit correction
 Codex P2 identified root-only installed-license package scanning and missing physical workspace-local dependencies. Collector now scans supported root Yarn workspaces and physical workspace node_modules, keeping symlink avoidance; negative/fixture tests added. Historical root-only 669 package / 24 missing-file totals are not asserted as whole-workspace results. Exact-head CI and Codex re-review PENDING. No legal/commercial clearance; public repository and clinical NO-GO unchanged.
 

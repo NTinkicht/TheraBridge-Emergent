@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 review queue wave 2
+Added scripts/commercial/build-installed-license-review.mjs and negative tests, full-CI integration and docs/commercial/installed-license-review-wave2.md. Derives cautious per-installed-version triage from on-disk LICENSE/NOTICE SHA-256 evidence and preserves all commercial-approval gates as false. No third-party license text verified or rights granted. Qualification pending.
+
+---
+
 ## 2026-11-10 — PR #329 Codex P2 remediation
 Fixed installed license evidence collector to discover physical non-hoisted workspace-local packages (apps/api and apps/web) while skipping symlinks; added fixture covering both paths and unsupported-glob fail-closed. Updated audit report to distinguish historical root-only totals from current full-workspace pending evidence. Final-head tests and independent review NOT YET VERIFIED.
 
