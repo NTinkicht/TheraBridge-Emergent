@@ -27,7 +27,7 @@ jest.mock('@/components/clinical/HomePlanSyntheticAssist',()=>({
 jest.mock('@/lib/clinical',()=>{
  const real=jest.requireActual('@/lib/clinical');
  return {...real,clinicalApi:{...real.clinicalApi,saveVersion:jest.fn(),
-  submit:jest.fn(),templates:jest.fn()}};
+  submit:jest.fn(),templates:jest.fn(),newVersion:jest.fn()}};
 });
 const {clinicalApi}=require('../src/lib/clinical');
 const {VersionEditor}=require('../src/components/clinical/PlanEditor');
@@ -105,6 +105,81 @@ describe('M4-08 real clinician plan version draft controls',()=>{
    expect.objectContaining({homeActivities:[
     expect.objectContaining({durationMinutes:25,goalKey:'g1'})
    ]}));
+ });
+ it('searches the correct service, trim-filter and paginates the full library',async()=>{
+  clinicalApi.templates
+   .mockResolvedValueOnce({items:[{...template,id:'t2',title:'Fictional speech sequence'}],nextOffset:50})
+   .mockResolvedValueOnce({items:[{...template,id:'t3',title:'Fictional conversation exercise'}],nextOffset:null});
+  await mount();
+  await change('plan-template-search','  practice  ');
+  await click('plan-template-find');
+  expect(clinicalApi.templates).toHaveBeenCalledWith('c1',{
+   service:'speech',search:'practice',offset:0,limit:50
+  });
+  expect(find('plan-template-more')).toHaveLength(1);
+  await click('plan-template-more');
+  expect(clinicalApi.templates).toHaveBeenLastCalledWith('c1',{
+   service:'speech',search:'practice',offset:50,limit:50
+  });
+  expect(find('plan-template-more')).toHaveLength(0);
+  const options=get('home-activity-add').findAllByType('option')
+    .map(option=>option.props.value);
+  expect(options).toEqual(['','t2','t3']);
+ });
+ it('keeps existing evidence on failed search and allows a source-bound retry',async()=>{
+  clinicalApi.templates.mockRejectedValueOnce(new Error('synthetic timeout'))
+   .mockResolvedValueOnce({items:[{...template,id:'t2'}],nextOffset:null});
+  await mount();
+  await click('plan-template-find');
+  expect(JSON.stringify(tree.toJSON())).toContain('Could not search the activity library');
+  expect(get('plan-save').props.disabled).toBe(false);
+  await click('plan-template-find');
+  expect(clinicalApi.templates).toHaveBeenCalledTimes(2);
+  expect(JSON.stringify(tree.toJSON())).not.toContain('Could not search the activity library');
+ });
+ it('does not submit unsaved clinician edits for supervisor review',async()=>{
+  await mount();
+  expect(get('plan-submit').props.disabled).toBe(false);
+  await change('plan-summary','Unsaved fictional change');
+  expect(get('plan-submit').props.disabled).toBe(true);
+  expect(clinicalApi.submit).not.toHaveBeenCalled();
+ });
+ it('blocks handoff when another version has unsaved work',async()=>{
+  await act(async()=>tree=create(h(VersionEditor,{
+   centerId:'c1',ws:ws(),planId:'plan-1',planTitle:'Synthetic plan',
+   service:'speech',v:version(),run,onDirtyChange:pending,otherPlanDirty:true
+  })));
+  expect(get('plan-submit').props.disabled).toBe(true);
+  expect(clinicalApi.submit).not.toHaveBeenCalled();
+ });
+ it('submits an unchanged saved draft with exact version and no approval',async()=>{
+  clinicalApi.submit.mockResolvedValue({status:'IN_REVIEW'});
+  await mount();
+  await click('plan-submit');
+  expect(clinicalApi.submit).toHaveBeenCalledWith('c1','v1',3);
+  expect(clinicalApi.saveVersion).not.toHaveBeenCalled();
+  expect(JSON.stringify(tree.toJSON())).toContain('Approve and release');
+ });
+ it('allows a returned-for-revision author to edit but not a withdrawn version',async()=>{
+  await mount(version({status:'RETURNED_FOR_REVISION'}));
+  expect(get('plan-summary').props.disabled).toBe(false);
+  expect(find('plan-save')).toHaveLength(1);
+  await act(async()=>tree.update(h(VersionEditor,{
+   centerId:'c1',ws:ws(),planId:'plan-1',planTitle:'Synthetic plan',
+   service:'speech',v:version({status:'WITHDRAWN'}),run,onDirtyChange:pending,
+   otherPlanDirty:false
+  })));
+  expect(get('plan-summary').props.disabled).toBe(true);
+  expect(find('plan-save')).toHaveLength(0);
+  expect(find('plan-new-version')).toHaveLength(1);
+ });
+ it('creates a new draft from withdrawn provenance without mutating frozen evidence',async()=>{
+  clinicalApi.newVersion.mockResolvedValue({id:'v2'});
+  await mount(version({status:'WITHDRAWN'}));
+  await click('plan-new-version');
+  expect(clinicalApi.newVersion).toHaveBeenCalledWith('c1','plan-1');
+  expect(clinicalApi.saveVersion).not.toHaveBeenCalled();
+  expect(clinicalApi.submit).not.toHaveBeenCalled();
  });
  it('keeps returned/supervisor or withdrawn plan read-only without silently sending for review',async()=>{
   await mount(version({status:'IN_REVIEW',mine:false}),ws({canEdit:false,canReview:true}));
