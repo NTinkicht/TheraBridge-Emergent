@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 PR #350 exact-version exception evidence pipeline
+Implemented `scripts/commercial/build-license-exception-register.mjs` and regression tests; wired new job output into `.github/workflows/ci.yml` installed evidence artifact. Corrected Codex P2 silent coverage omission by comparing union of publisher name/version keys to independently installed physical-package keys, with new missing/phantom/drift negative tests (commits `5cd99f2`, `0cf822a`). Prior exact implementation HEAD `0cf822a` full CI [42901575999](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42901575999) SUCCESS and per-commit JSON contained 53 exact-version exceptions and 91 assets, all non-approved. Codex subsequently found P1: Rule 7 handover files missing; FIX_NOW by updating CURRENT_STATE, WORK_LOG, NEXT_WORK, TEST_RESULTS in this PR. Subsequent documentation HEAD will need new exact-head tests + final Codex review before merge. No authoritative upstream legal adjudication, final notices, licensing grant, patient data or clinical release.
+
+---
+
 ## 2026-11-10 — COM-02 full transitive verifier and SWC size exceptions
 Prepared follow-up source patch to raise installed non-direct exact-version audit attempt budget from 160 to 768, preserve safe per-download bound and detailed unresolved statuses, and allow only exact oversized @next/swc-linux-x64-{gnu,musl}@14.2.33 larger compressed/decompressed limits. Negative tests cover pinned version isolation and complete population classification. No commercial or clinical authorization; qualification pending.
 
