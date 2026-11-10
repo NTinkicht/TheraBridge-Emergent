@@ -1,3 +1,11 @@
+## COM-04 contract suite qualification
+1. Run exact-head source SBOM/secret scan/full CI and Codex; resolve review findings on contract drafts and ensure no protected personal data or privileged material appears.
+2. Rights-holder and UAE counsel must verify MSA, SaaS/Enterprise grants, DPA and liability/termination clauses before any customer use.
+3. Product/privacy/security/clinical/finance owners must determine and sign blank business fields, service levels, hosting, regulatory requirements and clinical release boundaries.
+4. Store executed agreements and legal evidence privately; keep public draft NON-BINDING. V1 runtime and G2/G2b NO-GO unchanged.
+
+---
+
 ## COM-02 P2 workspace license scanner correction — verification needed
 1. Confirm exact-head CI passes new non-hoisted workspace fixture, frozen-Yarn installed license evidence collector, SBOM, tests, previews and Smart CI gate.
 2. Download updated exact-run installed license artifact, recompute whole-workspace count, reconcile remaining missing-license cases and triage.

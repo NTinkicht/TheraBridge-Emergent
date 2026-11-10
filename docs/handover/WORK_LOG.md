@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-04 non-binding customer agreement drafts
+Prepared a consolidated contract pack under docs/commercial/contracts/: draft MSA, SaaS and enterprise schedules, DPA, security, service levels/support, acceptable-use, and order-form fields plus legal/ownership approval matrix. Kept all terms conditional and the public repo free from executed agreements, private identities and medical data. No new licensing runtime, billing or clinical behavior. CI and Codex pending.
+
+---
+
 ## 2026-11-10 — PR #329 Codex P2 remediation
 Fixed installed license evidence collector to discover physical non-hoisted workspace-local packages (apps/api and apps/web) while skipping symlinks; added fixture covering both paths and unsupported-glob fail-closed. Updated audit report to distinguish historical root-only totals from current full-workspace pending evidence. Final-head tests and independent review NOT YET VERIFIED.
 
