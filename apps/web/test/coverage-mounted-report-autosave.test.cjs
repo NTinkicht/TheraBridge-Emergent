@@ -30,6 +30,7 @@ afterAll(()=>{global.window=originalWindow;});
 beforeEach(()=>jest.clearAllMocks());
 afterEach(async()=>{if(tree){await act(async()=>tree.unmount());tree=null;}jest.clearAllMocks();});
 const get=(id)=>tree.root.findByProps({'data-testid':id});
+const find=(id)=>tree.root.findAllByProps({'data-testid':id});
 async function mount(p=rootProps()){
  await act(async()=>{tree=create(h(ReportEditor,p));});
  return p;
@@ -66,6 +67,85 @@ describe('M4-08 mounted clinical report editor refuses unacknowledged revisions'
   expect(get('report-save-state').props['data-state']).toBe('saved');
   await click('report-submit');
   expect(reportsApi.submit).toHaveBeenCalledWith('fictional-center','r1',2);
+ });
+ it('conflicting stale report preserves unsaved text and never submits',async()=>{
+  reportsApi.autosave.mockRejectedValue({status:409,message:'Synthetic revision conflict'});
+  const p=await mount();
+  await edit('Local evidence must not be overwritten');
+  await click('report-submit');
+  expect(get('report-save-state').props['data-state']).toBe('conflict');
+  expect(get('report-conflict')).toBeTruthy();
+  expect(get('report-section-summary').props.value).toBe('Local evidence must not be overwritten');
+  expect(reportsApi.submit).not.toHaveBeenCalled();
+  expect(p.onSuccess).not.toHaveBeenCalled();
+  await click('report-conflict-reload');
+  expect(p.onReload).toHaveBeenCalledTimes(1);
+ });
+ it('previews only after the exact dirty revision is acknowledged by server',async()=>{
+  reportsApi.autosave.mockResolvedValue({version:3,savedAt:'2026-11-10T10:30:00Z'});
+  const p=await mount();
+  await edit('Pending fictional report');
+  await click('report-preview-toggle');
+  expect(reportsApi.autosave).toHaveBeenCalledWith('fictional-center','r1',
+   {summary:'Pending fictional report'},1);
+  expect(p.onPreview).toHaveBeenCalledTimes(1);
+  expect(get('report-save-state').props['data-state']).toBe('saved');
+ });
+ it('does not open family preview if save fails',async()=>{
+  reportsApi.autosave.mockRejectedValue({status:422,message:'Synthetic rejected content'});
+  const p=await mount();
+  await edit('Invalid synthetic section');
+  await click('report-preview-toggle');
+  expect(p.onPreview).not.toHaveBeenCalled();
+  expect(get('report-save-state').props['data-state']).toBe('error');
+ });
+ it('creates exact server-acknowledged handoff revision and locks editor until released',async()=>{
+  reportsApi.autosave.mockResolvedValue({version:9,savedAt:'2026-11-10T11:00:00Z'});
+  const ref={current:null};
+  await mount({...rootProps(),handoffGateRef:ref});
+  expect(ref.current).toEqual(expect.any(Function));
+  await edit('Synthetic report draft before plan handoff');
+  let lease;
+  await act(async()=>{lease=await ref.current();});
+  expect(lease.revision).toBe(9);
+  expect(get('report-handoff-edit-lock')).toBeTruthy();
+  expect(get('report-section-summary').props.disabled).toBe(true);
+  await act(async()=>lease.release());
+  expect(find('report-handoff-edit-lock')).toHaveLength(0);
+  expect(get('report-section-summary').props.disabled).toBe(false);
+ });
+ it('refuses handoff lease after failed autosave and releases busy gate',async()=>{
+  reportsApi.autosave.mockRejectedValue({status:409,message:'Synthetic conflict'});
+  const ref={current:null};
+  await mount({...rootProps(),handoffGateRef:ref});
+  await edit('Synthetic pending handoff');
+  await expect(act(async()=>ref.current())).rejects.toThrow('could not be saved');
+  expect(find('report-handoff-edit-lock')).toHaveLength(0);
+  expect(get('report-section-summary').props.disabled).toBe(false);
+ });
+ it('prevents save-version transition from overlapping a pending autosave',async()=>{
+  let finish;
+  reportsApi.autosave.mockImplementation(()=>new Promise(resolve=>{finish=resolve;}));
+  reportsApi.saveVersion.mockResolvedValue({number:3});
+  await mount();
+  await edit('Pending synthetic update');
+  await act(async()=>{get('report-save-version').props.onClick();await Promise.resolve();});
+  expect(get('report-transition-edit-lock')).toBeTruthy();
+  expect(get('report-section-summary').props.disabled).toBe(true);
+  expect(reportsApi.saveVersion).not.toHaveBeenCalled();
+  await act(async()=>finish({version:2,savedAt:'2026-11-10T12:00:00Z'}));
+  expect(reportsApi.saveVersion).toHaveBeenCalledWith('fictional-center','r1',2);
+  expect(find('report-transition-edit-lock')).toHaveLength(0);
+ });
+ it('returns read-only report sections with no submission action for a supervisor',async()=>{
+  const p=rootProps();p.d.canEdit=false;p.d.canReview=true;p.d.report.status='IN_REVIEW';
+  await mount(p);
+  expect(get('report-readonly')).toBeTruthy();
+  expect(find('report-save-version')).toHaveLength(0);
+  expect(find('report-submit')).toHaveLength(0);
+  expect(find('synthetic-report-assist')).toHaveLength(0);
+  expect(get('report-section-summary').props.disabled).toBe(true);
+  expect(JSON.stringify(tree.toJSON())).toContain('Release to family');
  });
  it('never exposes a production family release button as enabled authority',async()=>{
   await mount();
