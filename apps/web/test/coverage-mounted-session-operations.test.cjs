@@ -34,8 +34,10 @@ afterAll(()=>{global.window=windowBefore;});
 beforeEach(()=>{jest.clearAllMocks();});
 afterEach(async()=>{if(tree){await act(async()=>tree.unmount());tree=null;}});
 const get=id=>tree.root.findByProps({'data-testid':id});
+const textOf=node=>typeof node==='string'?node:Array.isArray(node)?
+ node.map(textOf).join(''):React.isValidElement(node)?textOf(node.props.children):'';
 const button=name=>tree.root.findAllByType('button').find(b=>
- b.props.children&&JSON.stringify(b.props.children).includes(name));
+ textOf(b.props.children).includes(name));
 const click=async name=>act(async()=>{const b=button(name);if(!b)throw Error('Missing '+name);b.props.onClick();});
 const mount=async(n=note(),ws=workspace())=>{
  const onPending=jest.fn();
@@ -69,7 +71,7 @@ describe('M4-08 session persistence and completion remain unsigned',()=>{
   expect(clinicalApi.saveSession).toHaveBeenCalledTimes(1);
   const first=clinicalApi.saveSession.mock.calls[0][2];
   expect(out()).toContain('Outcome unknown');
-  expect(out()).toContain('Resolve previous draft save');
+  expect(button('Resolve previous draft save')).toBeDefined();
   await click('Resolve previous draft save');
   expect(clinicalApi.saveSession).toHaveBeenCalledTimes(2);
   expect(clinicalApi.saveSession.mock.calls[1][2]).toEqual(first);
