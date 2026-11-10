@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #352 handover refresh and remaining legal obligations
+Code HEAD `e0ee645c` passed full CI [42908445420](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42908445420), with 6/6 collector tests PASS and 53/53 registry candidates obtained; Codex P1 regression resolved. The P2 Rule 7 documentation gap is being fixed; **the new docs-only HEAD requires fresh exact-head CI and Codex after the edit** before Rule 16 merge. On merge, next phase: independently verify 53 exact-version upstream LICENSE/NOTICE texts and immutable copyright evidence; 91 non-package assets; SaaS network versus on-prem customer-redistributed image obligations; OS/runtime/Redis/Postgres, models/datasets/services. These are not authorized merely by registry metadata. No final notices/proprietary license or clinical G2/G2b release.
+
+---
+
 ## 2026-11-11 — COM-02 #352 immediate qualification and remaining authority
 Run exact-head full CI and inspect candidate count/status from its evidence artifact; diagnose and fix failures. Then mark implementation PR ready, request exact-head independent Codex review after stable full-CI success, disposition all P0–P3 findings and requalify if code changes. No merge with red/pending CI or stale review. Follow-up must fetch/corroborate exact-version source LICENSE/NOTICE text from immutable upstream revisions and obtain separate rights-holder/counsel review for 53 package exceptions and 91 assets, including SaaS/network-use versus customer-redistributed enterprise images. Do not treat registry `license` strings as verified legal source, or authorize clinical G2/G2b release.
 
