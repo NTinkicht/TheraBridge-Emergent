@@ -1,6 +1,6 @@
 # COM-02 — authoritative exact-version LICENSE/NOTICE text verification
 
-Status: **DRAFT CHECKPOINT; NOT IMPLEMENTED, NOT TESTED, NOT LEGALLY APPROVED**.
+Status: **IMMUTABLE-TEXT VERIFIER IMPLEMENTED; CI/REVIEW PENDING — NOT LEGALLY APPROVED**.
 
 Predecessor: [merged PR #352](https://github.com/NTinkicht/TheraBridge-Emergent/pull/352), merge `c96b1838856188a67e7f1491277de065f00e6312`. Tracking: [#354](https://github.com/NTinkicht/TheraBridge-Emergent/issues/354), parent #351 and #349.
 
@@ -18,3 +18,11 @@ The registry metadata candidate collector covers **53/53** exact unresolved npm 
 - Preserve public GitHub access, unsigned proprietary licensing, no final third-party notices, and clinical G2/G2b NO-GO.
 
 This checkpoint itself grants no rights.
+
+## Implemented source-text evidence gate
+
+`scripts/commercial/verify-immutable-license-texts.mjs` handles explicit package/version → GitHub owner/repository/full 40-byte commit SHA/path mappings, never inferred from npm tags or moving repository branches. It only fetches immutable `raw.githubusercontent.com` source paths, rejects redirects, invalid paths and non-UTF-8 or oversized documents, and records actual SHA-256 bytes. It records the evidence state as `IMMUTABLE_SOURCE_BYTES_HASHED_CORRESPONDENCE_UNVERIFIED`, **not** independently verified source-to-package lineage, licensing consent or approved redistribution.
+
+The initial `docs/commercial/immutable-upstream-source-mappings.json` has **zero mappings**: no authoritative correspondence has yet been individually confirmed, so all 53 rows remain explicitly unmapped. The verifier is wired after the registry candidate collector in CI and retains per-commit JSON evidence. Any mapping added later must be independently corroborated with exact package/version source publication and reviewed by counsel; immutable source bytes alone are not permission.
+
+No raw third-party license texts are committed to this public repository. No final notices or legal grant.
