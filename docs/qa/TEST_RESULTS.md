@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #355 P2 timeout and scanner qualifications (PENDING NEW HEAD)
+Added mocked HTTPS trickle stream regression requiring absolute deadline and rejected non-200 response regression requiring immediate request destruction; existing immutable source SHA/path and approval-adversarial tests remain. Earlier code HEAD CI found secret-scan FAILURE: `generic-api-key` on `apps/web/test/coverage-stage3-mounted-recovery-and-feasibility.test.cjs` from a separate Web branch in all-ref history (not a real licensing secret). Added scoped exact fixture allowlist, awaiting new-head Gitleaks verification. **Do not claim PASS** until required latest-head jobs complete. No legal approval, final notices or clinical G2/G2b activation.
+
+---
+
 ## 2026-11-11 — COM-02 #355 immutable license source QA (NOT RUN)
 Offline tests added: full exact Git commit SHA, reject branch/path traversal, preserve unmapped exceptions, reject invalid or oversized UTF8 text, SHA256 of pinned text only, maintain unresolved package-version correspondence, HTTP failure preservation, false approvals/duplicate or phantom mappings. CI command: `node --test scripts/commercial/verify-immutable-license-texts.test.mjs`; subsequent evidence output `therabridge-com02-immutable-text-evidence.json`. Full exact-head CI and Codex pending. Source mapping register empty (0 independently corroborated Git commits), so expected counts 53 unmapped and 0 verified source texts or legal approvals until actual CI confirms. G2/G2b NO-GO.
 
