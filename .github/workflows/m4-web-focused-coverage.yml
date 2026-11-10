@@ -1,0 +1,50 @@
+name: m4-web-focused-coverage
+
+on:
+  push:
+    branches:
+      - test/m4-08-web-60-mega-coverage
+    paths:
+      - 'apps/web/**'
+      - 'scripts/qa/m4-web-coverage-hotspots*'
+      - 'scripts/qa/m4-web-coverage-audit*'
+      - 'scripts/qa/m4-web-jest.config.cjs'
+      - '.github/workflows/m4-web-focused-coverage.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m4-web-focused-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  measured-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.18.3'
+          cache: yarn
+      - name: Install locked dependencies
+        run: yarn install --frozen-lockfile
+      - name: Preserve existing Web node-test regression contract
+        run: yarn workspace @therabridge/web test
+      - name: Run source-executing full-Web Istanbul and fail-closed audit
+        run: |
+          node --test scripts/qa/m4-web-coverage-audit.test.mjs scripts/qa/m4-measured-coverage.test.mjs scripts/qa/m4-web-coverage-hotspots.test.mjs
+          ./node_modules/.bin/jest --config scripts/qa/m4-web-jest.config.cjs --runInBand
+          node scripts/qa/m4-web-coverage-audit.mjs
+          node scripts/qa/m4-web-coverage-hotspots.mjs
+      - name: Publish sanitized numeric summaries (not clinical acceptance)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-web-focused-evidence-${{ github.run_id }}
+          path: |
+            .workspace/m4-coverage/m4-web-coverage-baseline.json
+            .workspace/m4-coverage/m4-web-hotspots.json
+          if-no-files-found: error
+          retention-days: 7
