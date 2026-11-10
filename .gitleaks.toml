@@ -21,9 +21,6 @@ regexes = [
   '''^\$\{?[A-Z_][A-Z0-9_]*''',
   '''\$\{''',
   '''^[a-z0-9]+(-[a-z0-9]+)+$''',
-  # Historical M4-08 CSRF token test fixture only; no real credential.
-  # Suppress just this exact captured placeholder, not a file/path or rule.
-  '''^synthetic$''',
   # Exact synthetic-only test literals retained in earlier PR #73 commits.
   '''^LOCAL_FIXTURE_ONLY$''',
   '''^PRIVATE_CSRF$''',
