@@ -134,12 +134,14 @@ describe('Stage 2 mounted clinical evidence: no version cross-contamination',()=
   await mount(ProgressPanel,{ws:datasets(),onNavigate:jest.fn()});
   expect(get('progress-goal-g1')).toBeTruthy();
   expect(get('progress-periods-g1')).toBeTruthy();
-  expect(html()).toContain('2 (2026-11-10)');
-  expect(html()).not.toContain('99 (2026-11-09)');
+  const currentSvg=get('progress-chart-g1').findByType('svg');
+  expect(currentSvg.props['aria-label']).toContain('2 on 2026-11-10');
+  expect(currentSvg.props['aria-label']).not.toContain('99');
   expect(get('progress-history-toggle').props['aria-expanded']).toBe(false);
   await click('progress-history-toggle');
   expect(get('progress-historical-pv-old-g1')).toBeTruthy();
-  expect(html()).toContain('99 (2026-11-09)');
+  expect(get('historical-chart-pv-old-g1').findByType('svg').props['aria-label'])
+   .toContain('99 on 2026-11-09');
  });
  it('requires a finite numeric observation and exact selected version before recording',async()=>{
   clinicalApi.observe.mockResolvedValue({id:'ob-new'});
