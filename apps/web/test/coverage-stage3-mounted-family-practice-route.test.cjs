@@ -57,7 +57,7 @@ describe('mounted guardian synthetic practice keeps progress and releases separa
   await mount();
   expect(practiceApi.week).toHaveBeenCalledWith('center-a',undefined);
   expect(get('practice-page')).toBeTruthy();
-  expect(get('practice-child-name').props.children).toBe('For Fictional Alex');
+  expect(get('practice-child-name').props.children.join('')).toBe('For Fictional Alex');
   expect(get('practice-sample-banner')).toBeTruthy();
   expect(out()).toContain('never counted as therapy progress');
  });
