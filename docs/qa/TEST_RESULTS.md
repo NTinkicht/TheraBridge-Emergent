@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 publisher tarball evidence (NOT YET CI-QUALIFIED)
+Authored tests verifying synthetic tarball SRI, top-level license hashes, tampering rejection, strict registry host validation, invalid archives/lockfile and false approval gates. Local fixtures passed (6/6) before GitHub submission; GitHub CI and exact-head Codex PENDING. The real registry evidence sample is capped and is NOT the entire dependency population or legal clearance.
+
+---
+
 ## 2026-11-10 — COM-02 installed-to-Yarn-lock provenance evidence (NOT YET QUALIFIED)
 Authored Node tests for version matching, missing versions, false legal approval, duplicate paths, malformed/missing lock entries and untrusted resolved sources. Local fixture tests passed before submission; exact GitHub head full CI, new artifact and Codex review PENDING. No real patient data, billing, licensing activation or clinical NO-GO changes.
 

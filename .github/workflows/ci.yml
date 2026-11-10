@@ -202,7 +202,12 @@ jobs:
         run: node --test scripts/commercial/reconcile-installed-lock.test.mjs
       - name: Reconcile exact installed versions to frozen Yarn lock metadata (not tarball verification)
         run: node scripts/commercial/reconcile-installed-lock.mjs /tmp/therabridge-installed-license-review.json yarn.lock /tmp/therabridge-installed-lock-provenance.json
+      - name: Validate published tarball verification tooling (offline adversarial tests)
+        run: node --test scripts/commercial/verify-published-tarballs.test.mjs
+      - name: Verify bounded exact npm tarballs and hash packaged LICENSE/NOTICE evidence
+        run: node scripts/commercial/verify-published-tarballs.mjs /tmp/therabridge-installed-lock-provenance.json yarn.lock docs/commercial/direct-license-evidence.json /tmp/therabridge-publisher-tarball-evidence.json
       - name: Archive installed license evidence for full CI
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: therabridge-installed-license-files-${{ github.sha }}
@@ -210,6 +215,7 @@ jobs:
             /tmp/therabridge-installed-licenses.json
             /tmp/therabridge-installed-license-review.json
             /tmp/therabridge-installed-lock-provenance.json
+            /tmp/therabridge-publisher-tarball-evidence.json
           if-no-files-found: error
           retention-days: 30
       - name: M4-02 private QA runtime redaction and fail-closed tests

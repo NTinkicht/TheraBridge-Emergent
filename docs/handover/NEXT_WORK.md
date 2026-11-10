@@ -1,3 +1,10 @@
+## COM-02 published tarball audit acceptance and expansion
+1. Pass offline published-tarball fixture tests, exact-head CI SBOM/secrets/full preview, independent Codex, examine per-commit integrity outcomes. Confirm no integrity mismatch, no fabricated legal approvals.
+2. Expand direct dependency sampling and all transitive/optional/OS/image, icon/font/logo/illustration/model/data rights using protected provenance records and defensible reviewer ownership.
+3. Obtain publisher notices and counsel-signed SaaS versus enterprise redistribution obligations. No root proprietary LICENSE or commercial/clinical activation without legal/IP and governance approvals.
+
+---
+
 ## COM-02 exact locked-package provenance verification
 1. Qualify lock metadata reconciliation script and negative tests with exact-head CI/SBOM/secret scan, sustained preview, Smart CI and Codex.
 2. Review missing, ambiguous, no-integrity and nonstandard-source rows from installed artifact; verify registry-published exact tarball integrity before claiming source authenticity.

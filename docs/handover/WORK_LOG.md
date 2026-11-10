@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 artifact byte verification wave 4
+Implemented bounded, strict HTTPS allowlisted exact published npm tarball downloads; Yarn SRI verification, whole-archive SHA-256 and top-level packaged LICENSE/NOTICE SHA-256; network failures unresolved and integrity mismatch stops CI. Added offline adversarial fixtures, artifact integration and legal-gap runbook. This is not legal authorization or complete dependency coverage. Await exact-head CI and Codex review.
+
+---
+
 ## 2026-11-10 — COM-02 version-locked metadata reconciliation
 Implemented standalone Yarn v1 lockfile metadata-to-installed-package audit, negative tests, CI archive integration and technical scope guide. Reports missing and ambiguous resolved versions instead of silently accepting them; records declared integrity without claiming verified tarball bytes or granting commercial rights. CI/review pending.
 
