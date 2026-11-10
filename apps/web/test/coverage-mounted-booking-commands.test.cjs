@@ -110,7 +110,8 @@ describe('M4-08 booking refuses unauthorized/unassigned therapist choices',()=>{
   await click('book-save');
   expect(onDone).not.toHaveBeenCalled();
   expect(opsApi.book).toHaveBeenCalledTimes(1);
-  expect(get('book-error')).toBeTruthy();
+  // The shared error handler owns the user-visible alert in this workflow.
+  expect(onError).toHaveBeenCalledWith(expect.objectContaining({status:403}));
  });
  it('moves one existing visit without changing sibling series visits',async()=>{
   const editing={id:'appointment-1',childId:'kid',membershipId:'therapist-1',
