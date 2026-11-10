@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #357 source-root evidence and P1 fix disposition
+First implementation test run on SHA `4ee9a2bd` found a P1 test fixture defect: a valid GitHub owner `evil.org` was incorrectly described as spoofed origin. FIX_NOW in `6a8c960` using `github.com.evil.org`; resolved inline Codex thread. Improved fail-closed gate: exact npm manifest SHA256 + Yarn lock integrity match required before source-root HTTP fetch (`88afc20`, `f8aa469`). At code SHA `8c645d0f`, [CI run 42923019170](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42923019170) passed all 7 new adversarial tests; generated 15 possible source-root matches of 53, not 15 proven release linkages. Other 38 not matched via this technique; 53 attestation decisions remain unresolved. No commercial license rights inferred. Full code-head CI had pending long-running steps when written, and new docs HEAD requires requalification.
+
+---
+
 ## 2026-11-11 — COM-02 #357 first implementation checkpoint
 Implemented registry exact-version `gitHead` candidate capture, trusted-host GitHub repository parsing, immutable commit `package.json` fetch using existing absolute-deadline HTTPS reader, identity SHA-256, and explicit untrusted correspondence classification. Added adversarial tests for mutable commits, spoofed domains, wrong version/name, oversized/non-UTF8 source, forged approvals, duplicate inputs and unavailable network states. CI wired to publish correspondence candidate JSON. No tests have been marked PASS yet; correspondence is not established by npm publisher claims alone.
 
