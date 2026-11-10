@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #355 immutable source text verifier (IMPLEMENTED / CI NOT RUN)
+Added strict full-commit-pinned upstream LICENSE/NOTICE SHA-256 verifier, with a deliberately empty correspondence map and evidence-only CI artifact. No repository source-to-npm-version correspondence is independently verified, so all 53 candidate package versions are unresolved; no upstream text, commercial approval, final notices, production clinical approval or G2/G2b activation. Security negative tests added; exact-head full CI and independent review pending.
+
+---
+
 ## 2026-11-11 — COM-02 #352 measured candidate collection (code HEAD PASSED; doc-only HEAD pending)
 **Verified on code HEAD `e0ee645ced29bbe2d603c125e013646a343c1a02`:** full CI run [42908445420](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42908445420) SUCCESS, six new exact-version registry metadata adversarial tests PASS, **53/53 exact-version registry metadata responses**, 0 missing/invalid candidate manifests, 0 authoritative upstream LICENSE-text proofs, 0 legally approved packages. SBOM, gitleaks, live-session, demo-journey, Compose, 10-minute preview and Smart CI all green on code head. Codex earlier P1 incorrect test digest linkage fixed; later P2 correctly requires updating Rule 7 files with this evidence. This documentation update creates a NEW HEAD requiring its own exact-head CI/Codex review before merge. 91 tracked assets, upstream copyrights, SaaS and enterprise distribution rights still OPEN; public repository unchanged and G2/G2b NO-GO.
 
