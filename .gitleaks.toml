@@ -23,7 +23,7 @@ regexes = [
   '''^[a-z0-9]+(-[a-z0-9]+)+$''',
   # Historical M4-08 branch test fixture csrfToken:'synthetic' (two findings, no live credential).
   # Match captured value exactly; no path-wide or rule-wide suppression.
-  '''^synthetic
+  '''^synthetic$''',
   '''^LOCAL_FIXTURE_ONLY$''',
   '''^PRIVATE_CSRF$''',
   # M4-02 old Git commit contains this deterministic local test-only literal.
