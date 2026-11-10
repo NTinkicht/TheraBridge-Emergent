@@ -132,7 +132,7 @@ describe('M4-08 authenticated home is role and context scoped',()=>{
   const out=draw(AppHomePage);
   expect(out).toContain('data-testid="home-title"');
   expect(out).toContain('Fictional');
-  expect(out).toContain('data-testid="home-summary-loading"');
+  expect(out).toContain('data-testid="dashboard-loading"');
   expect(out).toContain('Clinical signing, approval and release');
  });
  it('presents platform administrator without impersonating a center tenant',()=>{
