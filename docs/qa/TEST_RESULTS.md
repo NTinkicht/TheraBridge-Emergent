@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #357 source correspondence collector tests (NOT YET RUN)
+Added offline tests for strict exact GitHub origin (no credentials, subdomain spoofing, SSH, queries or traversal), 40-hex commit, immutable root `package.json` name/version and SHA-256, invalid JSON/UTF8/size, preserved missing GitHead and 404/untrusted states, zero authorization and tampered scope. CI runs `node --test scripts/commercial/corroborate-source-revisions.test.mjs` and archives `therabridge-com02-source-correspondence-candidates.json`. Required exact-head CI is pending. No publisher/source correspondence independently attested, no authoritative LICENSE text approval or commercial grant, no G2/G2b activation.
+
+---
+
 ## 2026-11-11 — COM-02 #355 P2 timeout and scanner qualifications (PENDING NEW HEAD)
 Added mocked HTTPS trickle stream regression requiring absolute deadline and rejected non-200 response regression requiring immediate request destruction; existing immutable source SHA/path and approval-adversarial tests remain. Earlier code HEAD CI found secret-scan FAILURE: `generic-api-key` on `apps/web/test/coverage-stage3-mounted-recovery-and-feasibility.test.cjs` from a separate Web branch in all-ref history (not a real licensing secret). Added scoped exact fixture allowlist, awaiting new-head Gitleaks verification. **Do not claim PASS** until required latest-head jobs complete. No legal approval, final notices or clinical G2/G2b activation.
 
