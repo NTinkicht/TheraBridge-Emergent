@@ -3,7 +3,7 @@
 const React=require('react');
 const {renderToStaticMarkup}=require('react-dom/server');
 const h=React.createElement,draw=(C,p)=>renderToStaticMarkup(h(C,p));
-const {validate:validateApplication}=require('../src/apply-validation');
+const {validateApplication}=require('../src/apply-validation');
 const {validate:validateCenter}=require('../src/app/app/centers/new/page');
 const {DecisionPanel}=require('../src/components/applications/DecisionPanel');
 const application=(extra={})=>({
