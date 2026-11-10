@@ -1,3 +1,11 @@
+## 2026-11-10 — M4-08 mega PR #339 latest measured Web checkpoint (FOCUSED CI PASS; M4-08 NOT QUALIFIED)
+- Source-wide genuine Web Jest/Istanbul focused CI #42867251775, branch SHA 2d3839b8acab8dc1f94518a0d75232deb4ad283b: PASS. Denominator 151 Web source files, including 25 zero-statement-coverage modules.
+- Web metrics: **51.61% lines, 39.18% branches, 31.28% functions, 45.34% statements**. Stage 1 ≥60% lines: **FAIL / NOT MET**, gap 8.39 points. Stage 2 80%: NOT STARTED.
+- Added executed synthetic tests for source-bound/clinical record projections, member and center permissions, family and clinical route states, application decisions, and actual React state transitions in report-to-plan idempotent handoff, error retry, clinician checkpoint choice, guardian reminders and report autosave.
+- Focused CI is supplemental, NOT proof of six full original jobs on final HEAD; final-head CodeX and integrated API/security evidence PENDING. No clinical approval, release, real patient data or deployment. G2/G2b NO-GO.
+
+---
+
 ## 2026-11-10 — M4-08 Stage 1 PR #339 genuine Web-coverage expansion (NOT YET QUALIFIED)
 - OWNER POLICY: general Web lines target staged 60% then 80% (issues #337/#338); security-critical Web logic separately targets ≥95% measured branches. All-source Istanbul denominator and all four metrics preserved. No automatic clinical clearance.
 - EXECUTED-TEST FILES ADDED (source-executing Jest, synthetic): coverage-versioned-evidence-regressions.test.cjs and coverage-transport-permissions.test.cjs, covering source/version attribution, missing/reordered/changed evidence, saved-plan snapshots, center/supervisor routes, protected clinical/report command boundaries, and public vs protected invitation operations.
