@@ -40,6 +40,7 @@ jobs:
           ./node_modules/.bin/jest --config scripts/qa/m4-web-jest.config.cjs --runInBand
           node scripts/qa/m4-web-coverage-audit.mjs
           node scripts/qa/m4-web-coverage-hotspots.mjs
+          node -e 'const r=require("./.workspace/m4-coverage/m4-web-hotspots.json"); console.log("SANITIZED WEB HOTSPOTS (source paths + uncovered line counts only)"); for(const x of r.topUncoveredLines) console.log(x.path+" | missing="+x.uncoveredLines+" | lines="+x.linePercent+"% | branches="+x.branchPercent+"%");'
       - name: Publish sanitized numeric summaries (not clinical acceptance)
         uses: actions/upload-artifact@v4
         with:
