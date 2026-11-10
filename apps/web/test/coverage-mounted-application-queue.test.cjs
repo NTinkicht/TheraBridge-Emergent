@@ -4,8 +4,9 @@ const React=require('react');
 const Renderer=require('react-test-renderer');
 const {act,create}=Renderer,h=React.createElement;
 let state=null;
+const mockHandle=jest.fn(e=>{throw e;});
 jest.mock('@/components/auth/useSession',()=>({
- useSession:()=>({state,handle:jest.fn(e=>{throw e;})})
+ useSession:()=>({state,handle:mockHandle})
 }));
 jest.mock('@/components/auth/ProductShell',()=>({
  ProductShell:({children})=>React.createElement('main',null,children)
