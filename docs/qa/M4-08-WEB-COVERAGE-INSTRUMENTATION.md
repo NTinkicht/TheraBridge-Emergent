@@ -1,6 +1,10 @@
 # M4-08 — Application-wide Web coverage instrumentation and target gap closure
 
-**Status: draft scope checkpoint only — NOT IMPLEMENTED / NOT TESTED / NOT REVIEW QUALIFIED.**
+**Status: instrumentation, source-wide denominator audits, and several executed-test waves IMPLEMENTED and CI-qualified; full 95% application-wide acceptance NOT QUALIFIED.**
+
+As of PR #332 (merged 2026-11-10), CI measures 93 API source files and 151 Web source files. API lines 95.50%, branches 78.84%, functions 93.69%, statements 91.35%; Web lines 10.63%, branches 7.05%, functions 7.86%, statements 9.89%. 123 Web modules have no executed statements. Evidence is in M4-08 issue #182 and the exact-run CI artifacts; these figures are not a clinical release authorization. The checklist below is the original scope record; completed infrastructure is documented in merged PRs #301, #306, #324, #325, #328, #330, #331 and #332.
+
+**Accelerated implementation approach:** qualify whole domain workflows in larger PRs (multiple screens/states per role), introduce browser-mounted source instrumentation for client transitions, and independently target API branch deficits. Maintain all-source denominators, cross-role isolation, six original CI checks, SBOM and exact-head independent review.
 
 Parent: [M4-08 #182](https://github.com/NTinkicht/TheraBridge-Emergent/issues/182); epic [M4 #167](https://github.com/NTinkicht/TheraBridge-Emergent/issues/167).
 Predecessor: [M4-07 PR #305](https://github.com/NTinkicht/TheraBridge-Emergent/pull/305), merged to main as `2a4abb74764a213aec0aa94c4d889eed9cb966a1`.
@@ -22,9 +26,9 @@ Predecessor: [M4-07 PR #305](https://github.com/NTinkicht/TheraBridge-Emergent/p
 
 ## Acceptance
 
-- [ ] Actual Web source-wide report for four metrics generated and testable, with zero-coverage modules accounted for
-- [ ] API+Web summary has verified denominators, evidence provenance and explicit below-target metrics
-- [ ] Coverage regressions positively/negatively test fail-closed report validation
+- [x] Actual Web source-wide report for four metrics generated and testable, with zero-coverage modules accounted for
+- [x] API+Web summary has verified denominators, evidence provenance and explicit below-target metrics
+- [x] Coverage regressions positively/negatively test fail-closed report validation
 - [ ] Targeted tests improve measured gaps without new behavioral regressions
 - [ ] Six original CI jobs and `smart-ci-gate` PASS on final HEAD; independent Codex exact-head review; all comments dispositioned
 - [ ] All M4-02 protected hosted QA, M4-06/07 remaining qualification, 95%-target exceptions, G2/G2b clinical gates stay distinct and open as warranted

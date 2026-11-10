@@ -22,6 +22,11 @@
 
 ---
 
+## M4-08 big-batch execution plan — stop the helper-only PR cadence
+Stage A: qualify real role-targeted pages across 15 operational routes with multiple data states on source-wide Istanbul; fix failures and track measured delta. Stage B: one broader client-side/browser-coverage PR spanning login/context, scheduling, clinical drafts, family practice and governance, with reliable browser-to-source Istanbul provenance and no hidden denominator. Stage C: one API tenant/clinical branch coverage PR across role, cross-tenant, concurrency, scheduling and protected release negatives. Do not claim 95% until actual 4-metric gate passes. Maintain Codex, original CI jobs, SBOM, Smart CI and clinical NO-GO.
+
+---
+
 ## M4-08 API coverage wave 4
 Qualify source-executing auth/security boundary regression tests and the invalid empty-cookie-name parser correction via six original exact-head CI jobs, SBOM, Smart CI and independent review. Re-measure all API lines/branches/functions/statements against 93 executable-file baseline, track unexecuted source modules, and continue real branch tests across tenant authorization and scheduling. Clinical G2/G2b remain NO-GO.
 

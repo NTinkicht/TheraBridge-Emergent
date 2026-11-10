@@ -13,6 +13,11 @@ Inspected root, API and web package manifests, Dockerfile.preview, SBOM CI and e
 
 ---
 
+## 2026-11-10 — Consolidated M4-08 coverage work package
+Started one 15-route Jest SSR matrix rather than a series of helper-only micro-PRs. Executes actual Next page source for loading, retryable error, synthetic empty and locked messaging states; central test boundary deliberately mocks Workspace/useLoad and does not claim to verify API authorization or browser interactions. Stale coverage planning notes reconciled in docs/qa. Qualify full CI and Codex before merge.
+
+---
+
 ## 2026-11-10 — API source-executing coverage and hard-deny tests
 Created `apps/api/test/m4-auth-boundaries.e2e-spec.ts` exercising actual policy/permissions, unsigned clinical capabilities, family messaging restrictions, trusted forwarded IP processing, cookies, token comparisons and password rejection. Pure fake data and no services. First full API CI run surfaced invalid whitespace-only cookie names; parser updated to skip empty names. Requalification pending; no release approval claimed.
 
