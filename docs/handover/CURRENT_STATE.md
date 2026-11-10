@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #357 source-correspondence candidate collection (CODE COMMITTED / TESTS PENDING)
+Added exact registry gitHead candidate field and bounded immutable GitHub source root `package.json` identity matching with SHA-256, without authorizing package-to-Git source correspondence or legal rights. CI produces a 53-version evidence candidate register, retains unmatched/invalid records, and preserves 91 separately tracked assets. No independently attested source-version mappings, no authoritative upstream text/source approvals, no final notices or G2/G2b clinical release. Actual new-head test, six required jobs and independent Codex review PENDING.
+
+---
+
 ## 2026-11-11 — COM-02 #355 Codex P2 and unrelated all-ref secret scan (REQUALIFICATION PENDING)
 Codex review found the HTTPS license-text downloader's inactivity-only timeout could be bypassed by trickle-stream responses; fixed with absolute bounded request deadline, cleanup on settlement and no-drain rejects, with deterministic Node regression tests. A full CI run on earlier HEAD detected `generic-api-key` in the explicitly fictional M4-08 Web password reset test in a separate branch because Gitleaks scans `--all` Git history. Applied a narrow combined exact-file/exact synthetic-literal allowlist in `.gitleaks.toml`, without bypassing other secrets. Latest implementation HEAD exact CI and reviewer pending; no commercial legal approval, verified source mapping, final notices or G2/G2b clinical activation.
 
