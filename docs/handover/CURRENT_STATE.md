@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #357 measured source-root candidate evidence
+Code checkpoint `8c645d0feb79ddd7fc8cea24425aa6c722e2631b` — GitHub Actions full-CI run [42923019170](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42923019170): new corroboration tests **7 PASS / 0 FAIL**, source candidate generation PASS. Recorded exact-version `53` exceptions, `15` registry gitHead+immutable source-root manifest name/version matches, **53 still independently un-attested**, `0` authoritative upstream LICENSE texts verified, `0` legal approvals. Six-job full CI was **still underway when this note was committed**; any later documentation HEAD requires fresh CI and independent review. The 91 non-package assets, PAX review and G2/G2b NO-GO remain open.
+
+---
+
 ## 2026-11-11 — COM-02 #357 source-correspondence candidate collection (CODE COMMITTED / TESTS PENDING)
 Added exact registry gitHead candidate field and bounded immutable GitHub source root `package.json` identity matching with SHA-256, without authorizing package-to-Git source correspondence or legal rights. CI produces a 53-version evidence candidate register, retains unmatched/invalid records, and preserves 91 separately tracked assets. No independently attested source-version mappings, no authoritative upstream text/source approvals, no final notices or G2/G2b clinical release. Actual new-head test, six required jobs and independent Codex review PENDING.
 
