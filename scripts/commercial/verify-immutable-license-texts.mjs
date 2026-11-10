@@ -124,4 +124,4 @@ if(import.meta.url===new URL('file://'+process.argv[1]).href){
   writeFileSync(destination,JSON.stringify(out,null,2)+'\n',{flag:'wx'});console.log(JSON.stringify(out.counts));
  }catch(e){console.error(e.message);process.exitCode=1;}
 }
-export {validatedRawUrl,validateText,collectTextHashes};
+export {validatedRawUrl,validateText,collectTextHashes,fetchRaw};
