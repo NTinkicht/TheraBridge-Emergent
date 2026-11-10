@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 non-direct exhaustive evidence (PENDING CI QUALIFICATION)
+Added tests proving only exactly pinned SWC 14.2.33 variants gain higher archive caps; unrelated names/versions remain on original caps. Added tests for full observed non-direct population with zero sample deferrals and fail-closed missing-lock cases. Exact-head CI, full publisher artifact and independent Codex review PENDING. The audit result is technical hash provenance, not package legal clearance or redistribution rights.
+
+---
+
 ## 2026-11-10 — M4-08 Stage 2 #345 measured ≥80% Web line target MET; merge qualification PENDING
 
 - **Exact code SHA `8af17a710793ea40b5c92350ad600ffb3bf982f9`**, focused full-source instrumented Istanbul [run #42905581705](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42905581705): **PASS 67/67 suites, 604/604 tests**, full **154/154 production Web source modules**, 15 files with zero executed statements. **Lines 80.28%, branches 69.14%, functions 65.09%, statements 75.86%.** The owner-directed ≥80% genuine Web **line** Stage 2 target is MET by **0.28 percentage points**, **not** a ≥95% critical-branch qualification, clinical acceptance, legal approval, or a full CI/merge PASS.

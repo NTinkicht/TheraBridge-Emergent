@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 full transitive verifier and SWC size exceptions
+Prepared follow-up source patch to raise installed non-direct exact-version audit attempt budget from 160 to 768, preserve safe per-download bound and detailed unresolved statuses, and allow only exact oversized @next/swc-linux-x64-{gnu,musl}@14.2.33 larger compressed/decompressed limits. Negative tests cover pinned version isolation and complete population classification. No commercial or clinical authorization; qualification pending.
+
+---
+
 ## 2026-11-10 — M4-08 Stage 2 #345 measured ≥80% Web line target MET; merge qualification PENDING
 
 - **Exact code SHA `8af17a710793ea40b5c92350ad600ffb3bf982f9`**, focused full-source instrumented Istanbul [run #42905581705](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42905581705): **PASS 67/67 suites, 604/604 tests**, full **154/154 production Web source modules**, 15 files with zero executed statements. **Lines 80.28%, branches 69.14%, functions 65.09%, statements 75.86%.** The owner-directed ≥80% genuine Web **line** Stage 2 target is MET by **0.28 percentage points**, **not** a ≥95% critical-branch qualification, clinical acceptance, legal approval, or a full CI/merge PASS.

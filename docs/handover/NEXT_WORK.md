@@ -1,3 +1,8 @@
+## COM-02 full non-direct technical coverage and license rights
+Qualify exact-head full CI artifacts/Codex: compare all non-direct name/version statuses to installed physical copies, inspect any lock/source/size/header/file mismatches, retain unresolved items without auto approval. Then conduct manual upstream license/copyright obligations for @types and transitive packages, native runtime/container/OS layers, logos/fonts/models/datasets and SaaS vs on-prem enterprise rights. Keep COM-01/02 unresolved until qualified signoffs.
+
+---
+
 ## 2026-11-10 — M4-08 Stage 2 #345 measured ≥80% Web line target MET; merge qualification PENDING
 
 - **Exact code SHA `8af17a710793ea40b5c92350ad600ffb3bf982f9`**, focused full-source instrumented Istanbul [run #42905581705](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42905581705): **PASS 67/67 suites, 604/604 tests**, full **154/154 production Web source modules**, 15 files with zero executed statements. **Lines 80.28%, branches 69.14%, functions 65.09%, statements 75.86%.** The owner-directed ≥80% genuine Web **line** Stage 2 target is MET by **0.28 percentage points**, **not** a ≥95% critical-branch qualification, clinical acceptance, legal approval, or a full CI/merge PASS.

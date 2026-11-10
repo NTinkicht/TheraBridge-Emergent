@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 complete installed non-direct publisher classification (review pending)
+Prepared full-CI exact name/version verification for all observed 620 non-direct installed-version rows, with cap 768, distinct physical copy tracking and pinned SWC Linux 14.2.33 48/256-MiB archive exceptions. Other packages keep 16/64-MiB limits; integrity, per-copy LICENSE/NOTICE matches and zero legal approvals fail closed. Independent CI/review pending; clinical G2/G2b NO-GO unchanged.
+
+---
+
 ## 2026-11-10 — M4-08 Stage 2 #345 measured ≥80% Web line target MET; merge qualification PENDING
 
 - **Exact code SHA `8af17a710793ea40b5c92350ad600ffb3bf982f9`**, focused full-source instrumented Istanbul [run #42905581705](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42905581705): **PASS 67/67 suites, 604/604 tests**, full **154/154 production Web source modules**, 15 files with zero executed statements. **Lines 80.28%, branches 69.14%, functions 65.09%, statements 75.86%.** The owner-directed ≥80% genuine Web **line** Stage 2 target is MET by **0.28 percentage points**, **not** a ≥95% critical-branch qualification, clinical acceptance, legal approval, or a full CI/merge PASS.
