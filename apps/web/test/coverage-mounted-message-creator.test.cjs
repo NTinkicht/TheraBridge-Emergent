@@ -52,7 +52,7 @@ describe('M4-08 mounted conversation creator enforces child and recipient restri
   await mount({});
   const audience=get('new-thread-audience');
   expect(audience.findAllByType('option').map(x=>x.props.value)).not.toContain('GUARDIAN');
-  expect(get('new-thread-recipient')).toBeUndefined();
+  expect(tree.root.findAllByProps({'data-testid':'new-thread-recipient'})).toHaveLength(0);
  });
  it('requires a connected guardian before an assigned therapist can send family message',async()=>{
   await mount({therapistMembershipId:'assigned'});
