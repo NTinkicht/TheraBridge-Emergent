@@ -4,6 +4,9 @@ const React=require('react');
 const Renderer=require('react-test-renderer');
 const {act,create}=Renderer;
 const h=React.createElement;
+jest.mock('next/link',()=>({
+ __esModule:true,default:({href,children,...props})=>React.createElement('a',{...props,href},children)
+}));
 let familyResponse=null,failed=false;
 jest.mock('@/components/centers/kit',()=>{
  const actual=jest.requireActual('@/components/centers/kit');
