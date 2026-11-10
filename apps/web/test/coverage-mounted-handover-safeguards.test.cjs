@@ -99,6 +99,27 @@ describe('M4-08 operational handover never implicitly transfers clinical permiss
   expect(text()).toContain('cannot approve a clinical handover');
   expect(text()).toContain('Staff accepted');
  });
+ it('cancels an operational proposal and preserves original therapist assignment',async()=>{
+  items=[openProposal()];
+  await mount();
+  const cancel=tree.root.findAllByType('button')
+   .find(b=>b.props.children==='Cancel proposal');
+  expect(cancel).toBeDefined();
+  await act(async()=>cancel.props.onClick());
+  expect(opsApi.cancelHandover).toHaveBeenCalledWith('center-1','handover-1');
+  expect(get('handover-row-handover-1').props['data-status']).toBe('CANCELLED');
+  expect(child().assignments[0].membershipId).toBe('old');
+  expect(text()).toContain('No clinical information or assignment changed');
+ });
+ it('shows a recoverable operational error when readiness cannot be verified',async()=>{
+  items=[openProposal()];
+  opsApi.handoverReadiness.mockRejectedValueOnce(new Error('Fictional lookup outage'));
+  await mount();
+  const check=tree.root.findAllByType('button').find(b=>b.props.children==='Check readiness');
+  await act(async()=>check.props.onClick());
+  expect(text()).toContain('Could not verify this operational readiness snapshot');
+  expect(find('handover-readiness')).toHaveLength(0);
+ });
  it('shows explicit disabled environment without proposing or loading eligible staff',async()=>{
   opsApi.handovers.mockResolvedValue({enabled:false,items:[],nextCancelledOffset:null});
   await mount();
