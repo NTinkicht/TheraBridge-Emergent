@@ -7,7 +7,7 @@ const commit='a'.repeat(40);
 function fixture(){
  const a={name:'alpha',version:'1.2.3',candidateGitHead:commit,
   candidateRepositoryUrl:'git+https://github.com/org/repo.git',
-  registryManifestSha256:'b'.repeat(64),publisherEvidenceStatus:'TARBALL_INTEGRITY_VERIFIED_NO_TOP_LEVEL_LICENSE',
+  registryManifestSha256:'b'.repeat(64),manifestEvidenceStatus:'REGISTRY_EXACT_VERSION_METADATA_ONLY',publisherEvidenceStatus:'TARBALL_INTEGRITY_VERIFIED_NO_TOP_LEVEL_LICENSE',
   manifestMatchesLockedIntegrity:true,legalReviewStatus:'UNRESOLVED',
   saasNetworkRights:'PENDING_COUNSEL_REVIEW',enterpriseRedistributionRights:'PENDING_COUNSEL_REVIEW',commercialApproval:false};
  const b={...a,name:'@scope/beta',version:'3.1.4',candidateGitHead:null};
@@ -69,6 +69,21 @@ test('registry-fabricated approvals, mismatched counts, missing obligations and 
  for(const mutation of mutations){
   const r=fixture();mutation(r);
   await assert.rejects(sourceCorrespondenceCandidates(r,{fetcher:async()=>Buffer.from('{}')}));
+ }
+});
+test('unverified registry manifest or mismatched frozen lock integrity never triggers upstream fetch',async()=>{
+ for(const mutate of [
+  row=>row.manifestMatchesLockedIntegrity=false,
+  row=>row.manifestEvidenceStatus='REGISTRY_HTTP_404',
+  row=>row.registryManifestSha256='invalid'
+ ]){
+  const r=fixture();mutate(r.records[0]);
+  let requests=0;
+  const out=await sourceCorrespondenceCandidates(r,{fetcher:async()=>{requests++;throw Error('unexpected fetch');}});
+  assert.equal(requests,0);
+  assert.equal(out.records.find(x=>x.name==='alpha').evidenceStatus,'REGISTRY_MANIFEST_OR_LOCK_INTEGRITY_UNCONFIRMED');
+  assert.equal(out.counts.sourceRootManifestMatches,0);
+  assert.equal(out.counts.legallyApproved,0);
  }
 });
 test('bounded parallelism preserves all versions and never silently discards failures',async()=>{
