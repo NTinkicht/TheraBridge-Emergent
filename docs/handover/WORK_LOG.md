@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #355 security follow-up
+Fixed P2 absolute HTTPS deadline, rejected redirect draining and added fake HTTP trickle and non-200 response tests in commits `4ce0784`, `5da64c0`, `b5f4ba6`; review thread resolved. Subsequent required `secret-scan` exposed historic synthetic password-reset fixture on unrelated Web stage3 branch through `gitleaks --all`; minimal AND-scoped test-path/exact-literal allowlist added in commit `22ad663`, maintaining repository-wide scanning. Full latest-head CI and independent review NOT YET QUALIFIED. No verified exact-version upstream mapping or license grant.
+
+---
+
 ## 2026-11-11 — COM-02 #355 immutable Git revision evidence implementation
 Implemented `scripts/commercial/verify-immutable-license-texts.mjs`, its offline adversarial tests, zero-approval `docs/commercial/immutable-upstream-source-mappings.json`, and per-run CI JSON. The tool requires 40-byte hex commits, safe GitHub raw LICENSE/NOTICE paths, HTTPS host allowlist, zero redirects, bounded UTF8 text, actual SHA256. Even an immutable text hash remains UNVERIFIED for package-version correspondence and legal rights. No tests claimed PASS until GitHub CI executes.
 
