@@ -1,3 +1,8 @@
+## 2026-11-10 — M4-08 consolidated workspace-route matrix (pending verification)
+Added source-executing React SSR tests across fifteen real app workspace pages, their loading/error branches, guardian synthetic home practice empty state and the fail-closed messaging notice. Replaced only Workspace/useLoad at the synthetic test boundary; these are not interactive browser or API-permission tests. Full 151 Web source denominator unchanged. CI, new measured coverage and independent review pending; M4-08 95% NOT QUALIFIED, G2/G2b NO-GO.
+
+---
+
 ## 2026-11-10 — M4-08 API branch-safety coverage wave (review pending)
 Added Jest executed-code tests for six-role permission matrix, unsigned clinical/messaging denials, cookie construction and parsing, trusted proxy IP chain resolution, token comparisons and password policy fail-closed paths. Uses synthetic values; one production-safe parser correction now skips whitespace-only invalid cookie names; no clinical release change. CI and exact-head Codex pending, 95% target NOT QUALIFIED.
 
