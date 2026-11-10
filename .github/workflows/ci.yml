@@ -207,6 +207,7 @@ jobs:
       - name: Verify bounded exact npm tarballs and hash packaged LICENSE/NOTICE evidence
         run: node scripts/commercial/verify-published-tarballs.mjs /tmp/therabridge-installed-lock-provenance.json yarn.lock docs/commercial/direct-license-evidence.json /tmp/therabridge-publisher-tarball-evidence.json
       - name: Archive installed license evidence for full CI
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: therabridge-installed-license-files-${{ github.sha }}

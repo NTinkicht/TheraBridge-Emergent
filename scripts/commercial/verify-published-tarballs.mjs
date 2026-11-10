@@ -53,6 +53,9 @@ function extractLicenseHashes(gzip){
  const files=[];let offset=0;
  while(offset+512<=tar.length){
   const h=tar.subarray(offset,offset+512);if(h.every(x=>x===0))break;
+  // PAX/GNU path overrides can change what a raw header filename means.
+  // Reject instead of claiming license evidence for an effective different path.
+  if([120,103,76,75].includes(h[156]))throw Error('UNSUPPORTED_TAR_EXTENDED_HEADER');
   const field=h.subarray(124,136).toString('utf8').replace(/\0.*$/,'').trim();
   if(!/^[0-7]+$/.test(field))throw Error('UNSUPPORTED_TAR_SIZE');
   const size=parseInt(field,8);
@@ -81,6 +84,9 @@ async function fetchTarball(url){
    res.on('data',part=>{total+=part.length;if(total>MAX_GZIP){req.destroy(Error('TARBALL_TOO_LARGE'));return;}chunks.push(part);});
    res.on('end',()=>resolve(Buffer.concat(chunks)));res.on('error',reject);
   });
+  // Socket inactivity timeout alone does not stop slow trickle responses.
+  const deadline=setTimeout(()=>req.destroy(Error('TOTAL_DEADLINE_EXCEEDED')),12000);
+  req.on('close',()=>clearTimeout(deadline));
   req.on('timeout',()=>req.destroy(Error('TIMEOUT')));req.on('error',reject);
  });
 }

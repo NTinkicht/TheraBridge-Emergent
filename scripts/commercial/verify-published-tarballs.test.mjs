@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {gzipSync} from 'node:zlib';
+import {gzipSync,gunzipSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
 import {audit,parseLock,verifyIntegrity,extractLicenseHashes,validatedUrl} from './verify-published-tarballs.mjs';
 function file(path,data){
@@ -51,4 +51,12 @@ test('missing direct package is visible rather than silently passed',async()=>{
 test('rejects fabricated commercial approval in previous evidence',async()=>{
  const f=fixture();f.installed.records[0].legalApproval=true;
  await assert.rejects(()=>audit(f,{fetchBuffer:async()=>f.bytes}),/FALSE_APPROVAL/);
+});
+
+test('rejects PAX and GNU extended path headers instead of mislabeling effective LICENSE files',()=>{
+ const f=fixture();const tar=gunzipSync(f.bytes);
+ for(const code of [120,103,76,75]){
+  const changed=Buffer.from(tar);changed[156]=code;
+  assert.throws(()=>extractLicenseHashes(gzipSync(changed)),/UNSUPPORTED_TAR_EXTENDED_HEADER/);
+ }
 });
