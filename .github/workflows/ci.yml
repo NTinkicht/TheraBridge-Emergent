@@ -222,6 +222,10 @@ jobs:
         run: node --test scripts/commercial/collect-upstream-license-candidates.test.mjs
       - name: Collect immutable exact-version registry metadata candidates (never legal clearance)
         run: node scripts/commercial/collect-upstream-license-candidates.mjs /tmp/therabridge-com02-exact-version-rights-queue.json /tmp/therabridge-com02-upstream-candidates.json
+      - name: Validate candidate Git commit and immutable source package identity without false attestation
+        run: node --test scripts/commercial/corroborate-source-revisions.test.mjs
+      - name: Collect version-pinned source root manifest corroboration candidates (not legal authority)
+        run: node scripts/commercial/corroborate-source-revisions.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-source-correspondence-candidates.json
       - name: Validate fail-closed exact-commit LICENSE/NOTICE text hashing
         run: node --test scripts/commercial/verify-immutable-license-texts.test.mjs
       - name: Reconcile immutable upstream text evidence without approving source correspondence
@@ -240,6 +244,7 @@ jobs:
             /tmp/therabridge-transitive-tarball-evidence.json
             /tmp/therabridge-com02-exact-version-rights-queue.json
             /tmp/therabridge-com02-upstream-candidates.json
+            /tmp/therabridge-com02-source-correspondence-candidates.json
             /tmp/therabridge-com02-immutable-text-evidence.json
           if-no-files-found: error
           retention-days: 30
