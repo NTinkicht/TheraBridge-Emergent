@@ -68,3 +68,20 @@ test('strictly retains unrecognized root-license exceptions even when local inst
  assert.equal(p.enterpriseRedistributionRights,'PENDING_COUNSEL_REVIEW');
  assert.equal(p.installedCopies[0].files[0].file,'LICENSE');
 });
+
+test('P2: independent installed inventory prevents silent loss of an unresolved version',()=>{
+ const f=fixture();
+ f.transitive.records=[];f.transitive.counts.uniqueVersionRows=0;
+ assert.throws(()=>buildExceptionRegister(f),/INSTALLED_VERSION_MISSING_PUBLISHER_EVIDENCE/);
+});
+test('new installed package requires exact matching publisher record regardless of old claimed counts',()=>{
+ const f=fixture();
+ f.installed.packages.push({name:'gamma',version:'3.0.0',installedPath:'node_modules/gamma',
+ commercialApproval:false,actualLicenseTextReviewed:false,foundLicenseFiles:[]});
+ f.installed.count=3;
+ assert.throws(()=>buildExceptionRegister(f),/INSTALLED_VERSION_MISSING_PUBLISHER_EVIDENCE/);
+});
+test('rejects phantom publisher versions absent from exact installed inventory',()=>{
+ const f=fixture();f.installed.packages.pop();f.installed.count=1;
+ assert.throws(()=>buildExceptionRegister(f),/PUBLISHER_VERSION_NOT_INSTALLED/);
+});
