@@ -25,9 +25,10 @@ jest.mock('@/components/design/states',()=>{
  return {...real,Dialog:({open,children,footer,testId})=>open?
   React.createElement('aside',{'data-testid':testId},children,footer):null};
 });
-jest.mock('@/components/operations/BookDialog',()=>({
- BookDialog:()=>React.createElement('aside',{'data-testid':'booking-host-boundary'})
-}));
+jest.mock('@/components/operations/BookDialog',()=>{
+ const real=jest.requireActual('@/components/operations/BookDialog');
+ return {...real,BookDialog:()=>React.createElement('aside',{'data-testid':'booking-host-boundary'})};
+});
 jest.mock('@/components/operations/HandoverProposalPanel',()=>({
  HandoverProposalPanel:()=>React.createElement('aside',{'data-testid':'handover-host-boundary'})
 }));
