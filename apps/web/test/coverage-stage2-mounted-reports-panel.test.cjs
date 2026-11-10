@@ -86,7 +86,8 @@ describe('Stage 2 source-scoped reports panel history and creation',()=>{
   expect(reportsApi.list).toHaveBeenCalledWith('c1','fictional-child',1);
   expect(find('report-row-r1')).toHaveLength(1);
   expect(find('report-row-r2')).toHaveLength(1);
-  expect(html()).toContain('2 saved versions');
+  const meta=get('report-row-r2').findAllByType('p')[1];
+  expect(meta.props.children.flat(Infinity).join('')).toContain('2 saved versions');
   expect(find('reports-load-more')).toHaveLength(0);
  });
  it('shows non-fatal older report fetch error and preserves already loaded row',async()=>{
