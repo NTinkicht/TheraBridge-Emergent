@@ -3,6 +3,11 @@ Authoring: a deterministic fail-closed installed license review report from the 
 
 ---
 
+## 2026-11-10 — COM-04 contract suite draft (review pending)
+Added public, non-binding draft MSA/SaaS/Enterprise/DPA/Security/SLA/AUP/Order Form clauses and an approval-control index under docs/commercial/contracts/. No contracting entity, legal rights, tax, price, service guarantee, data residency or clinical permission is asserted. COM-01/02/03 and UAE counsel approval remain mandatory. PR exact-head CI/review NOT YET QUALIFIED.
+
+---
+
 ## 2026-11-10 — COM-02 PR #329 non-hoisted workspace audit correction
 Codex P2 identified root-only installed-license package scanning and missing physical workspace-local dependencies. Collector now scans supported root Yarn workspaces and physical workspace node_modules, keeping symlink avoidance; negative/fixture tests added. Historical root-only 669 package / 24 missing-file totals are not asserted as whole-workspace results. Exact-head CI and Codex re-review PENDING. No legal/commercial clearance; public repository and clinical NO-GO unchanged.
 

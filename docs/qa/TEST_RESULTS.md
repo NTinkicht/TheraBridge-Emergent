@@ -5,6 +5,14 @@
 
 ---
 
+## 2026-11-10 — COM-04 contract draft qualification (NOT RUN)
+- Public draft clause completeness/contract-stack review: AUTHORING ONLY; not external counsel review.
+- Exact-head CI, source SBOM, secret scan, Codex: NOT YET RUN on this PR head.
+- Legal/IP/third-party licensing, UAE health/child data and clinical release: OPEN / NO-GO.
+- No runtime, migration, payments or clinical feature changes.
+
+---
+
 ## 2026-11-10 — PR #329 Codex P2 workspace local dependencies (FIXED IN CODE, QUALIFICATION PENDING)
 - Existing old-head full CI: PASS, but old root-only installed-package artifact is incomplete for non-hoisted packages.
 - New regression: hoisted plus apps/api and apps/web physical installed dependencies, symlink avoidance and unsupported workspace glob: AUTHORED, NOT YET RUN on new head.
