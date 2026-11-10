@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 bounded exact npm publisher tarball evidence (PR qualification pending)
+Created authenticated HTTPS npm-registry-only tarball verifier with exact Yarn SRI check and top-level LICENSE/NOTICE digest inventory. Bounded sample (8 packages) and explicit unresolved statuses; no text or tarballs published. Unit and negative fixtures authored, CI and Codex still pending. NOT legal approval or full package coverage; public repo and G2/G2b NO-GO retained.
+
+---
+
 ## 2026-11-10 — COM-02 lockfile-to-installed evidence reconciliation (in review)
 Added an offline evidence join from installed LICENSE/NOTICE queue to exact Yarn v1 name/version/declared integrity and resolved-source hashes. Missing/ambiguous packages stay UNRESOLVED. No published tarball bytes or legal license texts verified. Full CI and Codex final head pending; no commercial/clinical approvals.
 
