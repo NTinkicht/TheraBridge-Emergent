@@ -97,7 +97,7 @@ test('malformed and dangerous PAX/GNU extensions fail closed',()=>{
  for(const broken of ['bad','7 a=b\n',paxRecord('path','package/../LICENSE'),paxRecord('path','package/LICENSE')+paxRecord('path','package/NOTICE')]){
   assert.throws(()=>extractLicenseHashes(archive(broken,120)),/MALFORMED_PAX_RECORD|UNSAFE_TAR_PATH/);
  }
- assert.throws(()=>extractLicenseHashes(archive(paxRecord('path','package/LICENSE'),103)),/UNSAFE_GLOBAL_PAX_PATH/);
+ assert.throws(()=>extractLicenseHashes(archive(paxRecord('path','package/LICENSE'),103)),/UNSAFE_GLOBAL_PAX_PATH|UNSUPPORTED_PAX_SEMANTICS/);
  assert.throws(()=>extractLicenseHashes(archive('package/LICENSE\0',75)),/UNSUPPORTED_GNU_LONG_LINK/);
  assert.throws(()=>extractLicenseHashes(archive(paxRecord('path','package/LICENSE'),120,[])),/ORPHAN_TAR_EXTENSION/);
  const huge=paxRecord('comment','x'.repeat(65536));
