@@ -1,3 +1,11 @@
+## M4-08 Stage 1 — PR #339 Web mega suite to ≥60% all-source lines (MUST COMPLETE BEFORE MERGE)
+1. Grow source-executing high-quality tests across actual mounted Web auth/context, onboarding, children/team, schedules, clinical notes/reports, progress, family practice/feedback, accessibility and failure/retry/permission revocation. Do not game coverage with snapshot-only/mocks of tested units or reduce denominator.
+2. Run the original full-source Istanbul Web measurement (all four metrics and zero-statement file count, exact head); **prove ≥60% lines** before Stage 1 merge. Maintain separate security-critical branches ≥95% target and complete critical E2E scenario checks.
+3. Resolve Codex P1 Rule 7 handover sync, any subsequent P1/P2 findings, and require six original CI jobs, Smart CI, SBOM, secret scan and final-head independent review. Keep #182 / #167 open until all true acceptance requirements complete.
+4. Only after #339 passes and merges, implement separate Stage 2 #338 ≥80% Web line coverage in one mega PR. No clinical/production release; G2/G2b remain NO-GO.
+
+---
+
 ## COM-04 contract suite qualification
 1. Run exact-head source SBOM/secret scan/full CI and Codex; resolve review findings on contract drafts and ensure no protected personal data or privileged material appears.
 2. Rights-holder and UAE counsel must verify MSA, SaaS/Enterprise grants, DPA and liability/termination clauses before any customer use.
