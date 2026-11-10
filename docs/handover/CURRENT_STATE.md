@@ -3,6 +3,21 @@ Added public, non-binding draft MSA/SaaS/Enterprise/DPA/Security/SLA/AUP/Order F
 
 ---
 
+## 2026-11-10 — COM-02 PR #329 non-hoisted workspace audit correction
+Codex P2 identified root-only installed-license package scanning and missing physical workspace-local dependencies. Collector now scans supported root Yarn workspaces and physical workspace node_modules, keeping symlink avoidance; negative/fixture tests added. Historical root-only 669 package / 24 missing-file totals are not asserted as whole-workspace results. Exact-head CI and Codex re-review PENDING. No legal/commercial clearance; public repository and clinical NO-GO unchanged.
+
+---
+
+## 2026-11-09 — COM-02 installed package file inventory extension
+PR #329 now also records exact installed package LICENSE/NOTICE file filenames and SHA-256 hashes from the existing frozen Yarn install in full CI. Source SBOM of 695 components yielded zero license declarations (all UNKNOWN), motivating file-based evidence collection. Legal licenses/redistribution approval remain UNVERIFIED. New tests and final-head CI/Codex NOT VERIFIED at checkpoint. Clinical NO-GO and public GitHub preserved.
+
+---
+
+## 2026-11-09 — COM-02 direct license upstream evidence ledger (in review)
+Added first-pass upstream publisher evidence for 38 declared direct dependencies (16 upstream references, 22 PENDING); none approved or exact-version verified. CI enforcement checks future direct dependency additions/changes have a review entry. This does not complete transitive/OS/fonts/images/model provenance verification or IP ownership. Repository stays public for Actions; clinical production remains NO-GO. PR exact-head CI/review NOT VERIFIED at authoring checkpoint.
+
+---
+
 ## 2026-11-10 — M4-08 consolidated workspace-route matrix (pending verification)
 Added source-executing React SSR tests across fifteen real app workspace pages, their loading/error branches, guardian synthetic home practice empty state and the fail-closed messaging notice. Replaced only Workspace/useLoad at the synthetic test boundary; these are not interactive browser or API-permission tests. Full 151 Web source denominator unchanged. CI, new measured coverage and independent review pending; M4-08 95% NOT QUALIFIED, G2/G2b NO-GO.
 

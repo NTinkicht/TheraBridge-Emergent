@@ -6,6 +6,29 @@
 
 ---
 
+## 2026-11-10 — PR #329 Codex P2 workspace local dependencies (FIXED IN CODE, QUALIFICATION PENDING)
+- Existing old-head full CI: PASS, but old root-only installed-package artifact is incomplete for non-hoisted packages.
+- New regression: hoisted plus apps/api and apps/web physical installed dependencies, symlink avoidance and unsupported workspace glob: AUTHORED, NOT YET RUN on new head.
+- Whole-workspace installed dependency inventory totals: NOT VERIFIED until exact-head artifact reviewed.
+- Exact-head Codex and CI: PENDING; legal/clinical approval remains OPEN/NO-GO.
+
+---
+
+## 2026-11-09 — COM-02 installed license collector extension (NOT RUN at checkpoint)
+Earlier CycloneDX and classifier artifacts inspected: 695 components; no license fields, 695 unknown; this is a verified scanner limitation, NOT commercial clearance. New collector tests and installed package license-file artifact: NOT RUN / NOT VERIFIED on latest head. Full CI and exact-head Codex: PENDING. Direct evidence ledger count 38 with 16 publisher references/22 pending is only a first-pass source summary, not legal approval.
+
+---
+
+## 2026-11-09 — COM-02 direct evidence ledger validation (NOT RUN)
+- Source publisher license checks: UPSTREAM GENERAL INFO ONLY; exact locked version, tarball text and package hashes NOT VERIFIED.
+- Direct evidence index: 38 declarations; 16 upstream references, 22 pending, 0 legally approved (static authoring count; automated parity checks NOT RUN yet).
+- `check-direct-evidence.mjs` regression suite: NOT RUN.
+- Full CI, SBOM and actual artifacts on proposed PR head: NOT VERIFIED.
+- Independent Codex review: PENDING.
+- Commercial ownership, redistribution/attribution and clinical production approvals: BLOCKED/NO-GO.
+
+---
+
 ## M4-08 fifteen-route workspace state matrix — UNQUALIFIED UNTIL EXACT-HEAD CI
 Added Jest tests executing real Next.js pages for clinical, children, team, schedule, progress, governance, access review, family progress, practice, feedback, setup, centers, center details, profile and activities across loading/error states, plus zero-assignment guardian practice, empty clinical list and messaging disabled state. Workspace/useLoad fixture replaces session/server only, not full integration. Real browser interactions and backend authorization remain separately tested. 151-file denominator and 95% acceptance untouched. Updated numeric receipt pending.
 
