@@ -1,0 +1,93 @@
+# One shot: CI already reconciled through authorized GitHub edit; preserve both source streams.
+name: one-shot-m4-stage1-main-reconciliation
+on:
+  push:
+    branches:
+      - test/m4-08-web-60-mega-coverage
+    paths:
+      - '.github/workflows/m4-stage1-reconcile.yml'
+permissions:
+  contents: write
+concurrency:
+  group: one-shot-m4-stage1-sync
+  cancel-in-progress: false
+jobs:
+  reconcile:
+    if: "${{ github.event.head_commit.message == 'chore(qa): stage1 one-shot main reconciliation' }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Safely reconcile concurrent main changes, preserving both evidence streams
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/test/m4-08-web-60-mega-coverage"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          if git merge --no-commit --no-ff origin/main; then
+            echo 'No overlapping hunks'
+          else
+            echo 'Resolving only expected main/QA evidence overlaps'
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess, tempfile, sys
+          cmd = lambda *args: subprocess.check_output(args)
+          conflicts = set(cmd('git','diff','--name-only','--diff-filter=U').decode().splitlines())
+          expected = {
+            '.github/workflows/ci.yml', '.gitleaksignore',
+            'docs/handover/CURRENT_STATE.md', 'docs/handover/WORK_LOG.md',
+            'docs/handover/NEXT_WORK.md', 'docs/qa/TEST_RESULTS.md',
+          }
+          if not conflicts.issubset(expected):
+              sys.exit('Unexpected conflicting file; no automatic override: '+repr(sorted(conflicts-expected)))
+          for name in sorted(conflicts):
+              ours = cmd('git','show',':2:'+name)
+              theirs = cmd('git','show',':3:'+name)
+              target = Path(name)
+              if name == '.github/workflows/ci.yml':
+                  start = b'      - name: M4-08 audited Web coverage hotspots for high-value tests (diagnostic only)\n'
+                  finish = b'      - name: M4-08 independently cross-check real API + Web coverage'
+                  if ours.count(start)!=1 or ours.count(finish)!=1 or theirs.count(finish)!=1:
+                      sys.exit('CI hotspot anchors changed; manual review required')
+                  block = ours[ours.index(start):ours.index(finish)]
+                  anchor = b'          node scripts/qa/m4-web-coverage-audit.mjs\n'
+                  if theirs.count(anchor)!=1 or start in theirs:
+                      sys.exit('Main CI instrumentation changed; manual review required')
+                  target.write_bytes(theirs.replace(anchor,anchor+block,1))
+              else:
+                  base=cmd('git','show',':1:'+name)
+                  with tempfile.TemporaryDirectory() as temp:
+                      a,b,c=[Path(temp)/part for part in ('ours','base','main')]
+                      a.write_bytes(ours);b.write_bytes(base);c.write_bytes(theirs)
+                      # Git's union merge preserves BOTH concurrent evidence
+                      # streams; do not silently favor a branch's update.
+                      p=subprocess.run(['git','merge-file','-p','--union',
+                          str(a),str(b),str(c)],capture_output=True)
+                      if p.returncode!=0 or b'<<<<<<<' in p.stdout or b'>>>>>>>' in p.stdout:
+                          sys.exit('Could not safely preserve both evidence streams for '+name)
+                      target.write_bytes(p.stdout)
+              subprocess.check_call(['git','add','--',name])
+          remaining=cmd('git','diff','--name-only','--diff-filter=U').decode().strip()
+          if remaining:sys.exit('Unresolved merge paths: '+remaining)
+          ci=Path('.github/workflows/ci.yml').read_text()
+          if ci.count('M4-08 audited Web coverage hotspots')!=1:
+              sys.exit('Web hotspot QA was lost or duplicated')
+          if 'verify-published-tarballs' not in ci and 'publisher tarball' not in ci.lower():
+              sys.exit('Main commercial evidence checks were not retained')
+          for name in ('docs/handover/CURRENT_STATE.md','docs/qa/TEST_RESULTS.md'):
+              value=Path(name).read_text()
+              if '60.08%' not in value or 'COM-02' not in value:
+                  sys.exit('Both M4-08 and concurrent commercial provenance must remain in '+name)
+          print('Preserved current main CI, license evidence, QA coverage, and both handover streams')
+          PY
+          git diff --cached --check
+          git status --short
+          git commit -m 'merge: reconcile concurrent commercial main and M4-08 Stage 1 QA'
+          git push origin HEAD:refs/heads/test/m4-08-web-60-mega-coverage
