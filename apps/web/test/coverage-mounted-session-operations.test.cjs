@@ -105,7 +105,7 @@ describe('M4-08 session persistence and completion remain unsigned',()=>{
   expect(out()).toContain('Local unsaved clinical evidence');
   expect(out()).toContain('New server evidence');
   expect(out()).toContain('version 4');
-  expect(button('Save draft').props.disabled).toBe(true);
+  expect(button('Retry save').props.disabled).toBe(true);
   expect(clinicalApi.saveSession).toHaveBeenCalledTimes(1);
  });
  it('retains local evidence and refuses reconciliation after access revocation',async()=>{
