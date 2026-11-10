@@ -29,3 +29,7 @@ The existence of this draft is not authority to license or deploy TheraBridge co
 **This is a candidate discovery mechanism, not independent upstream release-to-package attestation.** An npm publisher can claim `repository` and `gitHead` fields; matching those against a root source manifest alone cannot prove that npm distribution came from the stated commit. Monorepo subpackages (root manifest mismatch) remain unresolved until correct package-path lineage is independently established. All 53 exceptions remain in the output regardless of missing or rejected metadata. The output includes zero authoritative LICENSE text verifications, zero legal approvals, zero source-version independent attestations and still reports all 91 separately unresolved assets.
 
 The collector emits an exact-commit metadata candidate queue and does not mutate the empty, signed-source-approval mapping register. There is no automatic transition to commercial licensing.
+
+## Additional integrity precondition
+
+The resolver refuses to fetch Git source candidates unless the npm manifest was retrieved for the **exact package version**, its raw metadata SHA-256 is present, and its `dist.integrity` matches the frozen Yarn lock integrity. Unmatched manifests, missing SRI or mismatches yield `REGISTRY_MANIFEST_OR_LOCK_INTEGRITY_UNCONFIRMED` per package, never a positive source-correspondence claim. This preserves a strict separation between content-lock evidence, upstream source-root matching, independent package publication attestation and commercial rights.
