@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - test/m4-08-web-60-mega-coverage
+      - test/m4-08-web-80-mega-coverage
     paths:
       - 'apps/web/**'
       - 'scripts/qa/m4-web-coverage-hotspots*'
