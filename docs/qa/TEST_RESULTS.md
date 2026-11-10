@@ -1,3 +1,8 @@
+## M4-08 fifteen-route workspace state matrix — UNQUALIFIED UNTIL EXACT-HEAD CI
+Added Jest tests executing real Next.js pages for clinical, children, team, schedule, progress, governance, access review, family progress, practice, feedback, setup, centers, center details, profile and activities across loading/error states, plus zero-assignment guardian practice, empty clinical list and messaging disabled state. Workspace/useLoad fixture replaces session/server only, not full integration. Real browser interactions and backend authorization remain separately tested. 151-file denominator and 95% acceptance untouched. Updated numeric receipt pending.
+
+---
+
 ## M4-08 API source-boundary coverage — NOT YET CI QUALIFIED
 New Jest tests execute API policy, cookie, security and password code on positive and negative branches. No patient or network traffic or clinical actions. The first test job failed 1 of 732 tests on invalid empty cookie name handling; parser corrected and final-head CI pending. Source-wide coverage / CI / Codex evidence pending. Target 95% per API/Web metric remains unmet.
 
