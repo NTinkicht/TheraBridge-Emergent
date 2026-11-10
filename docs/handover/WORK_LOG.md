@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 review queue wave 2
+Added scripts/commercial/build-installed-license-review.mjs and negative tests, full-CI integration and docs/commercial/installed-license-review-wave2.md. Derives cautious per-installed-version triage from on-disk LICENSE/NOTICE SHA-256 evidence and preserves all commercial-approval gates as false. No third-party license text verified or rights granted. Qualification pending.
+
+---
+
 ## 2026-11-10 — COM-04 non-binding customer agreement drafts
 Prepared a consolidated contract pack under docs/commercial/contracts/: draft MSA, SaaS and enterprise schedules, DPA, security, service levels/support, acceptable-use, and order-form fields plus legal/ownership approval matrix. Kept all terms conditional and the public repo free from executed agreements, private identities and medical data. No new licensing runtime, billing or clinical behavior. CI and Codex pending.
 

@@ -1,3 +1,11 @@
+## COM-02 wave 2 final-head qualification and legal evidence
+1. Check installed license triage unit/negative tests, exact-head SBOM, six CI jobs, Smart CI and fresh Codex; inspect artifact and reconcile counts without treating metadata as clearance.
+2. Next wave: verify exact locked npm tarball LICENSE/NOTICE digests and published URLs; reconcile package aliases, platform-optional and dev/runtime differences; add tamper/unknown tests.
+3. Audit OS/container images, font binaries, artwork, logos, model and dataset terms and public code provenance; assign private legal review and prepare approved third-party notices.
+4. No automatic legal approval, final LICENSE, real-data clinical operation or billing activation.
+
+---
+
 ## COM-04 contract suite qualification
 1. Run exact-head source SBOM/secret scan/full CI and Codex; resolve review findings on contract drafts and ensure no protected personal data or privileged material appears.
 2. Rights-holder and UAE counsel must verify MSA, SaaS/Enterprise grants, DPA and liability/termination clauses before any customer use.

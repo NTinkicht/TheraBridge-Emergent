@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 installed-license triage wave 2 (review pending)
+Authoring: a deterministic fail-closed installed license review report from the frozen Yarn install inventory, including exact name/version/path and LICENSE/NOTICE hashes, with separate restrictive/missing/compound categories. All records remain UNRESOLVED and legally unapproved; COM-01/02/03 clearance and clinical NO-GO unchanged. Full CI and Codex are pending.
+
+---
+
 ## 2026-11-10 — COM-04 contract suite draft (review pending)
 Added public, non-binding draft MSA/SaaS/Enterprise/DPA/Security/SLA/AUP/Order Form clauses and an approval-control index under docs/commercial/contracts/. No contracting entity, legal rights, tax, price, service guarantee, data residency or clinical permission is asserted. COM-01/02/03 and UAE counsel approval remain mandatory. PR exact-head CI/review NOT YET QUALIFIED.
 

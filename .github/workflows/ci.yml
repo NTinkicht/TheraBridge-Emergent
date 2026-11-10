@@ -194,11 +194,17 @@ jobs:
         run: node --test scripts/commercial/collect-installed-licenses.test.mjs
       - name: Collect installed package license-file hashes (review evidence only)
         run: node scripts/commercial/collect-installed-licenses.mjs . /tmp/therabridge-installed-licenses.json
+      - name: Validate installed license review triage and fail-closed safeguards
+        run: node --test scripts/commercial/build-installed-license-review.test.mjs
+      - name: Produce version-specific installed LICENSE/NOTICE triage (not legal approval)
+        run: node scripts/commercial/build-installed-license-review.mjs /tmp/therabridge-installed-licenses.json /tmp/therabridge-installed-license-review.json
       - name: Archive installed license evidence for full CI
         uses: actions/upload-artifact@v4
         with:
           name: therabridge-installed-license-files-${{ github.sha }}
-          path: /tmp/therabridge-installed-licenses.json
+          path: |
+            /tmp/therabridge-installed-licenses.json
+            /tmp/therabridge-installed-license-review.json
           if-no-files-found: error
           retention-days: 30
       - name: M4-02 private QA runtime redaction and fail-closed tests

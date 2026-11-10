@@ -1,3 +1,10 @@
+## 2026-11-10 — COM-02 installed license triage wave 2 (NOT QUALIFIED)
+- New tests cover normal triage, forged approvals, malformed hashes/byte lengths, duplicate paths, file-count contradictions, path escapes and compound license candidates. Authored, not yet CI-run on this head.
+- Full-CI artifact will include installed-license review queue; no legal/redistribution/clinical approval is implied.
+- Full six-job CI, SBOM and Codex final-head review: PENDING.
+
+---
+
 ## 2026-11-10 — COM-04 contract draft qualification (NOT RUN)
 - Public draft clause completeness/contract-stack review: AUTHORING ONLY; not external counsel review.
 - Exact-head CI, source SBOM, secret scan, Codex: NOT YET RUN on this PR head.
