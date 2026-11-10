@@ -1,3 +1,8 @@
+## 2026-11-10 — COM-02 lockfile-to-installed evidence reconciliation (in review)
+Added an offline evidence join from installed LICENSE/NOTICE queue to exact Yarn v1 name/version/declared integrity and resolved-source hashes. Missing/ambiguous packages stay UNRESOLVED. No published tarball bytes or legal license texts verified. Full CI and Codex final head pending; no commercial/clinical approvals.
+
+---
+
 ## 2026-11-10 — COM-02 installed-license triage wave 2 (review pending)
 Authoring: a deterministic fail-closed installed license review report from the frozen Yarn install inventory, including exact name/version/path and LICENSE/NOTICE hashes, with separate restrictive/missing/compound categories. All records remain UNRESOLVED and legally unapproved; COM-01/02/03 clearance and clinical NO-GO unchanged. Full CI and Codex are pending.
 

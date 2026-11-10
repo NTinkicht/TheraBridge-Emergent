@@ -1,3 +1,10 @@
+## COM-02 exact locked-package provenance verification
+1. Qualify lock metadata reconciliation script and negative tests with exact-head CI/SBOM/secret scan, sustained preview, Smart CI and Codex.
+2. Review missing, ambiguous, no-integrity and nonstandard-source rows from installed artifact; verify registry-published exact tarball integrity before claiming source authenticity.
+3. Retrieve LICENSE/NOTICE bytes and copyright for precise version; distinguish SaaS versus enterprise redistribution, OS/image, fonts, illustrations, models and datasets. Legal/IP approval remains open.
+
+---
+
 ## COM-02 wave 2 final-head qualification and legal evidence
 1. Check installed license triage unit/negative tests, exact-head SBOM, six CI jobs, Smart CI and fresh Codex; inspect artifact and reconcile counts without treating metadata as clearance.
 2. Next wave: verify exact locked npm tarball LICENSE/NOTICE digests and published URLs; reconcile package aliases, platform-optional and dev/runtime differences; add tamper/unknown tests.
