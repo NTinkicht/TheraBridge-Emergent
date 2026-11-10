@@ -1,3 +1,8 @@
+## 2026-11-10 — M4-08 Stage 2 #345 (DRAFT, NOT QUALIFIED)
+Stage 1 PR #339 merged as `77cbf7c0b95e69b53686fceabfb49c7af986476e`, closing #337 on real 60.08% source-wide Web lines. Separate Stage 2 PR #345 implements #338 toward >=80%. Latest **verified focused** run #42887887583 at `684565cb64c7cbcfa07266f14893a0591fcfb426` PASSED **45/45 suites, 402/402 tests**, with genuine full-scope 154/154 Web files: **lines 68.59%, branches 56.54%, functions 49.89%, statements 63.15%**, 17 zero-statement-coverage modules. Remaining to 80% lines: **11.41 points**. Stage 2 remains OPEN/DRAFT; full original exact-head CI and Codex independent review not yet qualified. Production session-controller stale-tenant summary fetch was prevented before authorization-dependent lookup; synthetic invitation and guardian/report/clinical controls gained mounted negative tests. Clinical G2/G2b NO-GO and family release restrictions unchanged.
+
+---
+
 ## 2026-11-10 Stage 1 M4-08 source-wide Web line target MET, but PR #339 UNMERGED. Focused CI run 42873722265 PASS on ed3a750946f5a2f1ec38355daa5cb64aabc11b33: 154 source files; lines 60.08%, branches 48.75%, functions 40.33%, statements 54.24%, 18 zero-statement modules. All-source instrumentation unchanged. Does NOT constitute the security-critical 95% branch goal, M4 final acceptance, a full-CI green head or Codex review. Clinical G2/G2b NO-GO persists; no family clinical release, no real data.
 
 ---
