@@ -96,7 +96,7 @@ describe('mounted appointment authorization, recurrence and conflict actions',()
  it('records attendance only for own already-started scheduled visit',async()=>{
   opsApi.setStatus.mockResolvedValue({});
   await render(visit({startsAt:'2020-12-15T09:00:00.000Z',endsAt:'2020-12-15T09:45:00.000Z'}));
-  expect(find('appt-attended')).toHaveLength(1);
+  expect(get('appt-attended')).toBeTruthy();
   expect(find('appt-move')).toHaveLength(0);
   await click('appt-attended');
   expect(opsApi.setStatus).toHaveBeenCalledWith('center-a','appt-fictional','COMPLETED');
@@ -142,7 +142,7 @@ describe('mounted appointment authorization, recurrence and conflict actions',()
   opsApi.series.mockResolvedValue(recurrence());
   await render(visit({seriesId:'series-fictional',isException:true}));
   expect(find('series-edit')).toHaveLength(0);
-  expect(find('series-cancel')).toHaveLength(1);
+  expect(get('series-cancel')).toBeTruthy();
   expect(html()).toContain('this visit was moved on its own');
  });
  it('never offers mutation on cancelled visit, even to a manager',async()=>{
@@ -150,7 +150,7 @@ describe('mounted appointment authorization, recurrence and conflict actions',()
   expect(find('appt-cancel')).toHaveLength(0);
   expect(find('appt-move')).toHaveLength(0);
   expect(find('appt-attended')).toHaveLength(0);
-  expect(find('appt-close')).toHaveLength(1);
+  expect(get('appt-close')).toBeTruthy();
   expect(opsApi.setStatus).not.toHaveBeenCalled();
  });
 });
