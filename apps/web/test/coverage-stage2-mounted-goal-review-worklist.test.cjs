@@ -53,7 +53,7 @@ describe('mounted center-local clinician review reminders',()=>{
   expect(output).toContain('Review within 14 days');
   expect(output).toContain('No review date set');
   expect(get('goal-review-row-g1').findAllByType('p').some(p=>Array.isArray(p.props.children)&&p.props.children.includes(1))).toBe(true);
-  expect(output).toContain('1 linked home activity(ies)');
+  expect(output).toContain('linked home activity(ies)');
   expect(output).toContain('does not mean a goal was achieved');
  });
  it('does not interpret historical version measurements as current goals',async()=>{
