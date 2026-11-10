@@ -55,6 +55,10 @@ describe('M4-08 mounted conversation creator enforces child and recipient restri
   expect(tree.root.findAllByProps({'data-testid':'new-thread-recipient'})).toHaveLength(0);
  });
  it('requires a connected guardian before an assigned therapist can send family message',async()=>{
+  opsApi.child.mockResolvedValue(connected({guardians:[
+   {id:'g1',displayName:'First synthetic guardian',portalStatus:'CONNECTED'},
+   {id:'g3',displayName:'Second synthetic guardian',portalStatus:'CONNECTED'},
+   {id:'g2',displayName:'Pending guardian',portalStatus:'PENDING'}]}));
   await mount({therapistMembershipId:'assigned'});
   expect(opsApi.child).toHaveBeenCalledWith('c1','fictional-child');
   await write('new-thread-subject','Family scheduling');
