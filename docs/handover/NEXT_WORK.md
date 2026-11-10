@@ -1,3 +1,18 @@
+## 2026-11-10 Stage 1 threshold MET on SHA ed3a750: Web all-source 154 files, lines 60.08% (run 42873722265 PASS), branches 48.75%, functions 40.33%, statements 54.24%. The branch remains UNMERGED. Priority: fix independent full CI failure at M4-06 database replay (do not weaken requirement); run original exact-head CI, SBOM, secret scan and Codex; adjudicate comments, update evidence. Only then merge #339, close #337, begin separate Stage 2 #338 to ≥80% Web lines. Keep explicit >95% security-sensitive branch qualification distinct, not satisfied by 60% lines. G2/G2b NO-GO and protected hosted M4-02 gates persist.
+
+---
+
+## M4-08 PR #339 immediate next action — close Web ≥60% line target
+Owner-approved Stage 1 remains open: latest completed focused source-wide Istanbul run 42867251775 on 2d3839b8 measured 51.61% Web lines, 39.18% branches, 31.28% functions, 45.34% statements over 151 modules; 25 files unexecuted. Need another **8.39 percentage points genuine lines**, no denominator reduction. Focus on remaining high-risk interactive work: ReportEditor, SessionEditor, PlanEditor, messaging, clinical/child detail, scheduling; capture real mounted or browser transitions (success, failure, stale sessions, retry/rollback, unauthorized and cross-role) rather than snapshots/helper-only tests. Preserve separate security-critical ≥95% branch goal and API safety gates.
+After 60% is verified, obtain exact final-head six original CI jobs, Smart CI, SBOM, gitleaks, Codex review, Rule7 evidence; resolve all findings, then merge Stage 1 and start separate #338 to 80%. Do not merge with red/unknown CI; G2/G2b clinical NO-GO, M4-02 hosted credentials and audit evidence remain distinct.
+
+---
+
+## M4-08 Stage 1 — PR #339 Web mega suite to ≥60% all-source lines (MUST COMPLETE BEFORE MERGE)
+1. Grow source-executing high-quality tests across actual mounted Web auth/context, onboarding, children/team, schedules, clinical notes/reports, progress, family practice/feedback, accessibility and failure/retry/permission revocation. Do not game coverage with snapshot-only/mocks of tested units or reduce denominator.
+2. Run the original full-source Istanbul Web measurement (all four metrics and zero-statement file count, exact head); **prove ≥60% lines** before Stage 1 merge. Maintain separate security-critical branches ≥95% target and complete critical E2E scenario checks.
+3. Resolve Codex P1 Rule 7 handover sync, any subsequent P1/P2 findings, and require six original CI jobs, Smart CI, SBOM, secret scan and final-head independent review. Keep #182 / #167 open until all true acceptance requirements complete.
+4. Only after #339 passes and merges, implement separate Stage 2 #338 ≥80% Web line coverage in one mega PR. No clinical/production release; G2/G2b remain NO-GO.
 ## COM-02 complete transitive and rights review
 1. Qualify Next.js 14.2.35 size-exception output, initial 160 non-direct publisher tarball sample, installed per-copy license hashes and artifact retention under exact-head CI and Codex.
 2. Expand verified coverage to all remaining non-direct names/versions; resolve `@types` license provenance, missing top-level license texts and lockfile/OS/platform exceptions.

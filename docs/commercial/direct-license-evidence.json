@@ -573,6 +573,21 @@
       "redistributionReviewed": false,
       "commercialApproval": false,
       "reviewStatus": "PENDING_UPSTREAM_REVIEW"
+    },
+    {
+      "manifest": "package.json",
+      "scope": "devDependencies",
+      "name": "react-test-renderer",
+      "requestedRange": "18.3.1",
+      "upstreamLicenseCandidate": null,
+      "evidenceUrl": null,
+      "evidenceLevel": "not_checked",
+      "exactPackageVersionVerified": false,
+      "actualLicenseFileVerified": false,
+      "licenseNoticeVerified": false,
+      "redistributionReviewed": false,
+      "commercialApproval": false,
+      "reviewStatus": "PENDING_UPSTREAM_REVIEW"
     }
   ]
 }

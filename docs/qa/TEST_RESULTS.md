@@ -1,3 +1,21 @@
+## 2026-11-10 Web M4-08 PR #339 Stage 1 source-wide line coverage: focused CI #42873722265 PASS, head ed3a750946f5a2f1ec38355daa5cb64aabc11b33. 154 / 154 source modules instrumented (no exclusions): 60.08% lines; 48.75% branches; 40.33% functions; 54.24% statements. 18 modules have zero executed statements. Stage 1 owner-approved ≥60% all-source Web LINE target: MET. This is not 95% application coverage, nor 95% security branch coverage, nor final M4 acceptance. Full original exact-head CI and independent review are still required. Commercial SBOM new renderer evidence now records PENDING_UPSTREAM_REVIEW with no license approval. No clinical authorizations changed.
+
+---
+
+## 2026-11-10 — M4-08 mega PR #339 latest measured Web checkpoint (FOCUSED CI PASS; M4-08 NOT QUALIFIED)
+- Source-wide genuine Web Jest/Istanbul focused CI #42867251775, branch SHA 2d3839b8acab8dc1f94518a0d75232deb4ad283b: PASS. Denominator 151 Web source files, including 25 zero-statement-coverage modules.
+- Web metrics: **51.61% lines, 39.18% branches, 31.28% functions, 45.34% statements**. Stage 1 ≥60% lines: **FAIL / NOT MET**, gap 8.39 points. Stage 2 80%: NOT STARTED.
+- Added executed synthetic tests for source-bound/clinical record projections, member and center permissions, family and clinical route states, application decisions, and actual React state transitions in report-to-plan idempotent handoff, error retry, clinician checkpoint choice, guardian reminders and report autosave.
+- Focused CI is supplemental, NOT proof of six full original jobs on final HEAD; final-head CodeX and integrated API/security evidence PENDING. No clinical approval, release, real patient data or deployment. G2/G2b NO-GO.
+
+---
+
+## 2026-11-10 — M4-08 Stage 1 PR #339 genuine Web-coverage expansion (NOT YET QUALIFIED)
+- OWNER POLICY: general Web lines target staged 60% then 80% (issues #337/#338); security-critical Web logic separately targets ≥95% measured branches. All-source Istanbul denominator and all four metrics preserved. No automatic clinical clearance.
+- EXECUTED-TEST FILES ADDED (source-executing Jest, synthetic): coverage-versioned-evidence-regressions.test.cjs and coverage-transport-permissions.test.cjs, covering source/version attribution, missing/reordered/changed evidence, saved-plan snapshots, center/supervisor routes, protected clinical/report command boundaries, and public vs protected invitation operations.
+- NEW TEST EXECUTION: NOT VERIFIED on final head yet. Baseline before #334: 151 Web production source modules; lines 10.63%, branches 7.05%, functions 7.86%, statements 9.89%; 123 unexecuted. Re-measure at #339 final head; do not cite previous baseline as current.
+- Stage 1 >=60% measured Web line acceptance: **NOT QUALIFIED**. Stage 2 80% **NOT STARTED**. No changes to API/clinical approval; G2/G2b NO-GO.
+- Mandatory six-job CI / Smart CI / SBOM / gitleaks / Codex final HEAD: IN PROGRESS, not asserted green. Codex initial P1 Rule 7 handover sync addressed in this update; final-head re-review pending.
 ## 2026-11-10 — COM-02 next and transitive evidence qualification PENDING
 Authored offline test cases for transitive-only selection, source/SRI integrity, installed license matching/mismatch, false approvals and missing lock integrity, plus pinned-version archive limit tests and mandatory SRI for Next.js. Exact-head GitHub tests, network sampling and Codex pending. No real clinical data, legal clearance or signed contract flows tested/authorized.
 

@@ -104,7 +104,7 @@ function Conversation({ centerId, id, tone, onBack, onChanged, onError }: { cent
   );
 }
 
-function NewThread({ centerId, open, tone, kids, therapistMembershipId, onClose, onDone, onError }: { centerId: string; open: boolean; tone: Tone; kids: { id: string; name: string }[]; therapistMembershipId?: string; onClose: () => void; onDone: (id: string) => void; onError: (e: unknown) => void }) {
+export function NewThread({ centerId, open, tone, kids, therapistMembershipId, onClose, onDone, onError }: { centerId: string; open: boolean; tone: Tone; kids: { id: string; name: string }[]; therapistMembershipId?: string; onClose: () => void; onDone: (id: string) => void; onError: (e: unknown) => void }) {
   const [f, setF] = useState({ childId: '', guardianLinkId: '', audience: 'GUARDIAN' as ThreadAudience, service: '', category: 'scheduling', subject: '', body: '' });
   const [guardians, setGuardians] = useState<{ id: string; displayName: string }[]>([]);
   const [services, setServices] = useState<string[]>([]);
