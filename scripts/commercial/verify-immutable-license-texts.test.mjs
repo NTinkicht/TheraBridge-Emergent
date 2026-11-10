@@ -1,7 +1,9 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {validatedRawUrl,validateText,collectTextHashes} from './verify-immutable-license-texts.mjs';
+import {EventEmitter} from 'node:events';
+import https from 'node:https';
+import {validatedRawUrl,validateText,collectTextHashes,fetchRaw} from './verify-immutable-license-texts.mjs';
 function fixture(){
  const row={name:'alpha',version:'1.0.0',publisherEvidenceStatus:'TARBALL_INTEGRITY_VERIFIED_NO_TOP_LEVEL_LICENSE',
   registryManifestSha256:'a'.repeat(64),commercialApproval:false,legalReviewStatus:'UNRESOLVED',
@@ -65,4 +67,38 @@ test('forged approval, duplicate mappings, unknown package and changed scope fai
   const {candidates,mappings}=fixture();mutation(candidates,mappings);
   await assert.rejects(collectTextHashes(candidates,mappings,{fetcher:async()=>Buffer.from('terms')}));
  }
+});
+
+test('absolute deadline aborts a trickle response and destroys the request',async()=>{
+ const original=https.get;let destroyed=false;let tick=null;
+ try{
+  https.get=(url,opts,cb)=>{
+   const req=new EventEmitter();
+   req.destroy=(err)=>{destroyed=true;if(tick)clearInterval(tick);if(err)queueMicrotask(()=>req.emit('error',err));return req;};
+   queueMicrotask(()=>{
+    const res=new EventEmitter();res.statusCode=200;
+    res.destroy=()=>{if(tick)clearInterval(tick);};
+    cb(res);
+    tick=setInterval(()=>res.emit('data',Buffer.from('x')),2);
+   });
+   return req;
+  };
+  await assert.rejects(fetchRaw('https://raw.githubusercontent.com/org/repo/'+ 'a'.repeat(40)+'/LICENSE',{deadlineMs:25}),/UPSTREAM_TIMEOUT/);
+  assert.equal(destroyed,true);
+ }finally{https.get=original;if(tick)clearInterval(tick);}
+});
+test('non-200 upstream response is aborted without draining body',async()=>{
+ const original=https.get;let destroyed=false;
+ try{
+  https.get=(url,opts,cb)=>{
+   const req=new EventEmitter();req.destroy=()=>{destroyed=true;return req;};
+   queueMicrotask(()=>{
+    const res=new EventEmitter();res.statusCode=302;res.destroy=()=>{};
+    cb(res);
+   });
+   return req;
+  };
+  await assert.rejects(fetchRaw('https://raw.githubusercontent.com/org/repo/'+ 'a'.repeat(40)+'/LICENSE',{deadlineMs:100}),/UPSTREAM_HTTP_302/);
+  assert.equal(destroyed,true);
+ }finally{https.get=original;}
 });
