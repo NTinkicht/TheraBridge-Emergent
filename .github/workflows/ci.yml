@@ -129,8 +129,8 @@ jobs:
           result=$?
           set -e
           if [ "$result" -ne 0 ]; then
-            # Print rule and tracked file only: NEVER leak matched text, snippets or secrets.
-            node -e 'const fs=require("fs");const a=JSON.parse(fs.readFileSync("/tmp/tb-secret-scan.json","utf8"));for(const x of a)console.log("SCAN_FINDING_RULE_PATH "+JSON.stringify({rule:x.RuleID,file:x.File}));'
+            # Print rule, tracked file and source location only: NEVER leak matched text, snippets or secrets.
+            node -e 'const fs=require("fs");const a=JSON.parse(fs.readFileSync("/tmp/tb-secret-scan.json","utf8"));for(const x of a)console.log("SCAN_FINDING_RULE_PATH "+JSON.stringify({rule:x.RuleID,file:x.File,line:x.StartLine,commit:x.Commit}));'
           fi
           rm -f /tmp/tb-secret-scan.json
           exit "$result"
