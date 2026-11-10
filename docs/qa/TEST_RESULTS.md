@@ -1,3 +1,12 @@
+## 2026-11-10 — M4-08 Stage 1 PR #339 genuine Web-coverage expansion (NOT YET QUALIFIED)
+- OWNER POLICY: general Web lines target staged 60% then 80% (issues #337/#338); security-critical Web logic separately targets ≥95% measured branches. All-source Istanbul denominator and all four metrics preserved. No automatic clinical clearance.
+- EXECUTED-TEST FILES ADDED (source-executing Jest, synthetic): coverage-versioned-evidence-regressions.test.cjs and coverage-transport-permissions.test.cjs, covering source/version attribution, missing/reordered/changed evidence, saved-plan snapshots, center/supervisor routes, protected clinical/report command boundaries, and public vs protected invitation operations.
+- NEW TEST EXECUTION: NOT VERIFIED on final head yet. Baseline before #334: 151 Web production source modules; lines 10.63%, branches 7.05%, functions 7.86%, statements 9.89%; 123 unexecuted. Re-measure at #339 final head; do not cite previous baseline as current.
+- Stage 1 >=60% measured Web line acceptance: **NOT QUALIFIED**. Stage 2 80% **NOT STARTED**. No changes to API/clinical approval; G2/G2b NO-GO.
+- Mandatory six-job CI / Smart CI / SBOM / gitleaks / Codex final HEAD: IN PROGRESS, not asserted green. Codex initial P1 Rule 7 handover sync addressed in this update; final-head re-review pending.
+
+---
+
 ## 2026-11-10 — COM-04 contract draft qualification (NOT RUN)
 - Public draft clause completeness/contract-stack review: AUTHORING ONLY; not external counsel review.
 - Exact-head CI, source SBOM, secret scan, Codex: NOT YET RUN on this PR head.
