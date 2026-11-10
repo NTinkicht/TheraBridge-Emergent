@@ -25,7 +25,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function DecisionPanel({ app, canDecide, onChanged, onError }: { app: ApplicationDetail; canDecide: boolean; onChanged: (a: ApplicationDetail) => void; onError: (e: unknown) => void }) {
+export function DecisionPanel({ app, canDecide, onChanged, onError }: { app: ApplicationDetail; canDecide: boolean; onChanged: (a: ApplicationDetail) => void; onError: (e: unknown) => void }) {
   const [decision, setDecision] = useState<'APPROVED' | 'REJECTED' | null>(null);
   const [rationale, setRationale] = useState('');
   const [busy, setBusy] = useState(false);
