@@ -51,18 +51,13 @@ regexes = [
   '''^\$\{?[A-Z_][A-Z0-9_]*''',
 ]
 
-# Narrow Git-history exception: Stage 3 Web synthetic reset-flow test fixture
-# was present on an unrelated coverage branch when global --all scanning ran.
-# Match BOTH exact test file AND known non-credential literals; no generic
-# suppression or path-wide exemption. Keep all other refs/rules scanned.
+# M4-08 Stage 3: one historic fictional password-mismatch input, NOT a credential.
+# This applies solely to the generic-api-key rule, the exact test source
+# path and the exact literal. Other secret rules and values still scan.
 [[allowlists]]
-description = "Explicit fictional reset tokens in M4-08 synthetic coverage test only"
+targetRules = ["generic-api-key"]
+description = "Single synthetic mismatched-password fixture in full-history scan"
 condition = "AND"
 regexTarget = "secret"
 paths = ['''^apps/web/test/coverage-stage3-mounted-recovery-and-feasibility\.test\.cjs$''']
-regexes = [
-  '''^fictional-reset-token$''',
-  '''^synthetic-strong-password$''',
-  '''^synthetic-strong-1$''',
-  '''^synthetic-strong-2$''',
-]
+regexes = ['''^synthetic-strong-1$''']
