@@ -55,7 +55,7 @@ describe('M4-08 forwarded proxy trust is checked from the direct peer backwards'
     expect(resolveClientIp('::ffff:10.0.0.1','203.0.113.25',proxy())).toBe('203.0.113.25');
   });
   it('does not accidentally trust a syntactically malformed IPv4 mapping',()=>{
-    expect(resolveClientIp('::ffff:not-an-address','203.0.113.25',proxy())).toBe('::ffff:not-an-address');
+    expect(resolveClientIp('::ffff:not-an-address','203.0.113.25',proxy())).toBe('unknown');
   });
   it('returns source-most IP if every hop is trusted',()=>{
     expect(resolveClientIp('10.0.0.1','10.0.0.2',proxy())).toBe('10.0.0.2');
