@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #359 bulk work and Codex P2 fix
+Created consolidated source text candidate hash collector and 53-version/91-asset rights queue; 8 pinned exact source revisions, 9 upstream LICENSE/NOTICE paths all hashed in first CI artifact; no raw third-party texts committed. New regression tests cover tampered registry Git commit, repo host, lock integrity, duplicates, asset omissions, unknown source provenance, unavailability, unsafe paths, license approver spoof, wrong UTF-8 and concurrent fetch. First Codex P2: prior source-root match can time out; fixed to keep all rows and no fabricated approval while rejecting actual contradictory provenance. PR review comment documents fix; issue #356 remains open for independent publisher-to-source attestations and lawyer decisions. Rule 7 and final HEAD rerun remain required.
+
+---
+
 ## 2026-11-11 — COM-02 consolidated evidence work PR #359
 Opened single large PR with upstream LICENSE/NOTICE SHA-256 candidate hash collector, curated eight exact source revisions/nine paths, all-53 package provenance classing (15 root candidates, 33 missing GitHead, 3 Next.js monorepo mismatches, 2 unsafe legacy repository claims) and all-91 non-package asset rights/presence triage. Implemented six offline adversarial tests and CI producer/upload. Input inventories must match, no missing/duplicated package or asset, version/candidate branch security fail-closed, no legal rights or clinical approvals inferred. NO TESTS MARKED PASS UNTIL CI. Full job and independent review pending.
 
