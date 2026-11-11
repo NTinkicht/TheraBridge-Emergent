@@ -26,3 +26,11 @@ Unsigned commercial legal/IP/third-party rights and clinical G2/G2b approvals re
 ### Qualification
 
 Dedicated offline adversarial tests and the one full-CI artifact stage are wired. Exact-head CI and final Codex approval are **pending until independently confirmed**.
+
+### First observed exact-run evidence (before final review)
+
+The first implemented CI evidence artifact for this PR reported **53 packages**, **91 non-package assets**, **15 root source-manifest candidates**, **8 curated immutable source revisions with 9 of 9 source-license/notice file bytes successfully SHA-256 hashed**. Source provenance triage classified **26 DefinitelyTyped missing-revision cases**, **7 additional missing-revision cases**, **3 Next.js monorepo subpackage root-identity mismatches**, **2 disallowed legacy repository URL claims**, and **15 pinned root-manifest matches**. The 91 asset inventory is **73 image/icon, 15 brand, 3 container-build** source paths; shipment status remains **NOT VERIFIED**.
+
+The hashes prove that particular bytes were served from those pinned source paths, **not** that the npm tarballs were built from that Git commit, not that every applicable LICENSE/NOTICE obligation is known, and not any legal clearance. Every one of the 53 package versions still requires independent publication/source attestation; **0 legal approvals, 0 source-to-publisher attestations, 0 final notices**.
+
+Codex found a P2 in the transient network failure path of the bulk collector: retain the version and mark source evidence unavailable when the prior exact source corroboration received a retryable HTTP/timeout error, rather than fail the entire report. That behavior and two negative regression tests are implemented; exact final HEAD CI and independent review remain pending.
