@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #359 observed candidate hash evidence, P2 fix pending exact HEAD
+Initial CI producer PASS and bulk review artifact generated. Measured 53 package exceptions, 91 assets, 15 pinned root source matches, 8 curated source revisions, 9/9 literal HTTPS immutable source bytes successfully SHA-256 hashed. All 53 source-publication attestations and 91 actual release presence reviews remain outstanding; **0 legal approvals/THIRD_PARTY_NOTICES**. Codex P2 prior source fetch timeout previously blocked consolidated report; implemented retained unresolved row with no license fetch for upstream 408/429/5xx, TIMEOUT, SOURCE_FETCH_FAILED. Added two deterministic negative tests (transient upstream and contradictory source identity). **Final exact-head full CI and clean independent Codex not yet confirmed**; do not interpret text hash as license rights. Clinical G2/G2b NO-GO.
+
+---
+
 ## 2026-11-11 — COM-02 mega PR #359 bulk evidence QA (PENDING)
 New offline `node --test scripts/commercial/build-bulk-rights-evidence.test.mjs` covers 53-version/91-asset schema joins via small synthetic fixtures; forged approvals, missing/duplicate package/asset, locked integrity or source revision mismatch, unsafe curated path/host, invalid raw UTF-8, network 404 and bounded concurrency. CI producer emits `therabridge-com02-bulk-rights-evidence.json`, never third-party license texts or legal grant. Initial baseline has 53 package exceptions, 91 source assets; 8 curated source versions and 9 candidate immutable upstream LICENSE paths. **Exact-head CI NOT YET RUN/QUALIFIED**, no live 9/9 file existence claimed. Legal approvals 0; G2/G2b NO-GO.
 
