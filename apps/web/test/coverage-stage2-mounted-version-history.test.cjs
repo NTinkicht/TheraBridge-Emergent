@@ -185,7 +185,7 @@ describe('real immutable plan version history and source provenance',()=>{
  it('preserves an unavailable legacy title and missing duration as explicitly unavailable',async()=>{
   await render(plan([version(2),version(1,{homeActivities:[activity({templateId:'lost-template',snapshot:undefined,note:undefined,durationMinutes:undefined,goalKey:''})]})]));
   expect(html()).toContain('Historic activity (template unavailable)');
-  expect(get('plan-history-activity-duration').props.children.flat(Infinity).join('')).toContain('Template duration: unavailable');
+  expect(find('plan-history-activity-duration').some(n=>String(n.props.children.flat(Infinity).join('')).includes('Template duration: unavailable'))).toBe(true);
   expect(html()).toContain('No plan-specific duration');
   expect(html()).toContain('Not recorded');
  });
