@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #359 final qualification and next independent legal wave
+Qualify entire bulk evidence, including P2 transient upstream timeout path, on final HEAD with full test/secret-scan/SBOM/demo/live-session/Compose/10-min preview/Smart CI and final Codex 0 findings. Merge only after Rule 16 conditions. After merge, one follow-up work item should corroborate source revision-to-published npm tarball for 15 source-root candidates, address 26 DefinitelyTyped + 7 other missing revision rows, 3 Next.js subpackages and 2 legacy Git URL claims, then distinguish actual redistributed release image assets from 91 source assets. Separately obtain commercial IP, upstream notices, SaaS/enterprise counsel contracts and clinical G2/G2b signoff; no automatic rights approvals.
+
+---
+
 ## 2026-11-11 — COM-02 PR #359 qualification and independent legal evidence
 Run new mega-PR producer on actual 53 exception and 91 source asset inputs. Verify exact immutable source license byte hashes for eight curated source versions/nine paths and leave unavailable content unresolved. Repair all CI failures, collect full test, secret scan, SBOM, demo, live session, Compose, ten-minute preview and Smart CI on final exact HEAD, request independent Codex re-review, merge only with all findings resolved. Then independently attest package tarball-to-source linkage; prove actual SaaS vs enterprise redistributed release artifact contents; obtain IP and third-party rights-holder/UAE counsel approvals. G2/G2b clinical NO-GO unchanged.
 
