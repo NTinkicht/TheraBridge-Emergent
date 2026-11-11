@@ -862,3 +862,6 @@ The existing release comparator rejected the tagged image reference the new Dock
 
 ## 2026-11-12 — COM-02 canonical Docker RepoDigest validation
 Fixed legitimate Docker registry-port/tag digest matching; added mocked exact repository-and-sha256 test. No image has been independently captured/signed, and all 53 package publication and 91 asset rights checks remain unresolved. Final-head CI/Codex required before merge.
+
+## 2026-11-12 — PR #362 paired release capture preparation
+Added strict offline manifest merger for distinct SaaS/Enterprise candidate Docker exports, rejecting counterfeit signature and approval fields and unsafe file inventory metadata. New Node tests and full CI job wiring added. No actual release edition artifacts yet; signed OCI verification, 53 npm publication versions, 91 asset redistribution and counsel remain open. Exact-head green CI and Codex unverified; PR stays draft.
