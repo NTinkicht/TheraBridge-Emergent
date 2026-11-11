@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #359 source-availability negative-path extension
+Expanded Codex P2 fix to preserve queue on any valid upstream HTTP failure including 404, in addition to timeout and origin errors; added deterministic 404 negative regression. The failed source evidence remains unresolved, 0 legal approvals and no release permissions. Rerun full exact-head CI and Codex.
+
+---
+
 ## 2026-11-11 — COM-02 #359 bulk work and Codex P2 fix
 Created consolidated source text candidate hash collector and 53-version/91-asset rights queue; 8 pinned exact source revisions, 9 upstream LICENSE/NOTICE paths all hashed in first CI artifact; no raw third-party texts committed. New regression tests cover tampered registry Git commit, repo host, lock integrity, duplicates, asset omissions, unknown source provenance, unavailability, unsafe paths, license approver spoof, wrong UTF-8 and concurrent fetch. First Codex P2: prior source-root match can time out; fixed to keep all rows and no fabricated approval while rejecting actual contradictory provenance. PR review comment documents fix; issue #356 remains open for independent publisher-to-source attestations and lawyer decisions. Rule 7 and final HEAD rerun remain required.
 

@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #359 final upstream outage-boundary clarification
+All upstream HTTP failures (including 404) in prior pinned-source corroboration preserve the package's unresolved queue row without automatically treating it as verified LICENSE text; actual contradicted source identity, altered Git SHA, wrong repository or lock integrity remain hard failures. A 404 negative regression was added. **Final exact-head full CI and clean Codex review pending**.
+
+---
+
 ## 2026-11-11 — COM-02 mega PR #359 measured 53/91 bulk evidence (FINAL CI PENDING)
 Initial CI artifact verified 53/53 package exceptions and 91/91 tracked assets; 8 curated exact Git source versions yielded 9/9 SHA-256 immutable LICENSE/NOTICE **text candidates**. Provenance triage: 15 pinned source-root package name/version matches, 26 DefinitelyTyped lacking GitHead, 7 other missing revisions, 3 Next.js monorepo mismatches and 2 legacy unsafe repository claims. Every package remains independently un-attested; all legal approval, final notices, commercial grants 0. The 91 tracked assets split 73 image/icon, 15 brand and 3 container-build paths, all with production release presence **NOT VERIFIED**. Codex P2 transient timeout failure fixed by preserving row and skipping source fetch rather than losing whole audit; CI and review of final documentation HEAD PENDING. G2/G2b NO-GO.
 

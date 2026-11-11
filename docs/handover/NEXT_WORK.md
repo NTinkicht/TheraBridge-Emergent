@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #359 qualification checkpoint
+Check all HTTP source read failures including 404 preserve the 53-version rights queue and never imply valid upstream licensing. Verify no source identity mismatch bypass; no source-asset production release inference. Final merged HEAD needs full required CI and Codex before merge.
+
+---
+
 ## 2026-11-11 — COM-02 #359 final qualification and next independent legal wave
 Qualify entire bulk evidence, including P2 transient upstream timeout path, on final HEAD with full test/secret-scan/SBOM/demo/live-session/Compose/10-min preview/Smart CI and final Codex 0 findings. Merge only after Rule 16 conditions. After merge, one follow-up work item should corroborate source revision-to-published npm tarball for 15 source-root candidates, address 26 DefinitelyTyped + 7 other missing revision rows, 3 Next.js subpackages and 2 legacy Git URL claims, then distinguish actual redistributed release image assets from 91 source assets. Separately obtain commercial IP, upstream notices, SaaS/enterprise counsel contracts and clinical G2/G2b signoff; no automatic rights approvals.
 
