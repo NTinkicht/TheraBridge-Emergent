@@ -100,7 +100,7 @@ test('adversarial false grants, missing rows, asset drift and forged license map
  }
 });
 test('upstream timeout or transient HTTP failure does not erase unresolved package evidence',async()=>{
- for(const status of ['UPSTREAM_TIMEOUT','UPSTREAM_HTTP_503','SOURCE_FETCH_FAILED']){
+ for(const status of ['UPSTREAM_TIMEOUT','UPSTREAM_HTTP_503','UPSTREAM_HTTP_404','SOURCE_FETCH_FAILED']){
   const {register,correspondence,config}=fixtures();
   correspondence.records[0].evidenceStatus=status;
   let requests=0;
