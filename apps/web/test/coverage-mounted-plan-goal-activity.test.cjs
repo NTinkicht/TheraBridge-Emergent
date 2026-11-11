@@ -22,7 +22,7 @@ jest.mock('@/components/clinical/HomePracticeCalendar',()=>({
  HomePracticeCalendar:()=>h('aside',null,'Practice calendar sidecar')
 }));
 jest.mock('@/components/clinical/HomePlanSyntheticAssist',()=>({
- HomePlanSyntheticAssist:()=>h('aside',null,'Synthetic suggestions sidecar')
+ HomePlanSyntheticAssist:({onInsert})=>h('button',{'data-testid':'synthetic-insert-duplicate',onClick:()=>onInsert({templateId:'t1',goalKey:'g1',frequency:'Weekly'})},'Insert duplicate synthetic suggestion')
 }));
 jest.mock('@/lib/clinical',()=>{
  const real=jest.requireActual('@/lib/clinical');
@@ -270,9 +270,15 @@ describe('M4-08 real clinician plan version draft controls',()=>{
  });
  it('duplicate synthetic suggestion cannot silently add a second copy of an activity',async()=>{
   await mount(version({homeActivities:[{templateId:'t1',goalKey:'g1',frequency:'Weekly'}]}));
-  const suggestion=tree.root.findAll(n=>n.type==='aside'&&n.props.children==='Synthetic suggestions sidecar');
-  expect(suggestion).toHaveLength(1);
+  expect(get('synthetic-insert-duplicate')).toBeTruthy();
+  await click('synthetic-insert-duplicate');
+  await click('synthetic-insert-duplicate');
+  expect(find('home-activity-0')).toHaveLength(1);
   expect(find('home-activity-1')).toHaveLength(0);
+  await click('plan-save');
+  expect(clinicalApi.saveVersion).toHaveBeenCalledWith('c1','v1',
+   expect.objectContaining({homeActivities:[expect.objectContaining({templateId:'t1',goalKey:'g1'})]}));
+  expect(clinicalApi.saveVersion.mock.calls[0][2].homeActivities).toHaveLength(1);
  });
  it('read-only version retains saved goal values but removes every mutation action',async()=>{
   await mount(version({status:'IN_REVIEW',mine:false}),ws({canEdit:false,canReview:false}));
