@@ -32,11 +32,16 @@ describe('final M4-08 authentication, CSRF and failure-path execution',()=>{
     const {authApi,rest,onUnauthorized}=load();
     const listener=jest.fn();onUnauthorized(listener);
     rest.remember(sample('old-token'));
-    global.fetch.mockResolvedValue(denied(401));
+    global.fetch.mockResolvedValueOnce(response(200,{csrfToken:'fresh-preauth'}))
+      .mockResolvedValueOnce(denied(401))
+      .mockResolvedValueOnce(response(200,{}));
     await expect(authApi.login('fake@example.invalid','fictional')).rejects.toMatchObject({status:401});
+    expect(calls('/api/auth/login')).toHaveLength(1);
+    expect(calls('/api/auth/login')[0][1].headers['X-CSRF-Token']).toBe('fresh-preauth');
     expect(listener).not.toHaveBeenCalled();
-    await expect(rest.send('POST','/api/synthetic/write',{x:1})).rejects.toMatchObject({status:401});
+    await expect(rest.send('POST','/api/synthetic/write',{x:1})).resolves.toEqual({});
     expect(calls('/api/synthetic/write')[0][1].headers['X-CSRF-Token']).toBeUndefined();
+    expect(listener).not.toHaveBeenCalled();
   });
   test('failed pre-auth CSRF 401 does not trigger authenticated session revocation',async()=>{
     const {authApi,onUnauthorized}=load();
@@ -145,7 +150,7 @@ describe('final M4-08 authentication, CSRF and failure-path execution',()=>{
   });
   test('array-valued validation message is normalized without trusting body as a success',async()=>{
     const {rest}=load();global.fetch.mockResolvedValue(denied(422));
-    await expect(rest.send('POST','/api/synthetic/invalid',{})).rejects.toMatchObject({status:403});
+    await expect(rest.send('POST','/api/synthetic/invalid',{})).rejects.toMatchObject({status:422});
     global.fetch.mockResolvedValue(response(422,{message:['invalid child','invalid version']}));
     await expect(rest.send('PATCH','/api/synthetic/invalid',{})).rejects.toThrow('invalid child invalid version');
   });
