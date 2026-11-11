@@ -30,7 +30,9 @@ const setup=(assignments:any[]=[{childId:'child-a',service:'speech',membershipId
    {id:'synthetic-therapist',displayName:'Fictional Clinician',memberships:[{id:'member-1'}]}
   ])},
   child:{findMany:jest.fn().mockResolvedValue([child()])},
-  governanceHistory:{findMany:jest.fn().mockResolvedValue([])}
+  governanceHistory:{findMany:jest.fn().mockResolvedValue([])},
+  governanceSnapshot:{findFirst:jest.fn().mockResolvedValue(null)},
+  centerEvent:{create:jest.fn().mockResolvedValue({id:'fictional-event'})}
  };
  const prisma:any={$transaction:jest.fn(async(fn:any)=>fn(tx))};
  const clinical:any={
@@ -158,5 +160,62 @@ describe('M4-08 original governance documents fail-closed role and tenant scope'
    {id:'entry-a',actorId:'known-actor',sourceVersion:3,actorName:'Fictional Operator'},
    {id:'entry-b',actorId:'former-actor',sourceVersion:2,actorName:'Staff member'}
   ]);
+ });
+});
+
+
+describe('M4-08 immutable governance preview forbids cross-tenant clinical disclosure',()=>{
+ it('guardian cannot inspect preview artifact or enumerate immutable snapshots',async()=>{
+  const {service,tx}=setup();
+  await expect(service.preview(center,{...therapist,role:'GUARDIAN'},'snapshot-a'))
+   .rejects.toMatchObject({status:403});
+  expect(tx.governanceSnapshot.findFirst).not.toHaveBeenCalled();
+ });
+ it('missing snapshot produces non-enumerating 404 scoped to current center',async()=>{
+  const {service,tx}=setup();
+  await expect(service.preview(center,therapist,'missing'))
+   .rejects.toMatchObject({status:404});
+  expect(tx.governanceSnapshot.findFirst).toHaveBeenCalledWith({
+   where:{id:'missing',centerId:center}
+  });
+  expect(tx.planVersion.findFirst).not.toHaveBeenCalled();
+ });
+ it('foreign or inaccessible source document cannot leak saved snapshot content',async()=>{
+  const {service,tx}=setup();
+  tx.governanceSnapshot.findFirst.mockResolvedValueOnce({
+   id:'snapshot-a',centerId:center,kind:'PLAN',documentId:'unknown-plan',
+   childId:'child-a',content:{sensitive:'Fictional content'}
+  });
+  tx.planVersion.findFirst.mockResolvedValueOnce(null);
+  await expect(service.preview(center,therapist,'snapshot-a'))
+   .rejects.toMatchObject({status:404});
+  expect(tx.centerEvent.create).not.toHaveBeenCalled();
+ });
+ it('authorized center-specific snapshot stays internal with explicit unsigned/ unreleased booleans',async()=>{
+  const {service,tx,clinical}=setup();
+  tx.governanceSnapshot.findFirst.mockResolvedValueOnce({
+   id:'snapshot-a',centerId:center,kind:'PLAN',documentId:'plan-version-1',
+   childId:'child-a',sourceVersion:3,content:{title:'Fictional source'}
+  });
+  const r=await service.preview(center,therapist,'snapshot-a');
+  expect(r).toMatchObject({
+   id:'snapshot-a',approved:false,signed:false,released:false,
+   content:{title:'Fictional source'}
+  });
+  expect(r.notice).toMatch(/not approved, signed or released/);
+  expect(clinical.child).toHaveBeenCalledWith(tx,center,therapist,'child-a','speech');
+  expect(tx.centerEvent.create.mock.calls[0][0].data).toMatchObject({
+   centerId:center,type:'clinical.preview_viewed',actorUserId:'synthetic-therapist',
+   meta:{childId:'child-a',snapshotId:'snapshot-a'}
+  });
+ });
+ it('invalid document kind remains forbidden even if snapshot record exists',async()=>{
+  const {service,tx}=setup();
+  tx.governanceSnapshot.findFirst.mockResolvedValueOnce({
+   id:'snapshot-a',centerId:center,kind:'OTHER',documentId:'source-a',childId:'child-a'
+  });
+  await expect(service.preview(center,therapist,'snapshot-a'))
+   .rejects.toMatchObject({status:404});
+  expect(tx.centerEvent.create).not.toHaveBeenCalled();
  });
 });
