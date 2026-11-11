@@ -36,7 +36,11 @@ jest.mock('@/components/design/states',()=>({
 }));
 jest.mock('@/lib/reports',()=>{
  const actual=jest.requireActual('@/lib/reports');
- return {...actual,daysAgo:()=> '2026-08-14',isoDay:()=> '2026-11-11',
+ return {...actual,daysAgo:(days)=>{
+  const date=new Date('2026-11-11T12:00:00.000Z');
+  date.setUTCDate(date.getUTCDate()-days);
+  return date.toISOString().slice(0,10);
+ },isoDay:()=> '2026-11-11',
  reportsApi:{...actual.reportsApi,dashboard:jest.fn()}};
 });
 const {reportsApi}=require('../src/lib/reports');
@@ -146,12 +150,17 @@ describe('mounted progress dashboard remains source-bound and version-agnostic a
   expect(get('dash-goal-synthetic-child-g2')).toBeTruthy();
   expect(get('metric-goals').props.children).toBe('Goals shown:1');
  });
- it.each(['30','90','180','365'])('period %s requests a server-backed interval rather than inferred progress',async period=>{
+ it.each([
+  ['30','2026-10-13'],
+  ['90','2026-08-14'],
+  ['180','2026-05-16'],
+  ['365','2025-11-12']
+ ])('period %s requests its exact independently verified inclusive date range',async(period,expectedFrom)=>{
   await mount();await select('filter-period',period);
   expect(get('filter-period').props.value).toBe(period);
   await requestedFetcher();
   expect(reportsApi.dashboard).toHaveBeenLastCalledWith('centre-a',
-   expect.objectContaining({from:'2026-08-14',to:'2026-11-11'}));
+   expect.objectContaining({from:expectedFrom,to:'2026-11-11'}));
  });
  it('valid custom range uses explicit entered dates and does not infer clinical improvement',async()=>{
   await mount();await select('filter-period','custom');
