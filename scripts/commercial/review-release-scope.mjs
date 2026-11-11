@@ -41,7 +41,7 @@ function reviewReleaseScope(bulk,manifest){
  const names=new Set();
  const images=manifest.images.map(im=>{
   if(!['SAAS','ENTERPRISE'].includes(im.edition)||!PIN.test(im.ociDigest??'')||
-    typeof im.imageRef!=='string'||im.imageRef.length>200||!/^[-.a-zA-Z0-9_/]+$/.test(im.imageRef)||
+    typeof im.imageRef!=='string'||im.imageRef.length>200||!/^[a-zA-Z0-9][a-zA-Z0-9._/:-]*$/.test(im.imageRef)||
     names.has(im.edition)||!Array.isArray(im.files)||im.files.length>100000||
     im.filesystemCaptureStatus!=='UNATTESTED_CANDIDATE'||
     im.releaseApproval!==false)throw Error('INVALID_IMAGE_SCOPE');
