@@ -856,3 +856,6 @@ The owner authorized individual demo logins for Dalia Mansour (behavioral/ABA), 
 
 ## 2026-11-12 — PR #362 COM-02 candidate runtime capture checkpoint
 Added a digest-pinned local Docker-export file inventory tool, offline negative tests, and full-CI test wiring. This is *candidate* technical evidence, **not** independently signed production OCI evidence, SaaS/enterprise rights approval, signed customer terms or clinical authorization. No release images supplied, no publication lineage approved among 53 unresolved versions, and all 91 source assets require distribution-scope/rights review. CI and Codex remain PENDING on the new head; the PR must stay draft until qualified. G2/G2b NO-GO.
+
+## 2026-11-12 — PR #362 capture-to-scope compatibility correction
+The existing release comparator rejected the tagged image reference the new Docker-export capture emits. Corrected bounded image reference validation, added end-to-end candidate comparison regression, and fail-closed forged capture provenance negative fixtures. Current source is committed; all required CI and independent Codex verification must be repeated on final SHA. Release images still absent; no rights or G2/G2b approvals.
