@@ -141,4 +141,62 @@ describe('M4-08 session persistence and completion remain unsigned',()=>{
   expect(button('Save draft')).toBeUndefined();
   expect(button('Review and complete session')).toBeUndefined();
  });
+
+ it('missing actual start is rejected without a save attempt or inferred clinical timestamp',async()=>{
+  await mount(note({actualStart:null,actualEnd:null}));
+  await click('Save draft');
+  expect(clinicalApi.saveSession).not.toHaveBeenCalled();
+  expect(out()).toContain('Actual start is required');
+  expect(out()).toContain('Your original note is preserved');
+ });
+ it('403 revocation never creates a retryable unknown server outcome or reuses rejected mutation key',async()=>{
+  clinicalApi.saveSession.mockRejectedValueOnce(new ApiError(403,'Synthetic role revoked'))
+   .mockResolvedValueOnce({version:4,updatedAt:'2026-11-10T10:00:00Z'});
+  await mount();
+  await click('Save draft');
+  expect(out()).toContain('Synthetic role revoked');
+  expect(out()).not.toContain('Outcome unknown');
+  const failed=clinicalApi.saveSession.mock.calls[0][2].mutationKey;
+  await click('Retry save');
+  expect(clinicalApi.saveSession.mock.calls[1][2].mutationKey).not.toBe(failed);
+ });
+ it('429 rate limiting rejects without recycling a prior uncertain mutation',async()=>{
+  clinicalApi.saveSession.mockRejectedValueOnce(new ApiError(429,'Synthetic rate limited'))
+   .mockResolvedValueOnce({version:4,updatedAt:'2026-11-10T10:00:00Z'});
+  await mount();await click('Save draft');
+  expect(out()).toContain('Synthetic rate limited');
+  expect(out()).not.toContain('Outcome unknown');
+  const prior=clinicalApi.saveSession.mock.calls[0][2].mutationKey;
+  await click('Retry save');
+  expect(clinicalApi.saveSession.mock.calls[1][2].mutationKey).not.toBe(prior);
+ });
+ it('a 409 without an accessible server copy retains local edits and refuses silent recovery',async()=>{
+  clinicalApi.saveSession.mockRejectedValueOnce(new ApiError(409,'Synthetic stale version'));
+  clinicalApi.workspace.mockResolvedValueOnce(workspace({notes:[]}));
+  await mount();
+  const field=tree.root.findByProps({'aria-label':'Session focus'});
+  await act(async()=>field.props.onChange({target:{value:'Fictional retained observation'}}));
+  await click('Save draft');
+  expect(out()).toContain('Editing authorization is unavailable');
+  expect(out()).toContain('Fictional retained observation');
+  expect(clinicalApi.saveSession).toHaveBeenCalledTimes(1);
+ });
+ it('completion cannot proceed while an earlier draft save has uncertain outcome',async()=>{
+  clinicalApi.saveSession.mockRejectedValueOnce(new Error('Synthetic timeout'));
+  await mount();
+  await click('Save draft');
+  expect(out()).toContain('Outcome unknown');
+  await click('Review and complete session');
+  expect(clinicalApi.saveSession).toHaveBeenCalledTimes(1);
+  expect(out()).toContain('unknown outcome');
+ });
+ it('session completion rejects withheld user confirmation and never signs the note',async()=>{
+  global.window.confirm.mockReturnValueOnce(false);
+  await mount();
+  await click('Review and complete session');
+  expect(clinicalApi.saveSession).not.toHaveBeenCalled();
+  expect(out()).toContain('In progress · unsigned');
+  expect(out()).toContain('Sign note');
+ });
+
 });
