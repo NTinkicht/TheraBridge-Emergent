@@ -10,7 +10,7 @@ jest.mock('@/components/centers/kit',()=>({
  useLoad:(fetcher)=>{requestedFetcher=fetcher;return loaded;},
  PageTitle:({title,testId})=>h('h1',{'data-testid':testId},title),
  SelectField:({value,options,onChange,testId})=>h('select',{'data-testid':testId,value,onChange:e=>onChange(e.target.value)},
-  options.map(o=>h('option',{key:o.value,value:o.value},o.label))
+  options.map(o=>h('option',{key:o.value,value:o.value},o.label)))
 }));
 jest.mock('@/components/auth/Field',()=>({Field:({value,onChange,testId,error})=>
  h('div',null,h('input',{'data-testid':testId,value,onChange}),error&&h('span',null,error))}));
