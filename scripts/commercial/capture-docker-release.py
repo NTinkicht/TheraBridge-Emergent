@@ -78,7 +78,16 @@ def capture(edition, reference):
         raise ValueError("EXPECTED_DIGEST_PINNED_IMAGE")
     image_name, digest = reference.rsplit("@", 1)
     detail = json.loads(docker_output("image", "inspect", reference))
-    if len(detail) != 1 or reference not in detail[0].get("RepoDigests", []):
+    # Docker records canonical RepoDigests as repository@sha256, without an
+    # optional tag in the caller's reference. Do not compare digest alone:
+    # the repository must match too, including a registry port where present.
+    last_segment = image_name.rsplit("/", 1)[-1]
+    repository = (image_name.rsplit(":", 1)[0]
+                  if ":" in last_segment else image_name)
+    canonical = repository + "@" + digest
+    if (len(detail) != 1 or
+            not isinstance(detail[0].get("RepoDigests"), list) or
+            canonical not in detail[0]["RepoDigests"]):
         raise ValueError("INSPECTED_IMAGE_DOES_NOT_MATCH_PIN")
     container = docker_output("create", "--", reference)
     if not re.fullmatch(r"[a-f0-9]{64}", container):
