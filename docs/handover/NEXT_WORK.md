@@ -1047,3 +1047,6 @@ Verify tagged image fixture and forged-signature tests in full CI; capture exact
 
 ## 2026-11-12 — Next qualification gate for PR #362
 Verify mocked canonical RepoDigest export case in exact-head CI, inspect all full CI jobs, obtain independent Codex review after stable passing final head, and resolve review findings. Production release edition artifacts and 53 npm immutable publisher-to-source attestations require genuine signed upstream/build evidence; legal grant and clinical gates remain closed.
+
+## 2026-11-12 — Qualify combined Docker release evidence
+Verify final-head Python capture and Node dual-edition merge tests in required full CI. When real SaaS and Enterprise release images exist, capture digest-pinned candidate inventories, merge them into an exclusive new JSON, compare to the 91-asset rights register, and independently check signed immutable OCI publication/deployment evidence. Independently corroborate 53 exact-version npm lineages. No unsigned JSON is legal or production release authority. Require green CI/independent exact-head Codex before merging.
