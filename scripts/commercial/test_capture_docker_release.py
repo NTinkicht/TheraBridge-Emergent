@@ -78,6 +78,38 @@ class ReleaseCaptureTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "INSPECTED_IMAGE"):
                 module.capture("SAAS", reference)
 
+    def test_docker_repo_digest_canonical_tag_and_registry_port(self):
+        reference = "registry.example:5000/therabridge/api:v1@sha256:" + "a" * 64
+        canonical = "registry.example:5000/therabridge/api@sha256:" + "a" * 64
+        export_tar = make_tar([("opt/app/readme.txt", b"licensed?", "file")])
+
+        class FakeExport:
+            def __init__(self):
+                self.stdout = export_tar
+            def wait(self, timeout=None):
+                return 0
+            def kill(self):
+                pass
+
+        def fake_docker(*args):
+            if args[:2] == ("image", "inspect"):
+                return json.dumps([{"RepoDigests": [canonical]}])
+            if args[0] == "create":
+                return "c" * 64
+            raise AssertionError(args)
+
+        from contextlib import ExitStack
+        with ExitStack() as stack:
+            stack.enter_context(patch.object(module, "docker_output", side_effect=fake_docker))
+            stack.enter_context(patch.object(module.subprocess, "Popen", return_value=FakeExport()))
+            stack.enter_context(patch.object(module.subprocess, "run"))
+            result = module.capture("SAAS", reference)
+        self.assertEqual(result["imageRef"], "registry.example:5000/therabridge/api:v1")
+        self.assertEqual(result["ociDigest"], "sha256:" + "a" * 64)
+        self.assertEqual(result["filesystemCaptureStatus"], "UNATTESTED_CANDIDATE")
+        self.assertFalse(result["captureLimitations"]["independentSignatureVerified"])
+        self.assertEqual(result["files"][0]["path"], "opt/app/readme.txt")
+
     def test_candidate_is_never_published_or_legally_approved(self):
         source = open("scripts/commercial/capture-docker-release.py",
                       encoding="utf-8").read()
