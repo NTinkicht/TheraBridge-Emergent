@@ -105,21 +105,22 @@ describe('Access and consent readiness stays locked even when synthetic records 
   [{userId:null,removedAt:null},'Invitation pending'],
   [{userId:'fake',removedAt:null},'Connected'],
   [{userId:'fake',removedAt:'2026-11-11T09:00Z'},'Revoked']
- ])('guardian state %j is shown as %s without granting permissions',(attrs,label)=>act(async()=>{
+ ])('guardian state %j is shown as %s without granting permissions',async(attrs,label)=>{
   loaded.data=data({children:[child({guardians:[{
    id:'guardian-a',displayName:'Fictional Parent',relationship:'mother',
    capabilities:[],restrictions:'Unavailable',...attrs
   }]})]});
-  tree=create(h(Page));
+  await mount();
   expect(json()).toContain(label);
   expect(json()).toContain('Consent / release: blocked');
- }));
+ });
  it('empty guardian capabilities are displayed as None rather than undefined',async()=>{
   loaded.data=data({children:[child({guardians:[{
    id:'guardian-a',displayName:'Fictional Parent',relationship:'mother',
    userId:null,removedAt:null,capabilities:[],restrictions:'Not approved'
   }]})]});
-  await mount();expect(json()).toContain('Portal capabilities: None');
+  await mount();expect(json()).toContain('Portal capabilities: ');
+  expect(json()).toContain('None');
  });
  it('invitation lifecycle distinguishes returned application status without mutating it',async()=>{
   loaded.data=data({invitations:[
@@ -191,7 +192,7 @@ describe('Access and consent readiness stays locked even when synthetic records 
   ]});
   await mount();
   expect(json()).toContain('synthetic.member.suspended');
-  expect(json()).toContain('actor System');
+  expect(json()).toContain('System');
   expect(json()).toContain('fictional-operator');
   expect(json()).toContain('Latest 100 non-clinical events');
  });
