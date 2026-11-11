@@ -924,3 +924,6 @@ Created `scripts/commercial/capture-docker-release.py`: digest-pinned local Dock
 
 ## 2026-11-12 — PR #362 compatibility and forged-attestation hardening
 Updated `review-release-scope.mjs` image-ref validator to accept digest capture output with a tag/registry port. Added round-trip test confirming candidate status remains unapproved and negative cases for fabricated signing/legal/mounts claims. All work stays in one mega PR. Fresh final-head CI is required; older passing CI checks are historical.
+
+## 2026-11-12 — PR #362 Docker digest matching correction
+Matched Docker's canonical repository@sha256 RepoDigests when caller supplied registry:port/path:tag@sha256. The full repository identity and digest remain mandatory; fake Docker export test added. Final qualification pending; no signed OCI proof or distribution clearance obtained.
