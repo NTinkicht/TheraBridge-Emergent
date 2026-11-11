@@ -27,3 +27,6 @@ All four Rule 7 documents; offline source-attestation, digest/path/conflict and 
 ### Integration correction and adversarial validation
 
 The release-scope comparer now accepts safely bounded tagged image names (including port-qualified registry references) produced by the Docker capture script; previously the candidate `imageRef` colon was incorrectly rejected. Added a candidate round-trip fixture and rejected forged `independentSignatureVerified`, `commercialApproval`, runtime-mount completeness and manipulated non-regular-entry counters. Legacy manually supplied candidate inventories remain explicitly untrusted, and no capture is promoted to signed evidence. Exact-head CI/review **PENDING** after this fix.
+
+### Docker canonical RepoDigest enforcement
+The local image lookup now normalizes an optional tag off the canonical `RepoDigests` comparison while preserving the exact repository name (including registry port) **and immutable sha256 digest**. This prevents false negatives on normal Docker inspect metadata without accepting a digest from another repository. Dedicated mocked Docker export tests cover this path; original image rights remain unapproved. Final-head CI and independent Codex review still PENDING.
