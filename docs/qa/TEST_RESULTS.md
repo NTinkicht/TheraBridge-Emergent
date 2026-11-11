@@ -1155,3 +1155,6 @@ Added tests for tagged image references (registry port and tag), matching local 
 
 ## 2026-11-12 — PR #362 canonical Docker RepoDigest fixture
 Added mocked image inspect/create/export successful SHA-256 capture with canonical tagless RepoDigest, version-tagged image input and registry port. This covers the previous real-world false-reject condition without weakening digest requirement. New case not yet confirmed by final-head CI. Clinical/commercial authorization remains NO-GO.
+
+## 2026-11-12 — PR #362 offline merger regressions
+New Node tests for successful candidate-only dual-edition merging, rejected swapped/duplicate editions, fabricated signature and legal fields, path traversal/duplicate file rows, malformed digests and file-order canonicalization. Test execution on final GitHub head not yet confirmed; no authorization claims. Python Docker capture tests remain a separate full-CI gate.
