@@ -852,3 +852,7 @@ New isolated branch adds five fictional children, including Amina and Zayd as Ah
 
 ## 2026-11-02 — Three synthetic therapist identities (PR pending)
 The owner authorized individual demo logins for Dalia Mansour (behavioral/ABA), Nour Haddad (OT) and Huda Rahim (Speech). A separate three-password `DEMO_EXTRA_PASSWORDS_JSON` is required on Render; the original seven-password `DEMO_PASSWORDS_JSON` is preserved. Three display-only membership records are promoted into local therapist authentication identities idempotently. The private hosted runner adds `TB_HOSTED_QA_EXTRA_USERS_JSON` for targeted role/session/logout checks while retaining its seven baseline users. **NOT YET DEPLOYED OR HOSTED-VERIFIED.** No real clinical authorization, AI release or acceptance promotion.
+
+
+## 2026-11-12 — PR #362 COM-02 candidate runtime capture checkpoint
+Added a digest-pinned local Docker-export file inventory tool, offline negative tests, and full-CI test wiring. This is *candidate* technical evidence, **not** independently signed production OCI evidence, SaaS/enterprise rights approval, signed customer terms or clinical authorization. No release images supplied, no publication lineage approved among 53 unresolved versions, and all 91 source assets require distribution-scope/rights review. CI and Codex remain PENDING on the new head; the PR must stay draft until qualified. G2/G2b NO-GO.
