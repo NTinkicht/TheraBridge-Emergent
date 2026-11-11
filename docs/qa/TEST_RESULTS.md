@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #361 release file digest candidate QA (NOT YET RUN)
+Added offline `node --test scripts/commercial/review-release-scope.test.mjs` covering empty release manifest fail-closed behavior, immutable OCI digest and SHA256 image-file candidate matching without claimed signatures, duplicate edition/path, traversal, invalid SHA or bytes, counterfeit commercial approvals and missing 53/91 inventory subsets. CI adds output `therabridge-com02-release-scope-review.json`. All image runtime presence statuses stay NOT_INDEPENDENTLY_ATTESTED with zero images initially. Exact-head full CI, Codex pending. Commercial approval 0; G2/G2b NO-GO.
+
+---
+
 ## 2026-11-11 — COM-02 #359 observed candidate hash evidence, P2 fix pending exact HEAD
 Initial CI producer PASS and bulk review artifact generated. Measured 53 package exceptions, 91 assets, 15 pinned root source matches, 8 curated source revisions, 9/9 literal HTTPS immutable source bytes successfully SHA-256 hashed. All 53 source-publication attestations and 91 actual release presence reviews remain outstanding; **0 legal approvals/THIRD_PARTY_NOTICES**. Codex P2 prior source fetch timeout previously blocked consolidated report; implemented retained unresolved row with no license fetch for any upstream HTTP error (including 404), TIMEOUT or SOURCE_FETCH_FAILED. Added two deterministic negative tests (transient upstream and contradictory source identity). **Final exact-head full CI and clean independent Codex not yet confirmed**; do not interpret text hash as license rights. Clinical G2/G2b NO-GO.
 
