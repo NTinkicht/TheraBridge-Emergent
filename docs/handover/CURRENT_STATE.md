@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #361 release scope comparator (IMPLEMENTED, CI PENDING)
+After #359 merged with full CI and clean Codex, opened one grouped #361 release-image and source publication attestation followup. Implemented conservative exact asset SHA-256-to-pinned OCI image file candidate comparison, preserving all 53 package and 91 asset exception rows, no uploaded/signed release images yet. The checked-in image evidence manifest is empty; no shipping status is independently attested. No source-to-publisher attestation, customer license approval, final THIRD_PARTY_NOTICES or clinical G2/G2b gate changes. Added regression tests/CI artifact; exact-head full CI and independent review NOT YET QUALIFIED.
+
+---
+
 ## 2026-11-11 — COM-02 #359 final upstream outage-boundary clarification
 All upstream HTTP failures (including 404) in prior pinned-source corroboration preserve the package's unresolved queue row without automatically treating it as verified LICENSE text; actual contradicted source identity, altered Git SHA, wrong repository or lock integrity remain hard failures. A 404 negative regression was added. **Final exact-head full CI and clean Codex review pending**.
 

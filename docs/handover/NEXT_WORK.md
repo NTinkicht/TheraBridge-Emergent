@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #361 planned evidence-to-rights completion
+Qualify exact-head CI, resolve Codex findings and preserve all clinical and legal gates. Obtain independently captured and signed real SaaS and enterprise OCI digest/file/SBOM release evidence; currently NONE exists and the per-asset release status remains UNKNOWN. Independently corroborate all 53 package publication/repository commits (including DefinitelyTyped 26, other missing Git SHA 7, Next.js monorepo 3, untrusted repo URL 2, root matches 15) before legal-source assertions. Verify 91 asset source and redistributed rights, semantic-PAX exception and OS/native dependencies. Human owner/UAE counsel must approve actual enterprise vs SaaS rights, IP ownership and terms.
+
+---
+
 ## 2026-11-11 — COM-02 #359 qualification checkpoint
 Check all HTTP source read failures including 404 preserve the 53-version rights queue and never imply valid upstream licensing. Verify no source identity mismatch bypass; no source-asset production release inference. Final merged HEAD needs full required CI and Codex before merge.
 

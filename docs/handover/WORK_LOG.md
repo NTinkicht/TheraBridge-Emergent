@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 #361 source-to-release followup first code chunk
+Merged prior #359 (merge SHA 16316d3f41c1f1c1b9f20b8ea5ce00961dc6dd4e). Opened #361 as a bundled release-scope and exact package provenance wave. Added `review-release-scope.mjs`, its adversarial unit tests, digest-pin schema `release-file-evidence.json` (zero invented release image records), and full-CI publication of source asset/release rights comparisons. Fail-closed package/version/asset inventory counts, candidate image digest/path, no final legal/clinical approvals. No test PASS claimed until CI.
+
+---
+
 ## 2026-11-11 — COM-02 #359 source-availability negative-path extension
 Expanded Codex P2 fix to preserve queue on any valid upstream HTTP failure including 404, in addition to timeout and origin errors; added deterministic 404 negative regression. The failed source evidence remains unresolved, 0 legal approvals and no release permissions. Rerun full exact-head CI and Codex.
 
