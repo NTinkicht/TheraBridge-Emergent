@@ -159,10 +159,10 @@ describe('real immutable plan version history and source provenance',()=>{
  });
  it('compares both historical directions without combining version-bound outcome data',async()=>{
   await render(plan([version(2,{summary:'New fictional summary',goals:[goal({target:9})]}),version(1,{summary:'Old fictional summary'})]));
-  expect(html()).toContain('Version 1 → version 2');
+  expect(get('plan-history-comparison').findAllByType('p').some(n=>String(n.props.children?.flat?.(Infinity).join('') ?? n.props.children).includes('Version 1 → version 2'))).toBe(true);
   await select('plan-compare-before','version-2');
   await select('plan-compare-after','version-1');
-  expect(html()).toContain('Version 2 → version 1');
+  expect(get('plan-history-comparison').findAllByType('p').some(n=>String(n.props.children?.flat?.(Infinity).join('') ?? n.props.children).includes('Version 2 → version 1'))).toBe(true);
   expect(get('plan-history-comparison')).toBeTruthy();
   expect(html()).toContain('not an outcome or improvement score');
  });
@@ -185,7 +185,7 @@ describe('real immutable plan version history and source provenance',()=>{
  it('preserves an unavailable legacy title and missing duration as explicitly unavailable',async()=>{
   await render(plan([version(2),version(1,{homeActivities:[activity({templateId:'lost-template',snapshot:undefined,note:undefined,durationMinutes:undefined,goalKey:''})]})]));
   expect(html()).toContain('Historic activity (template unavailable)');
-  expect(html()).toContain('Template duration: unavailable');
+  expect(get('plan-history-activity-duration').props.children.flat(Infinity).join('')).toContain('Template duration: unavailable');
   expect(html()).toContain('No plan-specific duration');
   expect(html()).toContain('Not recorded');
  });
