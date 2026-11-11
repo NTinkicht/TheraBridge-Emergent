@@ -859,3 +859,6 @@ Added a digest-pinned local Docker-export file inventory tool, offline negative 
 
 ## 2026-11-12 — PR #362 capture-to-scope compatibility correction
 The existing release comparator rejected the tagged image reference the new Docker-export capture emits. Corrected bounded image reference validation, added end-to-end candidate comparison regression, and fail-closed forged capture provenance negative fixtures. Current source is committed; all required CI and independent Codex verification must be repeated on final SHA. Release images still absent; no rights or G2/G2b approvals.
+
+## 2026-11-12 — COM-02 canonical Docker RepoDigest validation
+Fixed legitimate Docker registry-port/tag digest matching; added mocked exact repository-and-sha256 test. No image has been independently captured/signed, and all 53 package publication and 91 asset rights checks remain unresolved. Final-head CI/Codex required before merge.
