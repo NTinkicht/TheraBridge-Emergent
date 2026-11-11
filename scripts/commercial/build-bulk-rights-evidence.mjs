@@ -76,18 +76,25 @@ function validateInputs(register,correspondence,config){
   // Any forged source commit/owner is fatal: the whitelist is candidate-only,
   // but must not point to the wrong upstream package/revision.
   const corresponding=matches.get(id(e));
-  if(corresponding.evidenceStatus!==SOURCE_MATCH||
-   corresponding.candidateGitHead!==e.commit||
+  if(corresponding.candidateGitHead!==e.commit||
    corresponding.registryManifestEvidenceStatus!=='REGISTRY_EXACT_VERSION_METADATA_ONLY'||
    corresponding.lockedIntegrityMatchesRegistry!==true||
    !/^[a-f0-9]{64}$/.test(corresponding.registryManifestSha256??''))
    throw Error('CURATED_SOURCE_NOT_EXACT_REGISTRY_MATCH');
+  // A prior bounded source read may fail transiently while the exact locked
+  // source identity remains the same. Preserve the unresolved row instead of
+  // dropping the 53-version report or inventing a positive correspondence.
+  const temporarilyUnavailable=corresponding.evidenceStatus==='UPSTREAM_TIMEOUT'||
+   corresponding.evidenceStatus==='SOURCE_FETCH_FAILED'||
+   /^UPSTREAM_HTTP_(?:408|429|5\d\d)$/.test(corresponding.evidenceStatus??'');
+  if(corresponding.evidenceStatus!==SOURCE_MATCH&&!temporarilyUnavailable)
+   throw Error('CURATED_SOURCE_CORRESPONDENCE_CONTRADICTED');
   let parsed;
   try{parsed=repoIdentity(corresponding.candidateRepositoryUrl);}catch{throw Error('CURATED_SOURCE_HOST_UNTRUSTED');}
   if(parsed.owner!==e.owner||parsed.repository!==e.repository)
    throw Error('CURATED_REPOSITORY_MISMATCH');
   for(const path of e.paths)validatedRawUrl({...e,path});
-  byVersion.set(id(e),e);
+  byVersion.set(id(e),{...e,corroborationUnavailable:temporarilyUnavailable});
  }
  const assets=new Set();
  for(const a of register.nonPackage){
@@ -127,6 +134,10 @@ async function buildBulkEvidence(register,correspondence,config,{fetcher=fetchRa
  for(const row of records){
   const chosen=byVersion.get(id(row));
   if(!chosen)continue;
+  if(chosen.corroborationUnavailable){
+   row.textCandidateStatus='PRIOR_SOURCE_CORROBORATION_UNAVAILABLE_NO_LICENSE_FETCH';
+   continue;
+  }
   row.textCandidateStatus='CURATED_IMMUTABLE_PATHS_PENDING_FETCH';
   for(const path of chosen.paths)
    jobs.push({row,mapping:{owner:chosen.owner,repository:chosen.repository,commit:chosen.commit,path}});
