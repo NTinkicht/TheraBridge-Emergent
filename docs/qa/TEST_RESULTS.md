@@ -1149,3 +1149,6 @@ Seed regression added for idempotent 6 children, 3 display-only extra therapist 
 
 ## 2026-11-12 — COM-02 PR #362 candidate Docker release evidence
 Implemented offline unittest cases for streaming byte hashing, traversal, duplicate archive member paths, mutable/forged digest pins, Docker inspect RepoDigests mismatch and no automatic approvals. Full GitHub Actions execution and exact-head result **PENDING** at implementation checkpoint. No actual image export or cryptographic publication attestation has been executed; do not mark any of the 53 npm versions or 91 source assets legally approved. G2/G2b remain NO-GO.
+
+## 2026-11-12 — PR #362 capture integration verification candidates
+Added tests for tagged image references (registry port and tag), matching local Docker-export candidate into release scope without rights promotion, and rejection of forged independent signature, copyright approval, complete-runtime-mount assertions, or negative omitted entry counts. These are **implemented test cases, not yet a verified green exact-head run**. Review/commercial go-live unapproved.
