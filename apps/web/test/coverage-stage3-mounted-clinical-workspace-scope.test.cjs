@@ -18,6 +18,8 @@ const mockPanel=label=>({ws,pagination,run,onPending,onNavigate})=>h('section',
  onClick:()=>pagination.load()},'Load older'),
  onPending&&h('button',{'data-testid':'stage3-pending-'+label,
  onClick:()=>onPending('note-a',true)},'Unsaved note'),
+ onPending&&h('button',{'data-testid':'stage3-cleared-'+label,
+ onClick:()=>onPending('note-a',false)},'Note saved'),
  run&&h('button',{'data-testid':'stage3-run-'+label,
  onClick:()=>run(()=>Promise.resolve(), 'Synthetic draft recorded')},'Persist synthetic draft'),
  onNavigate&&h('button',{'data-testid':'stage3-navigate-'+label,
@@ -140,4 +142,108 @@ describe('clinical child route source-scoped evidence history and tab safety',()
   expect(get('clinical-child-name')).toBeTruthy();
   expect(clinicalApi.workspace).toHaveBeenCalledTimes(2);
  });
+ it('loads only a supervisor-specific draft view and never signs a clinical report',async()=>{
+  session.activeContext.role='CLINICAL_SUPERVISOR';
+  clinicalApi.workspace.mockResolvedValueOnce(workspace({canReview:true,canEdit:false}));
+  await mount();
+  expect(JSON.stringify(tree.toJSON())).toContain('Clinical supervisor review');
+  expect(get('clinical-synthetic-banner')).toBeTruthy();
+ });
+ it('does not fetch earlier plans if authoritative response reports no more pages',async()=>{
+  clinicalApi.workspace.mockResolvedValueOnce(workspace({hasMorePlans:false}));
+  await mount();await click('clinical-tab-plan');await click('stage3-load-plan');
+  expect(clinicalApi.workspace).toHaveBeenCalledTimes(1);
+  expect(get('stage3-panel-plan').props['data-plans']).toBe(1);
+ });
+ it('does not fetch earlier assessments if authoritative response reports no more pages',async()=>{
+  clinicalApi.workspace.mockResolvedValueOnce(workspace({hasMoreAssessments:false}));
+  await mount();await click('clinical-tab-assessments');await click('stage3-load-assessments');
+  expect(clinicalApi.workspace).toHaveBeenCalledTimes(1);
+  expect(get('stage3-panel-assessments').props['data-assessments']).toBe(1);
+ });
+ it('retains current history and surfaces failure when old plans cannot be read',async()=>{
+  await mount();clinicalApi.workspace.mockRejectedValueOnce(Error('Synthetic old-plan access denied'));
+  await click('clinical-tab-plan');await click('stage3-load-plan');
+  expect(get('stage3-panel-plan').props['data-plans']).toBe(1);
+  expect(clinicalApi.workspace).toHaveBeenCalledTimes(2);
+  expect(JSON.stringify(tree.toJSON())).toContain('Older plans could not be loaded');
+ });
+ it('retains current assessment and exposes a retryable older-assessment failure',async()=>{
+  await mount();clinicalApi.workspace.mockRejectedValueOnce(Error('Synthetic old-assessment denied'));
+  await click('clinical-tab-assessments');await click('stage3-load-assessments');
+  expect(get('stage3-panel-assessments').props['data-assessments']).toBe(1);
+  expect(JSON.stringify(tree.toJSON())).toContain('Earlier assessments could not be loaded');
+ });
+ it('deduplicates overlapping historical plans and observations by real item identity',async()=>{
+  await mount();
+  clinicalApi.workspace.mockResolvedValueOnce(workspace({
+   plans:[plan('plan-current'),plan('plan-old-2')],
+   observations:[observation('obs-current'),observation('obs-old-2')],
+   hasMorePlans:false
+  }));
+  await click('clinical-tab-plan');await click('stage3-load-plan');
+  expect(get('stage3-panel-plan').props['data-plans']).toBe(2);
+  expect(get('stage3-panel-plan').props['data-observations']).toBe(2);
+ });
+ it('deduplicates overlapping assessments without inventing clinical evidence',async()=>{
+  await mount();
+  clinicalApi.workspace.mockResolvedValueOnce(workspace({assessments:[assessment('ass-current'),assessment('ass-old-2')],hasMoreAssessments:false}));
+  await click('clinical-tab-assessments');await click('stage3-load-assessments');
+  expect(get('stage3-panel-assessments').props['data-assessments']).toBe(2);
+ });
+ it('reports ordinary navigation safely when clinician clears unsaved session state',async()=>{
+  await mount();await click('clinical-tab-sessions');await click('stage3-pending-sessions');
+  await click('stage3-cleared-sessions');
+  await click('clinical-tab-plan');
+  expect(get('stage3-panel-plan')).toBeTruthy();
+  expect(global.window.confirm).not.toHaveBeenCalled();
+ });
+ it('blocks browser beforeunload while synthetic session text is unsaved',async()=>{
+  await mount();await click('clinical-tab-sessions');await click('stage3-pending-sessions');
+  const handler=global.window.addEventListener.mock.calls.find(c=>c[0]==='beforeunload')?.[1];
+  expect(typeof handler).toBe('function');
+  const event={preventDefault:jest.fn(),returnValue:undefined};
+  handler(event);
+  expect(event.preventDefault).toHaveBeenCalledTimes(1);
+  expect(event.returnValue).toBe('');
+ });
+ it('allows beforeunload without preventDefault when no session is pending',async()=>{
+  await mount();
+  const handler=global.window.addEventListener.mock.calls.find(c=>c[0]==='beforeunload')?.[1];
+  const event={preventDefault:jest.fn(),returnValue:undefined};
+  handler(event);
+  expect(event.preventDefault).not.toHaveBeenCalled();
+  expect(event.returnValue).toBeUndefined();
+ });
+ it('stops a real anchor navigation when user refuses to discard unsaved text',async()=>{
+  await mount();await click('clinical-tab-sessions');await click('stage3-pending-sessions');
+  const handler=global.document.addEventListener.mock.calls.find(c=>c[0]==='click')?.[1];
+  const event={target:{closest:()=>({href:'/app/children'})},preventDefault:jest.fn(),stopPropagation:jest.fn()};
+  handler(event);
+  expect(global.window.confirm).toHaveBeenCalled();
+  expect(event.preventDefault).toHaveBeenCalledTimes(1);
+  expect(event.stopPropagation).toHaveBeenCalledTimes(1);
+ });
+ it('does not intercept unrelated non-anchor clicks while editing a draft',async()=>{
+  await mount();await click('clinical-tab-sessions');await click('stage3-pending-sessions');
+  const handler=global.document.addEventListener.mock.calls.find(c=>c[0]==='click')?.[1];
+  const event={target:{closest:()=>null},preventDefault:jest.fn(),stopPropagation:jest.fn()};
+  handler(event);
+  expect(event.preventDefault).not.toHaveBeenCalled();
+ });
+ it('undoes a browser history traversal after rejected discard confirmation',async()=>{
+  await mount();await click('clinical-tab-sessions');await click('stage3-pending-sessions');
+  const handler=global.window.addEventListener.mock.calls.find(c=>c[0]==='popstate')?.[1];
+  handler();
+  expect(global.window.confirm).toHaveBeenCalled();
+  expect(global.history.go).toHaveBeenCalledWith(1);
+ });
+ it('cleans up browser navigation guards when the clinical screen unmounts',async()=>{
+  await mount();
+  await act(async()=>{tree.unmount();tree=null;});
+  const events=global.window.removeEventListener.mock.calls.map(c=>c[0]);
+  expect(events).toEqual(expect.arrayContaining(['beforeunload','popstate']));
+  expect(global.document.removeEventListener).toHaveBeenCalledWith('click',expect.any(Function),true);
+ });
+
 });
