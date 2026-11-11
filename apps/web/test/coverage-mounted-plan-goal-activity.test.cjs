@@ -248,4 +248,101 @@ describe('M4-08 real clinician plan version draft controls',()=>{
   expect(JSON.stringify(tree.toJSON())).toContain('Approve and release');
   expect(clinicalApi.submit).not.toHaveBeenCalled();
  });
+
+ it('new activities are excluded from specialty list once already attached',async()=>{
+  await mount();
+  await change('home-activity-add','t1');
+  const values=get('home-activity-add').findAllByType('option').map(o=>o.props.value);
+  expect(values).not.toContain('t1');
+  expect(find('home-activity-0')).toHaveLength(1);
+  expect(get('home-activity-unlinked')).toBeTruthy();
+ });
+ it('legacy already-saved unlinked activity remains editable without inventing an association',async()=>{
+  clinicalApi.saveVersion.mockResolvedValue({version:4});
+  await mount(version({homeActivities:[{templateId:'t1',frequency:'Weekly',note:'Fictional routine'}]}));
+  expect(find('home-activity-unlinked')).toHaveLength(0);
+  expect(get('plan-save').props.disabled).toBe(false);
+  await change('plan-summary','Fictional clinician edit');
+  await click('plan-save');
+  expect(clinicalApi.saveVersion).toHaveBeenCalledWith('c1','v1',expect.objectContaining({
+   homeActivities:[expect.objectContaining({templateId:'t1'})]
+  }));
+ });
+ it('duplicate synthetic suggestion cannot silently add a second copy of an activity',async()=>{
+  await mount(version({homeActivities:[{templateId:'t1',goalKey:'g1',frequency:'Weekly'}]}));
+  const suggestion=tree.root.findAll(n=>n.type==='aside'&&n.props.children==='Synthetic suggestions sidecar');
+  expect(suggestion).toHaveLength(1);
+  expect(find('home-activity-1')).toHaveLength(0);
+ });
+ it('read-only version retains saved goal values but removes every mutation action',async()=>{
+  await mount(version({status:'IN_REVIEW',mine:false}),ws({canEdit:false,canReview:false}));
+  expect(get('plan-summary').props.disabled).toBe(true);
+  expect(get('goal-title-0').props.disabled).toBe(true);
+  expect(get('goal-horizon-0').props.disabled).toBe(true);
+  expect(find('goal-add')).toHaveLength(0);
+  expect(find('goal-remove-0')).toHaveLength(0);
+  expect(find('plan-save')).toHaveLength(0);
+  expect(find('plan-submit')).toHaveLength(0);
+  expect(find('review-return')).toHaveLength(0);
+ });
+ it('existing home activity allows removing it without altering immutable persisted source',async()=>{
+  clinicalApi.saveVersion.mockResolvedValue({version:4});
+  const original=version({homeActivities:[{templateId:'t1',goalKey:'g1',frequency:'Weekly'}]});
+  await mount(original);
+  const row=get('home-activity-0');
+  const remove=row.findAllByType('button').find(x=>x.props['aria-label']==='Remove activity');
+  await act(async()=>remove.props.onClick());
+  expect(find('home-activity-0')).toHaveLength(0);
+  await click('plan-save');
+  expect(clinicalApi.saveVersion.mock.calls[0][2].homeActivities).toEqual([]);
+  expect(original.homeActivities).toHaveLength(1);
+ });
+ it('frozen internal plan can start a new version without resubmitting or approving it',async()=>{
+  clinicalApi.newVersion.mockResolvedValueOnce({id:'v2',status:'DRAFT'});
+  await mount(version({status:'FROZEN_INTERNAL'}));
+  expect(find('plan-save')).toHaveLength(0);
+  expect(get('plan-new-version')).toBeTruthy();
+  await click('plan-new-version');
+  expect(clinicalApi.newVersion).toHaveBeenCalledWith('c1','plan-1');
+  expect(clinicalApi.submit).not.toHaveBeenCalled();
+ });
+ it('pending reviewer return does not clear comment if the server rejects the action',async()=>{
+  run=jest.fn(async(fn)=>{await fn();return false;});
+  clinicalApi.giveBack.mockResolvedValueOnce({status:'IN_REVIEW'});
+  await mount(version({status:'IN_REVIEW',mine:false}),ws({canEdit:false,canReview:true}));
+  await change('review-comment','Fictional missing attachment');
+  await click('review-return');
+  expect(get('review-comment').props.value).toBe('Fictional missing attachment');
+  expect(clinicalApi.giveBack).toHaveBeenCalledWith('c1','v1','Fictional missing attachment',3);
+ });
+ it('successful reviewer return clears only the unsent comment, never signs the clinical plan',async()=>{
+  clinicalApi.giveBack.mockResolvedValueOnce({status:'RETURNED_FOR_REVISION'});
+  await mount(version({status:'IN_REVIEW',mine:false}),ws({canEdit:false,canReview:true}));
+  await change('review-comment','  Fictional reviewer feedback  ');
+  await click('review-return');
+  expect(get('review-comment').props.value).toBe('');
+  expect(JSON.stringify(tree.toJSON())).toContain('Approve and release');
+  expect(clinicalApi.saveVersion).not.toHaveBeenCalled();
+ });
+ it('a failed immutable preview request does not display fabricated family data',async()=>{
+  run=jest.fn(async(fn)=>{try {await fn();} catch {} return false;});
+  clinicalApi.familyPreview.mockRejectedValueOnce({status:403,message:'Fictional denied'});
+  await mount();
+  await click('plan-family-preview');
+  expect(clinicalApi.familyPreview).toHaveBeenCalledWith('c1','v1');
+  expect(find('family-preview')).toHaveLength(0);
+  expect(get('plan-family-preview')).toBeTruthy();
+ });
+ it('internal preview may render exact returned activity but never becomes a family release',async()=>{
+  clinicalApi.familyPreview.mockResolvedValueOnce({notice:'Synthetic internal-only preview',
+   activities:[{template:{...template},frequency:'Weekly'}],
+   snapshotId:'fictional-snapshot',fingerprint:'fictional-hash'});
+  await mount();
+  await click('plan-family-preview');
+  expect(get('family-preview')).toBeTruthy();
+  expect(JSON.stringify(tree.toJSON())).toContain('Synthetic internal-only preview');
+  expect(JSON.stringify(tree.toJSON())).toContain('fictional-snapshot');
+  expect(clinicalApi.submit).not.toHaveBeenCalled();
+ });
+
 });
