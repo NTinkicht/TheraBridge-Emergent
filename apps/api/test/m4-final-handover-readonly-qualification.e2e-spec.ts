@@ -121,7 +121,7 @@ describe('M4-08 governance non-authorizing handover list boundaries',()=>{
  });
  it('returns all current active items and bounded first 100 canceled items with next-page cursor',async()=>{
   const {prisma,service}=fake();
-  prisma.caseloadTransferDraft.findMany.mockImplementation(async args=>{
+  prisma.caseloadTransferDraft.findMany.mockImplementation(async (args:any)=>{
    if(args.where.status==='CANCELLED')return Array.from({length:101},(_,i)=>draft({id:'cancel-'+i,status:'CANCELLED'}));
    return [draft({id:'active-one',status:'PENDING_ACK'}),draft({id:'active-two',status:'ACKNOWLEDGED'})];
   });
