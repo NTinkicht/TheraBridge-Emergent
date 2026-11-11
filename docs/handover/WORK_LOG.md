@@ -927,3 +927,6 @@ Updated `review-release-scope.mjs` image-ref validator to accept digest capture 
 
 ## 2026-11-12 — PR #362 Docker digest matching correction
 Matched Docker's canonical repository@sha256 RepoDigests when caller supplied registry:port/path:tag@sha256. The full repository identity and digest remain mandatory; fake Docker export test added. Final qualification pending; no signed OCI proof or distribution clearance obtained.
+
+## 2026-11-12 — PR #362 two-edition release scope integration
+Created `merge-release-captures.mjs` with strict per-edition schema validation and canonical file-list hashing; added adversarial tests and full-CI test step. Produces a combined UNATTESTED_CANDIDATE evidence JSON for conservative release-scope review. Source package publication, actual distributed images and human legal authorization remain unresolved.
