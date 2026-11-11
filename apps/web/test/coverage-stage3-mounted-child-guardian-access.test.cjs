@@ -199,7 +199,7 @@ describe('mounted child access and operational audit safety',()=>{
   expect(JSON.stringify(tree.toJSON())).toContain(label);
   if(canInvite){
    expect(get('guardian-invite-guardian-a')).toBeTruthy();
-   expect(JSON.stringify(get('guardian-invite-guardian-a').props.children)).toContain(action);
+   expect(get('guardian-invite-guardian-a').props.children.filter(x=>typeof x==='string').join('')).toContain(action);
   } else expect(find('guardian-invite-guardian-a')).toHaveLength(0);
  });
  it('missing guardian relationships have a safe read-only empty family state',async()=>{
