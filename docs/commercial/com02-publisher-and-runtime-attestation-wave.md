@@ -30,3 +30,7 @@ The release-scope comparer now accepts safely bounded tagged image names (includ
 
 ### Docker canonical RepoDigest enforcement
 The local image lookup now normalizes an optional tag off the canonical `RepoDigests` comparison while preserving the exact repository name (including registry port) **and immutable sha256 digest**. This prevents false negatives on normal Docker inspect metadata without accepting a digest from another repository. Dedicated mocked Docker export tests cover this path; original image rights remain unapproved. Final-head CI and independent Codex review still PENDING.
+
+### Dual-edition candidate manifest merger
+
+New `scripts/commercial/merge-release-captures.mjs` consumes separately produced local `SAAS` and `ENTERPRISE` Docker export candidate JSON and writes a new combined manifest; example: `node scripts/commercial/merge-release-captures.mjs /tmp/saas.json /tmp/enterprise.json /tmp/com02-unattested-images.json`. It fails closed on wrong/duplicate editions, arbitrary injected fields, forged signed/legal approvals, malformed digest and asset file paths, duplicate file entries, and exceeded size limits. This output can be passed to `review-release-scope.mjs` with the existing bulk rights evidence. Both images retain `UNATTESTED_CANDIDATE`; summary counts `independentlyVerifiedReleaseImages: 0`, and no commercial rights are granted. A dedicated offline Node test suite is wired into full CI; no real edition images have been provided.
