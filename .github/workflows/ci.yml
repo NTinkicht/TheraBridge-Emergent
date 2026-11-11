@@ -234,6 +234,10 @@ jobs:
         run: node --test scripts/commercial/build-bulk-rights-evidence.test.mjs
       - name: Build consolidated per-version and source-asset evidence (NEVER legal approval)
         run: node scripts/commercial/build-bulk-rights-evidence.mjs /tmp/therabridge-com02-exact-version-rights-queue.json /tmp/therabridge-com02-source-correspondence-candidates.json docs/commercial/upstream-license-path-candidates.json /tmp/therabridge-com02-bulk-rights-evidence.json
+      - name: Validate strict release-image and publication-scope rights reconciliation
+        run: node --test scripts/commercial/review-release-scope.test.mjs
+      - name: Build conservative actual-image candidate comparison (unattested means unresolved)
+        run: node scripts/commercial/review-release-scope.mjs /tmp/therabridge-com02-bulk-rights-evidence.json docs/commercial/release-file-evidence.json /tmp/therabridge-com02-release-scope-review.json
       - name: Archive installed license evidence for full CI
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -250,6 +254,7 @@ jobs:
             /tmp/therabridge-com02-upstream-candidates.json
             /tmp/therabridge-com02-source-correspondence-candidates.json
             /tmp/therabridge-com02-bulk-rights-evidence.json
+            /tmp/therabridge-com02-release-scope-review.json
             /tmp/therabridge-com02-immutable-text-evidence.json
           if-no-files-found: error
           retention-days: 30
