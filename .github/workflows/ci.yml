@@ -4,6 +4,7 @@ on:
   push:
     branches: ["**"]
   pull_request:
+  workflow_dispatch:
 
 # Superseded pushes to the same ref should not consume two costly Docker jobs.
 concurrency:
