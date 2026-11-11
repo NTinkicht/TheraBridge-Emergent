@@ -155,7 +155,7 @@ describe('real immutable plan version history and source provenance',()=>{
    at:'2026-11-10T11:00:00Z',summary:'Fictional',observationIds:[],clinicalAuthorization:false,released:false
   }]})]));
   expect(html()).toContain('obsolete-goal');
-  expect(html()).toContain('0 explicit source observation(s)');
+  expect(get('plan-history-checkpoints').findAllByType('p').some(n => String(n.props.children?.join?.('') ?? n.props.children).includes('0 explicit source observation(s)'))).toBe(true);
  });
  it('compares both historical directions without combining version-bound outcome data',async()=>{
   await render(plan([version(2,{summary:'New fictional summary',goals:[goal({target:9})]}),version(1,{summary:'Old fictional summary'})]));
