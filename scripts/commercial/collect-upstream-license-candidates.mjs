@@ -55,6 +55,7 @@ function parseManifest(bytes,name,version){
  const dist=item.dist&&typeof item.dist==='object'?item.dist:{};
  return {sha256:digest(bytes),candidateLicenseExpression:license,
   candidateRepositoryUrl:safeText(repo,1024),candidateHomepage:home,
+  candidateGitHead:typeof item.gitHead==='string'&&/^[a-f0-9]{40}$/i.test(item.gitHead)?item.gitHead.toLowerCase():null,
   candidateDistIntegrity:safeText(dist.integrity,512),
   candidateDistTarball:safeText(dist.tarball,2048),
   candidateNotice:'UNVERIFIED_REGISTRY_MANIFEST_METADATA'};
@@ -88,7 +89,7 @@ async function buildUpstreamCandidates(input,{fetcher=fetchManifest,concurrency=
    pinnedSourceUrl:p.pinnedSourceUrl??null,
    manifestEvidenceStatus:'NOT_FETCHED',registryManifestSha256:null,
    candidateLicenseExpression:null,candidateRepositoryUrl:null,
-   candidateHomepage:null,candidateDistIntegrity:null,candidateDistTarball:null,
+   candidateHomepage:null,candidateGitHead:null,candidateDistIntegrity:null,candidateDistTarball:null,
    manifestMatchesLockedIntegrity:false,
    authoritativeLicenseTextSource:null,authoritativeLicenseTextSha256:null,
    upstreamCopyrightVerified:false,sourceRefVersionVerified:false,
@@ -110,6 +111,7 @@ async function buildUpstreamCandidates(input,{fetcher=fetchManifest,concurrency=
      candidateLicenseExpression:parsed.candidateLicenseExpression,
      candidateRepositoryUrl:parsed.candidateRepositoryUrl,
      candidateHomepage:parsed.candidateHomepage,
+     candidateGitHead:parsed.candidateGitHead,
      candidateDistIntegrity:parsed.candidateDistIntegrity,
      candidateDistTarball:parsed.candidateDistTarball,
      manifestMatchesLockedIntegrity:!!(parsed.candidateDistIntegrity&&row.lockedIntegrity&&parsed.candidateDistIntegrity===row.lockedIntegrity)});
