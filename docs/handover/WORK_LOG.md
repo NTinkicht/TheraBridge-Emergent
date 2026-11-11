@@ -917,3 +917,7 @@ Prepared additive guarded synthetic seed for five children, sibling guardian lin
 
 ## 2026-11-02 — Three synthetic therapist identities (PR pending)
 Added separate secret validation, three therapist identity creation without legacy password rotation, ten-identity idempotence/hosted seed checks, and protected extra-login QA. Credentials remain outside source/logs. New exact-HEAD CI and independent review required before merge. A protected GitHub QA secret and Render environment secret must both be provisioned securely before hosted deployment.
+
+
+## 2026-11-12 — PR #362 implementation batch 1
+Created `scripts/commercial/capture-docker-release.py`: digest-pinned local Docker inspect/create/export capture, bounded streaming per-file SHA-256 inventory, cleanup and explicit non-regular/volume exclusions. Created `scripts/commercial/test_capture_docker_release.py` negative fixtures; wired test to full CI. No real SaaS or Enterprise images captured or signed; package/asset/counsel release decisions remain unresolved. CI and Codex not yet verified for this checkpoint; work proceeds within PR #362 rather than opening another PR.
