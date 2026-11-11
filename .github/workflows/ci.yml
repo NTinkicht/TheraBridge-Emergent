@@ -287,6 +287,17 @@ jobs:
         run: |
           mkdir -p "$GITHUB_WORKSPACE/.workspace/m4-coverage/api"
           yarn workspace @therabridge/api test --coverage --collectCoverageFrom='src/**/*.ts' --coverageReporters=json-summary --coverageDirectory="$GITHUB_WORKSPACE/.workspace/m4-coverage/api"
+      - name: M4-08 independent full API branch/function hotspot audit (diagnostic only)
+        run: |
+          node --test scripts/qa/m4-api-coverage-hotspots.test.mjs
+          node scripts/qa/m4-api-coverage-hotspots.mjs
+      - name: Archive numeric-only API source hotspot diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-api-hotspots-${{ github.run_id }}
+          path: .workspace/m4-coverage/m4-api-hotspots.json
+          if-no-files-found: error
+          retention-days: 7
       - name: Validate M4-07 reproducible synthetic measurement and sanitized receipt
         run: |
           node --test scripts/qa/m4-performance-evidence.test.mjs
