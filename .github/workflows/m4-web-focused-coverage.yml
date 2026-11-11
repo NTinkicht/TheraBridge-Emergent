@@ -13,6 +13,13 @@ on:
       - 'scripts/qa/m4-web-coverage-audit*'
       - 'scripts/qa/m4-web-jest.config.cjs'
       - '.github/workflows/m4-web-focused-coverage.yml'
+  pull_request:
+    paths:
+      - 'apps/web/**'
+      - 'scripts/qa/m4-web-coverage-hotspots*'
+      - 'scripts/qa/m4-web-coverage-audit*'
+      - 'scripts/qa/m4-web-jest.config.cjs'
+      - '.github/workflows/m4-web-focused-coverage.yml'
   workflow_dispatch:
 
 permissions:
