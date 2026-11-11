@@ -1,3 +1,8 @@
+## 2026-11-11 — COM-02 mega PR #359 measured 53/91 bulk evidence (FINAL CI PENDING)
+Initial CI artifact verified 53/53 package exceptions and 91/91 tracked assets; 8 curated exact Git source versions yielded 9/9 SHA-256 immutable LICENSE/NOTICE **text candidates**. Provenance triage: 15 pinned source-root package name/version matches, 26 DefinitelyTyped lacking GitHead, 7 other missing revisions, 3 Next.js monorepo mismatches and 2 legacy unsafe repository claims. Every package remains independently un-attested; all legal approval, final notices, commercial grants 0. The 91 tracked assets split 73 image/icon, 15 brand and 3 container-build paths, all with production release presence **NOT VERIFIED**. Codex P2 transient timeout failure fixed by preserving row and skipping source fetch rather than losing whole audit; CI and review of final documentation HEAD PENDING. G2/G2b NO-GO.
+
+---
+
 ## 2026-11-11 — COM-02 mega PR #359 bulk evidence checkpoint (CODE COMMITTED / CI PENDING)
 Consolidated 53 npm exact-version publisher exceptions and 91 tracked assets into one counsel-facing fail-closed evidence generator. Eight immutable exact package-version source commit entries with nine candidate LICENSE/NOTICE paths are guarded against forged registry SHA, source Git commit or host and fetch only bounded UTF-8 source bytes; no raw third-party legal texts committed. Source-root candidate matching remains NOT independent release provenance, 0 authoritative legal interpretations/approvals, 0 commercial license grants or final notices. All source assets have production release presence UNKNOWN and SaaS/enterprise rights pending; semantic-PAX remains unresolved. Clinical G2/G2b NO-GO. New HEAD CI, Codex and merge NOT YET QUALIFIED.
 
