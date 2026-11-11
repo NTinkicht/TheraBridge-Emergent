@@ -1152,3 +1152,6 @@ Implemented offline unittest cases for streaming byte hashing, traversal, duplic
 
 ## 2026-11-12 — PR #362 capture integration verification candidates
 Added tests for tagged image references (registry port and tag), matching local Docker-export candidate into release scope without rights promotion, and rejection of forged independent signature, copyright approval, complete-runtime-mount assertions, or negative omitted entry counts. These are **implemented test cases, not yet a verified green exact-head run**. Review/commercial go-live unapproved.
+
+## 2026-11-12 — PR #362 canonical Docker RepoDigest fixture
+Added mocked image inspect/create/export successful SHA-256 capture with canonical tagless RepoDigest, version-tagged image input and registry port. This covers the previous real-world false-reject condition without weakening digest requirement. New case not yet confirmed by final-head CI. Clinical/commercial authorization remains NO-GO.
