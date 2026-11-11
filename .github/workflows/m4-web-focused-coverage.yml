@@ -6,6 +6,7 @@ on:
       - test/m4-08-web-60-mega-coverage
       - test/m4-08-web-80-mega-coverage
       - test/m4-08-stage3-web-90-mega
+      - test/m4-08-final-qualification-mega
     paths:
       - 'apps/web/**'
       - 'scripts/qa/m4-web-coverage-hotspots*'
