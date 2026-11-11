@@ -79,7 +79,7 @@ export class ClinicalService {
         user: { status: 'ACTIVE' }, roles: { some: { role: 'THERAPIST' } } },
       select: { specialties: true },
     });
-    if (!member?.specialties.length) return [];
+    if (!Array.isArray(member?.specialties) || !member.specialties.length) return [];
     return db.careAssignment.findMany({
       where: { centerId, membershipId: v.membershipId, endedAt: null,
         service: { in: member.specialties }, ...(childId ? { childId } : {}) },
