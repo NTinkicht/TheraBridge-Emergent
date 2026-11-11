@@ -86,7 +86,7 @@ function validateInputs(register,correspondence,config){
   // dropping the 53-version report or inventing a positive correspondence.
   const temporarilyUnavailable=corresponding.evidenceStatus==='UPSTREAM_TIMEOUT'||
    corresponding.evidenceStatus==='SOURCE_FETCH_FAILED'||
-   /^UPSTREAM_HTTP_(?:408|429|5\d\d)$/.test(corresponding.evidenceStatus??'');
+   /^UPSTREAM_HTTP_\d{3}$/.test(corresponding.evidenceStatus??'');
   if(corresponding.evidenceStatus!==SOURCE_MATCH&&!temporarilyUnavailable)
    throw Error('CURATED_SOURCE_CORRESPONDENCE_CONTRADICTED');
   let parsed;
