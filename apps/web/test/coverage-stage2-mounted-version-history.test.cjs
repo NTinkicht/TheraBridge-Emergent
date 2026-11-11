@@ -180,7 +180,7 @@ describe('real immutable plan version history and source provenance',()=>{
   await render(plan([version(2,{homeActivities:[]}),version(1,{homeActivities:[activity()]})]));
   expect(html()).toContain('Removed');
   expect(html()).toContain('Frozen activity from saved plan');
-  expect(html()).toContain('definition changes only');
+  expect(html()).toContain('Definition changes only');
  });
  it('preserves an unavailable legacy title and missing duration as explicitly unavailable',async()=>{
   await render(plan([version(2),version(1,{homeActivities:[activity({templateId:'lost-template',snapshot:undefined,note:undefined,durationMinutes:undefined,goalKey:''})]})]));
