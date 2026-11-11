@@ -61,3 +61,15 @@ condition = "AND"
 regexTarget = "secret"
 paths = ['''^apps/web/test/coverage-stage3-mounted-recovery-and-feasibility\.test\.cjs$''']
 regexes = ['''^synthetic-strong-1$''']
+
+# M4-08 final shared-workspace Jest suite: fictional CSRF fixture, not a
+# credential. The exact literal exists in an immutable feature-branch commit;
+# scope this allowance to only that single tracked test file and captured value.
+# All other credential assignments and repository history remain scanned.
+[[allowlists]]
+targetRules = ["therabridge-credential-assignment"]
+description = "Single fictional CSRF fixture in M4-08 workspace unit test history"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''^apps/web/test/coverage-m4-final-workspace-permissions-and-retry\.test\.cjs$''']
+regexes = ['''^fictional$''']
