@@ -1044,3 +1044,6 @@ Run offline candidate-capture tests in full exact-head CI; inspect all required 
 
 ## 2026-11-12 — PR #362 exact-head qualification after image-ref fix
 Verify tagged image fixture and forged-signature tests in full CI; capture exact final head run IDs and test outcomes before reporting PASS. Do not use old-head green results for latest SHA. Obtain genuine Docker OCI image evidence and third-party source attestations for 53 versions; compare all 91 assets and obtain SaaS/enterprise counsel approval. Do not merge prior to independent exact-head Codex review, entire required CI green, and Rule 7 refresh.
+
+## 2026-11-12 — Next qualification gate for PR #362
+Verify mocked canonical RepoDigest export case in exact-head CI, inspect all full CI jobs, obtain independent Codex review after stable passing final head, and resolve review findings. Production release edition artifacts and 53 npm immutable publisher-to-source attestations require genuine signed upstream/build evidence; legal grant and clinical gates remain closed.
