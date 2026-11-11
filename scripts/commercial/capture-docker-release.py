@@ -8,7 +8,7 @@ import subprocess
 import sys
 import tarfile
 
-PIN = re.compile(r"^[a-zA-Z0-9._/-]+(?::[a-zA-Z0-9._-]+)?@sha256:[0-9a-f]{64}$")
+PIN = re.compile(r"^[a-zA-Z0-9._-]+(?::[0-9]{1,5})?(?:/[a-zA-Z0-9._-]+)*(?::[a-zA-Z0-9._-]+)?@sha256:[0-9a-f]{64}$")
 HEX = re.compile(r"^[0-9a-f]{64}$")
 MAX_FILES = 100000
 MAX_FILE_BYTES = 512 * 1024 * 1024
