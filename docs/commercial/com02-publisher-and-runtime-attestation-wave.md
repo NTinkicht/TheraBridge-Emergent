@@ -34,3 +34,7 @@ The local image lookup now normalizes an optional tag off the canonical `RepoDig
 ### Dual-edition candidate manifest merger
 
 New `scripts/commercial/merge-release-captures.mjs` consumes separately produced local `SAAS` and `ENTERPRISE` Docker export candidate JSON and writes a new combined manifest; example: `node scripts/commercial/merge-release-captures.mjs /tmp/saas.json /tmp/enterprise.json /tmp/com02-unattested-images.json`. It fails closed on wrong/duplicate editions, arbitrary injected fields, forged signed/legal approvals, malformed digest and asset file paths, duplicate file entries, and exceeded size limits. This output can be passed to `review-release-scope.mjs` with the existing bulk rights evidence. Both images retain `UNATTESTED_CANDIDATE`; summary counts `independentlyVerifiedReleaseImages: 0`, and no commercial rights are granted. A dedicated offline Node test suite is wired into full CI; no real edition images have been provided.
+
+## Actions restart attempt — 2026-11-12
+
+Previous exact-head GitHub Actions CI and commercial-inventory runs ended with `startup_failure` before any jobs executed. GitHub refused full-run retries. This documentation-only commit requests fresh PR/push workflow runs; it does not change source-code semantics, assert CI success, attest image contents, approve third-party rights, or change clinical G2/G2b gates. Review and exact-new-head CI must both be requalified before merging.
