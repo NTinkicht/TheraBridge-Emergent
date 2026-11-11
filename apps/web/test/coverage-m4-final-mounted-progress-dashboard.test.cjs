@@ -118,7 +118,7 @@ describe('mounted progress dashboard remains source-bound and version-agnostic a
   });
   expect(html()).toContain('2026-10-31');
   expect(html()).toContain('2026-11-10');
-  expect(html()).toContain('None recorded')===false;
+  expect(html()).not.toContain('None recorded');
  });
  it('selected child narrows available services and explicitly filters network query',async()=>{
   await mount();await select('filter-child','synthetic-child');
