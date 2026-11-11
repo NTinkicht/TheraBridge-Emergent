@@ -99,6 +99,29 @@ test('adversarial false grants, missing rows, asset drift and forged license map
   await assert.rejects(buildBulkEvidence(f.register,f.correspondence,f.config,{fetcher:async()=>Buffer.from('abc')}));
  }
 });
+test('upstream timeout or transient HTTP failure does not erase unresolved package evidence',async()=>{
+ for(const status of ['UPSTREAM_TIMEOUT','UPSTREAM_HTTP_503','SOURCE_FETCH_FAILED']){
+  const {register,correspondence,config}=fixtures();
+  correspondence.records[0].evidenceStatus=status;
+  let requests=0;
+  const out=await buildBulkEvidence(register,correspondence,config,{fetcher:async()=>{
+   requests++;throw Error('source should not be fetched after failed corroboration');
+  }});
+  assert.equal(requests,0);
+  assert.equal(out.packages.length,3);
+  const row=out.packages.find(x=>x.name==='alpha');
+  assert.equal(row.textCandidateStatus,'PRIOR_SOURCE_CORROBORATION_UNAVAILABLE_NO_LICENSE_FETCH');
+  assert.equal(row.sourceTextCandidates.length,0);
+  assert.equal(out.counts.curatedSourceVersions,1);
+  assert.equal(out.counts.packagesStillRequiringIndependentAttestation,3);
+  assert.equal(out.counts.legallyApproved,0);
+ }
+});
+test('contradictory version source identity still rejects curated mapping',async()=>{
+ const {register,correspondence,config}=fixtures();
+ correspondence.records[0].evidenceStatus='SOURCE_PACKAGE_IDENTITY_MISMATCH';
+ await assert.rejects(buildBulkEvidence(register,correspondence,config,{fetcher:async()=>Buffer.from('text')}),/CURATED_SOURCE_CORRESPONDENCE_CONTRADICTED/);
+});
 test('zero curated source files still preserves entire review queue',async()=>{
  const {register,correspondence,config}=fixtures();config.records=[];
  let n=0;
