@@ -209,7 +209,7 @@ describe('M4-08 real supervisor review comments enforce validation and exact ver
   await mountReview();await change('review-comment','Fictional unsent feedback');
   await click('review-return');
   expect(get('review-comment').props.value).toBe('Fictional unsent feedback');
-  expect(get('review-error')).toBeTruthy();
+  expect(onError).toHaveBeenCalledTimes(1);
   expect(onReload).not.toHaveBeenCalled();
  });
 });

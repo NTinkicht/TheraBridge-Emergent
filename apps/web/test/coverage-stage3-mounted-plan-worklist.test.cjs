@@ -210,7 +210,7 @@ describe('M4-08 90% real plan list historical navigation and aggregate dirty sco
   const summaries=find('plan-summary');
   expect(summaries).toHaveLength(2);
   await act(async()=>summaries[0].props.onChange({target:{value:'Unsubmitted source-specific changes'}}));
-  const submit=find('plan-submit');
+  const submit=find('plan-submit').filter(x=>x.type==='button');
   expect(submit).toHaveLength(2);
   expect(submit[0].props.disabled).toBe(true);
   expect(submit[1].props.disabled).toBe(true);
@@ -219,7 +219,7 @@ describe('M4-08 90% real plan list historical navigation and aggregate dirty sco
  it('multiple versions use version pluralization, not a fabricated approved status',async()=>{
   const p=plan('plan-a',{versions:[ver('version-current',3),ver('version-old',2)]});
   await mount(workspace({plans:[p]}));
-  expect(JSON.stringify(tree.toJSON())).toContain('2 versions');
+  expect(get('plan-plan-a').findAllByType('p')[0].children.filter(x=>typeof x==='string').join('')).toContain('2 versions');
   expect(JSON.stringify(tree.toJSON())).toContain('Approve and release');
  });
 });
