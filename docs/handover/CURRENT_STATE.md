@@ -868,3 +868,6 @@ Added strict offline manifest merger for distinct SaaS/Enterprise candidate Dock
 
 ## 2026-11-12 — COM-02 next consolidated PR after merged #362
 Opened follow-up branch for offline DSSE Ed25519 verification of exact dual-edition OCI digest and filesystem-inventory claims. Verifier accepts only a separately approved, pinned public-key SPKI SHA-256 and valid DSSE PAE signature; explicitly declines to infer publisher identity, production deployment, legal grants or clinical G2/G2b authorization. Ephemeral-key adversarial tests and CI wiring implemented. Real release signed attestations, 53 npm source lineages, 91 asset rights and counsel decisions remain unverified; new PR full CI/Codex pending.
+
+## 2026-11-12 — COM-02 paired signed-release-rights reconciliation
+Following merged #363, implemented a fail-closed, fully reverified DSSE + two-edition Docker export + complete bulk package/source-asset evidence join. Output distinguishes exact signed LOCAL candidate hashes from actual release and legal rights; no publisher authority or independently attested production deployment can be claimed. Offline adversarial CI test wiring added. Full CI/Codex qualification pending; actual 53 npm publisher lineages and 91 assets remain unresolved. G2/G2b NO-GO unchanged.
