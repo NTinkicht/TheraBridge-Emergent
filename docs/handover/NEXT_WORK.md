@@ -1056,3 +1056,5 @@ Qualify DSSE verifier's offline adversarial suite on exact final HEAD with full 
 
 ## 2026-11-12 — COM-02 next work after signed rights join
 Qualify new cross-evidence rights join against full exact-head CI, commercial inventory and independent Codex review; resolve all P1/P2 before merge. Obtain genuine independently signed production SaaS and Enterprise OCI release artifacts and trusted publisher identities. Link actual registries/deployments and layer/SBOM package identities with 91 exact source assets; independently corroborate 53 exact npm package-version upstream publishing lineages; request distinct SaaS versus on-prem enterprise obligations approval from rights holders/UAE counsel. Keep approval counts zero and preserve clinical signing/consent/release NO-GO.
+
+2026-11-12 Requalify PR #364 after Codex P2 fix: confirm supplemental obligations and adversarial regression in full exact-head CI, obtain exact-head Codex review and merge only if green. Actual signer authority, OCI registry publication/deployment, 53 npm provenance lineages, 91 assets and counsel remain unresolved.
