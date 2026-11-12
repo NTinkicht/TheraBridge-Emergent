@@ -1,23 +1,3 @@
-## 2026-11-11 — COM-02 #361 release scope comparator (IMPLEMENTED, CI PENDING)
-After #359 merged with full CI and clean Codex, opened one grouped #361 release-image and source publication attestation followup. Implemented conservative exact asset SHA-256-to-pinned OCI image file candidate comparison, preserving all 53 package and 91 asset exception rows, no uploaded/signed release images yet. The checked-in image evidence manifest is empty; no shipping status is independently attested. No source-to-publisher attestation, customer license approval, final THIRD_PARTY_NOTICES or clinical G2/G2b gate changes. Added regression tests/CI artifact; exact-head full CI and independent review NOT YET QUALIFIED.
-
----
-
-## 2026-11-11 — COM-02 #359 final upstream outage-boundary clarification
-All upstream HTTP failures (including 404) in prior pinned-source corroboration preserve the package's unresolved queue row without automatically treating it as verified LICENSE text; actual contradicted source identity, altered Git SHA, wrong repository or lock integrity remain hard failures. A 404 negative regression was added. **Final exact-head full CI and clean Codex review pending**.
-
----
-
-## 2026-11-11 — COM-02 mega PR #359 measured 53/91 bulk evidence (FINAL CI PENDING)
-Initial CI artifact verified 53/53 package exceptions and 91/91 tracked assets; 8 curated exact Git source versions yielded 9/9 SHA-256 immutable LICENSE/NOTICE **text candidates**. Provenance triage: 15 pinned source-root package name/version matches, 26 DefinitelyTyped lacking GitHead, 7 other missing revisions, 3 Next.js monorepo mismatches and 2 legacy unsafe repository claims. Every package remains independently un-attested; all legal approval, final notices, commercial grants 0. The 91 tracked assets split 73 image/icon, 15 brand and 3 container-build paths, all with production release presence **NOT VERIFIED**. Codex P2 transient timeout failure fixed by preserving row and skipping source fetch rather than losing whole audit; CI and review of final documentation HEAD PENDING. G2/G2b NO-GO.
-
----
-
-## 2026-11-11 — COM-02 mega PR #359 bulk evidence checkpoint (CODE COMMITTED / CI PENDING)
-Consolidated 53 npm exact-version publisher exceptions and 91 tracked assets into one counsel-facing fail-closed evidence generator. Eight immutable exact package-version source commit entries with nine candidate LICENSE/NOTICE paths are guarded against forged registry SHA, source Git commit or host and fetch only bounded UTF-8 source bytes; no raw third-party legal texts committed. Source-root candidate matching remains NOT independent release provenance, 0 authoritative legal interpretations/approvals, 0 commercial license grants or final notices. All source assets have production release presence UNKNOWN and SaaS/enterprise rights pending; semantic-PAX remains unresolved. Clinical G2/G2b NO-GO. New HEAD CI, Codex and merge NOT YET QUALIFIED.
-
----
-
 ## 2026-11-11 — COM-02 #357 measured source-root candidate evidence
 Code checkpoint `8c645d0feb79ddd7fc8cea24425aa6c722e2631b` — GitHub Actions full-CI run [42923019170](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42923019170): new corroboration tests **7 PASS / 0 FAIL**, source candidate generation PASS. Recorded exact-version `53` exceptions, `15` registry gitHead+immutable source-root manifest name/version matches, **53 still independently un-attested**, `0` authoritative upstream LICENSE texts verified, `0` legal approvals. Six-job full CI was **still underway when this note was committed**; any later documentation HEAD requires fresh CI and independent review. The 91 non-package assets, PAX review and G2/G2b NO-GO remain open.
 
@@ -852,16 +832,3 @@ New isolated branch adds five fictional children, including Amina and Zayd as Ah
 
 ## 2026-11-02 — Three synthetic therapist identities (PR pending)
 The owner authorized individual demo logins for Dalia Mansour (behavioral/ABA), Nour Haddad (OT) and Huda Rahim (Speech). A separate three-password `DEMO_EXTRA_PASSWORDS_JSON` is required on Render; the original seven-password `DEMO_PASSWORDS_JSON` is preserved. Three display-only membership records are promoted into local therapist authentication identities idempotently. The private hosted runner adds `TB_HOSTED_QA_EXTRA_USERS_JSON` for targeted role/session/logout checks while retaining its seven baseline users. **NOT YET DEPLOYED OR HOSTED-VERIFIED.** No real clinical authorization, AI release or acceptance promotion.
-
-
-## 2026-11-12 — PR #362 COM-02 candidate runtime capture checkpoint
-Added a digest-pinned local Docker-export file inventory tool, offline negative tests, and full-CI test wiring. This is *candidate* technical evidence, **not** independently signed production OCI evidence, SaaS/enterprise rights approval, signed customer terms or clinical authorization. No release images supplied, no publication lineage approved among 53 unresolved versions, and all 91 source assets require distribution-scope/rights review. CI and Codex remain PENDING on the new head; the PR must stay draft until qualified. G2/G2b NO-GO.
-
-## 2026-11-12 — PR #362 capture-to-scope compatibility correction
-The existing release comparator rejected the tagged image reference the new Docker-export capture emits. Corrected bounded image reference validation, added end-to-end candidate comparison regression, and fail-closed forged capture provenance negative fixtures. Current source is committed; all required CI and independent Codex verification must be repeated on final SHA. Release images still absent; no rights or G2/G2b approvals.
-
-## 2026-11-12 — COM-02 canonical Docker RepoDigest validation
-Fixed legitimate Docker registry-port/tag digest matching; added mocked exact repository-and-sha256 test. No image has been independently captured/signed, and all 53 package publication and 91 asset rights checks remain unresolved. Final-head CI/Codex required before merge.
-
-## 2026-11-12 — PR #362 paired release capture preparation
-Added strict offline manifest merger for distinct SaaS/Enterprise candidate Docker exports, rejecting counterfeit signature and approval fields and unsafe file inventory metadata. New Node tests and full CI job wiring added. No actual release edition artifacts yet; signed OCI verification, 53 npm publication versions, 91 asset redistribution and counsel remain open. Exact-head green CI and Codex unverified; PR stays draft.

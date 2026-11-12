@@ -61,13 +61,3 @@ condition = "AND"
 regexTarget = "secret"
 paths = ['''^apps/web/test/coverage-stage3-mounted-recovery-and-feasibility\.test\.cjs$''']
 regexes = ['''^synthetic-strong-1$''']
-
-# M4-08 historical fictional CSRF token in one Web coverage test, scanned by --all.
-# Only suppress this rule, exact fixture path, and exact synthetic literal.
-[[allowlists]]
-targetRules = ["therabridge-credential-assignment"]
-description = "Synthetic CSRF token in M4-08 workspace permissions test"
-condition = "AND"
-regexTarget = "secret"
-paths = ['''^apps/web/test/coverage-m4-final-workspace-permissions-and-retry\.test\.cjs$''']
-regexes = ['''^fictional$''']
