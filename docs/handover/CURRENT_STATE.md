@@ -865,3 +865,6 @@ Fixed legitimate Docker registry-port/tag digest matching; added mocked exact re
 
 ## 2026-11-12 — PR #362 paired release capture preparation
 Added strict offline manifest merger for distinct SaaS/Enterprise candidate Docker exports, rejecting counterfeit signature and approval fields and unsafe file inventory metadata. New Node tests and full CI job wiring added. No actual release edition artifacts yet; signed OCI verification, 53 npm publication versions, 91 asset redistribution and counsel remain open. Exact-head green CI and Codex unverified; PR stays draft.
+
+## 2026-11-12 — COM-02 next consolidated PR after merged #362
+Opened follow-up branch for offline DSSE Ed25519 verification of exact dual-edition OCI digest and filesystem-inventory claims. Verifier accepts only a separately approved, pinned public-key SPKI SHA-256 and valid DSSE PAE signature; explicitly declines to infer publisher identity, production deployment, legal grants or clinical G2/G2b authorization. Ephemeral-key adversarial tests and CI wiring implemented. Real release signed attestations, 53 npm source lineages, 91 asset rights and counsel decisions remain unverified; new PR full CI/Codex pending.
