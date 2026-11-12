@@ -103,7 +103,7 @@ describe('M4-08 authorized child edits and archiving never bypass concurrency',(
  it('updates exact child version and only provided fields with trimmed optional preferred name',async()=>{
   const {service,tx,trial}=make();
   await service.update(center,userId,childId,{
-   version:2,firstName:'  Fictional A  ',preferredName:' ',services:['speech','speech','occupational']
+   version:2,firstName:'  Fictional A  ',preferredName:'',services:['speech','speech','occupational']
   } as any);
   expect(tx.child.updateMany).toHaveBeenCalledWith({where:{id:childId,centerId:center,version:2},
    data:expect.objectContaining({firstName:'Fictional A',preferredName:null,

@@ -18,8 +18,13 @@ jest.mock('@/lib/messages',()=>{
  return {...real,messagesApi:{...real.messagesApi,
   list:jest.fn(),thread:jest.fn(),reply:jest.fn(),setStatus:jest.fn(),open:jest.fn()}};
 });
+jest.mock('@/lib/operations',()=>{
+ const real=jest.requireActual('@/lib/operations');
+ return {...real,opsApi:{...real.opsApi,child:jest.fn()}};
+});
 const {messagesApi}=require('../src/lib/messages');
-const {Messages}=require('../src/components/messages/Messages');
+const {Messages,NewThread}=require('../src/components/messages/Messages');
+const {opsApi}=require('../src/lib/operations');
 const thread=(more={})=>({
  id:'thread-a',subject:'Synthetic family scheduling',child:'Fictional Alex',
  category:'scheduling',audience:'GUARDIAN',service:null,status:'OPEN',
@@ -51,6 +56,11 @@ afterAll(()=>{global.document=oldDocument;});
 beforeEach(()=>{
  jest.useFakeTimers();jest.clearAllMocks();
  for(const k of ['list','thread','reply','setStatus','open'])messagesApi[k].mockReset();
+ opsApi.child.mockReset();opsApi.child.mockResolvedValue({services:['speech','occupational'],
+ guardians:[{id:'link-a',displayName:'Fictional guardian',portalStatus:'CONNECTED'},
+  {id:'link-pending',displayName:'Another guardian',portalStatus:'INVITED'}],
+ assignments:[{membershipId:'therapist-a',endedAt:null,service:'speech'},
+  {membershipId:'other-therapist',endedAt:null,service:'occupational'}]});
  messagesApi.list.mockResolvedValue({items:[thread()],unread:1});
  messagesApi.thread.mockResolvedValue(detail());
  messagesApi.reply.mockResolvedValue(detail({
@@ -124,5 +134,173 @@ describe('real messaging inbox and server-authoritative status',()=>{
   await mount();
   expect(get('threads-empty')).toBeTruthy();
   expect(find('thread-thread-a')).toHaveLength(0);
+ });
+});
+
+
+describe('M4-08 real NewThread boundaries for staff, family, manager and exact recipients',()=>{
+ const compose=async(props={})=>{await mount(props);await click('new-thread-button');};
+ it('empty child selection fails before network creation',async()=>{
+  await act(async()=>tree=create(h(NewThread,{centerId:'center-a',open:true,tone:'family',kids:[],
+   onClose:jest.fn(),onDone:jest.fn(),onError})));
+  await click('new-thread-send');
+  expect(get('new-thread-error')).toBeTruthy();
+  expect(messagesApi.open).not.toHaveBeenCalled();
+ });
+ it('short subject fails locally, never creates a placeholder family conversation',async()=>{
+  await compose({family:true});
+  await change('new-thread-subject','ab');
+  await change('new-thread-body','Fictional arrangement');
+  await click('new-thread-send');
+  expect(get('new-thread-error')).toBeTruthy();
+  expect(messagesApi.open).not.toHaveBeenCalled();
+ });
+ it('empty message refuses opening a family thread even when subject is valid',async()=>{
+  await compose({family:true});
+  await change('new-thread-subject','Fictional visit changes');
+  await click('new-thread-send');
+  expect(messagesApi.open).not.toHaveBeenCalled();
+  expect(get('new-thread-error')).toBeTruthy();
+ });
+ it('guardian submits only exact child, category and trimmed text without staff audiences',async()=>{
+  messagesApi.open.mockResolvedValueOnce({id:'new-family-thread'});
+  await compose({family:true});
+  await change('new-thread-subject','  Fictional schedule question  ');
+  await change('new-thread-body','  Can we change a synthetic visit?  ');
+  await click('new-thread-send');
+  expect(messagesApi.open).toHaveBeenCalledWith('center-a',{
+   childId:'child-a',category:'scheduling',subject:'Fictional schedule question',
+   body:'Can we change a synthetic visit?'
+  });
+  expect(find('new-thread-dialog')).toHaveLength(0);
+ });
+ it('assigned therapist cannot address an unknown guardian ID after linked directory response',async()=>{
+  await compose();
+  expect(opsApi.child).toHaveBeenCalledWith('center-a','child-a');
+  expect(get('new-thread-recipient').findAllByType('option').map(x=>x.props.value))
+   .toEqual(['','link-a']);
+  await change('new-thread-recipient','');
+  await change('new-thread-subject','Fictional safe handoff');
+  await change('new-thread-body','Fictional message body');
+  await click('new-thread-send');
+  expect(get('new-thread-error')).toBeTruthy();
+  expect(messagesApi.open).not.toHaveBeenCalled();
+ });
+ it('assigned therapist can send only to active connected guardian and exact child',async()=>{
+  messagesApi.open.mockResolvedValueOnce({id:'new-staff-thread'});
+  await compose();
+  await change('new-thread-subject','  Fictional family schedule  ');
+  await change('new-thread-body','  Fictional update  ');
+  await click('new-thread-send');
+  expect(messagesApi.open).toHaveBeenCalledWith('center-a',{
+   childId:'child-a',category:'scheduling',subject:'Fictional family schedule',
+   body:'Fictional update',audience:'GUARDIAN',guardianLinkId:'link-a'
+  });
+ });
+ it('specialty conversation rejects absence of a permitted child service',async()=>{
+  await compose();await change('new-thread-audience','SPECIALTY');
+  await change('new-thread-subject','Fictional coordination');
+  await change('new-thread-body','Fictional staff note');
+  await click('new-thread-send');
+  expect(get('new-thread-error')).toBeTruthy();
+  expect(messagesApi.open).not.toHaveBeenCalled();
+ });
+ it('specialty conversation permits assigned therapist exact service, not another team',async()=>{
+  messagesApi.open.mockResolvedValueOnce({id:'new-team-thread'});
+  await compose();await change('new-thread-audience','SPECIALTY');
+  expect(get('new-thread-service').findAllByType('option').map(x=>x.props.value))
+   .toEqual(['','speech']);
+  await change('new-thread-service','speech');
+  await change('new-thread-subject','Fictional specialty coordination');
+  await change('new-thread-body','Fictional evidence only');
+  await click('new-thread-send');
+  expect(messagesApi.open.mock.calls[0][1]).toMatchObject({
+   audience:'SPECIALTY',service:'speech',childId:'child-a'
+  });
+  expect(messagesApi.open.mock.calls[0][1]).not.toHaveProperty('guardianLinkId');
+ });
+ it('unassigned manager has no family audience and no guardian directory for child',async()=>{
+  await compose({therapistMembershipId:undefined});
+  expect(get('new-thread-audience').findAllByType('option').map(x=>x.props.value))
+   .not.toContain('GUARDIAN');
+  expect(find('new-thread-recipient')).toHaveLength(0);
+  await change('new-thread-audience','GUARDIAN');
+  await change('new-thread-subject','Fictional blocked attempt');
+  await change('new-thread-body','Fictional body');
+  await click('new-thread-send');
+  expect(messagesApi.open).not.toHaveBeenCalled();
+  expect(get('new-thread-error')).toBeTruthy();
+ });
+ it('manager may create only an internal care-team thread, not a family release',async()=>{
+  messagesApi.open.mockResolvedValueOnce({id:'manager-thread'});
+  await compose({therapistMembershipId:undefined});
+  await change('new-thread-subject','Fictional care coordination');
+  await change('new-thread-body','Synthetic operational message');
+  await click('new-thread-send');
+  expect(messagesApi.open.mock.calls[0][1]).toMatchObject({
+   audience:'CARE_TEAM',childId:'child-a'
+  });
+  expect(messagesApi.open.mock.calls[0][1]).not.toHaveProperty('guardianLinkId');
+ });
+ it('remote child directory denial does not retain old guardian eligibility',async()=>{
+  opsApi.child.mockRejectedValueOnce(new Error('Synthetic access revoked'));
+  await compose();
+  expect(get('new-thread-recipient').findAllByType('option').map(x=>x.props.value))
+   .toEqual(['']);
+  await change('new-thread-subject','Fictional denied recipient');
+  await change('new-thread-body','Unsent operational note');
+  await click('new-thread-send');
+  expect(messagesApi.open).not.toHaveBeenCalled();
+ });
+ it('message network rejection leaves draft for explicit retry rather than claiming delivery',async()=>{
+  messagesApi.open.mockRejectedValueOnce({status:403,message:'Synthetic receiver revoked'});
+  await compose({family:true});
+  await change('new-thread-subject','Fictional scheduling change');
+  await change('new-thread-body','Keep this fictional draft');
+  await click('new-thread-send');
+  expect(get('new-thread-error')).toBeTruthy();
+  expect(get('new-thread-body').props.value).toBe('Keep this fictional draft');
+  expect(get('new-thread-dialog')).toBeTruthy();
+ });
+});
+describe('M4-08 message inbox read-only branch and visibility semantics',()=>{
+ it('family sees own conversational wording without displaying child identity in row',async()=>{
+  await mount({family:true});
+  expect(get('messages-page').props.className).toContain('theme-family-light');
+  expect(get('thread-thread-a')).toBeTruthy();
+  expect(get('messages-non-clinical-notice')).toBeTruthy();
+ });
+ it('closed list with zero rows gives explicit closed rather than an open-family prompt',async()=>{
+  messagesApi.list.mockImplementation(async(_,status)=>({
+   items:status==='CLOSED'?[]:[thread()],unread:0
+  }));
+  await mount();await click('threads-tab-closed');
+  expect(get('threads-empty')).toBeTruthy();
+  expect(JSON.stringify(tree.toJSON())).toContain('No closed conversations');
+ });
+ it('no assigned child disables creation instead of allowing unscoped sending',async()=>{
+  await mount({kids:[]});
+  expect(get('new-thread-button').props.disabled).toBe(true);
+  expect(find('new-thread-dialog')).toHaveLength(0);
+ });
+ it('unread marking is absent for a read thread, even if another unread count exists',async()=>{
+  messagesApi.list.mockResolvedValueOnce({items:[thread({unread:false})],unread:1});
+  await mount();
+  expect(find('thread-unread-thread-a')).toHaveLength(0);
+ });
+ it('closed thread cannot send an additional reply',async()=>{
+  messagesApi.thread.mockResolvedValueOnce(detail({status:'CLOSED',canManage:false}));
+  await mount();await click('thread-thread-a');
+  expect(get('conversation-closed-note')).toBeTruthy();
+  expect(find('reply-input')).toHaveLength(0);
+  expect(find('conversation-toggle')).toHaveLength(0);
+ });
+ it('manager reopens closed conversation only after server acknowledgement',async()=>{
+  messagesApi.thread.mockResolvedValueOnce(detail({status:'CLOSED'}));
+  messagesApi.setStatus.mockResolvedValueOnce(detail({status:'OPEN'}));
+  await mount();await click('thread-thread-a');
+  await click('conversation-toggle');
+  expect(messagesApi.setStatus).toHaveBeenCalledWith('center-a','thread-a',false);
+  expect(get('reply-input')).toBeTruthy();
  });
 });
