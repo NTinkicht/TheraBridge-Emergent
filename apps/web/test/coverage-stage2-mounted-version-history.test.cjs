@@ -208,3 +208,75 @@ describe('real immutable plan version history and source provenance',()=>{
  });
 
 });
+
+
+describe('M4-08 final 90% exact saved version provenance branches',()=>{
+ it('missing saved activity title or current library title is explicitly unavailable',async()=>{
+  const lost=activity({templateId:'not-in-catalogue',snapshot:undefined,goalKey:undefined,
+   note:undefined,durationMinutes:undefined});
+  await render(plan([version(2),version(1,{homeActivities:[lost]})]));
+  expect(html()).toContain('Historic activity (template unavailable)');
+  expect(html()).toContain('Template duration: unavailable');
+  expect(html()).toContain('Not recorded');
+ });
+ it('an activity snapshot with empty materials and safety never borrows newer library metadata',async()=>{
+  const saved={...snapshot,materials:[],steps:[],safety:[]};
+  await render(plan([version(2),version(1,{homeActivities:[
+   activity({snapshot:saved,notes:'Fictional legacy',durationMinutes:undefined})
+  ]})]));
+  expect(html()).toContain('Saved activity definition');
+  expect(html()).toContain('Materials:');
+  expect(html()).toContain('None recorded');
+  expect(html()).not.toContain('Changed mutable library title');
+ });
+ it('unchanged goal metadata never suggests an evidence continuity decision',async()=>{
+  await render(plan([version(2,{goals:[goal({horizon:undefined})]}),
+   version(1,{goals:[goal({horizon:undefined})]})]));
+  expect(html()).toContain('No goal definition changes');
+  expect(find('goal-definition-warning')).toHaveLength(0);
+ });
+ it('selected same source versions make the comparison unavailable until distinct IDs are chosen',async()=>{
+  await render();
+  await select('plan-compare-after','version-1');
+  expect(find('plan-history-comparison')).toHaveLength(0);
+  await select('plan-compare-after','version-2');
+  expect(get('plan-history-comparison')).toBeTruthy();
+ });
+ it('selected earlier version can be switched repeatedly without mutating current source',async()=>{
+  const source=plan([version(2),version(1)]);
+  await render(source);
+  await click('plan-history-select-2');
+  await click('plan-history-select-1');
+  await click('plan-history-select-2');
+  expect(get('plan-history-inspection')).toBeTruthy();
+  expect(JSON.stringify(source)).toContain('Saved synthetic summary 1');
+ });
+ it('read-only historic goal carries explicit target and next-review dates only from that version',async()=>{
+  await render(plan([version(2),version(1,{goals:[goal({
+   horizon:'LONG_TERM',targetOn:'2030-01-01',reviewOn:'2029-12-01'
+  })]})]));
+  expect(html()).toContain('Long-term');
+  expect(html()).toContain('2030-01-01');
+  expect(html()).toContain('2029-12-01');
+ });
+ it('saved original step and safety arrays survive later changes in templates',async()=>{
+  const old={...snapshot,title:'Original exact saved title',materials:['original-paper'],
+   safety:['Original clinician safety'],steps:['Original step']};
+  await render(plan([version(2),version(1,{homeActivities:[activity({snapshot:old})]})]));
+  expect(html()).toContain('Original exact saved title');
+  expect(html()).toContain('Original clinician safety');
+  expect(html()).toContain('Original step');
+  expect(html()).toContain('original-paper');
+ });
+ it('review notes can be empty without inventing an identity or supervisor comment',async()=>{
+  await render(plan([version(2),version(1,{reviewNotes:[]})]));
+  expect(html()).not.toContain('Recorded review notes');
+ });
+ it('a restored draft status and withdrawn source are both labeled without implied family release',async()=>{
+  await render(plan([version(2,{status:'RETURNED_FOR_REVISION'}),
+   version(1,{status:'WITHDRAWN'})]));
+  expect(html()).toContain('Returned for revision');
+  expect(html()).toContain('Withdrawn');
+  expect(html()).toContain('Internal, read-only drafts');
+ });
+});
