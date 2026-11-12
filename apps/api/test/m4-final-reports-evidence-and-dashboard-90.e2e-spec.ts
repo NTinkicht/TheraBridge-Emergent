@@ -186,6 +186,9 @@ describe('M4-08 dashboard enforces exact role, center and specialty before proje
  });
  it('childId filter cannot switch into a different child unseen in actor workspace',async()=>{
   const {service,db}=make();
+  // Simulate Prisma honoring the explicit empty childId IN predicate.
+  db.therapyPlan.findMany.mockResolvedValueOnce([]);
+  db.observation.findMany.mockResolvedValueOnce([]);
   const result=await service.dashboard(center,therapist,{childId:'unknown-child'} as any);
   expect(result.goals).toEqual([]);
   expect(db.therapyPlan.findMany.mock.calls[0][0].where.childId).toEqual({in:[]});
