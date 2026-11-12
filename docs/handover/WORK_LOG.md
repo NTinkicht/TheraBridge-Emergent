@@ -917,3 +917,16 @@ Prepared additive guarded synthetic seed for five children, sibling guardian lin
 
 ## 2026-11-02 — Three synthetic therapist identities (PR pending)
 Added separate secret validation, three therapist identity creation without legacy password rotation, ten-identity idempotence/hosted seed checks, and protected extra-login QA. Credentials remain outside source/logs. New exact-HEAD CI and independent review required before merge. A protected GitHub QA secret and Render environment secret must both be provisioned securely before hosted deployment.
+
+
+## 2026-11-12 — PR #362 implementation batch 1
+Created `scripts/commercial/capture-docker-release.py`: digest-pinned local Docker inspect/create/export capture, bounded streaming per-file SHA-256 inventory, cleanup and explicit non-regular/volume exclusions. Created `scripts/commercial/test_capture_docker_release.py` negative fixtures; wired test to full CI. No real SaaS or Enterprise images captured or signed; package/asset/counsel release decisions remain unresolved. CI and Codex not yet verified for this checkpoint; work proceeds within PR #362 rather than opening another PR.
+
+## 2026-11-12 — PR #362 compatibility and forged-attestation hardening
+Updated `review-release-scope.mjs` image-ref validator to accept digest capture output with a tag/registry port. Added round-trip test confirming candidate status remains unapproved and negative cases for fabricated signing/legal/mounts claims. All work stays in one mega PR. Fresh final-head CI is required; older passing CI checks are historical.
+
+## 2026-11-12 — PR #362 Docker digest matching correction
+Matched Docker's canonical repository@sha256 RepoDigests when caller supplied registry:port/path:tag@sha256. The full repository identity and digest remain mandatory; fake Docker export test added. Final qualification pending; no signed OCI proof or distribution clearance obtained.
+
+## 2026-11-12 — PR #362 two-edition release scope integration
+Created `merge-release-captures.mjs` with strict per-edition schema validation and canonical file-list hashing; added adversarial tests and full-CI test step. Produces a combined UNATTESTED_CANDIDATE evidence JSON for conservative release-scope review. Source package publication, actual distributed images and human legal authorization remain unresolved.

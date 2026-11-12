@@ -1037,3 +1037,16 @@ Qualify roster-seed PR via six exact-head CI jobs and independent Codex review; 
 2. Provision three unique high-entropy passwords through approved secure channels as `DEMO_EXTRA_PASSWORDS_JSON` on the dedicated Render synthetic service and `TB_HOSTED_QA_EXTRA_USERS_JSON` in the protected GitHub environment. Do not alter the seven existing passwords.
 3. Merge reviewed PR, promote into the manually deployed synthetic branch, check readiness and seed count 10, then request protected ten-login QA approval.
 4. Keep clinical signing, release, consent and real AI/STT gates disabled; no baseline promotion from synthetic-only checks.
+
+
+## 2026-11-12 — COM-02 PR #362 implementation and verification
+Run offline candidate-capture tests in full exact-head CI; inspect all required jobs including SBOM, secret scan, preview/Compose and role acceptance. Obtain genuine OCI digest-pinned SaaS and Enterprise build records plus verified independently signed artifact/provenance attestations from an approved build runner. Feed captured candidate manifests into existing release-scope review, with non-regular entry/runtime volume limits visible. Independently prove all 53 npm tarball-to-source publications and compare all 91 tracked assets plus container/OS libraries to actual customer-shipped bytes. Reconcile SaaS versus enterprise rights with qualified legal counsel, keep notices draft, no automatic grants. Resolve independent Codex findings, update Rule 7 evidence and merge only after exact-head full green CI and independent review. Preserve G2/G2b clinical NO-GO.
+
+## 2026-11-12 — PR #362 exact-head qualification after image-ref fix
+Verify tagged image fixture and forged-signature tests in full CI; capture exact final head run IDs and test outcomes before reporting PASS. Do not use old-head green results for latest SHA. Obtain genuine Docker OCI image evidence and third-party source attestations for 53 versions; compare all 91 assets and obtain SaaS/enterprise counsel approval. Do not merge prior to independent exact-head Codex review, entire required CI green, and Rule 7 refresh.
+
+## 2026-11-12 — Next qualification gate for PR #362
+Verify mocked canonical RepoDigest export case in exact-head CI, inspect all full CI jobs, obtain independent Codex review after stable passing final head, and resolve review findings. Production release edition artifacts and 53 npm immutable publisher-to-source attestations require genuine signed upstream/build evidence; legal grant and clinical gates remain closed.
+
+## 2026-11-12 — Qualify combined Docker release evidence
+Verify final-head Python capture and Node dual-edition merge tests in required full CI. When real SaaS and Enterprise release images exist, capture digest-pinned candidate inventories, merge them into an exclusive new JSON, compare to the 91-asset rights register, and independently check signed immutable OCI publication/deployment evidence. Independently corroborate 53 exact-version npm lineages. No unsigned JSON is legal or production release authority. Require green CI/independent exact-head Codex before merging.

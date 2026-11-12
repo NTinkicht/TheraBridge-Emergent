@@ -89,3 +89,42 @@ test('duplicate edition cannot rewrite matching output',()=>{
  f.manifest.images=[item,{...item}];
  assert.throws(()=>reviewReleaseScope(f.bulk,f.manifest),/INVALID_IMAGE_SCOPE/);
 });
+
+test('tagged digest-pinned image candidate from capture tool integrates without granting rights',()=>{
+ const {bulk,manifest}=fixtures();
+ manifest.images=[{edition:'SAAS',imageRef:'registry.example:5000/therabridge/api:v1.0.0',
+  ociDigest:'sha256:'+'c'.repeat(64),filesystemCaptureStatus:'UNATTESTED_CANDIDATE',
+  releaseApproval:false,captureLimitations:{
+   source:'LOCAL_DOCKER_EXPORT_NOT_DEPLOYMENT_ATTESTATION',
+   nonRegularEntriesOmitted:{symlinks:0,hardlinks:0,directories:1,other:0},
+   volumesAndRuntimeMountsNotIncluded:true,
+   independentSignatureVerified:false,commercialApproval:false},
+  files:[{path:'opt/app/asset.svg',sha256:'a'.repeat(64),bytes:42}]}];
+ const out=reviewReleaseScope(bulk,manifest);
+ assert.equal(out.counts.pinnedImageCandidates,1);
+ assert.equal(out.imageCandidates[0].imageRef,'registry.example:5000/therabridge/api:v1.0.0');
+ assert.equal(out.imageCandidates[0].independentSignatureVerified,false);
+ assert.equal(out.assets[0].decision,'UNRESOLVED');
+ assert.equal(out.commercialLicenseGranted,false);
+});
+
+test('reject forged independent signature and legal approval in local export metadata',()=>{
+ for(const corrupt of [
+  c=>{c.independentSignatureVerified=true;},
+  c=>{c.commercialApproval=true;},
+  c=>{c.volumesAndRuntimeMountsNotIncluded=false;},
+  c=>{c.source='SIGNED_DEPLOYMENT';},
+  c=>{c.nonRegularEntriesOmitted.hardlinks=-1;}
+ ]){
+  const {bulk,manifest}=fixtures();
+  const captureLimitations={
+   source:'LOCAL_DOCKER_EXPORT_NOT_DEPLOYMENT_ATTESTATION',
+   nonRegularEntriesOmitted:{symlinks:0,hardlinks:0,directories:0,other:0},
+   volumesAndRuntimeMountsNotIncluded:true,independentSignatureVerified:false,commercialApproval:false};
+  manifest.images=[{edition:'ENTERPRISE',imageRef:'registry.example/app:v2',
+   ociDigest:'sha256:'+'d'.repeat(64),filesystemCaptureStatus:'UNATTESTED_CANDIDATE',
+   releaseApproval:false,files:[],captureLimitations}];
+  corrupt(captureLimitations);
+  assert.throws(()=>reviewReleaseScope(bulk,manifest),/FORGED_CAPTURE_PROVENANCE/);
+ }
+});

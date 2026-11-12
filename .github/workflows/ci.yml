@@ -206,6 +206,8 @@ jobs:
         run: node --test scripts/commercial/verify-published-tarballs.test.mjs
       - name: Verify all installed direct npm tarballs and compare on-disk LICENSE/NOTICE hashes
         run: node scripts/commercial/verify-published-tarballs.mjs /tmp/therabridge-installed-lock-provenance.json yarn.lock docs/commercial/direct-license-evidence.json /tmp/therabridge-installed-licenses.json /tmp/therabridge-publisher-tarball-evidence.json
+      - name: Verify digest-pinned candidate Docker release capture parser (offline, fail-closed)
+        run: python3 -m unittest discover -s scripts/commercial -p test_capture_docker_release.py -v
       - name: Validate consolidated transitive and asset obligations queue
         run: node --test scripts/commercial/build-com02-obligations-queue.test.mjs
       - name: Collect transitive dependencies and tracked assets for legal-review matrix
@@ -234,6 +236,8 @@ jobs:
         run: node --test scripts/commercial/build-bulk-rights-evidence.test.mjs
       - name: Build consolidated per-version and source-asset evidence (NEVER legal approval)
         run: node scripts/commercial/build-bulk-rights-evidence.mjs /tmp/therabridge-com02-exact-version-rights-queue.json /tmp/therabridge-com02-source-correspondence-candidates.json docs/commercial/upstream-license-path-candidates.json /tmp/therabridge-com02-bulk-rights-evidence.json
+      - name: Validate dual-edition Docker release evidence merge (offline, fail-closed)
+        run: node --test scripts/commercial/merge-release-captures.test.mjs
       - name: Validate strict release-image and publication-scope rights reconciliation
         run: node --test scripts/commercial/review-release-scope.test.mjs
       - name: Build conservative actual-image candidate comparison (unattested means unresolved)

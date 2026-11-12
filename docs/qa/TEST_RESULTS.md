@@ -1145,3 +1145,16 @@ Seed regression added for idempotent 6 children, 3 display-only extra therapist 
 
 ## 2026-11-02 — Three synthetic therapist identities (PR pending)
 **PENDING CI/REVIEW/DEPLOYMENT:** New tests assert 10 local auth identities after repeat seed, three Ahmed sibling links, therapist behavioral specialty and 15 appointments; hosted preview rejects a missing/malformed three-password secret. Additional protected browser runner verifies three distinct synthetic therapist logins, therapist context and logout. Historical seven-role run 41489268355 was dispatched separately; its status does not prove new account access. No new clinical sign-offs or family releases.
+
+
+## 2026-11-12 — COM-02 PR #362 candidate Docker release evidence
+Implemented offline unittest cases for streaming byte hashing, traversal, duplicate archive member paths, mutable/forged digest pins, Docker inspect RepoDigests mismatch and no automatic approvals. Full GitHub Actions execution and exact-head result **PENDING** at implementation checkpoint. No actual image export or cryptographic publication attestation has been executed; do not mark any of the 53 npm versions or 91 source assets legally approved. G2/G2b remain NO-GO.
+
+## 2026-11-12 — PR #362 capture integration verification candidates
+Added tests for tagged image references (registry port and tag), matching local Docker-export candidate into release scope without rights promotion, and rejection of forged independent signature, copyright approval, complete-runtime-mount assertions, or negative omitted entry counts. These are **implemented test cases, not yet a verified green exact-head run**. Review/commercial go-live unapproved.
+
+## 2026-11-12 — PR #362 canonical Docker RepoDigest fixture
+Added mocked image inspect/create/export successful SHA-256 capture with canonical tagless RepoDigest, version-tagged image input and registry port. This covers the previous real-world false-reject condition without weakening digest requirement. New case not yet confirmed by final-head CI. Clinical/commercial authorization remains NO-GO.
+
+## 2026-11-12 — PR #362 offline merger regressions
+New Node tests for successful candidate-only dual-edition merging, rejected swapped/duplicate editions, fabricated signature and legal fields, path traversal/duplicate file rows, malformed digests and file-order canonicalization. Test execution on final GitHub head not yet confirmed; no authorization claims. Python Docker capture tests remain a separate full-CI gate.
