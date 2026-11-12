@@ -216,7 +216,7 @@ describe('M4-08 final 90% exact saved version provenance branches',()=>{
    note:undefined,durationMinutes:undefined});
   await render(plan([version(2),version(1,{homeActivities:[lost]})]));
   expect(html()).toContain('Historic activity (template unavailable)');
-  expect(html()).toContain('Template duration: unavailable');
+  expect(get('plan-history-activity-duration').children.filter(x=>typeof x==='string').join('')).toContain('Template duration: unavailable');
   expect(html()).toContain('Not recorded');
  });
  it('an activity snapshot with empty materials and safety never borrows newer library metadata',async()=>{

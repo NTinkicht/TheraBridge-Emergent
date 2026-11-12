@@ -63,7 +63,7 @@ describe('M4-08 exact center scheduling and temporal checks',()=>{
   [{to:'2026-11-10T00:00:00Z'},'reversed'],
   [{to:'2027-01-01T00:00:00Z'},'overlong'],
   [{from:'2026-11-11T00:00:00Z',to:'2026-11-11T00:00:00Z'},'empty']
- ])('rejects %s range before database read (%s)',async (input)=>{
+ ])('rejects %s range before database read (%s)',async (input,_label)=>{
   const {service,tx}=make();
   await expect(service.list(center,admin,range(input))).rejects.toMatchObject({status:422});
   expect(tx.appointment.findMany).not.toHaveBeenCalled();
