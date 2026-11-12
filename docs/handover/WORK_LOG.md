@@ -930,3 +930,6 @@ Matched Docker's canonical repository@sha256 RepoDigests when caller supplied re
 
 ## 2026-11-12 — PR #362 two-edition release scope integration
 Created `merge-release-captures.mjs` with strict per-edition schema validation and canonical file-list hashing; added adversarial tests and full-CI test step. Produces a combined UNATTESTED_CANDIDATE evidence JSON for conservative release-scope review. Source package publication, actual distributed images and human legal authorization remain unresolved.
+
+## 2026-11-12 — COM-02 signed release claim follow-up
+Following merged #362 (merge `0582d47da0fbf4bf744e2a9a91c272a340c72f8b`), implemented `verify-oci-dsse.mjs` enforcing Ed25519 DSSE PAE verification, independent SPKI fingerprint pin, exact 2-edition digest/inventory correspondence, strict schema and explicit negative release claims. Added fixture-generated adversarial signature tests and wired them into full CI. Technical implementation only; all upstream legal and clinical gates still NO-GO. Qualification pending.
