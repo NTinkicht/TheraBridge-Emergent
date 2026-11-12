@@ -55,6 +55,7 @@ const booking=(extra:Record<string,unknown>={})=>({
  childId,membershipId:member,service:'speech',
  startsAt:start.toISOString(),endsAt:end.toISOString(),room:'Room S',...extra
 }) as any;
+const slot=(extra:Record<string,unknown>={})=>({childId,membershipId:member,startsAt:start,endsAt:end,...extra});
 const range=(extra:Record<string,unknown>={})=>({
  from:'2026-11-11T00:00:00Z',to:'2026-11-18T00:00:00Z',...extra
 }) as any;
@@ -132,8 +133,8 @@ describe('M4-08 collision checks and therapist assignment fail closed',()=>{
    {membershipId:member,childId:'different',startsAt:start,endsAt:end},
    {membershipId:'other',childId:'child-b',startsAt:start,endsAt:end}
   ]);
-  const slots=[booking(),booking({childId:'child-b',membershipId:'unrelated'}),
-   booking({childId:'child-free',membershipId:'staff-free'})];
+  const slots=[slot(),slot({childId:'child-b',membershipId:'unrelated'}),
+   slot({childId:'child-free',membershipId:'staff-free'})];
   const r=await service.clashesForSlots(tx,center,slots,['excluded']);
   expect(r).toEqual([
    'The therapist already has an appointment at this time.',
@@ -145,7 +146,7 @@ describe('M4-08 collision checks and therapist assignment fail closed',()=>{
   const {service,tx}=make();tx.appointment.findMany.mockResolvedValueOnce([
    {membershipId:member,childId,startsAt:new Date(start.getTime()-1800000),endsAt:start}
   ]);
-  expect(await service.clashesForSlots(tx,center,[booking()])).toEqual([null]);
+  expect(await service.clashesForSlots(tx,center,[slot()])).toEqual([null]);
  });
  it('missing child denies assignment even when a therapist is in the directory',async()=>{
   const {service,tx}=make();tx.child.findFirst.mockResolvedValueOnce(null);

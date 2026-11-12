@@ -255,7 +255,7 @@ describe('M4-08 quantitative goal claim consistency never asserts clinical effic
   const ref=goalSource().find(x=>x.ref.startsWith('observation:'))!.ref;
   const r=await service.decide(center,actor,reportId,dto({
    action:'APPLIED',section:'goals',proposalFingerprint:fingerprint('goals'),
-   claims:[{text:'Fictional measured 3 counts',sourceRefs:[ref]}]
+   claims:[{text:'Fictional measured 3 times',sourceRefs:[ref]}]
   }));
   expect(r).toMatchObject({persisted:true,claimValidation:'REFERENCED_NOT_VERIFIED'});
  });

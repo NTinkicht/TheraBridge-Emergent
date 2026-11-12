@@ -22,7 +22,7 @@ const make=()=>{
   center:{findUnique:jest.fn().mockResolvedValue({id:center,status:'ACTIVE',trialEndsAt:new Date('2030-01-01')})},
   centerEvent:{create:jest.fn().mockResolvedValue({id:'fictional-event'})},
   membership:{findFirst:jest.fn().mockResolvedValue({id:'active',specialties:['speech']})},
-  careAssignment:{findMany:jest.fn().mockResolvedValue([{membershipId:'therapist-member'}])},
+  careAssignment:{findMany:jest.fn().mockResolvedValue([{membershipId:'therapist-member',childId:child,service:'speech'}])},
   guardianLink:{
    findFirst:jest.fn().mockResolvedValue({id:linkId,child:{id:child,services:['speech']}}),
    findMany:jest.fn().mockResolvedValue([{
