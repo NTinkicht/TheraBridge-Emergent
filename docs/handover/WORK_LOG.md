@@ -1,3 +1,23 @@
+## 2026-11-11 — COM-02 #361 source-to-release followup first code chunk
+Merged prior #359 (merge SHA 16316d3f41c1f1c1b9f20b8ea5ce00961dc6dd4e). Opened #361 as a bundled release-scope and exact package provenance wave. Added `review-release-scope.mjs`, its adversarial unit tests, digest-pin schema `release-file-evidence.json` (zero invented release image records), and full-CI publication of source asset/release rights comparisons. Fail-closed package/version/asset inventory counts, candidate image digest/path, no final legal/clinical approvals. No test PASS claimed until CI.
+
+---
+
+## 2026-11-11 — COM-02 #359 source-availability negative-path extension
+Expanded Codex P2 fix to preserve queue on any valid upstream HTTP failure including 404, in addition to timeout and origin errors; added deterministic 404 negative regression. The failed source evidence remains unresolved, 0 legal approvals and no release permissions. Rerun full exact-head CI and Codex.
+
+---
+
+## 2026-11-11 — COM-02 #359 bulk work and Codex P2 fix
+Created consolidated source text candidate hash collector and 53-version/91-asset rights queue; 8 pinned exact source revisions, 9 upstream LICENSE/NOTICE paths all hashed in first CI artifact; no raw third-party texts committed. New regression tests cover tampered registry Git commit, repo host, lock integrity, duplicates, asset omissions, unknown source provenance, unavailability, unsafe paths, license approver spoof, wrong UTF-8 and concurrent fetch. First Codex P2: prior source-root match can time out; fixed to keep all rows and no fabricated approval while rejecting actual contradictory provenance. PR review comment documents fix; issue #356 remains open for independent publisher-to-source attestations and lawyer decisions. Rule 7 and final HEAD rerun remain required.
+
+---
+
+## 2026-11-11 — COM-02 consolidated evidence work PR #359
+Opened single large PR with upstream LICENSE/NOTICE SHA-256 candidate hash collector, curated eight exact source revisions/nine paths, all-53 package provenance classing (15 root candidates, 33 missing GitHead, 3 Next.js monorepo mismatches, 2 unsafe legacy repository claims) and all-91 non-package asset rights/presence triage. Implemented six offline adversarial tests and CI producer/upload. Input inventories must match, no missing/duplicated package or asset, version/candidate branch security fail-closed, no legal rights or clinical approvals inferred. NO TESTS MARKED PASS UNTIL CI. Full job and independent review pending.
+
+---
+
 ## 2026-11-11 — COM-02 #357 source-root evidence and P1 fix disposition
 First implementation test run on SHA `4ee9a2bd` found a P1 test fixture defect: a valid GitHub owner `evil.org` was incorrectly described as spoofed origin. FIX_NOW in `6a8c960` using `github.com.evil.org`; resolved inline Codex thread. Improved fail-closed gate: exact npm manifest SHA256 + Yarn lock integrity match required before source-root HTTP fetch (`88afc20`, `f8aa469`). At code SHA `8c645d0f`, [CI run 42923019170](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42923019170) passed all 7 new adversarial tests; generated 15 possible source-root matches of 53, not 15 proven release linkages. Other 38 not matched via this technique; 53 attestation decisions remain unresolved. No commercial license rights inferred. Full code-head CI had pending long-running steps when written, and new docs HEAD requires requalification.
 
@@ -897,3 +917,16 @@ Prepared additive guarded synthetic seed for five children, sibling guardian lin
 
 ## 2026-11-02 — Three synthetic therapist identities (PR pending)
 Added separate secret validation, three therapist identity creation without legacy password rotation, ten-identity idempotence/hosted seed checks, and protected extra-login QA. Credentials remain outside source/logs. New exact-HEAD CI and independent review required before merge. A protected GitHub QA secret and Render environment secret must both be provisioned securely before hosted deployment.
+
+
+## 2026-11-12 — PR #362 implementation batch 1
+Created `scripts/commercial/capture-docker-release.py`: digest-pinned local Docker inspect/create/export capture, bounded streaming per-file SHA-256 inventory, cleanup and explicit non-regular/volume exclusions. Created `scripts/commercial/test_capture_docker_release.py` negative fixtures; wired test to full CI. No real SaaS or Enterprise images captured or signed; package/asset/counsel release decisions remain unresolved. CI and Codex not yet verified for this checkpoint; work proceeds within PR #362 rather than opening another PR.
+
+## 2026-11-12 — PR #362 compatibility and forged-attestation hardening
+Updated `review-release-scope.mjs` image-ref validator to accept digest capture output with a tag/registry port. Added round-trip test confirming candidate status remains unapproved and negative cases for fabricated signing/legal/mounts claims. All work stays in one mega PR. Fresh final-head CI is required; older passing CI checks are historical.
+
+## 2026-11-12 — PR #362 Docker digest matching correction
+Matched Docker's canonical repository@sha256 RepoDigests when caller supplied registry:port/path:tag@sha256. The full repository identity and digest remain mandatory; fake Docker export test added. Final qualification pending; no signed OCI proof or distribution clearance obtained.
+
+## 2026-11-12 — PR #362 two-edition release scope integration
+Created `merge-release-captures.mjs` with strict per-edition schema validation and canonical file-list hashing; added adversarial tests and full-CI test step. Produces a combined UNATTESTED_CANDIDATE evidence JSON for conservative release-scope review. Source package publication, actual distributed images and human legal authorization remain unresolved.

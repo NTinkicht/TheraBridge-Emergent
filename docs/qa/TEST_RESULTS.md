@@ -1,3 +1,18 @@
+## 2026-11-11 — COM-02 #361 release file digest candidate QA (NOT YET RUN)
+Added offline `node --test scripts/commercial/review-release-scope.test.mjs` covering empty release manifest fail-closed behavior, immutable OCI digest and SHA256 image-file candidate matching without claimed signatures, duplicate edition/path, traversal, invalid SHA or bytes, counterfeit commercial approvals and missing 53/91 inventory subsets. CI adds output `therabridge-com02-release-scope-review.json`. All image runtime presence statuses stay NOT_INDEPENDENTLY_ATTESTED with zero images initially. Exact-head full CI, Codex pending. Commercial approval 0; G2/G2b NO-GO.
+
+---
+
+## 2026-11-11 — COM-02 #359 observed candidate hash evidence, P2 fix pending exact HEAD
+Initial CI producer PASS and bulk review artifact generated. Measured 53 package exceptions, 91 assets, 15 pinned root source matches, 8 curated source revisions, 9/9 literal HTTPS immutable source bytes successfully SHA-256 hashed. All 53 source-publication attestations and 91 actual release presence reviews remain outstanding; **0 legal approvals/THIRD_PARTY_NOTICES**. Codex P2 prior source fetch timeout previously blocked consolidated report; implemented retained unresolved row with no license fetch for any upstream HTTP error (including 404), TIMEOUT or SOURCE_FETCH_FAILED. Added two deterministic negative tests (transient upstream and contradictory source identity). **Final exact-head full CI and clean independent Codex not yet confirmed**; do not interpret text hash as license rights. Clinical G2/G2b NO-GO.
+
+---
+
+## 2026-11-11 — COM-02 mega PR #359 bulk evidence QA (PENDING)
+New offline `node --test scripts/commercial/build-bulk-rights-evidence.test.mjs` covers 53-version/91-asset schema joins via small synthetic fixtures; forged approvals, missing/duplicate package/asset, locked integrity or source revision mismatch, unsafe curated path/host, invalid raw UTF-8, network 404 and bounded concurrency. CI producer emits `therabridge-com02-bulk-rights-evidence.json`, never third-party license texts or legal grant. Initial baseline has 53 package exceptions, 91 source assets; 8 curated source versions and 9 candidate immutable upstream LICENSE paths. **Exact-head CI NOT YET RUN/QUALIFIED**, no live 9/9 file existence claimed. Legal approvals 0; G2/G2b NO-GO.
+
+---
+
 ## 2026-11-11 — COM-02 #357 measured source correspondence QA (DEDICATED TEST PASS)
 **PASS** 7/7 `node --test scripts/commercial/corroborate-source-revisions.test.mjs` on code SHA `8c645d0feb79ddd7fc8cea24425aa6c722e2631b`, CI [42923019170](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42923019170). Positive root package identity, strict GitHub host/full SHA, wrong name/version, invalid bytes/UTF-8, unavailable GitHead, spoofed hostname, publisher/lock mismatch, tampered approvals and bounded concurrency covered. Generated report counts `{exceptions:53,sourceRootManifestMatches:15,stillRequiresIndependentAttestation:53,authoritativeLicenseTextsVerified:0,legallyApproved:0}`. Earlier initial HEAD 4ee9a2 had **FAIL** on wrong test fixture; fixed in 6a8c960 with reviewed P1 disposition. At writing time full integration/preview job on code SHA remained incomplete, so this is **not a full-CI pass claim**. Documentation-only HEAD now must be requalified. Clinical G2/G2b NO-GO.
 
@@ -1130,3 +1145,16 @@ Seed regression added for idempotent 6 children, 3 display-only extra therapist 
 
 ## 2026-11-02 — Three synthetic therapist identities (PR pending)
 **PENDING CI/REVIEW/DEPLOYMENT:** New tests assert 10 local auth identities after repeat seed, three Ahmed sibling links, therapist behavioral specialty and 15 appointments; hosted preview rejects a missing/malformed three-password secret. Additional protected browser runner verifies three distinct synthetic therapist logins, therapist context and logout. Historical seven-role run 41489268355 was dispatched separately; its status does not prove new account access. No new clinical sign-offs or family releases.
+
+
+## 2026-11-12 — COM-02 PR #362 candidate Docker release evidence
+Implemented offline unittest cases for streaming byte hashing, traversal, duplicate archive member paths, mutable/forged digest pins, Docker inspect RepoDigests mismatch and no automatic approvals. Full GitHub Actions execution and exact-head result **PENDING** at implementation checkpoint. No actual image export or cryptographic publication attestation has been executed; do not mark any of the 53 npm versions or 91 source assets legally approved. G2/G2b remain NO-GO.
+
+## 2026-11-12 — PR #362 capture integration verification candidates
+Added tests for tagged image references (registry port and tag), matching local Docker-export candidate into release scope without rights promotion, and rejection of forged independent signature, copyright approval, complete-runtime-mount assertions, or negative omitted entry counts. These are **implemented test cases, not yet a verified green exact-head run**. Review/commercial go-live unapproved.
+
+## 2026-11-12 — PR #362 canonical Docker RepoDigest fixture
+Added mocked image inspect/create/export successful SHA-256 capture with canonical tagless RepoDigest, version-tagged image input and registry port. This covers the previous real-world false-reject condition without weakening digest requirement. New case not yet confirmed by final-head CI. Clinical/commercial authorization remains NO-GO.
+
+## 2026-11-12 — PR #362 offline merger regressions
+New Node tests for successful candidate-only dual-edition merging, rejected swapped/duplicate editions, fabricated signature and legal fields, path traversal/duplicate file rows, malformed digests and file-order canonicalization. Test execution on final GitHub head not yet confirmed; no authorization claims. Python Docker capture tests remain a separate full-CI gate.
