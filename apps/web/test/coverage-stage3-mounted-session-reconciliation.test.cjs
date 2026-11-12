@@ -169,3 +169,168 @@ describe('mounted clinical session evidence revision and negative controls',()=>
   expect(clinicalApi.saveSession).toHaveBeenCalledTimes(1);
  });
 });
+
+
+describe('M4-08 90% real session interaction and identity preservation',()=>{
+ it('removing a clinical activity changes only the local reviewed draft',async()=>{
+  await mount();
+  await click('Remove activity');
+  await click('Save draft');
+  expect(clinicalApi.saveSession.mock.calls[0][2].activities).toEqual([]);
+  expect(note().activities).toHaveLength(1);
+ });
+ it('adding a service-matched library activity stores unsent evidence without inventing a clinical outcome',async()=>{
+  await mount(note({activities:[]}));
+  await click('Add Fictional activity');
+  await click('Save draft');
+  const entries=clinicalApi.saveSession.mock.calls[0][2].activities;
+  expect(entries).toHaveLength(1);
+  expect(entries[0]).toMatchObject({templateId:'t1',completion:'NOT_STARTED',
+   objective:'',minutes:0,observation:''});
+  expect(entries[0].outcome).toBeUndefined();
+ });
+ it('query hides unrelated library suggestions and no synthetic activity is inserted',async()=>{
+  await mount(note({activities:[]}));
+  await change('session-search-note-a','not-in-catalogue');
+  expect(button('Add Fictional activity')).toBeUndefined();
+  await change('session-search-note-a','Fictional');
+  expect(button('Add Fictional activity')).toBeDefined();
+ });
+ it('activity evidence reorder changes only persisted ordering, not source identities',async()=>{
+  await mount(note({activities:[
+   activity({id:'activity-first'}),activity({id:'activity-second',objective:'Fictional second'})
+  ]}));
+  const downs=tree.root.findAllByType('button').filter(b=>textOf(b.props.children).includes('Move down'));
+  await act(async()=>downs[0].props.onClick());
+  await click('Save draft');
+  expect(clinicalApi.saveSession.mock.calls[0][2].activities.map((a:any)=>a.id))
+   .toEqual(['activity-second','activity-first']);
+ });
+ it('activity detail edits persist actual minutes, objective and factual observations as unvalidated evidence',async()=>{
+  await mount();
+  await change('objective-activity-a','Fictional reviewed objective');
+  await change('minutes-activity-a','18');
+  const observation=tree.root.findByProps({'aria-label':'Factual observation'});
+  await act(async()=>observation.props.onChange({target:{value:'Fictional measured response'}}));
+  await click('Save draft');
+  expect(clinicalApi.saveSession.mock.calls[0][2].activities[0]).toMatchObject({
+   objective:'Fictional reviewed objective',minutes:18,observation:'Fictional measured response',
+   completion:'COMPLETED'
+  });
+ });
+ it('completion reclassification without existing outcome does not require destructive confirmation',async()=>{
+  const n=note({activities:[activity({outcome:undefined,assistance:undefined})]});
+  await mount(n);
+  await change('completion-activity-a','NOT_STARTED');
+  expect(global.window.confirm).not.toHaveBeenCalled();
+  await click('Save draft');
+  const a=clinicalApi.saveSession.mock.calls[0][2].activities[0];
+  expect(a.completion).toBe('NOT_STARTED');
+  expect(a.outcome).toBeUndefined();
+  expect(a.assistance).toBeUndefined();
+ });
+ it('explicit outcome and separate assistance remain distinct in saved activity payload',async()=>{
+  await mount();
+  await change('outcome-activity-a','ACHIEVED');
+  await change('assistance-activity-a','INDEPENDENT');
+  await click('Save draft');
+  const a=clinicalApi.saveSession.mock.calls[0][2].activities[0];
+  expect(a.outcome).toBe('ACHIEVED');
+  expect(a.assistance).toBe('INDEPENDENT');
+ });
+ it('unlinking a goal clears both plan version and goal key to prevent false evidence attribution',async()=>{
+  await mount(note({activities:[activity({planVersionId:'v1',goalKey:'goal-a'})]}));
+  await change('goal-activity-a','');
+  await click('Save draft');
+  const a=clinicalApi.saveSession.mock.calls[0][2].activities[0];
+  expect(a.planVersionId).toBeUndefined();
+  expect(a.goalKey).toBeUndefined();
+ });
+ it('an unsigned legacy note without actual start fails before network persistence',async()=>{
+  await mount(note({actualStart:null}));
+  await click('Save draft');
+  expect(output()).toContain('Actual start is required');
+  expect(clinicalApi.saveSession).not.toHaveBeenCalled();
+ });
+ it('draft with no historical source end persists explicit typed actual end without completing',async()=>{
+  await mount(note({actualEnd:null}));
+  await change('session-end-time-note-a','2026-11-10T13:00:00');
+  await click('Save draft');
+  expect(clinicalApi.saveSession.mock.calls[0][2]).toMatchObject({
+   actualEnd:expect.any(String),executionStatus:'IN_PROGRESS'
+  });
+  expect(output()).toContain('Sign note');
+ });
+ it('previously saved session cannot silently erase unsaved local note after incoming revision',async()=>{
+  const n=note();
+  await mount(n);
+  const focus=tree.root.findByProps({'aria-label':'Session focus'});
+  await act(async()=>focus.props.onChange({target:{value:'Fictional unsaved local evidence'}}));
+  await act(async()=>tree.update(h(SessionEditor,{
+   centerId:'center-a',n:{...n,version:99,sections:{...n.sections,focus:'Foreign refreshed evidence'}},
+   ws:workspace(),onPending:pending
+  })));
+  expect(tree.root.findByProps({'aria-label':'Session focus'}).props.value)
+   .toBe('Fictional unsaved local evidence');
+  expect(clinicalApi.saveSession).not.toHaveBeenCalled();
+ });
+ it('clean session receives authoritative server revision when no local evidence is dirty',async()=>{
+  const n=note();
+  await mount(n);
+  await act(async()=>tree.update(h(SessionEditor,{
+   centerId:'center-a',n:{...n,version:4,sections:{...n.sections,focus:'Fictional updated server evidence'}},
+   ws:workspace(),onPending:pending
+  })));
+  expect(tree.root.findByProps({'aria-label':'Session focus'}).props.value)
+   .toBe('Fictional updated server evidence');
+ });
+ it('transcript pending flag prevents completion until explicit reviewed evidence is settled',async()=>{
+  await mount();
+  await act(async()=>get('fake-dictation-pending').props.onClick());
+  expect(button('Review and complete session').props.disabled).toBe(true);
+  expect(clinicalApi.saveSession).not.toHaveBeenCalled();
+ });
+ it('approved locally reviewed short transcript is appended to existing evidence rather than replacing it',async()=>{
+  await mount(note({sections:{focus:'Fictional',activities:'',response:'Original fictional note',nextSteps:''}}));
+  await act(async()=>get('fake-dictation-insert').props.onClick());
+  expect(tree.root.findByProps({'aria-label':'Child response / reviewed dictation'}).props.value)
+   .toContain('Original fictional note\nSynthetic reviewed transcript');
+  await click('Save draft');
+  expect(clinicalApi.saveSession.mock.calls[0][2].sections.response)
+   .toContain('Synthetic reviewed transcript');
+ });
+ it('oversized reviewed transcript refuses insertion without changing clinician text',async()=>{
+  const huge='A'.repeat(3999);
+  await mount(note({sections:{focus:'Fictional',activities:'',response:huge,nextSteps:''}}));
+  await act(async()=>get('fake-dictation-insert').props.onClick());
+  expect(tree.root.findByProps({'aria-label':'Child response / reviewed dictation'}).props.value)
+   .toBe(huge);
+  expect(clinicalApi.saveSession).not.toHaveBeenCalled();
+ });
+ it('clinician cancellation prevents selecting newer server source over retained local evidence',async()=>{
+  clinicalApi.saveSession.mockRejectedValueOnce(new ApiError(409,'Synthetic version conflict'));
+  await mount();await click('Save draft');
+  global.window.confirm.mockReturnValueOnce(false);
+  await click('Retain server version');
+  expect(output()).toContain('Resolve conflicting session evidence');
+  expect(clinicalApi.saveSession).toHaveBeenCalledTimes(1);
+ });
+ it('reconciliation revalidates source and refuses stale changes rather than overwriting new evidence',async()=>{
+  clinicalApi.saveSession.mockRejectedValueOnce(new ApiError(409,'Synthetic version conflict'));
+  clinicalApi.workspace
+   .mockResolvedValueOnce(workspace({notes:[note({version:4})]}))
+   .mockResolvedValueOnce(workspace({notes:[note({version:5})]}))
+   .mockResolvedValueOnce(workspace({notes:[note({version:5})]}));
+  await mount();await click('Save draft');
+  await click('Save reviewed reconciliation as draft');
+  expect(clinicalApi.saveSession).toHaveBeenCalledTimes(1);
+  expect(output()).toContain('Resolve conflicting session evidence');
+ });
+ it('read-only session has no editable dictation or save controls',async()=>{
+  await mount(note({mine:false}),workspace({canEdit:false}));
+  expect(button('Save draft')).toBeUndefined();
+  expect(button('Review and complete session')).toBeUndefined();
+  expect(find('fake-dictation')).toHaveLength(0);
+  expect(output()).toContain('Sign note');
+ });
+});
