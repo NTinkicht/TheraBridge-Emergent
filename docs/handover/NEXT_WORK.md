@@ -1,3 +1,23 @@
+## 2026-11-11 — COM-02 #361 planned evidence-to-rights completion
+Qualify exact-head CI, resolve Codex findings and preserve all clinical and legal gates. Obtain independently captured and signed real SaaS and enterprise OCI digest/file/SBOM release evidence; currently NONE exists and the per-asset release status remains UNKNOWN. Independently corroborate all 53 package publication/repository commits (including DefinitelyTyped 26, other missing Git SHA 7, Next.js monorepo 3, untrusted repo URL 2, root matches 15) before legal-source assertions. Verify 91 asset source and redistributed rights, semantic-PAX exception and OS/native dependencies. Human owner/UAE counsel must approve actual enterprise vs SaaS rights, IP ownership and terms.
+
+---
+
+## 2026-11-11 — COM-02 #359 qualification checkpoint
+Check all HTTP source read failures including 404 preserve the 53-version rights queue and never imply valid upstream licensing. Verify no source identity mismatch bypass; no source-asset production release inference. Final merged HEAD needs full required CI and Codex before merge.
+
+---
+
+## 2026-11-11 — COM-02 #359 final qualification and next independent legal wave
+Qualify entire bulk evidence, including P2 transient upstream timeout path, on final HEAD with full test/secret-scan/SBOM/demo/live-session/Compose/10-min preview/Smart CI and final Codex 0 findings. Merge only after Rule 16 conditions. After merge, one follow-up work item should corroborate source revision-to-published npm tarball for 15 source-root candidates, address 26 DefinitelyTyped + 7 other missing revision rows, 3 Next.js subpackages and 2 legacy Git URL claims, then distinguish actual redistributed release image assets from 91 source assets. Separately obtain commercial IP, upstream notices, SaaS/enterprise counsel contracts and clinical G2/G2b signoff; no automatic rights approvals.
+
+---
+
+## 2026-11-11 — COM-02 PR #359 qualification and independent legal evidence
+Run new mega-PR producer on actual 53 exception and 91 source asset inputs. Verify exact immutable source license byte hashes for eight curated source versions/nine paths and leave unavailable content unresolved. Repair all CI failures, collect full test, secret scan, SBOM, demo, live session, Compose, ten-minute preview and Smart CI on final exact HEAD, request independent Codex re-review, merge only with all findings resolved. Then independently attest package tarball-to-source linkage; prove actual SaaS vs enterprise redistributed release artifact contents; obtain IP and third-party rights-holder/UAE counsel approvals. G2/G2b clinical NO-GO unchanged.
+
+---
+
 ## 2026-11-11 — COM-02 #357 final QA and substantive attestation still required
 Qualify final document-updated HEAD with full six-job CI, exact-head independent Codex and review disposition; the initial code SHA `8c645d0f` yielded 7/7 new tests and 15/53 GitHead/source-root identity candidate matches in [CI 42923019170](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42923019170). **No package has independently proven source-to-npm-artifact lineage.** After merge, prioritize independent exact-release-to-distributed-tarball corroboration for the 15 technical candidates plus monorepo/source-layout resolution for 38 others; separately verify authoritative LICENSE/NOTICE and 91 tracked assets, enterprise redistribution vs SaaS obligations and final rights-holder/UAE counsel approval. Preserve G2/G2b NO-GO.
 
@@ -1017,3 +1037,24 @@ Qualify roster-seed PR via six exact-head CI jobs and independent Codex review; 
 2. Provision three unique high-entropy passwords through approved secure channels as `DEMO_EXTRA_PASSWORDS_JSON` on the dedicated Render synthetic service and `TB_HOSTED_QA_EXTRA_USERS_JSON` in the protected GitHub environment. Do not alter the seven existing passwords.
 3. Merge reviewed PR, promote into the manually deployed synthetic branch, check readiness and seed count 10, then request protected ten-login QA approval.
 4. Keep clinical signing, release, consent and real AI/STT gates disabled; no baseline promotion from synthetic-only checks.
+
+
+## 2026-11-12 — COM-02 PR #362 implementation and verification
+Run offline candidate-capture tests in full exact-head CI; inspect all required jobs including SBOM, secret scan, preview/Compose and role acceptance. Obtain genuine OCI digest-pinned SaaS and Enterprise build records plus verified independently signed artifact/provenance attestations from an approved build runner. Feed captured candidate manifests into existing release-scope review, with non-regular entry/runtime volume limits visible. Independently prove all 53 npm tarball-to-source publications and compare all 91 tracked assets plus container/OS libraries to actual customer-shipped bytes. Reconcile SaaS versus enterprise rights with qualified legal counsel, keep notices draft, no automatic grants. Resolve independent Codex findings, update Rule 7 evidence and merge only after exact-head full green CI and independent review. Preserve G2/G2b clinical NO-GO.
+
+## 2026-11-12 — PR #362 exact-head qualification after image-ref fix
+Verify tagged image fixture and forged-signature tests in full CI; capture exact final head run IDs and test outcomes before reporting PASS. Do not use old-head green results for latest SHA. Obtain genuine Docker OCI image evidence and third-party source attestations for 53 versions; compare all 91 assets and obtain SaaS/enterprise counsel approval. Do not merge prior to independent exact-head Codex review, entire required CI green, and Rule 7 refresh.
+
+## 2026-11-12 — Next qualification gate for PR #362
+Verify mocked canonical RepoDigest export case in exact-head CI, inspect all full CI jobs, obtain independent Codex review after stable passing final head, and resolve review findings. Production release edition artifacts and 53 npm immutable publisher-to-source attestations require genuine signed upstream/build evidence; legal grant and clinical gates remain closed.
+
+## 2026-11-12 — Qualify combined Docker release evidence
+Verify final-head Python capture and Node dual-edition merge tests in required full CI. When real SaaS and Enterprise release images exist, capture digest-pinned candidate inventories, merge them into an exclusive new JSON, compare to the 91-asset rights register, and independently check signed immutable OCI publication/deployment evidence. Independently corroborate 53 exact-version npm lineages. No unsigned JSON is legal or production release authority. Require green CI/independent exact-head Codex before merging.
+
+## 2026-11-12 — Next COM-02 technical evidence and qualification
+Qualify DSSE verifier's offline adversarial suite on exact final HEAD with full CI, commercial inventory and independent Codex review; remedy findings without bypass. For real release capture, obtain separately authenticated publisher key fingerprint, externally signed in-toto statement proving exact SaaS/Enterprise OCI digest and inventory hash, independent registry digest/transparency log/deployment provenance, OS/native/image SBOM component comparison, then source asset rights. Independently corroborate 53 npm exact-version publication-to-source links including @types/DefinitelyTyped and Next.js monorepo cases; consult rights holders and UAE legal counsel for 91 assets and distinct SaaS/enterprise terms. No releases or final notices or clinical G2/G2b transition.
+
+## 2026-11-12 — COM-02 next work after signed rights join
+Qualify new cross-evidence rights join against full exact-head CI, commercial inventory and independent Codex review; resolve all P1/P2 before merge. Obtain genuine independently signed production SaaS and Enterprise OCI release artifacts and trusted publisher identities. Link actual registries/deployments and layer/SBOM package identities with 91 exact source assets; independently corroborate 53 exact npm package-version upstream publishing lineages; request distinct SaaS versus on-prem enterprise obligations approval from rights holders/UAE counsel. Keep approval counts zero and preserve clinical signing/consent/release NO-GO.
+
+2026-11-12 Requalify PR #364 after Codex P2 fix: confirm supplemental obligations and adversarial regression in full exact-head CI, obtain exact-head Codex review and merge only if green. Actual signer authority, OCI registry publication/deployment, 53 npm provenance lineages, 91 assets and counsel remain unresolved.
