@@ -871,3 +871,5 @@ Opened follow-up branch for offline DSSE Ed25519 verification of exact dual-edit
 
 ## 2026-11-12 — COM-02 paired signed-release-rights reconciliation
 Following merged #363, implemented a fail-closed, fully reverified DSSE + two-edition Docker export + complete bulk package/source-asset evidence join. Output distinguishes exact signed LOCAL candidate hashes from actual release and legal rights; no publisher authority or independently attested production deployment can be claimed. Offline adversarial CI test wiring added. Full CI/Codex qualification pending; actual 53 npm publisher lineages and 91 assets remain unresolved. G2/G2b NO-GO unchanged.
+
+2026-11-12 PR #364 Codex P2 remedied: signed candidate-to-rights join now preserves the three unresolved OS/container, PostgreSQL/Redis and models/datasets/external-service obligation rows, validates exact categories/reasons and prohibits false approval. New regression cases added; final-head CI and Codex qualification pending.
