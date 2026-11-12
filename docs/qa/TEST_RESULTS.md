@@ -1161,3 +1161,6 @@ New Node tests for successful candidate-only dual-edition merging, rejected swap
 
 ## 2026-11-12 — COM-02 DSSE signed OCI candidate attestation test scope
 New offline Node `node --test scripts/commercial/verify-oci-dsse.test.mjs` exercises valid pinned-key Ed25519 DSSE for exact two-edition image digest and SHA-256 inventory; wrong trust key, corrupted signature, signed wrong digest, forged file inventory, swapped edition, forged schema/legal permissions, unsigned envelope, malformed encoding, tampered local file capture and unsupported RSA key. At commit creation **NOT YET EXECUTED IN GITHUB CI**, no acceptance claims. No real publisher/registry attestations or commercial/clinical permissions verified.
+
+## 2026-11-12 — COM-02 signed candidate-to-rights integrity fixtures
+New adversarial Node tests: valid two-edition signed local capture against all package/asset records, both edition asset byte matches/absences without authorizations, omitted package/asset rows, forged rights, corrupted manifest image digests and SHA-256 hashes, wrong independently pinned Ed25519 key, signed forged file-inventory hash, invalid signature, and signed fabricated approval. **Tests added, not yet proven green on final PR head**. Clinical G2/G2b and commercial grants stay NO-GO.
