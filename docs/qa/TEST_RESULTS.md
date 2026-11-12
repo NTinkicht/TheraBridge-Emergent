@@ -1164,3 +1164,5 @@ New offline Node `node --test scripts/commercial/verify-oci-dsse.test.mjs` exerc
 
 ## 2026-11-12 — COM-02 signed candidate-to-rights integrity fixtures
 New adversarial Node tests: valid two-edition signed local capture against all package/asset records, both edition asset byte matches/absences without authorizations, omitted package/asset rows, forged rights, corrupted manifest image digests and SHA-256 hashes, wrong independently pinned Ed25519 key, signed forged file-inventory hash, invalid signature, and signed fabricated approval. **Tests added, not yet proven green on final PR head**. Clinical G2/G2b and commercial grants stay NO-GO.
+
+2026-11-12 Added supplemental obligation preservation and negative tests to PR #364 signed rights reconciliation: require OS_RUNTIME_CONTAINER, POSTGRES_REDIS and MODELS_DATASETS_EXTERNAL_SERVICES exactly once with their unresolved reasons; reject missing/duplicate/unexpected categories, modified reasons, or forged commercial approval. New-head CI qualification pending; do not mark as passed until runner reports results.
