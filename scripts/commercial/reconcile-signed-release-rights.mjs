@@ -45,6 +45,29 @@ function reconcileSignedReleaseRights(bulk,capture,envelope,pem,expectedKeyFinge
     scope.counts.nonPackageAssets!==scope.assets.length||
     scope.counts.packages!==scope.packages.length)
   throw Error('MISSING_RIGHTS_ITEMS');
+ const supplementalExpected=new Map([
+  ['OS_RUNTIME_CONTAINER','REQUIRE_RELEASE_IMAGE_DIGEST_AND_COMPONENT_LEVEL_OBLIGATIONS'],
+  ['POSTGRES_REDIS','REQUIRE_EXACT_SHIPPED_VERSION_AND_DISTRIBUTION_SCOPE'],
+  ['MODELS_DATASETS_EXTERNAL_SERVICES','REQUIRE_PROVIDER_TERMS_INPUT_RIGHTS_AND_DATA_PROCESSING_ASSESSMENT']
+ ]);
+ if(!Array.isArray(bulk.supplementalDistributionReview)||
+    bulk.supplementalDistributionReview.length!==supplementalExpected.size)
+   throw Error('MISSING_SUPPLEMENTAL_DISTRIBUTION_RIGHTS');
+ const supplementalSeen=new Set();
+ const supplementalDistributionReview=bulk.supplementalDistributionReview.map(item=>{
+  if(!keys(item,['category','status','reason'])||
+     !supplementalExpected.has(item.category)||
+     supplementalSeen.has(item.category)||
+     item.status!=='UNRESOLVED'||
+     item.reason!==supplementalExpected.get(item.category))
+    throw Error('UNSAFE_SUPPLEMENTAL_DISTRIBUTION_RIGHTS');
+  supplementalSeen.add(item.category);
+  return {category:item.category,status:'UNRESOLVED',reason:item.reason,
+   actualDistributionIndependentlyVerified:false,
+   saasNetworkRights:'PENDING_COUNSEL_REVIEW',
+   enterpriseRedistributionRights:'PENDING_COUNSEL_REVIEW',
+   decision:'UNRESOLVED',commercialApproval:false};
+ }).sort((a,b)=>a.category.localeCompare(b.category,'en'));
  const assets=scope.assets.map(item=>{
   if(!keys(item.releaseImageComparisons,editions)||
      item.releasePresence!=='NOT_INDEPENDENTLY_ATTESTED'||
@@ -106,10 +129,11 @@ function reconcileSignedReleaseRights(bulk,capture,envelope,pem,expectedKeyFinge
     independentlyVerifiedProductionDeployment:false,commercialApproval:false};
   }),
   counts:{candidateImages:2,assets:assets.length,packages:packages.length,
+   supplementalDistributionObligations:supplementalDistributionReview.length,
    independentlyAttestedReleaseImages:0,
    independentlyVerifiedNpmPublisherSourceLinks:0,
    legallyApproved:0},
-  assets,packages,
+  assets,packages,supplementalDistributionReview,
   finalNoticesIssued:false,commercialLicenseGranted:false,
   g2ClinicalApproved:false,g2bClinicalApproved:false
  };
