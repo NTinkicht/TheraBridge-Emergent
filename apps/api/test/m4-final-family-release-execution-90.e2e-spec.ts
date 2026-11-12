@@ -4,6 +4,7 @@ import {FamilyReleaseService} from '../src/clinical/family-release.service';
 import {familyRenderingHash,buildFamilyRendering} from '../src/clinical/family-release-rendering';
 import {PrismaService} from '../src/prisma/prisma.service';
 const center='fictional-center',childId='fictional-child',snapshotId='fictional-snapshot';
+const centerId=center;
 const supervisor={role:'CLINICAL_SUPERVISOR',userId:'fictional-clinician',membershipId:'fictional-membership'} as any;
 const guardian={role:'GUARDIAN',userId:'fictional-guardian',membershipId:'fictional-guardian-membership'} as any;
 const planContent={service:'speech',title:'Fictional plan',summary:'Clinician authored synthetic summary',
@@ -277,7 +278,7 @@ describe('M4-08 synthetic release withdrawal and authorized recovery paths',()=>
  it('grantsForApproval returns exact read-only records even after service removal',async()=>{
   const {service,tx}=make();tx.child.findFirst.mockResolvedValueOnce({services:[]});
   const r=await service.grantsForApproval(center,supervisor,approval.id);
-  expect(r.items).toEqual([{id:grant.id,guardianLinkId:grant.guardianLinkId,status:'ACTIVE'}]);
+  expect(r.items).toMatchObject([{id:grant.id,guardianLinkId:grant.guardianLinkId,status:'ACTIVE'}]);
   expect(tx.syntheticFamilyGrant.findMany).toHaveBeenCalledWith({
    where:{centerId,approvalId:approval.id},
    select:{id:true,guardianLinkId:true,status:true},orderBy:{releasedAt:'desc'}

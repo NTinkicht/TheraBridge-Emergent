@@ -83,7 +83,7 @@ describe('M4-08 real report statement trace never promotes evidence to clinical 
   await change('statement-trace-search','  recorded STATEMENT  ');
   expect(find('statement-trace-source')).toHaveLength(1);
   expect(get('statement-trace-status-sessions')).toBeTruthy();
-  expect(out()).toContain('Showing 1 of 2');
+  expect(get('statement-trace-result-count').children.join('')).toContain('Showing 1 of 2');
  });
  it('search by source label or reference supports exact provenance, not guessed clinical claims',async()=>{
   await mount(ReportStatementTrace,{version:v([linked()]),childId:'fictional-child'});
@@ -112,7 +112,7 @@ describe('M4-08 real report statement trace never promotes evidence to clinical 
    evidence:{goals:[]}
   }),childId:'fictional-child'});
   expect(find('statement-trace-source')).toHaveLength(0);
-  expect(out()).toContain('0 recorded sources');
+  expect(tree.root.findAllByType('p').map(x=>x.children.filter(y=>typeof y==='string').join('')).join(' ')).toContain('0 recorded sources');
  });
 });
 describe('M4-08 real shared state controls retain loading, denial and retry boundaries',()=>{

@@ -8,6 +8,7 @@ import {InvitationsService} from '../src/centers/invitations.service';
 import {AuditService} from '../src/audit/audit.service';
 import {NoticesService} from '../src/operations/notices.service';
 const center='fictional-center',childId='fictional-child',userId='fictional-operator';
+const centerId=center;
 const now=new Date('2026-11-11T09:00:00.000Z');
 const admin={role:'CENTER_ADMIN',membershipId:'fictional-admin',userId} as any;
 const therapist={...admin,role:'THERAPIST'};

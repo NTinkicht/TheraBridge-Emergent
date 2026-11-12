@@ -203,7 +203,7 @@ describe('M4-08 90% real session interaction and identity preservation',()=>{
   const downs=tree.root.findAllByType('button').filter(b=>textOf(b.props.children).includes('Move down'));
   await act(async()=>downs[0].props.onClick());
   await click('Save draft');
-  expect(clinicalApi.saveSession.mock.calls[0][2].activities.map((a:any)=>a.id))
+  expect(clinicalApi.saveSession.mock.calls[0][2].activities.map((a)=>a.id))
    .toEqual(['activity-second','activity-first']);
  });
  it('activity detail edits persist actual minutes, objective and factual observations as unvalidated evidence',async()=>{

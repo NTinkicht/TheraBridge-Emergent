@@ -273,7 +273,7 @@ describe('M4-08 90% real panel branch and permission qualification',()=>{
    obs('two','pv-new',4,'2026-11-10')
   ]}),onNavigate:jest.fn()});
   await change('progress-granularity','month');
-  expect(html()).toContain('Monthly measurements');
+  expect(get('progress-periods-g1').findByType('caption').children.join('')).toContain('Monthly measurements');
   expect(find('progress-periods-g1')).toHaveLength(1);
   expect(html()).toContain('2026-10');
   expect(html()).toContain('2026-11');
