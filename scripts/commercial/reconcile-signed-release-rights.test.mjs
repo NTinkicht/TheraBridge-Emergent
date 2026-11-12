@@ -33,6 +33,11 @@ function fixture(){
    {...rights,path:'assets/icon.svg',sha256:A,category:'IMAGE_OR_ICON'},
    {...rights,path:'assets/other.svg',sha256:B,category:'IMAGE_OR_ICON'}
   ],
+  supplementalDistributionReview:[
+   {category:'OS_RUNTIME_CONTAINER',status:'UNRESOLVED',reason:'REQUIRE_RELEASE_IMAGE_DIGEST_AND_COMPONENT_LEVEL_OBLIGATIONS'},
+   {category:'POSTGRES_REDIS',status:'UNRESOLVED',reason:'REQUIRE_EXACT_SHIPPED_VERSION_AND_DISTRIBUTION_SCOPE'},
+   {category:'MODELS_DATASETS_EXTERNAL_SERVICES',status:'UNRESOLVED',reason:'REQUIRE_PROVIDER_TERMS_INPUT_RIGHTS_AND_DATA_PROCESSING_ASSESSMENT'}
+  ],
   finalNoticesIssued:false,commercialLicenseGranted:false};
  const captures=mergeCaptures(image('SAAS'),image('ENTERPRISE'));
  const {publicKey,privateKey}=generateKeyPairSync('ed25519');
@@ -55,12 +60,19 @@ test('verifies actual DSSE bytes then accounts for all packages/assets without l
  const f=fixture();
  const result=reconcile(f.bulk,f.captures,f.envelopeFor(),f.pem,f.fp);
  assert.deepEqual(result.counts,{candidateImages:2,assets:2,packages:2,
-  independentlyAttestedReleaseImages:0,independentlyVerifiedNpmPublisherSourceLinks:0,legallyApproved:0});
+  supplementalDistributionObligations:3,independentlyAttestedReleaseImages:0,independentlyVerifiedNpmPublisherSourceLinks:0,legallyApproved:0});
  assert.equal(result.images.every(x=>x.dsseSignatureVerifiedAgainstPinnedKey&&
   !x.independentlyVerifiedProductionDeployment&&!x.commercialApproval),true);
  assert.equal(result.assets[0].editions.SAAS.candidateByteMatch,true);
  assert.equal(result.assets[1].editions.ENTERPRISE.candidateByteMatch,false);
  assert(result.packages.every(x=>!x.exactNpmPublisherToSourceIndependentlyVerified&&!x.commercialApproval));
+ assert.deepEqual(result.supplementalDistributionReview.map(x=>x.category),[
+  'MODELS_DATASETS_EXTERNAL_SERVICES','OS_RUNTIME_CONTAINER','POSTGRES_REDIS']);
+ assert(result.supplementalDistributionReview.every(x=>x.status==='UNRESOLVED'&&
+  x.enterpriseRedistributionRights==='PENDING_COUNSEL_REVIEW'&&
+  x.saasNetworkRights==='PENDING_COUNSEL_REVIEW'&&
+  x.actualDistributionIndependentlyVerified===false&&
+  x.commercialApproval===false));
  assert.equal(result.finalNoticesIssued,false);
  assert.equal(result.g2ClinicalApproved,false);
  assert.equal(result.g2bClinicalApproved,false);
@@ -103,4 +115,20 @@ test('even a signed false publisher identity or false file scope cannot promote 
  bad.commercialApproval=true;
  assert.throws(()=>reconcile(f.bulk,f.captures,f.envelopeFor(bad),f.pem,f.fp),
   /INVALID_SIGNED_CLAIM/);
+});
+
+test('Codex P2 regression: reject missing, duplicate, forged or approved supplemental obligations',()=>{
+ for(const change of [
+  f=>{delete f.bulk.supplementalDistributionReview;},
+  f=>{f.bulk.supplementalDistributionReview.pop();},
+  f=>{f.bulk.supplementalDistributionReview[1]={...f.bulk.supplementalDistributionReview[0]};},
+  f=>{f.bulk.supplementalDistributionReview[0].status='APPROVED';},
+  f=>{f.bulk.supplementalDistributionReview[0].reason='NOT_APPLICABLE';},
+  f=>{f.bulk.supplementalDistributionReview[0].commercialApproval=true;},
+  f=>{f.bulk.supplementalDistributionReview[1].category='IGNORED_INFRASTRUCTURE';},
+  f=>{f.bulk.supplementalDistributionReview.push({category:'UNTRACKED',status:'UNRESOLVED',reason:'MISSING'});}
+ ]){
+  const f=fixture();change(f);
+  assert.throws(()=>reconcile(f.bulk,f.captures,f.envelopeFor(),f.pem,f.fp));
+ }
 });
