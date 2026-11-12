@@ -933,3 +933,8 @@ Created `merge-release-captures.mjs` with strict per-edition schema validation a
 
 ## 2026-11-12 — COM-02 signed release claim follow-up
 Following merged #362 (merge `0582d47da0fbf4bf744e2a9a91c272a340c72f8b`), implemented `verify-oci-dsse.mjs` enforcing Ed25519 DSSE PAE verification, independent SPKI fingerprint pin, exact 2-edition digest/inventory correspondence, strict schema and explicit negative release claims. Added fixture-generated adversarial signature tests and wired them into full CI. Technical implementation only; all upstream legal and clinical gates still NO-GO. Qualification pending.
+
+## 2026-11-12 — COM-02 signed claim and rights aggregation
+After PR #363 merged (commit `3066ec6c8be7767fd5b59262e64e0454f9a629c6`), created `reconcile-signed-release-rights.mjs` to cryptographically reverify DSSE against independently pinned key and reconcile exact SaaS/Enterprise capture digests with conservative all-version/all-asset rights report. Added forgery/omission negative tests and full-CI wiring; no legal permission or actual release verification. Rule 7 updated, CI/review pending.
+
+2026-11-12 Codex P2 follow-up in PR #364: supplementalDistributionReview was omitted from the joined evidence output. Implemented fail-closed three-category preservation and separate SaaS/enterprise counsel queue. Regression tests guard missing, duplicate, forged or approved obligations. Requires fresh CI/review after commits.
