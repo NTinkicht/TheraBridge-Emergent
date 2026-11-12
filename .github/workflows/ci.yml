@@ -238,6 +238,8 @@ jobs:
         run: node scripts/commercial/build-bulk-rights-evidence.mjs /tmp/therabridge-com02-exact-version-rights-queue.json /tmp/therabridge-com02-source-correspondence-candidates.json docs/commercial/upstream-license-path-candidates.json /tmp/therabridge-com02-bulk-rights-evidence.json
       - name: Validate dual-edition Docker release evidence merge (offline, fail-closed)
         run: node --test scripts/commercial/merge-release-captures.test.mjs
+      - name: Validate pinned-key DSSE OCI candidate signature and adversarial forgery cases
+        run: node --test scripts/commercial/verify-oci-dsse.test.mjs
       - name: Validate strict release-image and publication-scope rights reconciliation
         run: node --test scripts/commercial/review-release-scope.test.mjs
       - name: Build conservative actual-image candidate comparison (unattested means unresolved)

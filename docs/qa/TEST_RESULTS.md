@@ -1158,3 +1158,6 @@ Added mocked image inspect/create/export successful SHA-256 capture with canonic
 
 ## 2026-11-12 — PR #362 offline merger regressions
 New Node tests for successful candidate-only dual-edition merging, rejected swapped/duplicate editions, fabricated signature and legal fields, path traversal/duplicate file rows, malformed digests and file-order canonicalization. Test execution on final GitHub head not yet confirmed; no authorization claims. Python Docker capture tests remain a separate full-CI gate.
+
+## 2026-11-12 — COM-02 DSSE signed OCI candidate attestation test scope
+New offline Node `node --test scripts/commercial/verify-oci-dsse.test.mjs` exercises valid pinned-key Ed25519 DSSE for exact two-edition image digest and SHA-256 inventory; wrong trust key, corrupted signature, signed wrong digest, forged file inventory, swapped edition, forged schema/legal permissions, unsigned envelope, malformed encoding, tampered local file capture and unsupported RSA key. At commit creation **NOT YET EXECUTED IN GITHUB CI**, no acceptance claims. No real publisher/registry attestations or commercial/clinical permissions verified.
