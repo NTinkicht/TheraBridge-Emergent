@@ -124,7 +124,7 @@ describe('M4-08 90% calendar date, duration and historical definition branch cas
   await mount({activities:[activity({snapshot:undefined,templateId:'lost',
    durationMinutes:undefined})],templates:[]});
   expect(get('home-calendar-item')).toBeTruthy();
-  expect(output()).toContain('Activity definition unavailable');
+  expect(output()).toContain('Unavailable activity definition');
   expect(output()).not.toContain('min (activity definition)');
  });
  it('plan-specific duration with unavailable template is clearly distinguished',async()=>{

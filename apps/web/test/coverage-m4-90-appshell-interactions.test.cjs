@@ -129,7 +129,7 @@ describe('M4-08 real AppShell interaction states and family-only theme',()=>{
  });
  it('more entries with no href explicitly report unavailable rather than navigating',async()=>{
   await mount('family','home');await click('bottom-nav-more');
-  await click('nav-messages');
+  await act(async()=>find('nav-messages').filter(n=>n.type==='button').at(-1).props.onClick());
   expect(mockNotify).toHaveBeenCalledWith(expect.stringContaining('Messages'));
   expect(find('more-sheet')).toHaveLength(0);
  });
