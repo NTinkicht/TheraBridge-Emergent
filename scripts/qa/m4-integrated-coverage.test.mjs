@@ -57,8 +57,27 @@ test('PR evidence distinguishes actual synthetic checkout SHA from reviewed head
  assert.equal(result.testedRefType,'synthetic_pr_merge_checkout');
  const missing=fixture(96);missing.eventName='pull_request';
  assert.throws(()=>integratedReceipt(missing),/missing_pr_head_base_provenance/);
- const invalid=fixture(96);invalid.eventName='workflow_dispatch';
+ const invalid=fixture(96);invalid.eventName='schedule';
  assert.throws(()=>integratedReceipt(invalid),/unsupported_coverage_event/);
+});
+
+test('manual workflow_dispatch carries its exact checkout SHA without fabricating PR head/base review',()=>{
+ const x=fixture(96);
+ x.eventName='workflow_dispatch';
+ const r=integratedReceipt(x);
+ assert.equal(r.testedRefType,'manual_dispatch_commit');
+ assert.equal(r.headSha,sha);
+ assert.equal(r.prBaseSha,null);
+ assert.equal(r.threshold,90);
+ assert.deepEqual(r.belowThreshold,[]);
+});
+
+test('90% is accepted from exact counters while 89.999% fails closed',()=>{
+ const x=fixture(90);
+ assert.deepEqual(integratedReceipt(x).belowThreshold,[]);
+ const y=fixture(89);
+ assert(integratedReceipt(y).belowThreshold.includes('api_branches'));
+ assert(integratedReceipt(y).belowThreshold.includes('web_branches'));
 });
 
 test('fails closed on omitted API source, fake API summary and aggregate manipulation',()=>{
