@@ -175,3 +175,23 @@ describe('M4-08 staff invitation preconditions are role-specific and fail closed
   expect(tx.invitation.updateMany).not.toHaveBeenCalled();
  });
 });
+
+describe('M4-08 invitation delivery stays capture-only for all role labels',()=>{
+ it('uses the standard join invitation copy for staff rather than first-owner setup',()=>{
+  const {service}=make();
+  const send=jest.fn();
+  (service as any).mailbox.send=send;
+  service.deliver(invitation({kind:'STAFF',roles:['THERAPIST']}),'Fictional Center','synthetic-fragment');
+  expect(send).toHaveBeenCalledTimes(1);
+  expect(send.mock.calls[0][0].subject).toBe('Join Fictional Center on TheraBridge');
+  expect(send.mock.calls[0][0].body).toContain('as therapist');
+ });
+ it('retains an explicitly supplied unrecognized role label without granting a mapped role',()=>{
+  const {service}=make();
+  const send=jest.fn();
+  (service as any).mailbox.send=send;
+  service.deliver(invitation({kind:'STAFF',roles:['SYNTHETIC_UNKNOWN_ROLE']}),'Fictional Center','synthetic-fragment');
+  expect(send.mock.calls[0][0].body).toContain('as SYNTHETIC_UNKNOWN_ROLE');
+  expect(send.mock.calls[0][0].body).not.toContain('as center administrator');
+ });
+});
