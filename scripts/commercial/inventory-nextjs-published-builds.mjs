@@ -131,6 +131,15 @@ function sourceRecipe(bytes,expected){
   pinnedBuildInputs:{napiCli:manifest.devDependencies['@napi-rs/cli']},
   requiresSourceToolchainCargoLockAndTarget:true,reproduciblePublishedArchive:false};
 }
+function reportStatus(records){
+ const complete=records.length===3&&records.every(x=>
+  x.archiveStatus==='INTEGRITY_VERIFIED_PUBLISHED_FILE_INVENTORY_NOT_REPRODUCIBILITY'&&
+  x.buildRecipeStatus==='SIGNED_COMMIT_BUILD_RECIPE_CAPTURED_NOT_EXECUTED');
+ if(complete)return 'ALL_THREE_PUBLISHED_ARCHIVE_INVENTORIES_AND_RECIPES_VERIFIED_NOT_REPRODUCIBLE_BUILDS';
+ if(records.some(x=>x.archiveStatus==='INTEGRITY_VERIFIED_PUBLISHED_FILE_INVENTORY_NOT_REPRODUCIBILITY'))
+  return 'PARTIAL_PUBLISHED_ARCHIVE_EVIDENCE_REMAINING_UNVERIFIED';
+ return 'NO_VERIFIED_PUBLISHED_ARCHIVE_EVIDENCE';
+}
 async function inventory(candidates,verified,raw,sourceReport,{fetchArchive=download,fetchSource=fetchRaw}={}){
  const expected=validateSource(candidates,verified,raw);
  if(sourceReport?.schema!=='therabridge-com02-signed-nextjs-immutable-source-review-v1'||
@@ -200,12 +209,7 @@ async function inventory(candidates,verified,raw,sourceReport,{fetchArchive=down
  }
  records.sort((a,b)=>a.name.localeCompare(b.name,'en'));
  return {schema:'therabridge-com02-published-nextjs-archive-reproducibility-readiness-v1',
-  status:records.every(x=>x.archiveStatus==='INTEGRITY_VERIFIED_PUBLISHED_FILE_INVENTORY_NOT_REPRODUCIBILITY'&&
-    x.buildRecipeStatus==='SIGNED_COMMIT_BUILD_RECIPE_CAPTURED_NOT_EXECUTED')?
-   'ALL_THREE_PUBLISHED_ARCHIVE_INVENTORIES_AND_RECIPES_VERIFIED_NOT_REPRODUCIBLE_BUILDS':
-   records.some(x=>x.archiveStatus==='INTEGRITY_VERIFIED_PUBLISHED_FILE_INVENTORY_NOT_REPRODUCIBILITY')?
-    'PARTIAL_PUBLISHED_ARCHIVE_EVIDENCE_REMAINING_UNVERIFIED':
-    'NO_VERIFIED_PUBLISHED_ARCHIVE_EVIDENCE',
+  status:reportStatus(records),
   inputSigstoreReceiptSha256:sha(Buffer.from(JSON.stringify(verified))),
   inputSourceReconciliationSha256:sha(Buffer.from(JSON.stringify(sourceReport))),
   counts:{allUnresolvedPackages:53,signedCandidates:3,
@@ -229,4 +233,4 @@ if(process.argv[1]&&import.meta.url===new URL('file://'+process.argv[1]).href){
   console.log(JSON.stringify(report.counts));
  }catch(e){console.error('COM02_ARCHIVE_READINESS_FAILED',e.message);process.exitCode=1;}
 }
-export {tarballUrl,checkSRI,readArchive,sourceRecipe,inventory};
+export {tarballUrl,checkSRI,readArchive,sourceRecipe,reportStatus,inventory};
