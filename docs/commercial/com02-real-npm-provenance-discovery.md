@@ -34,3 +34,6 @@ This snapshot is evidence of registry **advertisement**, not yet cryptographic p
 
 ### Codex P2 correction
 Raw registry-advertised URL text is validated **before** URL normalization; nested raw or percent-encoded traversal is rejected and the URL's decoded attestation subject must match the exact npm name@version. npm CLI JSON is retained as an **audit observation only**; it does not guarantee access to a verified Sigstore bundle or authoritative source revision. Separate supported bundle retrieval and independent verification remain required.
+
+### Additional Codex P2 regressions
+The successful two-package fixture now asserts the correct sorted scoped package and a positive attestation URL matching its exact manifest subject. More importantly, a registry outage or genuine zero-advertised-pointer inventory produces and archives a deterministic **no-audit, no-source-proof, no-approval receipt**, never a false CI failure or positive attestation. The exact 53 unresolved package rows are preserved.
