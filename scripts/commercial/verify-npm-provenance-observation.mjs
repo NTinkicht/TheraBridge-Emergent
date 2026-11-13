@@ -52,7 +52,7 @@ function select(input){
  selected.sort((a,b)=>a.name.localeCompare(b.name,'en')||a.version.localeCompare(b.version,'en'));
  return selected;
 }
-function summarise(input,observed,installedLock,auditBytes,auditExit){
+function summarise(input,observed,installedLock,auditBytes,auditExit,auditExecuted=true){
  const selected=select(input);
  if(!Number.isInteger(auditExit)||auditExit < 0 || auditExit > 255)
   throw Error('INVALID_AUDIT_EXIT');
@@ -72,7 +72,7 @@ function summarise(input,observed,installedLock,auditBytes,auditExit){
    publisherProvenanceIndependentlyVerified:false,
    sourceRevisionIndependentlyVerified:false,
    commercialApproval:false,
-   auditStatus:locked && auditExit===0?
+   auditStatus:locked && auditExecuted && auditExit===0?
     'NPM_AUDIT_SIGNATURES_SUCCEEDED_BUT_SUBJECT_REVIEW_REQUIRED':
     'NPM_AUDIT_SIGNATURES_NOT_ESTABLISHED'};
  });
@@ -86,6 +86,7 @@ function summarise(input,observed,installedLock,auditBytes,auditExit){
   candidateRegisterSha256:sha(JSON.stringify(input)),
   npmAuditOutputSha256:sha(auditBytes),
   npmAuditExitCode:auditExit,
+  npmAuditExecuted:auditExecuted,
   npmAuditParseableJson:(()=>{try{JSON.parse(auditBytes.toString('utf8'));return true;}catch{return false;}})(),
   counts:{allUnresolvedPackages:input.records.length,
    advertisedAttestationCandidates:selected.length,
@@ -116,13 +117,21 @@ function audit(input){
   // permits inspecting Linux GNU/Musl package bytes on one synthetic runner,
   // not executing either platform-specific native binary.
   const installed=run('npm',['install','--force','--ignore-scripts','--no-audit','--no-fund','--package-lock-only'],root);
-  if(installed.code!==0)throw Error('NPM_LOCK_GENERATION_FAILED_'+(installed.error??installed.code));
-  const install=run('npm',['ci','--force','--ignore-scripts','--no-audit','--no-fund'],root);
-  if(install.code!==0)throw Error('NPM_ISOLATED_INSTALL_FAILED_'+(install.error??install.code));
-  const lock=JSON.parse(readFileSync(join(root,'package-lock.json'),'utf8'));
-  const cmd=run('npm',['audit','signatures','--json','--include-attestations'],root);
-  return {receipt:summarise(input,candidates,lock,cmd.stdout,cmd.code),
-   auditJson:cmd.stdout};
+  let lock={packages:{}},code=255,stdout=Buffer.alloc(0),auditExecuted=false;
+  if(installed.code===0){
+   const install=run('npm',['ci','--force','--ignore-scripts','--no-audit','--no-fund'],root);
+   if(install.code===0){
+    lock=JSON.parse(readFileSync(join(root,'package-lock.json'),'utf8'));
+    const cmd=run('npm',['audit','signatures','--json','--include-attestations'],root);
+    code=cmd.code;stdout=cmd.stdout;auditExecuted=true;
+   } else {
+    stdout=Buffer.from(JSON.stringify({status:'ISOLATED_INSTALL_FAILED_NO_AUDIT',exitCode:install.code})+'\n');
+   }
+  }else{
+   stdout=Buffer.from(JSON.stringify({status:'PACKAGE_LOCK_FETCH_FAILED_NO_AUDIT',exitCode:installed.code})+'\n');
+  }
+  return {receipt:summarise(input,candidates,lock,stdout,code,auditExecuted),
+   auditJson:stdout};
  } finally{rmSync(root,{recursive:true,force:true,maxRetries:2});}
 }
 if(process.argv[1]&&import.meta.url===new URL('file://'+process.argv[1]).href){
