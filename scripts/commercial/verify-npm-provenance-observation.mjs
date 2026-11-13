@@ -80,7 +80,7 @@ function summarise(input,observed,installedLock,auditBytes,auditExit,auditExecut
     'NPM_AUDIT_SIGNATURES_SUCCEEDED_BUT_SUBJECT_REVIEW_REQUIRED':
     'NPM_AUDIT_SIGNATURES_NOT_ESTABLISHED'};
  });
- if(!Array.isArray(observed)||observed.some(x=>!byKey.has(id(x)))||
+ if(!Array.isArray(observed)||observed.length!==selected.length||observed.some(x=>!byKey.has(id(x)))||
     new Set(observed.map(id)).size!==observed.length)
   throw Error('UNEXPECTED_AUDITED_PACKAGES');
  // Npm CLI's cryptographic outcome is observed, not silently converted
