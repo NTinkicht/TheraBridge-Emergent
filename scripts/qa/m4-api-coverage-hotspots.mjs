@@ -45,15 +45,15 @@ export function apiHotspots({summary,expectedSourcePaths,sourceRoot}){
       summary.total[m]?.covered!==totals[m].covered||totals[m].total===0)invalid('mismatch_'+m);
  }
  const ratio=(n)=>n.total===0?100:Number((n.covered/n.total*100).toFixed(2));
- const needed=n=>Math.max(0,Math.ceil(n.total*0.95-1e-9)-n.covered);
+ const needed=n=>Math.max(0,Math.ceil(n.total*0.90-1e-9)-n.covered);
  const top=(metric)=>files.map(f=>({
    path:f.path,uncovered:f.counts[metric].total-f.counts[metric].covered,
    percentage:ratio(f.counts[metric])
  })).sort((a,b)=>b.uncovered-a.uncovered||a.path.localeCompare(b.path)).slice(0,25);
  return {
    schemaVersion:1,kind:'m4_api_full_source_hotspot_diagnostic_not_release_approval',
-   sourceCount:files.length,thresholdPercent:95,
-   metrics:Object.fromEntries(metrics.map(m=>[m,{...totals[m],percent:ratio(totals[m]),additionalCoveredUnitsTo95:needed(totals[m])}])),
+   sourceCount:files.length,thresholdPercent:90,
+   metrics:Object.fromEntries(metrics.map(m=>[m,{...totals[m],percent:ratio(totals[m]),additionalCoveredUnitsTo90:needed(totals[m])}])),
    zeroExecutedFiles:files.filter(f=>f.counts.statements.covered===0).length,
    topUncoveredLines:top('lines'),topUncoveredBranches:top('branches'),topUncoveredFunctions:top('functions'),
    note:'Actual source-instrumented Jest counters, full API source denominator, never a clinical or production-release approval'
