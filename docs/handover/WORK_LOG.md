@@ -945,3 +945,5 @@ Confirmed merged #362/#363/#364 (main 9a271e62). Closed #346/#349/#351/#354 as d
 2026-11-13 Inspected initial GitHub CI 43425805033 artifact directly: 53 exact metadata rows, 3 Next.js attestation advertisements, 50 no advertisement, 0 cryptographically verified publication lineage. Added isolated npm CLI signature observation with bounded raw result and no scripts, exact-version lock integrity checks and negative tests; source and legal approvals remain zero.
 
 2026-11-13 Fixed Codex P2s in #365: validate raw registry URLs before normalization to exclude encoded traversal; remove unsupported verified-bundle output assertion from npm CLI instructions and implementation. Bound npm audit output and retain NO source/legal proof until separately validated.
+
+2026-11-13 Follow-up review remediations #365: fixed sorted scoped/npm fixture assertions and alpha positive subject; changed zero-advertisement/outage branch to persist complete no-audit receipt with zero approvals; added negative tests and exact-run requalification.
