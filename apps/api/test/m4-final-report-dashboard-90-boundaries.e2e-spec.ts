@@ -30,7 +30,7 @@ function make(){
 const period={from:'2026-11-01',to:'2026-11-12'};
 describe('M4-08 dashboard filters child and specialty by live assignment rather than navigation',()=>{
  it('does not expose plans without live therapist assignment',async()=>{
-  const {service,db,clinical}=make();clinical.therapistAssignments.mockResolvedValue([]);
+  const {service,db,clinical}=make();clinical.therapistAssignments.mockResolvedValue([]);db.child.findMany.mockResolvedValue([]);
   const r=await service.dashboard('center-one',therapist,period as any);
   expect(r.children).toEqual([]);expect(r.goals).toEqual([]);
   expect(db.child.findMany.mock.calls[0][0].where.id.in).toEqual([]);
@@ -51,7 +51,7 @@ describe('M4-08 dashboard filters child and specialty by live assignment rather 
   });
  });
  it('filters requested child without returning unrelated synthetic goal measurements',async()=>{
-  const {service,db}=make();
+  const {service,db}=make();db.therapyPlan.findMany.mockResolvedValue([]);
   const r=await service.dashboard('center-one',therapist,{...period,childId:'child-b'} as any);
   expect(r.goals).toEqual([]);
   expect(db.therapyPlan.findMany.mock.calls[0][0].where.childId.in).toEqual([]);
@@ -136,7 +136,7 @@ describe('M4-08 dashboard filters child and specialty by live assignment rather 
   expect(db.child.findMany.mock.calls[0][0].where).toEqual({centerId:'center-one',status:'ACTIVE'});
  });
  it('returns no children or goals when the center has no active child',async()=>{
-  const {service,db}=make();db.child.findMany.mockResolvedValue([]);
+  const {service,db}=make();db.child.findMany.mockResolvedValue([]);db.therapyPlan.findMany.mockResolvedValue([]);
   const r=await service.dashboard('center-one',supervisor,period as any);
   expect(r.children).toEqual([]);expect(r.goals).toEqual([]);
  });
