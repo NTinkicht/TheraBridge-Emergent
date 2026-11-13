@@ -941,3 +941,5 @@ After PR #363 merged (commit `3066ec6c8be7767fd5b59262e64e0454f9a629c6`), create
 
 ## 2026-11-13 — COM-02 canonical unresolved work and npm attestation leads
 Confirmed merged #362/#363/#364 (main 9a271e62). Closed #346/#349/#351/#354 as duplicate historical issues with unresolved obligations consolidated under #356 (53 npm exact versions) and #360 (real release + 91 asset rights). Extended existing exact npm manifest evidence with bounded, allowlisted attestation pointer hints; this does not validate Sigstore provenance or bestow publication-source authority. Offline tests and current CI artifact integration included; no claimed independent signatures, no rights clearance, no actual release approval.
+
+2026-11-13 Inspected initial GitHub CI 43425805033 artifact directly: 53 exact metadata rows, 3 Next.js attestation advertisements, 50 no advertisement, 0 cryptographically verified publication lineage. Added isolated npm CLI signature observation with bounded raw result and no scripts, exact-version lock integrity checks and negative tests; source and legal approvals remain zero.
