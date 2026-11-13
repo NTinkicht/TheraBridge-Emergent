@@ -1175,3 +1175,6 @@ New test cases in `collect-upstream-license-candidates.test.mjs` check safely bo
 2026-11-13 Added regression tests for raw `a/%2e%2e/pkg` and encoded `pkg%2F%2e%2e%2Fother` attestation URL traversal; npm audit JSON is observation only. Latest-head green/full review not yet confirmed after fixes.
 
 2026-11-13 Added regression covering correct sorted @scope/beta attestation URL, matching alpha manifest subject, and zero selected advertised attestation candidates. Zero-case receipt records all unresolved packages and no audit, no source attestation, and no commercial or G2/G2b approval. New latest-head CI pending.
+
+## 2026-11-13 — npm Sigstore bundle-verification acceptance scope
+New offline Node tests for scoped PURL encoding; exact pinned npm Sigstore verifier and in-toto Statement v1 digest/PURL match; forged signed version, package name or tarball SRI; invalid/missing bundle export; missing/extra/duplicate verified entries; nonzero audit exit; SLSA source commit claim not automatically approved. These are implementation tests; final-head CI results and real trusted bundle statuses are pending. No licensing or clinical approval inferred.
