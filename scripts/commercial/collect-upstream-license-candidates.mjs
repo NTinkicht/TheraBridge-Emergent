@@ -44,37 +44,35 @@ function safeText(value,max=512){return typeof value==='string'&&value.length<=m
 // Sigstore bundle. Any publication-to-source promotion requires npm's trusted
 // attestation verification (e.g. npm audit signatures) against exact tarball SRI.
 function attestationPointer(dist,name=null,version=null){
+ // Advertisement is only an unverified registry hint, never source provenance.
  if(dist?.attestations===undefined)return {status:'NOT_ADVERTISED',url:null};
- const candidate=dist.attestations;
- if(!candidate||typeof candidate!=='object'||Array.isArray(candidate)||
-    typeof candidate.url!=='string')
-  return {status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null};
- // Inspect the UNNORMALIZED text first: new URL() silently removes a/%2e%2e/
- // and can conceal encoded traversal in an otherwise valid registry URL.
+ const value=dist.attestations?.url;
+ const invalid=()=>({status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null});
+ if(typeof value!=='string')return invalid();
+ // Validate RAW text before WHATWG URL canonicalization: that parser removes
+ // encoded dot-segment traversal and would otherwise hide malicious paths.
  const prefix='https://registry.npmjs.org/-/npm/v1/attestations/';
- if(!candidate.url.startsWith(prefix))
-  return {status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null};
- const rawSuffix=candidate.url.slice(prefix.length);
- let decodedSuffix;
- try{decodedSuffix=decodeURIComponent(rawSuffix);}catch{
-  return {status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null};
- }
- if(!rawSuffix||rawSuffix.length>350||
-    rawSuffix.includes('/')||rawSuffix.includes('\\')||
-    !/^[A-Za-z0-9%._~! let url;try{url=new URL(candidate.url);}catch{
-  return {status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null};
- }
- if(url.protocol!=='https:'||url.hostname!=='registry.npmjs.org'||url.port||'()+,;=:@-]+$/.test(rawSuffix)||
-    decodedSuffix.includes('..')||decodedSuffix.includes('\\')||
-    decodedSuffix.includes('?')||decodedSuffix.includes('#')||
-    (name!==null||version!==null)&&decodedSuffix!==name+'@'+version)
-  return {status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null};
- let url;try{url=new URL(candidate.url);}catch{
-  return {status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null};
- }
- if(url.protocol!=='https:'||url.hostname!=='registry.npmjs.org'||url.port||
-    url.username||url.password||url.search||url.hash||
-    !/^\/-\/npm\/v1\/attestations\/[A-Za-z0-9%._~!function parseManifest(bytes,name,version){'()+,;=:@/-]{1,350}$/.test(url.pathname)||
+ if(!value.startsWith(prefix))return invalid();
+ const rawSuffix=value.slice(prefix.length);
+ if(!rawSuffix||rawSuffix.length>350||rawSuffix.includes('/')||
+    rawSuffix.includes('\\')||
+    !/^[A-Za-z0-9%._~!$&'()+,;=:@-]+$/.test(rawSuffix))
+   return invalid();
+ let decoded;
+ try{decoded=decodeURIComponent(rawSuffix);}catch{return invalid();}
+ if(decoded.includes('..')||decoded.includes('\\')||
+    decoded.includes('?')||decoded.includes('#')||
+    (name!==null||version!==null)&&decoded!==name+'@'+version)
+   return invalid();
+ let url;
+ try{url=new URL(value);}catch{return invalid();}
+ if(url.protocol!=='https:'||url.hostname!=='registry.npmjs.org'||
+    url.port||url.username||url.password||url.search||url.hash||
+    url.pathname!=='/-/npm/v1/attestations/'+rawSuffix)
+   return invalid();
+ return {status:'UNVERIFIED_REGISTRY_ATTESTATION_POINTER',url:value};
+}
+function parseManifest(bytes,name,version){'()+,;=:@/-]{1,350}$/.test(url.pathname)||
     url.pathname.includes('..')||url.pathname.includes('//'))
   return {status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null};
  if(name!==null||version!==null){
