@@ -43,7 +43,7 @@ function safeText(value,max=512){return typeof value==='string'&&value.length<=m
 // A registry-advertised attestation URL is a DISCOVERY HINT only, not a verified
 // Sigstore bundle. Any publication-to-source promotion requires npm's trusted
 // attestation verification (e.g. npm audit signatures) against exact tarball SRI.
-function attestationPointer(dist){
+function attestationPointer(dist,name=null,version=null){
  if(dist?.attestations===undefined)return {status:'NOT_ADVERTISED',url:null};
  const candidate=dist.attestations;
  if(!candidate||typeof candidate!=='object'||Array.isArray(candidate)||
@@ -57,6 +57,13 @@ function attestationPointer(dist){
     !/^\/-\/npm\/v1\/attestations\/[A-Za-z0-9%._~!function parseManifest(bytes,name,version){'()+,;=:@/-]{1,350}$/.test(url.pathname)||
     url.pathname.includes('..')||url.pathname.includes('//'))
   return {status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null};
+ if(name!==null||version!==null){
+  let target;
+  try{target=decodeURIComponent(url.pathname.slice('/-/npm/v1/attestations/'.length));}
+  catch{return {status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null};}
+  if(target!==name+'@'+version)
+   return {status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null};
+ }
  return {status:'UNVERIFIED_REGISTRY_ATTESTATION_POINTER',url:url.toString()};
 }
 function parseManifest(bytes,name,version){
@@ -72,7 +79,7 @@ function parseManifest(bytes,name,version){
   item.repository&&typeof item.repository==='object'?item.repository.url:null;
  const home=safeText(item.homepage,1024);
  const dist=item.dist&&typeof item.dist==='object'?item.dist:{};
- const attestation=attestationPointer(dist);
+ const attestation=attestationPointer(dist,name,version);
  return {sha256:digest(bytes),candidateLicenseExpression:license,
   candidateRepositoryUrl:safeText(repo,1024),candidateHomepage:home,
   candidateGitHead:typeof item.gitHead==='string'&&/^[a-f0-9]{40}$/i.test(item.gitHead)?item.gitHead.toLowerCase():null,
