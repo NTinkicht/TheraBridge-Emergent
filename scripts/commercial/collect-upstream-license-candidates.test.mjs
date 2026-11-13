@@ -40,7 +40,7 @@ test('registry manifest candidate is version-locked, hashed and never called a v
  assert.equal(out.records[0].candidateLicenseExpression,'MIT');
  assert.equal(out.records[0].manifestMatchesLockedIntegrity,true);
  assert.equal(out.records[0].candidateRegistryAttestationStatus,'UNVERIFIED_REGISTRY_ATTESTATION_POINTER');
- assert.equal(out.records[0].candidateRegistryAttestationUrl,'https://registry.npmjs.org/-/npm/v1/attestations/alpha@1.0.0');
+ assert.equal(out.records[0].candidateRegistryAttestationUrl,'https://registry.npmjs.org/-/npm/v1/attestations/%40scope%2Fbeta@2.0.0');
  assert.equal(out.records[0].publisherProvenanceIndependentlyVerified,false);
  assert.equal(out.counts.registryAttestationPointersAdvertised,2);
  assert.equal(out.counts.independentlyVerifiedPublisherProvenance,0);
@@ -115,7 +115,7 @@ test('npm attestation hints never constitute independent Sigstore verification',
    value?.url===valid?'UNVERIFIED_REGISTRY_ATTESTATION_POINTER':'INVALID_REGISTRY_ATTESTATION_HINT');
  }
  const parsed=parseManifest(Buffer.from(JSON.stringify({name:'alpha',version:'1.0.0',
-  dist:{attestations:{url:valid},integrity:'sha512-AAAA'}})),'alpha','1.0.0');
+  dist:{attestations:{url:'https://registry.npmjs.org/-/npm/v1/attestations/alpha@1.0.0'},integrity:'sha512-AAAA'}})),'alpha','1.0.0');
  assert.equal(parsed.publisherProvenanceIndependentlyVerified,false);
  assert.equal(parsed.candidateRegistryAttestationStatus,'UNVERIFIED_REGISTRY_ATTESTATION_POINTER');
  const mismatched=parseManifest(Buffer.from(JSON.stringify({name:'alpha',version:'1.0.0',
