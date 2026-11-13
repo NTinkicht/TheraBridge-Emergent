@@ -1190,3 +1190,5 @@ New tests cover 53/3 version-set selection; three signed SLSA revision claims an
 
 ## 2026-11-13 — signed npm archive/build-readiness tests
 New offline Node cases: allowlist only the 3 signed Next.js versions, exact SHA512 tarball SRI, regular tar file SHA256/paths, reject duplicated names, traversal, symlink or global tar extension, reject absent/mismatched source package version and build commands. Actual published tarball/immutable source data qualified only after full CI. All completed build/release and legal approval counters remain zero.
+
+2026-11-13 New Codex P2 regression: zero verified tarballs -> NO_VERIFIED status; partial/recipe gap -> PARTIAL status; exactly 3 verified archives and recipes -> complete inventory status (not reproduced build). File lists retain individual SHA-256/path/byte values and stable serialization. Latest corrected-head CI pending.
