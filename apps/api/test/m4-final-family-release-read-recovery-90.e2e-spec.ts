@@ -37,7 +37,7 @@ function fixture(){
  jest.spyOn(service as any,'clinician').mockResolvedValue(undefined);
  return {service,tx,db};
 }
-const eligible=(service:FamilyReleaseService)=>(service as any).eligibleRead;
+const eligible=(service:FamilyReleaseService)=>(service as any).eligibleRead.bind(service);
 describe('family document read refuses revoked identity and stale evidence',()=>{
  it.each([null,grant({status:'REVOKED'}),grant({status:'WITHDRAWN'})])(
   'refuses absent or inaccessible release %j',async g=>{
