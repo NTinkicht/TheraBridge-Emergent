@@ -894,3 +894,8 @@ Following merged PR #365, implementing pinned npm 11.19.1 Sigstore trust-chain a
 
 ## 2026-11-13 — COM-02 signed Next.js source manifests
 After PR #366 merged (`11cfc8ee`), implemented an exact trusted receipt/raw Sigstore/53-version queue join for the 3 signed Next.js packages; independently fetches immutable source manifests under signed commits and records SHA-256 and source version; distinguishes direct @next/env source from parent SWC version for GNU/Musl native binary. No native tarball reproducibility or legal permission inferred. 50 unadvertised packages and 91 assets still unresolved, G2/G2b NO-GO. New PR CI/review pending.
+
+## 2026-11-13 — COM-02 npm tarball reproducibility prerequisites
+After merged #367, PR work inventories exact 3 signed npm package archives from registry with lockfile SHA-512, bounded/safe file hashes, generated JS/native binary counts and signed immutable Next.js ncc/TypeScript or Rust/N-API build recipes. Does NOT attempt native builds or certify byte-for-byte reproducibility. Keeps source/rights evidence for remaining 50 npm versions, 91 source assets and actual SaaS/Enterprise OCI releases unresolved. Clinical G2/G2b NO-GO.
+
+2026-11-13 PR #368 initial CI verified exact published 3 npm archives and source recipes; GNU SWC binary 131,406,240B, Musl 156,809,432B. Zero actual reproducible tarballs. Codex P2 fixed: persist each shipped file's SHA256/path/bytes and derive report status from real success/partial/failure rather than static string. Latest-head CI/review pending.
