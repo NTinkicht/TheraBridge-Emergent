@@ -65,9 +65,9 @@ describe('M4-08 production shell only shows permitted navigation',()=>{
  it('does not fabricate a selected workspace and offers explicit context switch only for multiple memberships',async()=>{
   await mount(session({activeContext:null,contexts:[center,guardian]}));
   expect(get('active-context-label').props.children).toBe('No workspace selected');
-  expect(all('workspace-switcher')).toHaveLength(1);
+  expect(all('workspace-switcher').filter(node=>node.type==='a')).toHaveLength(1);
   await act(async()=>tree.update(h(ProductShell,{session:session({contexts:[center]}),active:'home',planned:[],children:'Only one'})));
-  expect(all('workspace-switcher')).toHaveLength(0);
+  expect(all('workspace-switcher').filter(node=>node.type==='a')).toHaveLength(0);
  });
  it('mobile destination changes invoke client routing but do not grant new permissions',async()=>{
   await mount(session({permissions:['center.children.read']}));
