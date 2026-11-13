@@ -947,3 +947,6 @@ Confirmed merged #362/#363/#364 (main 9a271e62). Closed #346/#349/#351/#354 as d
 2026-11-13 Fixed Codex P2s in #365: validate raw registry URLs before normalization to exclude encoded traversal; remove unsupported verified-bundle output assertion from npm CLI instructions and implementation. Bound npm audit output and retain NO source/legal proof until separately validated.
 
 2026-11-13 Follow-up review remediations #365: fixed sorted scoped/npm fixture assertions and alpha positive subject; changed zero-advertisement/outage branch to persist complete no-audit receipt with zero approvals; added negative tests and exact-run requalification.
+
+## 2026-11-13 — COM-02 next priority implemented
+Created pinned npm CLI Sigstore verified-bundle audit for three exact advertised provenance npm package versions; checks package-lock integrity, supported signed Statement v1 PURL + SHA512, and preserves signed SLSA source revision claim metadata without elevating it to independently corroborated source rights. Added adversarial tests and full-CI artifact integration; real exact-head run and Codex review pending. Preserve commercial/clinical NO-GO.
