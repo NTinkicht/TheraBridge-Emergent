@@ -93,7 +93,7 @@ describe('M4-08 session start enforces therapist specialty, appointment and idem
  });
  it('refuses an actual start on a different center-local calendar day',async()=>{
   const {service,tx}=make();
-  tx.center.findUniqueOrThrow.mockResolvedValue({timezone:'Pacific/Auckland'});
+  tx.center.findUniqueOrThrow.mockResolvedValue({timezone:'Pacific/Kiritimati'});
   await expect(service.start('center-one',actor,'child-one',startDto() as any))
     .rejects.toMatchObject({status:422});
   expect(tx.sessionNote.create).not.toHaveBeenCalled();
