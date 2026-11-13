@@ -49,6 +49,26 @@ function attestationPointer(dist,name=null,version=null){
  if(!candidate||typeof candidate!=='object'||Array.isArray(candidate)||
     typeof candidate.url!=='string')
   return {status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null};
+ // Inspect the UNNORMALIZED text first: new URL() silently removes a/%2e%2e/
+ // and can conceal encoded traversal in an otherwise valid registry URL.
+ const prefix='https://registry.npmjs.org/-/npm/v1/attestations/';
+ if(!candidate.url.startsWith(prefix))
+  return {status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null};
+ const rawSuffix=candidate.url.slice(prefix.length);
+ let decodedSuffix;
+ try{decodedSuffix=decodeURIComponent(rawSuffix);}catch{
+  return {status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null};
+ }
+ if(!rawSuffix||rawSuffix.length>350||
+    rawSuffix.includes('/')||rawSuffix.includes('\\')||
+    !/^[A-Za-z0-9%._~! let url;try{url=new URL(candidate.url);}catch{
+  return {status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null};
+ }
+ if(url.protocol!=='https:'||url.hostname!=='registry.npmjs.org'||url.port||'()+,;=:@-]+$/.test(rawSuffix)||
+    decodedSuffix.includes('..')||decodedSuffix.includes('\\')||
+    decodedSuffix.includes('?')||decodedSuffix.includes('#')||
+    (name!==null||version!==null)&&decodedSuffix!==name+'@'+version)
+  return {status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null};
  let url;try{url=new URL(candidate.url);}catch{
   return {status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null};
  }
