@@ -13,7 +13,7 @@ test('reports real aggregate deficit and sanitized relative paths',()=>{
  const r=run(input());
  assert.equal(r.sourceCount,1);
  assert.equal(r.metrics.branches.percent,25);
- assert.equal(r.metrics.branches.additionalCoveredUnitsTo95,3);
+ assert.equal(r.metrics.branches.additionalCoveredUnitsTo90,3);
  assert.equal(r.topUncoveredBranches[0].path,'apps/api/src/auth/access.ts');
  assert.equal(r.topUncoveredBranches[0].uncovered,3);
  assert.equal(r.kind,'m4_api_full_source_hotspot_diagnostic_not_release_approval');
