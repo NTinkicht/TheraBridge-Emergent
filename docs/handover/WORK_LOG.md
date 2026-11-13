@@ -950,3 +950,5 @@ Confirmed merged #362/#363/#364 (main 9a271e62). Closed #346/#349/#351/#354 as d
 
 ## 2026-11-13 — COM-02 next priority implemented
 Created pinned npm CLI Sigstore verified-bundle audit for three exact advertised provenance npm package versions; checks package-lock integrity, supported signed Statement v1 PURL + SHA512, and preserves signed SLSA source revision claim metadata without elevating it to independently corroborated source rights. Added adversarial tests and full-CI artifact integration; real exact-head run and Codex review pending. Preserve commercial/clinical NO-GO.
+
+2026-11-13 Additional PR #366 qualification: first pinned npm 11.19.1 verification step ran but second-stage Statement-v1 parser rejected actual payloads (0/3 subject matches). Added original authenticated npm CLI `verified` bundle output to artifact beside hash-linked summary to diagnose provenance schema. Fixed adversarial test identity rejection and historical all-refs synthetic `fictional` credential scan with exact narrowly-scoped rule; no broad secret scan exemption.
