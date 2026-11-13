@@ -146,7 +146,10 @@ function obtain(input){
  const selected=select(input);
  const root=mkdtempSync(join(tmpdir(),'tb-com02-pinned-npm-'));
  try{
-  if(!selected.length)return classify(input,{packages:{}},Buffer.from('{}'),255,NPM_VERSION);
+  if(!selected.length){
+   const auditBytes=Buffer.from('{}');
+   return {report:classify(input,{packages:{}},auditBytes,255,NPM_VERSION),auditBytes};
+  }
   const verifier=join(root,'verifier'),project=join(root,'project');
   mkdirSync(verifier);mkdirSync(project);
   const bootstrap=run('npm',['install','--prefix',verifier,'--ignore-scripts','--no-audit','--no-fund','--no-save','npm@'+NPM_VERSION],root);
@@ -162,18 +165,20 @@ function obtain(input){
   if(inst.status!==0)throw Error('PINNED_NPM_ISOLATED_INSTALL_UNAVAILABLE');
   const lock=JSON.parse(readFileSync(join(project,'package-lock.json'),'utf8'));
   const audit=run(process.execPath,[cli,'audit','signatures','--json','--include-attestations'],project);
-  return classify(input,lock,audit.stdout,audit.status,ver);
+  return {report:classify(input,lock,audit.stdout,audit.status,ver),auditBytes:audit.stdout};
  }finally{rmSync(root,{recursive:true,force:true,maxRetries:2});}
 }
 if(process.argv[1]&&import.meta.url===new URL('file://'+process.argv[1]).href){
  const paths=process.argv.slice(2);
- if(paths.length!==2||paths[0]===paths[1]){
-  console.error('Usage: verify-npm-sigstore-bundles.mjs exact-registry-candidates.json new-summary.json');process.exit(2);
+ if(paths.length!==3||new Set(paths).size!==3){
+  console.error('Usage: verify-npm-sigstore-bundles.mjs exact-registry-candidates.json new-summary.json new-verified-bundles.json');process.exit(2);
  }
  try{
   const input=JSON.parse(readFileSync(paths[0],'utf8'));
-  const report=obtain(input);
+  const {report,auditBytes}=obtain(input);
+  if(auditBytes.length>8*1024*1024)throw Error('OVERSIZED_VERIFIED_BUNDLE_EXPORT');
   writeFileSync(paths[1],JSON.stringify(report,null,2)+'\n',{flag:'wx'});
+  writeFileSync(paths[2],auditBytes,{flag:'wx'});
   console.log(JSON.stringify(report.counts));
  }catch(e){console.error('SIGSTORE_BUNDLE_CHECK_FAILED',e.message);process.exitCode=1;}
 }
