@@ -1082,3 +1082,5 @@ Qualify new exact-commit Next.js source corroboration in full CI with independen
 
 ## 2026-11-13 — Next reproducibility stage
 Run new real CI archive/recipe evidence and inspect exact signed source versions' published .tgz file sets and actual native binary hashes. Fix evidence-backed parsing defects, obtain clean final-head Codex and all green CI before merge. Then set up independently pinned Next.js 14.2.x checkout, ncc/TS and N-API/Rust GNU/Musl build matrix only where toolchains and release recipe can be pinned, compare generated file hashes and archive bytes, and record mismatch rather than approving by default. Resolve other 50 npm lineages and 91 asset/release rights separately.
+
+2026-11-13 Requalify #368 corrected head with full CI and Codex; retrieve final artifact containing *individual* JS and native .node hashes. Plan pinned Next.js ncc/TypeScript and Rust/N-API GNU/Musl controlled rebuild against these per-file digests, documenting release tooling and reproducibility blockers. 50 npm packages, 91 assets, real production OCI and counsel still unresolved.
