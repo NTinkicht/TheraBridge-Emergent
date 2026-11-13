@@ -1079,3 +1079,6 @@ Qualify new verifier against exact-head full CI and Codex. Inspect archived npm 
 
 ## 2026-11-13 — COM-02 next after immutable manifests
 Qualify new exact-commit Next.js source corroboration in full CI with independent exact-head Codex. Inspect real evidence artifact for 1 direct source-manifest match and 2 parent SWC-source matches, distinguish any network failures, and merge only if required checks succeed. Next research actual npm tarball-to-source reproducibility (including GNU/Musl Rust native builds, build args and toolchains) and independent source lineages for the 50 packages without advertised Sigstore. No third-party redistribution/license/clinical GO without authorized rights proof and counsel.
+
+## 2026-11-13 — Next reproducibility stage
+Run new real CI archive/recipe evidence and inspect exact signed source versions' published .tgz file sets and actual native binary hashes. Fix evidence-backed parsing defects, obtain clean final-head Codex and all green CI before merge. Then set up independently pinned Next.js 14.2.x checkout, ncc/TS and N-API/Rust GNU/Musl build matrix only where toolchains and release recipe can be pinned, compare generated file hashes and archive bytes, and record mismatch rather than approving by default. Resolve other 50 npm lineages and 91 asset/release rights separately.
