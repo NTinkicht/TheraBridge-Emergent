@@ -109,8 +109,12 @@ function audit(input){
  const candidates=select(input);
  const root=mkdtempSync(join(tmpdir(),'tb-com02-npm-audit-'));
  try{
-  if(!candidates.length)return {status:'NO_ADVERTISED_ATTESTATION_CANDIDATES',
-    candidateCount:0,commercialApproval:false};
+  if(!candidates.length){
+   const auditJson=Buffer.from(JSON.stringify({
+    status:'NO_ADVERTISED_ATTESTATION_CANDIDATES',auditExecuted:false})+'\n');
+   return {receipt:summarise(input,[],{packages:{}},auditJson,255,false),
+    auditJson};
+  }
   const manifest={name:'therabridge-com02-attestation-review',version:'0.0.0',
    private:true,description:'Isolated no-scripts supply chain evidence',
    dependencies:Object.fromEntries(candidates.map(x=>[x.name,x.version]))};
