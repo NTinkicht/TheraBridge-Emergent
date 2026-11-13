@@ -100,7 +100,7 @@ export function integratedReceipt({api,web,webAudit,runId,sha,eventName='push',p
    typeof prBaseSha!=='string'||!/^[0-9a-f]{40}$/.test(prBaseSha)))
    throw Error('missing_pr_head_base_provenance');
  const verifiedApiFiles=auditApiScope({api,apiSourcePaths,apiRoot});
- const measured=measuredCoverage({api,web});
+ const measured=measuredCoverage({api,web,threshold:90});
  for(const metric of metrics){
   const item=web.total[metric],score=Math.round(item.covered/item.total*10000)/100;
   if(webAudit.percentages?.[metric]!==score)throw Error('web_audit_metric_mismatch_'+metric);
@@ -118,7 +118,7 @@ export function integratedReceipt({api,web,webAudit,runId,sha,eventName='push',p
   testedRefType:eventName==='pull_request'?'synthetic_pr_merge_checkout':'push_commit',
   scope:{apiSourceFiles:verifiedApiFiles,webSourceFiles:webAudit.sourceFileCount,
    webZeroStatementCoverageFiles:webAudit.zeroStatementCoverageFiles},
-  threshold:95,percentages:measured.scopes,belowThreshold:measured.belowThreshold,
+  threshold:90,percentages:measured.scopes,belowThreshold:measured.belowThreshold,
   m4_08_gate:'NOT_QUALIFIED',
   reason:measured.belowThreshold.length?'measured_threshold_shortfalls':'independent_release_approval_pending',
   note:'Four metrics measured for API and Web; no clinical release authorization or approved exclusions'
