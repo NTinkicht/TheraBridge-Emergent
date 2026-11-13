@@ -1187,3 +1187,6 @@ New offline Node tests for scoped PURL encoding; exact pinned npm Sigstore verif
 
 ## 2026-11-13 — signed npm release to Next.js source manifests
 New tests cover 53/3 version-set selection; three signed SLSA revision claims and exact raw/receipt SHA-256 binding; one exact @next/env source manifest; two parent SWC source manifests; wrong source versions and timeout; counterfeited signature receipts, removed/duplicated versions, raw bundle swapping, modified signed source commit, unsafe path traversal. No test claims binary/package reproducibility, rights-holder approval or G2/G2b clinical GO. Exact-head full CI and Codex qualification pending.
+
+## 2026-11-13 — signed npm archive/build-readiness tests
+New offline Node cases: allowlist only the 3 signed Next.js versions, exact SHA512 tarball SRI, regular tar file SHA256/paths, reject duplicated names, traversal, symlink or global tar extension, reject absent/mismatched source package version and build commands. Actual published tarball/immutable source data qualified only after full CI. All completed build/release and legal approval counters remain zero.
