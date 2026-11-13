@@ -23,3 +23,13 @@ The exact-head full CI archives the receipt in the already established commercia
 
 ### Live evidence reconciliation checkpoint
 First full CI run on PR #366 executed npm 11.19.1's verified-bundle export successfully. Its summary reported 3 verified CLI attestation entries but **zero signed subject matches in the second-stage parser** because the real statements failed the script's stricter Statement-v1 shape check. Those packages must remain unresolved, not counted as authenticated source versions. The updated workflow now retains the **original npm 11.19.1 verified-bundle JSON** alongside its SHA-256-linked summary for manual review and corrective parser qualification. This raw signed material may contain public certificate and transparency-log evidence; do not treat the attached registry material as licensing consent. The first CI was also blocked by a historical synthetic M4 test literal, scoped narrowly in .gitleaks.toml without disabling secret scanning.
+
+### Authenticated statement formats observed in the raw npm 11.19.1 artifact
+
+The live CI artifact provides two Sigstore-verified bundle entries per Next.js package, matching the actual pinned CLI schema: one **in-toto Statement v0.1 npm publish attestation** (`https://github.com/npm/attestation/tree/main/specs/publish/v0.1`) and one **in-toto Statement v1 SLSA provenance** (`https://slsa.dev/provenance/v1`). Each uses a scoped PURL (`pkg:npm/%40next/...`) and the exact locked SHA-512. The verifier now requires both, rejects duplicate/absent types or mismatching subjects and records source revision claims from the SLSA build definition. A valid source revision **claim** is not proof that published bytes are reproducible from the repository or an intellectual-property license.
+
+From the authenticated SLSA payloads:
+- `@next/env@14.2.35`: repository `https://github.com/vercel/next.js`, workflow branch `refs/heads/14-2-1`, source commit `7b940d9ce96faddb9f92ff40f5e35c34ace04eb2`. The immutable commit was independently confirmed to exist via GitHub's repository commits API.
+- `@next/swc-linux-x64-gnu@14.2.33` and `@next/swc-linux-x64-musl@14.2.33`: same repository/workflow branch, source commit `5a97b408c2d8668bed1642d382fc1d78ed3731cc`, independently confirmed to exist via GitHub's commits API.
+
+The first script version rejected the genuine paired statement schema and recorded 0/3 second-stage matches. This correction and the Codex finding on false-positive receipt status are now implemented, but **latest-head CI and Codex qualification are required before claiming the updated verifier's 3/3 output**. The independent repository-check evidence above establishes commit existence, not reproducibility, source-tree copyright clearance, or permission to redistribute.
