@@ -1178,3 +1178,5 @@ New test cases in `collect-upstream-license-candidates.test.mjs` check safely bo
 
 ## 2026-11-13 — npm Sigstore bundle-verification acceptance scope
 New offline Node tests for scoped PURL encoding; exact pinned npm Sigstore verifier and in-toto Statement v1 digest/PURL match; forged signed version, package name or tarball SRI; invalid/missing bundle export; missing/extra/duplicate verified entries; nonzero audit exit; SLSA source commit claim not automatically approved. These are implementation tests; final-head CI results and real trusted bundle statuses are pending. No licensing or clinical approval inferred.
+
+2026-11-13 Initial PR #366 real npm evidence observed 3 advertised/verified CLI bundles, 0 second-stage matching signed subjects (BAD_SIGNED_STATEMENT); no publisher-to-source mapping may be approved. Added raw npm 11.19.1 audit JSON to exact-head CI artifact. Existing adversarial parser tests passed after expected identity rejection fix; full new-head CI and external Codex review pending.
