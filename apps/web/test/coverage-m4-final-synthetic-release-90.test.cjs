@@ -112,4 +112,30 @@ describe('M4-08 rendered synthetic family-release state boundaries',()=>{
   expect(view()).toContain('Release change denied');
   expect(button('Revoke')).toBeDefined();
  });
+ it('grant handler itself refuses an empty recipient even if invoked programmatically',async()=>{
+  await mount();await click('Approve family rendering');
+  await click('Release approved version');
+  expect(api.grant).not.toHaveBeenCalled();
+  expect(api.grantsForApproval).toHaveBeenCalledTimes(1);
+ });
+ it('a denied grant refresh displays an actionable error without changing access state',async()=>{
+  api.grantsForApproval.mockRejectedValueOnce(new Error('synthetic unavailable'));
+  await mount();await click('Approve family rendering');
+  expect(view()).toContain('Synthetic approval unavailable or denied');
+  expect(button('Release approved version')).toBeUndefined();
+ });
+ it('failed grant reload leaves existing release identity unchanged',async()=>{
+  await mount();await click('Approve family rendering');await select('family-release-guardian');
+  await click('Release approved version');
+  api.grantsForApproval.mockRejectedValueOnce(new Error('synthetic reload denial'));
+  await click('Reload existing grants');
+  expect(view()).toContain('Unable to reload grants');
+  expect(button('Revoke')).toBeDefined();
+ });
+ it('withdrawal always clears previously recorded release identity',async()=>{
+  await mount();await click('Approve family rendering');await select('family-release-guardian');
+  await click('Release approved version');await click('Withdraw');
+  expect(api.change).toHaveBeenCalledWith('center-a','synthetic-grant','WITHDRAWN','Synthetic clinical release correction');
+  expect(button('Revoke')).toBeUndefined();
+ });
 });
