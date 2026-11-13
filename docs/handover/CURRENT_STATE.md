@@ -882,3 +882,6 @@ Following merged #364 and consolidation of superseded #346/#349/#351/#354 as dup
 2026-11-13 Codex P2 remediation in PR #365: raw npm registry attestation paths now checked before WHATWG URL normalization, including encoded `..` traversal; npm audit CLI switched to supported `npm audit signatures --json` and result is an observation, not a verified bundle export. Separate Sigstore retrieval/trust-chain/source-subject verification still required; legal/clinical NO-GO.
 
 2026-11-13 PR #365 additional review fixes: corrected scoped/npm fixture ordering, enforce exact positive attestation subject, and emit fail-closed no-audit receipts when the selected attestation candidate set is empty. No provenance/legal approvals inferred; latest CI/review qualification pending.
+
+## 2026-11-13 — COM-02 authenticated npm Sigstore claim verification
+Following merged PR #365, implementing pinned npm 11.19.1 Sigstore trust-chain and transparency-log verification for the three advertised exact-version npm packages, plus strict signed PURL and SHA-512 digest binding and SLSA source revision claim extraction. This is authenticated *source claim candidate* evidence, never independently corroborated source build reproducibility or license authority. The other 50 versions, 91 tracked assets and actual production OCI releases remain unresolved; G2/G2b NO-GO.
