@@ -30,7 +30,7 @@ test('registry manifest candidate is version-locked, hashed and never called a v
   const bytes=Buffer.from(JSON.stringify({name,version,license:'MIT',
    repository:{type:'git',url:'git+https://github.com/example/alpha.git'},
    dist:{integrity:'sha512-AAAA',tarball:'https://registry.npmjs.org/alpha/-/alpha-1.0.0.tgz',
-    attestations:{url:'https://registry.npmjs.org/-/npm/v1/attestations/alpha@1.0.0',
+    attestations:{url:name==='alpha'?'https://registry.npmjs.org/-/npm/v1/attestations/alpha@1.0.0':'https://registry.npmjs.org/-/npm/v1/attestations/%40scope%2Fbeta@2.0.0',
      provenance:{predicateType:'https://slsa.dev/provenance/v1'}}}}));
   rawByName.set(name,bytes);return bytes;
  };
@@ -115,6 +115,10 @@ test('npm attestation hints never constitute independent Sigstore verification',
   dist:{attestations:{url:valid},integrity:'sha512-AAAA'}})),'alpha','1.0.0');
  assert.equal(parsed.publisherProvenanceIndependentlyVerified,false);
  assert.equal(parsed.candidateRegistryAttestationStatus,'UNVERIFIED_REGISTRY_ATTESTATION_POINTER');
+ const mismatched=parseManifest(Buffer.from(JSON.stringify({name:'alpha',version:'1.0.0',
+  dist:{attestations:{url:'https://registry.npmjs.org/-/npm/v1/attestations/beta@2.0.0'}}})),'alpha','1.0.0');
+ assert.equal(mismatched.candidateRegistryAttestationStatus,'INVALID_REGISTRY_ATTESTATION_HINT');
+ assert.equal(mismatched.candidateRegistryAttestationUrl,null);
 });
 test('missing and invalid attestation advertisements stay explicitly unverified, with complete source rows',async()=>{
  const r=register();
