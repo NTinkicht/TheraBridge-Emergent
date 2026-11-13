@@ -885,3 +885,5 @@ Following merged #364 and consolidation of superseded #346/#349/#351/#354 as dup
 
 ## 2026-11-13 — COM-02 authenticated npm Sigstore claim verification
 Following merged PR #365, implementing pinned npm 11.19.1 Sigstore trust-chain and transparency-log verification for the three advertised exact-version npm packages, plus strict signed PURL and SHA-512 digest binding and SLSA source revision claim extraction. This is authenticated *source claim candidate* evidence, never independently corroborated source build reproducibility or license authority. The other 50 versions, 91 tracked assets and actual production OCI releases remain unresolved; G2/G2b NO-GO.
+
+2026-11-13 PR #366 initial real signed bundles: pinned npm CLI completed, but second-stage in-toto payload parser matched 0/3 (BAD_SIGNED_STATEMENT), so signed source-correspondence remains 0. Added exact raw npm verified-bundle JSON archival to enable inspection, while preserving 53/53 package unresolved and all legal/clinical NO-GO. Historical synthetic M4 `fictional` rejected-password test narrowly allowlisted from all-refs gitleaks without weakening general scan.
