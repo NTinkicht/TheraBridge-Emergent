@@ -21,17 +21,23 @@ function input(){
 }
 const lock=()=>({packages:{'node_modules/@next/env':{
  version,integrity:sri,resolved:'https://registry.npmjs.org/@next/env/-/env-14.2.35.tgz'}}});
-function entry({name=pkg,versionNumber=version,sha=signedSha,src=source,commit='b'.repeat(40)}={}){
- const statement={_type:'https://in-toto.io/Statement/v1',
+function entry({name=pkg,versionNumber=version,sha=signedSha,
+ src=source+'@refs/heads/14-2-1',commit='b'.repeat(40)}={}){
+ const purl=signedSubject(name,versionNumber),subject=[{name:purl,digest:{sha512:sha}}];
+ const publish={_type:'https://in-toto.io/Statement/v0.1',
+  predicateType:'https://github.com/npm/attestation/tree/main/specs/publish/v0.1',
+  subject,predicate:{name,version:versionNumber,registry:'https://registry.npmjs.org'}};
+ const slsa={_type:'https://in-toto.io/Statement/v1',
   predicateType:'https://slsa.dev/provenance/v1',
-  subject:[{name:signedSubject(name,versionNumber),digest:{sha512:sha}}],
-  predicate:{buildDefinition:{resolvedDependencies:[{uri:src,digest:{gitCommit:commit}}]}}};
+  subject,predicate:{buildDefinition:{
+   externalParameters:{workflow:{repository:source.slice(4),ref:'refs/heads/14-2-1'}},
+   resolvedDependencies:[{uri:src,digest:{gitCommit:commit}}]}}};
+ const bundle=x=>({predicateType:x.predicateType,
+  bundle:{dsseEnvelope:{payload:Buffer.from(JSON.stringify(x)).toString('base64'),
+   signatures:[{sig:'a'}]}}});
  return {name,version:versionNumber,
   attestations:{url:'https://registry.npmjs.org/-/npm/v1/attestations/%40next%2Fenv@14.2.35'},
-  attestationBundles:[{
-   predicateType:'https://slsa.dev/provenance/v1',
-   bundle:{dsseEnvelope:{payload:Buffer.from(JSON.stringify(statement)).toString('base64'),
-    signatures:[{sig:'a'}]}}}]};
+  attestationBundles:[bundle(publish),bundle(slsa)]};
 }
 test('canonical npm purl keeps scoped @ symbol encoded',()=>{
  assert.equal(signedSubject('@next/env','14.2.35'),'pkg:npm/%40next/env@14.2.35');
@@ -45,7 +51,7 @@ test('verified npm CLI bundles and exact signed SRI produce source-claim candida
  assert.equal(report.counts.legallyApproved,0);
  assert.equal(report.records[0].signatureEvidenceStatus,'PINNED_NPM_SIGSTORE_BUNDLE_VERIFIED_SUBJECT_AND_DIGEST');
  assert.equal(report.records[0].signedStatements[0].signedPackageAndTarballMatch,true);
- assert.equal(report.records[0].signedStatements[0].sourceRevisionClaims[0].revisionClaim,'b'.repeat(40));
+ assert.equal(report.records[0].signedStatements[1].sourceRevisionClaims[0].revisionClaim,'b'.repeat(40));
  assert.equal(report.records[0].independentlyVerifiedPublisherSourceCorrespondence,false);
  assert.equal(report.commercialLicenseGranted,false);
  assert.equal(report.g2ClinicalApproved,false);
@@ -91,9 +97,25 @@ test('reject fabricated extra verified package, duplicate verified package and u
 });
 test('signed source metadata is never elevated to corroborated reproducible upstream lineage',()=>{
  const r=classify(input(),lock(),Buffer.from(JSON.stringify({verified:[
-  entry({commit:'c'.repeat(40),src:'git+https://github.com/vercel/next.js'})
+  entry({commit:'c'.repeat(40),src:'git+https://github.com/vercel/next.js@refs/heads/14-2-1'})
  ],invalid:[],missing:[]})),0,'11.19.1');
- assert.equal(r.records[0].signedStatements[0].sourceRevisionClaims[0].revisionClaim,'c'.repeat(40));
- assert.equal(r.records[0].signedStatements[0].publicationToSourceIndependentlyCorroborated,false);
+ assert.equal(r.records[0].signedStatements[1].sourceRevisionClaims[0].revisionClaim,'c'.repeat(40));
+ assert.equal(r.records[0].signedStatements[1].publicationToSourceIndependentlyCorroborated,false);
  assert.equal(r.records[0].independentlyVerifiedPublisherSourceCorrespondence,false);
+});
+
+test('reject publish-only, provenance-only or source/publish subject disagreement',()=>{
+ for(const variant of [
+  e=>e.attestationBundles.pop(),
+  e=>e.attestationBundles.shift(),
+  e=>{const st=JSON.parse(Buffer.from(e.attestationBundles[0].bundle.dsseEnvelope.payload,'base64'));
+    st.subject[0].digest.sha512='f'.repeat(128);
+    e.attestationBundles[0].bundle.dsseEnvelope.payload=Buffer.from(JSON.stringify(st)).toString('base64');},
+  e=>{const st=JSON.parse(Buffer.from(e.attestationBundles[1].bundle.dsseEnvelope.payload,'base64'));
+    st.predicate.buildDefinition.externalParameters.workflow.repository='https://github.com/evil/fork';
+    e.attestationBundles[1].bundle.dsseEnvelope.payload=Buffer.from(JSON.stringify(st)).toString('base64');},
+ ]){
+  const bad=entry();variant(bad);
+  assert.throws(()=>bundleStatements(bad,{name:pkg,version,lockedIntegrity:sri}));
+ }
 });
