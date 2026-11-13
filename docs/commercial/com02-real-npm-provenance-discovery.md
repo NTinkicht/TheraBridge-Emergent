@@ -19,3 +19,15 @@ The collector's CI output is a **discovery inventory** and cannot substitute for
 ## Qualification
 
 The full CI performs a new offline adversarial test for URL/domain/protocol/credentials/path/query/path normalization, invalid metadata and forged positive approval; source row counts must remain stable. The already existing full-CI artifact `therabridge-installed-license-files-${github.sha}` includes the exact `/tmp/therabridge-com02-upstream-candidates.json`, preserving observed per-version states for rights review. All counted proofs stay zero until independent verification and authorized decisions.
+
+## Actual CI evidence on initial PR #365 head
+
+Downloaded and inspected the complete exact-run GitHub Actions artifact for run `43425805033`. It contains **53/53 exact-version npm registry metadata records**, of which **3 advertised a registry attestation URL**, **50 did not**, **0 had malformed pointers** and **0 were independently publisher-to-source verified**. The three *unverified* lead versions were:
+
+- `@next/env@14.2.35` — registry advertises an attestation endpoint.
+- `@next/swc-linux-x64-gnu@14.2.33` — registry advertises an attestation endpoint.
+- `@next/swc-linux-x64-musl@14.2.33` — registry advertises an attestation endpoint.
+
+The repo's provenance tool now also attempts a real `npm audit signatures --json --include-attestations` in an isolated temporary npm project with the **exact versions, no package lifecycle scripts and explicit npm registry**, retaining its raw JSON and deterministic receipt as separate files in the existing CI artifact. It requires exact npm-lock integrity correspondence and **does not auto-mark any of the three as having authoritative source provenance**: signed subject/version, source repository/commit, publisher authority and build transparency must still be checked separately. Registry/network/install failures produce explicit `NOT_ESTABLISHED` receipts, not invented signatures. Signed local Docker claims remain distinct from production release provenance.
+
+This snapshot is evidence of registry **advertisement**, not yet cryptographic proof of an independently trustworthy upstream release or legal permission. Exact-head CI and Codex must be checked again after adding the npm CLI observation workflow.
