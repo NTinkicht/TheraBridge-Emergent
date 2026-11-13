@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {gzipSync} from 'node:zlib';
-import {tarballUrl,checkSRI,readArchive,sourceRecipe} from './inventory-nextjs-published-builds.mjs';
+import {tarballUrl,checkSRI,readArchive,sourceRecipe,reportStatus} from './inventory-nextjs-published-builds.mjs';
 
 function header(name,data,type=48){
  const h=Buffer.alloc(512);
@@ -77,4 +77,25 @@ test('native SWC source requires N-API Rust build recipe and does not claim bina
  assert.equal(result.requiresSourceToolchainCargoLockAndTarget,true);
  assert.equal(result.reproduciblePublishedArchive,false);
  assert.throws(()=>sourceRecipe(Buffer.from('{}'),{name:'@next/swc',version:'14.2.33'}));
+});
+
+test('Codex P2: incomplete or unavailable archives cannot receive success status',()=>{
+ const yes={archiveStatus:'INTEGRITY_VERIFIED_PUBLISHED_FILE_INVENTORY_NOT_REPRODUCIBILITY',
+  buildRecipeStatus:'SIGNED_COMMIT_BUILD_RECIPE_CAPTURED_NOT_EXECUTED'};
+ const absent={archiveStatus:'UNVERIFIED_REGISTRY_TIMEOUT',buildRecipeStatus:'NOT_VERIFIED'};
+ assert.equal(reportStatus([absent,absent,absent]),'NO_VERIFIED_PUBLISHED_ARCHIVE_EVIDENCE');
+ assert.equal(reportStatus([yes,absent,absent]),'PARTIAL_PUBLISHED_ARCHIVE_EVIDENCE_REMAINING_UNVERIFIED');
+ assert.equal(reportStatus([yes,yes,{...yes,buildRecipeStatus:'UNVERIFIED_RECIPE'}]),
+  'PARTIAL_PUBLISHED_ARCHIVE_EVIDENCE_REMAINING_UNVERIFIED');
+ assert.equal(reportStatus([yes,yes,yes]),
+  'ALL_THREE_PUBLISHED_ARCHIVE_INVENTORIES_AND_RECIPES_VERIFIED_NOT_REPRODUCIBLE_BUILDS');
+ assert.equal(reportStatus([yes,yes]),'PARTIAL_PUBLISHED_ARCHIVE_EVIDENCE_REMAINING_UNVERIFIED');
+});
+test('Codex P2: complete per-file hash evidence is deterministic and remains available',()=>{
+ const archive=readArchive(sample());
+ assert(archive.files.every(x=>/^[a-f0-9]{64}$/.test(x.sha256)&&
+  typeof x.path==='string'&&Number.isInteger(x.bytes)));
+ const listing=JSON.stringify(archive.files);
+ assert.equal(JSON.stringify(readArchive(sample()).files),listing);
+ assert.equal(archive.files.find(x=>x.path==='dist/index.js').bytes,9);
 });
