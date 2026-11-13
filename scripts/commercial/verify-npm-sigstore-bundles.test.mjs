@@ -55,9 +55,16 @@ test('reject different package version and tarball digest even if bundle wrapper
   entry({sha:'f'.repeat(128)})
  ]){
   assert.throws(()=>bundleStatements(malicious,{name:pkg,version,lockedIntegrity:sri}));
-  const r=classify(input(),lock(),Buffer.from(JSON.stringify({verified:[malicious],invalid:[],missing:[]})),0,'11.19.1');
-  assert.equal(r.counts.verifiedSignedSubjectsAndDigests,0);
-  assert.equal(r.counts.legallyApproved,0);
+  if(malicious.name!==pkg||malicious.version!==version){
+   assert.throws(()=>classify(input(),lock(),Buffer.from(JSON.stringify({
+    verified:[malicious],invalid:[],missing:[]})),0,'11.19.1'),
+    /UNEXPECTED_VERIFIED_ATTESTATION/);
+  }else{
+   const r=classify(input(),lock(),Buffer.from(JSON.stringify({
+    verified:[malicious],invalid:[],missing:[]})),0,'11.19.1');
+   assert.equal(r.counts.verifiedSignedSubjectsAndDigests,0);
+   assert.equal(r.counts.legallyApproved,0);
+  }
  }
 });
 test('nonzero audit exit, missing verified export, wrong lock SRI, invalid or missing audit remains nonapproved',()=>{
