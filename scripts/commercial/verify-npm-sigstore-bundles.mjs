@@ -79,6 +79,7 @@ function bundleStatements(entry,expected){
       immutableGitCommitExistenceIndependentlyChecked:false,
       publishedTarballReproducedFromSource:false});
    }
+   if(sourceCandidates.length===0)throw Error('MISSING_CONSISTENT_SIGNED_SOURCE_REVISION');
   }
   statements.push({inTotoStatementType:statement._type,predicateType:statement.predicateType,
    dssePayloadSha256:digest(payload),signedPackageAndTarballMatch:true,
