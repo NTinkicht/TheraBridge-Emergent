@@ -938,3 +938,12 @@ Following merged #362 (merge `0582d47da0fbf4bf744e2a9a91c272a340c72f8b`), implem
 After PR #363 merged (commit `3066ec6c8be7767fd5b59262e64e0454f9a629c6`), created `reconcile-signed-release-rights.mjs` to cryptographically reverify DSSE against independently pinned key and reconcile exact SaaS/Enterprise capture digests with conservative all-version/all-asset rights report. Added forgery/omission negative tests and full-CI wiring; no legal permission or actual release verification. Rule 7 updated, CI/review pending.
 
 2026-11-12 Codex P2 follow-up in PR #364: supplementalDistributionReview was omitted from the joined evidence output. Implemented fail-closed three-category preservation and separate SaaS/enterprise counsel queue. Regression tests guard missing, duplicate, forged or approved obligations. Requires fresh CI/review after commits.
+
+## 2026-11-13 — COM-02 canonical unresolved work and npm attestation leads
+Confirmed merged #362/#363/#364 (main 9a271e62). Closed #346/#349/#351/#354 as duplicate historical issues with unresolved obligations consolidated under #356 (53 npm exact versions) and #360 (real release + 91 asset rights). Extended existing exact npm manifest evidence with bounded, allowlisted attestation pointer hints; this does not validate Sigstore provenance or bestow publication-source authority. Offline tests and current CI artifact integration included; no claimed independent signatures, no rights clearance, no actual release approval.
+
+2026-11-13 Inspected initial GitHub CI 43425805033 artifact directly: 53 exact metadata rows, 3 Next.js attestation advertisements, 50 no advertisement, 0 cryptographically verified publication lineage. Added isolated npm CLI signature observation with bounded raw result and no scripts, exact-version lock integrity checks and negative tests; source and legal approvals remain zero.
+
+2026-11-13 Fixed Codex P2s in #365: validate raw registry URLs before normalization to exclude encoded traversal; remove unsupported verified-bundle output assertion from npm CLI instructions and implementation. Bound npm audit output and retain NO source/legal proof until separately validated.
+
+2026-11-13 Follow-up review remediations #365: fixed sorted scoped/npm fixture assertions and alpha positive subject; changed zero-advertisement/outage branch to persist complete no-audit receipt with zero approvals; added negative tests and exact-run requalification.

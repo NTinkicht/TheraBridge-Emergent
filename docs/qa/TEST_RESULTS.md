@@ -1166,3 +1166,12 @@ New offline Node `node --test scripts/commercial/verify-oci-dsse.test.mjs` exerc
 New adversarial Node tests: valid two-edition signed local capture against all package/asset records, both edition asset byte matches/absences without authorizations, omitted package/asset rows, forged rights, corrupted manifest image digests and SHA-256 hashes, wrong independently pinned Ed25519 key, signed forged file-inventory hash, invalid signature, and signed fabricated approval. **Tests added, not yet proven green on final PR head**. Clinical G2/G2b and commercial grants stay NO-GO.
 
 2026-11-12 Added supplemental obligation preservation and negative tests to PR #364 signed rights reconciliation: require OS_RUNTIME_CONTAINER, POSTGRES_REDIS and MODELS_DATASETS_EXTERNAL_SERVICES exactly once with their unresolved reasons; reject missing/duplicate/unexpected categories, modified reasons, or forged commercial approval. New-head CI qualification pending; do not mark as passed until runner reports results.
+
+## 2026-11-13 — npm provenance advertisement discovery qualification
+New test cases in `collect-upstream-license-candidates.test.mjs` check safely bounded exact npm attestation URL advertisement, origin allowlist, protocol, port, traversal, query/fragment, forged verified flags, absent and malformed pointers. The 53-version collector retains unresolved records and explicitly reports zero independent verified provenance. New commit's exact-head GitHub CI/Codex status is not yet verified. Existing commercial/clinical NO-GO remains.
+
+2026-11-13 Added offline tests for exact npm attestation URL version matching and for isolated npm audit receipt integrity, incomplete/duplicate observation rejection, wrong installed lock integrity, invalid signatures and explicit zero publisher/source and legal approvals. Real npm CLI audit capture added to existing full CI artifact, but latest-head full CI results must be verified before PR merge.
+
+2026-11-13 Added regression tests for raw `a/%2e%2e/pkg` and encoded `pkg%2F%2e%2e%2Fother` attestation URL traversal; npm audit JSON is observation only. Latest-head green/full review not yet confirmed after fixes.
+
+2026-11-13 Added regression covering correct sorted @scope/beta attestation URL, matching alpha manifest subject, and zero selected advertised attestation candidates. Zero-case receipt records all unresolved packages and no audit, no source attestation, and no commercial or G2/G2b approval. New latest-head CI pending.

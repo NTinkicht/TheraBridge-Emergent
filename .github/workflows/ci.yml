@@ -224,6 +224,10 @@ jobs:
         run: node --test scripts/commercial/collect-upstream-license-candidates.test.mjs
       - name: Collect immutable exact-version registry metadata candidates (never legal clearance)
         run: node scripts/commercial/collect-upstream-license-candidates.mjs /tmp/therabridge-com02-exact-version-rights-queue.json /tmp/therabridge-com02-upstream-candidates.json
+      - name: Validate npm attestation discovery and fail-closed signature audit receipts
+        run: node --test scripts/commercial/verify-npm-provenance-observation.test.mjs
+      - name: Independently query npm CLI signatures for advertised exact-version candidates (not source or legal approval)
+        run: node scripts/commercial/verify-npm-provenance-observation.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-npm-provenance-observation.json /tmp/therabridge-com02-npm-signature-audit.json
       - name: Validate candidate Git commit and immutable source package identity without false attestation
         run: node --test scripts/commercial/corroborate-source-revisions.test.mjs
       - name: Collect version-pinned source root manifest corroboration candidates (not legal authority)
@@ -260,6 +264,8 @@ jobs:
             /tmp/therabridge-transitive-tarball-evidence.json
             /tmp/therabridge-com02-exact-version-rights-queue.json
             /tmp/therabridge-com02-upstream-candidates.json
+            /tmp/therabridge-com02-npm-provenance-observation.json
+            /tmp/therabridge-com02-npm-signature-audit.json
             /tmp/therabridge-com02-source-correspondence-candidates.json
             /tmp/therabridge-com02-bulk-rights-evidence.json
             /tmp/therabridge-com02-release-scope-review.json

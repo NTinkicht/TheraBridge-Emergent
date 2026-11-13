@@ -40,6 +40,38 @@ function fetchManifest(url,{timeoutMs=7000,maxBytes=MAX_BYTES}={}){
  });
 }
 function safeText(value,max=512){return typeof value==='string'&&value.length<=max&&!/[\u0000-\u001f]/.test(value)?value:null;}
+// A registry-advertised attestation URL is a DISCOVERY HINT only, not a verified
+// Sigstore bundle. Any publication-to-source promotion requires npm's trusted
+// attestation verification (e.g. npm audit signatures) against exact tarball SRI.
+function attestationPointer(dist,name=null,version=null){
+ // Advertisement is only an unverified registry hint, never source provenance.
+ if(dist?.attestations===undefined)return {status:'NOT_ADVERTISED',url:null};
+ const value=dist.attestations?.url;
+ const invalid=()=>({status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null});
+ if(typeof value!=='string')return invalid();
+ // Validate RAW text before WHATWG URL canonicalization: that parser removes
+ // encoded dot-segment traversal and would otherwise hide malicious paths.
+ const prefix='https://registry.npmjs.org/-/npm/v1/attestations/';
+ if(!value.startsWith(prefix))return invalid();
+ const rawSuffix=value.slice(prefix.length);
+ if(!rawSuffix||rawSuffix.length>350||rawSuffix.includes('/')||
+    rawSuffix.includes('\\')||
+    !/^[A-Za-z0-9%._~!$&'()+,;=:@-]+$/.test(rawSuffix))
+   return invalid();
+ let decoded;
+ try{decoded=decodeURIComponent(rawSuffix);}catch{return invalid();}
+ if(decoded.includes('..')||decoded.includes('\\')||
+    decoded.includes('?')||decoded.includes('#')||
+    (name!==null||version!==null)&&decoded!==name+'@'+version)
+   return invalid();
+ let url;
+ try{url=new URL(value);}catch{return invalid();}
+ if(url.protocol!=='https:'||url.hostname!=='registry.npmjs.org'||
+    url.port||url.username||url.password||url.search||url.hash||
+    url.pathname!=='/-/npm/v1/attestations/'+rawSuffix)
+   return invalid();
+ return {status:'UNVERIFIED_REGISTRY_ATTESTATION_POINTER',url:value};
+}
 function parseManifest(bytes,name,version){
  if(!Buffer.isBuffer(bytes)||bytes.length<2||bytes.length>MAX_BYTES)throw Error('BAD_MANIFEST_BYTES');
  let item;try{item=JSON.parse(bytes.toString('utf8'));}catch{throw Error('BAD_MANIFEST_JSON');}
@@ -53,11 +85,15 @@ function parseManifest(bytes,name,version){
   item.repository&&typeof item.repository==='object'?item.repository.url:null;
  const home=safeText(item.homepage,1024);
  const dist=item.dist&&typeof item.dist==='object'?item.dist:{};
+ const attestation=attestationPointer(dist,name,version);
  return {sha256:digest(bytes),candidateLicenseExpression:license,
   candidateRepositoryUrl:safeText(repo,1024),candidateHomepage:home,
   candidateGitHead:typeof item.gitHead==='string'&&/^[a-f0-9]{40}$/i.test(item.gitHead)?item.gitHead.toLowerCase():null,
   candidateDistIntegrity:safeText(dist.integrity,512),
   candidateDistTarball:safeText(dist.tarball,2048),
+  candidateRegistryAttestationUrl:attestation.url,
+  candidateRegistryAttestationStatus:attestation.status,
+  publisherProvenanceIndependentlyVerified:false,
   candidateNotice:'UNVERIFIED_REGISTRY_MANIFEST_METADATA'};
 }
 function failureCode(e){
@@ -90,6 +126,8 @@ async function buildUpstreamCandidates(input,{fetcher=fetchManifest,concurrency=
    manifestEvidenceStatus:'NOT_FETCHED',registryManifestSha256:null,
    candidateLicenseExpression:null,candidateRepositoryUrl:null,
    candidateHomepage:null,candidateGitHead:null,candidateDistIntegrity:null,candidateDistTarball:null,
+   candidateRegistryAttestationUrl:null,candidateRegistryAttestationStatus:'NOT_FETCHED',
+   publisherProvenanceIndependentlyVerified:false,
    manifestMatchesLockedIntegrity:false,
    authoritativeLicenseTextSource:null,authoritativeLicenseTextSha256:null,
    upstreamCopyrightVerified:false,sourceRefVersionVerified:false,
@@ -114,6 +152,8 @@ async function buildUpstreamCandidates(input,{fetcher=fetchManifest,concurrency=
      candidateGitHead:parsed.candidateGitHead,
      candidateDistIntegrity:parsed.candidateDistIntegrity,
      candidateDistTarball:parsed.candidateDistTarball,
+     candidateRegistryAttestationUrl:parsed.candidateRegistryAttestationUrl,
+     candidateRegistryAttestationStatus:parsed.candidateRegistryAttestationStatus,
      manifestMatchesLockedIntegrity:!!(parsed.candidateDistIntegrity&&row.lockedIntegrity&&parsed.candidateDistIntegrity===row.lockedIntegrity)});
    }catch(e){row.manifestEvidenceStatus=failureCode(e);}
   }
@@ -122,6 +162,9 @@ async function buildUpstreamCandidates(input,{fetcher=fetchManifest,concurrency=
  records.sort((a,b)=>a.name.localeCompare(b.name,'en')||a.version.localeCompare(b.version,'en'));
  const counts={exceptions:records.length,exactVersionMetadata:records.filter(x=>x.manifestEvidenceStatus==='REGISTRY_EXACT_VERSION_METADATA_ONLY').length,
   missingOrInvalidMetadata:records.filter(x=>x.manifestEvidenceStatus!=='REGISTRY_EXACT_VERSION_METADATA_ONLY').length,
+  registryAttestationPointersAdvertised:records.filter(x=>x.candidateRegistryAttestationStatus==='UNVERIFIED_REGISTRY_ATTESTATION_POINTER').length,
+  registryAttestationPointersInvalid:records.filter(x=>x.candidateRegistryAttestationStatus==='INVALID_REGISTRY_ATTESTATION_HINT').length,
+  independentlyVerifiedPublisherProvenance:0,
   authoritativeLicenseTextsVerified:0,legallyApproved:0};
  return {schema:'therabridge-com02-upstream-authority-candidates-v1',
   status:'REGISTRY_METADATA_CANDIDATES_NOT_AUTHORITY_OR_LEGAL_CLEARANCE',
@@ -139,4 +182,4 @@ if(import.meta.url===new URL('file://'+process.argv[1]).href){
   console.log(JSON.stringify(result.counts));
  }catch(e){console.error(e.message);process.exitCode=1;}
 }
-export {manifestUrl,parseManifest,buildUpstreamCandidates};
+export {manifestUrl,parseManifest,attestationPointer,buildUpstreamCandidates};
