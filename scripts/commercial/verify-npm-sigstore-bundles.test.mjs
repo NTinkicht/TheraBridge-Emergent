@@ -47,6 +47,7 @@ test('verified npm CLI bundles and exact signed SRI produce source-claim candida
  const report=classify(input(),lock(),Buffer.from(JSON.stringify({
   verified:[entry()],invalid:[],missing:[]})),0,'11.19.1');
  assert.equal(report.counts.verifiedSignedSubjectsAndDigests,1);
+ assert.equal(report.status,'VERIFIED_CANDIDATE_SIGNED_SUBJECTS_SOURCE_REPRODUCIBILITY_NOT_CORROBORATED');
  assert.equal(report.counts.independentlyCorroboratedPublisherToSource,0);
  assert.equal(report.counts.legallyApproved,0);
  assert.equal(report.records[0].signatureEvidenceStatus,'PINNED_NPM_SIGSTORE_BUNDLE_VERIFIED_SUBJECT_AND_DIGEST');
@@ -118,4 +119,20 @@ test('reject publish-only, provenance-only or source/publish subject disagreemen
   const bad=entry();variant(bad);
   assert.throws(()=>bundleStatements(bad,{name:pkg,version,lockedIntegrity:sri}));
  }
+});
+
+test('Codex P2: zero candidates, absent bundles and invalid npm signatures never report success',()=>{
+ const no=input();
+ no.records[0].candidateRegistryAttestationStatus='NOT_ADVERTISED';
+ no.records[0].candidateRegistryAttestationUrl=null;
+ no.counts.registryAttestationPointersAdvertised=0;
+ const zero=classify(no,{packages:{}},Buffer.from('{}'),255,'11.19.1');
+ assert.equal(zero.status,'NO_ADVERTISED_ATTESTATION_CANDIDATES');
+ assert.equal(zero.counts.verifiedSignedSubjectsAndDigests,0);
+ const absent=classify(input(),lock(),Buffer.from('{"invalid":[],"missing":[]}'),0,'11.19.1');
+ assert.equal(absent.status,'NO_VERIFIED_SIGNED_PACKAGE_SUBJECTS');
+ const invalid=classify(input(),lock(),Buffer.from(JSON.stringify({
+  verified:[entry()],invalid:['tampered'],missing:[]})),1,'11.19.1');
+ assert.equal(invalid.status,'NO_VERIFIED_SIGNED_PACKAGE_SUBJECTS');
+ assert.equal(invalid.commercialLicenseGranted,false);
 });
