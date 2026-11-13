@@ -236,6 +236,10 @@ jobs:
         run: node --test scripts/commercial/corroborate-signed-nextjs-source.test.mjs
       - name: Corroborate pinned signed Next.js release claims with immutable source manifests (not reproducibility)
         run: node scripts/commercial/corroborate-signed-nextjs-source.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-verified-npm-bundle-candidates.json /tmp/therabridge-com02-raw-verified-npm-bundles.json /tmp/therabridge-com02-nextjs-immutable-source-review.json
+      - name: Validate exact npm published tarball inventory and source build-recipe boundaries
+        run: node --test scripts/commercial/inventory-nextjs-published-builds.test.mjs
+      - name: Record real npm release archive files, SRI and immutable source build recipes (not reproduced builds)
+        run: node scripts/commercial/inventory-nextjs-published-builds.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-verified-npm-bundle-candidates.json /tmp/therabridge-com02-raw-verified-npm-bundles.json /tmp/therabridge-com02-nextjs-immutable-source-review.json /tmp/therabridge-com02-nextjs-published-build-readiness.json
       - name: Validate candidate Git commit and immutable source package identity without false attestation
         run: node --test scripts/commercial/corroborate-source-revisions.test.mjs
       - name: Collect version-pinned source root manifest corroboration candidates (not legal authority)
@@ -277,6 +281,7 @@ jobs:
             /tmp/therabridge-com02-verified-npm-bundle-candidates.json
             /tmp/therabridge-com02-raw-verified-npm-bundles.json
             /tmp/therabridge-com02-nextjs-immutable-source-review.json
+            /tmp/therabridge-com02-nextjs-published-build-readiness.json
             /tmp/therabridge-com02-source-correspondence-candidates.json
             /tmp/therabridge-com02-bulk-rights-evidence.json
             /tmp/therabridge-com02-release-scope-review.json
