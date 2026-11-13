@@ -94,7 +94,7 @@ export function integratedReceipt({api,web,webAudit,runId,sha,eventName='push',p
    webAudit.zeroStatementCoverageFiles>webAudit.sourceFileCount)throw Error('unqualified_web_source_audit');
  if(typeof runId!=='string'||!/^[0-9]+$/.test(runId)||
    typeof sha!=='string'||!/^[0-9a-f]{40}$/.test(sha))throw Error('missing_exact_execution_provenance');
- if(!['push','pull_request'].includes(eventName))throw Error('unsupported_coverage_event');
+ if(!['push','pull_request','workflow_dispatch'].includes(eventName))throw Error('unsupported_coverage_event');
  if(eventName==='pull_request'&&(
    typeof prHeadSha!=='string'||!/^[0-9a-f]{40}$/.test(prHeadSha)||
    typeof prBaseSha!=='string'||!/^[0-9a-f]{40}$/.test(prBaseSha)))
@@ -105,7 +105,7 @@ export function integratedReceipt({api,web,webAudit,runId,sha,eventName='push',p
   const item=web.total[metric],score=Math.round(item.covered/item.total*10000)/100;
   if(webAudit.percentages?.[metric]!==score)throw Error('web_audit_metric_mismatch_'+metric);
  }
- const shortfalls=metrics.filter(metric=>web.total[metric].covered/web.total[metric].total*100<95);
+ const shortfalls=metrics.filter(metric=>web.total[metric].covered/web.total[metric].total*100<90);
  if(JSON.stringify(webAudit.below90)!==JSON.stringify(shortfalls))throw Error('web_audit_threshold_mismatch');
  const apiFiles=Object.keys(api).filter(x=>x!=='total');
  const webFiles=Object.keys(web).filter(x=>x!=='total');
@@ -115,7 +115,7 @@ export function integratedReceipt({api,web,webAudit,runId,sha,eventName='push',p
   source:'real_istanbul_coverage_summary',runId,
   testedCheckoutSha:sha,headSha:eventName==='pull_request'?prHeadSha:sha,
   prBaseSha:eventName==='pull_request'?prBaseSha:null,
-  testedRefType:eventName==='pull_request'?'synthetic_pr_merge_checkout':'push_commit',
+  testedRefType:eventName==='pull_request'?'synthetic_pr_merge_checkout':eventName==='workflow_dispatch'?'manual_dispatch_commit':'push_commit',
   scope:{apiSourceFiles:verifiedApiFiles,webSourceFiles:webAudit.sourceFileCount,
    webZeroStatementCoverageFiles:webAudit.zeroStatementCoverageFiles},
   threshold:90,percentages:measured.scopes,belowThreshold:measured.belowThreshold,
