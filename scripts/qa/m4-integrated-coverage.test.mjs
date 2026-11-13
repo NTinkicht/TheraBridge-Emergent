@@ -13,7 +13,7 @@ function fixture(covered=85){
  webAudit:{kind:'m4_web_full_source_instrumented_baseline_not_release_gate',
   sourceFileCount:1,instrumentedFileCount:1,zeroStatementCoverageFiles:covered?0:1,
   percentages:Object.fromEntries(metrics.map(x=>[x,covered])),
-  below95:covered<95?[...metrics]:[]},
+  below90:covered<90?[...metrics]:[]},
  apiRoot:'/repo/apps/api/src',apiSourcePaths:['/repo/apps/api/src/a.ts'],
  runId:'12345',sha};
 }
@@ -37,7 +37,7 @@ test('reject missing files, tampered scope, wrong aggregate and audit mismatch',
  assert.throws(()=>integratedReceipt(y),/unqualified_web_source_audit/);
  const z=fixture();z.webAudit.percentages.lines=99;
  assert.throws(()=>integratedReceipt(z),/web_audit_metric_mismatch/);
- const k=fixture();k.webAudit.below95=[];
+ const k=fixture();k.webAudit.below90=[];
  assert.throws(()=>integratedReceipt(k),/web_audit_threshold_mismatch/);
 });
 test('reject absent exact SHA, run ID and invalid counters',()=>{
