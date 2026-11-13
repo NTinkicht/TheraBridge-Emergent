@@ -80,3 +80,18 @@ test('rejects attempts to smuggle unselected or repeated version observations in
    /UNEXPECTED_AUDITED_PACKAGES/);
  }
 });
+
+test('zero advertised provenance versions emit explicit no-audit nonapproval receipt',()=>{
+ const x=fixture();
+ x.records[0].candidateRegistryAttestationUrl=null;
+ x.records[0].candidateRegistryAttestationStatus='NOT_ADVERTISED';
+ x.counts.registryAttestationPointersAdvertised=0;
+ const raw=Buffer.from(JSON.stringify({status:'NO_ADVERTISED_ATTESTATION_CANDIDATES',auditExecuted:false}));
+ const receipt=summarise(x,[],{packages:{}},raw,255,false);
+ assert.equal(receipt.counts.allUnresolvedPackages,2);
+ assert.equal(receipt.counts.advertisedAttestationCandidates,0);
+ assert.equal(receipt.counts.independentlyVerifiedPublisherSourceLinks,0);
+ assert.equal(receipt.npmAuditExecuted,false);
+ assert.equal(receipt.finalNoticesIssued,false);
+ assert.equal(receipt.commercialApproval,false);
+});
