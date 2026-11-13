@@ -947,3 +947,12 @@ Confirmed merged #362/#363/#364 (main 9a271e62). Closed #346/#349/#351/#354 as d
 2026-11-13 Fixed Codex P2s in #365: validate raw registry URLs before normalization to exclude encoded traversal; remove unsupported verified-bundle output assertion from npm CLI instructions and implementation. Bound npm audit output and retain NO source/legal proof until separately validated.
 
 2026-11-13 Follow-up review remediations #365: fixed sorted scoped/npm fixture assertions and alpha positive subject; changed zero-advertisement/outage branch to persist complete no-audit receipt with zero approvals; added negative tests and exact-run requalification.
+
+## 2026-11-13 — COM-02 next priority implemented
+Created pinned npm CLI Sigstore verified-bundle audit for three exact advertised provenance npm package versions; checks package-lock integrity, supported signed Statement v1 PURL + SHA512, and preserves signed SLSA source revision claim metadata without elevating it to independently corroborated source rights. Added adversarial tests and full-CI artifact integration; real exact-head run and Codex review pending. Preserve commercial/clinical NO-GO.
+
+2026-11-13 Additional PR #366 qualification: first pinned npm 11.19.1 verification step ran but second-stage Statement-v1 parser rejected actual payloads (0/3 subject matches). Added original authenticated npm CLI `verified` bundle output to artifact beside hash-linked summary to diagnose provenance schema. Fixed adversarial test identity rejection and historical all-refs synthetic `fictional` credential scan with exact narrowly-scoped rule; no broad secret scan exemption.
+
+2026-11-13 Extracted npm 11.19.1 raw verified Sigstore bundles from CI ZIP: 3 versions x (publish v0.1 + SLSA v1), signed scope/digest and source claims for 2 immutable vercel/next.js revisions, both commits exist in official GitHub repository. Implemented corrected paired statement parser, source claims and Codex P2 result-derived no-success-with-zero-matches status. Pending exact-head CI/Codex qualification.
+
+2026-11-13 PR #366 Codex P1 and full CI regression found missing rejection for signed SLSA provenance with mismatched workflow repository and all resolved dependency URIs. Implemented mandatory consistent GitHub source commit match; no source or legal permission inferred. Re-review/CI pending.

@@ -71,3 +71,14 @@ condition = "AND"
 regexTarget = "secret"
 paths = ['''^apps/web/test/coverage-m4-final-workspace-permissions-and-retry\.test\.cjs$''']
 regexes = ['''^fictional$''']
+
+# Historical M4-08 bootstrap safety test on another Git ref, not in main.
+# The exact literal "fictional" is deliberately rejected as an env password.
+# Keep scope to this test path + exact synthetic value + one scanner rule.
+[[allowlists]]
+targetRules = ["therabridge-credential-assignment"]
+description = "Synthetic rejected OWNER_PASSWORD in M4 bootstrap guard fixture"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''^apps/api/test/m4-final-bootstrap-owner-guard\.e2e-spec\.ts$''']
+regexes = ['''^fictional$''']
