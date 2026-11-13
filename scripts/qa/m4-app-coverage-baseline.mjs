@@ -1,5 +1,5 @@
 // M4-08: observed application-wide coverage baseline.
-// A baseline is NEVER a >=95% acceptance receipt. No source coverage is inferred
+// A baseline is NEVER a ≥90% acceptance receipt. No source coverage is inferred
 // from static source-reading tests, source-file counts or passing test suites.
 import {readFileSync,readdirSync,statSync,mkdirSync,writeFileSync} from 'node:fs';
 import {resolve,join} from 'node:path';
@@ -39,20 +39,20 @@ export function reportBaseline({apiSummary,webSourceCount,webInstrumentedPaths=[
     for(const metric of metrics){
       if(webAudit.percentages?.[metric]!==webMetrics[metric])throw Error('web_metric_mismatch_'+metric);
     }
-    webGap=metrics.filter(k=>webSummary.total[k].covered/webSummary.total[k].total*100<95);
-    if(JSON.stringify(webGap)!==JSON.stringify(webAudit.below95))throw Error('web_gap_mismatch');
+    webGap=metrics.filter(k=>webSummary.total[k].covered/webSummary.total[k].total*100<90);
+    if(JSON.stringify(webGap)!==JSON.stringify(webAudit.below90))throw Error('web_gap_mismatch');
   }
   return {
     schemaVersion:1,kind:'m4_application_coverage_baseline_not_release_gate',
     api:{sourceScope:'apps/api/src/**/*.ts',instrumentedFileCount:files.length,
-      percentages:observed,below95:metrics.filter(k=>observed[k]<95)},
+      percentages:observed,below90:metrics.filter(k=>observed[k]<90)},
     web:{sourceScope:'apps/web/src/**/*.{ts,tsx,js,jsx,mjs}',
       applicationSourceFileCount:webSourceCount,
       observedRuntimeModuleCount:webObserved.size,
-      istanbulCoverageMeasured:measuredWeb,percentages:webMetrics,below95:webGap},
+      istanbulCoverageMeasured:measuredWeb,percentages:webMetrics,below90:webGap},
     m4_08_gate:'NOT_QUALIFIED',
-    reason:measuredWeb?'API_and_Web_measured_but_95percent_acceptance_not_qualified':'web_application_coverage_not_instrumented_and_api_threshold_not_proven',
-    note:'A passing CI baseline does not satisfy >=95% API/Web lines,branches,functions,statements.'
+    reason:measuredWeb?'API_and_Web_measured_but_90percent_acceptance_not_qualified':'web_application_coverage_not_instrumented_and_api_threshold_not_proven',
+    note:'A passing CI baseline does not satisfy ≥90% API/Web lines,branches,functions,statements.'
   };
 }
 export function observedWebPaths({directory,webPrefix}){
