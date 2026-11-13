@@ -6,6 +6,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
+import {attestationPointer} from './collect-upstream-license-candidates.mjs';
 
 const sha=x=>createHash('sha256').update(x).digest('hex');
 const id=x=>JSON.stringify([x.name,x.version]);
@@ -39,11 +40,8 @@ function select(input){
    row.candidateDistIntegrity!==row.lockedIntegrity||
    typeof row.candidateRegistryAttestationUrl!=='string')
    throw Error('UNTRUSTED_REGISTRY_PROVENANCE_CANDIDATE');
-  const url=new URL(row.candidateRegistryAttestationUrl);
-  if(url.protocol!=='https:'||url.hostname!=='registry.npmjs.org'||url.port||
-   url.username||url.password||url.search||url.hash||
-   !url.pathname.startsWith('/-/npm/v1/attestations/')||
-   decodeURIComponent(url.pathname.slice('/-/npm/v1/attestations/'.length))!==row.name+'@'+row.version)
+  if(attestationPointer({attestations:{url:row.candidateRegistryAttestationUrl}},
+      row.name,row.version).status!=='UNVERIFIED_REGISTRY_ATTESTATION_POINTER')
    throw Error('UNSAFE_ATTESTATION_LOCATION');
   selected.push({name:row.name,version:row.version,lockedIntegrity:row.lockedIntegrity,
    advertisedAttestationUrl:row.candidateRegistryAttestationUrl});
@@ -126,7 +124,7 @@ function audit(input){
    const install=run('npm',['ci','--force','--ignore-scripts','--no-audit','--no-fund'],root);
    if(install.code===0){
     lock=JSON.parse(readFileSync(join(root,'package-lock.json'),'utf8'));
-    const cmd=run('npm',['audit','signatures','--json','--include-attestations'],root);
+    const cmd=run('npm',['audit','signatures','--json'],root);
     code=cmd.code;stdout=cmd.stdout;auditExecuted=true;
    } else {
     stdout=Buffer.from(JSON.stringify({status:'ISOLATED_INSTALL_FAILED_NO_AUDIT',exitCode:install.code})+'\n');
