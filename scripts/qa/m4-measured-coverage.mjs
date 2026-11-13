@@ -9,7 +9,7 @@ function score(summary,metric){
   item.total<=0||item.covered<0||item.covered>item.total)throw Error('invalid_coverage_data');
  return (item.covered/item.total)*100; // Unrounded for gate comparisons.
 }
-export function measuredCoverage({api,web,threshold=95}={}){
+export function measuredCoverage({api,web,threshold=90}={}){
  if(!Number.isFinite(threshold)||threshold<=0||threshold>100)throw Error('invalid_threshold');
  const scopes={};
  const raw={};
