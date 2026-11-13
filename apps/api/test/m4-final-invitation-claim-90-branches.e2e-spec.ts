@@ -133,3 +133,45 @@ describe('M4-08 invitation acceptance is an atomic, role-scoped membership trans
   });
  });
 });
+
+describe('M4-08 staff invitation preconditions are role-specific and fail closed',()=>{
+ it('checks available therapist seats before creating an invited therapist',async()=>{
+  const {service,tx}=make();
+  const seat=jest.fn().mockResolvedValue(undefined),writable=jest.fn().mockResolvedValue(undefined);
+  (service as any).trial.assertTherapistSeat=seat;
+  (service as any).trial.assertWritable=writable;
+  jest.spyOn(service as any,'createAndSend').mockImplementation(async(_input:any,_onTx:any,before:any)=>{
+   await before(tx,now);return {status:'PENDING'};
+  });
+  await service.inviteStaff('center-one','actor-one',{
+   email:'fictional@example.invalid',displayName:'Synthetic Therapist',roles:['THERAPIST'],specialties:['speech']
+  });
+  expect(seat).toHaveBeenCalledWith(tx,'center-one',now);
+  expect(writable).not.toHaveBeenCalled();
+ });
+ it('checks writable center rather than consuming a therapist seat for a coordinator',async()=>{
+  const {service,tx}=make();
+  const seat=jest.fn().mockResolvedValue(undefined),writable=jest.fn().mockResolvedValue(undefined);
+  (service as any).trial.assertTherapistSeat=seat;
+  (service as any).trial.assertWritable=writable;
+  jest.spyOn(service as any,'createAndSend').mockImplementation(async(_input:any,_onTx:any,before:any)=>{
+   await before(tx,now);return {status:'PENDING'};
+  });
+  await service.inviteStaff('center-one','actor-one',{
+   email:'fictional@example.invalid',displayName:'Synthetic Coordinator',roles:['COORDINATOR']
+  });
+  expect(writable).toHaveBeenCalledWith(tx,'center-one',now);
+  expect(seat).not.toHaveBeenCalled();
+ });
+ it('does not swallow center trial denial for a therapist invitation',async()=>{
+  const {service,tx}=make();
+  (service as any).trial.assertTherapistSeat=jest.fn().mockRejectedValue(new Error('synthetic seat limit'));
+  jest.spyOn(service as any,'createAndSend').mockImplementation(async(_input:any,_onTx:any,before:any)=>{
+   await before(tx,now);return {status:'PENDING'};
+  });
+  await expect(service.inviteStaff('center-one','actor-one',{
+   email:'fictional@example.invalid',displayName:'Synthetic Therapist',roles:['THERAPIST']
+  })).rejects.toThrow('synthetic seat limit');
+  expect(tx.invitation.updateMany).not.toHaveBeenCalled();
+ });
+});
