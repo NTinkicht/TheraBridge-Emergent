@@ -962,3 +962,5 @@ Built one consolidated package-to-source immutable Git commit corroboration step
 
 ## 2026-11-13 — COM-02 published npm archive evidence
 Implemented next coherent PR: strict 3 exact signed npm tarball registry retrieval, SHA-512 compressed integrity, bounded safe in-memory archive file inventory and shipped JS/native .node counts; independently captured source commit's ncc/TypeScript and Rust/N-API release recipes. Added adversarial tests and full-CI artifact wiring. Never claims tarball reproducibility, independent license approval or G2/G2b GO. Final CI/Codex qualification pending.
+
+2026-11-13 PR #368 Codex review P2 corrections: status now depends on actual successful 3/3 archive + source recipe results and cannot declare verified during registry outage; evidence retains every bounded tar member path, byte length and SHA256 for future rebuild comparison. Added targeted regressions, re-run complete qualification before merge.
