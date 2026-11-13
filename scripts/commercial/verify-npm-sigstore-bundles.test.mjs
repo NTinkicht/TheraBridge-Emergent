@@ -26,10 +26,12 @@ function entry({name=pkg,versionNumber=version,sha=signedSha,src=source,commit='
   predicateType:'https://slsa.dev/provenance/v1',
   subject:[{name:signedSubject(name,versionNumber),digest:{sha512:sha}}],
   predicate:{buildDefinition:{resolvedDependencies:[{uri:src,digest:{gitCommit:commit}}]}}};
- return {name,version:versionNumber,attestations:{bundles:[{
-  predicateType:'https://slsa.dev/provenance/v1',
-  bundle:{dsseEnvelope:{payload:Buffer.from(JSON.stringify(statement)).toString('base64'),
-   signatures:[{sig:'a'}]}}}]}};
+ return {name,version:versionNumber,
+  attestations:{url:'https://registry.npmjs.org/-/npm/v1/attestations/%40next%2Fenv@14.2.35'},
+  attestationBundles:[{
+   predicateType:'https://slsa.dev/provenance/v1',
+   bundle:{dsseEnvelope:{payload:Buffer.from(JSON.stringify(statement)).toString('base64'),
+    signatures:[{sig:'a'}]}}}]};
 }
 test('canonical npm purl keeps scoped @ symbol encoded',()=>{
  assert.equal(signedSubject('@next/env','14.2.35'),'pkg:npm/%40next/env@14.2.35');
