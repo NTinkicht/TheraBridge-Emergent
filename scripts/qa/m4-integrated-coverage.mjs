@@ -106,7 +106,7 @@ export function integratedReceipt({api,web,webAudit,runId,sha,eventName='push',p
   if(webAudit.percentages?.[metric]!==score)throw Error('web_audit_metric_mismatch_'+metric);
  }
  const shortfalls=metrics.filter(metric=>web.total[metric].covered/web.total[metric].total*100<95);
- if(JSON.stringify(webAudit.below95)!==JSON.stringify(shortfalls))throw Error('web_audit_threshold_mismatch');
+ if(JSON.stringify(webAudit.below90)!==JSON.stringify(shortfalls))throw Error('web_audit_threshold_mismatch');
  const apiFiles=Object.keys(api).filter(x=>x!=='total');
  const webFiles=Object.keys(web).filter(x=>x!=='total');
  if(!apiFiles.length||webFiles.length!==webAudit.instrumentedFileCount)throw Error('incomplete_source_scope');
