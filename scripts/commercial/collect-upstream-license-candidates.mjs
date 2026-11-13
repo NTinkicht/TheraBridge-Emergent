@@ -72,18 +72,6 @@ function attestationPointer(dist,name=null,version=null){
    return invalid();
  return {status:'UNVERIFIED_REGISTRY_ATTESTATION_POINTER',url:value};
 }
-function parseManifest(bytes,name,version){'()+,;=:@/-]{1,350}$/.test(url.pathname)||
-    url.pathname.includes('..')||url.pathname.includes('//'))
-  return {status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null};
- if(name!==null||version!==null){
-  let target;
-  try{target=decodeURIComponent(url.pathname.slice('/-/npm/v1/attestations/'.length));}
-  catch{return {status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null};}
-  if(target!==name+'@'+version)
-   return {status:'INVALID_REGISTRY_ATTESTATION_HINT',url:null};
- }
- return {status:'UNVERIFIED_REGISTRY_ATTESTATION_POINTER',url:url.toString()};
-}
 function parseManifest(bytes,name,version){
  if(!Buffer.isBuffer(bytes)||bytes.length<2||bytes.length>MAX_BYTES)throw Error('BAD_MANIFEST_BYTES');
  let item;try{item=JSON.parse(bytes.toString('utf8'));}catch{throw Error('BAD_MANIFEST_JSON');}
