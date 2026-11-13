@@ -228,6 +228,10 @@ jobs:
         run: node --test scripts/commercial/verify-npm-provenance-observation.test.mjs
       - name: Independently query npm CLI signatures for advertised exact-version candidates (not source or legal approval)
         run: node scripts/commercial/verify-npm-provenance-observation.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-npm-provenance-observation.json /tmp/therabridge-com02-npm-signature-audit.json
+      - name: Validate pinned npm Sigstore bundle subject and digest verifier (adversarial offline)
+        run: node --test scripts/commercial/verify-npm-sigstore-bundles.test.mjs
+      - name: Obtain and verify exact npm package Sigstore bundles using pinned npm 11.19.1 (never legal approval)
+        run: node scripts/commercial/verify-npm-sigstore-bundles.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-verified-npm-bundle-candidates.json
       - name: Validate candidate Git commit and immutable source package identity without false attestation
         run: node --test scripts/commercial/corroborate-source-revisions.test.mjs
       - name: Collect version-pinned source root manifest corroboration candidates (not legal authority)
@@ -266,6 +270,7 @@ jobs:
             /tmp/therabridge-com02-upstream-candidates.json
             /tmp/therabridge-com02-npm-provenance-observation.json
             /tmp/therabridge-com02-npm-signature-audit.json
+            /tmp/therabridge-com02-verified-npm-bundle-candidates.json
             /tmp/therabridge-com02-source-correspondence-candidates.json
             /tmp/therabridge-com02-bulk-rights-evidence.json
             /tmp/therabridge-com02-release-scope-review.json
