@@ -42,7 +42,8 @@ function select(input){
   const url=new URL(row.candidateRegistryAttestationUrl);
   if(url.protocol!=='https:'||url.hostname!=='registry.npmjs.org'||url.port||
    url.username||url.password||url.search||url.hash||
-   !url.pathname.startsWith('/-/npm/v1/attestations/'))
+   !url.pathname.startsWith('/-/npm/v1/attestations/')||
+   decodeURIComponent(url.pathname.slice('/-/npm/v1/attestations/'.length))!==row.name+'@'+row.version)
    throw Error('UNSAFE_ATTESTATION_LOCATION');
   selected.push({name:row.name,version:row.version,lockedIntegrity:row.lockedIntegrity,
    advertisedAttestationUrl:row.candidateRegistryAttestationUrl});
@@ -60,6 +61,9 @@ function summarise(input,observed,installedLock,auditBytes,auditExit,auditExecut
  if(!installedLock||typeof installedLock!=='object'||
   !installedLock.packages||typeof installedLock.packages!=='object')
   throw Error('LOCKFILE_NOT_AVAILABLE');
+ let parsedAudit=null;
+ try{parsedAudit=JSON.parse(auditBytes.toString('utf8'));}catch{}
+ const auditIsJson=!!parsedAudit&&typeof parsedAudit==='object'&&!Array.isArray(parsedAudit);
  const records=selected.map(x=>{
   const installed=installedLock.packages['node_modules/'+x.name];
   const locked=!!installed && installed.version===x.version &&
@@ -72,7 +76,7 @@ function summarise(input,observed,installedLock,auditBytes,auditExit,auditExecut
    publisherProvenanceIndependentlyVerified:false,
    sourceRevisionIndependentlyVerified:false,
    commercialApproval:false,
-   auditStatus:locked && auditExecuted && auditExit===0?
+   auditStatus:locked && auditExecuted && auditIsJson && auditExit===0?
     'NPM_AUDIT_SIGNATURES_SUCCEEDED_BUT_SUBJECT_REVIEW_REQUIRED':
     'NPM_AUDIT_SIGNATURES_NOT_ESTABLISHED'};
  });
@@ -87,7 +91,7 @@ function summarise(input,observed,installedLock,auditBytes,auditExit,auditExecut
   npmAuditOutputSha256:sha(auditBytes),
   npmAuditExitCode:auditExit,
   npmAuditExecuted:auditExecuted,
-  npmAuditParseableJson:(()=>{try{JSON.parse(auditBytes.toString('utf8'));return true;}catch{return false;}})(),
+  npmAuditParseableJson:auditIsJson,
   counts:{allUnresolvedPackages:input.records.length,
    advertisedAttestationCandidates:selected.length,
    exactRegistryLockMatches:records.filter(r=>r.exactIntegrityInstalledFromRegistry).length,
