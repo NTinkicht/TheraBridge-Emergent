@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {manifestUrl,parseManifest,buildUpstreamCandidates} from './collect-upstream-license-candidates.mjs';
+import {manifestUrl,parseManifest,attestationPointer,buildUpstreamCandidates} from './collect-upstream-license-candidates.mjs';
 const hash=b=>createHash('sha256').update(b).digest('hex');
 function register(){
  const a={name:'alpha',version:'1.0.0',dependencyScope:'DIRECT_DECLARED',
@@ -29,7 +29,9 @@ test('registry manifest candidate is version-locked, hashed and never called a v
   const name=url.includes('%40scope')?'@scope/beta':'alpha', version=name==='alpha'?'1.0.0':'2.0.0';
   const bytes=Buffer.from(JSON.stringify({name,version,license:'MIT',
    repository:{type:'git',url:'git+https://github.com/example/alpha.git'},
-   dist:{integrity:'sha512-AAAA',tarball:'https://registry.npmjs.org/alpha/-/alpha-1.0.0.tgz'}}));
+   dist:{integrity:'sha512-AAAA',tarball:'https://registry.npmjs.org/alpha/-/alpha-1.0.0.tgz',
+    attestations:{url:'https://registry.npmjs.org/-/npm/v1/attestations/alpha@1.0.0',
+     provenance:{predicateType:'https://slsa.dev/provenance/v1'}}}}));
   rawByName.set(name,bytes);return bytes;
  };
  const out=await buildUpstreamCandidates(r,{fetcher,concurrency:2});
@@ -37,6 +39,11 @@ test('registry manifest candidate is version-locked, hashed and never called a v
  assert.equal(out.counts.authoritativeLicenseTextsVerified,0);assert.equal(out.counts.legallyApproved,0);
  assert.equal(out.records[0].candidateLicenseExpression,'MIT');
  assert.equal(out.records[0].manifestMatchesLockedIntegrity,true);
+ assert.equal(out.records[0].candidateRegistryAttestationStatus,'UNVERIFIED_REGISTRY_ATTESTATION_POINTER');
+ assert.equal(out.records[0].candidateRegistryAttestationUrl,'https://registry.npmjs.org/-/npm/v1/attestations/alpha@1.0.0');
+ assert.equal(out.records[0].publisherProvenanceIndependentlyVerified,false);
+ assert.equal(out.counts.registryAttestationPointersAdvertised,2);
+ assert.equal(out.counts.independentlyVerifiedPublisherProvenance,0);
  assert.equal(out.records[0].authoritativeLicenseTextSource,null);
  assert.equal(out.records[0].sourceRefVersionVerified,false);
  assert.equal(out.records[0].saasNetworkRights,'PENDING_COUNSEL_REVIEW');
@@ -81,4 +88,45 @@ test('bounded concurrency never exceeds configured workers and preserves source 
  assert.equal(peak,1);
  assert.deepEqual(out.records.map(x=>x.name),['@scope/beta','alpha'].sort((a,b)=>a.localeCompare(b,'en')));
  assert.equal(out.counts.exactVersionMetadata,2);
+});
+
+test('npm attestation hints never constitute independent Sigstore verification',()=>{
+ const valid='https://registry.npmjs.org/-/npm/v1/attestations/pkg@1.0.0';
+ assert.deepEqual(attestationPointer({attestations:{url:valid}}),{
+  status:'UNVERIFIED_REGISTRY_ATTESTATION_POINTER',url:valid});
+ assert.deepEqual(attestationPointer({}),{status:'NOT_ADVERTISED',url:null});
+ for(const value of [
+  {url:'http://registry.npmjs.org/-/npm/v1/attestations/pkg@1.0.0'},
+  {url:'https://registry.npmjs.org.evil.example/-/npm/v1/attestations/pkg@1.0.0'},
+  {url:'https://registry.npmjs.org:8443/-/npm/v1/attestations/pkg@1.0.0'},
+  {url:'https://registry.npmjs.org/-/npm/v1/attestations/../other'},
+  {url:'https://registry.npmjs.org/-/npm/v1/attestations/pkg?redirect=1'},
+  {url:'https://registry.npmjs.org/-/npm/v1/attestations/pkg#fragment'},
+  {url:'https://registry.npmjs.org/elsewhere'},
+  {url:'file:///tmp/attestations'},
+  {url:42},
+  {url:valid,commercialApproval:true,verified:true},
+  null
+ ]){
+  assert.equal(attestationPointer({attestations:value}).status,
+   value?.url===valid?'UNVERIFIED_REGISTRY_ATTESTATION_POINTER':'INVALID_REGISTRY_ATTESTATION_HINT');
+ }
+ const parsed=parseManifest(Buffer.from(JSON.stringify({name:'alpha',version:'1.0.0',
+  dist:{attestations:{url:valid},integrity:'sha512-AAAA'}})),'alpha','1.0.0');
+ assert.equal(parsed.publisherProvenanceIndependentlyVerified,false);
+ assert.equal(parsed.candidateRegistryAttestationStatus,'UNVERIFIED_REGISTRY_ATTESTATION_POINTER');
+});
+test('missing and invalid attestation advertisements stay explicitly unverified, with complete source rows',async()=>{
+ const r=register();
+ const output=await buildUpstreamCandidates(r,{fetcher:async url=>{
+  const scoped=url.includes('%40scope');
+  return Buffer.from(JSON.stringify({name:scoped?'@scope/beta':'alpha',
+   version:scoped?'2.0.0':'1.0.0',
+   dist:scoped?{attestations:{url:'https://evil.invalid/bundle'}}:{}}));
+ }});
+ assert.equal(output.counts.registryAttestationPointersAdvertised,0);
+ assert.equal(output.counts.registryAttestationPointersInvalid,1);
+ assert.equal(output.counts.independentlyVerifiedPublisherProvenance,0);
+ assert.equal(output.records.length,2);
+ assert(output.records.every(row=>row.publisherProvenanceIndependentlyVerified===false));
 });
