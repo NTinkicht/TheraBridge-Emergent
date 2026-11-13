@@ -159,7 +159,7 @@ async function inventory(candidates,verified,raw,sourceReport,{fetchArchive=down
    throw Error('SOURCE_RECONCILIATION_MISMATCH');
   const record={name:e.name,version:e.version,signedCommit:e.signedRevision,
    publishedArchiveSRI:e.lockedIntegrity,publishedArchiveSha256:null,
-   packageFileCount:0,publishedFilesSha256:null,
+   packageFileCount:0,publishedFilesSha256:null,publishedFiles:[],
    generatedJsFiles:0,nativeNodeFiles:0,nativeNodeBytes:0,
    sourceBuildRecipe:null,sourceManifestSha256:src.sourceManifestSha256,
    archiveStatus:'UNVERIFIED',buildRecipeStatus:'NOT_VERIFIED',
@@ -175,6 +175,7 @@ async function inventory(candidates,verified,raw,sourceReport,{fetchArchive=down
    // Archive manifest content is intentionally not used for identity:
    // signed npm PURL/SRI bind archive bytes, and source is separately checked.
    record.packageFileCount=archive.files.length;
+   record.publishedFiles=archive.files;
    record.publishedFilesSha256=sha(Buffer.from(JSON.stringify(archive.files)));
    record.generatedJsFiles=archive.files.filter(f=>f.extension==='js'||f.extension==='mjs'||f.extension==='cjs').length;
    const binaries=archive.files.filter(f=>f.extension==='node');
@@ -199,7 +200,12 @@ async function inventory(candidates,verified,raw,sourceReport,{fetchArchive=down
  }
  records.sort((a,b)=>a.name.localeCompare(b.name,'en'));
  return {schema:'therabridge-com02-published-nextjs-archive-reproducibility-readiness-v1',
-  status:'SIGNED_AND_INTEGRITY_VERIFIED_ARCHIVE_INVENTORY_NOT_SOURCE_REPRODUCIBILITY_OR_LICENSE',
+  status:records.every(x=>x.archiveStatus==='INTEGRITY_VERIFIED_PUBLISHED_FILE_INVENTORY_NOT_REPRODUCIBILITY'&&
+    x.buildRecipeStatus==='SIGNED_COMMIT_BUILD_RECIPE_CAPTURED_NOT_EXECUTED')?
+   'ALL_THREE_PUBLISHED_ARCHIVE_INVENTORIES_AND_RECIPES_VERIFIED_NOT_REPRODUCIBLE_BUILDS':
+   records.some(x=>x.archiveStatus==='INTEGRITY_VERIFIED_PUBLISHED_FILE_INVENTORY_NOT_REPRODUCIBILITY')?
+    'PARTIAL_PUBLISHED_ARCHIVE_EVIDENCE_REMAINING_UNVERIFIED':
+    'NO_VERIFIED_PUBLISHED_ARCHIVE_EVIDENCE',
   inputSigstoreReceiptSha256:sha(Buffer.from(JSON.stringify(verified))),
   inputSourceReconciliationSha256:sha(Buffer.from(JSON.stringify(sourceReport))),
   counts:{allUnresolvedPackages:53,signedCandidates:3,
