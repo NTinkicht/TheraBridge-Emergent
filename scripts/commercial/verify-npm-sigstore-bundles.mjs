@@ -28,8 +28,7 @@ function signedSubject(name,version){
 function bundleStatements(entry,expected){
  if(!entry||typeof entry!=='object'||entry.name!==expected.name||
     entry.version!==expected.version||
-    !Array.isArray(entry.attestationBundles)||
-    entry.attestationBundles.length<1||entry.attestationBundles.length>12)
+    !Array.isArray(entry.attestationBundles)||entry.attestationBundles.length!==2)
   throw Error('VERIFIED_BUNDLE_ENTRY_MISSING');
  const sri=expected.lockedIntegrity;
  if(typeof sri!=='string'||!/^sha512-[A-Za-z0-9+/]+={0,2}$/.test(sri))
@@ -37,49 +36,57 @@ function bundleStatements(entry,expected){
  const digest512=Buffer.from(sri.slice(7),'base64');
  if(digest512.length!==64||digest512.toString('base64')!==sri.slice(7))
   throw Error('INVALID_LOCK_SRI');
- const expectedHex=digest512.toString('hex');
- const purl=signedSubject(expected.name,expected.version);
- let matched=0;
- const statements=[];
+ const expectedHex=digest512.toString('hex'),purl=signedSubject(expected.name,expected.version);
+ const PUBLISH='https://github.com/npm/attestation/tree/main/specs/publish/v0.1';
+ const SLSA='https://slsa.dev/provenance/v1';
+ const types=new Set(),statements=[];
  for(const item of entry.attestationBundles){
-  const bundle=item.bundle;
+  const bundle=item?.bundle;
   if(!bundle||typeof bundle!=='object'||!bundle.dsseEnvelope||
      !Array.isArray(bundle.dsseEnvelope.signatures)||!bundle.dsseEnvelope.signatures.length)
    throw Error('INVALID_VERIFIED_BUNDLE_SHAPE');
   const payload=b64(bundle.dsseEnvelope.payload);
   let statement;
   try{statement=JSON.parse(payload.toString('utf8'));}catch{throw Error('INVALID_SIGNED_PAYLOAD');}
-  if(!statement||statement._type!=='https://in-toto.io/Statement/v1'||
-     !Array.isArray(statement.subject)||statement.subject.length<1||
-     statement.subject.length>16)
+  const isPublish=statement?._type==='https://in-toto.io/Statement/v0.1'&&statement?.predicateType===PUBLISH;
+  const isProvenance=statement?._type==='https://in-toto.io/Statement/v1'&&statement?.predicateType===SLSA;
+  if((!isPublish&&!isProvenance)||!Array.isArray(statement?.subject)||
+     statement.subject.length!==1||types.has(statement.predicateType)||
+     item.predicateType!==statement.predicateType)
    throw Error('BAD_SIGNED_STATEMENT');
-  const match=statement.subject.some(s=>s?.name===purl &&
-   s.digest?.sha512===expectedHex);
-  if(match)matched++;
-  const pred=statement.predicate||{};
+  types.add(statement.predicateType);
+  if(statement.subject[0]?.name!==purl||
+     statement.subject[0]?.digest?.sha512!==expectedHex)
+   throw Error('NO_MATCHING_SIGNED_PURL_AND_TARBALL_SHA512');
+  if(isPublish&&(statement.predicate?.name!==expected.name||
+      statement.predicate?.version!==expected.version||
+      statement.predicate?.registry!=='https://registry.npmjs.org'))
+    throw Error('SIGNED_PUBLISH_IDENTITY_MISMATCH');
   const sourceCandidates=[];
-  function source(uri,digestValue){
-   if(typeof uri!=='string'||uri.length>1500||!uri.startsWith('git+https://github.com/'))return;
-   if(typeof digestValue!=='string'||!H40.test(digestValue))return;
-   sourceCandidates.push({repositoryClaim:uri,revisionClaim:digestValue});
+  if(isProvenance){
+   const workflow=statement.predicate?.buildDefinition?.externalParameters?.workflow;
+   const deps=statement.predicate?.buildDefinition?.resolvedDependencies;
+   if(!Array.isArray(deps)||!workflow||typeof workflow.repository!=='string')
+    throw Error('MISSING_SIGNED_SLSA_SOURCE_METADATA');
+   for(const dep of deps){
+    const uri=dep?.uri,sha=dep?.digest?.gitCommit;
+    if(typeof uri!=='string'||typeof sha!=='string'||!H40.test(sha))continue;
+    const match=uri.match(/^git\+https:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)@refs\/(heads|tags)\/([A-Za-z0-9._/-]+)$/);
+    if(!match||match[4].includes('..')||match[4].startsWith('/')||
+       workflow.repository!=='https://github.com/'+match[1]+'/'+match[2])continue;
+    sourceCandidates.push({repositoryClaim:workflow.repository,
+      sourceRefClaim:'refs/'+match[3]+'/'+match[4],revisionClaim:sha,
+      immutableGitCommitExistenceIndependentlyChecked:false,
+      publishedTarballReproducedFromSource:false});
+   }
   }
-  for(const dep of pred.buildDefinition?.resolvedDependencies||[]){
-   source(dep?.uri,dep?.digest?.gitCommit||dep?.digest?.sha1);
-  }
-  for(const dep of pred.materials||[]){
-   source(dep?.uri,dep?.digest?.gitCommit||dep?.digest?.sha1);
-  }
-  statements.push({
-   predicateType:statement.predicateType||null,
-   dssePayloadSha256:digest(payload),
-   signedPackageAndTarballMatch:match,
-   sourceRevisionClaims:sourceCandidates.slice(0,16),
-   publicationToSourceIndependentlyCorroborated:false,
-   rightsApproved:false
-  });
+  statements.push({inTotoStatementType:statement._type,predicateType:statement.predicateType,
+   dssePayloadSha256:digest(payload),signedPackageAndTarballMatch:true,
+   sourceRevisionClaims:sourceCandidates,
+   publicationToSourceIndependentlyCorroborated:false,rightsApproved:false});
  }
- if(matched===0)throw Error('NO_MATCHING_SIGNED_PURL_AND_TARBALL_SHA512');
- return {signedStatements:statements,matchingSubjectStatements:matched,
+ if(!types.has(PUBLISH)||!types.has(SLSA))throw Error('MISSING_REQUIRED_PUBLISH_AND_PROVENANCE_ATTESTATIONS');
+ return {signedStatements:statements,matchingSubjectStatements:2,
   verifiedBundleCount:entry.attestationBundles.length,
   bundleTrustVerifiedByPinnedNpmCli:true};
 }
