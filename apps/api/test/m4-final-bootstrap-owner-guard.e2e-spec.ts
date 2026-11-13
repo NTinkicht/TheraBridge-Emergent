@@ -42,11 +42,11 @@ describe('first platform owner bootstrap refuses insecure input sources', () => 
     expect(bootstrapPreconditionError(valid(), args, false))
       .toContain('interactive terminal');
   });
-  it.each([
+  it.each(([
     [], ['--email'], ['--email',''], ['--email','not-an-email'],
     ['--email','a@b'], ['--email','a@@example.invalid'],
     ['--email','a b@example.invalid'],
-  ])('refuses malformed or absent address flags %j', invalid => {
+  ] as string[][]).map(values => [values]))('refuses malformed or absent address flags %j', invalid => {
     expect(bootstrapPreconditionError(valid(), invalid, true))
       .toContain('Usage: bootstrap:owner --email');
   });
