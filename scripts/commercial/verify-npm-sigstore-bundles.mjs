@@ -28,8 +28,8 @@ function signedSubject(name,version){
 function bundleStatements(entry,expected){
  if(!entry||typeof entry!=='object'||entry.name!==expected.name||
     entry.version!==expected.version||
-    !Array.isArray(entry.attestations?.bundles)||
-    entry.attestations.bundles.length<1||entry.attestations.bundles.length>12)
+    !Array.isArray(entry.attestationBundles)||
+    entry.attestationBundles.length<1||entry.attestationBundles.length>12)
   throw Error('VERIFIED_BUNDLE_ENTRY_MISSING');
  const sri=expected.lockedIntegrity;
  if(typeof sri!=='string'||!/^sha512-[A-Za-z0-9+/]+={0,2}$/.test(sri))
@@ -41,7 +41,7 @@ function bundleStatements(entry,expected){
  const purl=signedSubject(expected.name,expected.version);
  let matched=0;
  const statements=[];
- for(const item of entry.attestations.bundles){
+ for(const item of entry.attestationBundles){
   const bundle=item.bundle;
   if(!bundle||typeof bundle!=='object'||!bundle.dsseEnvelope||
      !Array.isArray(bundle.dsseEnvelope.signatures)||!bundle.dsseEnvelope.signatures.length)
@@ -80,7 +80,7 @@ function bundleStatements(entry,expected){
  }
  if(matched===0)throw Error('NO_MATCHING_SIGNED_PURL_AND_TARBALL_SHA512');
  return {signedStatements:statements,matchingSubjectStatements:matched,
-  verifiedBundleCount:entry.attestations.bundles.length,
+  verifiedBundleCount:entry.attestationBundles.length,
   bundleTrustVerifiedByPinnedNpmCli:true};
 }
 function classify(input,lock,auditBytes,auditExit,verifiedNpmVersion){
