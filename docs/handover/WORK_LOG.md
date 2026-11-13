@@ -959,3 +959,6 @@ Created pinned npm CLI Sigstore verified-bundle audit for three exact advertised
 
 ## 2026-11-13 — COM-02 source evidence implementation
 Built one consolidated package-to-source immutable Git commit corroboration step after merged Sigstore PR #366: validate 53 unresolved row completeness, three authenticated exact npm PURLs and SHA512 subjects, original npm bundle bytes and trusted receipt hash, exact signed vercel/next.js source commit/workflow branch, and immutable source package manifest names/versions; archive source SHA-256 evidence. Distinguish SWC parent source from native binary rebuild. Added adversarial tests and full CI wiring; review/results pending.
+
+## 2026-11-13 — COM-02 published npm archive evidence
+Implemented next coherent PR: strict 3 exact signed npm tarball registry retrieval, SHA-512 compressed integrity, bounded safe in-memory archive file inventory and shipped JS/native .node counts; independently captured source commit's ncc/TypeScript and Rust/N-API release recipes. Added adversarial tests and full-CI artifact wiring. Never claims tarball reproducibility, independent license approval or G2/G2b GO. Final CI/Codex qualification pending.
