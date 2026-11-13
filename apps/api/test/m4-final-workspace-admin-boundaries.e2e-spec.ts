@@ -101,8 +101,8 @@ describe('M4-08 setup provenance and manual steps',()=>{
   const value=await service.setup('center-one');
   expect(value.done).toBe(0);
   expect(value.total).toBeGreaterThan(0);
-  expect(value.steps.find((x:any)=>x.key==='review_permissions').manual).toBe(true);
-  expect(value.steps.find((x:any)=>x.key==='invite_team').completedAt).toBeNull();
+  expect(value.steps.find((x:any)=>x.key==='review_permissions')?.manual).toBe(true);
+  expect(value.steps.find((x:any)=>x.key==='invite_team')?.completedAt).toBeNull();
  });
  it('attributes an existing completed step only to a recorded user',async()=>{
   const {service,db}=make();
@@ -110,7 +110,7 @@ describe('M4-08 setup provenance and manual steps',()=>{
   db.user.findMany.mockResolvedValue([{id:'user-one',displayName:'Synthetic Operator'}]);
   const value=await service.setup('center-one');
   expect(value.done).toBe(1);
-  expect(value.steps.find((x:any)=>x.key==='invite_team').completedBy).toBe('Synthetic Operator');
+  expect(value.steps.find((x:any)=>x.key==='invite_team')?.completedBy).toBe('Synthetic Operator');
  });
  it('does not accept an unknown setup step',async()=>{
   const {service,db}=make();
