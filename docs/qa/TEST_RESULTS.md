@@ -1171,3 +1171,5 @@ New adversarial Node tests: valid two-edition signed local capture against all p
 New test cases in `collect-upstream-license-candidates.test.mjs` check safely bounded exact npm attestation URL advertisement, origin allowlist, protocol, port, traversal, query/fragment, forged verified flags, absent and malformed pointers. The 53-version collector retains unresolved records and explicitly reports zero independent verified provenance. New commit's exact-head GitHub CI/Codex status is not yet verified. Existing commercial/clinical NO-GO remains.
 
 2026-11-13 Added offline tests for exact npm attestation URL version matching and for isolated npm audit receipt integrity, incomplete/duplicate observation rejection, wrong installed lock integrity, invalid signatures and explicit zero publisher/source and legal approvals. Real npm CLI audit capture added to existing full CI artifact, but latest-head full CI results must be verified before PR merge.
+
+2026-11-13 Added regression tests for raw `a/%2e%2e/pkg` and encoded `pkg%2F%2e%2e%2Fother` attestation URL traversal; npm audit JSON is observation only. Latest-head green/full review not yet confirmed after fixes.
