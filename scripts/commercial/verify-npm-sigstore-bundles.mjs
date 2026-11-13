@@ -134,7 +134,10 @@ function classify(input,lock,auditBytes,auditExit,verifiedNpmVersion){
   trustedVerifier:{name:'npm',version:NPM_VERSION,mode:'npm audit signatures --json --include-attestations',
    resultHashSha256:digest(auditBytes),exitCode:auditExit},
   inputManifestSha256:digest(Buffer.from(JSON.stringify(input))),
-  status:'SIGNED_SUBJECT_VERIFIED_WITH_NPM_SIGSTORE_TRUST_NOT_SOURCE_REPRODUCIBILITY_OR_LEGAL_APPROVAL',
+  status:selected.length===0?'NO_ADVERTISED_ATTESTATION_CANDIDATES':
+   signatureMatches===0?'NO_VERIFIED_SIGNED_PACKAGE_SUBJECTS':
+   signatureMatches<selected.length?'PARTIAL_VERIFIED_SIGNED_SUBJECTS_SOURCE_NOT_CORROBORATED':
+   'VERIFIED_CANDIDATE_SIGNED_SUBJECTS_SOURCE_REPRODUCIBILITY_NOT_CORROBORATED',
   counts:{unresolvedExactVersionPackages:input.records.length,
    attestationCandidates:selected.length,verifiedSignedSubjectsAndDigests:signatureMatches,
    independentlyCorroboratedPublisherToSource:0,legallyApproved:0},
