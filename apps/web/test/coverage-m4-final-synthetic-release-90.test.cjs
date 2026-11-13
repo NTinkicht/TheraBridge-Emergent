@@ -122,7 +122,10 @@ describe('M4-08 rendered synthetic family-release state boundaries',()=>{
   api.grantsForApproval.mockRejectedValueOnce(new Error('synthetic unavailable'));
   await mount();await click('Approve family rendering');
   expect(view()).toContain('Synthetic approval unavailable or denied');
-  expect(button('Release approved version')).toBeUndefined();
+  // The approval ID may be set before the grant-list request fails; the
+  // release control must remain disabled without a selected recipient.
+  expect(button('Release approved version').props.disabled).toBe(true);
+  expect(api.grant).not.toHaveBeenCalled();
  });
  it('failed grant reload leaves existing release identity unchanged',async()=>{
   await mount();await click('Approve family rendering');await select('family-release-guardian');
