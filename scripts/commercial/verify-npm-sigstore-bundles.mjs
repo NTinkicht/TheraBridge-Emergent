@@ -23,8 +23,7 @@ function b64(text){
  return b;
 }
 function signedSubject(name,version){
- const n=name.startsWith('@')?name.slice(1):name;
- return 'pkg:npm/'+encodeURIComponent(n).replace(/%2F/gi,'/')+'@'+version;
+ return 'pkg:npm/'+encodeURIComponent(name).replace(/%2F/gi,'/')+'@'+version;
 }
 function bundleStatements(entry,expected){
  if(!entry||typeof entry!=='object'||entry.name!==expected.name||
