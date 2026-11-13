@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 const metrics=['lines','branches','functions','statements'];
 const sha='a'.repeat(40);
-function fixture(covered=90){
+function fixture(covered=85){
  const row=Object.fromEntries(metrics.map(x=>[x,{total:100,covered,skipped:0,pct:covered}]));
  return {api:{total:structuredClone(row),'/repo/apps/api/src/a.ts':structuredClone(row)},
  web:{total:structuredClone(row),'/repo/apps/web/src/a.ts':structuredClone(row)},
