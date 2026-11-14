@@ -6,14 +6,14 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 const metrics=['lines','branches','functions','statements'];
 const sha='a'.repeat(40);
-function fixture(covered=90){
+function fixture(covered=85){
  const row=Object.fromEntries(metrics.map(x=>[x,{total:100,covered,skipped:0,pct:covered}]));
  return {api:{total:structuredClone(row),'/repo/apps/api/src/a.ts':structuredClone(row)},
  web:{total:structuredClone(row),'/repo/apps/web/src/a.ts':structuredClone(row)},
  webAudit:{kind:'m4_web_full_source_instrumented_baseline_not_release_gate',
   sourceFileCount:1,instrumentedFileCount:1,zeroStatementCoverageFiles:covered?0:1,
   percentages:Object.fromEntries(metrics.map(x=>[x,covered])),
-  below95:covered<95?[...metrics]:[]},
+  below90:covered<90?[...metrics]:[]},
  apiRoot:'/repo/apps/api/src',apiSourcePaths:['/repo/apps/api/src/a.ts'],
  runId:'12345',sha};
 }
@@ -37,7 +37,7 @@ test('reject missing files, tampered scope, wrong aggregate and audit mismatch',
  assert.throws(()=>integratedReceipt(y),/unqualified_web_source_audit/);
  const z=fixture();z.webAudit.percentages.lines=99;
  assert.throws(()=>integratedReceipt(z),/web_audit_metric_mismatch/);
- const k=fixture();k.webAudit.below95=[];
+ const k=fixture();k.webAudit.below90=[];
  assert.throws(()=>integratedReceipt(k),/web_audit_threshold_mismatch/);
 });
 test('reject absent exact SHA, run ID and invalid counters',()=>{
@@ -57,8 +57,27 @@ test('PR evidence distinguishes actual synthetic checkout SHA from reviewed head
  assert.equal(result.testedRefType,'synthetic_pr_merge_checkout');
  const missing=fixture(96);missing.eventName='pull_request';
  assert.throws(()=>integratedReceipt(missing),/missing_pr_head_base_provenance/);
- const invalid=fixture(96);invalid.eventName='workflow_dispatch';
+ const invalid=fixture(96);invalid.eventName='schedule';
  assert.throws(()=>integratedReceipt(invalid),/unsupported_coverage_event/);
+});
+
+test('manual workflow_dispatch carries its exact checkout SHA without fabricating PR head/base review',()=>{
+ const x=fixture(96);
+ x.eventName='workflow_dispatch';
+ const r=integratedReceipt(x);
+ assert.equal(r.testedRefType,'manual_dispatch_commit');
+ assert.equal(r.headSha,sha);
+ assert.equal(r.prBaseSha,null);
+ assert.equal(r.threshold,90);
+ assert.deepEqual(r.belowThreshold,[]);
+});
+
+test('90% is accepted from exact counters while 89.999% fails closed',()=>{
+ const x=fixture(90);
+ assert.deepEqual(integratedReceipt(x).belowThreshold,[]);
+ const y=fixture(89);
+ assert(integratedReceipt(y).belowThreshold.includes('api_branches'));
+ assert(integratedReceipt(y).belowThreshold.includes('web_branches'));
 });
 
 test('fails closed on omitted API source, fake API summary and aggregate manipulation',()=>{

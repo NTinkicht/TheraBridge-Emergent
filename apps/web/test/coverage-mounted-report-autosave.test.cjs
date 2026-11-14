@@ -157,3 +157,122 @@ describe('M4-08 mounted clinical report editor refuses unacknowledged revisions'
   expect(json).not.toContain('data-testid\\":\\"clinical-release-approved');
  });
 });
+
+
+describe('M4-08 ≥90% real report editor state/concurrency branch qualifications',()=>{
+ it('unchanged saved report can save immutable version without unnecessary autosave',async()=>{
+  reportsApi.saveVersion.mockResolvedValueOnce({number:7});
+  const p=await mount();
+  await click('report-save-version');
+  expect(reportsApi.autosave).not.toHaveBeenCalled();
+  expect(reportsApi.saveVersion).toHaveBeenCalledWith('fictional-center','r1',1);
+  expect(p.onSuccess).toHaveBeenCalledWith('Saved as version 7.');
+ });
+ it('unchanged read-only report preview is internal only and has no mutating controls',async()=>{
+  const p=rootProps();p.d.canEdit=false;p.d.report.status='FROZEN_INTERNAL';
+  await mount(p);await click('report-preview-toggle');
+  expect(get('report-readonly')).toBeTruthy();
+  expect(JSON.stringify(tree.toJSON())).toContain('Read-only');
+  expect(p.onPreview).toHaveBeenCalledTimes(1);
+  expect(reportsApi.autosave).not.toHaveBeenCalled();
+  expect(find('report-submit')).toHaveLength(0);
+ });
+ it('no savedAt timestamp cannot invent a saved time',async()=>{
+  reportsApi.autosave.mockResolvedValueOnce({version:2,savedAt:null});
+  await mount();await edit('Synthetic recorded note');
+  await click('report-preview-toggle');
+  const state=get('report-save-state');
+  expect(state.props['data-state']).toBe('saved');
+  expect(state.children.filter(x=>typeof x==='string').join('')).toContain('All changes saved');
+  expect(state.children.filter(x=>typeof x==='string').join('')).not.toContain(' at ');
+ });
+ it('a second save-version transition cannot pass an in-flight first transition',async()=>{
+  let resolve;
+  reportsApi.saveVersion.mockImplementation(()=>new Promise(ok=>{resolve=ok;}));
+  const p=await mount();
+  await act(async()=>{get('report-save-version').props.onClick();await Promise.resolve();});
+  expect(get('report-transition-edit-lock')).toBeTruthy();
+  expect(get('report-save-version').props.disabled).toBe(true);
+  expect(reportsApi.saveVersion).toHaveBeenCalledTimes(1);
+  await act(async()=>{resolve({number:5});});
+  expect(reportsApi.saveVersion).toHaveBeenCalledTimes(1);
+  expect(p.onSuccess).toHaveBeenCalledWith('Saved as version 5.');
+ });
+ it('while an editor handoff lease is active, a second lease is refused',async()=>{
+  const ref={current:null};
+  await mount({...rootProps(),handoffGateRef:ref});
+  let lease;await act(async()=>{lease=await ref.current();});
+  expect(get('report-handoff-edit-lock')).toBeTruthy();
+  await expect(ref.current()).rejects.toThrow(/already busy/);
+  expect(reportsApi.autosave).not.toHaveBeenCalled();
+  await act(async()=>lease.release());
+  expect(find('report-handoff-edit-lock')).toHaveLength(0);
+ });
+ it('report handoff lease cannot be issued after another submit transition has begun',async()=>{
+  let resolve;
+  reportsApi.submit.mockImplementation(()=>new Promise(ok=>{resolve=ok;}));
+  const ref={current:null};await mount({...rootProps(),handoffGateRef:ref});
+  await act(async()=>{get('report-submit').props.onClick();await Promise.resolve();});
+  expect(get('report-transition-edit-lock')).toBeTruthy();
+  await expect(ref.current()).rejects.toThrow(/already busy/);
+  await act(async()=>resolve({number:4}));
+  expect(find('report-transition-edit-lock')).toHaveLength(0);
+ });
+ it('dirty draft registers before-unload warning while no saved report version was created',async()=>{
+  await mount();await edit('Unsaved fictional draft to retain');
+  const listener=global.window.addEventListener.mock.calls.find(c=>c[0]==='beforeunload')[1];
+  const preventDefault=jest.fn();
+  listener({preventDefault});
+  expect(preventDefault).toHaveBeenCalledTimes(1);
+  expect(reportsApi.autosave).not.toHaveBeenCalled();
+ });
+ it('clean report does not warn on navigation after mount',async()=>{
+  await mount();
+  const listener=global.window.addEventListener.mock.calls.find(c=>c[0]==='beforeunload')[1];
+  const preventDefault=jest.fn();
+  listener({preventDefault});
+  expect(preventDefault).not.toHaveBeenCalled();
+ });
+ it('all registered draft listeners are removed on component cleanup',async()=>{
+  await mount();
+  await act(async()=>tree.unmount());tree=null;
+  expect(global.window.removeEventListener.mock.calls.some(c=>c[0]==='beforeunload'))
+   .toBe(true);
+ });
+ it('conflicted local typing stays conflicted and visible, never silently retries a stale version',async()=>{
+  reportsApi.autosave.mockRejectedValueOnce({status:409,message:'Synthetic conflict'});
+  await mount();await edit('Unsent source A');
+  await click('report-save-version');
+  expect(get('report-save-state').props['data-state']).toBe('conflict');
+  await edit('Revised unsent source B');
+  expect(get('report-save-state').props['data-state']).toBe('conflict');
+  expect(get('report-section-summary').props.value).toBe('Revised unsent source B');
+  expect(reportsApi.saveVersion).not.toHaveBeenCalled();
+ });
+ it('success follows exact queued version after retry and keeps mutation isolated',async()=>{
+  reportsApi.autosave.mockRejectedValueOnce(new Error('Synthetic transport'))
+   .mockResolvedValueOnce({version:9,savedAt:'2026-11-10T14:00:00Z'});
+  reportsApi.saveVersion.mockResolvedValueOnce({number:9});
+  const p=await mount();
+  await edit('Fictional source-bound text');
+  await click('report-save-version');
+  expect(reportsApi.saveVersion).not.toHaveBeenCalled();
+  await click('report-save-retry');
+  await click('report-save-version');
+  expect(reportsApi.saveVersion).toHaveBeenCalledWith('fictional-center','r1',9);
+  expect(p.onSuccess).toHaveBeenCalledWith('Saved as version 9.');
+ });
+ it('new changes during an active autosave remain pending instead of being declared saved',async()=>{
+  let finish;
+  reportsApi.autosave.mockImplementationOnce(()=>new Promise(ok=>{finish=ok;}))
+   .mockResolvedValueOnce({version:3,savedAt:'2026-11-10T14:30:00Z'});
+  await mount();
+  await edit('First fictional revision');
+  await act(async()=>{get('report-save-version').props.onClick();await Promise.resolve();});
+  expect(get('report-save-state').props['data-state']).toBe('saving');
+  // Mutation is guarded while transition is active. It cannot be accepted.
+  expect(get('report-section-summary').props.disabled).toBe(true);
+  await act(async()=>finish({version:2,savedAt:'2026-11-10T14:00:00Z'}));
+  expect(reportsApi.autosave).toHaveBeenCalledTimes(1);
+ });
+});

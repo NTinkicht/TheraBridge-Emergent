@@ -92,3 +92,63 @@ describe('real clinician-entered home plan calendar is an internal preview',()=>
   expect(output()).toContain('no timezone conversion');
  });
 });
+
+
+describe('M4-08 90% calendar date, duration and historical definition branch cases',()=>{
+ it('saved version is read-only and no false unsaved source is shown',async()=>{
+  await mount({unsaved:false});
+  expect(output()).toContain('Read-only dated plan preview');
+  expect(output()).not.toContain('Unsaved plan edits are shown as a local preview');
+ });
+ it('valid dated plans and undated legacy entries remain differentiated',async()=>{
+  await mount({activities:[activity(),activity({templateId:'undated',schedule:undefined})]});
+  expect(get('home-calendar-item')).toBeTruthy();
+  expect(get('home-calendar-omissions')).toBeTruthy();
+  expect(find('home-calendar-no-schedules')).toHaveLength(0);
+ });
+ it('invalid scheduled entry is never projected even alongside a valid activity',async()=>{
+  await mount({activities:[activity(),activity({templateId:'invalid',
+   schedule:{cadence:'WEEKLY',startsOn:'2026-11-30',endsOn:'2026-11-01',weekdays:[1]}
+  })]});
+  expect(get('home-calendar-omissions')).toBeTruthy();
+  expect(get('home-calendar-item')).toBeTruthy();
+ });
+ it('multiple activities on same date display separate source-specific rows',async()=>{
+  await mount({activities:[activity(),activity({templateId:'second',snapshot:{
+   ...snapshot,title:'Second saved practice'
+  }})]});
+  expect(find('home-calendar-item').filter(n=>n.type==='li')).toHaveLength(2);
+  expect(output()).toContain('Second saved practice');
+ });
+ it('empty source duration does not infer minutes from missing library',async()=>{
+  await mount({activities:[activity({snapshot:undefined,templateId:'lost',
+   durationMinutes:undefined})],templates:[]});
+  expect(get('home-calendar-item')).toBeTruthy();
+  expect(output()).toContain('Unavailable activity definition');
+  expect(output()).not.toContain('min (activity definition)');
+ });
+ it('plan-specific duration with unavailable template is clearly distinguished',async()=>{
+  await mount({activities:[activity({snapshot:undefined,templateId:'lost',
+   durationMinutes:35})],templates:[]});
+  expect(output()).toContain('35 min (plan-specific; template unavailable min)');
+ });
+ it('empty clinician note creates no invented instructions',async()=>{
+  await mount({activities:[activity({note:''})]});
+  expect(find('home-calendar-therapist-instructions')).toHaveLength(0);
+ });
+ it('monthly selection changes list and never reuses previous month plan',async()=>{
+  await mount();await change('home-calendar-month','2026-12');
+  expect(get('home-calendar-month').props.value).toBe('2026-12');
+  expect(find('home-calendar-item')).toHaveLength(0);
+  await change('home-calendar-month','2026-11');
+  expect(find('home-calendar-item')).toHaveLength(1);
+ });
+ it('date cell selection changes focus without changing original schedule source',async()=>{
+  const a=activity();const before=JSON.stringify(a);
+  await mount({activities:[a]});
+  await click('home-calendar-day-2026-11-10');
+  await click('home-calendar-day-2026-11-11');
+  expect(JSON.stringify(a)).toBe(before);
+  expect(get('home-calendar-day-2026-11-11').props['aria-pressed']).toBe(true);
+ });
+});

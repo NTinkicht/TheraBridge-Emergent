@@ -31,8 +31,10 @@ const Platform=require('../src/app/design-preview/platform/page').default;
 let tree=null,originalWindow;
 beforeAll(()=>{originalWindow=global.window;global.window={location:{search:''}};});
 afterAll(()=>{global.window=originalWindow;});
-beforeEach(()=>{previewState='populated';jest.clearAllMocks();});
-afterEach(async()=>{if(tree){await act(async()=>tree.unmount());tree=null;}});
+// Keep illustration fixtures deterministic across weekdays, weekends and CI timezone.
+// The preview uses the real clock in its mounted effect; use an activity day.
+beforeEach(()=>{jest.useFakeTimers({now:new Date('2026-11-10T09:00:00.000Z')});previewState='populated';jest.clearAllMocks();});
+afterEach(async()=>{if(tree){await act(async()=>tree.unmount());tree=null;}jest.useRealTimers();});
 const mount=async C=>act(async()=>{tree=create(h(C));});
 const get=id=>tree.root.findByProps({'data-testid':id});
 const find=id=>tree.root.findAllByProps({'data-testid':id});

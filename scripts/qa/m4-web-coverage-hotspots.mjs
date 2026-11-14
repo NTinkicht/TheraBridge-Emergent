@@ -48,7 +48,29 @@ export function report(summary) {
     sourceScope:'apps/web/src/**/*.{ts,tsx,js,jsx,mjs}',
     sourceFileCount:files.length,
     zeroStatementCoverageFiles:files.filter(f=>f.coverage.statements.covered===0).length,
-    totals,topUncoveredLines:files.slice(0,35).map(f=>({
+    totals,
+    // Additional numeric-only per-file shortfalls: source coverage counters,
+    // not clinical data or original Istanbul execution traces.
+    topUncoveredBranches:[...files].sort((a,b)=>
+      (b.coverage.branches.total-b.coverage.branches.covered)-
+      (a.coverage.branches.total-a.coverage.branches.covered) || a.path.localeCompare(b.path)
+    ).slice(0,35).map(f=>({
+      path:f.path,uncoveredBranches:f.coverage.branches.total-f.coverage.branches.covered,
+      branchPercent:f.coverage.branches.total?Number((100*f.coverage.branches.covered/f.coverage.branches.total).toFixed(2)):100
+    })),
+    topUncoveredFunctions:[...files].sort((a,b)=>
+      (b.coverage.functions.total-b.coverage.functions.covered)-
+      (a.coverage.functions.total-a.coverage.functions.covered) || a.path.localeCompare(b.path)
+    ).slice(0,35).map(f=>({
+      path:f.path,uncoveredFunctions:f.coverage.functions.total-f.coverage.functions.covered
+    })),
+    topUncoveredStatements:[...files].sort((a,b)=>
+      (b.coverage.statements.total-b.coverage.statements.covered)-
+      (a.coverage.statements.total-a.coverage.statements.covered) || a.path.localeCompare(b.path)
+    ).slice(0,35).map(f=>({
+      path:f.path,uncoveredStatements:f.coverage.statements.total-f.coverage.statements.covered
+    })),
+    topUncoveredLines:files.slice(0,35).map(f=>({
       path:f.path,uncoveredLines:f.uncoveredLines,
       linePercent:f.coverage.lines.total?Number((100*f.coverage.lines.covered/f.coverage.lines.total).toFixed(2)):100,
       branchPercent:f.coverage.branches.total?Number((100*f.coverage.branches.covered/f.coverage.branches.total).toFixed(2)):100,

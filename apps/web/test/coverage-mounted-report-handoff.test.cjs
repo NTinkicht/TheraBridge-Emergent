@@ -116,3 +116,125 @@ describe('M4-08 mounted clinician checkpoint selector invalid order enforcement'
   expect(body).toContain('not clinical outcome');
  });
 });
+
+
+describe('M4-08 ≥90% handoff eligibility, source freshness and idempotent recovery',()=>{
+ it('read-only clinician cannot create an internal plan from report evidence',async()=>{
+  const d=detail();d.canEdit=false;
+  await act(async()=>{tree=create(h(ReportToPlanHandoff,{centerId:'center-1',
+   detail:d,prepare:jest.fn()}));});
+  expect(tree.toJSON()).toBeNull();
+  expect(reportsApi.version).not.toHaveBeenCalled();
+ });
+ it('missing saved report version cannot synthesize a new draft or source claims',async()=>{
+  const d=detail();d.versions=[];
+  await act(async()=>{tree=create(h(ReportToPlanHandoff,{
+   centerId:'center-1',detail:d,prepare:jest.fn()
+  }));});
+  expect(use(tree,'report-to-plan-needs-version')).toBeTruthy();
+  expect(tree.root.findAllByProps({'data-testid':'report-to-plan-create'})).toHaveLength(0);
+  expect(reportsApi.version).not.toHaveBeenCalled();
+ });
+ it('open form does not enable creation without explicit clinician goal selection',async()=>{
+  reportsApi.version.mockResolvedValue(snapshot());
+  await act(async()=>{tree=create(h(ReportToPlanHandoff,{
+   centerId:'center-1',detail:detail(),prepare:jest.fn()
+  }));});
+  await click(tree,'report-to-plan-toggle');
+  await act(async()=>Promise.resolve());
+  expect(use(tree,'report-to-plan-create').props.disabled).toBe(true);
+  expect(reportsApi.createPlanDraft).not.toHaveBeenCalled();
+ });
+ it('short title prevents creating a draft, without discarding selected goals',async()=>{
+  await mountedHandoff(jest.fn());
+  await act(async()=>use(tree,'report-to-plan-title').props.onChange({target:{value:'x'}}));
+  expect(use(tree,'report-to-plan-create').props.disabled).toBe(true);
+  expect(use(tree,'report-to-plan-goal-0').props.checked).toBe(true);
+ });
+ it('source version read failure shows recoverable error without inventing goals',async()=>{
+  const prepare=jest.fn();
+  reportsApi.version.mockRejectedValueOnce(new Error('Fictional source access revoked'));
+  await act(async()=>{tree=create(h(ReportToPlanHandoff,{centerId:'center-1',
+   detail:detail(),prepare}));});
+  await click(tree,'report-to-plan-toggle');
+  await act(async()=>Promise.resolve());
+  expect(use(tree,'report-to-plan-error')).toBeTruthy();
+  expect(tree.root.findAllByProps({'data-testid':'report-to-plan-goal-0'})).toHaveLength(0);
+  expect(use(tree,'report-to-plan-create').props.disabled).toBe(true);
+ });
+ it('source with missing plan version ID cannot be mapped onto a current goal',async()=>{
+  const snap=snapshot();
+  snap.evidence.goals=[goal({planVersionId:undefined})];
+  reportsApi.version.mockResolvedValueOnce(snap);
+  await act(async()=>{tree=create(h(ReportToPlanHandoff,{
+   centerId:'center-1',detail:detail(),prepare:jest.fn()
+  }));});
+  await click(tree,'report-to-plan-toggle');await act(async()=>Promise.resolve());
+  expect(use(tree,'report-to-plan-goals')).toBeTruthy();
+  expect(tree.root.findAllByProps({'data-testid':'report-to-plan-goal-0'})).toHaveLength(0);
+  expect(use(tree,'report-to-plan-create').props.disabled).toBe(true);
+ });
+ it('editor handoff lease save failure produces no POST, releases lock and shows retry',async()=>{
+  const prepare=jest.fn().mockRejectedValueOnce(new Error('Fictional autosave denied'));
+  await mountedHandoff(prepare);await click(tree,'report-to-plan-create');
+  expect(reportsApi.createPlanDraft).not.toHaveBeenCalled();
+  expect(use(tree,'report-to-plan-error').props.children).toMatch(/could not be saved/);
+  expect(use(tree,'report-to-plan-create').props.disabled).toBe(false);
+ });
+ it('confirmed draft never retries POST after clicking its disabled Create button',async()=>{
+  const prepare=jest.fn().mockResolvedValue({revision:8,release:jest.fn()});
+  await mountedHandoff(prepare);
+  reportsApi.createPlanDraft.mockResolvedValueOnce({id:'draft-once'});
+  await click(tree,'report-to-plan-create');
+  expect(use(tree,'report-to-plan-create').props.disabled).toBe(true);
+  expect(reportsApi.createPlanDraft).toHaveBeenCalledTimes(1);
+ });
+ it('navigation failure retains successful draft receipt and link, rather than reposting',async()=>{
+  const prepare=jest.fn().mockResolvedValue({revision:8,release:jest.fn()});
+  await mountedHandoff(prepare);
+  push.mockImplementationOnce(()=>{throw new Error('Fictional navigation blocked')});
+  reportsApi.createPlanDraft.mockResolvedValueOnce({id:'draft-verified'});
+  await click(tree,'report-to-plan-create');
+  expect(use(tree,'report-to-plan-completed')).toBeTruthy();
+  expect(use(tree,'report-to-plan-error').props.children).toMatch(/navigation did not complete/);
+  expect(use(tree,'report-to-plan-open-created').props.href).toBe('/app/clinical/fake-child#plan');
+  expect(reportsApi.createPlanDraft).toHaveBeenCalledTimes(1);
+ });
+ it('unresolved POST can be cancelled only after explicit user acknowledgement',async()=>{
+  const release=jest.fn();const prepare=jest.fn().mockResolvedValue({revision:8,release});
+  await mountedHandoff(prepare);
+  reportsApi.createPlanDraft.mockRejectedValueOnce(new Error('Fictional timeout'));
+  await click(tree,'report-to-plan-create');
+  const old=global.window;
+  global.window={confirm:jest.fn(()=>false)};
+  try{
+   await click(tree,'report-to-plan-abandon');
+   expect(release).not.toHaveBeenCalled();
+   expect(use(tree,'report-to-plan-create').props.children).toBe('Retry same request');
+   global.window.confirm.mockReturnValueOnce(true);
+   await click(tree,'report-to-plan-abandon');
+   expect(release).toHaveBeenCalledTimes(1);
+   expect(tree.root.findAllByProps({'data-testid':'report-to-plan-abandon'})).toHaveLength(0);
+  }finally{global.window=old;}
+ });
+ it('switching source versions replaces old selected goal IDs instead of silently mixing plans',async()=>{
+  const d=detail();d.versions.push({
+   id:'source-version-2',number:2,kind:'SAVED',createdAt:'2026-11-11T09:00:00Z'
+  });
+  const second=snapshot();second.id='source-version-2';
+  second.evidence.goals=[goal({planVersionId:'plan-v2',key:'goal-b'})];
+  reportsApi.version.mockResolvedValueOnce(snapshot()).mockResolvedValueOnce(second);
+  await act(async()=>{tree=create(h(ReportToPlanHandoff,{
+   centerId:'center-1',detail:d,prepare:jest.fn()
+  }));});
+  await click(tree,'report-to-plan-toggle');await act(async()=>Promise.resolve());
+  await selectGoal(tree);
+  await act(async()=>use(tree,'report-to-plan-source').props.onChange({
+   target:{value:'source-version-2'}
+  }));
+  await act(async()=>Promise.resolve());
+  expect(reportsApi.version).toHaveBeenCalledWith('center-1','source-version-2');
+  expect(use(tree,'report-to-plan-goal-0').props.checked).toBe(false);
+  expect(use(tree,'report-to-plan-create').props.disabled).toBe(true);
+ });
+});

@@ -157,3 +157,117 @@ describe('real booking dialog source-bound scheduling controls',()=>{
   expect(done).toHaveBeenCalledWith('Appointment booked.');
  });
 });
+
+
+describe('M4-08 90% real booking conditional error/assignment cases',()=>{
+ it('closed booking modal does not query a private child directory',async()=>{
+  await mount({open:false});
+  expect(find('book-dialog')).toHaveLength(0);
+  expect(opsApi.children).not.toHaveBeenCalled();
+  expect(opsApi.child).not.toHaveBeenCalled();
+ });
+ it('calendar-provided initial slot uses exact date and time rather than wall-clock guess',async()=>{
+  await mount({initial:{date:'2035-12-16',start:'10:15'}});
+  expect(get('book-date-input').props.value).toBe('2035-12-16');
+  expect(get('book-start-input').props.value).toBe('10:15');
+ });
+ it('no initial child cannot book until explicit child assignment selection',async()=>{
+  await mount({childId:undefined});
+  expect(get('book-child-select').props.value).toBe('');
+  await click('book-save');
+  expect(get('book-error')).toBeTruthy();
+  expect(opsApi.book).not.toHaveBeenCalled();
+ });
+ it('failed center child listing surfaces failure without inventing available children',async()=>{
+  opsApi.children.mockRejectedValueOnce(new ApiError(403,'Fictional directory denied'));
+  await mount({childId:undefined});
+  expect(get('book-error')).toBeTruthy();
+  expect(get('book-child-select').findAllByType('option').map(x=>x.props.value)).toEqual(['']);
+  expect(opsApi.book).not.toHaveBeenCalled();
+ });
+ it('failed assignment lookup does not preserve other family therapist options',async()=>{
+  opsApi.child.mockRejectedValueOnce(new ApiError(403,'Fictional assignments changed'));
+  await mount();
+  expect(get('book-error')).toBeTruthy();
+  expect(get('book-therapist-select').findAllByType('option').map(x=>x.props.value)).toEqual(['']);
+ });
+ it('two assigned specialties require explicit specialty choice to avoid accidental cross-service booking',async()=>{
+  opsApi.child.mockResolvedValueOnce({assignments:[
+   assignment({membershipId:'speech-a',service:'speech',isLead:false}),
+   assignment({membershipId:'ot-a',service:'occupational',isLead:true})
+  ]});
+  await mount();
+  expect(get('book-service-select').props.value).toBe('');
+  expect(get('book-therapist-select').props.value).toBe('');
+  await click('book-save');
+  expect(opsApi.book).not.toHaveBeenCalled();
+  await change('book-service-select','occupational');
+  expect(get('book-therapist-select').props.value).toBe('ot-a');
+  await click('book-save');
+  expect(opsApi.book.mock.calls[0][1]).toMatchObject({
+   membershipId:'ot-a',service:'occupational'
+  });
+ });
+ it('explicit second clinician selection preserves only that assigned membership',async()=>{
+  opsApi.child.mockResolvedValueOnce({assignments:[
+   assignment({membershipId:'speech-lead',isLead:true}),
+   assignment({membershipId:'speech-second',isLead:false})
+  ]});
+  await mount();
+  await change('book-therapist-select','speech-second');
+  await click('book-save');
+  expect(opsApi.book.mock.calls[0][1].membershipId).toBe('speech-second');
+ });
+ it('changing child resets incompatible specialty and therapist before new server assignments resolve',async()=>{
+  opsApi.children.mockResolvedValueOnce({items:[person,{
+   id:'child-b',firstName:'Fictional',lastName:'Other',preferredName:null
+  }]});
+  opsApi.child.mockImplementation(async(_,id)=>({
+   assignments:id==='child-b'?[assignment({
+    membershipId:'another-staff',service:'occupational',isLead:true
+   })]:[assignment()]
+  }));
+  await mount();
+  await change('book-child-select','child-b');
+  expect(opsApi.child).toHaveBeenLastCalledWith('center-a','child-b');
+  expect(get('book-service-select').props.value).toBe('occupational');
+  expect(get('book-therapist-select').props.value).toBe('another-staff');
+  await click('book-save');
+  expect(opsApi.book.mock.calls[0][1].childId).toBe('child-b');
+ });
+ it('empty optional room is omitted instead of manufacturing a room reservation',async()=>{
+  await mount();await change('book-room-input','');
+  await click('book-save');
+  expect(opsApi.book.mock.calls[0][1].room).toBeUndefined();
+ });
+ it('a single recurring visit uses singular wording and no false skip claim',async()=>{
+  opsApi.createSeries.mockResolvedValueOnce({created:1,skipped:[]});
+  await mount();await click('repeat-weekly');await click('book-save');
+  expect(done).toHaveBeenCalledWith('1 repeating visit booked.');
+ });
+ it('multiple recurring visits correctly report intentional skipped clashes',async()=>{
+  opsApi.createSeries.mockResolvedValueOnce({created:2,skipped:[{date:'2035-12-17'},{date:'2035-12-19'}]});
+  await mount();await click('repeat-weekly');await click('book-save');
+  expect(done).toHaveBeenCalledWith('2 repeating visits booked, 2 skipped because of clashes.');
+ });
+ it('non-conflict API error does not offer dangerous skip-conflicts override',async()=>{
+  opsApi.createSeries.mockRejectedValueOnce(new ApiError(422,'Fictional invalid recurrence'));
+  await mount();await click('repeat-weekly');await click('book-save');
+  expect(get('book-error')).toBeTruthy();
+  expect(find('book-clashes')).toHaveLength(0);
+  expect(opsApi.createSeries).toHaveBeenCalledTimes(1);
+ });
+ it('rescheduling ungrouped appointment cannot silently mutate a different series',async()=>{
+  await mount({editing:oldVisit({seriesId:null,room:null})});
+  expect(get('book-room-input').props.value).toBe('');
+  expect(get('book-length-select').props.value).toBe('45');
+  await click('book-save');
+  expect(done).toHaveBeenCalledWith('Appointment moved.');
+  expect(opsApi.reschedule).toHaveBeenCalledWith('center-a','appt-old',
+   expect.objectContaining({room:'',version:7}));
+ });
+ it('unrecognized service label is displayed literally, never granted a role',()=>{
+  const {serviceLabel}=require('../src/components/operations/BookDialog');
+  expect(serviceLabel('fictional-unknown-specialty')).toBe('fictional-unknown-specialty');
+ });
+});

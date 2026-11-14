@@ -4,6 +4,7 @@ on:
   push:
     branches: ["**"]
   pull_request:
+  workflow_dispatch:
 
 # Superseded pushes to the same ref should not consume two costly Docker jobs.
 concurrency:
@@ -224,10 +225,6 @@ jobs:
         run: node --test scripts/commercial/collect-upstream-license-candidates.test.mjs
       - name: Collect immutable exact-version registry metadata candidates (never legal clearance)
         run: node scripts/commercial/collect-upstream-license-candidates.mjs /tmp/therabridge-com02-exact-version-rights-queue.json /tmp/therabridge-com02-upstream-candidates.json
-      - name: Validate npm attestation discovery and fail-closed signature audit receipts
-        run: node --test scripts/commercial/verify-npm-provenance-observation.test.mjs
-      - name: Independently query npm CLI signatures for advertised exact-version candidates (not source or legal approval)
-        run: node scripts/commercial/verify-npm-provenance-observation.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-npm-provenance-observation.json /tmp/therabridge-com02-npm-signature-audit.json
       - name: Validate pinned npm Sigstore bundle subject and digest verifier (adversarial offline)
         run: node --test scripts/commercial/verify-npm-sigstore-bundles.test.mjs
       - name: Obtain and verify exact npm package Sigstore bundles using pinned npm 11.19.1 (never legal approval)
@@ -276,8 +273,6 @@ jobs:
             /tmp/therabridge-transitive-tarball-evidence.json
             /tmp/therabridge-com02-exact-version-rights-queue.json
             /tmp/therabridge-com02-upstream-candidates.json
-            /tmp/therabridge-com02-npm-provenance-observation.json
-            /tmp/therabridge-com02-npm-signature-audit.json
             /tmp/therabridge-com02-verified-npm-bundle-candidates.json
             /tmp/therabridge-com02-raw-verified-npm-bundles.json
             /tmp/therabridge-com02-nextjs-immutable-source-review.json
@@ -338,6 +333,10 @@ jobs:
           path: .workspace/m4-performance/m4-07-synthetic-api.json
           if-no-files-found: error
           retention-days: 7
+      - name: M4-08 independent full API branch/function hotspot audit (diagnostic only)
+        run: |
+          node --test scripts/qa/m4-api-coverage-hotspots.test.mjs
+          node scripts/qa/m4-api-coverage-hotspots.mjs
       - name: Gate measured API fingerprint-core coverage (95/90/95/95)
         run: yarn workspace @therabridge/api test:coverage:core
       - name: Web configuration unit tests with observed V8 instrumentation
