@@ -157,3 +157,35 @@ describe('M4-08 series read/update/cancel cannot bypass center or lifecycle cons
   }
  });
 });
+
+describe('M4-08 cancellation keeps series boundaries and remaining-visit lifecycle consistent', () => {
+  const activeSeries = {status:'ACTIVE', startDate:new Date('2026-11-16T00:00:00.000Z'), membershipId:'fictional-member', childId:'fictional-child'};
+  const visit = {id:'synthetic-appointment', startsAt:new Date('2026-11-23T10:00:00.000Z')};
+
+  it('clamps the cancelled-series end date to its original start and ends a series with no remaining future visits', async () => {
+    const {service,tx,notices}=make();
+    tx.appointmentSeries.findFirst.mockResolvedValue(activeSeries);
+    tx.appointment.findMany.mockResolvedValue([visit]);
+    tx.appointment.count.mockResolvedValue(0);
+    const result=await service.cancel('center','actor','series',{fromDate:'2026-11-16',reason:'Synthetic cancellation'} as any);
+    expect(result).toEqual({cancelled:1});
+    expect(tx.appointmentSeries.update.mock.calls[0][0].data).toMatchObject({status:'ENDED',version:{increment:1}});
+    expect(tx.appointmentSeries.update.mock.calls[0][0].data.untilDate.toISOString().slice(0,10)).toBe('2026-11-16');
+    expect(tx.appointment.updateMany.mock.calls[0][0].where).toEqual({centerId:'center',id:{in:['synthetic-appointment']}});
+    expect(notices.changed).toHaveBeenCalledWith([{id:visit.id,before:visit.startsAt}],'cancelled');
+  });
+
+  it('retains ACTIVE status and truncates untilDate when other future appointments survive', async () => {
+    const {service,tx,notices}=make();
+    tx.appointmentSeries.findFirst.mockResolvedValue(activeSeries);
+    tx.appointment.findMany.mockResolvedValue([visit]);
+    tx.appointment.count.mockResolvedValue(2);
+    const result=await service.cancel('center','actor','series',{fromDate:'2026-11-23',reason:'Synthetic partial cancellation'} as any);
+    expect(result).toEqual({cancelled:1});
+    const updated=tx.appointmentSeries.update.mock.calls[0][0].data;
+    expect(updated.status).toBeUndefined();
+    expect(updated.untilDate.toISOString().slice(0,10)).toBe('2026-11-22');
+    expect(updated.version).toEqual({increment:1});
+    expect(notices.changed).toHaveBeenCalledTimes(1);
+  });
+});
