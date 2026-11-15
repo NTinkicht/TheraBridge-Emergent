@@ -1,3 +1,10 @@
+## 2026-11-15 — M5-03 immediate next qualifications
+1. Run full CI for M5-03 eight-area shell PR; inspect failures including Chromium seven-role permission-index exact equality, desktop rail compact/expanded, mobile More focus trap/return, five viewports, family light theme; fix exact-head Codex comments before merge.
+2. After merge, M5-03 #186 remains OPEN for private before/after screenshots and owner signoff, real screen-reader/focus/contrast, responsive and low-bandwidth, safe role/center/specialty switching, explicit dynamic hierarchy, and retiring duplicate mobile select only after equivalent tested replacement.
+3. Preserve M5-02 eight-area taxonomy, M4-01 66/91/55 and #266 private 1,023 step reconciliation, G2/G2b NO-GO, no shared Render/Neon changes.
+
+---
+
 ## 2026-11-15 — M5-02 canonical IA source proposal gates
 1. Qualify exact-head CI/Smart CI/SBOM and independent Codex; inspect 66/91/20 crosswalk receipt, resolve source or status mismatches. Merge only with 6 original CI jobs green and no unresolved reviews.
 2. Secure actual role mental-model workshop and approved clickable wireframes. For each canonical row reconcile real authorized destination, role/specialty permission, not-available vs policy-blocked distinction and 1,023 controlled step IDs from authorized private source, without leaking titles/metadata to unauthorized roles.
