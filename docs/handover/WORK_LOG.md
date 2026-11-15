@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-02 source IA implementation (unqualified)
+Added `scripts/qa/m5-task-areas.mjs` and adversarial tests; derive exact permission-specific navigation and group all 20 existing NAV rows into seven proposed task areas, explicitly preserve the center/family same-route Activities distinction, classify non-primary pages for inspection. Wired source-only receipt to CI; documented controlled source evidence gap #266 (66/91/55/1023 is **not** row mapped). No product route, permissions, governance or hosted database changed.
+
+---
+
 ## 2026-11-15 — M5-01 third audit tranche, engineering implementation
 Added seven role keyboard journey checks with direct keyboard Home/sign-out activation and mobile focus behavior, numeric page-settling timings on existing 175 synthetic visits, validation tests and CI wiring. No clinical action or external production fixtures. Await exact-head CI and independent Codex; NOT UX acceptance.
 
