@@ -172,6 +172,7 @@ jobs:
       - name: M5-02 canonical 66/91 requirement-to-task IA proposal (no authorization)
         run: |
           node --test scripts/design/m5-ia-crosswalk.test.mjs
+          node --test scripts/design/m5-shell-navigation.test.mjs
           node scripts/design/m5-ia-crosswalk.mjs /tmp/therabridge-m5-ia-proposal.json
       - name: Archive source-only M5-02 navigation grouping proposal
         uses: actions/upload-artifact@v4

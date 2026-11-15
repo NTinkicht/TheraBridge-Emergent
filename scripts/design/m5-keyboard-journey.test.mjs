@@ -5,6 +5,9 @@ import { KEYBOARD_EXPECTED, validateKeyboardJourneys } from './m5-keyboard-journ
 const ids = ['platform-admin','center-admin','coordinator','speech-therapist','ot-therapist','supervisor','guardian'];
 const fixture = () => ids.map(persona => ({ persona, desktopHomeViaEnter: 'OBSERVED',
   mobileSelectFocus: 'OBSERVED', mobileShiftTabToSignOut: 'NOT_OBSERVED',
+  desktopRailToggle: 'OBSERVED', mobileMoreKeyboard: 'OBSERVED',
+  mobilePermissionLinks: 'OBSERVED', mobileQuickLinkCount: 3,
+  mobileBreakpointClosure: 'OBSERVED', mobileScrollLockRestored: 'OBSERVED',
   signOutViaEnter: 'OBSERVED', desktopNavigationMs: 102 }));
 
 test('requires a bounded measured keyboard path for all seven distinct synthetic personas', () => {
@@ -19,6 +22,13 @@ test('requires a bounded measured keyboard path for all seven distinct synthetic
 test('does not confuse a keyboard focus observation with human accessibility approval', () => {
   for (const patch of [
     { desktopHomeViaEnter: 'PASS' },
+    { desktopRailToggle: 'NOT_OBSERVED' },
+    { mobileMoreKeyboard: 'NOT_TESTED' },
+    { mobilePermissionLinks: 'NOT_OBSERVED' },
+    { mobileBreakpointClosure: 'NOT_OBSERVED' },
+    { mobileScrollLockRestored: 'NOT_OBSERVED' },
+    { mobileQuickLinkCount: 0 },
+    { mobileQuickLinkCount: 4 },
     { mobileSelectFocus: 'NOT_TESTED' },
     { signOutViaEnter: 'BLOCKED' },
     { desktopNavigationMs: -1 },

@@ -5,6 +5,19 @@
 
 ---
 
+## 2026-11-15 — M5-03 reviewer correction final qualification
+1. Re-run exact-HEAD PR #393 six original CI jobs, SBOM/Smart CI and dedicated Web coverage after `<details>` type and More breakpoint/scroll remediations. Inspect seven-role Chromium keyboard receipt for permission equality, focus trap/return, rail collapse, responsive closure and background scroll restoration. Obtain new Codex review for final head, resolve P2 threads only after code qualification.
+2. Merge only with green full CI, Codex zero unresolved and mergeable latest main. Keep #186 OPEN for human image/screen-reader/low bandwidth/full workflow UX and center/child/specialty navigation context. G2/G2b NO-GO.
+
+---
+
+## 2026-11-15 — M5-03 immediate next qualifications
+1. Run full CI for M5-03 eight-area shell PR; inspect failures including Chromium seven-role permission-index exact equality, desktop rail compact/expanded, mobile More focus trap/return, five viewports, family light theme; fix exact-head Codex comments before merge.
+2. After merge, M5-03 #186 remains OPEN for private before/after screenshots and owner signoff, real screen-reader/focus/contrast, responsive and low-bandwidth, safe role/center/specialty switching, explicit dynamic hierarchy, and retiring duplicate mobile select only after equivalent tested replacement.
+3. Preserve M5-02 eight-area taxonomy, M4-01 66/91/55 and #266 private 1,023 step reconciliation, G2/G2b NO-GO, no shared Render/Neon changes.
+
+---
+
 ## 2026-11-15 — PR #311 qualification
 1. Verify all six required CI jobs + SBOM/Smart CI on the new #311 HEAD, especially API PostgreSQL e2e under Nest 11/Fastify 5 and the COM-02 Sigstore steps (expect 5 verified signed subjects: 3 Next.js + 2 sharp-libvips). Fix real failures without weakening fail-closed checks.
 2. Obtain independent final-head Codex review; record FIX_NOW / DEFER_ISSUE / DECLINE_WITH_REASON for every finding before any Rule 16 merge.

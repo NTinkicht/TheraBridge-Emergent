@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeftRight, Baby, Building2, CalendarDays, ClipboardCheck, Home, Inbox, KeyRound, LineChart, ListChecks, Lock, LogOut, MessagesSquare, NotebookPen, Settings2, Sparkles, Sprout, UserRound, Users, type LucideIcon } from 'lucide-react';
+import { ArrowLeftRight, Baby, Building2, CalendarDays, ChevronDown, ChevronRight, ClipboardCheck, Home, Inbox, KeyRound, LineChart, ListChecks, Lock, LogOut, Menu, MessagesSquare, NotebookPen, PanelLeftClose, PanelLeftOpen, Settings2, Sparkles, Sprout, UserRound, Users, X, type LucideIcon } from 'lucide-react';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { SignatureBand } from '@/components/brand/SignatureBand';
 import { Avatar } from '@/components/design/ui';
 import { ROLE_LABELS, authApi, contextLabel, type SessionInfo } from '@/lib/auth';
 import { ApiError } from '@/lib/api';
+import { groupAuthorizedNav, quickMobileNav } from './nav-areas';
 
 export interface PlannedModule {
   label: string;
@@ -16,13 +17,13 @@ export interface PlannedModule {
   icon: LucideIcon;
 }
 
-function NavLink({ href, icon: Icon, label, active, testId, family = false }: { href: string; icon: LucideIcon; label: string; active: boolean; testId: string; family?: boolean }) {
+function NavLink({ href, icon: Icon, label, active, testId, family = false, compact = false }: { href: string; icon: LucideIcon; label: string; active: boolean; testId: string; family?: boolean; compact?: boolean }) {
   return (
-    <Link href={href} aria-current={active ? 'page' : undefined} data-testid={testId}
-      className={`relative flex min-h-[44px] shrink-0 items-center gap-2 rounded-control px-2.5 text-[14px] font-medium transition-colors md:gap-3 md:px-3 ${active ? (family ? 'bg-fam-accentTint text-fam-accent' : 'bg-brand-actionTint text-brand-action') : 'text-brand-inkMuted hover:bg-surface-subtle hover:text-brand-ink'}`}>
+    <Link href={href} aria-current={active ? 'page' : undefined} data-testid={testId} title={compact ? label : undefined}
+      className={`relative flex min-h-[44px] shrink-0 items-center gap-2 rounded-control px-2.5 text-[14px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-action md:gap-3 md:px-3 ${compact ? 'justify-center' : ''} ${active ? (family ? 'bg-fam-accentTint text-fam-accent' : 'bg-brand-actionTint text-brand-action') : 'text-brand-inkMuted hover:bg-surface-subtle hover:text-brand-ink'}`}>
       {active && <span aria-hidden="true" className={`absolute bottom-2 left-0 top-2 w-[3px] rounded-r-full ${family ? 'bg-fam-accent' : 'bg-brand-action'}`} />}
       <Icon size={19} strokeWidth={1.8} aria-hidden="true" />
-      {label}
+      <span className={compact ? 'sr-only' : undefined}>{label}</span>
     </Link>
   );
 }
@@ -54,10 +55,79 @@ export function ProductShell({ session, active, planned, children }: { session: 
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
+  const [railCollapsed, setRailCollapsed] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
+  const moreCloseRef = useRef<HTMLButtonElement>(null);
+  const morePanelRef = useRef<HTMLDivElement>(null);
   const ctx = session.activeContext;
   const where = ctx ? `${contextLabel(ctx)} · ${ROLE_LABELS[ctx.role]}` : 'No workspace selected';
-  const nav = NAV.filter((n) => !n.permission || session.permissions.includes(n.permission));
+  // Client-side grouping is display-only; server session permissions still control every route.
+  const groups = groupAuthorizedNav(NAV, session.permissions);
+  const nav = groups.flatMap((group) => group.items);
+  const mobileQuick = quickMobileNav(groups);
+  const activeNav = nav.find((n) => n.key === active);
+  const activeGroup = groups.find((group) => group.items.some((n) => n.key === active));
+  const activeGroupKey = activeGroup?.key;
   const family = ctx?.role === 'GUARDIAN';
+  const contextId = ctx?.type === 'center' ? ctx.centerId : 'platform';
+
+  // Never persist a menu or drawer state across a role/tenant context switch.
+  useEffect(() => { setMoreOpen(false); setExpandedGroups({}); }, [ctx?.role, contextId]);
+  useEffect(() => {
+    if (activeGroupKey) setExpandedGroups(previous => previous[activeGroupKey] ? previous : { ...previous, [activeGroupKey]: true });
+  }, [activeGroupKey]);
+  useEffect(() => {
+    if (moreOpen) moreCloseRef.current?.focus();
+  }, [moreOpen]);
+
+  // A mobile More dialog must not remain logically open after it is hidden at
+  // the desktop breakpoint. Lock background scrolling only for its lifetime;
+  // restore preexisting styles even after navigation/unmount.
+  useEffect(() => {
+    if (!moreOpen) return;
+    const bodyOverflow = document.body.style.overflow;
+    const rootOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    const desktop = window.matchMedia('(min-width: 768px)');
+    const closeOnDesktop = () => {
+      if (!desktop.matches) return;
+      setMoreOpen(false);
+      document.querySelector<HTMLElement>('[data-testid="sidebar-collapse-toggle"]')?.focus();
+    };
+    desktop.addEventListener('change', closeOnDesktop);
+    closeOnDesktop();
+    return () => {
+      desktop.removeEventListener('change', closeOnDesktop);
+      document.body.style.overflow = bodyOverflow;
+      document.documentElement.style.overflow = rootOverflow;
+    };
+  }, [moreOpen]);
+
+  function closeMore() {
+    setMoreOpen(false);
+    moreButtonRef.current?.focus();
+  }
+
+  function handleMoreKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeMore();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const focusables = [...(morePanelRef.current?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), select:not([disabled])') ?? [])]
+      .filter((el) => el.getClientRects().length > 0);
+    if (!focusables.length) { event.preventDefault(); return; }
+    const first = focusables[0], last = focusables[focusables.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault(); last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault(); first.focus();
+    }
+  }
 
   async function signOut() {
     setSigningOut(true);
@@ -74,10 +144,19 @@ export function ProductShell({ session, active, planned, children }: { session: 
 
   return (
     <div className={`flex min-h-screen ${family ? 'theme-family-auto bg-fam-canvas text-fam-ink' : 'bg-canvas-clinical text-brand-ink'}`} data-testid="product-shell">
-      <aside className="sticky top-0 hidden h-screen w-sidebar shrink-0 flex-col border-r border-border-light bg-surface-white md:flex" data-testid="product-sidebar">
+      <aside className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-border-light bg-surface-white transition-[width] md:flex ${railCollapsed ? 'w-[76px]' : 'w-sidebar'}`} data-testid="product-sidebar" data-collapsed={railCollapsed}>
         <SignatureBand />
-        <div className="flex h-16 items-center gap-2 px-5"><BrandMark variant="symbol" height={26} /><BrandMark variant="wordmark" height={17} /></div>
-        {session.contexts.length > 1 && (
+        <div className={`flex h-16 items-center ${railCollapsed ? 'justify-center px-2' : 'gap-2 px-5'}`}>
+          <BrandMark variant="symbol" height={26} />
+          {!railCollapsed && <BrandMark variant="wordmark" height={17} />}
+        </div>
+        <button type="button" onClick={() => setRailCollapsed(value => !value)} data-testid="sidebar-collapse-toggle"
+          aria-label={railCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!railCollapsed}
+          className="mx-2 mb-2 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-control border border-border-light px-2 text-[12px] font-medium text-brand-inkMuted focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action">
+          {railCollapsed ? <PanelLeftOpen size={18} aria-hidden="true" /> : <PanelLeftClose size={18} aria-hidden="true" />}
+          {!railCollapsed && 'Collapse menu'}
+        </button>
+        {session.contexts.length > 1 && !railCollapsed && (
           <Link href="/select-context" className="mx-3 mb-3 flex items-center gap-2 rounded-control border border-border-light px-3 py-2 transition-colors hover:bg-surface-subtle" data-testid="workspace-switcher">
             <span className="min-w-0 flex-1">
               <span className="block break-words text-[13px] font-semibold">{ctx ? contextLabel(ctx) : 'Choose workspace'}</span>
@@ -86,10 +165,31 @@ export function ProductShell({ session, active, planned, children }: { session: 
             <ArrowLeftRight size={15} className="text-brand-inkMuted" aria-hidden="true" />
           </Link>
         )}
-        <nav aria-label="Primary" className="flex-1 space-y-1 overflow-y-auto px-3">
-          {nav.map((n) => <NavLink key={n.key} href={n.href} icon={n.icon} label={n.label} active={active === n.key} family={family} testId={`nav-${n.key}`} />)}
-          {planned.length > 0 && <p className="px-3 pb-1 pt-5 text-[12px] font-semibold uppercase tracking-[0.06em] text-brand-inkMuted">Coming next</p>}
-          {planned.map((m) => (
+        <nav aria-label="Primary" className={`flex-1 space-y-1 overflow-y-auto ${railCollapsed ? 'px-2' : 'px-3'}`} data-testid="desktop-grouped-navigation">
+          {railCollapsed ? nav.map((n) => (
+            <NavLink key={n.key + ':' + (n.permission ?? '')} href={n.href} icon={n.icon} label={n.label}
+              active={active === n.key} family={family} compact testId={`nav-${n.key}`} />
+          )) : groups.map((group) => (
+            <details key={contextId + ':' + (ctx?.role ?? '') + ':' + group.key}
+              open={expandedGroups[group.key] ?? (group.key === 'workspace' || group.items.some(n => n.key === active))}
+              onToggle={(event) => {
+                const expanded = event.currentTarget.open;
+                setExpandedGroups(previous => previous[group.key] === expanded ? previous : { ...previous, [group.key]: expanded });
+              }}
+              data-testid={`nav-group-${group.key}`} className="group rounded-control">
+              <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between rounded-control px-3 text-[12px] font-semibold text-brand-inkMuted hover:bg-surface-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action">
+                <span>{group.label}</span>
+                <ChevronDown size={16} className="transition-transform group-open:rotate-180" aria-hidden="true" />
+              </summary>
+              <div className="space-y-1 pb-2">
+                {group.items.map((n) => <NavLink key={n.key + ':' + (n.permission ?? '')}
+                  href={n.href} icon={n.icon} label={n.label} active={active === n.key}
+                  family={family} testId={`nav-${n.key}`} />)}
+              </div>
+            </details>
+          ))}
+          {planned.length > 0 && !railCollapsed && <p className="px-3 pb-1 pt-5 text-[12px] font-semibold uppercase tracking-[0.06em] text-brand-inkMuted">Coming next</p>}
+          {!railCollapsed && planned.map((m) => (
             <span key={m.label} aria-disabled="true" title={`Arrives in ${m.unit}`} data-testid={`nav-planned-${m.label.toLowerCase().replace(/\W+/g, '-')}`}
               className="flex min-h-[44px] cursor-not-allowed items-center gap-3 rounded-control px-3 text-[14px] text-brand-inkMuted/70">
               <m.icon size={19} strokeWidth={1.8} aria-hidden="true" />
@@ -111,6 +211,11 @@ export function ProductShell({ session, active, planned, children }: { session: 
           </button>
         </header>
         {signOutError && <p role="alert" className="bg-status-dangerSurface px-4 py-2 text-[14px] font-medium text-status-danger md:px-8" data-testid="sign-out-error">{signOutError}</p>}
+        <nav aria-label="Breadcrumb" data-testid="shell-breadcrumb" className="flex min-h-[36px] items-center gap-2 px-4 pt-2 text-[12px] text-brand-inkMuted md:px-8">
+          {activeNav?.key !== 'home' && <><Link href="/app" className="underline-offset-2 hover:underline">Home</Link><ChevronRight size={13} aria-hidden="true" /></>}
+          {activeNav?.key !== 'home' && activeGroup && <><span>{activeGroup.label}</span><ChevronRight size={13} aria-hidden="true" /></>}
+          <span aria-current="page" className="font-semibold text-brand-ink">{activeNav?.label ?? 'Workspace'}</span>
+        </nav>
         <nav aria-label="Primary" className="border-b border-border-light bg-surface-white px-4 py-3 md:hidden" data-testid="mobile-nav">
           <label htmlFor="mobile-workspace-navigation" className="mb-1 block text-[12px] font-semibold text-brand-inkMuted">Navigate to</label>
           <select id="mobile-workspace-navigation" data-testid="mobile-nav-select"
@@ -121,7 +226,48 @@ export function ProductShell({ session, active, planned, children }: { session: 
             {session.contexts.length > 1 && <option value="/select-context">Switch workspace</option>}
           </select>
         </nav>
-        <main id="main" className="mx-auto w-full max-w-[1160px] flex-1 px-4 pb-14 pt-6 md:px-8 md:pt-8">{children}</main>
+        <main id="main" className="mx-auto w-full max-w-[1160px] flex-1 px-4 pb-32 pt-6 md:px-8 md:pb-14 md:pt-8">{children}</main>
+        <nav aria-label="Quick navigation" data-testid="mobile-bottom-nav"
+          className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 gap-1 border-t border-border-light bg-surface-white px-2 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 shadow-[0_-4px_18px_rgba(20,33,61,0.08)] md:hidden">
+          {mobileQuick.map(n => <Link key={n.key + ':' + (n.permission ?? '')} href={n.href}
+            data-testid={`mobile-quick-${n.key}`} aria-current={active === n.key ? 'page' : undefined}
+            className={`flex min-h-[52px] min-w-0 flex-col items-center justify-center gap-1 rounded-control px-1 text-center text-[11px] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action ${active === n.key ? (family ? 'bg-fam-accentTint text-fam-accent' : 'bg-brand-actionTint text-brand-action') : 'text-brand-inkMuted'}`}>
+            <n.icon size={20} aria-hidden="true" /><span className="max-w-full truncate">{n.short}</span>
+          </Link>)}
+          <button type="button" ref={moreButtonRef} data-testid="mobile-more-button"
+            aria-haspopup="dialog" aria-expanded={moreOpen} aria-controls="mobile-more-panel"
+            onClick={() => setMoreOpen(true)} className="flex min-h-[52px] min-w-0 flex-col items-center justify-center gap-1 rounded-control px-1 text-[11px] font-semibold text-brand-inkMuted focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action">
+            <Menu size={20} aria-hidden="true" /><span>More</span>
+          </button>
+        </nav>
+        {moreOpen && <div className="fixed inset-0 z-50 md:hidden" data-testid="mobile-more-sheet">
+          <button type="button" aria-label="Dismiss navigation" onClick={closeMore} className="absolute inset-0 bg-black/50 touch-none" />
+          <div role="dialog" aria-modal="true" aria-label="All navigation" id="mobile-more-panel"
+            ref={morePanelRef} onKeyDown={handleMoreKeyDown}
+            className="absolute inset-x-0 bottom-0 max-h-[84dvh] overflow-y-auto overscroll-y-contain rounded-t-2xl bg-surface-white px-4 pb-[max(env(safe-area-inset-bottom),24px)] pt-4 shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-[17px] font-semibold text-brand-ink">All destinations</h2>
+              <button type="button" ref={moreCloseRef} onClick={closeMore} aria-label="Close navigation"
+                data-testid="mobile-more-close" className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-control border border-border-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action">
+                <X size={20} aria-hidden="true" />
+              </button>
+            </div>
+            {groups.map(group => <section key={group.key} className="mb-4" data-testid={`mobile-group-${group.key}`}>
+              <h3 className="mb-1 px-2 text-[12px] font-semibold uppercase tracking-wide text-brand-inkMuted">{group.label}</h3>
+              <div className="space-y-1">{group.items.map(n => <Link
+                key={n.key + ':' + (n.permission ?? '')} href={n.href}
+                onClick={() => setMoreOpen(false)} data-testid={`mobile-more-${n.key}`}
+                aria-current={active === n.key ? 'page' : undefined}
+                className={`flex min-h-[44px] items-center gap-3 rounded-control px-3 text-[14px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action ${active === n.key ? (family ? 'bg-fam-accentTint text-fam-accent' : 'bg-brand-actionTint text-brand-action') : 'text-brand-ink'}`}>
+                <n.icon size={18} aria-hidden="true" />{n.label}
+              </Link>)}</div>
+            </section>)}
+            {session.contexts.length > 1 && <Link href="/select-context" onClick={() => setMoreOpen(false)}
+              className="mt-2 flex min-h-[44px] items-center gap-2 rounded-control border border-border-light px-3 text-[14px] font-medium">
+              <ArrowLeftRight size={18} aria-hidden="true" />Switch workspace
+            </Link>}
+          </div>
+        </div>}
       </div>
     </div>
   );
