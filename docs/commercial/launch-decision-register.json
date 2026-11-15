@@ -1,0 +1,47 @@
+{
+  "schema": "therabridge-commercial-launch-decision-register-v1",
+  "scope": "NON_AUTHORIZING_PUBLIC_TRACKING_ONLY",
+  "lastReviewed": "2026-11-15",
+  "editions": {
+    "SAAS": {
+      "status": "BLOCKED",
+      "releaseDigest": null,
+      "required": [
+        "ipChainOfTitle",
+        "contractingEntity",
+        "saasContract",
+        "privacyDpa",
+        "thirdPartyNetworkRights",
+        "saasReleaseScope",
+        "assetRights",
+        "counselApproval",
+        "ownerApproval"
+      ],
+      "evidence": {}
+    },
+    "ENTERPRISE": {
+      "status": "BLOCKED",
+      "releaseDigest": null,
+      "required": [
+        "ipChainOfTitle",
+        "contractingEntity",
+        "enterpriseContract",
+        "thirdPartyRedistributionRights",
+        "enterpriseReleaseScope",
+        "assetRights",
+        "thirdPartyNotices",
+        "counselApproval",
+        "ownerApproval"
+      ],
+      "evidence": {}
+    }
+  },
+  "clinical": {
+    "g2": "NO_GO",
+    "g2b": "NO_GO",
+    "realPatientProcessingAllowed": false,
+    "consentOrReportReleaseAllowed": false
+  },
+  "commercialLicenseGranted": false,
+  "finalThirdPartyNoticesIssued": false
+}
