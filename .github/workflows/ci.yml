@@ -169,6 +169,17 @@ jobs:
         run: |
           node --test scripts/qa/m5-route-audit.test.mjs
           node scripts/qa/m5-route-audit.mjs /tmp/therabridge-m5-ui-source-baseline.json
+      - name: M5-02 canonical 66/91 requirement-to-task IA proposal (no authorization)
+        run: |
+          node --test scripts/design/m5-ia-crosswalk.test.mjs
+          node scripts/design/m5-ia-crosswalk.mjs /tmp/therabridge-m5-ia-proposal.json
+      - name: Archive source-only M5-02 navigation grouping proposal
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-02-source-ia-proposal-${{ github.sha }}
+          path: /tmp/therabridge-m5-ia-proposal.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Archive M5-01 source-only audit receipt (NOT screenshots or UX clearance)
         uses: actions/upload-artifact@v4
         with:
