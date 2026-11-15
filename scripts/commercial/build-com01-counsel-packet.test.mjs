@@ -44,6 +44,12 @@ test('adopted proprietary notice is not accepted as a mere proposal',()=>{
 test('launch policy must still prohibit commercial license and G2/G2b',()=>{
  assert.throws(()=>buildPacket({...inputs,launch:'{}'}),/COM01_CANNOT_CORROBORATE/);
  assert.throws(()=>buildPacket({...inputs,launch:''}),/COM01_INVALID_SOURCE/);
+ const forged=JSON.parse(inputs.launch);
+ forged.commercialLicenseGranted=true; // Keyword-based scans would miss this.
+ assert.throws(()=>buildPacket({...inputs,launch:JSON.stringify(forged)}),/COM01_CANNOT_CORROBORATE/);
+ forged.commercialLicenseGranted=false;
+ forged.invariants.g2NoGo=false;
+ assert.throws(()=>buildPacket({...inputs,launch:JSON.stringify(forged)}),/COM01_CANNOT_CORROBORATE/);
 });
 test('report does not copy names, contributor identifiers, contract text, private records or signatures',()=>{
  const p=buildPacket(inputs);
