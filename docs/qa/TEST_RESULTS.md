@@ -1,3 +1,13 @@
+## 2026-11-15 — #394 sharp removal (LOCAL; exact-head CI PENDING)
+| Check | Result |
+|---|---|
+| `next build` + `next start` with `sharp`/`@img` removed | PASS — `/login` 200, `/_next/image` 404 |
+| Strip command on a simulated tree (root + nested `sharp`, `@img`) | PASS — all removed, verification passes |
+| `scripts/qa/m2-h06-frontend.test.mjs` incl. new image/sharp contract | PASS (9/9); negative check with an injected `next/image` import FAILS as expected |
+| Docker image build | NOT RUN locally (no Docker daemon) — `preview-container`/`compose` CI authoritative |
+
+---
+
 ## 2026-11-15 — Next 16.4.6 + React 19.3 (LOCAL ONLY; EXACT-HEAD CI PENDING)
 | Check | Result |
 |---|---|

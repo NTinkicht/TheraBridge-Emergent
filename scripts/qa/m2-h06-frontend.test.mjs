@@ -111,3 +111,21 @@ test('M2-H06 #130: Next.js response headers and existing diagnostics route gates
     assert.match(read('apps/web/src/app/' + name), /role="alert"/);
   }
 });
+
+test('Next image optimizer stays disabled and release images never ship sharp/libvips', async () => {
+  const config = (await import('../../apps/web/next.config.mjs')).default;
+  assert.equal(config.images?.unoptimized, true);
+  // Re-enabling optimization requires next/image usage review and a counsel decision on LGPL libvips.
+  const { spawnSync } = await import('node:child_process');
+  const src = new URL('../../apps/web/src', import.meta.url).pathname;
+  const grep = spawnSync('grep', ['-rlE', "from ['\"]next/(legacy/)?image['\"]", src], { encoding: 'utf8' });
+  assert.equal(grep.status, 1, 'next/image is imported while the optimizer is disabled: ' + grep.stdout);
+  for (const dockerfile of ['Dockerfile.preview', 'apps/web/Dockerfile']) {
+    const text = read(dockerfile);
+    const install = text.indexOf('yarn install --frozen-lockfile');
+    const strip = text.indexOf("-path '*/node_modules/sharp' -o -path '*/node_modules/@img'");
+    const build = text.indexOf('yarn workspace @therabridge/web build');
+    assert.ok(install >= 0 && strip > install && strip < build, dockerfile + ' must strip sharp/@img after install and before the web build');
+    assert.match(text, /! find \/repo -type d .*node_modules\/sharp.*\| grep -q \./, dockerfile + ' must fail closed if sharp/@img remain');
+  }
+});
