@@ -1,3 +1,8 @@
+## 2026-11-15 — M4-CLOSE-02 implementation checkpoint
+Checked Render live service/deploy SHA and the protected hosted workflow's approval/secrets/main-only constraints. Added executable isolated *_test PostgreSQL two-valid-center auth and revocation tests and tightened acceptance receipt validation to reject simple booleans and misclassified 401/403/404. No protected run dispatched; GitHub connector does not expose workflow dispatch. No environment/prod/clinical mutations. New PR CI and review still NOT RUN/PENDING.
+
+---
+
 ## 2026-11-15 — M4-CLOSE-01 consolidated evidence/process work
 Read current GitHub M4 issue states and #176/#183/#266/#268/#279 evidence; did not reopen closed M4 engineering or claim the 49 historic pending issues implemented. Added a fail-closed, read-only Git ancestry checker for exact historical merge commits #274–#276 and adversarial tests for lost ancestor, shallow history and tampered scope; wired into full CI. Added explicit forward-only two-parent feature-branch merge procedure and candid limitation on original force-ref lease proof. New work is a PR checkpoint only: no CI or review PASS claimed yet; protected hosted acceptance, 1,023 controlled steps and clinical approval not performed.
 
