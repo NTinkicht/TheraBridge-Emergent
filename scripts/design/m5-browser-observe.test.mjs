@@ -16,6 +16,8 @@ const make = () => ({
   })))),
   keyboardJourneys: PERSONAS.map(p => ({ persona: p.id, desktopHomeViaEnter: 'OBSERVED',
     mobileSelectFocus: 'OBSERVED', mobileShiftTabToSignOut: 'NOT_OBSERVED',
+    desktopRailToggle: 'OBSERVED', mobileMoreKeyboard: 'OBSERVED',
+    mobilePermissionLinks: 'OBSERVED', mobileQuickLinkCount: 3,
     signOutViaEnter: 'OBSERVED', desktopNavigationMs: 123 }))
 });
 
