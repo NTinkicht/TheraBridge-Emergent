@@ -58,7 +58,7 @@ test('rejects drift, duplicate version, missing digest and invented source group
   x=>x.counts.otherNpmVersions=27,
   x=>x.counts.SOURCE_ROOT_MANIFEST_ONLY=2,
   x=>x.packages.push({...x.packages[1]}),
-  x=>x.packages[1].version=x.packages[2].version='2.0.0',
+  x=>{x.packages[2].name=x.packages[1].name;x.packages[2].version=x.packages[1].version;},
   x=>x.packages[1].publisherTarballSha256='invalid',
   x=>x.packages[1].sourceCommitCandidate=null,
   x=>x.packages[2].group='SIGNED_AND_APPROVED',
