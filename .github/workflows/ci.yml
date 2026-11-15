@@ -262,6 +262,10 @@ jobs:
         run: node --test scripts/commercial/corroborate-source-revisions.test.mjs
       - name: Collect version-pinned source root manifest corroboration candidates (not legal authority)
         run: node scripts/commercial/corroborate-source-revisions.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-source-correspondence-candidates.json
+      - name: Validate exact 26 DefinitelyTyped unresolved source lineage and rights targets
+        run: node --test scripts/commercial/build-definitelytyped-triage.test.mjs
+      - name: Build exact DefinitelyTyped version-specific third-party rights followup receipt
+        run: node scripts/commercial/build-definitelytyped-triage.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-source-correspondence-candidates.json /tmp/therabridge-com02-exact-version-rights-queue.json /tmp/therabridge-com02-definitelytyped-26-triage.json
       - name: Validate immutable-source root observations, aliases, and false-approval boundaries
         run: node --test scripts/commercial/reconcile-independent-root-observations.test.mjs
       - name: Corroborate 15 source-root observations against exact 53 npm candidate report without authorizing lineage
@@ -322,6 +326,7 @@ jobs:
             /tmp/therabridge-com02-nextjs-immutable-source-review.json
             /tmp/therabridge-com02-nextjs-published-build-readiness.json
             /tmp/therabridge-com02-source-correspondence-candidates.json
+            /tmp/therabridge-com02-definitelytyped-26-triage.json
             /tmp/therabridge-com02-root-observation-reconciliation.json
             /tmp/therabridge-com02-bulk-rights-evidence.json
             /tmp/therabridge-com02-release-scope-review.json
