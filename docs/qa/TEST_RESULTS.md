@@ -1186,3 +1186,5 @@ New tests cover 53/3 version-set selection; three signed SLSA revision claims an
 New offline Node cases: allowlist only the 3 signed Next.js versions, exact SHA512 tarball SRI, regular tar file SHA256/paths, reject duplicated names, traversal, symlink or global tar extension, reject absent/mismatched source package version and build commands. Actual published tarball/immutable source data qualified only after full CI. All completed build/release and legal approval counters remain zero.
 
 2026-11-13 New Codex P2 regression: zero verified tarballs -> NO_VERIFIED status; partial/recipe gap -> PARTIAL status; exactly 3 verified archives and recipes -> complete inventory status (not reproduced build). File lists retain individual SHA-256/path/byte values and stable serialization. Latest corrected-head CI pending.
+
+2026-11-15 — COM-LAUNCH suite added (six tests) for default blocked SaaS/Enterprise, fabricated approval, fake image digest, duplicated/missing obligations, forged evidence, and clinical G2/real-patient bypass. CI-wired but NO exact-head run PASS claimed until completed. The validator cannot grant legal/clinical authorization.
