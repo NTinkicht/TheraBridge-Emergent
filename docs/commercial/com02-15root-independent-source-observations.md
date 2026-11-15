@@ -11,7 +11,7 @@ Tracks [#356](https://github.com/NTinkicht/TheraBridge-Emergent/issues/356) and 
 - **2/15** resolved in alternative repositories **at the same exact Git commits and with the same package version**:
   - `consola@2.15.3`: original claim `nuxt/consola`; independently observed at `unjs/consola`, commit `c99ff6c4a54a6a7eccea26aa37603b9b36535d48`.
   - `tr46@0.0.3`: original claim `Sebmaster/tr46.js`; independently observed at `jsdom/tr46`, commit `a8009f9ce80ff5dbe71dd71e203afe4e4c878d28`.
-  - **These observations do not prove repository succession or transfers of copyright.** Historical provenance/alias proof is still required and the two records stay distinctly classified.
+  - **Additional GitHub repository-ID verification:** on 2026-11-15, GitHub's repository endpoint independently resolved both old and canonical paths to the **same stable repository IDs**: `nuxt/consola` and `unjs/consola` → `127546642`, and `Sebmaster/tr46.js` and `jsdom/tr46` → `36964214`. This establishes current GitHub redirect/repository identity, **not copyright assignment, past publisher authority, or source-to-npm build lineage**. The two records remain separately classified from direct claimed-path lookups.
 - The seven source manifests outside the earlier eight curated revisions declared either `MIT` or `BSD-2-Clause` in `package.json`. These are **self-declared SPDX metadata only**. Common root LICENSE paths tested at those exact revisions did not yield authoritative texts. Do not copy current-default-branch LICENSE files to represent old releases.
 - The existing bulk CI independently hashed nine immutable LICENSE paths for the previously curated eight versions. Those bytes are evidence of source-file text, **not** independently proven npm artifact license terms or permission to redistribute.
 - The remaining 38 of the original 53 exceptions have **no new source-root verification** from this evidence wave. The 91 source assets and missing commercially signed OCI images are still separate blockers.
@@ -22,7 +22,7 @@ Tracks [#356](https://github.com/NTinkicht/TheraBridge-Emergent/issues/356) and 
 
 The verifier `scripts/commercial/reconcile-independent-root-observations.mjs`:
 1. Requires the existing **full 53-row** exact npm registry/lock correspondence report, with zero prior authorizations.
-2. Enforces all 15 exact names, versions, claimed npm repository identities and Git commit revisions; explicit alternate-repository exceptions cannot be silently relabeled as authenticated original repositories.
+2. Enforces all 15 exact names, versions, claimed npm repository identities and Git commit revisions; explicit GitHub repository redirect observations must carry their independently checked canonical IDs and cannot be silently relabeled as direct lookups or legal assignments.
 3. Reconciles the source-manifest SHA-256 from the immutable upstream fetch to the frozen independently inspected snapshot. Actual contradictions or false grants fail; transient upstream fetch failures remain **UNVERIFIED**, not positives.
 4. Produces an exact-run report archived with the existing licensing CI evidence. Reports **zero** publisher-to-source build attestation, zero license grants, no final notices and G2/G2b NO-GO.
 
