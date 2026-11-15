@@ -59,12 +59,12 @@ async function verify(triage,{name,version,commit,sourceRoot},{fetcher=fetch,tok
      ...(token?{Authorization:'Bearer '+token}:{})}});
    if(response?.status!==200)throw Error('EXACT_GIT_OBJECT_UNAVAILABLE');
    const bytes=Buffer.from(await response.arrayBuffer());
-   if(bytes.length>2*1024*1024)throw Error('GIT_OBJECT_RESPONSE_TOO_LARGE');
+   if(bytes.length>8*1024*1024)throw Error('GIT_OBJECT_RESPONSE_TOO_LARGE');
    return JSON.parse(bytes.toString('utf8'));
   }finally{clearTimeout(timer);}
  }
- function entries(tree){
-  if(tree?.truncated!==false||!Array.isArray(tree.tree)||tree.tree.length>3000)
+ function entries(tree,limit=3000){
+  if(tree?.truncated!==false||!Array.isArray(tree.tree)||tree.tree.length>limit)
    throw Error('GIT_TREE_TRUNCATED_OR_OVERSIZED');
   return [...tree.tree].sort((a,b)=>a.path<b.path?-1:a.path>b.path?1:0);
  }
@@ -72,7 +72,7 @@ async function verify(triage,{name,version,commit,sourceRoot},{fetcher=fetch,tok
  if(c.sha!==commit||!h40.test(c.tree?.sha||''))throw Error('COMMIT_NOT_INDEPENDENTLY_PINNED');
  let treeSha=c.tree.sha;
  for(const part of sourceRoot.split('/')){
-  const items=entries(await get('trees',treeSha)).filter(x=>x.path===part&&x.type==='tree'&&h40.test(x.sha||''));
+  const items=entries(await get('trees',treeSha),30000).filter(x=>x.path===part&&x.type==='tree'&&h40.test(x.sha||''));
   if(items.length!==1)throw Error('SOURCE_DIRECTORY_NOT_IN_PINNED_TREE');
   treeSha=items[0].sha;
  }
