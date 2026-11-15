@@ -86,7 +86,7 @@ test('independent tenant receipt cannot be reduced to a boolean or wrong deploym
  input.twoTenantEvidence.deployedSha='b'.repeat(40);
  assert(evaluateM4HostedEvidence(input).reasons.includes('two_valid_tenant_test_not_verified'));
  input.twoTenantEvidence=fixture().twoTenantEvidence;
- input.twoTenantEvidence.crossTenantDenied=false;
+ input.twoTenantEvidence.checks.find(x=>x.step==='cross_center_a_to_b_denied').httpStatus=200;
  assert(evaluateM4HostedEvidence(input).reasons.includes('two_valid_tenant_test_not_verified'));
 });
 
