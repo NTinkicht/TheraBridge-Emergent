@@ -8,7 +8,7 @@ const sha=x=>createHash('sha256').update(x).digest('hex');
 const h40=/^[a-f0-9]{40}$/,h64=/^[a-f0-9]{64}$/;
 const identity=x=>JSON.stringify([x.name,x.version]);
 const DIRECT='DIRECT_CLAIMED_REPOSITORY_EXACT_COMMIT_MANIFEST_MATCH';
-const ALTERNATE='ALTERNATE_REPOSITORY_EXACT_COMMIT_MATCH_HISTORICAL_CLAIM_UNRESOLVED';
+const ALTERNATE='ALTERNATE_REPOSITORY_EXACT_COMMIT_MATCH_GITHUB_REDIRECT_VERIFIED_COPYRIGHT_UNVERIFIED';
 const schema='therabridge-com02-independent-root-observations-v1';
 const expectedNames=[
  '@tokenizer/token@0.3.0','abstract-logging@2.0.1','consola@2.15.3',
@@ -18,8 +18,8 @@ const expectedNames=[
  'tr46@0.0.3','type-fest@4.41.0'
 ];
 const allowedAliases=new Map([
- ['consola@2.15.3',['nuxt/consola','unjs/consola']],
- ['tr46@0.0.3',['Sebmaster/tr46.js','jsdom/tr46']]
+ ['consola@2.15.3',['nuxt/consola','unjs/consola','127546642']],
+ ['tr46@0.0.3',['Sebmaster/tr46.js','jsdom/tr46','36964214']]
 ]);
 function reconcile(candidates,observations){
  if(candidates?.schema!=='therabridge-com02-githead-source-corroboration-candidates-v1'||
@@ -35,6 +35,7 @@ function reconcile(candidates,observations){
     observations.candidateCount!==15||observations.sourcePackageManifestMatches!==15||
     observations.claimedRepositoryDirectlyResolved!==13||
     observations.alternativeRepositoryExactCommitMatches!==2||
+    observations.githubRepositoryRedirectsVerified!==2||
     observations.publisherToSourceIndependentlyAttested!==0||
     observations.legallyApproved!==0||observations.commercialLicenseGranted!==false||
     observations.g2ClinicalApproved!==false||observations.g2bClinicalApproved!==false||
@@ -71,10 +72,13 @@ function reconcile(candidates,observations){
    throw Error('OBSERVATION_REPOSITORY_DIFFERS_FROM_NPM_CLAIM');
   const aliases=allowedAliases.get(k);
   if(aliases){
+   const redirect=row.githubRepoRedirect;
    if(row.observationStatus!==ALTERNATE||
-      row.registryClaimedRepository!==aliases[0]||row.observedRepository!==aliases[1])
+      row.registryClaimedRepository!==aliases[0]||row.observedRepository!==aliases[1]||
+      redirect?.requested!==aliases[0]||redirect?.canonical!==aliases[1]||
+      redirect?.repositoryId!==aliases[2]||redirect?.githubEndpointResolvesToSameRepositoryId!==true)
     throw Error('HISTORICAL_REPOSITORY_ALIAS_UNVERIFIED');
-  }else if(row.observationStatus!==DIRECT||row.registryClaimedRepository!==row.observedRepository)
+  }else if(row.observationStatus!==DIRECT||row.registryClaimedRepository!==row.observedRepository||row.githubRepoRedirect!==null)
     throw Error('FORGED_DIRECT_REPOSITORY_CORROBORATION');
   const temporaryUnavailable=['SOURCE_FETCH_FAILED','UPSTREAM_TIMEOUT'].includes(candidate.evidenceStatus)||
       /^UPSTREAM_HTTP_\d+$/.test(candidate.evidenceStatus||'');
@@ -100,7 +104,8 @@ function reconcile(candidates,observations){
    correspondenceSha256:sha(JSON.stringify(candidates)),
    counts:{originalVersions:53,observedSourceRoots:15,sourceManifestSha256Matches:sourceMatches,
      claimedRepositoriesDirect:out.filter(x=>x.status===DIRECT).length,
-     alternateRepositoriesNotLineageProven:2,
+     githubRepositoryRedirectsVerified:2,
+     historicalCopyrightTransfersVerified:0,
      publicationToSourceBuildCorrespondenceVerified:0,legallyApproved:0},
    records:out.sort((a,b)=>a.name.localeCompare(b.name,'en')||a.version.localeCompare(b.version,'en')),
    finalNoticesIssued:false,commercialLicenseGranted:false,
