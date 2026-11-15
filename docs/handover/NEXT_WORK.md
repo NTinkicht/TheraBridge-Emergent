@@ -1,3 +1,10 @@
+## 2026-11-15 — M5-02 task architecture next gates
+1. Qualify source task-area proposal exact HEAD: deterministic 20-entry/7-area CI receipt with no stale/duplicate/unsafe or lost permission entries, six original CI jobs, SBOM, Smart CI and independent final-head Codex review. Resolve issues before merge.
+2. Keep M5-02 #185 OPEN: obtain canonical signed/versioned 66-feature/91-workflow/55-owner/1,023-step matrix via #266, map each row without invented equivalence, obtain owner mental-model workshop and role-oriented clickable wireframes, then authorize M5-03 clustered shell.
+3. No real data, clinical signing/release/AI enabled, no Render shared demo mutation. G2/G2b NO-GO preserved.
+
+---
+
 ## 2026-11-15 — M5-01 next gate after keyboard/machine timing implementation
 1. Qualify third tranche: inspect numeric browser receipt for all 175 timed routes and seven keyboard personas; disposition `NOT_OBSERVED` focus transitions as investigation candidates. Check full CI six jobs, Smart CI/SBOM and fresh exact-head Codex review before merging.
 2. M5-01 #184 remains OPEN for private human-reviewed screenshots, real full-task duration/click/error capture, screen-reader and focus-visible review, low-bandwidth + family dark-mode evidence, and owner signoff. No fabricated UX PASS, no G2/G2b change.
