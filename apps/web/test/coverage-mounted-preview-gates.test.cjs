@@ -27,12 +27,15 @@ jest.mock('@/components/design/useNow',()=>({
 }));
 const Child=require('../src/app/design-preview/child/page').default;
 const Family=require('../src/app/design-preview/family/page').default;
+const Center=require('../src/app/design-preview/center/page').default;
 const Platform=require('../src/app/design-preview/platform/page').default;
 let tree=null,originalWindow;
 beforeAll(()=>{originalWindow=global.window;global.window={location:{search:''}};});
 afterAll(()=>{global.window=originalWindow;});
-beforeEach(()=>{previewState='populated';jest.clearAllMocks();});
-afterEach(async()=>{if(tree){await act(async()=>tree.unmount());tree=null;}});
+// Keep illustration fixtures deterministic across weekdays, weekends and CI timezone.
+// The preview uses the real clock in its mounted effect; use an activity day.
+beforeEach(()=>{jest.useFakeTimers({now:new Date('2026-11-10T09:00:00.000Z')});previewState='populated';jest.clearAllMocks();});
+afterEach(async()=>{if(tree){await act(async()=>tree.unmount());tree=null;}jest.useRealTimers();});
 const mount=async C=>act(async()=>{tree=create(h(C));});
 const get=id=>tree.root.findByProps({'data-testid':id});
 const find=id=>tree.root.findAllByProps({'data-testid':id});
@@ -69,6 +72,15 @@ describe('M4-08 actual family illustration must not impersonate a released home 
   expect(html()).toContain('plan release is not yet approved');
   expect(get('week-card')).toBeTruthy();
  });
+ it('shows the illustrative rest state on a weekend instead of presenting an unapproved activity',async()=>{
+  jest.setSystemTime(new Date('2026-11-14T09:00:00.000Z'));
+  await mount(Family);
+  expect(get('release-scenario').props.value).toBe('illustration');
+  expect(get('rest-state')).toBeTruthy();
+  expect(find('start-activity')).toHaveLength(0);
+  expect(find('illustration-label')).toHaveLength(0);
+  expect(get('week-card')).toBeTruthy();
+ });
  it('switches to today policy showing no approved plan and hides illustrated actions',async()=>{
   await mount(Family);
   await act(async()=>get('release-scenario').props.onChange({target:{value:'today'}}));
@@ -101,5 +113,31 @@ describe('M4-08 platform simulation remains plainly illustrative and fail closed
   await click('applications-tab-decided');
   expect(get('applications-tab-decided').props['aria-selected']).toBe(true);
   expect(html()).toContain('Decisions need a written rationale');
+ });
+});
+
+describe('M4-08 mounted fictional center preview protects pending invitation interactions',()=>{
+ it('requires confirmation before a preview-only pending invitation can be revoked',async()=>{
+  await mount(Center);
+  expect(get('trial-banner')).toBeTruthy();
+  expect(get('staff-card')).toBeTruthy();
+  await click('invite-revoke');
+  expect(get('revoke-dialog')).toBeTruthy();
+  expect(mockNotify).not.toHaveBeenCalled();
+  await click('revoke-cancel');
+  expect(find('revoke-dialog')).toHaveLength(0);
+  expect(mockNotify).not.toHaveBeenCalled();
+ });
+ it('never claims that the illustrative revoke action changed a real invitation',async()=>{
+  await mount(Center);
+  await click('invite-revoke');
+  await click('revoke-confirm');
+  expect(find('revoke-dialog')).toHaveLength(0);
+  expect(mockNotify).toHaveBeenCalledWith(expect.stringContaining('nothing was revoked'));
+ });
+ it('keeps resend illustrative instead of sending an invitation',async()=>{
+  await mount(Center);
+  await click('invite-resend');
+  expect(mockNotify).toHaveBeenCalledWith(expect.stringContaining('no invitation was resent'));
  });
 });

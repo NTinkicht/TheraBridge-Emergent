@@ -1,0 +1,95 @@
+{
+  "schema": "therabridge-com02-curated-source-license-paths-v1",
+  "commercialApproval": false,
+  "records": [
+    {
+      "name": "cssesc",
+      "version": "3.0.0",
+      "owner": "mathiasbynens",
+      "repository": "cssesc",
+      "commit": "cb894eb42f27c8d3cd793f16afe35b3ab38000a1",
+      "paths": [
+        "LICENSE-MIT.txt"
+      ],
+      "commercialApproval": false
+    },
+    {
+      "name": "emoji-regex",
+      "version": "8.0.0",
+      "owner": "mathiasbynens",
+      "repository": "emoji-regex",
+      "commit": "a9f2e514523d4c0931974aff5059052da10c52c5",
+      "paths": [
+        "LICENSE-MIT.txt"
+      ],
+      "commercialApproval": false
+    },
+    {
+      "name": "emoji-regex",
+      "version": "9.2.2",
+      "owner": "mathiasbynens",
+      "repository": "emoji-regex",
+      "commit": "0ffa466d7ab65af304d03dddd3a92a2d8268e7ce",
+      "paths": [
+        "LICENSE-MIT.txt"
+      ],
+      "commercialApproval": false
+    },
+    {
+      "name": "jsesc",
+      "version": "3.1.0",
+      "owner": "mathiasbynens",
+      "repository": "jsesc",
+      "commit": "819f534875fd87c9033bb72148ab6a6ad1219ca0",
+      "paths": [
+        "LICENSE-MIT.txt"
+      ],
+      "commercialApproval": false
+    },
+    {
+      "name": "postcss-selector-parser",
+      "version": "6.1.5",
+      "owner": "postcss",
+      "repository": "postcss-selector-parser",
+      "commit": "d90b6e38a0c79d07b02bf0d602bc242fe94be6b9",
+      "paths": [
+        "LICENSE-MIT"
+      ],
+      "commercialApproval": false
+    },
+    {
+      "name": "punycode",
+      "version": "2.3.1",
+      "owner": "mathiasbynens",
+      "repository": "punycode.js",
+      "commit": "9e1b2cda98d215d3a73fcbfe93c62e021f4ba768",
+      "paths": [
+        "LICENSE-MIT.txt"
+      ],
+      "commercialApproval": false
+    },
+    {
+      "name": "tmp",
+      "version": "0.0.33",
+      "owner": "raszi",
+      "repository": "node-tmp",
+      "commit": "0900dd5b112ac7a482e4bdf3cb002bfe1b3acf77",
+      "paths": [
+        "LICENSE"
+      ],
+      "commercialApproval": false
+    },
+    {
+      "name": "type-fest",
+      "version": "4.41.0",
+      "owner": "sindresorhus",
+      "repository": "type-fest",
+      "commit": "68469722a9521122b6cb40376c4c4544aef28228",
+      "paths": [
+        "license-mit",
+        "license-cc0"
+      ],
+      "commercialApproval": false
+    }
+  ]
+}

@@ -1,3 +1,144 @@
+## 2026-11-15 — M5-01 browser observer requalification
+Verify full latest-head CI including 175-route screenshot capture and numeric receipt, resolve any true test failures; get independent final-head Codex zero unresolved. Merge only after six required jobs, SBOM/Smart CI green. Inspect receipt for denied, redirects, load timeouts, error and horizontal-overflow candidates, without claiming visual review or #184 closure.
+
+---
+
+## 2026-11-15 — M5-01 browser evidence qualification
+1. Run full CI after adding 175 synthetic viewport observations. Examine route redirects/errors/overflow flags; fix real harness defects without weakening permissions or G2/G2b. Review final-head Codex comments and green six-job+Smart CI before merge.
+2. Because screenshots are intentionally deleted and not visually reviewed, schedule an approved private sanitized screenshot inspection for every persona/viewport; then measured full five-task journeys, accessibility keyboard/screen-reader and family dark theme on an isolated synthetic fixture. Do not close #184 on browser-route evidence alone.
+
+---
+
+## 2026-11-15 — M5-01 exact-head requalification after P2
+1. Verify strict NAV parser new regression tests, actual full source inventory and six required CI jobs + SBOM/Smart CI on final PR #380 head. Obtain a NEW independent Codex review; resolve old P2 thread only after concrete correction is qualified.
+2. Merge only after green CI and independent final-head review. Retain 175 NOT_RUN source inventory targets for isolated synthetic visual + actual task capture in subsequent M5 work. #184 OPEN, clinical G2/G2b NO-GO.
+
+---
+
+## 2026-11-15 — M5-01 UI audit next gates
+1. Qualify M5-01 source audit on exact branch HEAD: full required CI, SBOM/Smart CI and independent Codex review; fix failures before merge. Receipt is source-only and no screen/role acceptance.
+2. Use approved isolated synthetic environment to collect and inspect the seven-persona, 320/390/768/1024/1440 screenshots and full five-task-per-persona click/time/error journeys. Audit keyboard, screen reader, loading/empty/blocked/error and guardian dark-mode states. Store private, sanitized receipts tied to deployed SHA.
+3. Prioritize verified UX problems into grouped M5-02+ PRs while retaining Direction B tokens, tenant/role/specialty/guardian restrictions and G2/G2b NO-GO. No M5-01 closeout or source-only UX PASS.
+
+---
+
+## 2026-11-15 — Protected M4-02 acceptance dependency (not a current PASS)
+1. Qualify and review exact-head protected deployment attestation PR, then merge under Rules 13–16. No protected hosted run yet.
+2. Confirm separately approved disposable synthetic two-valid-tenant hosted stack and isolated database; do not mutate Render's old shared demo or create persistent paid infrastructure without approval. Obtain read-only Render control-plane API secret TB_HOSTED_RENDER_READONLY_API_KEY within protected GitHub environment (name only).
+3. After real deployment matches checkout SHA, operator dispatches protected ten-account workflow and separately runs genuine two-hosted-center, guardian withdrawal, therapist suspension and expiry probes. Keep policy cases BLOCKED, publish only sanitized receipts. #176/#268 remain OPEN until independently accepted; G2/G2b NO-GO.
+
+---
+
+## 2026-11-15 — M4-CLOSE-02 completion requirements
+1. Qualify isolated real-PostgreSQL M4-CLOSE-02 tests and eight-check hosted evidence validator on full new PR CI. Fix real failures, independently review exact final HEAD, merge under Rules 13-16.
+2. With explicit operator approval, create *disposable isolated* two-valid-tenant hosted fixture; do not mutate the live shared demo. Verify deployment SHA independently; currently demo is pinned to old 3cdd722... SHA. Request protected workflow approval for all ten synthetic accounts on main, then run actual multi-tenant auth/revocation/guardian/cookie/session probes.
+3. Retain actual sanitized per-probe receipts and any governance BLOCKED classifications; never infer hosted PASS from offline Jest success or boolean receipt inputs. Keep #176/#268 and epic #167 OPEN until accepted. G2/G2b NO-GO.
+
+---
+
+## 2026-11-15 — M4 closeout order (no reopening M4-08)
+1. Qualify M4-CLOSE-01 evidence/process PR: run full exact-head CI including new ancestry negative-path tests and reviewer disposition, then merge if Rule 16 fully satisfied. No automatic closure of #266/#279/#183.
+2. M4-CLOSE-02: prepare and run operator-authorized disposable **two valid tenant** hosted acceptance; independently attest deployed SHA and 10-role private session/revocation/guardian boundaries. Record PASS/FAIL/BLOCKED honestly; #176/#268 remain OPEN until executed. Never modify live shared demo tenants for test isolation.
+3. Map canonical 212 rows and 1,023 workflow steps only against authoritative private approved source; preserve M5–M11 routing, original excluded V2 entries and missing clinical signatures.
+4. Close #183/#279 and epic #167 only after evidence/reviewer and owner disposition; otherwise record explicit blocked dependency and keep OPEN. Clinical G2/G2b NO-GO; no 95% expansion.
+
+---
+
+## 2026-11-11 — COM-02 #361 planned evidence-to-rights completion
+Qualify exact-head CI, resolve Codex findings and preserve all clinical and legal gates. Obtain independently captured and signed real SaaS and enterprise OCI digest/file/SBOM release evidence; currently NONE exists and the per-asset release status remains UNKNOWN. Independently corroborate all 53 package publication/repository commits (including DefinitelyTyped 26, other missing Git SHA 7, Next.js monorepo 3, untrusted repo URL 2, root matches 15) before legal-source assertions. Verify 91 asset source and redistributed rights, semantic-PAX exception and OS/native dependencies. Human owner/UAE counsel must approve actual enterprise vs SaaS rights, IP ownership and terms.
+
+---
+
+## 2026-11-11 — COM-02 #359 qualification checkpoint
+Check all HTTP source read failures including 404 preserve the 53-version rights queue and never imply valid upstream licensing. Verify no source identity mismatch bypass; no source-asset production release inference. Final merged HEAD needs full required CI and Codex before merge.
+
+---
+
+## 2026-11-11 — COM-02 #359 final qualification and next independent legal wave
+Qualify entire bulk evidence, including P2 transient upstream timeout path, on final HEAD with full test/secret-scan/SBOM/demo/live-session/Compose/10-min preview/Smart CI and final Codex 0 findings. Merge only after Rule 16 conditions. After merge, one follow-up work item should corroborate source revision-to-published npm tarball for 15 source-root candidates, address 26 DefinitelyTyped + 7 other missing revision rows, 3 Next.js subpackages and 2 legacy Git URL claims, then distinguish actual redistributed release image assets from 91 source assets. Separately obtain commercial IP, upstream notices, SaaS/enterprise counsel contracts and clinical G2/G2b signoff; no automatic rights approvals.
+
+---
+
+## 2026-11-11 — COM-02 PR #359 qualification and independent legal evidence
+Run new mega-PR producer on actual 53 exception and 91 source asset inputs. Verify exact immutable source license byte hashes for eight curated source versions/nine paths and leave unavailable content unresolved. Repair all CI failures, collect full test, secret scan, SBOM, demo, live session, Compose, ten-minute preview and Smart CI on final exact HEAD, request independent Codex re-review, merge only with all findings resolved. Then independently attest package tarball-to-source linkage; prove actual SaaS vs enterprise redistributed release artifact contents; obtain IP and third-party rights-holder/UAE counsel approvals. G2/G2b clinical NO-GO unchanged.
+
+---
+
+## 2026-11-11 — COM-02 #357 final QA and substantive attestation still required
+Qualify final document-updated HEAD with full six-job CI, exact-head independent Codex and review disposition; the initial code SHA `8c645d0f` yielded 7/7 new tests and 15/53 GitHead/source-root identity candidate matches in [CI 42923019170](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42923019170). **No package has independently proven source-to-npm-artifact lineage.** After merge, prioritize independent exact-release-to-distributed-tarball corroboration for the 15 technical candidates plus monorepo/source-layout resolution for 38 others; separately verify authoritative LICENSE/NOTICE and 91 tracked assets, enterprise redistribution vs SaaS obligations and final rights-holder/UAE counsel approval. Preserve G2/G2b NO-GO.
+
+---
+
+## 2026-11-11 — COM-02 #357 qualification and independent evidence follow-up
+Run exact-head CI on source-correspondence candidate collector, examine actual 53-version GitHead/immutable-source match distribution, correct failures, and update evidence files with measured SHA/run results. Require final Codex review on stable green HEAD, resolve all findings and merge only when all six Rule 16 jobs green. Independently prove actual upstream release-to-npm tarball lineage before approving any mapping; a matching `gitHead`/root package.json is not that proof. Maintain 91 unresolved nonpackage assets, separate SaaS vs enterprise licensing obligations, PAX exception, and G2/G2b clinical NO-GO.
+
+---
+
+## 2026-11-11 — M4-08 Stage 3 PR #353 exact-head qualification and merge
+1. Verify the history-wide Gitleaks result on the narrow deterministic fictional mismatched-password test fixture exception; if any finding persists, investigate securely, do not hide/disable real findings. After documentation updates, require NEW exact-head full CI: secret-scan, SBOM, application test, seven-role demo-journey, live-session, Compose, non-root 512MiB ten-minute preview, Smart CI, source-covered focused Web audit.
+2. Preserve focused run [#42913539171](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42913539171) on code HEAD `96941265146be1803a32d96c7d1124f57e207cb4`: 88/88 Jest suites, 832/832 Web tests PASS, 154/154 instrumented production modules, 9 modules with no executed statements, 90.13% lines / 81.04% branches / 79.24% functions / 86.62% statements. Never collapse line coverage into all-four-metric M4 approval: branches 81.04%, functions 79.24%, statements 86.62%, nine wholly unexecuted modules and distinct ≥95% security-critical branch goal remain open.
+3. When final-head CI green, mark PR #353 ready for review, trigger one independent Codex review, disposition every P1/P2 and newly created head CI, then merge with exact-head SHA. Close Stage 3 issue #348 only upon qualified merge and record the merge commit.
+4. Continue M4 parent #182 all-four-metric API/Web ≥95% and security-critical ≥95% branches, hosted ten-account synthetic acceptance (#176), audit reconciliation (#183), source inventory (#266); clinical G2/G2b, real AI/STT, guardian release and commercial approvals remain closed/NO-GO.
+
+---
+
+## 2026-11-11 — COM-02 #355 qualification after P2 and all-ref synthetic finding
+Qualify HEAD including added absolute request timeout tests; validate .gitleaks global exact synthetic fixture allowlist eliminates only known false positive, not real credentials. Inspect full original `test`, `secret-scan`, `live-session`, `demo-journey`, `preview-container`, `compose` and Smart CI on exact final HEAD. Then obtain final Codex independent review after stable CI, disposition all findings, merge only if Rule 16 gates pass. The 53 exact package/version source-to-revision mappings remain fully unresolved until independently corroborated, with 91 assets, SaaS/on-prem rights, and G2/G2b legal/clinical gates still open.
+
+---
+
+## 2026-11-11 — COM-02 #355 qualify before expanding source authority
+Qualify exact HEAD with original full CI (including new immutable verifier regression tests), obtain full preview/Compose/Smart CI and commercial inventory results, then mark ready and request final Codex independent review on stable SHA; resolve all findings and update Rule 7 test evidence based on actual CI. Following merge, perform independently corroborated exact npm version-to-Git-commit proof before adding mappings; review upstream LICENSE/NOTICE text hashes, 91 non-package assets and SaaS-vs-enterprise distribution with authorized counsel. No automatic licenses, final notices or clinical G2/G2b authorization.
+
+---
+
+## 2026-11-11 — COM-02 #352 handover refresh and remaining legal obligations
+Code HEAD `e0ee645c` passed full CI [42908445420](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42908445420), with 6/6 collector tests PASS and 53/53 registry candidates obtained; Codex P1 regression resolved. The P2 Rule 7 documentation gap is being fixed; **the new docs-only HEAD requires fresh exact-head CI and Codex after the edit** before Rule 16 merge. On merge, next phase: independently verify 53 exact-version upstream LICENSE/NOTICE texts and immutable copyright evidence; 91 non-package assets; SaaS network versus on-prem customer-redistributed image obligations; OS/runtime/Redis/Postgres, models/datasets/services. These are not authorized merely by registry metadata. No final notices/proprietary license or clinical G2/G2b release.
+
+---
+
+## 2026-11-11 — COM-02 #352 immediate qualification and remaining authority
+Run exact-head full CI and inspect candidate count/status from its evidence artifact; diagnose and fix failures. Then mark implementation PR ready, request exact-head independent Codex review after stable full-CI success, disposition all P0–P3 findings and requalify if code changes. No merge with red/pending CI or stale review. Follow-up must fetch/corroborate exact-version source LICENSE/NOTICE text from immutable upstream revisions and obtain separate rights-holder/counsel review for 53 package exceptions and 91 assets, including SaaS/network-use versus customer-redistributed enterprise images. Do not treat registry `license` strings as verified legal source, or authorize clinical G2/G2b release.
+
+---
+
+## 2026-11-10 — COM-02 PR #350 immediate qualification then rights review
+First complete Rule 7 evidence synchronization for the verified exact-version register and prior CI run 42901575999 (code SHA `0cf822a`, success); resolve Codex P1 handover gap. After documentation commits, require a NEW full exact-head CI green on latest HEAD, inspect generated rights JSON and any changed dependency baseline, and request exactly one final independent Codex review once CI green; explicitly disposition all review comments before Rule 16 merge. Thereafter pursue #349 exact-version authoritative upstream published LICENSE/NOTICE text and copyright for 52 no-root-license package versions, investigation of 1 unsupported-PAX archive, rights-holder authority, 91 tracked assets plus OS/container/native/service/model/dataset evidence. Both SaaS/network-use and enterprise redistribution must be independently reviewed by authorized counsel; zero automatic legal approvals. Keep root proprietary LICENSE and customer contracts unsigned and G2/G2b clinical NO-GO; no live patient data.
+
+---
+
+## COM-02 full non-direct technical coverage and license rights
+Qualify exact-head full CI artifacts/Codex: compare all non-direct name/version statuses to installed physical copies, inspect any lock/source/size/header/file mismatches, retain unresolved items without auto approval. Then conduct manual upstream license/copyright obligations for @types and transitive packages, native runtime/container/OS layers, logos/fonts/models/datasets and SaaS vs on-prem enterprise rights. Keep COM-01/02 unresolved until qualified signoffs.
+
+---
+
+## 2026-11-10 — M4-08 Stage 2 #345 measured ≥80% Web line target MET; merge qualification PENDING
+
+- **Exact code SHA `8af17a710793ea40b5c92350ad600ffb3bf982f9`**, focused full-source instrumented Istanbul [run #42905581705](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42905581705): **PASS 67/67 suites, 604/604 tests**, full **154/154 production Web source modules**, 15 files with zero executed statements. **Lines 80.28%, branches 69.14%, functions 65.09%, statements 75.86%.** The owner-directed ≥80% genuine Web **line** Stage 2 target is MET by **0.28 percentage points**, **not** a ≥95% critical-branch qualification, clinical acceptance, legal approval, or a full CI/merge PASS.
+- Source-executing mounted regressions added across plan versions, editing, report optimistic autosave and handoff lease, supervisor review queue, scheduling/calendar, recurrence and conflicts, therapist assignment and revocation, guardian requests, actual message inbox/recipient isolation, home-practice idempotency and timeout recovery, platform trial administration, synthetic grant recovery, account-security rotation/global sign-out, application review decisions, center settings, self-profile, activity library, simulated multilingual dictation and accessible scroll-strip interactions. Transport mocked; production component logic executes. All sources including uncovered files remain in denominator. Fail-closed source audit and sanitized per-file hotspots retained; no denominator tricks.
+- Latest branch at this checkpoint remains **DRAFT** until original full exact-head CI, Smart CI, SBOM/gitleaks, seven-role synthetic acceptance, container/Compose, independent exact-head Codex, P0/P1/P2 disposition and branch/main reconciliation meet repository requirements. The separate ≥95% security-critical branch qualification and 15 zero-statement modules remain documented work; no claim of general 95% coverage. G2/G2b clinical NO-GO unchanged.
+- Stage 3 owner-required ≥90% full-Web line coverage tracked at #348; execute after Stage 2 merged. No stage merge if any required gate red or no independent review.
+
+---
+
+## 2026-11-10 — M4-08 Stage 2 #345 source-verified checkpoint: 74.95% Web lines (NOT QUALIFIED)
+- **Code SHA `dc5e54906fad12a80be6935524d18efa64880d7d`**, focused original full-Web Istanbul [run #42902267598](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42902267598): **PASS 55/55 Jest suites, 499/499 tests**, 154/154 production source modules with 15 zero-statement modules. **Lines 74.95%, branches 62.38%, functions 57.23%, statements 69.87%.** This is focused coverage, not all original CI checks or final-head Codex, and ≥80% Stage 2 is **NOT MET** (gap **5.05 percentage points**).
+- Added actual mounted production-source regressions across appointment status, cancellation and recurrence, booking assignment/series collision and timezone, therapist handover readiness fail-closed, guardian home-plan request, fixed-choice home practice exact-key uncertainty, platform trial bounds, application detail session/decision controls, team directory/invitations, schedule route and responsive ScrollStrip, synthetic existing grant withdrawal/revocation. Tests use synthetic backend I/O; no real clinical data, signing, release or permission grant.
+- Corrected failing initial test fixtures/assertions using exact CI evidence; **the PASS above is the authoritative measured run**, not prior red heads. CI additionally emits sanitized ordered uncovered file/line/branch hotspots for genuine quality-first work, without exclusions.
+- **Next**: develop one cohesive additional domain batch on #345 against ranked uncovered real source (PlanEditor, ReportEditor, SessionEditor, Messages, PlanVersionHistory, current routes); reach ≥80% genuine full-source Web lines, maintain separate ≥95% safety-critical branch goal. Then exact-final-HEAD full original CI, Smart CI, SBOM/gitleaks, seven-role synthetic browser, container/Compose and Codex review; resolve P0–P2 and reconcile current main before merge. **M4-02 hosted ten-account QA, historical audit M4-09, COM-02 legal clearance and G2/G2b clinical NO-GO are independent.** Stage 3 ≥90% owner target tracked #348 after Stage 2 merges.
+
+---
+
+## 2026-11-10 — M4-08 Stage 2 #345 high-risk PlanEditor test batch (focused VERIFIED; full CI PENDING)
+Exact commit `765ae0347a87f6ce1b0beddacd95eae96871d593`: focused Web CI [#42897868594](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42897868594) **PASS 45/45 Jest suites, 414/414 tests**. Full source audited 154/154 Web production modules (17 zero-statement modules); **69.15% lines, 57.39% branches, 50.71% functions, 63.89% statements**. Stage 2 >=80% lines remains **NOT MET**, gap **10.85 percentage points**; this measurement is NOT comprehensive final-head full CI, independent Codex review, 95% security-critical branch qualification, clinical or commercial approval. Source-verified earlier Stage 2 fix prevents stale report-history rows after child/center switch. Seven mounted PlanEditor tests added for source-scoped activity search pagination, network retry, unsaved/other-version edits, saved draft review, returned/withdrawn version state, new draft version. The first focused run failed three new test-harness expectations; repaired mock resets/async flushing/double component-node matching; the passing run is authoritative. Next: prioritize uncovered high-line-count real Web components and browser-mounted interactions; preserve full denominator, original CI, Smart CI, SBOM/gitleaks, review and Rule 7. Stage 3 >=90% target tracked in #348 only after #345 >=80% is merged. Clinical G2/G2b NO-GO unchanged.
+
+---
+
+## 2026-11-10 — Stage 2 #345 next ordered work (NOT HANDOFF COMPLETE)
+Current draft #345; latest green full-denominator focused run #42887887583 (`684565cb64c7cbcfa07266f14893a0591fcfb426`) proves **68.59% all-source Web lines over 154/154 modules**; branch 56.54%, functions 49.89%, statements 63.15%, 17 unexecuted. Stage 2 owner-approved acceptance is >=80% Web lines, gap **11.41 percentage points** (approx. 600 additional covered lines at 5257-line current denominator; remeasure on every source change). Prioritize real mounted high-risk uncovered: PlanEditor version transitions, SessionEditor negative branches, appointment/scheduling mutations, therapist and team scoping, synthetic report release and clinical routes, then other genuine source behavior. Keep per-file hotspots, all-source denominator and four metrics, 95% security-sensitive branch goal separate. Do not pad with source-string/snapshot tests. Before merge, require >=80 measured, all original exact-HEAD CI/smart gate, SBOM/gitleaks, independent Codex review and resolved comments, Rule 7 records. G2/G2b clinical NO-GO, M4-02 hosted QA and COM-02 commercial approvals remain independent.
+
+---
+
 ## 2026-11-10 Stage 1 threshold MET on SHA ed3a750: Web all-source 154 files, lines 60.08% (run 42873722265 PASS), branches 48.75%, functions 40.33%, statements 54.24%. The branch remains UNMERGED. Priority: fix independent full CI failure at M4-06 database replay (do not weaken requirement); run original exact-head CI, SBOM, secret scan and Codex; adjudicate comments, update evidence. Only then merge #339, close #337, begin separate Stage 2 #338 to ≥80% Web lines. Keep explicit >95% security-sensitive branch qualification distinct, not satisfied by 60% lines. G2/G2b NO-GO and protected hosted M4-02 gates persist.
 
 ---
@@ -942,3 +1083,60 @@ Qualify roster-seed PR via six exact-head CI jobs and independent Codex review; 
 2. Provision three unique high-entropy passwords through approved secure channels as `DEMO_EXTRA_PASSWORDS_JSON` on the dedicated Render synthetic service and `TB_HOSTED_QA_EXTRA_USERS_JSON` in the protected GitHub environment. Do not alter the seven existing passwords.
 3. Merge reviewed PR, promote into the manually deployed synthetic branch, check readiness and seed count 10, then request protected ten-login QA approval.
 4. Keep clinical signing, release, consent and real AI/STT gates disabled; no baseline promotion from synthetic-only checks.
+
+
+## 2026-11-12 — COM-02 PR #362 implementation and verification
+Run offline candidate-capture tests in full exact-head CI; inspect all required jobs including SBOM, secret scan, preview/Compose and role acceptance. Obtain genuine OCI digest-pinned SaaS and Enterprise build records plus verified independently signed artifact/provenance attestations from an approved build runner. Feed captured candidate manifests into existing release-scope review, with non-regular entry/runtime volume limits visible. Independently prove all 53 npm tarball-to-source publications and compare all 91 tracked assets plus container/OS libraries to actual customer-shipped bytes. Reconcile SaaS versus enterprise rights with qualified legal counsel, keep notices draft, no automatic grants. Resolve independent Codex findings, update Rule 7 evidence and merge only after exact-head full green CI and independent review. Preserve G2/G2b clinical NO-GO.
+
+## 2026-11-12 — PR #362 exact-head qualification after image-ref fix
+Verify tagged image fixture and forged-signature tests in full CI; capture exact final head run IDs and test outcomes before reporting PASS. Do not use old-head green results for latest SHA. Obtain genuine Docker OCI image evidence and third-party source attestations for 53 versions; compare all 91 assets and obtain SaaS/enterprise counsel approval. Do not merge prior to independent exact-head Codex review, entire required CI green, and Rule 7 refresh.
+
+## 2026-11-12 — Next qualification gate for PR #362
+Verify mocked canonical RepoDigest export case in exact-head CI, inspect all full CI jobs, obtain independent Codex review after stable passing final head, and resolve review findings. Production release edition artifacts and 53 npm immutable publisher-to-source attestations require genuine signed upstream/build evidence; legal grant and clinical gates remain closed.
+
+## 2026-11-12 — Qualify combined Docker release evidence
+Verify final-head Python capture and Node dual-edition merge tests in required full CI. When real SaaS and Enterprise release images exist, capture digest-pinned candidate inventories, merge them into an exclusive new JSON, compare to the 91-asset rights register, and independently check signed immutable OCI publication/deployment evidence. Independently corroborate 53 exact-version npm lineages. No unsigned JSON is legal or production release authority. Require green CI/independent exact-head Codex before merging.
+
+## 2026-11-12 — Next COM-02 technical evidence and qualification
+Qualify DSSE verifier's offline adversarial suite on exact final HEAD with full CI, commercial inventory and independent Codex review; remedy findings without bypass. For real release capture, obtain separately authenticated publisher key fingerprint, externally signed in-toto statement proving exact SaaS/Enterprise OCI digest and inventory hash, independent registry digest/transparency log/deployment provenance, OS/native/image SBOM component comparison, then source asset rights. Independently corroborate 53 npm exact-version publication-to-source links including @types/DefinitelyTyped and Next.js monorepo cases; consult rights holders and UAE legal counsel for 91 assets and distinct SaaS/enterprise terms. No releases or final notices or clinical G2/G2b transition.
+
+## 2026-11-12 — COM-02 next work after signed rights join
+Qualify new cross-evidence rights join against full exact-head CI, commercial inventory and independent Codex review; resolve all P1/P2 before merge. Obtain genuine independently signed production SaaS and Enterprise OCI release artifacts and trusted publisher identities. Link actual registries/deployments and layer/SBOM package identities with 91 exact source assets; independently corroborate 53 exact npm package-version upstream publishing lineages; request distinct SaaS versus on-prem enterprise obligations approval from rights holders/UAE counsel. Keep approval counts zero and preserve clinical signing/consent/release NO-GO.
+
+2026-11-12 Requalify PR #364 after Codex P2 fix: confirm supplemental obligations and adversarial regression in full exact-head CI, obtain exact-head Codex review and merge only if green. Actual signer authority, OCI registry publication/deployment, 53 npm provenance lineages, 91 assets and counsel remain unresolved.
+
+## 2026-11-13 — M4-08 last qualification and closure gate (owner target 90%)
+On existing draft PR #358, finish **>=90% unrounded** lines, branches, functions, statements for both full-scope API (93 runtime TS modules) and Web (154 source modules). Web 90% is measured on earlier `ae5c3a8`, but must reverify exact final HEAD. API branches were 88.19% before the latest clinical/invitation/report suites; do not claim qualification without exact-head measured receipts. Finish Codex P1/P2/P3 disposition, verify four Rule 7 records, no outstanding security-critical 90% issues, and confirm six original CI jobs, Smart CI, SBOM, secret scan, preview/Compose, seven-role synthetic journey and independent exact-head reviewer all PASS. Then mark PR ready, merge if Rule 16 gates satisfy; close #182/#167 only on matching acceptance evidence. Never authorize real clinical signing, consent, releases or real patient processing.
+
+## 2026-11-13 — COM-02 after pinned npm Sigstore verification
+Qualify new verifier against exact-head full CI and Codex. Inspect archived npm 11.19.1 verified Sigstore bundle receipts for @next/env 14.2.35 and @next/swc-linux-x64-gnu and -musl 14.2.33. Independently compare signed source revision claims against authentic upstream GitHub commits/workflow identity and actual npm archive build provenance before approved mapping; retain all unverified as unresolved. Source-correspondence evidence for the other 50 versions and genuine SaaS/Enterprise production image and 91 asset-rights clearance remain. No legal or clinical grants.
+
+2026-11-13 Retrieve exact PR #366 raw Sigstore bundle artifact from latest CI, compare real in-toto statement versions, subject PURLs/SHA512 and source predicates, and adjust conservative parser with adversarial regressions. Keep signed claim verified counters zero until a genuine match. Recheck full CI, Codex and review thread resolution before merge. Independently corroborate source revision beyond signed claims; maintain 50 unadvertised versions and real release/right clearance unresolved.
+
+2026-11-13 Next after #366 qualification: independently compare exact Next.js source trees and published package subpath build instructions to signed commits 7b940d9c and 5a97b408; corroborate release-builder certificate/workflow identity and package tarball reproducibility before source-version rights decisions. Remaining 50 npm versions without advertised provenance require independent upstream source proof; production OCI, 91 assets and legal approvals remain unresolved. Never auto-grant G2/G2b or SaaS/enterprise licensing.
+
+2026-11-13 Requalify PR #366 after Codex P1 source-workflow consistency fix; review actual archived 3 exact npm signed package/source claims, green six-gate full CI and clean final-head Codex before merging. Independently establish build reproducibility and source-license rights for these 3 and the other 50, plus real OCI/91 asset legal clearance.
+
+## 2026-11-13 — COM-02 next after immutable manifests
+Qualify new exact-commit Next.js source corroboration in full CI with independent exact-head Codex. Inspect real evidence artifact for 1 direct source-manifest match and 2 parent SWC-source matches, distinguish any network failures, and merge only if required checks succeed. Next research actual npm tarball-to-source reproducibility (including GNU/Musl Rust native builds, build args and toolchains) and independent source lineages for the 50 packages without advertised Sigstore. No third-party redistribution/license/clinical GO without authorized rights proof and counsel.
+
+## 2026-11-13 — Next reproducibility stage
+Run new real CI archive/recipe evidence and inspect exact signed source versions' published .tgz file sets and actual native binary hashes. Fix evidence-backed parsing defects, obtain clean final-head Codex and all green CI before merge. Then set up independently pinned Next.js 14.2.x checkout, ncc/TS and N-API/Rust GNU/Musl build matrix only where toolchains and release recipe can be pinned, compare generated file hashes and archive bytes, and record mismatch rather than approving by default. Resolve other 50 npm lineages and 91 asset/release rights separately.
+
+2026-11-13 Requalify #368 corrected head with full CI and Codex; retrieve final artifact containing *individual* JS and native .node hashes. Plan pinned Next.js ncc/TypeScript and Rust/N-API GNU/Musl controlled rebuild against these per-file digests, documenting release tooling and reproducibility blockers. 50 npm packages, 91 assets, real production OCI and counsel still unresolved.
+
+2026-11-15 — Qualify #370 separately and COM-LAUNCH edition gate PR with exact-head full required CI/Codex review before merging. Next build controlled, non-public signed approval handoff without pushing privileged evidence to public repo; resolve IP #312, source rights #356, release #360 and counsel review. Enterprise readiness must not be inferred from SaaS and G2/G2b stay NO-GO.
+
+2026-11-15 — Qualify corrected COM-02 comparator branch exact-head full CI, commercial inventory and independent Codex; merge only when all green and findings resolved. Continue release binary reconciliation #360, npm source rights #356, ownership #312, and counsel release gate #371; never claim successful standalone source rebuild/rights approval. G2/G2b NO-GO.
+
+2026-11-15 — Qualify COM-05 design branch through exact-head full CI, synthetic preview and independent Codex review; merge only if clean. Later implement entitlements after V1 freeze and approved pricing/issuer/contract policy; do not change G2/G2b. COM-01 #312 rights, COM-02 #356/#360 release image and assets, COM-04 #315 counsel review, COM-LAUNCH #371 remain blocked.
+
+2026-11-15 — Qualify COM-01 crosswalk against exact-head full CI/Codex, merge if clean. Human priority remains restricted signed chain-of-title and rights-holder/contracting-entity decision (#312), source and shipped asset evidence (#356/#360), UAE counsel review (#315). Keep GitHub public and G2/G2b NO-GO. Do not treat public review packet as a legal grant.
+
+2026-11-15 — COM-01 latest Codex P2 follow-up: draft agreement's NOT SIGNABLE disclaimer and all seven approval-matrix rows (OPEN/BLOCKED/NO-GO) now strictly validated; forged APPROVED/GO changes rejected. Reused strict COM-05 parser against misleading input. Fresh exact-head CI and Codex required; no clinical/commercial approval.
+
+2026-11-15 — Qualify 15-root COM-02 observation PR with exact-head full CI including final Smart CI and independent Codex; merge only after green and resolved findings. Need provenance of historical nuxt/consola and Sebmaster/tr46.js paths vs alternate Git repositories, actual package publisher-to-source build attestations for all 53 versions, LICENSE text for additional seven candidate commits, and real SaaS/Enterprise OCI release digests and 91 source asset rights. Institutional ownership #312 and UAE counsel remain OPEN; G2/G2b NO-GO.
+
+2026-11-15 — Additional corroboration: GitHub API resolves `nuxt/consola` -> `unjs/consola` to repository ID `127546642`, and `Sebmaster/tr46.js` -> `jsdom/tr46` to repository ID `36964214`. Same exact original Git revisions contain matching name/version manifests. This verifies current GitHub repository redirects, not legal copyright transfer, npm publisher-to-source build proof, or redistribution clearance. Added frozen IDs and forgery regression; exact-head CI/Codex must requalify.
+
+2026-11-15 — Qualify the 26 DefinitelyTyped evidence receipt with exact-head full CI and independent Codex before merging. Next genuine proof is independently authenticated publisher historical revision and tarball/source correspondence for individual exact versions; avoid current-master inference. Keep remaining 27 versions and 91 assets in unresolved queue; need production SaaS/Enterprise image digests and IP/counsel decisions, G2/G2b NO-GO.

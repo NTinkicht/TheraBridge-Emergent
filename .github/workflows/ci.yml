@@ -4,6 +4,7 @@ on:
   push:
     branches: ["**"]
   pull_request:
+  workflow_dispatch:
 
 # Superseded pushes to the same ref should not consume two costly Docker jobs.
 concurrency:
@@ -129,8 +130,8 @@ jobs:
           result=$?
           set -e
           if [ "$result" -ne 0 ]; then
-            # Print rule and tracked file only: NEVER leak matched text, snippets or secrets.
-            node -e 'const fs=require("fs");const a=JSON.parse(fs.readFileSync("/tmp/tb-secret-scan.json","utf8"));for(const x of a)console.log("SCAN_FINDING_RULE_PATH "+JSON.stringify({rule:x.RuleID,file:x.File}));'
+            # Print rule, tracked file and source location only: NEVER leak matched text, snippets or secrets.
+            node -e 'const fs=require("fs");const a=JSON.parse(fs.readFileSync("/tmp/tb-secret-scan.json","utf8"));for(const x of a)console.log("SCAN_FINDING_RULE_PATH "+JSON.stringify({rule:x.RuleID,file:x.File,line:x.StartLine,commit:x.Commit}));'
           fi
           rm -f /tmp/tb-secret-scan.json
           exit "$result"
@@ -164,6 +165,17 @@ jobs:
           fetch-depth: 0
       - name: Verify Smart CI classifier, policy gate and workflow wiring
         run: node --test scripts/ci/smart-ci.test.mjs scripts/ci/smart-ci-workflow.test.mjs
+      - name: M5-01 source-only route, role and viewport audit with adversarial tests
+        run: |
+          node --test scripts/qa/m5-route-audit.test.mjs
+          node scripts/qa/m5-route-audit.mjs /tmp/therabridge-m5-ui-source-baseline.json
+      - name: Archive M5-01 source-only audit receipt (NOT screenshots or UX clearance)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-01-ui-source-baseline-${{ github.sha }}
+          path: /tmp/therabridge-m5-ui-source-baseline.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Required portability files are present
         run: |
           for f in yarn.lock .env.example apps/api/.env.example apps/web/.env.example .nvmrc; do
@@ -185,10 +197,14 @@ jobs:
         run: |
           node --test scripts/qa/m4-historic-state-reconcile.test.mjs
           node scripts/qa/m4-historic-state-reconcile.mjs
+      - name: M4-09 verify historical merge ancestry and reject force-ref false assurance
+        run: |
+          node --test scripts/qa/m4-nonforce-ancestry.test.mjs
+          node scripts/qa/m4-nonforce-ancestry.mjs
       - name: M4-03 independent credential generator and recovery tests
         run: node --test scripts/preview/generate-secrets.test.mjs
       - name: M4-02 private hosted scope and workflow safety regressions
-        run: node --test scripts/qa/hosted-extra-contracts.test.mjs scripts/qa/hosted-role-guards.test.mjs scripts/qa/hosted-session-guards.test.mjs scripts/qa/hosted-private-workflow.test.mjs scripts/qa/prepare-hosted-run.test.mjs
+        run: node --test scripts/qa/hosted-extra-contracts.test.mjs scripts/qa/hosted-role-guards.test.mjs scripts/qa/hosted-session-guards.test.mjs scripts/qa/hosted-private-workflow.test.mjs scripts/qa/prepare-hosted-run.test.mjs scripts/qa/hosted-render-attestation.test.mjs
       - run: yarn install --frozen-lockfile
       - name: Verify exact-installed package license file inventory tooling
         run: node --test scripts/commercial/collect-installed-licenses.test.mjs
@@ -206,14 +222,89 @@ jobs:
         run: node --test scripts/commercial/verify-published-tarballs.test.mjs
       - name: Verify all installed direct npm tarballs and compare on-disk LICENSE/NOTICE hashes
         run: node scripts/commercial/verify-published-tarballs.mjs /tmp/therabridge-installed-lock-provenance.json yarn.lock docs/commercial/direct-license-evidence.json /tmp/therabridge-installed-licenses.json /tmp/therabridge-publisher-tarball-evidence.json
+      - name: Verify digest-pinned candidate Docker release capture parser (offline, fail-closed)
+        run: python3 -m unittest discover -s scripts/commercial -p test_capture_docker_release.py -v
       - name: Validate consolidated transitive and asset obligations queue
         run: node --test scripts/commercial/build-com02-obligations-queue.test.mjs
       - name: Collect transitive dependencies and tracked assets for legal-review matrix
         run: node scripts/commercial/build-com02-obligations-queue.mjs docs/commercial/direct-license-evidence.json /tmp/therabridge-installed-licenses.json /tmp/therabridge-publisher-tarball-evidence.json /tmp/therabridge-com02-obligations-queue.json
       - name: Validate bounded transitive publisher tarball audit safeguards
         run: node --test scripts/commercial/verify-transitive-tarballs.test.mjs
-      - name: Audit exact transitive package tarballs and installed license-file hashes (sample, not clearance)
+      - name: Classify every installed non-direct npm version and verify tarball hashes (not license clearance)
         run: node scripts/commercial/verify-transitive-tarballs.mjs /tmp/therabridge-installed-lock-provenance.json yarn.lock docs/commercial/direct-license-evidence.json /tmp/therabridge-installed-licenses.json /tmp/therabridge-transitive-tarball-evidence.json
+      - name: Validate exact-version license exception register fail-closed semantics
+        run: node --test scripts/commercial/build-license-exception-register.test.mjs
+      - name: Generate per-version unresolved license and SaaS/enterprise obligations register
+        run: node scripts/commercial/build-license-exception-register.mjs /tmp/therabridge-publisher-tarball-evidence.json /tmp/therabridge-transitive-tarball-evidence.json /tmp/therabridge-installed-licenses.json yarn.lock /tmp/therabridge-com02-obligations-queue.json /tmp/therabridge-com02-exact-version-rights-queue.json
+      - name: Validate exact npm registry manifest metadata candidates fail-closed
+        run: node --test scripts/commercial/collect-upstream-license-candidates.test.mjs
+      - name: Collect immutable exact-version registry metadata candidates (never legal clearance)
+        run: node scripts/commercial/collect-upstream-license-candidates.mjs /tmp/therabridge-com02-exact-version-rights-queue.json /tmp/therabridge-com02-upstream-candidates.json
+      - name: Validate npm attestation discovery and fail-closed signature audit receipts
+        run: node --test scripts/commercial/verify-npm-provenance-observation.test.mjs
+      - name: Independently query npm CLI signatures for advertised exact-version candidates (not source or legal approval)
+        run: node scripts/commercial/verify-npm-provenance-observation.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-npm-provenance-observation.json /tmp/therabridge-com02-npm-signature-audit.json
+      - name: Validate pinned npm Sigstore bundle subject and digest verifier (adversarial offline)
+        run: node --test scripts/commercial/verify-npm-sigstore-bundles.test.mjs
+      - name: Obtain and verify exact npm package Sigstore bundles using pinned npm 11.19.1 (never legal approval)
+        run: node scripts/commercial/verify-npm-sigstore-bundles.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-verified-npm-bundle-candidates.json /tmp/therabridge-com02-raw-verified-npm-bundles.json
+      - name: Validate signed Next.js source-to-exact-commit evidence boundaries
+        run: node --test scripts/commercial/corroborate-signed-nextjs-source.test.mjs
+      - name: Corroborate pinned signed Next.js release claims with immutable source manifests (not reproducibility)
+        run: node scripts/commercial/corroborate-signed-nextjs-source.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-verified-npm-bundle-candidates.json /tmp/therabridge-com02-raw-verified-npm-bundles.json /tmp/therabridge-com02-nextjs-immutable-source-review.json
+      - name: Validate exact npm published tarball inventory and source build-recipe boundaries
+        run: node --test scripts/commercial/inventory-nextjs-published-builds.test.mjs
+      - name: Verify independently SRI-authenticated published npm archive comparator
+        run: node --test scripts/commercial/compare-nextjs-rebuild.test.mjs
+      - name: Record real npm release archive files, SRI and immutable source build recipes (not reproduced builds)
+        run: node scripts/commercial/inventory-nextjs-published-builds.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-verified-npm-bundle-candidates.json /tmp/therabridge-com02-raw-verified-npm-bundles.json /tmp/therabridge-com02-nextjs-immutable-source-review.json /tmp/therabridge-com02-nextjs-published-build-readiness.json
+      - name: Validate candidate Git commit and immutable source package identity without false attestation
+        run: node --test scripts/commercial/corroborate-source-revisions.test.mjs
+      - name: Collect version-pinned source root manifest corroboration candidates (not legal authority)
+        run: node scripts/commercial/corroborate-source-revisions.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-source-correspondence-candidates.json
+      - name: Validate exact 26 DefinitelyTyped unresolved source lineage and rights targets
+        run: node --test scripts/commercial/build-definitelytyped-triage.test.mjs
+      - name: Build exact DefinitelyTyped version-specific third-party rights followup receipt
+        run: node scripts/commercial/build-definitelytyped-triage.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-source-correspondence-candidates.json /tmp/therabridge-com02-exact-version-rights-queue.json /tmp/therabridge-com02-definitelytyped-26-triage.json
+      - name: Validate immutable-source root observations, aliases, and false-approval boundaries
+        run: node --test scripts/commercial/reconcile-independent-root-observations.test.mjs
+      - name: Corroborate 15 source-root observations against exact 53 npm candidate report without authorizing lineage
+        run: node scripts/commercial/reconcile-independent-root-observations.mjs /tmp/therabridge-com02-source-correspondence-candidates.json docs/commercial/com02-independent-root-observations.json /tmp/therabridge-com02-root-observation-reconciliation.json
+      - name: Validate fail-closed exact-commit LICENSE/NOTICE text hashing
+        run: node --test scripts/commercial/verify-immutable-license-texts.test.mjs
+      - name: Reconcile immutable upstream text evidence without approving source correspondence
+        run: node scripts/commercial/verify-immutable-license-texts.mjs /tmp/therabridge-com02-upstream-candidates.json docs/commercial/immutable-upstream-source-mappings.json /tmp/therabridge-com02-immutable-text-evidence.json
+      - name: Validate bulk provenance and immutable LICENSE/NOTICE candidate rights queue fail-closed
+        run: node --test scripts/commercial/build-bulk-rights-evidence.test.mjs
+      - name: Build consolidated per-version and source-asset evidence (NEVER legal approval)
+        run: node scripts/commercial/build-bulk-rights-evidence.mjs /tmp/therabridge-com02-exact-version-rights-queue.json /tmp/therabridge-com02-source-correspondence-candidates.json docs/commercial/upstream-license-path-candidates.json /tmp/therabridge-com02-bulk-rights-evidence.json
+      - name: Validate dual-edition Docker release evidence merge (offline, fail-closed)
+        run: node --test scripts/commercial/merge-release-captures.test.mjs
+      - name: Validate pinned-key DSSE OCI candidate signature and adversarial forgery cases
+        run: node --test scripts/commercial/verify-oci-dsse.test.mjs
+      - name: Verify signed OCI candidate-to-rights reconciliation never grants commercial or clinical rights
+        run: node --test scripts/commercial/reconcile-signed-release-rights.test.mjs
+      - name: Validate strict release-image and publication-scope rights reconciliation
+        run: node --test scripts/commercial/review-release-scope.test.mjs
+      - name: Assert commercial launch decision records remain non-authorizing
+        run: |
+          node --test scripts/commercial/verify-launch-decision.test.mjs
+          node scripts/commercial/verify-launch-decision.mjs docs/commercial/launch-decision-register.json
+      - name: Verify COM-05 commercial editions and nonclinical entitlement safety invariants
+        run: |
+          node --test scripts/commercial/verify-com05-policy.test.mjs
+          node scripts/commercial/verify-com05-policy.mjs docs/commercial/com05-entitlement-design.json
+      - name: Verify non-sensitive COM-01 ownership and contract counsel intake
+        run: |
+          node --test scripts/commercial/build-com01-counsel-packet.test.mjs
+          node scripts/commercial/build-com01-counsel-packet.mjs \
+            docs/commercial/ip-rights-evidence-register.md \
+            docs/commercial/contracts/CONTRACT_PACK_DRAFT.md \
+            docs/commercial/proposed-proprietary-notice.md \
+            docs/commercial/com05-entitlement-design.json \
+            /tmp/therabridge-com01-counsel-intake.json
+      - name: Build conservative actual-image candidate comparison (unattested means unresolved)
+        run: node scripts/commercial/review-release-scope.mjs /tmp/therabridge-com02-bulk-rights-evidence.json docs/commercial/release-file-evidence.json /tmp/therabridge-com02-release-scope-review.json
       - name: Archive installed license evidence for full CI
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -226,6 +317,20 @@ jobs:
             /tmp/therabridge-publisher-tarball-evidence.json
             /tmp/therabridge-com02-obligations-queue.json
             /tmp/therabridge-transitive-tarball-evidence.json
+            /tmp/therabridge-com02-exact-version-rights-queue.json
+            /tmp/therabridge-com02-upstream-candidates.json
+            /tmp/therabridge-com02-npm-provenance-observation.json
+            /tmp/therabridge-com02-npm-signature-audit.json
+            /tmp/therabridge-com02-verified-npm-bundle-candidates.json
+            /tmp/therabridge-com02-raw-verified-npm-bundles.json
+            /tmp/therabridge-com02-nextjs-immutable-source-review.json
+            /tmp/therabridge-com02-nextjs-published-build-readiness.json
+            /tmp/therabridge-com02-source-correspondence-candidates.json
+            /tmp/therabridge-com02-definitelytyped-26-triage.json
+            /tmp/therabridge-com02-root-observation-reconciliation.json
+            /tmp/therabridge-com02-bulk-rights-evidence.json
+            /tmp/therabridge-com02-release-scope-review.json
+            /tmp/therabridge-com02-immutable-text-evidence.json
           if-no-files-found: error
           retention-days: 30
       - name: M4-02 private QA runtime redaction and fail-closed tests
@@ -278,6 +383,10 @@ jobs:
           path: .workspace/m4-performance/m4-07-synthetic-api.json
           if-no-files-found: error
           retention-days: 7
+      - name: M4-08 independent full API branch/function hotspot audit (diagnostic only)
+        run: |
+          node --test scripts/qa/m4-api-coverage-hotspots.test.mjs
+          node scripts/qa/m4-api-coverage-hotspots.mjs
       - name: Gate measured API fingerprint-core coverage (95/90/95/95)
         run: yarn workspace @therabridge/api test:coverage:core
       - name: Web configuration unit tests with observed V8 instrumentation
@@ -439,6 +548,15 @@ jobs:
       - run: yarn playwright install --with-deps chromium
       - name: Idempotent synthetic Ahmed seed and real seven-role browser journey
         run: node scripts/design/run-demo-live.mjs
+      - name: M5-01 browser receipt schema adversarial tests
+        run: node --test scripts/design/m5-browser-observe.test.mjs
+      - name: Archive numeric-only synthetic viewport observations, never screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-01-browser-observations-${{ github.sha }}
+          path: /tmp/therabridge-m5-01-browser-observations.json
+          if-no-files-found: error
+          retention-days: 30
       - if: always()
         run: rm -f .workspace/local-credentials/childrens-home-demo.json
 

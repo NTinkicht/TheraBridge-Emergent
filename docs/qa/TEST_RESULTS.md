@@ -1,3 +1,125 @@
+## 2026-11-15 — M5-01 client settlement and async failure classification (NEW HEAD PENDING)
+Codex P2 observations: 100ms post-DOM wait insufficient for hydrated screens; top-level HTTP 200 cannot prove client data load. Implemented visible loader + aria-busy bounded settling, explicit session/client error, forbidden/timeout outcomes and regression tests. Final-head CI and Codex NOT YET QUALIFIED. Screenshots are transient and not human-reviewed, #184 OPEN, G2/G2b NO-GO.
+
+---
+
+## 2026-11-15 — M5-01 browser viewport capture implementation (CI PENDING)
+Added source-derived 175 synthetic route/viewport attempts using real Chromium and disposable database, screenshot SHA-256 and temporary cleanup; output contains only enums/numbers/hashes. Fail-closed schema tests added but NOT YET EXECUTED on final HEAD. No user-oriented screenshots reviewed or UX acceptance; #184 OPEN, G2/G2b NO-GO.
+
+---
+
+## 2026-11-15 — M5-01 source audit: first receipt and P2 regression follow-up
+First CI audit step on PR #380 SHA 838d0daa PASS with archived source-only JSON: 41 routes, 20 navigation entries, seven personas, five widths, 175 pending capture points (0 screenshots). Codex P2: partial NAV extraction on object spreads / double-quoted permissions; parser now rejects unsupported items and tests exact literal permissions. **Latest parser-fix head CI/independent review PENDING**. Source-only evidence is not user acceptance; G2/G2b NO-GO.
+
+---
+
+## 2026-11-15 — M5-01 source-only route audit (NEW HEAD CI PENDING)
+Created negative regressions for duplicate canonical Next routes, missing navigation, malformed NAV parsing, symlink avoidance and fabricated capture PASS. Full repo audit emits a sanitized JSON inventory and 175 NOT_RUN capture targets to CI artifact. **Tests not yet run on the proposed branch**; screenshots and measured tasks NOT RUN; no accessibility or owner signoff. #184 OPEN, G2/G2b NO-GO.
+
+---
+
+## 2026-11-15 — Protected hosted Render deployment attestation negative tests (NOT RUN)
+Added mock Render HTTP GET checks for one latest live deployment with same exact SHA as operator input and current checkout; rejects wrong repo/service, missing token, malformed SHA, stale/newer failed deploy, multiple live deployments and non-200 response. Wired into protected workflow ahead of credential preflight. No protected environment access, no live hosted test, no new CI result yet. Old Render service remains 3cdd722...; previous ten-account run 84 PASS / 0 FAIL / 14 governance BLOCKED does not satisfy M4-02 hosted two-tenant gate. G2/G2b NO-GO.
+
+---
+
+## 2026-11-15 — M4-CLOSE-02 isolated real-PostgreSQL tests and fail-closed hosted receipt (NOT RUN)
+Added 3 new real PostgreSQL two-valid synthetic center HTTP tests (authorized reads, foreign-center/foreign-child 403/404 masking with a valid actor, suspended membership revocation even with stale assignment, expired session 401 without harming another center). Added hostile receipt tests for boolean-only v1, duplicate or missing checks, false positive HTTP 401, mismatched protected run, and missing independently existing targets. Execution on latest PR CI is PENDING; NO PASS claimed. Previous protected 42605446171 attempt 2 = 84 PASS / 0 FAIL / 14 policy BLOCKED, not final hosted acceptance. Real Render demo remains on 3cdd722... old SHA. No clinical G2/G2b approval.
+
+---
+
+## 2026-11-15 — M4-CLOSE-01 ancestry and evidence audit (NOT RUN on new HEAD)
+New source-executing Node tests assert three exact historic merged SHAs #274/#275/#276, a read-only ancestry command sequence, failure on unreachable commit, incomplete history, forged scope and invalid SHA, plus false-lease and clinical-approval fields set to false. Full CI step wired with checkout fetch-depth 0. **Test execution and full exact-head CI PENDING**; do not claim PASS based on prior #358. Prior #358 exact-head 43692201180 and Web focused 43692201195 SUCCESS; API branches 90.03%, Web branches 90.08% at 93/154 full-source denominator. Hosted protected run 42605446171 attempt 2 = 84 PASS / 0 FAIL / 14 BLOCKED; hosted multi-tenant and revoked-account acceptance still NOT QUALIFIED. G2/G2b NO-GO.
+
+---
+
+## 2026-11-11 — COM-02 #361 release file digest candidate QA (NOT YET RUN)
+Added offline `node --test scripts/commercial/review-release-scope.test.mjs` covering empty release manifest fail-closed behavior, immutable OCI digest and SHA256 image-file candidate matching without claimed signatures, duplicate edition/path, traversal, invalid SHA or bytes, counterfeit commercial approvals and missing 53/91 inventory subsets. CI adds output `therabridge-com02-release-scope-review.json`. All image runtime presence statuses stay NOT_INDEPENDENTLY_ATTESTED with zero images initially. Exact-head full CI, Codex pending. Commercial approval 0; G2/G2b NO-GO.
+
+---
+
+## 2026-11-11 — COM-02 #359 observed candidate hash evidence, P2 fix pending exact HEAD
+Initial CI producer PASS and bulk review artifact generated. Measured 53 package exceptions, 91 assets, 15 pinned root source matches, 8 curated source revisions, 9/9 literal HTTPS immutable source bytes successfully SHA-256 hashed. All 53 source-publication attestations and 91 actual release presence reviews remain outstanding; **0 legal approvals/THIRD_PARTY_NOTICES**. Codex P2 prior source fetch timeout previously blocked consolidated report; implemented retained unresolved row with no license fetch for any upstream HTTP error (including 404), TIMEOUT or SOURCE_FETCH_FAILED. Added two deterministic negative tests (transient upstream and contradictory source identity). **Final exact-head full CI and clean independent Codex not yet confirmed**; do not interpret text hash as license rights. Clinical G2/G2b NO-GO.
+
+---
+
+## 2026-11-11 — COM-02 mega PR #359 bulk evidence QA (PENDING)
+New offline `node --test scripts/commercial/build-bulk-rights-evidence.test.mjs` covers 53-version/91-asset schema joins via small synthetic fixtures; forged approvals, missing/duplicate package/asset, locked integrity or source revision mismatch, unsafe curated path/host, invalid raw UTF-8, network 404 and bounded concurrency. CI producer emits `therabridge-com02-bulk-rights-evidence.json`, never third-party license texts or legal grant. Initial baseline has 53 package exceptions, 91 source assets; 8 curated source versions and 9 candidate immutable upstream LICENSE paths. **Exact-head CI NOT YET RUN/QUALIFIED**, no live 9/9 file existence claimed. Legal approvals 0; G2/G2b NO-GO.
+
+---
+
+## 2026-11-11 — COM-02 #357 measured source correspondence QA (DEDICATED TEST PASS)
+**PASS** 7/7 `node --test scripts/commercial/corroborate-source-revisions.test.mjs` on code SHA `8c645d0feb79ddd7fc8cea24425aa6c722e2631b`, CI [42923019170](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42923019170). Positive root package identity, strict GitHub host/full SHA, wrong name/version, invalid bytes/UTF-8, unavailable GitHead, spoofed hostname, publisher/lock mismatch, tampered approvals and bounded concurrency covered. Generated report counts `{exceptions:53,sourceRootManifestMatches:15,stillRequiresIndependentAttestation:53,authoritativeLicenseTextsVerified:0,legallyApproved:0}`. Earlier initial HEAD 4ee9a2 had **FAIL** on wrong test fixture; fixed in 6a8c960 with reviewed P1 disposition. At writing time full integration/preview job on code SHA remained incomplete, so this is **not a full-CI pass claim**. Documentation-only HEAD now must be requalified. Clinical G2/G2b NO-GO.
+
+---
+
+## 2026-11-11 — COM-02 #357 source correspondence collector tests (NOT YET RUN)
+Added offline tests for strict exact GitHub origin (no credentials, subdomain spoofing, SSH, queries or traversal), 40-hex commit, immutable root `package.json` name/version and SHA-256, invalid JSON/UTF8/size, preserved missing GitHead and 404/untrusted states, zero authorization and tampered scope. CI runs `node --test scripts/commercial/corroborate-source-revisions.test.mjs` and archives `therabridge-com02-source-correspondence-candidates.json`. Required exact-head CI is pending. No publisher/source correspondence independently attested, no authoritative LICENSE text approval or commercial grant, no G2/G2b activation.
+
+---
+
+## 2026-11-11 — M4-08 Stage 3 PR #353 full-Web instrumented source audit
+**PASS focused source-executing audit:** focused run [#42913539171](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42913539171) on code HEAD `96941265146be1803a32d96c7d1124f57e207cb4`: 88/88 Jest suites, 832/832 Web tests PASS, 154/154 instrumented production modules, 9 modules with no executed statements, 90.13% lines / 81.04% branches / 79.24% functions / 86.62% statements. 90% Web line-only Stage 3 target PASSED, no production-module omission, 9 zero-statement files retained. Full 95% M4 API/Web four-metric acceptance **FAIL / NOT QUALIFIED** (lines below 95, branches below 95, functions below 95, statements below 95); separate ≥95% security-critical branch suite and signed clinical G2/G2b gates still unmet. Original full CI on code-head `9694126` passed application tests, SBOM, demo-journey, live-session and Compose but history-wide secret scan FAIL under default generic-api-key for exactly one synthetic recovery test fixture. Proposed strictly scoped allowlist (only default generic-key rule, exact source path, exact noncredential mismatched-password fixture value) is UNVERIFIED pending NEW full CI on final documented head. Preview-container load was still running at prior inspection. Do not infer merge readiness, legal permissions, clinical signing, guardian release or hosted production acceptance from Jest counts.
+
+---
+
+## 2026-11-11 — COM-02 #355 P2 timeout and scanner qualifications (PENDING NEW HEAD)
+Added mocked HTTPS trickle stream regression requiring absolute deadline and rejected non-200 response regression requiring immediate request destruction; existing immutable source SHA/path and approval-adversarial tests remain. Earlier code HEAD CI found secret-scan FAILURE: `generic-api-key` on `apps/web/test/coverage-stage3-mounted-recovery-and-feasibility.test.cjs` from a separate Web branch in all-ref history (not a real licensing secret). Added scoped exact fixture allowlist, awaiting new-head Gitleaks verification. **Do not claim PASS** until required latest-head jobs complete. No legal approval, final notices or clinical G2/G2b activation.
+
+---
+
+## 2026-11-11 — COM-02 #355 immutable license source QA (NOT RUN)
+Offline tests added: full exact Git commit SHA, reject branch/path traversal, preserve unmapped exceptions, reject invalid or oversized UTF8 text, SHA256 of pinned text only, maintain unresolved package-version correspondence, HTTP failure preservation, false approvals/duplicate or phantom mappings. CI command: `node --test scripts/commercial/verify-immutable-license-texts.test.mjs`; subsequent evidence output `therabridge-com02-immutable-text-evidence.json`. Full exact-head CI and Codex pending. Source mapping register empty (0 independently corroborated Git commits), so expected counts 53 unmapped and 0 verified source texts or legal approvals until actual CI confirms. G2/G2b NO-GO.
+
+---
+
+## 2026-11-11 — COM-02 #352 registry metadata candidate QA (CODE HEAD PASS; DOC HEAD PENDING)
+**PASS** on implementation SHA `e0ee645ced29bbe2d603c125e013646a343c1a02`, full CI [42908445420](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42908445420): 6/6 `collect-upstream-license-candidates.test.mjs` tests PASS, malformed response/wrong version/unsafe selector/unavailable HTTP state/fabricated legal approval/duplicate missing row/bounded concurrency regressions exercised. The collector generated `{exceptions:53, exactVersionMetadata:53, missingOrInvalidMetadata:0, authoritativeLicenseTextsVerified:0, legallyApproved:0}`. Required test, secret-scan, live-session, preview-container, demo-journey, Compose and Smart CI passed on SHA. Prior P1 fixture-hash comparison FIXED and resolved; Codex P2 Rule 7 synchronization FIX_NOW in this docs commit. **New documentation HEAD CI and final exact-head review NOT YET RUN**, and this previous success cannot qualify subsequent HEAD. Registry manifest license strings remain candidates only; 0 authoritative exact-version upstream license texts, 0 commercial permission grants, G2/G2b NO-GO.
+
+---
+
+## 2026-11-11 — COM-02 PR #352 exact-version registry candidate tests (NOT YET RUN)
+Added offline Node tests for exact scoped package/version URL encoding, invalid/ambiguous versions, mismatched registry manifest identity, byte and parse bounds, registry 404/invalid states, no silent exception loss, fabricated approvals, immutable manifest digest and limited concurrency. CI executes `node --test scripts/commercial/collect-upstream-license-candidates.test.mjs` then generates per-run evidence JSON. **PASS/FAIL pending actual GitHub Actions execution**; prior merged #350 results (53 package-version exceptions, 91 assets, 0 approvals) are baseline only, not evidence of this PR passing. No authoritative upstream license text, sublicense or clinical approvals inferred.
+
+---
+
+## 2026-11-10 — COM-02 exact-version rights register QA (PR #350)
+**PASS on prior implementation HEAD `0cf822ace6195d43b281e0a056fcc85d64f5b7d6`**: full GitHub CI [42901575999](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42901575999), including application/test, SBOM, secret scan, live-session, demo-journey, Compose, sustained 10-minute preview and Smart CI. `node --test scripts/commercial/build-license-exception-register.test.mjs` PASS, with positive deterministic per-version evidence and negative tests for duplicate package versions, fabricated commercial approval, inconsistent publisher-license matches, missing installed evidence, phantom publisher records and 0 inferred legal clearance. CI generated: 42 direct; 621 non-direct; 52 without recognized publisher-root LICENSE/NOTICE; 1 unsupported PAX semantics; 53 exception rows; 91 tracked non-package assets; 0 legal approvals. Codex P2 missing-installed-version finding FIXED/RESOLVED; subsequent P1 handover-evidence synchronization FIX_NOW in this documentation update. **New HEAD full CI and final independent review NOT YET RUN**, so do not claim PR merge qualification from the prior success. No upstream license rights, SaaS/enterprise resale permissions, clinical activation or release clearance were tested/approved.
+
+---
+
+## 2026-11-10 — COM-02 non-direct exhaustive evidence (PENDING CI QUALIFICATION)
+Added tests proving only exactly pinned SWC 14.2.33 variants gain higher archive caps; unrelated names/versions remain on original caps. Added tests for full observed non-direct population with zero sample deferrals and fail-closed missing-lock cases. Exact-head CI, full publisher artifact and independent Codex review PENDING. The audit result is technical hash provenance, not package legal clearance or redistribution rights.
+
+---
+
+## 2026-11-10 — M4-08 Stage 2 #345 measured ≥80% Web line target MET; merge qualification PENDING
+
+- **Exact code SHA `8af17a710793ea40b5c92350ad600ffb3bf982f9`**, focused full-source instrumented Istanbul [run #42905581705](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42905581705): **PASS 67/67 suites, 604/604 tests**, full **154/154 production Web source modules**, 15 files with zero executed statements. **Lines 80.28%, branches 69.14%, functions 65.09%, statements 75.86%.** The owner-directed ≥80% genuine Web **line** Stage 2 target is MET by **0.28 percentage points**, **not** a ≥95% critical-branch qualification, clinical acceptance, legal approval, or a full CI/merge PASS.
+- Source-executing mounted regressions added across plan versions, editing, report optimistic autosave and handoff lease, supervisor review queue, scheduling/calendar, recurrence and conflicts, therapist assignment and revocation, guardian requests, actual message inbox/recipient isolation, home-practice idempotency and timeout recovery, platform trial administration, synthetic grant recovery, account-security rotation/global sign-out, application review decisions, center settings, self-profile, activity library, simulated multilingual dictation and accessible scroll-strip interactions. Transport mocked; production component logic executes. All sources including uncovered files remain in denominator. Fail-closed source audit and sanitized per-file hotspots retained; no denominator tricks.
+- Latest branch at this checkpoint remains **DRAFT** until original full exact-head CI, Smart CI, SBOM/gitleaks, seven-role synthetic acceptance, container/Compose, independent exact-head Codex, P0/P1/P2 disposition and branch/main reconciliation meet repository requirements. The separate ≥95% security-critical branch qualification and 15 zero-statement modules remain documented work; no claim of general 95% coverage. G2/G2b clinical NO-GO unchanged.
+- Stage 3 owner-required ≥90% full-Web line coverage tracked at #348; execute after Stage 2 merged. No stage merge if any required gate red or no independent review.
+
+---
+
+## 2026-11-10 — M4-08 Stage 2 #345 source-verified checkpoint: 74.95% Web lines (NOT QUALIFIED)
+- **Code SHA `dc5e54906fad12a80be6935524d18efa64880d7d`**, focused original full-Web Istanbul [run #42902267598](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42902267598): **PASS 55/55 Jest suites, 499/499 tests**, 154/154 production source modules with 15 zero-statement modules. **Lines 74.95%, branches 62.38%, functions 57.23%, statements 69.87%.** This is focused coverage, not all original CI checks or final-head Codex, and ≥80% Stage 2 is **NOT MET** (gap **5.05 percentage points**).
+- Added actual mounted production-source regressions across appointment status, cancellation and recurrence, booking assignment/series collision and timezone, therapist handover readiness fail-closed, guardian home-plan request, fixed-choice home practice exact-key uncertainty, platform trial bounds, application detail session/decision controls, team directory/invitations, schedule route and responsive ScrollStrip, synthetic existing grant withdrawal/revocation. Tests use synthetic backend I/O; no real clinical data, signing, release or permission grant.
+- Corrected failing initial test fixtures/assertions using exact CI evidence; **the PASS above is the authoritative measured run**, not prior red heads. CI additionally emits sanitized ordered uncovered file/line/branch hotspots for genuine quality-first work, without exclusions.
+- **Next**: develop one cohesive additional domain batch on #345 against ranked uncovered real source (PlanEditor, ReportEditor, SessionEditor, Messages, PlanVersionHistory, current routes); reach ≥80% genuine full-source Web lines, maintain separate ≥95% safety-critical branch goal. Then exact-final-HEAD full original CI, Smart CI, SBOM/gitleaks, seven-role synthetic browser, container/Compose and Codex review; resolve P0–P2 and reconcile current main before merge. **M4-02 hosted ten-account QA, historical audit M4-09, COM-02 legal clearance and G2/G2b clinical NO-GO are independent.** Stage 3 ≥90% owner target tracked #348 after Stage 2 merges.
+
+---
+
+## 2026-11-10 — M4-08 Stage 2 #345 high-risk PlanEditor test batch (focused VERIFIED; full CI PENDING)
+Exact commit `765ae0347a87f6ce1b0beddacd95eae96871d593`: focused Web CI [#42897868594](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42897868594) **PASS 45/45 Jest suites, 414/414 tests**. Full source audited 154/154 Web production modules (17 zero-statement modules); **69.15% lines, 57.39% branches, 50.71% functions, 63.89% statements**. Stage 2 >=80% lines remains **NOT MET**, gap **10.85 percentage points**; this measurement is NOT comprehensive final-head full CI, independent Codex review, 95% security-critical branch qualification, clinical or commercial approval. Source-verified earlier Stage 2 fix prevents stale report-history rows after child/center switch. Seven mounted PlanEditor tests added for source-scoped activity search pagination, network retry, unsaved/other-version edits, saved draft review, returned/withdrawn version state, new draft version. The first focused run failed three new test-harness expectations; repaired mock resets/async flushing/double component-node matching; the passing run is authoritative. Next: prioritize uncovered high-line-count real Web components and browser-mounted interactions; preserve full denominator, original CI, Smart CI, SBOM/gitleaks, review and Rule 7. Stage 3 >=90% target tracked in #348 only after #345 >=80% is merged. Clinical G2/G2b NO-GO unchanged.
+
+---
+
+## 2026-11-10 — M4-08 Stage 2 #345 source-executed Web coverage VERIFIED BELOW TARGET
+Focused Actions [run #42887887583](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42887887583) on `684565cb64c7cbcfa07266f14893a0591fcfb426`: **PASS 45/45 Web Jest suites, 402/402 tests**, plus prior node-test contract and real audited Istanbul full-source coverage. 154/154 Web source files, no excluded modules; 17 files with zero executed statements. Lines **68.59%**, branches **56.54%**, functions **49.89%**, statements **63.15%**. Stage 1 60% was met and merged in #339; Stage 2 >=80% **NOT MET (11.41 points short)**. New tests execute mounted React actions and API-boundary negative states, with a production fix to stale prior-center summary requests. This focused run is NOT a complete original final-HEAD CI, security-critical 95% branch qualification, clinical acceptance, commercial authorization, hosted multi-role QA, real patient use or release. G2/G2b NO-GO remains enforced.
+
+---
+
 ## 2026-11-10 Web M4-08 PR #339 Stage 1 source-wide line coverage: focused CI #42873722265 PASS, head ed3a750946f5a2f1ec38355daa5cb64aabc11b33. 154 / 154 source modules instrumented (no exclusions): 60.08% lines; 48.75% branches; 40.33% functions; 54.24% statements. 18 modules have zero executed statements. Stage 1 owner-approved ≥60% all-source Web LINE target: MET. This is not 95% application coverage, nor 95% security branch coverage, nor final M4 acceptance. Full original exact-head CI and independent review are still required. Commercial SBOM new renderer evidence now records PENDING_UPSTREAM_REVIEW with no license approval. No clinical authorizations changed.
 
 ---
@@ -1058,3 +1180,60 @@ Seed regression added for idempotent 6 children, 3 display-only extra therapist 
 
 ## 2026-11-02 — Three synthetic therapist identities (PR pending)
 **PENDING CI/REVIEW/DEPLOYMENT:** New tests assert 10 local auth identities after repeat seed, three Ahmed sibling links, therapist behavioral specialty and 15 appointments; hosted preview rejects a missing/malformed three-password secret. Additional protected browser runner verifies three distinct synthetic therapist logins, therapist context and logout. Historical seven-role run 41489268355 was dispatched separately; its status does not prove new account access. No new clinical sign-offs or family releases.
+
+
+## 2026-11-12 — COM-02 PR #362 candidate Docker release evidence
+Implemented offline unittest cases for streaming byte hashing, traversal, duplicate archive member paths, mutable/forged digest pins, Docker inspect RepoDigests mismatch and no automatic approvals. Full GitHub Actions execution and exact-head result **PENDING** at implementation checkpoint. No actual image export or cryptographic publication attestation has been executed; do not mark any of the 53 npm versions or 91 source assets legally approved. G2/G2b remain NO-GO.
+
+## 2026-11-12 — PR #362 capture integration verification candidates
+Added tests for tagged image references (registry port and tag), matching local Docker-export candidate into release scope without rights promotion, and rejection of forged independent signature, copyright approval, complete-runtime-mount assertions, or negative omitted entry counts. These are **implemented test cases, not yet a verified green exact-head run**. Review/commercial go-live unapproved.
+
+## 2026-11-12 — PR #362 canonical Docker RepoDigest fixture
+Added mocked image inspect/create/export successful SHA-256 capture with canonical tagless RepoDigest, version-tagged image input and registry port. This covers the previous real-world false-reject condition without weakening digest requirement. New case not yet confirmed by final-head CI. Clinical/commercial authorization remains NO-GO.
+
+## 2026-11-12 — PR #362 offline merger regressions
+New Node tests for successful candidate-only dual-edition merging, rejected swapped/duplicate editions, fabricated signature and legal fields, path traversal/duplicate file rows, malformed digests and file-order canonicalization. Test execution on final GitHub head not yet confirmed; no authorization claims. Python Docker capture tests remain a separate full-CI gate.
+
+## 2026-11-12 — COM-02 DSSE signed OCI candidate attestation test scope
+New offline Node `node --test scripts/commercial/verify-oci-dsse.test.mjs` exercises valid pinned-key Ed25519 DSSE for exact two-edition image digest and SHA-256 inventory; wrong trust key, corrupted signature, signed wrong digest, forged file inventory, swapped edition, forged schema/legal permissions, unsigned envelope, malformed encoding, tampered local file capture and unsupported RSA key. At commit creation **NOT YET EXECUTED IN GITHUB CI**, no acceptance claims. No real publisher/registry attestations or commercial/clinical permissions verified.
+
+## 2026-11-12 — COM-02 signed candidate-to-rights integrity fixtures
+New adversarial Node tests: valid two-edition signed local capture against all package/asset records, both edition asset byte matches/absences without authorizations, omitted package/asset rows, forged rights, corrupted manifest image digests and SHA-256 hashes, wrong independently pinned Ed25519 key, signed forged file-inventory hash, invalid signature, and signed fabricated approval. **Tests added, not yet proven green on final PR head**. Clinical G2/G2b and commercial grants stay NO-GO.
+
+2026-11-12 Added supplemental obligation preservation and negative tests to PR #364 signed rights reconciliation: require OS_RUNTIME_CONTAINER, POSTGRES_REDIS and MODELS_DATASETS_EXTERNAL_SERVICES exactly once with their unresolved reasons; reject missing/duplicate/unexpected categories, modified reasons, or forged commercial approval. New-head CI qualification pending; do not mark as passed until runner reports results.
+
+## 2026-11-13 — M4-08 owner-revised 90% qualification evidence (PR #358)
+**Target:** full-source API/Web lines, branches, functions and statements >=90% on exact raw Istanbul ratios; formerly 95%, explicitly revised by owner. No production source exclusions or denominator reduction. **Verified Web focused result** at head `ae5c3a8`, GitHub Actions run `43488342915`: 1,557 tests / 114 suites PASS; all 154 Web source modules instrumented; lines 96.03%, branches 90.00% (audit below90=[]), functions 90.71%, statements 93.67%; two zero-statement Web modules remain in denominator. **Last verified API before additional coverage suites:** head `d215843`, run `43485535949`, 1,331 API tests / 58 suites PASS, 93 modules; lines 96.86%, branches 88.19%, functions 95.73%, statements 95.14%. New clinical/invitation/report source-executing tests are **NOT YET VERIFIED** on final head. Codex review on prior head `6d74f0d` raised Rule 7 evidence P1 and integrated-threshold/manual-dispatch P2s; corresponding code/document corrections require new CI and final-head review. Do not claim API 90% or PR final qualification yet; clinical G2/G2b NO-GO.
+
+## 2026-11-13 — npm Sigstore bundle-verification acceptance scope
+New offline Node tests for scoped PURL encoding; exact pinned npm Sigstore verifier and in-toto Statement v1 digest/PURL match; forged signed version, package name or tarball SRI; invalid/missing bundle export; missing/extra/duplicate verified entries; nonzero audit exit; SLSA source commit claim not automatically approved. These are implementation tests; final-head CI results and real trusted bundle statuses are pending. No licensing or clinical approval inferred.
+
+2026-11-13 Initial PR #366 real npm evidence observed 3 advertised/verified CLI bundles, 0 second-stage matching signed subjects (BAD_SIGNED_STATEMENT); no publisher-to-source mapping may be approved. Added raw npm 11.19.1 audit JSON to exact-head CI artifact. Existing adversarial parser tests passed after expected identity rejection fix; full new-head CI and external Codex review pending.
+
+2026-11-13 Updated Sigstore tests to require two authentic signed in-toto statements (publish v0.1 + SLSA v1) for each exact npm PURL/SHA512, reject missing/duplicate/type mismatch, forged subjects, wrong workflow repository, and no-candidate/invalid-audit false success. The first live verifier run archived original bundles but yielded 0/3 due unsupported publish statement; updated matcher needs final-head CI evidence before any new verified counts are reported.
+
+2026-11-13 Regression: mismatched signed workflow repository must reject even with valid outer signed npm package subject and digest, so SLSA source revision claims cannot be silently empty. First CI failed 1 of 8 focused tests (7 passed); corrected parser awaiting fresh exact-head CI and Codex.
+
+## 2026-11-13 — signed npm release to Next.js source manifests
+New tests cover 53/3 version-set selection; three signed SLSA revision claims and exact raw/receipt SHA-256 binding; one exact @next/env source manifest; two parent SWC source manifests; wrong source versions and timeout; counterfeited signature receipts, removed/duplicated versions, raw bundle swapping, modified signed source commit, unsafe path traversal. No test claims binary/package reproducibility, rights-holder approval or G2/G2b clinical GO. Exact-head full CI and Codex qualification pending.
+
+## 2026-11-13 — signed npm archive/build-readiness tests
+New offline Node cases: allowlist only the 3 signed Next.js versions, exact SHA512 tarball SRI, regular tar file SHA256/paths, reject duplicated names, traversal, symlink or global tar extension, reject absent/mismatched source package version and build commands. Actual published tarball/immutable source data qualified only after full CI. All completed build/release and legal approval counters remain zero.
+
+2026-11-13 New Codex P2 regression: zero verified tarballs -> NO_VERIFIED status; partial/recipe gap -> PARTIAL status; exactly 3 verified archives and recipes -> complete inventory status (not reproduced build). File lists retain individual SHA-256/path/byte values and stable serialization. Latest corrected-head CI pending.
+
+2026-11-15 — COM-LAUNCH suite added (six tests) for default blocked SaaS/Enterprise, fabricated approval, fake image digest, duplicated/missing obligations, forged evidence, and clinical G2/real-patient bypass. CI-wired but NO exact-head run PASS claimed until completed. The validator cannot grant legal/clinical authorization.
+
+2026-11-15 — Added seven COM-02 comparator tests for authentic archive same/different bytes, altered contents, forged legal grant, unsupported identity, tampered file inventory, attacker-rehashed fake archive/readiness and mispinned SRI. CI integrated on latest main; run results pending. No source reproduction, commercial or clinical approval.
+
+2026-11-15 — COM-05 draft policy has seven Node regression suites for unpriced editions, forged license/quota, expiry not deleting data or blocking export, cross-tenant/billing-clinical bypass, unsafe phone-home or issuer, unauthorized lifecycle automation, invalid editions/states. Test implementation committed and wired into full CI; exact-head qualification PENDING. No approvals implied.
+
+2026-11-15 — COM-01 new eight-test Node suite validates eight unresolved rights categories, nine draft contract sections, eleven non-approving decision IDs and SHA source references; rejects omitted/duplicated scope or contract section, forged OPEN-to-VERIFIED rights row, adopted proposed notice, missing clinical safeguard and leaks of raw contributor/contract text. CI wired; exact-head outcome PENDING.
+
+2026-11-15 — COM-01 latest Codex P2 follow-up: draft agreement's NOT SIGNABLE disclaimer and all seven approval-matrix rows (OPEN/BLOCKED/NO-GO) now strictly validated; forged APPROVED/GO changes rejected. Reused strict COM-05 parser against misleading input. Fresh exact-head CI and Codex required; no clinical/commercial approval.
+
+2026-11-15 — COM-02 15-root independent GitHub manifest observations: 15 exact source name/version match, 13 claimed repo direct, 2 alternative repo at exact same commit; no archive-to-source reproducibility or rights approvals. New seven-test regression suite checks all 53 preserved, forged source SHA/repo/commit and alias, missing/duplicate rows, fake commercial/clinical approvals and safe transient source HTTP failure. CI pending on exact PR head.
+
+2026-11-15 — Additional corroboration: GitHub API resolves `nuxt/consola` -> `unjs/consola` to repository ID `127546642`, and `Sebmaster/tr46.js` -> `jsdom/tr46` to repository ID `36964214`. Same exact original Git revisions contain matching name/version manifests. This verifies current GitHub repository redirects, not legal copyright transfer, npm publisher-to-source build proof, or redistribution clearance. Added frozen IDs and forgery regression; exact-head CI/Codex must requalify.
+
+2026-11-15 — COM-02 DefinitelyTyped 26-version audit: added six Node adversarial test scenarios for exact 53-way membership, 26 versions and two node majors, SRI/registry/tarball mismatches, fabricated immutable commits and authority, forged approvals and missing/duplicated rows. New per-commit CI artifact is unapproved candidate evidence. Exact-head CI/Codex PENDING; no false publication lineage.
