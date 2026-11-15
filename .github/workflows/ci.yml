@@ -165,6 +165,17 @@ jobs:
           fetch-depth: 0
       - name: Verify Smart CI classifier, policy gate and workflow wiring
         run: node --test scripts/ci/smart-ci.test.mjs scripts/ci/smart-ci-workflow.test.mjs
+      - name: M5-01 source-only route, role and viewport audit with adversarial tests
+        run: |
+          node --test scripts/qa/m5-route-audit.test.mjs
+          node scripts/qa/m5-route-audit.mjs /tmp/therabridge-m5-ui-source-baseline.json
+      - name: Archive M5-01 source-only audit receipt (NOT screenshots or UX clearance)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-01-ui-source-baseline-${{ github.sha }}
+          path: /tmp/therabridge-m5-ui-source-baseline.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Required portability files are present
         run: |
           for f in yarn.lock .env.example apps/api/.env.example apps/web/.env.example .nvmrc; do
