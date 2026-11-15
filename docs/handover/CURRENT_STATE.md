@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-03 Codex P2 remediation (UNQUALIFIED new HEAD)
+First M5-03 grouped shell PR #393 correctly built after native <details> type fix; new independent Codex review identified responsive More drawer stale-open/focus and background-scroll risks. Added desktop breakpoint close + visible rail focus, scoped body/root overflow lock with cleanup restoration and overscroll containment; seven-role Chromium resizing and scroll state negative-tested. All CI and new exact-head Codex required again; #186 OPEN, G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — M5-03 eight-area grouped ProductShell (IN PR, NOT QUALIFIED)
 M5-01 #184 and M5-02 #185 are CLOSED in GitHub; merged M5-02 #387 provides eight-area source proposal. M5-03 #186 first executable shell tranche adds exactly eight permission-filtered desktop task areas, optional compact icon rail, authorized breadcrumb, mobile three-link quickbar and complete More dialog with keyboard focus return; original mobile dropdown retained for compatibility. New CI source-crosswalk check and seven synthetic-role actual session permission/More/rail test. No API role changes, no persistent stale context, G2/G2b NO-GO. Final-head CI/Codex and manual UX acceptance pending; #186 OPEN.
 
