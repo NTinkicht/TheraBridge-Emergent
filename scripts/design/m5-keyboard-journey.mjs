@@ -143,6 +143,9 @@ export async function observeKeyboardJourney(page, persona, { base, settle }) {
   await page.getByTestId('mobile-more-sheet').waitFor({ state: 'visible' });
   await page.setViewportSize({ width: 1024, height: 850 });
   await page.getByTestId('mobile-more-sheet').waitFor({ state: 'hidden' });
+  await page.waitForFunction(() =>
+    document.querySelector('[data-testid="mobile-more-button"]')?.getAttribute('aria-expanded') === 'false',
+    null, { timeout: 5000 });
   assert.equal(await more.getAttribute('aria-expanded'), 'false',
     'More must become logically closed at desktop breakpoint');
   await page.setViewportSize({ width: 320, height: 850 });
