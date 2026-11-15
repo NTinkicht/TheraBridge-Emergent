@@ -54,7 +54,8 @@ export function validTwoTenantReceipt(value,sha,protectedRunId){
  for(const check of value.checks){
    if(!check||typeof check!=='object'||Array.isArray(check)||
       !TWO_TENANT_STEPS.includes(check.step)||found.has(check.step)||
-      check.status!=='PASS'||check.actorAuthenticated!==true||
+      check.status!=='PASS'||
+      check.actorAuthenticated!==(check.step!=='expired_session_denied')||
       check.existingTargetVerified!==true||
       typeof check.httpStatus!=='number'||!Number.isInteger(check.httpStatus))
      return false;
