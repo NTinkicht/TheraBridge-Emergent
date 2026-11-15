@@ -23,6 +23,51 @@ const hash = buffer => createHash('sha256').update(buffer).digest('hex');
 const noGo = { visualApproval: 'NOT_OBTAINED', accessibilityApproval: 'NOT_OBTAINED',
   realTaskTiming: 'NOT_RUN', clinicalGate: 'NO_GO_G2_G2b' };
 
+// A successful document request is not evidence of successful client hydration.
+// Explicitly wait for visible skeletons/aria-busy indicators to disappear. Keep
+// ambiguous/timeout states in evidence rather than silently calling them PASS.
+export async function observeSettledPage(page) {
+  await page.waitForTimeout(300); // Allow first React hydration/render to establish loading state.
+  let timedOut = false;
+  try {
+    await page.waitForFunction(() => {
+      const visible = el => Boolean(el.getClientRects().length);
+      return ![...document.querySelectorAll('[data-testid$="-loading"], [aria-busy="true"]')]
+        .some(visible);
+    }, null, { timeout: 12000, polling: 150 });
+    await page.waitForTimeout(200);
+    // A second settled check protects against loaders introduced by immediate effects.
+    await page.waitForFunction(() => {
+      const visible = el => Boolean(el.getClientRects().length);
+      return ![...document.querySelectorAll('[data-testid$="-loading"], [aria-busy="true"]')]
+        .some(visible);
+    }, null, { timeout: 5000, polling: 150 });
+  } catch (err) {
+    if (err?.name !== 'TimeoutError') throw err;
+    timedOut = true;
+  }
+  const state = await page.evaluate(() => {
+    const visible = el => Boolean(el.getClientRects().length);
+    const errorIds = [...document.querySelectorAll('[data-testid$="-error"]')]
+      .filter(visible).filter(el => el.getAttribute('role') === 'alert' || el.querySelector('[role="alert"]'));
+    return {
+      error: errorIds.length > 0 || Boolean(document.querySelector('[data-testid="session-error"]')),
+      denied: Boolean(document.querySelector('[data-testid="page-forbidden"]')),
+      busy: [...document.querySelectorAll('[data-testid$="-loading"], [aria-busy="true"]')].some(visible),
+    };
+  });
+  return { ...state, timedOut: timedOut || state.busy };
+}
+
+export function classifyBrowserOutcome({ route, pathname, httpStatus, state }) {
+  if (state.timedOut) return 'LOAD_TIMEOUT';
+  if (state.denied) return 'ROUTE_DENIED';
+  if (state.error || httpStatus >= 400) return 'ERROR_STATE';
+  if (pathname === '/login') return 'LOGIN_REQUIRED';
+  if (pathname !== route) return 'ROUTE_REDIRECTED';
+  return 'ROUTE_RENDERED';
+}
+
 export function validateBrowserReceipt(receipt) {
   if (receipt?.schemaVersion !== 1 || receipt?.environment !== 'ISOLATED_SYNTHETIC_CI' ||
       receipt?.evidenceType !== 'AUTOMATED_BROWSER_NOT_HUMAN_USABILITY' ||
@@ -41,7 +86,7 @@ export function validateBrowserReceipt(receipt) {
     if (x.screenshotStatus !== 'CAPTURED_NOT_REVIEWED' ||
         !/^[0-9a-f]{64}$/.test(x.screenshotSha256) ||
         !Number.isFinite(x.documentWidth) || !Number.isFinite(x.viewportWidth) ||
-        !['ROUTE_RENDERED', 'ROUTE_REDIRECTED', 'ERROR_STATE', 'LOGIN_REQUIRED'].includes(x.outcome) ||
+        !['ROUTE_RENDERED', 'ROUTE_REDIRECTED', 'ERROR_STATE', 'LOGIN_REQUIRED', 'LOAD_TIMEOUT', 'ROUTE_DENIED'].includes(x.outcome) ||
         !['PRESENT', 'ABSENT'].includes(x.navigationStatus) ||
         !['PRESENT', 'ABSENT'].includes(x.mainLandmarkStatus) ||
         !['NONE', 'OBSERVED'].includes(x.horizontalOverflow))
@@ -85,7 +130,7 @@ export async function runBrowserAudit({ passwords, output }) {
             assert(safe(route), 'Refuse non-local or dynamic unseeded route');
             // Navigation only; do not perform clinical mutations or persist browser state.
             const response = await page.goto(BASE + route, { waitUntil: 'domcontentloaded', timeout: 20000 });
-            await page.waitForTimeout(100);
+            const settled = await observeSettledPage(page);
             const dimensions = await page.evaluate(() => ({
               viewport: document.documentElement.clientWidth,
               document: document.documentElement.scrollWidth,
@@ -94,9 +139,8 @@ export async function runBrowserAudit({ passwords, output }) {
             }));
             const location = new URL(page.url());
             assert.equal(location.origin, BASE, 'M5 observation escaped local synthetic CI');
-            const outcome = location.pathname === '/login' ? 'LOGIN_REQUIRED'
-              : response?.status() >= 400 ? 'ERROR_STATE'
-              : location.pathname !== route ? 'ROUTE_REDIRECTED' : 'ROUTE_RENDERED';
+            const outcome = classifyBrowserOutcome({ route, pathname: location.pathname,
+              httpStatus: response?.status() ?? 0, state: settled });
             const snap = await page.screenshot({ fullPage: false, animations: 'disabled' });
             // Never upload screenshots: screenshots can include synthetic family/clinical narrative.
             // Retain only digest and basic shape, and delete all transient screenshots on exit.
