@@ -19,7 +19,10 @@ try {
       await region.focus();
       assert(await region.evaluate(el => document.activeElement === el), 'Keyboard focus must reach table region');
       for (let i=0;i<12;i++) await page.keyboard.press('ArrowRight');
-      await page.waitForTimeout(200);
+      await page.waitForFunction(() => {
+        const region = document.querySelector('[role="region"][aria-label*="Synthetic activity table"]');
+        return region instanceof HTMLElement && region.scrollLeft > 0;
+      }, null, { timeout: 3000 });
       const finalLeft = await region.evaluate(el => el.scrollLeft);
       assert(finalLeft > initial.scrollLeft, `ArrowRight must scroll table at ${width}px`);
       assert.equal(await region.locator('table caption').textContent(), 'Synthetic activity table');
