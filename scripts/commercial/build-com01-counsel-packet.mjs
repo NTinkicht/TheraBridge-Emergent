@@ -49,9 +49,12 @@ function buildPacket({rights,contracts,notice,launch}){
   if(typeof body!=='string'||body.length===0||body.length>1024*1024)
    throw Error('COM01_INVALID_SOURCE_'+name.toUpperCase());
  }
+ const contractIntro=contracts.split(/\r?\n/);
  if(!rights.startsWith('# COM-01: intellectual-property rights evidence register')||
     !rights.includes('Status: NOT VERIFIED')||
-    !contracts.startsWith('# TheraBridge — MSA and SaaS / Enterprise contracting pack\\n\\n**PUBLIC WORKING DRAFT — NOT A SIGNABLE AGREEMENT, OFFER, COPYRIGHT LICENSE OR PRODUCTION AUTHORIZATION.**\\n**Every [BRACKETED] field is an unresolved business/legal approval item, not a proposed default.**')||
+    (contractIntro[0]!=='# TheraBridge — MSA and SaaS / Enterprise contracting pack'||
+      contractIntro[2]!=='**PUBLIC WORKING DRAFT — NOT A SIGNABLE AGREEMENT, OFFER, COPYRIGHT LICENSE OR PRODUCTION AUTHORIZATION.**'||
+      contractIntro[3]!=='**Every [BRACKETED] field is an unresolved business/legal approval item, not a proposed default.**')||
     !notice.startsWith('# Proposed TheraBridge Proprietary Notice — NOT ADOPTED'))
   throw Error('COM01_SOURCE_STATUS_NOT_FAIL_CLOSED');
  const rows=rights.split(/\r?\n/).filter(line=>line.startsWith('| '));
@@ -71,7 +74,7 @@ function buildPacket({rights,contracts,notice,launch}){
  });
  const matrix=contracts.split('## I. Approval and traceability matrix');
  if(matrix.length!==2)throw Error('COM01_INVALID_APPROVAL_MATRIX');
- const matrixRows=matrix[1].split(/\\r?\\n/).filter(line=>line.startsWith('| ')).slice(2);
+ const matrixRows=matrix[1].split(/\r?\n/).filter(line=>line.startsWith('| ')).slice(2);
  if(matrixRows.length!==expectedApprovalMatrix.length)
    throw Error('COM01_UNEXPECTED_APPROVAL_MATRIX_ROWS');
  for(const [label,status] of expectedApprovalMatrix){
