@@ -46,11 +46,14 @@ test('persona/viewport plan is exactly 7 x 5 x 5 with zero fabricated observatio
 });
 
 test('NAV parser preserves separate permission-gated entries', () => {
-  const nav = parseNav("const NAV: unknown[] = [\n{ key: 'activities', href: '/app/activities', permission: 'center.activities.read', label: 'Activities' },\n{ key: 'activities', href: '/app/activities', permission: 'family.activities.read', label: 'Home' },\n];\n");
+  const nav = parseNav(`const NAV: unknown[] = [
+{ key: 'activities', href: '/app/activities', icon: Home, permission: 'center.activities.read', label: 'Activities', short: 'Activities' },
+{ key: "activities", href: "/app/activities", icon: Home, permission: "family.activities.read", label: "Home", short: "Home" },
+];`);
   assert.equal(nav.length, 2);
   assert.notEqual(nav[0].permission, nav[1].permission);
   assert.throws(() => parseNav('const OTHER = []'), /NAV definition/);
-  assert.throws(() => parseNav("const NAV: unknown[] = [\n{ key: 'x', href: 'https://evil.example', icon: Home, label: 'X', short: 'X' },\n];\n"), /unsafe/);
+  assert.throws(() => parseNav("const NAV: unknown[] = [\n{ key: 'x', href: 'https://evil.example', icon: Home, label: 'X', short: 'X' },\n];\n"), /Unsafe NAV href/);
 });
 
 test('source inventory refuses incomplete persona targets, not quietly records false PASS', async t => {
