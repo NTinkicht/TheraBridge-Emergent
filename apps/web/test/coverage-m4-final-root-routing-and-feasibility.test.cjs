@@ -5,7 +5,8 @@ const React=require('react'),Renderer=require('react-test-renderer');
 const {act,create}=Renderer,h=React.createElement;
 let jarHas;
 const redirect=jest.fn();
-jest.mock('next/headers',()=>({cookies:()=>({has:cookie=>jarHas.includes(cookie)})}));
+// Next 15: cookies() is async and resolves to the request cookie store.
+jest.mock('next/headers',()=>({cookies:async()=>({has:cookie=>jarHas.includes(cookie)})}));
 jest.mock('next/navigation',()=>({redirect:route=>redirect(route)}));
 jest.mock('@/components/design/PreviewContext',()=>({
  PreviewProvider:({children})=>h('section',{'data-testid':'preview-provider'},children)
@@ -30,19 +31,19 @@ const json=()=>JSON.stringify(tree.toJSON());
 beforeEach(()=>{jest.clearAllMocks();jarHas=[];});
 afterEach(async()=>{if(tree){await act(async()=>tree.unmount());tree=null;}});
 describe('M4-08 root navigation is only a convenience, never auth authority',()=>{
- test('without authenticated session cookie redirects into login',()=>{
-  Home();
+ test('without authenticated session cookie redirects into login',async()=>{
+  await Home();
   expect(redirect).toHaveBeenCalledTimes(1);
   expect(redirect).toHaveBeenCalledWith('/login');
  });
- test.each(['__Host-tb_session','tb_session'])('session cookie %s redirects to app for authoritative server validation',cookie=>{
+ test.each(['__Host-tb_session','tb_session'])('session cookie %s redirects to app for authoritative server validation',async cookie=>{
   jarHas=[cookie];
-  Home();
+  await Home();
   expect(redirect).toHaveBeenCalledWith('/app');
  });
- test('unrelated cookie cannot be mistaken for an authenticated TheraBridge session',()=>{
+ test('unrelated cookie cannot be mistaken for an authenticated TheraBridge session',async()=>{
   jarHas=['arbitrary-cookie'];
-  Home();
+  await Home();
   expect(redirect).toHaveBeenCalledWith('/login');
  });
  test('root metadata prevents indexing of synthetic clinical demonstration',()=>{

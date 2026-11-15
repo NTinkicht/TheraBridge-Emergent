@@ -22,9 +22,10 @@ export class RouteAccessVerifier implements OnApplicationBootstrap {
   routes(): RouteInfo[] {
     const out: RouteInfo[] = [];
     for (const wrapper of this.discovery.getControllers()) {
-      const proto = wrapper.metatype?.prototype;
-      if (!proto) continue;
-      const base = Reflect.getMetadata(PATH_METADATA, wrapper.metatype) as string;
+      const metatype = wrapper.metatype;
+      const proto = metatype?.prototype;
+      if (!metatype || !proto) continue;
+      const base = Reflect.getMetadata(PATH_METADATA, metatype) as string;
       for (const name of this.scanner.getAllMethodNames(proto)) {
         const fn = proto[name];
         const path = Reflect.getMetadata(PATH_METADATA, fn) as string | undefined;
@@ -32,7 +33,7 @@ export class RouteAccessVerifier implements OnApplicationBootstrap {
         out.push({
           route: `/${[base, path].filter((p) => p && p !== '/').join('/')}`,
           method: RequestMethod[Reflect.getMetadata(METHOD_METADATA, fn) as number],
-          access: this.reflector.getAllAndOverride<Access | undefined>(ACCESS_KEY, [fn, wrapper.metatype as object as Function]),
+          access: this.reflector.getAllAndOverride<Access | undefined>(ACCESS_KEY, [fn, metatype as Function]),
         });
       }
     }

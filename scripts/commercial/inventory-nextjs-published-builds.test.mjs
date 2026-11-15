@@ -16,17 +16,17 @@ function header(name,data,type=48){
  return Buffer.concat([h,data,Buffer.alloc((512-data.length%512)%512)]);
 }
 function sample(name='package/dist/index.js',data=Buffer.from('generated')){
- return gzipSync(Buffer.concat([header('package/package.json',Buffer.from('{"name":"@next/env","version":"14.2.35"}')),
+ return gzipSync(Buffer.concat([header('package/package.json',Buffer.from('{"name":"@next/env","version":"15.5.29"}')),
   header(name,data),Buffer.alloc(1024)]));
 }
 const sri=bytes=>'sha512-'+createHash('sha512').update(bytes).digest('base64');
 test('exact npm registry archive selection is restricted to the three signed versions',()=>{
- assert.equal(tarballUrl('@next/env','14.2.35'),
-  'https://registry.npmjs.org/%40next%2Fenv/-/env-14.2.35.tgz');
- assert.equal(tarballUrl('@next/swc-linux-x64-gnu','14.2.33'),
-  'https://registry.npmjs.org/%40next%2Fswc-linux-x64-gnu/-/swc-linux-x64-gnu-14.2.33.tgz');
- for(const [n,v] of [['evil','1.0.0'],['@next/env','14.2.34'],
-  ['@next/swc-linux-x64-musl','14.2.35'],['@next/env','../bad']])
+ assert.equal(tarballUrl('@next/env','15.5.29'),
+  'https://registry.npmjs.org/%40next%2Fenv/-/env-15.5.29.tgz');
+ assert.equal(tarballUrl('@next/swc-linux-x64-gnu','15.5.29'),
+  'https://registry.npmjs.org/%40next%2Fswc-linux-x64-gnu/-/swc-linux-x64-gnu-15.5.29.tgz');
+ for(const [n,v] of [['evil','1.0.0'],['@next/env','15.5.28'],['@next/env','14.2.35'],
+  ['@next/swc-linux-x64-musl','14.2.33'],['@img/sharp-libvips-linux-x64','1.3.4'],['@next/env','../bad']])
   assert.throws(()=>tarballUrl(n,v),/UNEXPECTED_NPM_PACKAGE/);
 });
 test('published archive exact SRI is mandatory and gzip file listing is bounded',()=>{
@@ -57,26 +57,26 @@ test('never promote symlink or unsupported global archive metadata to source evi
  }
 });
 test('direct environment package requires actual pinned ncc and TypeScript release scripts',()=>{
- const manifest=Buffer.from(JSON.stringify({name:'@next/env',version:'14.2.35',
+ const manifest=Buffer.from(JSON.stringify({name:'@next/env',version:'15.5.29',
   scripts:{release:'ncc build ./index.ts -o ./dist/ --minify',types:'tsc index.ts --declaration'},
   devDependencies:{'@vercel/ncc':'0.34.0'}}));
- const result=sourceRecipe(manifest,{name:'@next/env',version:'14.2.35'});
+ const result=sourceRecipe(manifest,{name:'@next/env',version:'15.5.29'});
  assert.equal(result.type,'NCC_TYPESCRIPT_RELEASE_BUILD');
  assert.equal(result.pinnedBuildInputs.ncc,'0.34.0');
  assert.equal(result.reproduciblePublishedArchive,false);
- assert.throws(()=>sourceRecipe(Buffer.from('{"name":"@next/env","version":"14.2.35"}'),
-  {name:'@next/env',version:'14.2.35'}),/ENV_SOURCE_BUILD_RECIPE_MISSING/);
- assert.throws(()=>sourceRecipe(manifest,{name:'@next/env',version:'14.2.34'}),/SOURCE_BUILD_RECIPE_VERSION_MISMATCH/);
+ assert.throws(()=>sourceRecipe(Buffer.from('{"name":"@next/env","version":"15.5.29"}'),
+  {name:'@next/env',version:'15.5.29'}),/ENV_SOURCE_BUILD_RECIPE_MISSING/);
+ assert.throws(()=>sourceRecipe(manifest,{name:'@next/env',version:'15.5.28'}),/SOURCE_BUILD_RECIPE_VERSION_MISMATCH/);
 });
 test('native SWC source requires N-API Rust build recipe and does not claim binary reproducibility',()=>{
- const manifest=Buffer.from(JSON.stringify({name:'@next/swc',version:'14.2.33',
+ const manifest=Buffer.from(JSON.stringify({name:'@next/swc',version:'15.5.29',
   scripts:{'build-native-release':'napi build --platform -p next-swc-napi --release'},
   devDependencies:{'@napi-rs/cli':'2.18.0'}}));
- const result=sourceRecipe(manifest,{name:'@next/swc',version:'14.2.33'});
+ const result=sourceRecipe(manifest,{name:'@next/swc',version:'15.5.29'});
  assert.equal(result.type,'RUST_NAPI_RELEASE_BUILD');
  assert.equal(result.requiresSourceToolchainCargoLockAndTarget,true);
  assert.equal(result.reproduciblePublishedArchive,false);
- assert.throws(()=>sourceRecipe(Buffer.from('{}'),{name:'@next/swc',version:'14.2.33'}));
+ assert.throws(()=>sourceRecipe(Buffer.from('{}'),{name:'@next/swc',version:'15.5.29'}));
 });
 
 test('Codex P2: incomplete or unavailable archives cannot receive success status',()=>{

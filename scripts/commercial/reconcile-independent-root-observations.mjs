@@ -4,6 +4,7 @@
 // published npm tarballs were built from it or confer redistribution rights.
 import {readFileSync,writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
+import {COM02_UNRESOLVED_VERSIONS as N} from './com02-nextjs-pins.mjs';
 const sha=x=>createHash('sha256').update(x).digest('hex');
 const h40=/^[a-f0-9]{40}$/,h64=/^[a-f0-9]{64}$/;
 const identity=x=>JSON.stringify([x.name,x.version]);
@@ -17,18 +18,24 @@ const expectedNames=[
  'postcss-selector-parser@6.1.5','punycode@2.3.1','tmp@0.0.33',
  'tr46@0.0.3','type-fest@4.41.0'
 ];
+// Frozen 2026-11-15 observations whose exact versions left the locked
+// dependency population (PR #311 Nest 11 / Next 15 upgrade). They stay in
+// the dated snapshot and are structurally re-validated, but are never bound
+// to current evidence; if one reappears in the lock it must be re-reviewed.
+const RETIRED=new Set(['consola@2.15.3','emoji-regex@9.2.2','tmp@0.0.33','tr46@0.0.3']);
+const RETIRED_STATUS='RETIRED_NOT_IN_CURRENT_LOCKED_POPULATION';
 const allowedAliases=new Map([
  ['consola@2.15.3',['nuxt/consola','unjs/consola','127546642']],
  ['tr46@0.0.3',['Sebmaster/tr46.js','jsdom/tr46','36964214']]
 ]);
 function reconcile(candidates,observations){
  if(candidates?.schema!=='therabridge-com02-githead-source-corroboration-candidates-v1'||
-    candidates?.counts?.exceptions!==53||
-    candidates?.counts?.stillRequiresIndependentAttestation!==53||
+    candidates?.counts?.exceptions!==N||
+    candidates?.counts?.stillRequiresIndependentAttestation!==N||
     candidates?.counts?.legallyApproved!==0||
     candidates?.commercialLicenseGranted!==false||
     candidates?.finalNoticesIssued!==false||
-    !Array.isArray(candidates.records)||candidates.records.length!==53)
+    !Array.isArray(candidates.records)||candidates.records.length!==N)
    throw Error('INVALID_COM02_SOURCE_CORRESPONDENCE');
  if(observations?.schema!==schema||observations.observedOn!=='2026-11-15'||
     observations.scope!=='PUBLIC_SOURCE_ROOT_METADATA_ONLY_NOT_PACKAGE_PUBLICATION_OR_LICENSE'||
@@ -63,6 +70,26 @@ function reconcile(candidates,observations){
   if(!expectedNames.includes(k)||obs.has(k))throw Error('UNEXPECTED_DUPLICATE_OR_MISSING_SOURCE_ID');
   obs.set(k,row);
   const candidate=byCandidate.get(identity(row));
+  if(RETIRED.has(k)){
+   if(candidate)throw Error('RETIRED_OBSERVATION_REAPPEARED_REQUIRES_REVIEW');
+   const aliases=allowedAliases.get(k);
+   if(aliases){
+    const redirect=row.githubRepoRedirect;
+    if(row.observationStatus!==ALTERNATE||
+       row.registryClaimedRepository!==aliases[0]||row.observedRepository!==aliases[1]||
+       redirect?.requested!==aliases[0]||redirect?.canonical!==aliases[1]||
+       redirect?.repositoryId!==aliases[2]||redirect?.githubEndpointResolvesToSameRepositoryId!==true)
+     throw Error('HISTORICAL_REPOSITORY_ALIAS_UNVERIFIED');
+   }else if(row.observationStatus!==DIRECT||row.registryClaimedRepository!==row.observedRepository||row.githubRepoRedirect!==null)
+     throw Error('FORGED_DIRECT_REPOSITORY_CORROBORATION');
+   out.push({name:row.name,version:row.version,claimedRepository:row.registryClaimedRepository,
+     observedRepository:row.observedRepository,commit:row.commit,
+     sourceManifestSha256:row.sourceManifestSha256,
+     gitBlobSha1Observation:row.gitManifestBlobSha1,
+     npmSourceRevisionIndependentlyVerified:false,
+     rightsApproved:false,status:RETIRED_STATUS});
+   continue;
+  }
   if(!candidate||candidate.candidateGitHead!==row.commit||
      !candidate.lockedIntegrityMatchesRegistry||
      candidate.registryManifestEvidenceStatus!=='REGISTRY_EXACT_VERSION_METADATA_ONLY')
@@ -102,7 +129,10 @@ function reconcile(candidates,observations){
    status:'PUBLIC_SOURCE_ROOT_METADATA_ONLY_PUBLISHER_SOURCE_LINEAGE_UNRESOLVED',
    observationSha256:sha(JSON.stringify(observations)),
    correspondenceSha256:sha(JSON.stringify(candidates)),
-   counts:{originalVersions:53,observedSourceRoots:15,sourceManifestSha256Matches:sourceMatches,
+   counts:{originalVersions:N,observedSourceRoots:15,
+     boundToCurrentPopulation:out.filter(x=>x.status!==RETIRED_STATUS).length,
+     retiredNotInCurrentPopulation:out.filter(x=>x.status===RETIRED_STATUS).length,
+     sourceManifestSha256Matches:sourceMatches,
      claimedRepositoriesDirect:out.filter(x=>x.status===DIRECT).length,
      githubRepositoryRedirectsVerified:2,
      historicalCopyrightTransfersVerified:0,

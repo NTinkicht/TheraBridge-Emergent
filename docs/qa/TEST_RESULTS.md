@@ -1,3 +1,26 @@
+## 2026-11-15 — PR #311 exact-head CI round 1 and live-session root cause
+Head `29fdda8`: `test` (full API PostgreSQL e2e + all COM-02 Sigstore steps), `sbom`, `secret-scan`, `demo-journey`, `compose` PASS. `live-session` FAIL (reproduced twice): first autosave PATCH 422 *Performed activities require objective…* with `objectiveLength: 0` while outcome/assistance were set. Root cause: SessionEditor minted the new activity UUID **inside** the `setActivities` updater; Next 15's App Router runs React 19 (bundled 19.2 canary), whose update rebasing replays updaters, re-keying the row and dropping the first edit. Fixed by minting the id once per click outside the updater; new Jest regression (replayed updaters) FAILS on the old code and PASSES on the fix. Separately, Playwright 1.55 settles held routes when their handler is unrouted, so the live race test now continues the held PATCH before unrouting (same race exercised). Local: web tsc PASS, web Jest 114 suites / 1562 tests PASS, coverage audit PASS. New exact-head CI PENDING.
+
+---
+
+## 2026-11-15 — PR #311 coherent security upgrade (LOCAL ONLY; EXACT-HEAD CI PENDING)
+Local workspace (Node 22.23.4 with `--ignore-engines` for install only; installed tree checked separately: 0 packages incompatible with Node 20.20.2):
+| Check | Result |
+|---|---|
+| API `tsc --noEmit` (Prisma client generated offline) | PASS |
+| API `nest build` | PASS |
+| Web `tsc --noEmit`, `next build` (Next 15.5.29) | PASS |
+| Web `node --test` unit tests | PASS (6/6) |
+| Web Jest full-source coverage suite | PASS (114 suites) |
+| All `scripts/**/*.test.mjs` | PASS |
+| CI `test` job COM-02 steps 13–34, 36–37, 39–57 replayed | PASS |
+| COM-02 steps 35/38 (npm 11.19.1 Sigstore receipt) | NOT RUN locally — same local limitation as `main`; CI authoritative |
+| Direct dependency evidence check | PASS (39 entries, approval NONE) |
+| API PostgreSQL e2e, live-session, demo-journey, preview-container, compose | NOT RUN locally |
+| npm advisory bulk check of yarn.lock | 7 remaining (pre-existing transitive), down from 63 on main |
+
+---
+
 ## 2026-11-15 — M5-02 task IA crosswalk (UNQUALIFIED source design)
 Added canonical inventory-to-eight-task-area pure source model, enforcing 66 feature IDs, 91 workflow IDs, 20 current nav rows, 7 persona review candidates, two V2 excluded items and no false route permission or UX pass. Adversarial tests and CI receipt wired, but final-head run not yet verified. No in-app change, no screenshots, no screen reader, no end-to-end clickable task tests and no approved human UX signoff; #185 OPEN, G2/G2b NO-GO.
 

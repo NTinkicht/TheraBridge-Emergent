@@ -8,27 +8,32 @@ const sri='sha512-'+Buffer.alloc(64,19).toString('base64'),sriHex=Buffer.alloc(6
 const C1='7b940d9ce96faddb9f92ff40f5e35c34ace04eb2';
 const C2='5a97b408c2d8668bed1642d382fc1d78ed3731cc';
 const targets=[
- ['@next/env','14.2.35',C1],
- ['@next/swc-linux-x64-gnu','14.2.33',C2],
- ['@next/swc-linux-x64-musl','14.2.33',C2]
+ ['@next/env','15.5.29',C1],
+ ['@next/swc-linux-x64-gnu','15.5.29',C2],
+ ['@next/swc-linux-x64-musl','15.5.29',C2]
+];
+const C3='ebb95f8add54eee8bed840e3fb587e4cbec857d7';
+const outOfScope=[
+ ['@img/sharp-libvips-linux-x64','1.3.4',C3,'https://github.com/lovell/sharp-libvips','refs/tags/v1.3.4'],
+ ['@img/sharp-libvips-linuxmusl-x64','1.3.4',C3,'https://github.com/lovell/sharp-libvips','refs/tags/v1.3.4']
 ];
 const source='https://github.com/vercel/next.js';
 const PUBLISH='https://github.com/npm/attestation/tree/main/specs/publish/v0.1';
 const SLSA='https://slsa.dev/provenance/v1';
-function identity([name,version,commit]){
+function identity([name,version,commit,repo=source,ref='refs/tags/v15.5.29']){
  const subject=[{name:signedSubject(name,version),digest:{sha512:sriHex}}];
  const pub={_type:'https://in-toto.io/Statement/v0.1',predicateType:PUBLISH,subject,
   predicate:{name,version,registry:'https://registry.npmjs.org'}};
  const slsa={_type:'https://in-toto.io/Statement/v1',predicateType:SLSA,subject,
-  predicate:{buildDefinition:{externalParameters:{workflow:{repository:source}},
-   resolvedDependencies:[{uri:'git+'+source+'@refs/heads/14-2-1',digest:{gitCommit:commit}}]}}};
+  predicate:{buildDefinition:{externalParameters:{workflow:{repository:repo}},
+   resolvedDependencies:[{uri:'git+'+repo+'@'+ref,digest:{gitCommit:commit}}]}}};
  const wrap=x=>({predicateType:x.predicateType,bundle:{dsseEnvelope:{
   payload:Buffer.from(JSON.stringify(x)).toString('base64'),signatures:[{sig:'fictional-test-only'}]}}});
  return {name,version,attestationBundles:[wrap(pub),wrap(slsa)]};
 }
 function fixture(){
- const keys=targets.map(t=>t[0]+'@'+t[1]);
- const records=targets.map(([name,version])=>({
+ const signed=[...targets,...outOfScope];
+ const records=signed.map(([name,version])=>({
   name,version,lockedIntegrity:sri,candidateDistIntegrity:sri,
   candidateRegistryAttestationStatus:'UNVERIFIED_REGISTRY_ATTESTATION_POINTER',
   candidateRegistryAttestationUrl:'https://registry.npmjs.org/-/npm/v1/attestations/'+encodeURIComponent(name)+'@'+version,
@@ -38,34 +43,35 @@ function fixture(){
   saasNetworkRights:'PENDING_COUNSEL_REVIEW',
   enterpriseRedistributionRights:'PENDING_COUNSEL_REVIEW'
  }));
- for(let i=0;i<50;i++)records.push({
+ for(let i=0;i<42;i++)records.push({
   name:'other'+i,version:'1.0.0',lockedIntegrity:sri,
   candidateRegistryAttestationStatus:'NOT_ADVERTISED',
   publisherProvenanceIndependentlyVerified:false,commercialApproval:false,
   legalReviewStatus:'UNRESOLVED',saasNetworkRights:'PENDING_COUNSEL_REVIEW',
   enterpriseRedistributionRights:'PENDING_COUNSEL_REVIEW'});
  const candidates={schema:'therabridge-com02-upstream-authority-candidates-v1',
-  counts:{exceptions:53,registryAttestationPointersAdvertised:3,
+  counts:{exceptions:47,registryAttestationPointersAdvertised:5,
    legallyApproved:0,independentlyVerifiedPublisherProvenance:0},
   records,finalNoticesIssued:false,commercialLicenseGranted:false};
- const verifiedRows=targets.map(([name,version,commit])=>{
-  const entry=identity([name,version,commit]);
+ const verifiedRows=signed.map(row=>{
+  const [name,version]=row;
+  const entry=identity(row);
   return {name,version,signatureEvidenceStatus:'PINNED_NPM_SIGSTORE_BUNDLE_VERIFIED_SUBJECT_AND_DIGEST',
    exactRegistryLockMatch:true,matchingSubjectStatements:2,verifiedBundleCount:2,
    independentlyVerifiedPublisherSourceCorrespondence:false,commercialApproval:false,
    signedStatements:bundleStatements(entry,{name,version,lockedIntegrity:sri}).signedStatements};
  });
- const raw=Buffer.from(JSON.stringify({verified:targets.map(identity),invalid:[],missing:[]}));
+ const raw=Buffer.from(JSON.stringify({verified:signed.map(x=>identity(x)),invalid:[],missing:[]}));
  const verified={schema:'therabridge-com02-verified-npm-sigstore-candidates-v1',
   trustedVerifier:{name:'npm',version:'11.19.1',exitCode:0,resultHashSha256:sha(raw)},
   inputManifestSha256:sha(Buffer.from(JSON.stringify(candidates))),
-  counts:{unresolvedExactVersionPackages:53,attestationCandidates:3,
-   verifiedSignedSubjectsAndDigests:3,independentlyCorroboratedPublisherToSource:0,legallyApproved:0},
+  counts:{unresolvedExactVersionPackages:47,attestationCandidates:5,
+   verifiedSignedSubjectsAndDigests:5,independentlyCorroboratedPublisherToSource:0,legallyApproved:0},
   records:verifiedRows,finalNoticesIssued:false,commercialLicenseGranted:false,
   g2ClinicalApproved:false,g2bClinicalApproved:false};
  return {candidates,verified,raw};
 }
-test('cross-check complete 53-version queue and exact 3 verifiable signed sources',()=>{
+test('cross-check complete 47-version queue, exact 3 Next.js signed sources and 2 accounted out-of-scope signatures',()=>{
  const f=fixture();
  const rows=validate(f.candidates,f.verified,f.raw);
  assert.equal(rows.length,3);
@@ -77,16 +83,18 @@ test('independently hash exact immutable source manifests without claiming nativ
  const f=fixture(),visited=[];
  const out=await corroborate(f.candidates,f.verified,f.raw,{fetcher:async url=>{
   visited.push(url);
-  if(url.includes('/packages/next-env/'))return Buffer.from('{"name":"@next/env","version":"14.2.35"}');
-  if(url.includes('/packages/next-swc/'))return Buffer.from('{"name":"@next/swc","version":"14.2.33"}');
+  if(url.includes('/packages/next-env/'))return Buffer.from('{"name":"@next/env","version":"15.5.29"}');
+  if(url.includes('/packages/next-swc/'))return Buffer.from('{"name":"@next/swc","version":"15.5.29"}');
   throw Error('UNEXPECTED_URL');
  }});
- assert.equal(out.counts.allOriginalUnresolvedVersions,53);
+ assert.equal(out.counts.allOriginalUnresolvedVersions,47);
  assert.equal(out.counts.sigstoreSignedPackages,3);
+ assert.equal(out.counts.outOfScopeSigstoreSignedPackages,2);
  assert.equal(out.counts.sourceManifestMatches,3);
  assert.equal(out.counts.exactPackageSourceManifestMatches,1);
  assert.equal(out.counts.nativeBinaryParentSourceMatches,2);
- assert.equal(out.counts.remainingWithoutAdvertisedSigstore,50);
+ assert.equal(out.counts.remainingWithoutAdvertisedSigstore,42);
+ assert.equal(out.records.some(x=>x.name.startsWith('@img/')),false);
  assert.equal(out.counts.independentlyReproducedPublishedNpmTarballs,0);
  assert.equal(out.counts.legallyApproved,0);
  assert.equal(out.records.every(x=>x.commercialApproval===false&&
@@ -100,7 +108,7 @@ test('independently hash exact immutable source manifests without claiming nativ
 test('source manifest missing, wrong version or upstream outage never promotes correspondence',async()=>{
  const f=fixture();
  const out=await corroborate(f.candidates,f.verified,f.raw,{fetcher:async url=>{
-  if(url.includes('/packages/next-env/'))return Buffer.from('{"name":"@next/env","version":"14.2.34"}');
+  if(url.includes('/packages/next-env/'))return Buffer.from('{"name":"@next/env","version":"15.5.28"}');
   throw Error('UPSTREAM_TIMEOUT');
  }});
  assert.equal(out.counts.sourceManifestMatches,0);
@@ -119,7 +127,14 @@ test('reject forged Sigstore receipt, modified raw bundles, missing original pac
   f=>{f.candidates.records.pop();},
   f=>{f.candidates.records[1].name='@next/unknown';},
   f=>{f.verified.records.push({...f.verified.records[0]});},
-  f=>{f.raw=Buffer.from('{"verified":[],"invalid":[],"missing":[]}');}
+  f=>{f.raw=Buffer.from('{"verified":[],"invalid":[],"missing":[]}');},
+  // An out-of-scope signed package must stay accounted for and verified.
+  f=>{f.candidates.records.splice(3,1);f.candidates.counts.exceptions=46;},
+  f=>{f.candidates.records[3].name='@img/sharp-libvips-darwin-arm64';},
+  f=>{f.verified.records[3].signatureEvidenceStatus='UNVERIFIED_OR_NOT_EXPORTED';},
+  f=>{f.verified.records[4].commercialApproval=true;},
+  // A previously pinned Next.js version or source ref is no longer trusted.
+  f=>{f.candidates.records[0].version='14.2.35';}
  ]){
   const f=fixture();change(f);
   assert.throws(()=>validate(f.candidates,f.verified,f.raw));
@@ -131,7 +146,7 @@ test('reject arbitrary upstream domains, path traversal, wrong exact package man
  }
  assert.throws(()=>immutableUrl('z'.repeat(40),'packages/next-env/package.json'));
  assert.throws(()=>checkSourceManifest(Buffer.from('{"name":"@next/env","version":"14.2.34"}'),
-   {version:'14.2.35',sourceSpec:{sourceName:'@next/env'}}),/SOURCE_VERSION_IDENTITY_MISMATCH/);
+   {version:'15.5.29',sourceSpec:{sourceName:'@next/env'}}),/SOURCE_VERSION_IDENTITY_MISMATCH/);
  assert.throws(()=>checkSourceManifest(Buffer.from('{INVALID'),
-   {version:'14.2.35',sourceSpec:{sourceName:'@next/env'}}));
+   {version:'15.5.29',sourceSpec:{sourceName:'@next/env'}}));
 });

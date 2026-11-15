@@ -11,14 +11,15 @@ const typesIds=types.map(x=>'@types/'+x);
 function splitId(value){const i=value.lastIndexOf('@');return {name:value.slice(0,i),version:value.slice(i+1)};}
 function buildInputs(){
  const versionIds=[...typesIds,...expectedNonTypes];
- const rootNames=new Set(['@tokenizer/token','abstract-logging','consola','cssesc','dlv',
+ const rootNames=new Set(['@tokenizer/token','abstract-logging','cssesc','dlv',
   'emoji-regex','esrecurse','glob-to-regexp','jsesc','postcss-selector-parser',
-  'punycode','tmp','tr46','type-fest']);
+  'punycode','type-fest']);
  const group=key=>{
   const n=splitId(key).name;
   if(n.startsWith('@types/'))return 'DT';
-  if(n.startsWith('@next/'))return 'MONO';
-  if(['eastasianwidth','natural-compare'].includes(n))return 'LEGACY';
+  // Subpath-published signed libvips binaries: repository root has no manifest.
+  if(n.startsWith('@img/sharp-libvips-'))return 'MONO';
+  if(['natural-compare'].includes(n))return 'LEGACY';
   if(rootNames.has(n))return 'ROOT';
   return 'MISSING';
  };
@@ -31,7 +32,7 @@ function buildInputs(){
    sourcePackageSha256:g==='ROOT'?hash:null,
    evidenceStatus:g==='DT'||g==='MISSING'?'SOURCE_REVISION_CANDIDATE_UNAVAILABLE':
     g==='ROOT'?'REGISTRY_GITHEAD_MATCHES_IMMUTABLE_SOURCE_ROOT_MANIFEST_ONLY':
-    g==='MONO'?'SOURCE_PACKAGE_IDENTITY_MISMATCH':'UNTRUSTED_REPOSITORY',
+    g==='MONO'?'UPSTREAM_HTTP_404':'UNTRUSTED_REPOSITORY',
    sourceVersionCorrespondence:'NOT_INDEPENDENTLY_ATTESTED',
    commercialApproval:false};
  });
@@ -56,13 +57,13 @@ function buildInputs(){
    commercialApproval:false}));
  return [
   {schema:'therabridge-com02-exact-version-rights-queue-v1',
-   counts:{exceptions:53,nonPackageAssets:91},exceptions,nonPackage:assets,
+   counts:{exceptions:47,nonPackageAssets:91},exceptions,nonPackage:assets,
    finalNoticesIssued:false,commercialLicenseGranted:false},
   {schema:'therabridge-com02-githead-source-corroboration-candidates-v1',
-   counts:{exceptions:53},records:correspondence,
+   counts:{exceptions:47},records:correspondence,
    finalNoticesIssued:false,commercialLicenseGranted:false},
   {schema:'therabridge-com02-bulk-rights-review-v1',
-   counts:{packages:53,nonPackageAssets:91,packagesStillRequiringIndependentAttestation:53,
+   counts:{packages:47,nonPackageAssets:91,packagesStillRequiringIndependentAttestation:47,
     legallyApproved:0},packages:bulkPackages,nonPackageAssets:bulkAssets,
    finalNoticesIssued:false,commercialLicenseGranted:false},
   {schema:'therabridge-com02-definitelytyped-26-pinned-triage-v1',
@@ -73,13 +74,13 @@ function buildInputs(){
 }
 test('comprehensive exact-version, asset and two-edition zero-approval report',()=>{
  const r=reconcile(...buildInputs());
- assert.equal(r.counts.npmExceptionVersions,53);
+ assert.equal(r.counts.npmExceptionVersions,47);
  assert.equal(r.counts.definitelyTypedVersions,26);
- assert.equal(r.counts.otherNpmVersions,27);
- assert.equal(r.counts.SOURCE_ROOT_MANIFEST_ONLY,15);
+ assert.equal(r.counts.otherNpmVersions,21);
+ assert.equal(r.counts.SOURCE_ROOT_MANIFEST_ONLY,11);
  assert.equal(r.counts.MISSING_IMMUTABLE_SOURCE_REVISION,7);
- assert.equal(r.counts.MONOREPO_SOURCE_SUBPATH_NOT_ATTESTED,3);
- assert.equal(r.counts.LEGACY_REPO_ORIGIN_UNTRUSTED,2);
+ assert.equal(r.counts.MONOREPO_SOURCE_SUBPATH_NOT_ATTESTED,2);
+ assert.equal(r.counts.LEGACY_REPO_ORIGIN_UNTRUSTED,1);
  assert.deepEqual(r.counts.assetCategories,{IMAGE_OR_ICON:73,BRAND:15,CONTAINER_BUILD:3});
  assert.equal(r.assets.length,91);
  assert.deepEqual(r.editions.map(x=>x.edition),['SAAS','ENTERPRISE']);
@@ -93,7 +94,7 @@ test('rejects missing or substituted DefinitelyTyped versions',()=>{
  const b=buildInputs();b[3].records[0].version='99.99.99';
  assert.throws(()=>reconcile(...b),/COM02_FULL_SCOPE_/);
 });
-test('rejects missing source row or repeated 53-version identity',()=>{
+test('rejects missing source row or repeated 47-version identity',()=>{
  const a=buildInputs();a[1].records.pop();
  assert.throws(()=>reconcile(...a),/COM02_FULL_SCOPE_/);
  const b=buildInputs();b[0].exceptions[1].name=b[0].exceptions[0].name;
@@ -108,10 +109,28 @@ test('rejects fake historical package revision, publication or legal approval',(
  const c=buildInputs();c[0].exceptions[0].decision='APPROVED';
  assert.throws(()=>reconcile(...c),/COM02_FULL_SCOPE_/);
 });
-test('rejects changed 27-version group or imaginary upstream Git root hash',()=>{
- const a=buildInputs();a[1].records[30].evidenceStatus='SOURCE_REVISION_CANDIDATE_UNAVAILABLE';
+test('rejects changed 21-version group or imaginary upstream Git root hash',()=>{
+ const root=buildInputs()[1].records.findIndex(x=>x.name==='@tokenizer/token');
+ const a=buildInputs();a[1].records[root].evidenceStatus='SOURCE_REVISION_CANDIDATE_UNAVAILABLE';
  assert.throws(()=>reconcile(...a),/COM02_FULL_SCOPE_/);
- const b=buildInputs();b[1].records[30].sourcePackageSha256=null;
+ const b=buildInputs();b[1].records[root].sourcePackageSha256=null;
+ assert.throws(()=>reconcile(...b),/COM02_FULL_SCOPE_/);
+});
+test('only the pinned subpath-published packages may carry a root-manifest 404',()=>{
+ const idx=name=>buildInputs()[1].records.findIndex(x=>x.name===name);
+ const a=buildInputs();a[1].records[idx('@tokenizer/token')].evidenceStatus='UPSTREAM_HTTP_404';
+ a[1].records[idx('@tokenizer/token')].sourcePackageSha256=null;
+ assert.throws(()=>reconcile(...a),/COM02_FULL_SCOPE_UNEXPECTED_OTHER_SOURCE_GROUP/);
+ const b=buildInputs();b[1].records[idx('@img/sharp-libvips-linux-x64')].evidenceStatus='UPSTREAM_HTTP_500';
+ assert.throws(()=>reconcile(...b),/COM02_FULL_SCOPE_UNEXPECTED_OTHER_SOURCE_GROUP/);
+ const c=buildInputs();c[1].records[idx('@img/sharp-libvips-linux-x64')].sourcePackageSha256='a'.repeat(64);
+ assert.throws(()=>reconcile(...c),/COM02_FULL_SCOPE_/);
+});
+test('signed Next.js packages without registry gitHead stay in the missing-revision group',()=>{
+ const i=buildInputs()[1].records.findIndex(x=>x.name==='@next/env');
+ const a=buildInputs();a[1].records[i].candidateGitHead=commit;
+ assert.throws(()=>reconcile(...a),/COM02_FULL_SCOPE_NEXTJS_SOURCE_CLASSIFICATION/);
+ const b=buildInputs();b[1].records[i].evidenceStatus='SOURCE_PACKAGE_IDENTITY_MISMATCH';
  assert.throws(()=>reconcile(...b),/COM02_FULL_SCOPE_/);
 });
 test('rejects omitted asset, forged source hash, altered category and invented rights',()=>{

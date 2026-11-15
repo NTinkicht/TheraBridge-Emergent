@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     container:
-      image: mcr.microsoft.com/playwright:v1.48.2-noble
+      image: mcr.microsoft.com/playwright:v1.55.1-noble
       options: --ipc=host
     environment: hosted-responsive-private
     defaults:
@@ -39,7 +39,7 @@ jobs:
         run: |
           corepack enable
           yarn install --frozen-lockfile
-          node -e "if(require('playwright/package.json').version!=='1.48.2') process.exit(2)"
+          node -e "if(require('playwright/package.json').version!=='1.55.1') process.exit(2)"
           node --check scripts/qa/hosted-interactive.mjs
           node --check scripts/qa/hosted-extra-therapists.mjs
           node --test scripts/qa/hosted-render-attestation.test.mjs

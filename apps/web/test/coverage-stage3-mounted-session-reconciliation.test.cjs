@@ -189,6 +189,29 @@ describe('M4-08 90% real session interaction and identity preservation',()=>{
    objective:'',minutes:0,observation:''});
   expect(entries[0].outcome).toBeUndefined();
  });
+ it('library activity identity is minted once per Add, outside the replayable state updater',async()=>{
+  // React may legitimately invoke a state updater more than once (StrictMode, and
+  // React 19 update rebasing in production). An updater that minted the UUID
+  // re-keyed the new row on replay and dropped the clinician's first edit
+  // (PR #311 live-session regression). Emulate replay: every functional update
+  // is evaluated twice and the second result is kept.
+  const realUseState=React.useState;
+  const replay=jest.spyOn(React,'useState').mockImplementation(init=>{
+   const [value,set]=realUseState(init);
+   return [value,u=>set(typeof u==='function'?prev=>{u(prev);return u(prev);}:u)];
+  });
+  let n=0;
+  const uuid=jest.spyOn(globalThis.crypto,'randomUUID').mockImplementation(()=>'synthetic-id-'+(++n));
+  try{
+   await mount(note({activities:[]}));
+   await click('Add Fictional activity');
+   expect(uuid).toHaveBeenCalledTimes(1);
+   await change('objective-synthetic-id-1','Synthetic first edit after add');
+   await click('Save draft');
+   const entries=clinicalApi.saveSession.mock.calls[0][2].activities;
+   expect(entries.map(x=>[x.id,x.objective])).toEqual([['synthetic-id-1','Synthetic first edit after add']]);
+  }finally{uuid.mockRestore();replay.mockRestore();}
+ });
  it('query hides unrelated library suggestions and no synthetic activity is inserted',async()=>{
   await mount(note({activities:[]}));
   await change('session-search-note-a','not-in-catalogue');

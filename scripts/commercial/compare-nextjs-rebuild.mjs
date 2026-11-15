@@ -4,9 +4,10 @@
 import {readFileSync,statSync,writeFileSync} from 'node:fs';
 import {createHash,timingSafeEqual} from 'node:crypto';
 import {readArchive,checkSRI} from './inventory-nextjs-published-builds.mjs';
+import {NEXTJS_TARGETS,NEXTJS_SIGNED_COUNT} from './com02-nextjs-pins.mjs';
 
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
-const ALLOW = new Set(['@next/env@14.2.35','@next/swc-linux-x64-gnu@14.2.33','@next/swc-linux-x64-musl@14.2.33']);
+const ALLOW = new Set(Object.keys(NEXTJS_TARGETS));
 const ARCHIVE_MAX = 48*1024*1024;
 const EXPECTED_STATUS='INTEGRITY_VERIFIED_PUBLISHED_FILE_INVENTORY_NOT_REPRODUCIBILITY';
 
@@ -32,10 +33,10 @@ function lockedIntegrity(lockfile,key){
 function compare(readiness, key, rebuilt, published, lockfile) {
  if (!ALLOW.has(key)) throw Error('UNEXPECTED_EXACT_PACKAGE');
  if (readiness?.schema!=='therabridge-com02-published-nextjs-archive-reproducibility-readiness-v1' ||
-     readiness?.counts?.signedCandidates!==3 || readiness?.counts?.legallyApproved!==0 ||
+     readiness?.counts?.signedCandidates!==NEXTJS_SIGNED_COUNT || readiness?.counts?.legallyApproved!==0 ||
      readiness?.commercialLicenseGranted!==false || readiness?.finalNoticesIssued!==false ||
      readiness?.g2ClinicalApproved!==false || readiness?.g2bClinicalApproved!==false ||
-     !Array.isArray(readiness.records) || readiness.records.length!==3)
+     !Array.isArray(readiness.records) || readiness.records.length!==NEXTJS_SIGNED_COUNT)
    throw Error('UNTRUSTED_PUBLISHED_READINESS');
  const [name,version]=key.split('@').slice(1).length===2
    ? ['@'+key.split('@')[1], key.split('@')[2]]

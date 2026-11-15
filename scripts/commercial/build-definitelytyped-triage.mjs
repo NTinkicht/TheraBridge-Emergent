@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // COM-02: freeze 26 exact @types package/version obligations to same-run evidence.
+// Population size is pinned once in com02-nextjs-pins.mjs (COM02_UNRESOLVED_VERSIONS).
 // npm metadata/lock SRI != immutable DefinitelyTyped commit or publisher lineage.
 import {readFileSync,statSync,writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
+import {COM02_UNRESOLVED_VERSIONS as N} from './com02-nextjs-pins.mjs';
 const sha=x=>createHash('sha256').update(x).digest('hex');
 const expected=[
  'babel__core@7.20.5','babel__generator@7.27.0','babel__template@7.4.4',
@@ -19,7 +21,7 @@ const id=x=>x.name+'@'+x.version;
 const hex64=/^[a-f0-9]{64}$/;
 const integrity=/^sha512-[A-Za-z0-9+/]+={0,2}$/;
 function unique(rows,tag){
- if(!Array.isArray(rows)||rows.length!==53)throw Error('EXPECTED_53_'+tag);
+ if(!Array.isArray(rows)||rows.length!==N)throw Error('EXPECTED_COM02_POPULATION_'+tag);
  const m=new Map();
  for(const x of rows){if(!x||!x.name||!x.version||m.has(id(x)))throw Error('DUPLICATE_'+tag);m.set(id(x),x);}
  return m;
@@ -28,8 +30,8 @@ function build(upstream,correspondence,rights){
  if(upstream?.schema!=='therabridge-com02-upstream-authority-candidates-v1'||
    correspondence?.schema!=='therabridge-com02-githead-source-corroboration-candidates-v1'||
    rights?.schema!=='therabridge-com02-exact-version-rights-queue-v1'||
-   upstream.counts?.exceptions!==53||correspondence.counts?.exceptions!==53||
-   rights.counts?.exceptions!==53||upstream.commercialLicenseGranted!==false||
+   upstream.counts?.exceptions!==N||correspondence.counts?.exceptions!==N||
+   rights.counts?.exceptions!==N||upstream.commercialLicenseGranted!==false||
    correspondence.commercialLicenseGranted!==false||rights.commercialLicenseGranted!==false||
    upstream.finalNoticesIssued!==false||correspondence.finalNoticesIssued!==false||
    rights.finalNoticesIssued!==false)
@@ -37,7 +39,7 @@ function build(upstream,correspondence,rights){
  const u=unique(upstream.records,'UPSTREAM');
  const c=unique(correspondence.records,'CORRESPONDENCE');
  const q=unique(rights.exceptions,'RIGHTS');
- if([...u.keys()].some(k=>!c.has(k)||!q.has(k)))throw Error('MISSING_53_WAY_JOIN');
+ if([...u.keys()].some(k=>!c.has(k)||!q.has(k)))throw Error('MISSING_COM02_WAY_JOIN');
  const observed=[...u.keys()].filter(k=>k.startsWith('@types/')).sort();
  const target=expected.map(x=>'@types/'+x).sort();
  if(JSON.stringify(observed)!==JSON.stringify(target))throw Error('DEFINITELYTYPED_VERSION_DRIFT');
@@ -99,7 +101,7 @@ function build(upstream,correspondence,rights){
   evidenceSha256:{upstream:sha(JSON.stringify(upstream)),
    correspondence:sha(JSON.stringify(correspondence)),
    rights:sha(JSON.stringify(rights))},
-  counts:{sourceExceptionVersions:53,definitelyTypedVersions:26,
+  counts:{sourceExceptionVersions:N,definitelyTypedVersions:26,
    publisherContentHashesAdvertised:records.filter(x=>x.publisherContentHashCandidate!==null).length,
    historicalGitSourceContentMatches:0,
    publisherToSourceAttested:0,sourceLicenseLegallyApproved:0,

@@ -29,7 +29,7 @@ jobs:
     timeout-minutes: 45
     # Preinstalled matching Chromium binary, no flaky runtime browser CDN download.
     container:
-      image: mcr.microsoft.com/playwright:v1.48.2-noble
+      image: mcr.microsoft.com/playwright:v1.55.1-noble
       options: --ipc=host
     environment: hosted-responsive-private
     # /__w/_temp is the writable volume mounted into the Playwright job
@@ -48,7 +48,7 @@ jobs:
         run: |
           corepack enable
           yarn install --frozen-lockfile
-          node -e "if(require('playwright/package.json').version!=='1.48.2') process.exit(2)"
+          node -e "if(require('playwright/package.json').version!=='1.55.1') process.exit(2)"
           node -e "require('playwright').chromium.executablePath() && console.log('Matching Chromium binary path configured')"
       - name: Validate approved private credentials and live public health
         env:

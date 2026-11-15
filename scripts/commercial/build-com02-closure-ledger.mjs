@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 // COM-02: exhaustive source-vs-release evidence readiness, not rights approval.
-// Crosschecks all 53 exact-version packages, 91 tracked assets, and both editions.
+// Crosschecks all exact-version packages (population pinned in com02-nextjs-pins.mjs),
+// 91 tracked assets, and both editions.
 import {readFileSync,statSync,writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {reviewReleaseScope} from './review-release-scope.mjs';
 import {expected as typeVersions} from './build-definitelytyped-triage.mjs';
+import {COM02_UNRESOLVED_VERSIONS as N,OUT_OF_SCOPE_SIGNED} from './com02-nextjs-pins.mjs';
 const sha=x=>createHash('sha256').update(x).digest('hex');
 const hex=/^[0-9a-f]{64}$/;
 const id=x=>JSON.stringify([x.name,x.version]);
@@ -15,18 +17,25 @@ const categoryMap=new Map([
  ['UNTRUSTED_REPOSITORY','LEGACY_REPO_ORIGIN_UNTRUSTED']
 ]);
 const expectedNonTypes=[
- '@next/env@14.2.35','@next/swc-linux-x64-gnu@14.2.33',
- '@next/swc-linux-x64-musl@14.2.33','@swc/counter@0.1.3',
- '@tokenizer/token@0.3.0','abstract-logging@2.0.1','busboy@1.6.0',
- 'client-only@0.0.1','consola@2.15.3','cssesc@3.0.0',
- 'dlv@1.1.3','eastasianwidth@0.2.0','emoji-regex@8.0.0',
- 'emoji-regex@9.2.2','esrecurse@4.3.0','exit@0.1.2',
+ '@img/sharp-libvips-linux-x64@1.3.4','@img/sharp-libvips-linuxmusl-x64@1.3.4',
+ '@next/env@15.5.29','@next/swc-linux-x64-gnu@15.5.29',
+ '@next/swc-linux-x64-musl@15.5.29',
+ '@tokenizer/token@0.3.0','abstract-logging@2.0.1',
+ 'client-only@0.0.1','cssesc@3.0.0',
+ 'dlv@1.1.3','emoji-regex@8.0.0',
+ 'esrecurse@4.3.0','exit@0.1.2',
  'glob-to-regexp@0.4.1','imurmurhash@0.1.4',
  'jest-pnp-resolver@1.2.3','jsesc@3.1.0',
  'natural-compare@1.4.0','postcss-selector-parser@6.1.5',
- 'punycode@2.3.1','streamsearch@1.1.0',
- 'tmp@0.0.33','tr46@0.0.3','type-fest@4.41.0'
+ 'punycode@2.3.1','type-fest@4.41.0'
 ];
+// Exact packages published from a repository SUBPATH whose root has no package
+// manifest (immutable root read is HTTP 404). Only these may take that status;
+// any other 404 or unknown status still fails closed.
+const SUBPATH_PUBLISHED=new Set(OUT_OF_SCOPE_SIGNED);
+// Next.js 15.5.29 packages carry signed SLSA provenance but no registry gitHead,
+// so their source-revision candidate is unavailable here (see the Next.js chain).
+const NEXTJS_GROUP='MISSING_IMMUTABLE_SOURCE_REVISION';
 const groupNames=['DEFINITELYTYPED_HISTORICAL_RELEASE','SOURCE_ROOT_MANIFEST_ONLY',
  'MISSING_IMMUTABLE_SOURCE_REVISION','MONOREPO_SOURCE_SUBPATH_NOT_ATTESTED',
  'LEGACY_REPO_ORIGIN_UNTRUSTED'];
@@ -47,9 +56,9 @@ function reconcile(rights,correspondence,bulk,types,release){
     bulk?.schema!=='therabridge-com02-bulk-rights-review-v1'||
     types?.schema!=='therabridge-com02-definitelytyped-26-pinned-triage-v1'||
     release?.schema!=='therabridge-com02-release-file-evidence-v1'||
-    rights.counts?.exceptions!==53||rights.counts?.nonPackageAssets!==91||
-    correspondence.counts?.exceptions!==53||
-    bulk.counts?.packages!==53||bulk.counts?.nonPackageAssets!==91||
+    rights.counts?.exceptions!==N||rights.counts?.nonPackageAssets!==91||
+    correspondence.counts?.exceptions!==N||
+    bulk.counts?.packages!==N||bulk.counts?.nonPackageAssets!==91||
     types.counts?.definitelyTypedVersions!==26||
     types.counts?.publisherToSourceAttested!==0||
     rights.finalNoticesIssued!==false||bulk.finalNoticesIssued!==false||
@@ -57,9 +66,9 @@ function reconcile(rights,correspondence,bulk,types,release){
     rights.commercialLicenseGranted!==false||bulk.commercialLicenseGranted!==false||
     correspondence.commercialLicenseGranted!==false||types.commercialApproval!==false||
     release.commercialApproval!==false)fail('UNSAFE_INPUT_ENVELOPE');
- const r=indexed(rights.exceptions,53,'RIGHTS');
- const c=indexed(correspondence.records,53,'SOURCE');
- const b=indexed(bulk.packages,53,'BULK');
+ const r=indexed(rights.exceptions,N,'RIGHTS');
+ const c=indexed(correspondence.records,N,'SOURCE');
+ const b=indexed(bulk.packages,N,'BULK');
  const d=indexed(types.records,26,'TYPES');
  const sourceIds=new Set([...r.keys()]);
  if([...c.keys(),...b.keys()].some(k=>!sourceIds.has(k)))fail('MISSING_EXACT_VERSION_JOIN');
@@ -71,7 +80,7 @@ function reconcile(rights,correspondence,bulk,types,release){
     .map(x=>x.name+'@'+x.version).sort();
  if(JSON.stringify(seenOther)!==JSON.stringify(mustOther))fail('NON_TYPES_VERSION_DRIFT');
  const scoped=reviewReleaseScope(bulk,release); // independently validates actual candidate file hashes
- if(scoped.counts.nonPackageAssets!==91||scoped.counts.packages!==53||
+ if(scoped.counts.nonPackageAssets!==91||scoped.counts.packages!==N||
     scoped.counts.independentlyAttestedReleaseImages!==0||
     scoped.counts.independentlyAttestedPackagePublicationLineages!==0||
     scoped.counts.legallyApproved!==0||scoped.commercialLicenseGranted!==false)
@@ -106,10 +115,16 @@ function reconcile(rights,correspondence,bulk,types,release){
       fail('FORGED_DT_HISTORICAL_LINEAGE');
    group='DEFINITELYTYPED_HISTORICAL_RELEASE';
   }else{
-   if(dt||!categoryMap.has(s.evidenceStatus))fail('UNEXPECTED_OTHER_SOURCE_GROUP');
-   group=categoryMap.get(s.evidenceStatus);
-   if((group==='MONOREPO_SOURCE_SUBPATH_NOT_ATTESTED')!==e.name.startsWith('@next/'))
+   const exactId=e.name+'@'+e.version;
+   if(dt)fail('UNEXPECTED_OTHER_SOURCE_GROUP');
+   if(SUBPATH_PUBLISHED.has(exactId)&&s.evidenceStatus==='UPSTREAM_HTTP_404'&&s.sourcePackageSha256==null)
+     group='MONOREPO_SOURCE_SUBPATH_NOT_ATTESTED';
+   else if(categoryMap.has(s.evidenceStatus))group=categoryMap.get(s.evidenceStatus);
+   else fail('UNEXPECTED_OTHER_SOURCE_GROUP');
+   if((group==='MONOREPO_SOURCE_SUBPATH_NOT_ATTESTED')!==SUBPATH_PUBLISHED.has(exactId))
      fail('MONOREPO_ORIGIN_CLASSIFICATION');
+   if(e.name.startsWith('@next/')&&(group!==NEXTJS_GROUP||s.candidateGitHead!==null))
+     fail('NEXTJS_SOURCE_CLASSIFICATION');
    if(group==='SOURCE_ROOT_MANIFEST_ONLY'&&(!hex.test(s.sourcePackageSha256||'')||
         !/^[a-f0-9]{40}$/.test(s.candidateGitHead||'')))fail('ROOT_SOURCE_CANDIDATE_MISSING');
   }
@@ -128,10 +143,10 @@ function reconcile(rights,correspondence,bulk,types,release){
  packages.sort((a,b)=>a.name.localeCompare(b.name,'en')||a.version.localeCompare(b.version,'en'));
  const groups=Object.fromEntries(groupNames.map(g=>[g,packages.filter(x=>x.group===g).length]));
  if(groups.DEFINITELYTYPED_HISTORICAL_RELEASE!==26||
-    groups.SOURCE_ROOT_MANIFEST_ONLY!==15||
+    groups.SOURCE_ROOT_MANIFEST_ONLY!==11||
     groups.MISSING_IMMUTABLE_SOURCE_REVISION!==7||
-    groups.MONOREPO_SOURCE_SUBPATH_NOT_ATTESTED!==3||
-    groups.LEGACY_REPO_ORIGIN_UNTRUSTED!==2)fail('GROUP_COUNT_DRIFT');
+    groups.MONOREPO_SOURCE_SUBPATH_NOT_ATTESTED!==2||
+    groups.LEGACY_REPO_ORIGIN_UNTRUSTED!==1)fail('GROUP_COUNT_DRIFT');
  const assetByPath=new Map();
  if(rights.nonPackage.length!==91||bulk.nonPackageAssets.length!==91||
     scoped.assets.length!==91)fail('ASSET_COUNT_DRIFT');
@@ -181,7 +196,7 @@ function reconcile(rights,correspondence,bulk,types,release){
     correspondence:sha(JSON.stringify(correspondence)),
     bulk:sha(JSON.stringify(bulk)),definitelyTyped:sha(JSON.stringify(types)),
     candidateRelease:sha(JSON.stringify(release))},
-  counts:{npmExceptionVersions:53,definitelyTypedVersions:26,otherNpmVersions:27,
+  counts:{npmExceptionVersions:N,definitelyTypedVersions:26,otherNpmVersions:expectedNonTypes.length,
    ...groups,nonPackageAssets:91,assetCategories:assetCounts,
    productionSaasImagesIndependentlyAuthenticated:0,
    enterpriseDeliverablesIndependentlyAuthenticated:0,

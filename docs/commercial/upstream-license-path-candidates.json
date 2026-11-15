@@ -25,17 +25,6 @@
       "commercialApproval": false
     },
     {
-      "name": "emoji-regex",
-      "version": "9.2.2",
-      "owner": "mathiasbynens",
-      "repository": "emoji-regex",
-      "commit": "0ffa466d7ab65af304d03dddd3a92a2d8268e7ce",
-      "paths": [
-        "LICENSE-MIT.txt"
-      ],
-      "commercialApproval": false
-    },
-    {
       "name": "jsesc",
       "version": "3.1.0",
       "owner": "mathiasbynens",
@@ -65,17 +54,6 @@
       "commit": "9e1b2cda98d215d3a73fcbfe93c62e021f4ba768",
       "paths": [
         "LICENSE-MIT.txt"
-      ],
-      "commercialApproval": false
-    },
-    {
-      "name": "tmp",
-      "version": "0.0.33",
-      "owner": "raszi",
-      "repository": "node-tmp",
-      "commit": "0900dd5b112ac7a482e4bdf3cb002bfe1b3acf77",
-      "paths": [
-        "LICENSE"
       ],
       "commercialApproval": false
     },
