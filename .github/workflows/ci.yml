@@ -316,7 +316,7 @@ jobs:
             /tmp/therabridge-com01-counsel-intake.json
       - name: Build conservative actual-image candidate comparison (unattested means unresolved)
         run: node scripts/commercial/review-release-scope.mjs /tmp/therabridge-com02-bulk-rights-evidence.json docs/commercial/release-file-evidence.json /tmp/therabridge-com02-release-scope-review.json
-      - name: Test exhaustive 53-version 91-asset dual-edition COM-02 closure ledger
+      - name: Test exhaustive exact-version (47 after PR #311) 91-asset dual-edition COM-02 closure ledger
         run: node --test scripts/commercial/build-com02-closure-ledger.test.mjs
       - name: Generate fail-closed COM-02 per-component commercial rights and release blocker ledger
         run: |

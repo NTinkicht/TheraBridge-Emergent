@@ -1,5 +1,7 @@
 # COM-02 full-scope evidence closure matrix — 53 npm versions, 91 assets, two editions
 
+> **Re-baseline 2026-11-15 (PR #311, Nest 11 / Next 15.5.29 dependency security upgrade):** the exact population is now **47** npm exceptions — the same **26** DefinitelyTyped versions plus **21** others: **11** immutable root `package.json` observations, **7** without a pinned revision (now including the three Next.js 15.5.29 packages, which carry signed SLSA provenance but no registry `gitHead`), **2** subpath-published LGPL-3.0-or-later `@img/sharp-libvips-*@1.3.4` binaries whose repository root has no manifest (HTTP 404), and **1** legacy untrusted repository identity. Removed from the lock: Next 14 `@next/*`, `@swc/counter`, `busboy`, `streamsearch`, `consola`, `eastasianwidth`, `emoji-regex@9.2.2`, `tmp@0.0.33`, `tr46@0.0.3`. Assets (91) and every BLOCKED/UNRESOLVED conclusion below are unchanged; the historical text below describes the pre-upgrade 53-version snapshot.
+
 **BLOCKED. Evidence integrity implementation; not independently established publication lineage, actual commercial release artifact, licensed IP, or clinical authorization.**
 
 Tracks [#356](https://github.com/NTinkicht/TheraBridge-Emergent/issues/356), [#360](https://github.com/NTinkicht/TheraBridge-Emergent/issues/360), [#371](https://github.com/NTinkicht/TheraBridge-Emergent/issues/371). This reconciles the previously separate, existing exact-version registries; it does not duplicate npm collectors, source-file hasher, signature verification, asset hashing or contract drafting.
