@@ -23,6 +23,7 @@ export function validateKeyboardJourneys(items) {
     if (item.desktopHomeViaEnter !== 'OBSERVED' || item.mobileSelectFocus !== 'OBSERVED' ||
         item.desktopRailToggle !== 'OBSERVED' ||
         item.mobileMoreKeyboard !== 'OBSERVED' || item.mobilePermissionLinks !== 'OBSERVED' ||
+        item.mobileBreakpointClosure !== 'OBSERVED' || item.mobileScrollLockRestored !== 'OBSERVED' ||
         !Number.isInteger(item.mobileQuickLinkCount) || item.mobileQuickLinkCount < 1 || item.mobileQuickLinkCount > 3 ||
         !['OBSERVED', 'NOT_OBSERVED'].includes(item.mobileShiftTabToSignOut) ||
         item.signOutViaEnter !== 'OBSERVED' ||
@@ -86,10 +87,17 @@ export async function observeKeyboardJourney(page, persona, { base, settle }) {
   })));
   assert(quickLinks.length >= 1 && quickLinks.length <= 3, 'Mobile quick navigation must stay bounded');
 
+  const originalOverflow = await page.evaluate(() => ({
+    body: document.body.style.overflow,
+    root: document.documentElement.style.overflow,
+  }));
   const more = page.getByTestId('mobile-more-button');
   await more.focus();
   await page.keyboard.press('Enter');
   await page.getByTestId('mobile-more-sheet').waitFor({ state: 'visible' });
+  await page.waitForFunction(() =>
+    document.body.style.overflow === 'hidden' && document.documentElement.style.overflow === 'hidden',
+    null, { timeout: 5000 });
   const dialog = page.getByRole('dialog', { name: 'All navigation' });
   assert.equal(await dialog.getAttribute('aria-modal'), 'true');
   const closeButton = page.getByTestId('mobile-more-close');
@@ -125,6 +133,25 @@ export async function observeKeyboardJourney(page, persona, { base, settle }) {
   await page.getByTestId('mobile-more-sheet').waitFor({ state: 'hidden' });
   assert(await more.evaluate(el => document.activeElement === el),
     'Escape must return keyboard focus to More button');
+  await page.waitForFunction(previous =>
+    document.body.style.overflow === previous.body &&
+    document.documentElement.style.overflow === previous.root, originalOverflow, { timeout: 5000 });
+
+  // Codex P2 regression: opening More, crossing md, then returning to mobile
+  // must never resurrect a hidden logical modal with focus behind it.
+  await page.keyboard.press('Enter');
+  await page.getByTestId('mobile-more-sheet').waitFor({ state: 'visible' });
+  await page.setViewportSize({ width: 1024, height: 850 });
+  await page.getByTestId('mobile-more-sheet').waitFor({ state: 'hidden' });
+  assert.equal(await more.getAttribute('aria-expanded'), 'false',
+    'More must become logically closed at desktop breakpoint');
+  await page.setViewportSize({ width: 320, height: 850 });
+  await page.getByTestId('mobile-more-sheet').waitFor({ state: 'hidden' });
+  assert.equal(await more.getAttribute('aria-expanded'), 'false',
+    'Returning to mobile must not resurrect a hidden More panel');
+  await page.waitForFunction(previous =>
+    document.body.style.overflow === previous.body &&
+    document.documentElement.style.overflow === previous.root, originalOverflow, { timeout: 5000 });
 
   await signOut.focus();
   const signOutFocused = await signOut.evaluate(el => document.activeElement === el);
@@ -136,6 +163,7 @@ export async function observeKeyboardJourney(page, persona, { base, settle }) {
     persona: persona.id,
     desktopHomeViaEnter: 'OBSERVED', desktopRailToggle: 'OBSERVED',
     mobileMoreKeyboard: 'OBSERVED', mobilePermissionLinks: 'OBSERVED',
+    mobileBreakpointClosure: 'OBSERVED', mobileScrollLockRestored: 'OBSERVED',
     mobileQuickLinkCount: quickLinks.length,
     mobileSelectFocus: 'OBSERVED',
     mobileShiftTabToSignOut: shiftBack ? 'OBSERVED' : 'NOT_OBSERVED',
