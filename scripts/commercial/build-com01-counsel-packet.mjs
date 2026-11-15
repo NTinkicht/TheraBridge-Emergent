@@ -27,6 +27,15 @@ const contractSections=[
  ['ORDER_FORM','## H. Order Form'],
  ['APPROVAL_MATRIX','## I. Approval and traceability matrix']
 ];
+const expectedApprovalMatrix=[
+ ['Rights-holder, academic/student/partner contributions','OPEN'],
+ ['Exact dependency/asset/model rights and SaaS/enterprise obligations','OPEN'],
+ ['Final authoritative repository proprietary notice','BLOCKED'],
+ ['Legal text, privacy law, child/health data and signatory authority','OPEN'],
+ ['Tier/limit/expiry and customer continuity policies','OPEN'],
+ ['Billing, enterprise deployment and production readiness','OPEN'],
+ ['G2/G2b and clinical/consent/safeguarding/AI release approval','NO-GO']
+];
 const legalGates=[
  'RIGHTS_HOLDER_IDENTITY','SOURCE_CHAIN_OF_TITLE',
  'ACADEMIC_INSTITUTIONAL_PERMISSION','PARTNER_BRAND_PERMISSION',
@@ -42,7 +51,7 @@ function buildPacket({rights,contracts,notice,launch}){
  }
  if(!rights.startsWith('# COM-01: intellectual-property rights evidence register')||
     !rights.includes('Status: NOT VERIFIED')||
-    !contracts.startsWith('# TheraBridge — MSA and SaaS / Enterprise contracting pack')||
+    !contracts.startsWith('# TheraBridge — MSA and SaaS / Enterprise contracting pack\\n\\n**PUBLIC WORKING DRAFT — NOT A SIGNABLE AGREEMENT, OFFER, COPYRIGHT LICENSE OR PRODUCTION AUTHORIZATION.**\\n**Every [BRACKETED] field is an unresolved business/legal approval item, not a proposed default.**')||
     !notice.startsWith('# Proposed TheraBridge Proprietary Notice — NOT ADOPTED'))
   throw Error('COM01_SOURCE_STATUS_NOT_FAIL_CLOSED');
  const rows=rights.split(/\r?\n/).filter(line=>line.startsWith('| '));
@@ -60,6 +69,18 @@ function buildPacket({rights,contracts,notice,launch}){
    if(matches.length!==1)throw Error('COM01_REQUIRED_CONTRACT_SECTION_MISSING_OR_DUPLICATED_'+id);
    return {id,present:true,approved:false};
  });
+ const matrix=contracts.split('## I. Approval and traceability matrix');
+ if(matrix.length!==2)throw Error('COM01_INVALID_APPROVAL_MATRIX');
+ const matrixRows=matrix[1].split(/\\r?\\n/).filter(line=>line.startsWith('| ')).slice(2);
+ if(matrixRows.length!==expectedApprovalMatrix.length)
+   throw Error('COM01_UNEXPECTED_APPROVAL_MATRIX_ROWS');
+ for(const [label,status] of expectedApprovalMatrix){
+   const matching=matrixRows.map(line=>line.split('|').slice(1,-1).map(cell=>cell.trim()))
+     .filter(cells=>cells[0]===label);
+   if(matching.length!==1||matching[0].length!==3||
+      !matching[0][1]||matching[0][2]!==status)
+     throw Error('COM01_CONTRACT_APPROVAL_MATRIX_NOT_BLOCKED');
+ }
  const decisions=legalGates.map(id=>({id,status:'UNRESOLVED',
   evidenceReference:'NOT_PROVIDED',humanSignoffVerified:false}));
  try{verifyCom05Draft(JSON.parse(launch));}
