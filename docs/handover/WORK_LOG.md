@@ -1,3 +1,8 @@
+## 2026-11-15 — M4-CLOSE-02 provenance preflight branch
+Audited Render workspace services and database inventory (no disposable hosted TheraBridge DB or service); inspected existing protected GitHub workflow and previous test results. Implemented mandatory read-only live Render SHA check on exact checkout and operator input before accessing ten synthetic private passwords. Added mock-API adversarial unit tests and operator readiness runbook. No Render deploy, service, DB, secret, shared demo or clinical policy modified. PR CI and final independent review pending.
+
+---
+
 ## 2026-11-15 — M4-CLOSE-02 implementation checkpoint
 Checked Render live service/deploy SHA and the protected hosted workflow's approval/secrets/main-only constraints. Added executable isolated *_test PostgreSQL two-valid-center auth and revocation tests and tightened acceptance receipt validation to reject simple booleans and misclassified 401/403/404. No protected run dispatched; GitHub connector does not expose workflow dispatch. No environment/prod/clinical mutations. New PR CI and review still NOT RUN/PENDING.
 
