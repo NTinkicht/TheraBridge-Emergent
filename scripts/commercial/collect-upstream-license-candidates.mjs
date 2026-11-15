@@ -87,8 +87,9 @@ function parseManifest(bytes,name,version){
  const dist=item.dist&&typeof item.dist==='object'?item.dist:{};
  const attestation=attestationPointer(dist,name,version);
  const publisherHash=item.typesPublisherContentHash;
- const candidateTypesPublisherContentHash=typeof publisherHash==='string'&&
-   /^[a-f0-9]{64}$/.test(publisherHash)?publisherHash:null;
+ const candidateTypesPublisherContentHash=name.startsWith('@types/')&&
+   typeof publisherHash==='string'&&/^[a-f0-9]{64}$/.test(publisherHash)?
+   publisherHash:null;
  const candidateTypesPublisherHashStatus=!name.startsWith('@types/')?
    'NOT_DEFINITELYTYPED':
    publisherHash===undefined?'NOT_ADVERTISED':
