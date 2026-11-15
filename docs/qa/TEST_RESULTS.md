@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-02 task IA crosswalk (UNQUALIFIED source design)
+Added canonical inventory-to-eight-task-area pure source model, enforcing 66 feature IDs, 91 workflow IDs, 20 current nav rows, 7 persona review candidates, two V2 excluded items and no false route permission or UX pass. Adversarial tests and CI receipt wired, but final-head run not yet verified. No in-app change, no screenshots, no screen reader, no end-to-end clickable task tests and no approved human UX signoff; #185 OPEN, G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — M5-01 keyboard route journeys and timing metric addition (UNQUALIFIED)
 Source instrumentation adds 175 route-settle time samples and seven keyboard-path samples to existing isolated synthetic browser CI. New negative tests reject forged PASS, invalid timings, missing/duplicated personas and unsafe receipt fields. Final-head execution not yet verified; task timings, human visual checks and screen-reader validation still NOT RUN. #184 OPEN, clinical G2/G2b NO-GO.
 

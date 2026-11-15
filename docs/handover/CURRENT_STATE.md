@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-02 canonical task IA proposal IN PR (not qualified)
+A design-only, source-derived eight-area navigation taxonomy maps all 66 features, 91 workflows and 20 current permission-conditioned NAV entries with seven role review candidates. No UI refactor, real permission grant, clinical/UX approval or authorized route added. Feature #39 and WF-X6 remain V2 excluded. Exact-head CI/Codex required. #185 remains OPEN; G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — M5-01 keyboard and machine timing tranche (IN PR, NOT QUALIFIED)
 Merged prior source #380 and 175-viewport browser #381 baselines; this new independent PR adds route settling times, seven safe synthetic keyboard journeys (desktop Enter Home, mobile select focus/Shift+Tab, Enter sign-out), strict no-secret receipt and negative tests. No full-task measurements, human visual review, screen-reader approval or clinical gate changes. Full CI/Codex pending. #184 stays OPEN, G2/G2b NO-GO.
 

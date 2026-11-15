@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-02 source crosswalk engineering tranche
+Created `scripts/design/m5-ia-crosswalk.mjs` and adversarial tests reading canonical CSV registers and existing ProductShell NAV; emits 66+91+20 grouped rows and 7-persona no-grants permission review. Added full CI artifact, owner-limited journey proposal, and explicit untested/blocked scopes. PR review/CI pending; no proof of clickability, usability or permissions, no production change.
+
+---
+
 ## 2026-11-15 — M5-01 third audit tranche, engineering implementation
 Added seven role keyboard journey checks with direct keyboard Home/sign-out activation and mobile focus behavior, numeric page-settling timings on existing 175 synthetic visits, validation tests and CI wiring. No clinical action or external production fixtures. Await exact-head CI and independent Codex; NOT UX acceptance.
 
