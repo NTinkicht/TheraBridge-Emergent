@@ -122,7 +122,8 @@ export async function buildIaCrosswalk({ directory = defaultDirectory, sourceAud
     })),
     navigation: audit.navigation.map(n => ({
       key: n.key, title: n.label, href: n.href, permission: n.permission,
-      proposedArea: requireKnownArea(navAreas[n.key]),
+      proposedArea: requireKnownArea(n.key === 'activities' && n.permission === 'family.activities.read'
+        ? 'family' : navAreas[n.key]),
       authorization: 'EXISTING_SERVER_SESSION_PERMISSION_FILTER',
       discoverability: 'NOT_TESTED',
     })),
