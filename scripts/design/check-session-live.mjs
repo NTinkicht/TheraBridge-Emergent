@@ -87,7 +87,11 @@ try {
   await page.route('**/clinical/sessions/*', async route => {
     if (route.request().method() === 'PATCH') {
       await responseText(remote).fill('Remote raced after recovery'); await saveDraft(remote); await saved(remote);
+      // Playwright >=1.55 settles in-flight routes when their handler is unrouted,
+      // so release this held PATCH first and only then remove the interceptor.
+      await route.continue();
       await page.unroute('**/clinical/sessions/*');
+      return;
     }
     await route.continue();
   });
