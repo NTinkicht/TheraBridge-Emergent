@@ -27,6 +27,7 @@ jest.mock('@/components/design/useNow',()=>({
 }));
 const Child=require('../src/app/design-preview/child/page').default;
 const Family=require('../src/app/design-preview/family/page').default;
+const Center=require('../src/app/design-preview/center/page').default;
 const Platform=require('../src/app/design-preview/platform/page').default;
 let tree=null,originalWindow;
 beforeAll(()=>{originalWindow=global.window;global.window={location:{search:''}};});
@@ -103,5 +104,31 @@ describe('M4-08 platform simulation remains plainly illustrative and fail closed
   await click('applications-tab-decided');
   expect(get('applications-tab-decided').props['aria-selected']).toBe(true);
   expect(html()).toContain('Decisions need a written rationale');
+ });
+});
+
+describe('M4-08 mounted fictional center preview protects pending invitation interactions',()=>{
+ it('requires confirmation before a preview-only pending invitation can be revoked',async()=>{
+  await mount(Center);
+  expect(get('trial-banner')).toBeTruthy();
+  expect(get('staff-card')).toBeTruthy();
+  await click('invite-revoke');
+  expect(get('revoke-dialog')).toBeTruthy();
+  expect(mockNotify).not.toHaveBeenCalled();
+  await click('revoke-cancel');
+  expect(find('revoke-dialog')).toHaveLength(0);
+  expect(mockNotify).not.toHaveBeenCalled();
+ });
+ it('never claims that the illustrative revoke action changed a real invitation',async()=>{
+  await mount(Center);
+  await click('invite-revoke');
+  await click('revoke-confirm');
+  expect(find('revoke-dialog')).toHaveLength(0);
+  expect(mockNotify).toHaveBeenCalledWith(expect.stringContaining('nothing was revoked'));
+ });
+ it('keeps resend illustrative instead of sending an invitation',async()=>{
+  await mount(Center);
+  await click('invite-resend');
+  expect(mockNotify).toHaveBeenCalledWith(expect.stringContaining('no invitation was resent'));
  });
 });
