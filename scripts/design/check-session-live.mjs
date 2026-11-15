@@ -12,12 +12,14 @@ const page = await context.newPage();
 // Local test runs use the same proxy origin rather than the externally exposed preview hostname.
 await context.addInitScript(() => { const original = window.fetch; window.fetch = (input, init) => typeof input === 'string' && input.includes('/api/') ? original(location.origin + new URL(input, location.origin).pathname + new URL(input, location.origin).search, init) : original(input, init); });
 const errors = []; page.on('pageerror', e => errors.push(e.message));
-// Failure diagnostics only: synthetic API error statuses/messages (never credentials or bodies sent).
+// Failure diagnostics only: synthetic API error statuses/messages and activity enum shape (never credentials or free text).
 const apiFailures = [];
 context.on('response', async r => {
   if (!r.url().includes('/api/') || r.status() < 400) return;
   let message = ''; try { const j = await r.json(); message = String(j?.message ?? j?.error ?? '').slice(0, 300); } catch {}
-  apiFailures.push(`${r.request().method()} ${new URL(r.url()).pathname} -> ${r.status()} ${message}`);
+  // Only synthetic enum/shape fields of the activity rows, never free text or credentials.
+  let shape = ''; try { const b = r.request().postDataJSON(); shape = JSON.stringify((b?.activities ?? []).map(a => ({ completion: a.completion, outcome: a.outcome ?? null, assistance: a.assistance ?? null, objectiveLength: (a.objective ?? '').length, minutes: a.minutes }))); } catch {}
+  apiFailures.push(`${r.request().method()} ${new URL(r.url()).pathname} -> ${r.status()} ${message} ${shape}`);
 });
 try {
   await page.goto(`${base}/login`);
@@ -196,7 +198,10 @@ try {
   console.log('PASS: real login → assigned child → ad-hoc start → library selection → separate result/assistance → synthetic transcript correction/insertion → autosave → reload/resume → complete → reload read-only; two-tab conflicts, blocked autosave, note/activity preservation, deliberate reconciliation, repeated updates, server retention, revoked/failed recovery and copyable exact uninserted transcript after remote completion; real Nest/Fastify and PostgreSQL, no mocked API responses.');
 } catch (e) {
   try {
-    for (const p of context.pages()) for (const t of await p.locator('[data-testid^="note-"] [role="status"], [data-testid^="note-"] p').allInnerTexts()) if (/sav|conflict|error|fail|unknown|resolve/i.test(t)) console.error('NOTE_STATUS', t.slice(0, 300));
+    for (const p of context.pages()) {
+      for (const t of await p.locator('[data-testid^="note-"] [role="status"]').allInnerTexts()) console.error('NOTE_STATUS', t.slice(0, 300));
+      console.error('NOTE_SELECTS', JSON.stringify(await p.locator('[data-testid^="note-"] select').evaluateAll(list => list.map(e => ({ id: (e.dataset.testid ?? '').split('-')[0], value: e.value, disabled: e.matches(':disabled') })))));
+    }
   } catch {}
   console.error('API_FAILURES', JSON.stringify(apiFailures.slice(-20)));
   console.error('PAGE_ERRORS', JSON.stringify(errors.slice(-10)));
