@@ -25,7 +25,8 @@
       "observationStatus": "DIRECT_CLAIMED_REPOSITORY_EXACT_COMMIT_MANIFEST_MATCH",
       "npmTarballBuiltFromSourceIndependentlyVerified": false,
       "sourceLicenseTextLegallyApproved": false,
-      "commercialApproval": false
+      "commercialApproval": false,
+      "githubRepoRedirect": null
     },
     {
       "name": "abstract-logging",
@@ -40,7 +41,8 @@
       "observationStatus": "DIRECT_CLAIMED_REPOSITORY_EXACT_COMMIT_MANIFEST_MATCH",
       "npmTarballBuiltFromSourceIndependentlyVerified": false,
       "sourceLicenseTextLegallyApproved": false,
-      "commercialApproval": false
+      "commercialApproval": false,
+      "githubRepoRedirect": null
     },
     {
       "name": "consola",
@@ -52,10 +54,16 @@
       "gitManifestBlobSha1": "dc2d25de3524c89079a0d92b489423d838bc40fe",
       "sourceManifestSha256": "747a0e7c5a79afa5c946fb707658b46e9285e851979238b626a00b27435b6c69",
       "manifestLicenseMetadata": "MIT",
-      "observationStatus": "ALTERNATE_REPOSITORY_EXACT_COMMIT_MATCH_HISTORICAL_CLAIM_UNRESOLVED",
+      "observationStatus": "ALTERNATE_REPOSITORY_EXACT_COMMIT_MATCH_GITHUB_REDIRECT_VERIFIED_COPYRIGHT_UNVERIFIED",
       "npmTarballBuiltFromSourceIndependentlyVerified": false,
       "sourceLicenseTextLegallyApproved": false,
-      "commercialApproval": false
+      "commercialApproval": false,
+      "githubRepoRedirect": {
+        "requested": "nuxt/consola",
+        "canonical": "unjs/consola",
+        "repositoryId": "127546642",
+        "githubEndpointResolvesToSameRepositoryId": true
+      }
     },
     {
       "name": "cssesc",
@@ -70,7 +78,8 @@
       "observationStatus": "DIRECT_CLAIMED_REPOSITORY_EXACT_COMMIT_MANIFEST_MATCH",
       "npmTarballBuiltFromSourceIndependentlyVerified": false,
       "sourceLicenseTextLegallyApproved": false,
-      "commercialApproval": false
+      "commercialApproval": false,
+      "githubRepoRedirect": null
     },
     {
       "name": "dlv",
@@ -85,7 +94,8 @@
       "observationStatus": "DIRECT_CLAIMED_REPOSITORY_EXACT_COMMIT_MANIFEST_MATCH",
       "npmTarballBuiltFromSourceIndependentlyVerified": false,
       "sourceLicenseTextLegallyApproved": false,
-      "commercialApproval": false
+      "commercialApproval": false,
+      "githubRepoRedirect": null
     },
     {
       "name": "emoji-regex",
@@ -100,7 +110,8 @@
       "observationStatus": "DIRECT_CLAIMED_REPOSITORY_EXACT_COMMIT_MANIFEST_MATCH",
       "npmTarballBuiltFromSourceIndependentlyVerified": false,
       "sourceLicenseTextLegallyApproved": false,
-      "commercialApproval": false
+      "commercialApproval": false,
+      "githubRepoRedirect": null
     },
     {
       "name": "emoji-regex",
@@ -115,7 +126,8 @@
       "observationStatus": "DIRECT_CLAIMED_REPOSITORY_EXACT_COMMIT_MANIFEST_MATCH",
       "npmTarballBuiltFromSourceIndependentlyVerified": false,
       "sourceLicenseTextLegallyApproved": false,
-      "commercialApproval": false
+      "commercialApproval": false,
+      "githubRepoRedirect": null
     },
     {
       "name": "esrecurse",
@@ -130,7 +142,8 @@
       "observationStatus": "DIRECT_CLAIMED_REPOSITORY_EXACT_COMMIT_MANIFEST_MATCH",
       "npmTarballBuiltFromSourceIndependentlyVerified": false,
       "sourceLicenseTextLegallyApproved": false,
-      "commercialApproval": false
+      "commercialApproval": false,
+      "githubRepoRedirect": null
     },
     {
       "name": "glob-to-regexp",
@@ -145,7 +158,8 @@
       "observationStatus": "DIRECT_CLAIMED_REPOSITORY_EXACT_COMMIT_MANIFEST_MATCH",
       "npmTarballBuiltFromSourceIndependentlyVerified": false,
       "sourceLicenseTextLegallyApproved": false,
-      "commercialApproval": false
+      "commercialApproval": false,
+      "githubRepoRedirect": null
     },
     {
       "name": "jsesc",
@@ -160,7 +174,8 @@
       "observationStatus": "DIRECT_CLAIMED_REPOSITORY_EXACT_COMMIT_MANIFEST_MATCH",
       "npmTarballBuiltFromSourceIndependentlyVerified": false,
       "sourceLicenseTextLegallyApproved": false,
-      "commercialApproval": false
+      "commercialApproval": false,
+      "githubRepoRedirect": null
     },
     {
       "name": "postcss-selector-parser",
@@ -175,7 +190,8 @@
       "observationStatus": "DIRECT_CLAIMED_REPOSITORY_EXACT_COMMIT_MANIFEST_MATCH",
       "npmTarballBuiltFromSourceIndependentlyVerified": false,
       "sourceLicenseTextLegallyApproved": false,
-      "commercialApproval": false
+      "commercialApproval": false,
+      "githubRepoRedirect": null
     },
     {
       "name": "punycode",
@@ -190,7 +206,8 @@
       "observationStatus": "DIRECT_CLAIMED_REPOSITORY_EXACT_COMMIT_MANIFEST_MATCH",
       "npmTarballBuiltFromSourceIndependentlyVerified": false,
       "sourceLicenseTextLegallyApproved": false,
-      "commercialApproval": false
+      "commercialApproval": false,
+      "githubRepoRedirect": null
     },
     {
       "name": "tmp",
@@ -205,7 +222,8 @@
       "observationStatus": "DIRECT_CLAIMED_REPOSITORY_EXACT_COMMIT_MANIFEST_MATCH",
       "npmTarballBuiltFromSourceIndependentlyVerified": false,
       "sourceLicenseTextLegallyApproved": false,
-      "commercialApproval": false
+      "commercialApproval": false,
+      "githubRepoRedirect": null
     },
     {
       "name": "tr46",
@@ -217,10 +235,16 @@
       "gitManifestBlobSha1": "b6826da1f7817f97ad6d307d698ad2004807c40a",
       "sourceManifestSha256": "615087f58ee138fd35c2b414c355b72e36e5919725b8aecc1c34f6a5585b9779",
       "manifestLicenseMetadata": "MIT",
-      "observationStatus": "ALTERNATE_REPOSITORY_EXACT_COMMIT_MATCH_HISTORICAL_CLAIM_UNRESOLVED",
+      "observationStatus": "ALTERNATE_REPOSITORY_EXACT_COMMIT_MATCH_GITHUB_REDIRECT_VERIFIED_COPYRIGHT_UNVERIFIED",
       "npmTarballBuiltFromSourceIndependentlyVerified": false,
       "sourceLicenseTextLegallyApproved": false,
-      "commercialApproval": false
+      "commercialApproval": false,
+      "githubRepoRedirect": {
+        "requested": "Sebmaster/tr46.js",
+        "canonical": "jsdom/tr46",
+        "repositoryId": "36964214",
+        "githubEndpointResolvesToSameRepositoryId": true
+      }
     },
     {
       "name": "type-fest",
@@ -235,7 +259,9 @@
       "observationStatus": "DIRECT_CLAIMED_REPOSITORY_EXACT_COMMIT_MANIFEST_MATCH",
       "npmTarballBuiltFromSourceIndependentlyVerified": false,
       "sourceLicenseTextLegallyApproved": false,
-      "commercialApproval": false
+      "commercialApproval": false,
+      "githubRepoRedirect": null
     }
-  ]
+  ],
+  "githubRepositoryRedirectsVerified": 2
 }
