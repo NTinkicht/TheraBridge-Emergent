@@ -44,6 +44,12 @@ test('family and center activity links remain permission distinct and responsive
   assert.match(shell,/mobile-more-panel/);
   assert.match(shell,/aria-modal="true"/);
   assert.match(shell,/handleMoreKeyDown/);
+  assert.match(shell,/window\.matchMedia\('\(min-width: 768px\)'\)/);
+  assert.match(shell,/desktop\.addEventListener\('change', closeOnDesktop\)/);
+  assert.match(shell,/document\.body\.style\.overflow = 'hidden'/);
+  assert.match(shell,/document\.documentElement\.style\.overflow = 'hidden'/);
+  assert.match(shell,/document\.body\.style\.overflow = bodyOverflow/);
+  assert.match(shell,/overscroll-y-contain/);
   assert.match(shell,/sidebar-collapse-toggle/);
   assert.match(shell,/shell-breadcrumb/);
   assert.match(source,/return candidates\.slice\(0, 3\)/);
