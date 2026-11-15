@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-01 source audit foundation (implementation, unqualified)
+Opened an isolated M5-01 branch with Next App Router source route discovery, permission-filtered nav inventory, deterministic seven-persona/175-entry audit plan and negative route/parser tests. Wired CI to archive source-only evidence. Live screenshots and actual task timings not performed; future browser QA must remain synthetic, sanitized and scoped. #184 OPEN, G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — M4-CLOSE-02 provenance preflight branch
 Audited Render workspace services and database inventory (no disposable hosted TheraBridge DB or service); inspected existing protected GitHub workflow and previous test results. Implemented mandatory read-only live Render SHA check on exact checkout and operator input before accessing ten synthetic private passwords. Added mock-API adversarial unit tests and operator readiness runbook. No Render deploy, service, DB, secret, shared demo or clinical policy modified. PR CI and final independent review pending.
 
