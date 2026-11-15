@@ -543,6 +543,15 @@ jobs:
       - run: yarn playwright install --with-deps chromium
       - name: Idempotent synthetic Ahmed seed and real seven-role browser journey
         run: node scripts/design/run-demo-live.mjs
+      - name: M5-01 browser receipt schema adversarial tests
+        run: node --test scripts/design/m5-browser-observe.test.mjs
+      - name: Archive numeric-only synthetic viewport observations, never screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-01-browser-observations-${{ github.sha }}
+          path: /tmp/therabridge-m5-01-browser-observations.json
+          if-no-files-found: error
+          retention-days: 30
       - if: always()
         run: rm -f .workspace/local-credentials/childrens-home-demo.json
 

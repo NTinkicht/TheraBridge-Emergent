@@ -1,3 +1,13 @@
+## 2026-11-15 — M5-01 client settlement and async failure classification (NEW HEAD PENDING)
+Codex P2 observations: 100ms post-DOM wait insufficient for hydrated screens; top-level HTTP 200 cannot prove client data load. Implemented visible loader + aria-busy bounded settling, explicit session/client error, forbidden/timeout outcomes and regression tests. Final-head CI and Codex NOT YET QUALIFIED. Screenshots are transient and not human-reviewed, #184 OPEN, G2/G2b NO-GO.
+
+---
+
+## 2026-11-15 — M5-01 browser viewport capture implementation (CI PENDING)
+Added source-derived 175 synthetic route/viewport attempts using real Chromium and disposable database, screenshot SHA-256 and temporary cleanup; output contains only enums/numbers/hashes. Fail-closed schema tests added but NOT YET EXECUTED on final HEAD. No user-oriented screenshots reviewed or UX acceptance; #184 OPEN, G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — M5-01 source audit: first receipt and P2 regression follow-up
 First CI audit step on PR #380 SHA 838d0daa PASS with archived source-only JSON: 41 routes, 20 navigation entries, seven personas, five widths, 175 pending capture points (0 screenshots). Codex P2: partial NAV extraction on object spreads / double-quoted permissions; parser now rejects unsupported items and tests exact literal permissions. **Latest parser-fix head CI/independent review PENDING**. Source-only evidence is not user acceptance; G2/G2b NO-GO.
 

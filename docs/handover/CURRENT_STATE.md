@@ -1,3 +1,13 @@
+## 2026-11-15 — M5-01 browser observer Codex P2 remediations (REQUALIFICATION PENDING)
+Codex first-head review found two P2 accuracy defects: pre-hydration skeleton capture and HTTP-200 masking asynchronous client errors. Observer now uses bounded two-stage visible-loading settlement, explicit client error/permission denial and LOAD_TIMEOUT classifications. Unit regressions cover those failure modes. Full CI and final-head independent review pending; #184 remains OPEN and browser output is NOT human UX PASS. No G2/G2b changes.
+
+---
+
+## 2026-11-15 — M5-01 isolated synthetic browser observations (IN PR, NOT QUALIFIED)
+After merged source-only #380, this PR adds a loopback disposable Chromium observer for seven role personas × five widths × five route entries. Screenshots are transient and erased; only numeric/enum observations and hashes are archived. New script tests and CI/reviewer qualifications PENDING. No human visual, screen-reader, full-task timing, private screenshot review or owner approval; #184 OPEN, G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — M5-01 Codex P2 NAV parser correction (NEW HEAD UNQUALIFIED)
 First CI source-audit step PASS at reviewed-old HEAD 838d0daa; artifact measured 41 canonical pages, 20 NAV entries, 175 NOT_RUN targets; zero screenshots or owner/clinical approvals. Codex P2 on that SHA identified silent omission of NAV spreads and double-quoted permission parsing. Replaced the parser with literal-only complete-consumption logic and adversarial tests rejecting unsupported entries/expressions, accepting exact double-quoted permissions. **New head full CI and fresh independent Codex review PENDING**; PR #380 remains OPEN, #184 OPEN, G2/G2b NO-GO.
 

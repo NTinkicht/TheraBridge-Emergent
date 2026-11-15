@@ -1,3 +1,13 @@
+## 2026-11-15 — M5-01 Codex P2 browser evidence fixes
+New head avoids calling loading skeletons successful pages and marks visible asynchronous client-error, page-forbidden, timed-out loading separately. Added negative/unit tests; exact-head full CI/Codex still pending. All pixels remain transient, no clinical approval.
+
+---
+
+## 2026-11-15 — M5-01 synthetic viewport browser tranche
+Implemented bounded Chromium observations into existing isolated seven-role demo journey; added 175-entry strict schema, sensitive-field denial tests and numeric-only archived receipt. Full-head CI and reviewer approval not yet obtained. No change to shared Render, licenses or clinical gates.
+
+---
+
 ## 2026-11-15 — M5-01 review remediation
 PR #380 first source-only audit job PASS: 41 pages / 20 NAV entries / 175 unexecuted screen targets. Codex P2 found NAV extractor could drop spread entries and misparse double-quoted permission. Remediated with complete literal-array consumption and new negative tests; fresh exact-head CI/Codex still pending, no UX or clinical acceptance.
 

@@ -1,3 +1,14 @@
+## 2026-11-15 — M5-01 browser observer requalification
+Verify full latest-head CI including 175-route screenshot capture and numeric receipt, resolve any true test failures; get independent final-head Codex zero unresolved. Merge only after six required jobs, SBOM/Smart CI green. Inspect receipt for denied, redirects, load timeouts, error and horizontal-overflow candidates, without claiming visual review or #184 closure.
+
+---
+
+## 2026-11-15 — M5-01 browser evidence qualification
+1. Run full CI after adding 175 synthetic viewport observations. Examine route redirects/errors/overflow flags; fix real harness defects without weakening permissions or G2/G2b. Review final-head Codex comments and green six-job+Smart CI before merge.
+2. Because screenshots are intentionally deleted and not visually reviewed, schedule an approved private sanitized screenshot inspection for every persona/viewport; then measured full five-task journeys, accessibility keyboard/screen-reader and family dark theme on an isolated synthetic fixture. Do not close #184 on browser-route evidence alone.
+
+---
+
 ## 2026-11-15 — M5-01 exact-head requalification after P2
 1. Verify strict NAV parser new regression tests, actual full source inventory and six required CI jobs + SBOM/Smart CI on final PR #380 head. Obtain a NEW independent Codex review; resolve old P2 thread only after concrete correction is qualified.
 2. Merge only after green CI and independent final-head review. Retain 175 NOT_RUN source inventory targets for isolated synthetic visual + actual task capture in subsequent M5 work. #184 OPEN, clinical G2/G2b NO-GO.
