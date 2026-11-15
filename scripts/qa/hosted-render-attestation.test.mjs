@@ -44,7 +44,8 @@ test('live SHA must match and newer failed/pending deploy must not be ignored',a
   [{deploy:{...deploy,commit:{id:other}}}],
   [{deploy:{...deploy,status:'build_in_progress'}}],
   [{deploy:{...deploy,status:'failed'}},{deploy}],
-  [{deploy},{deploy:{...deploy,id:'second-live'}}],[],
+  [{deploy},{deploy:{...deploy,id:'second-live'}}],
+  [{deploy:{...deploy,id:null}}],[],
  ]){
   const {fetchImpl}=mock(service,deployments);
   await assert.rejects(run(fetchImpl),/render_live_sha_mismatch|render_live_deploy_ambiguous_or_stale/);
