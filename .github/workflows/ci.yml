@@ -505,6 +505,7 @@ jobs:
             sleep 1
           done
           node scripts/design/check-preview-entry.mjs
+          node scripts/design/m5-table-keyboard.mjs
           node scripts/design/check-session-workflow.mjs
 
   live-session:
