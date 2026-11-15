@@ -82,6 +82,30 @@ export function ProductShell({ session, active, planned, children }: { session: 
     if (moreOpen) moreCloseRef.current?.focus();
   }, [moreOpen]);
 
+  // A mobile More dialog must not remain logically open after it is hidden at
+  // the desktop breakpoint. Lock background scrolling only for its lifetime;
+  // restore preexisting styles even after navigation/unmount.
+  useEffect(() => {
+    if (!moreOpen) return;
+    const bodyOverflow = document.body.style.overflow;
+    const rootOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    const desktop = window.matchMedia('(min-width: 768px)');
+    const closeOnDesktop = () => {
+      if (!desktop.matches) return;
+      setMoreOpen(false);
+      document.querySelector<HTMLElement>('[data-testid="sidebar-collapse-toggle"]')?.focus();
+    };
+    desktop.addEventListener('change', closeOnDesktop);
+    closeOnDesktop();
+    return () => {
+      desktop.removeEventListener('change', closeOnDesktop);
+      document.body.style.overflow = bodyOverflow;
+      document.documentElement.style.overflow = rootOverflow;
+    };
+  }, [moreOpen]);
+
   function closeMore() {
     setMoreOpen(false);
     moreButtonRef.current?.focus();
@@ -217,10 +241,10 @@ export function ProductShell({ session, active, planned, children }: { session: 
           </button>
         </nav>
         {moreOpen && <div className="fixed inset-0 z-50 md:hidden" data-testid="mobile-more-sheet">
-          <button type="button" aria-label="Dismiss navigation" onClick={closeMore} className="absolute inset-0 bg-black/50" />
+          <button type="button" aria-label="Dismiss navigation" onClick={closeMore} className="absolute inset-0 bg-black/50 touch-none" />
           <div role="dialog" aria-modal="true" aria-label="All navigation" id="mobile-more-panel"
             ref={morePanelRef} onKeyDown={handleMoreKeyDown}
-            className="absolute inset-x-0 bottom-0 max-h-[84dvh] overflow-y-auto rounded-t-2xl bg-surface-white px-4 pb-[max(env(safe-area-inset-bottom),24px)] pt-4 shadow-xl">
+            className="absolute inset-x-0 bottom-0 max-h-[84dvh] overflow-y-auto overscroll-y-contain rounded-t-2xl bg-surface-white px-4 pb-[max(env(safe-area-inset-bottom),24px)] pt-4 shadow-xl">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-[17px] font-semibold text-brand-ink">All destinations</h2>
               <button type="button" ref={moreCloseRef} onClick={closeMore} aria-label="Close navigation"
