@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {evaluateM4HostedEvidence} from './m4-acceptance-evidence.mjs';
+import {evaluateM4HostedEvidence,validTwoTenantReceipt} from './m4-acceptance-evidence.mjs';
 import {ROLES} from './hosted-readonly.mjs';
 const oldRoles=['platform','admin','coordinator','speech','ot','supervisor','guardian'];
 const newRoles=['aba2','ot2','speech2'];
@@ -31,8 +31,19 @@ const fixture=()=>{
  const extra=make(newRoles,requiredNew,'hosted_extra_therapists_private_readonly');
  for(const report of [legacy,extra]){report.deployedSha=sha;report.protectedRunId='42480077162';}
  return {legacy,extra,deployedSha:sha,verifiedSha:sha,operatorApproved:true,
-  twoTenantEvidence:{schema:1,syntheticOnly:true,deployedSha:sha,validTenantCount:2,
-   authorizedPositiveControlsPassed:true,crossTenantDenied:true,revocationDenied:true,operatorApproved:true}};
+  twoTenantEvidence:{
+   schema:2,kind:'protected_two_tenant_synthetic_receipt',syntheticOnly:true,
+   deployedSha:sha,protectedRunId:'42480077162',operatorApproved:true,
+   validTenantCount:2,disposableFixtureVerified:true,twoDistinctActiveCentersVerified:true,
+   clinicalGatesUnchanged:true,
+   checks:[
+    ['authorized_center_a',200],['authorized_center_b',200],
+    ['cross_center_a_to_b_denied',403],['cross_center_b_to_a_denied',404],
+    ['foreign_child_masked',404],['stale_therapist_revoked',403],
+    ['guardian_grant_withdrawn',403],['expired_session_denied',401]
+   ].map(([step,httpStatus])=>({step,httpStatus,status:'PASS',
+     actorAuthenticated:true,existingTargetVerified:true}))
+  }};
 };
 test('complete synthetic status contract qualifies only with external approval and two valid tenants',()=>{
  const result=evaluateM4HostedEvidence(fixture());
@@ -172,4 +183,38 @@ test('wrong blocked reason does not qualify even with matched summary counts',()
  const result=evaluateM4HostedEvidence(f);
  assert.equal(result.qualified,false);
  assert(result.reasons.includes('legacy_read_only_exclusion_invalid'));
+});
+
+test('boolean-only tenant receipts cannot counterfeit valid hosted revocation evidence',()=>{
+ const f=fixture();
+ f.twoTenantEvidence={schema:1,syntheticOnly:true,deployedSha:f.deployedSha,
+  validTenantCount:2,authorizedPositiveControlsPassed:true,
+  crossTenantDenied:true,revocationDenied:true,operatorApproved:true};
+ assert(evaluateM4HostedEvidence(f).reasons.includes('two_valid_tenant_test_not_verified'));
+});
+test('receipt requires two distinct existing centers and matching protected execution',()=>{
+ for(const bad of [
+  {twoDistinctActiveCentersVerified:false},{disposableFixtureVerified:false},
+  {validTenantCount:3},{protectedRunId:'another-run'},
+  {kind:'isolated_ci_not_hosted'}, {operatorApproved:false}
+ ]){
+  const f=fixture();Object.assign(f.twoTenantEvidence,bad);
+  assert(evaluateM4HostedEvidence(f).reasons.includes('two_valid_tenant_test_not_verified'),JSON.stringify(bad));
+ }
+});
+test('all eight concrete checks are required exactly once and cannot downgrade a denial to 401',()=>{
+ for(const mutation of [
+  checks=>checks.pop(),
+  checks=>checks.push({...checks[0]}),
+  checks=>{checks[2].httpStatus=401;},
+  checks=>{checks[0].httpStatus=404;},
+  checks=>{checks[4].existingTargetVerified=false;},
+  checks=>{checks[5].status='BLOCKED';},
+  checks=>{checks[6].actorAuthenticated=false;},
+  checks=>{checks[7].httpStatus=200;},
+ ]){
+  const f=fixture();mutation(f.twoTenantEvidence.checks);
+  assert.equal(validTwoTenantReceipt(f.twoTenantEvidence,f.deployedSha,'42480077162'),false);
+  assert(evaluateM4HostedEvidence(f).reasons.includes('two_valid_tenant_test_not_verified'));
+ }
 });
