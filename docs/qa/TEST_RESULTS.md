@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-01 source-only route audit (NEW HEAD CI PENDING)
+Created negative regressions for duplicate canonical Next routes, missing navigation, malformed NAV parsing, symlink avoidance and fabricated capture PASS. Full repo audit emits a sanitized JSON inventory and 175 NOT_RUN capture targets to CI artifact. **Tests not yet run on the proposed branch**; screenshots and measured tasks NOT RUN; no accessibility or owner signoff. #184 OPEN, G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — Protected hosted Render deployment attestation negative tests (NOT RUN)
 Added mock Render HTTP GET checks for one latest live deployment with same exact SHA as operator input and current checkout; rejects wrong repo/service, missing token, malformed SHA, stale/newer failed deploy, multiple live deployments and non-200 response. Wired into protected workflow ahead of credential preflight. No protected environment access, no live hosted test, no new CI result yet. Old Render service remains 3cdd722...; previous ten-account run 84 PASS / 0 FAIL / 14 governance BLOCKED does not satisfy M4-02 hosted two-tenant gate. G2/G2b NO-GO.
 
