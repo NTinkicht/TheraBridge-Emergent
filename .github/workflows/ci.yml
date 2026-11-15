@@ -168,7 +168,9 @@ jobs:
       - name: M5-01 source-only route, role and viewport audit with adversarial tests
         run: |
           node --test scripts/qa/m5-route-audit.test.mjs
+          node --test scripts/qa/m5-task-areas.test.mjs
           node scripts/qa/m5-route-audit.mjs /tmp/therabridge-m5-ui-source-baseline.json
+          node scripts/qa/m5-task-areas.mjs /tmp/therabridge-m5-task-areas.json
       - name: Archive M5-01 source-only audit receipt (NOT screenshots or UX clearance)
         uses: actions/upload-artifact@v4
         with:
