@@ -9,7 +9,7 @@
 | Today & workspace | Day overview, tasks, responsive workspace basics | Home |
 | Children & care | Child records, objectives, historical progress, reports/plans | Children, Progress |
 | Sessions & activities | Clinical sessions, notes, activities and feedback | Clinical workspace, Activities (center), Practice feedback |
-| Family & home | Guardian practice, family progress and child-specific home information | Home practice, Progress updates |
+| Family & home | Guardian practice, family progress and child-specific home information | Home practice, Progress updates, Activities (family permission) |
 | Center operations | Staff, center setup, platform administration and identity of centers | Center setup, Team, Center details, Centers, Applications |
 | Scheduling & messages | Visits, coordination, messages | Schedule, Messages |
 | Safety & governance | Policy, access, consent and release governance | Documents & review, Access & consent |
