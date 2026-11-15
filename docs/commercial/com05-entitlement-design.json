@@ -1,0 +1,81 @@
+{
+  "schema": "therabridge-com05-entitlement-design-v1",
+  "status": "DRAFT_NOT_ENABLED",
+  "pricingApproved": false,
+  "commercialLicenseGranted": false,
+  "runtimeEnforcementEnabled": false,
+  "editions": [
+    {
+      "key": "STARTER",
+      "status": "UNPRICED_UNAPPROVED",
+      "limits": {
+        "users": null,
+        "centers": null,
+        "children": null,
+        "storageGb": null,
+        "aiUnits": null
+      },
+      "overagePolicy": "UNDECIDED"
+    },
+    {
+      "key": "PROFESSIONAL",
+      "status": "UNPRICED_UNAPPROVED",
+      "limits": {
+        "users": null,
+        "centers": null,
+        "children": null,
+        "storageGb": null,
+        "aiUnits": null
+      },
+      "overagePolicy": "UNDECIDED"
+    },
+    {
+      "key": "ENTERPRISE",
+      "status": "UNPRICED_UNAPPROVED",
+      "limits": {
+        "users": null,
+        "centers": null,
+        "children": null,
+        "storageGb": null,
+        "aiUnits": null
+      },
+      "overagePolicy": "UNDECIDED"
+    }
+  ],
+  "subscriptionStates": [
+    "TRIAL",
+    "ACTIVE",
+    "GRACE",
+    "EXPIRED",
+    "SUSPENDED",
+    "CANCELLED"
+  ],
+  "invariants": {
+    "tenantIsolationIndependentOfSubscription": true,
+    "authorizationIndependentOfBilling": true,
+    "clinicalGovernanceCannotBeGrantedByEntitlement": true,
+    "consentCannotBeGrantedByEntitlement": true,
+    "safeguardingCannotBeGrantedByEntitlement": true,
+    "auditHistoryImmutableAcrossExpiry": true,
+    "lawfulDataExportAvailableAcrossExpiry": true,
+    "requiredRetentionAvailableAcrossExpiry": true,
+    "emergencyClinicalContinuityNotBlockedByBilling": true,
+    "failedLicenseServerCannotGrantNewEntitlements": true,
+    "gracePeriodDurationApproved": false,
+    "licenseExpiryCannotDeletePatientData": true,
+    "noUnapprovedPhoneHome": true,
+    "g2NoGo": true,
+    "g2bNoGo": true
+  },
+  "activation": {
+    "enabled": false,
+    "approvedIssuer": null,
+    "offlineLicenseVerification": false,
+    "enterpriseInstallationBinding": "UNDECIDED"
+  },
+  "lifecycle": {
+    "renewalAutomationEnabled": false,
+    "suspensionAutomationEnabled": false,
+    "automaticPatientDataDeletionEnabled": false
+  }
+}
