@@ -275,6 +275,15 @@ jobs:
         run: |
           node --test scripts/commercial/verify-com05-policy.test.mjs
           node scripts/commercial/verify-com05-policy.mjs docs/commercial/com05-entitlement-design.json
+      - name: Verify non-sensitive COM-01 ownership and contract counsel intake
+        run: |
+          node --test scripts/commercial/build-com01-counsel-packet.test.mjs
+          node scripts/commercial/build-com01-counsel-packet.mjs \
+            docs/commercial/ip-rights-evidence-register.md \
+            docs/commercial/contracts/CONTRACT_PACK_DRAFT.md \
+            docs/commercial/proposed-proprietary-notice.md \
+            docs/commercial/com05-entitlement-design.json \
+            /tmp/therabridge-com01-counsel-intake.json
       - name: Build conservative actual-image candidate comparison (unattested means unresolved)
         run: node scripts/commercial/review-release-scope.mjs /tmp/therabridge-com02-bulk-rights-evidence.json docs/commercial/release-file-evidence.json /tmp/therabridge-com02-release-scope-review.json
       - name: Archive installed license evidence for full CI

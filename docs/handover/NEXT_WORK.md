@@ -1106,3 +1106,7 @@ Run new real CI archive/recipe evidence and inspect exact signed source versions
 2026-11-15 — Qualify corrected COM-02 comparator branch exact-head full CI, commercial inventory and independent Codex; merge only when all green and findings resolved. Continue release binary reconciliation #360, npm source rights #356, ownership #312, and counsel release gate #371; never claim successful standalone source rebuild/rights approval. G2/G2b NO-GO.
 
 2026-11-15 — Qualify COM-05 design branch through exact-head full CI, synthetic preview and independent Codex review; merge only if clean. Later implement entitlements after V1 freeze and approved pricing/issuer/contract policy; do not change G2/G2b. COM-01 #312 rights, COM-02 #356/#360 release image and assets, COM-04 #315 counsel review, COM-LAUNCH #371 remain blocked.
+
+2026-11-15 — Qualify COM-01 crosswalk against exact-head full CI/Codex, merge if clean. Human priority remains restricted signed chain-of-title and rights-holder/contracting-entity decision (#312), source and shipped asset evidence (#356/#360), UAE counsel review (#315). Keep GitHub public and G2/G2b NO-GO. Do not treat public review packet as a legal grant.
+
+2026-11-15 — COM-01 latest Codex P2 follow-up: draft agreement's NOT SIGNABLE disclaimer and all seven approval-matrix rows (OPEN/BLOCKED/NO-GO) now strictly validated; forged APPROVED/GO changes rejected. Reused strict COM-05 parser against misleading input. Fresh exact-head CI and Codex required; no clinical/commercial approval.
