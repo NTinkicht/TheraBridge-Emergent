@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-03 eight-area grouped ProductShell (IN PR, NOT QUALIFIED)
+M5-01 #184 and M5-02 #185 are CLOSED in GitHub; merged M5-02 #387 provides eight-area source proposal. M5-03 #186 first executable shell tranche adds exactly eight permission-filtered desktop task areas, optional compact icon rail, authorized breadcrumb, mobile three-link quickbar and complete More dialog with keyboard focus return; original mobile dropdown retained for compatibility. New CI source-crosswalk check and seven synthetic-role actual session permission/More/rail test. No API role changes, no persistent stale context, G2/G2b NO-GO. Final-head CI/Codex and manual UX acceptance pending; #186 OPEN.
+
+---
+
 ## 2026-11-15 — M5-02 canonical task IA proposal IN PR (not qualified)
 A design-only, source-derived eight-area navigation taxonomy maps all 66 features, 91 workflows and 20 current permission-conditioned NAV entries with seven role review candidates. No UI refactor, real permission grant, clinical/UX approval or authorized route added. Feature #39 and WF-X6 remain V2 excluded. Exact-head CI/Codex required. #185 remains OPEN; G2/G2b NO-GO.
 
