@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeftRight, Baby, Building2, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, Home, Inbox, KeyRound, LineChart, ListChecks, Lock, LogOut, Menu, MessagesSquare, NotebookPen, PanelLeftClose, PanelLeftOpen, Settings2, Sparkles, Sprout, UserRound, Users, X, type LucideIcon } from 'lucide-react';
+import { ArrowLeftRight, Baby, Building2, CalendarDays, ChevronDown, ChevronRight, ClipboardCheck, Home, Inbox, KeyRound, LineChart, ListChecks, Lock, LogOut, Menu, MessagesSquare, NotebookPen, PanelLeftClose, PanelLeftOpen, Settings2, Sparkles, Sprout, UserRound, Users, X, type LucideIcon } from 'lucide-react';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { SignatureBand } from '@/components/brand/SignatureBand';
 import { Avatar } from '@/components/design/ui';
