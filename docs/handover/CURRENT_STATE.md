@@ -900,3 +900,5 @@ After merged #367, PR work inventories exact 3 signed npm package archives from 
 2026-11-13 PR #368 initial CI verified exact published 3 npm archives and source recipes; GNU SWC binary 131,406,240B, Musl 156,809,432B. Zero actual reproducible tarballs. Codex P2 fixed: persist each shipped file's SHA256/path/bytes and derive report status from real success/partial/failure rather than static string. Latest-head CI/review pending.
 
 2026-11-15 — COM-LAUNCH #371 edition-specific approval register branch established. Separate SaaS and Enterprise gates default BLOCKED, zero issued commercial rights or clinical G2/G2b GO. Existing contract pack reused rather than rewritten. Exact-head full CI/review and merge pending.
+
+2026-11-15 — PR #373 COM-LAUNCH authorization controls are merged at 14138186a572b0f54d3cddc2dcbd81d3a311fcbb. COM-02 comparator requalified on current main after Codex P2: published archive must pass exact-version yarn.lock SHA512 SRI and every member file must match authenticated bytes; untrusted readiness self-hashes cannot authorize published-byte match. New focused branch awaiting exact-head CI/Codex, no rights or clinical grants.

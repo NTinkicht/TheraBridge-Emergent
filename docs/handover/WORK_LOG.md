@@ -965,3 +965,5 @@ Implemented next coherent PR: strict 3 exact signed npm tarball registry retriev
 2026-11-13 PR #368 Codex review P2 corrections: status now depends on actual successful 3/3 archive + source recipe results and cannot declare verified during registry outage; evidence retains every bounded tar member path, byte length and SHA256 for future rebuild comparison. Added targeted regressions, re-run complete qualification before merge.
 
 2026-11-15 — COM-LAUNCH added a strictly non-authorizing public edition decision register, a fail-closed Node verifier, six adversarial tests, a CI step and documentation mapped to existing COM-01/03/04/05/06. It cannot transform declaration files into lawyer signatures. No customers/contracts released.
+
+2026-11-15 — Resolved Codex P2 in stale #370 implementation, transferred corrected comparator and seven tests onto current main without losing merged COM-LAUNCH #373, M4 or unrelated changes. Replaced untrusted readiness-only comparison with SRI-authenticated published tarball and pinned yarn.lock cross-check. New PR qualification pending, no forced branch update.
