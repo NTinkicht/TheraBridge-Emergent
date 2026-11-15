@@ -56,6 +56,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const [railCollapsed, setRailCollapsed] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const [moreOpen, setMoreOpen] = useState(false);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const moreCloseRef = useRef<HTMLButtonElement>(null);
@@ -72,7 +73,10 @@ export function ProductShell({ session, active, planned, children }: { session: 
   const contextId = ctx?.type === 'center' ? ctx.centerId : 'platform';
 
   // Never persist a menu or drawer state across a role/tenant context switch.
-  useEffect(() => { setMoreOpen(false); }, [ctx?.role, contextId]);
+  useEffect(() => { setMoreOpen(false); setExpandedGroups({}); }, [ctx?.role, contextId]);
+  useEffect(() => {
+    if (activeGroup) setExpandedGroups(previous => previous[activeGroup.key] ? previous : { ...previous, [activeGroup.key]: true });
+  }, [activeGroup?.key]);
   useEffect(() => {
     if (moreOpen) moreCloseRef.current?.focus();
   }, [moreOpen]);
@@ -141,8 +145,12 @@ export function ProductShell({ session, active, planned, children }: { session: 
             <NavLink key={n.key + ':' + (n.permission ?? '')} href={n.href} icon={n.icon} label={n.label}
               active={active === n.key} family={family} compact testId={`nav-${n.key}`} />
           )) : groups.map((group) => (
-            <details key={contextId + ':' + (ctx?.role ?? '') + ':' + active + ':' + group.key}
-              defaultOpen={group.key === 'workspace' || group.items.some(n => n.key === active)}
+            <details key={contextId + ':' + (ctx?.role ?? '') + ':' + group.key}
+              open={expandedGroups[group.key] ?? (group.key === 'workspace' || group.items.some(n => n.key === active))}
+              onToggle={(event) => {
+                const expanded = event.currentTarget.open;
+                setExpandedGroups(previous => previous[group.key] === expanded ? previous : { ...previous, [group.key]: expanded });
+              }}
               data-testid={`nav-group-${group.key}`} className="group rounded-control">
               <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between rounded-control px-3 text-[12px] font-semibold text-brand-inkMuted hover:bg-surface-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action">
                 <span>{group.label}</span>
