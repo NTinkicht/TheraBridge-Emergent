@@ -60,6 +60,10 @@ describe('M5-04 shared workspace patterns', () => {
     const details = tree.root.findByType('details');
     expect(details.props.open).toBe(true);
     expect(tree.root.findByType('summary')).toBeTruthy();
+    await act(async () => details.props.onToggle({currentTarget:{open:false}}));
+    expect(tree.root.findByType('details').props.open).toBe(false);
+    await act(async () => tree.update(h(DisclosureSection, {title:'Session details', summary:'Synthetic example', children:'Private disclosure', openByDefault:true})));
+    expect(tree.root.findByType('details').props.open).toBe(false);
     expect(output()).toContain('Private disclosure');
   });
   it('shows blocked and current task state as text, not color alone', async () => {
