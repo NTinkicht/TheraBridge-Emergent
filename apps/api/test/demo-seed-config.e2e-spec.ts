@@ -63,6 +63,66 @@ describe('synthetic hosted preview bootstrap policy',()=>{
     expect(()=>parseExtraHostedDemoPasswords(preview({DEMO_EXTRA_PASSWORDS_JSON:JSON.stringify(weak)}))).toThrow();
   });
 
+
+  test.each(['null','[]','"text"','1','true'])('rejects malformed seven-account secret root %s without invoking a database',raw=>{
+    expect(()=>parseHostedDemoPasswords(preview({DEMO_PASSWORDS_JSON:raw}))).toThrow(/email-to-password object/);
+  });
+  test.each(['null','[]','"text"','1','true'])('rejects malformed three-account secret root %s without invoking a database',raw=>{
+    expect(()=>parseExtraHostedDemoPasswords(preview({DEMO_EXTRA_PASSWORDS_JSON:raw}))).toThrow(/email-to-password object/);
+  });
+  test('rejects oversized secrets before parsing them or exposing their contents',()=>{
+    expect(()=>parseHostedDemoPasswords(preview({DEMO_PASSWORDS_JSON:' '.repeat(8193)}))).toThrow(/unexpectedly large/);
+    expect(()=>parseExtraHostedDemoPasswords(preview({DEMO_EXTRA_PASSWORDS_JSON:' '.repeat(4097)}))).toThrow(/unexpectedly large/);
+  });
+  test('rejects any unexpected or missing role name instead of tolerating partial tenants',()=>{
+    const seven=valid(),unknown={...seven,unknown:'demo-'+randomBytes(24).toString('base64url')};
+    expect(()=>parseHostedDemoPasswords(preview({DEMO_PASSWORDS_JSON:JSON.stringify(unknown)}))).toThrow(/exactly the seven/);
+    const sevenUnknown={...seven};delete sevenUnknown[DEMO_EMAILS.admin];
+    sevenUnknown['unknown@example.invalid']='demo-'+randomBytes(24).toString('base64url');
+    expect(()=>parseHostedDemoPasswords(preview({DEMO_PASSWORDS_JSON:JSON.stringify(sevenUnknown)}))).toThrow(/exactly the seven/);
+    const three=Object.fromEntries(Object.values(DEMO_EXTRA_EMAILS).map(e=>[e,'demo-'+randomBytes(24).toString('base64url')]));
+    const threeUnknown={...three};delete threeUnknown[DEMO_EXTRA_EMAILS.ot2];
+    threeUnknown['unknown@example.invalid']='demo-'+randomBytes(24).toString('base64url');
+    expect(()=>parseExtraHostedDemoPasswords(preview({DEMO_EXTRA_PASSWORDS_JSON:JSON.stringify(threeUnknown)}))).toThrow(/Exactly three designated/);
+  });
+  test('enforces nonstring, minimum, maximum and account-name password rules for all seven roles',()=>{
+    const seven=valid();
+    for(const bad of [null,1,{},[],false,'short','X'.repeat(129),'this-phrase-contains-admin-account-name']){
+      const input={...seven,[DEMO_EMAILS.admin]:bad};
+      expect(()=>parseHostedDemoPasswords(preview({DEMO_PASSWORDS_JSON:JSON.stringify(input)}))).toThrow(/24–128 characters and pass/);
+    }
+  });
+  test('enforces nonstring, minimum, maximum and account-name password rules for three extra therapists',()=>{
+    const three=Object.fromEntries(Object.values(DEMO_EXTRA_EMAILS).map(e=>[e,'demo-'+randomBytes(24).toString('base64url')]));
+    for(const bad of [null,1,{},[],false,'short','X'.repeat(129),'synthetic-dalia.mansour-username-inside']){
+      const input={...three,[DEMO_EXTRA_EMAILS.aba2]:bad};
+      expect(()=>parseExtraHostedDemoPasswords(preview({DEMO_EXTRA_PASSWORDS_JSON:JSON.stringify(input)}))).toThrow(/24–128 character password policy/);
+    }
+  });
+  test('rejects duplicate secrets even when all declared email identities are present',()=>{
+    const seven=valid();
+    seven[DEMO_EMAILS.parent]=seven[DEMO_EMAILS.platform];
+    expect(()=>parseHostedDemoPasswords(preview({DEMO_PASSWORDS_JSON:JSON.stringify(seven)}))).toThrow(/different password/);
+    const three=Object.fromEntries(Object.values(DEMO_EXTRA_EMAILS).map(e=>[e,'demo-'+randomBytes(24).toString('base64url')]));
+    three[DEMO_EXTRA_EMAILS.aba2]=three[DEMO_EXTRA_EMAILS.speech2];
+    expect(()=>parseExtraHostedDemoPasswords(preview({DEMO_EXTRA_PASSWORDS_JSON:JSON.stringify(three)}))).toThrow(/distinct/);
+  });
+  test('rejects missing, malformed, unapproved and non-PostgreSQL URLs even with consent flag',()=>{
+    const base={DEPLOYMENT_ENV:'ci',DEMO_SEED_CONFIRM:'CHILDRENS_HOME_SYNTHETIC_ONLY'};
+    for(const DATABASE_URL of [
+      undefined,'not-a-url','mysql://x:y@localhost:3306/therabridge_demo',
+      'postgresql://x:y@localhost:5432/patient_data','postgres://x:y@localhost:5432/live'
+    ]){
+      expect(()=>assertDemoAllowed({...base,DATABASE_URL})).toThrow();
+    }
+  });
+  test.each(['local','ci','preview','shared-synthetic'])('accepts explicitly authorized synthetic deployment %s with isolated PostgreSQL',DEPLOYMENT_ENV=>{
+    expect(()=>assertDemoAllowed({
+      DEPLOYMENT_ENV,DEMO_SEED_CONFIRM:'CHILDRENS_HOME_SYNTHETIC_ONLY',
+      DATABASE_URL:'postgres://fiction:fiction@localhost:5432/therabridge_synthetic_test'
+    })).not.toThrow();
+  });
+
   test('malformed protected original or extra file never leaks its contents in exception messages',async()=>{
     const filename=join(tmpdir(),'tb-m4-03-malformed-'+randomUUID()+'.json');
     const extraFile=filename.slice(0,-5)+'-extra.json';

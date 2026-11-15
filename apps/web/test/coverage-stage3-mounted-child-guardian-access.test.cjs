@@ -184,4 +184,125 @@ describe('mounted child access and operational audit safety',()=>{
   await act(async()=>{retry.props.onClick();await Promise.resolve();});
   expect(get('guardians-card')).toBeTruthy();
  });
+
+ it.each([
+  ['PENDING','Invited',true,'Resend'],
+  ['EXPIRED','Invitation expired',true,'Resend'],
+  ['NOT_INVITED','Not invited',true,'Invite'],
+  ['REVOKED','Invitation revoked',true,'Invite'],
+  ['REPLACED','Replaced',true,'Invite'],
+  ['CONNECTED','Portal connected',false,'']
+ ])('guardian status %s retains explicit access state %s',async(status,label,canInvite,action)=>{
+  opsApi.child.mockResolvedValue(child({guardians:[guardian({portalStatus:status})]}));
+  await mount();
+  expect(get('guardian-status-guardian-a')).toBeTruthy();
+  expect(JSON.stringify(tree.toJSON())).toContain(label);
+  if(canInvite){
+   expect(get('guardian-invite-guardian-a')).toBeTruthy();
+   expect(get('guardian-invite-guardian-a').props.children.filter(x=>typeof x==='string').join('')).toContain(action);
+  } else expect(find('guardian-invite-guardian-a')).toHaveLength(0);
+ });
+ it('missing guardian relationships have a safe read-only empty family state',async()=>{
+  opsApi.child.mockResolvedValue(child({guardians:[]}));
+  await mount();
+  expect(get('guardians-empty')).toBeTruthy();
+  expect(find('guardian-guardian-a')).toHaveLength(0);
+ });
+ it('does not allow guardian mutation when child is archived even with manage permission',async()=>{
+  opsApi.child.mockResolvedValue(child({status:'ARCHIVED',guardians:[guardian()]}));
+  await mount();
+  expect(find('add-guardian-button')).toHaveLength(0);
+  expect(find('assign-therapist-button')).toHaveLength(0);
+  expect(find('child-book-button')).toHaveLength(0);
+  expect(find('referent-change')).toHaveLength(0);
+ });
+ it('denies referent designation UI to coordinator despite operational edit permissions',async()=>{
+  session.activeContext.role='COORDINATOR';
+  await mount();
+  expect(find('referent-change')).toHaveLength(0);
+  expect(get('child-referent')).toBeTruthy();
+ });
+ it('reveals unavailable designated referent without claiming active clinical access',async()=>{
+  opsApi.child.mockResolvedValue(child({
+   referent:null,referentStatus:'UNAVAILABLE'
+  }));
+  await mount();
+  expect(get('referent-current').props.children).toContain('Designation unavailable');
+  expect(JSON.stringify(tree.toJSON())).toContain('grants no clinical permissions');
+ });
+ it('prevents therapist assignment when no membership has been selected',async()=>{
+  await mount();await click('assign-therapist-button');
+  await click('assign-save');
+  expect(opsApi.assign).not.toHaveBeenCalled();
+ });
+ it('does not offer a therapist whose specialty differs from requested service',async()=>{
+  opsApi.therapists.mockResolvedValue({items:[{
+   membershipId:'other-therapist',displayName:'Fictional Other',specialties:['occupational']
+  }],nextOffset:null});
+  await mount();await click('assign-therapist-button');
+  const values=get('assign-therapist-select').findAllByType('option').map(x=>x.props.value);
+  expect(values).not.toContain('other-therapist');
+  expect(opsApi.assign).not.toHaveBeenCalled();
+ });
+ it('selects a different service without retaining old specialty therapist choice',async()=>{
+  opsApi.child.mockResolvedValue(child({services:['speech','occupational']}));
+  opsApi.therapists.mockResolvedValue({items:[
+   {membershipId:'therapist-a',displayName:'Fictional Leila',specialties:['speech']},
+   {membershipId:'therapist-b',displayName:'Fictional Nora',specialties:['occupational']}
+  ],nextOffset:null});
+  await mount();await click('assign-therapist-button');
+  await change('assign-therapist-select','therapist-a');
+  await change('assign-service-select','occupational');
+  expect(get('assign-therapist-select').props.value).toBe('');
+  expect(opsApi.therapists).toHaveBeenLastCalledWith('center-a',expect.objectContaining({service:'occupational'}));
+ });
+ it('loads a second bounded therapist-directory page only when backend supplies nextOffset',async()=>{
+  opsApi.therapists.mockResolvedValueOnce({items:[{
+   membershipId:'therapist-a',displayName:'Fictional Leila',specialties:['speech']
+  }],nextOffset:100}).mockResolvedValueOnce({items:[{
+   membershipId:'therapist-b',displayName:'Fictional Nora',specialties:['speech']
+  }],nextOffset:null});
+  await mount();await click('assign-therapist-button');
+  expect(get('assign-therapist-load-more')).toBeTruthy();
+  await click('assign-therapist-load-more');
+  expect(opsApi.therapists).toHaveBeenLastCalledWith('center-a',
+   expect.objectContaining({service:'speech',offset:100,limit:100}));
+  const values=get('assign-therapist-select').findAllByType('option').map(x=>x.props.value);
+  expect(values).toContain('therapist-b');
+  expect(find('assign-therapist-load-more')).toHaveLength(0);
+ });
+ it('shows operational directory error without inventing available memberships',async()=>{
+  opsApi.therapists.mockRejectedValueOnce(Error('Synthetic therapist directory offline'));
+  await mount();await click('assign-therapist-button');
+  expect(JSON.stringify(tree.toJSON())).toContain('Unable to load eligible therapists');
+  expect(opsApi.assign).not.toHaveBeenCalled();
+ });
+ it('filters the therapist directory with a trimmed search string',async()=>{
+  await mount();await click('assign-therapist-button');
+  await change('assign-therapist-search','  Fictional Leila  ');
+  expect(opsApi.therapists).toHaveBeenLastCalledWith('center-a',
+   expect.objectContaining({search:'Fictional Leila',service:'speech',limit:100}));
+ });
+ it('child profile archived state remains readable without scheduling controls',async()=>{
+  opsApi.child.mockResolvedValue(child({status:'ARCHIVED',assignments:[]}));
+  await mount();
+  expect(get('child-title')).toBeTruthy();
+  expect(get('child-restore-button')).toBeTruthy();
+  expect(find('child-book-button')).toHaveLength(0);
+  expect(get('care-team-empty')).toBeTruthy();
+ });
+ it('enforces booking permission separately from ability to manage child profiles',async()=>{
+  session.permissions=['center.children.read','center.children.manage'];
+  await mount();
+  expect(get('add-guardian-button')).toBeTruthy();
+  expect(find('child-book-button')).toHaveLength(0);
+ });
+ it('uses a confirmed booking callback before reloading the child record',async()=>{
+  await mount();await click('child-book-button');
+  expect(get('synthetic-book-done')).toBeTruthy();
+  await click('synthetic-book-done');
+  expect(get('child-notice-success')).toBeTruthy();
+  expect(opsApi.child).toHaveBeenCalledTimes(2);
+ });
+
 });

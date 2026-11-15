@@ -18,7 +18,7 @@ test('real coverage totals include zero-executed source files and truthfully fai
  assert.equal(report.instrumentedFileCount,2);
  assert.equal(report.zeroStatementCoverageFiles,1);
  assert.equal(report.percentages.branches,50);
- assert.deepEqual(report.below95,['lines','branches','functions','statements']);
+ assert.deepEqual(report.below90,['lines','branches','functions','statements']);
  assert.equal(report.m4_08_gate,'NOT_QUALIFIED');
 });
 test('omitting an unexecuted file cannot improve the reported denominator',()=>{
