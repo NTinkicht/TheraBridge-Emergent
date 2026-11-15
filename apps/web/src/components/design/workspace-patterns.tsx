@@ -1,12 +1,12 @@
 'use client';
 
-import { useId, type KeyboardEvent, type ReactNode } from 'react';
+import { useId, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { Tone } from './ui';
 
 // Controlled by the caller: changing a child or tenant must replace the visible tab
 // content from the newly authorized projection, not preserve data from an old scope.
-export type WorkspaceTab = { id: string; label: string; content: ReactNode; disabled?: boolean };
+export type WorkspaceTab = { id: string; label: string; content: ReactNode; disabled?: boolean; testId?: string };
 export function WorkspaceTabs({
   tabs, selected, onSelect, label, tone = 'clinical',
 }: {
@@ -39,7 +39,7 @@ export function WorkspaceTabs({
         {tabs.map((tab) => (
           <button key={tab.id} id={`${uid}-tab-${tab.id}`} type="button" role="tab"
             aria-selected={active?.id === tab.id} aria-controls={`${uid}-panel-${tab.id}`}
-            disabled={tab.disabled}
+            disabled={tab.disabled} data-testid={tab.testId}
             tabIndex={active?.id === tab.id || (!active && available[0]?.id === tab.id) ? 0 : -1}
             onKeyDown={(event) => handleKey(event, tab.id)}
             onClick={() => !tab.disabled && onSelect(tab.id)}
@@ -66,8 +66,9 @@ export function DisclosureSection({
   title: string; children: ReactNode; summary?: ReactNode; openByDefault?: boolean; tone?: Tone;
 }) {
   const family = tone === 'family';
+  const [isOpen, setIsOpen] = useState(openByDefault);
   return (
-    <details open={openByDefault ? true : undefined}
+    <details open={isOpen} onToggle={(event) => setIsOpen(event.currentTarget.open)}
       className={`group rounded-card border ${family ? 'border-fam-border bg-fam-surface text-fam-ink' : 'border-border-light bg-surface-white text-brand-ink'}`}>
       <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-card px-4 py-3 font-semibold [&::-webkit-details-marker]:hidden">
         <span className="min-w-0">{title}{summary && <span className={`mt-1 block text-xs font-normal ${family ? 'text-fam-muted' : 'text-brand-inkMuted'}`}>{summary}</span>}</span>
