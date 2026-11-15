@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-03 reviewer P2 correction
+Corrected native details disclosure to typed controlled `open`. Responded to two Codex P2 on responsive More breakpoint and background scroll by closing drawer on `min-width:768px`, refocusing the desktop rail, locking/restoring root/body overflow only for modal lifetime and containing overscroll. Extended seven-role real Chromium checks for 320→1024→320, semantic aria-expanded=false and scroll restoration. Final CI/review pending; no hosted/policy writes.
+
+---
+
 ## 2026-11-15 — M5-03 source/navigation implementation (PR in progress)
 Implemented live ProductShell eight-group task navigation based on merged #387 M5-02 taxonomy. Added desktop sidebar rail collapse, source-visible breadcrumbs, bottom mobile quick links and keyboardable More panel; kept mobile select for existing regressions. Added typed permission map and adversarial source test plus CI Chromium per-role More/permission exact equality and keyboard focus trap. Pending six exact-head checks and Codex; no clinical or hosted changes.
 
