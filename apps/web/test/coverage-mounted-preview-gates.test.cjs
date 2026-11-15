@@ -72,6 +72,15 @@ describe('M4-08 actual family illustration must not impersonate a released home 
   expect(html()).toContain('plan release is not yet approved');
   expect(get('week-card')).toBeTruthy();
  });
+ it('shows the illustrative rest state on a weekend instead of presenting an unapproved activity',async()=>{
+  jest.setSystemTime(new Date('2026-11-14T09:00:00.000Z'));
+  await mount(Family);
+  expect(get('release-scenario').props.value).toBe('illustration');
+  expect(get('rest-state')).toBeTruthy();
+  expect(find('start-activity')).toHaveLength(0);
+  expect(find('illustration-label')).toHaveLength(0);
+  expect(get('week-card')).toBeTruthy();
+ });
  it('switches to today policy showing no approved plan and hides illustrated actions',async()=>{
   await mount(Family);
   await act(async()=>get('release-scenario').props.onChange({target:{value:'today'}}));
