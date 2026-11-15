@@ -86,7 +86,16 @@ function parseManifest(bytes,name,version){
  const home=safeText(item.homepage,1024);
  const dist=item.dist&&typeof item.dist==='object'?item.dist:{};
  const attestation=attestationPointer(dist,name,version);
+ const publisherHash=item.typesPublisherContentHash;
+ const candidateTypesPublisherContentHash=typeof publisherHash==='string'&&
+   /^[a-f0-9]{64}$/.test(publisherHash)?publisherHash:null;
+ const candidateTypesPublisherHashStatus=!name.startsWith('@types/')?
+   'NOT_DEFINITELYTYPED':
+   publisherHash===undefined?'NOT_ADVERTISED':
+   candidateTypesPublisherContentHash?'EXACT_VERSION_PUBLISHER_HASH_CANDIDATE':
+   'INVALID_PUBLISHER_HASH_CANDIDATE';
  return {sha256:digest(bytes),candidateLicenseExpression:license,
+  candidateTypesPublisherContentHash,candidateTypesPublisherHashStatus,
   candidateRepositoryUrl:safeText(repo,1024),candidateHomepage:home,
   candidateGitHead:typeof item.gitHead==='string'&&/^[a-f0-9]{40}$/i.test(item.gitHead)?item.gitHead.toLowerCase():null,
   candidateDistIntegrity:safeText(dist.integrity,512),
@@ -126,6 +135,7 @@ async function buildUpstreamCandidates(input,{fetcher=fetchManifest,concurrency=
    manifestEvidenceStatus:'NOT_FETCHED',registryManifestSha256:null,
    candidateLicenseExpression:null,candidateRepositoryUrl:null,
    candidateHomepage:null,candidateGitHead:null,candidateDistIntegrity:null,candidateDistTarball:null,
+   candidateTypesPublisherContentHash:null,candidateTypesPublisherHashStatus:'NOT_FETCHED',
    candidateRegistryAttestationUrl:null,candidateRegistryAttestationStatus:'NOT_FETCHED',
    publisherProvenanceIndependentlyVerified:false,
    manifestMatchesLockedIntegrity:false,
@@ -150,6 +160,8 @@ async function buildUpstreamCandidates(input,{fetcher=fetchManifest,concurrency=
      candidateRepositoryUrl:parsed.candidateRepositoryUrl,
      candidateHomepage:parsed.candidateHomepage,
      candidateGitHead:parsed.candidateGitHead,
+     candidateTypesPublisherContentHash:parsed.candidateTypesPublisherContentHash,
+     candidateTypesPublisherHashStatus:parsed.candidateTypesPublisherHashStatus,
      candidateDistIntegrity:parsed.candidateDistIntegrity,
      candidateDistTarball:parsed.candidateDistTarball,
      candidateRegistryAttestationUrl:parsed.candidateRegistryAttestationUrl,
