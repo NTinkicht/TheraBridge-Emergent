@@ -34,14 +34,14 @@ export async function observeSettledPage(page) {
       const visible = el => Boolean(el.getClientRects().length);
       return ![...document.querySelectorAll('[data-testid$="-loading"], [aria-busy="true"]')]
         .some(visible);
-    }, null, { timeout: 12000, polling: 150 });
+    }, null, { timeout: 3500, polling: 150 });
     await page.waitForTimeout(200);
     // A second settled check protects against loaders introduced by immediate effects.
     await page.waitForFunction(() => {
       const visible = el => Boolean(el.getClientRects().length);
       return ![...document.querySelectorAll('[data-testid$="-loading"], [aria-busy="true"]')]
         .some(visible);
-    }, null, { timeout: 5000, polling: 150 });
+    }, null, { timeout: 1200, polling: 150 });
   } catch (err) {
     if (err?.name !== 'TimeoutError') throw err;
     timedOut = true;
