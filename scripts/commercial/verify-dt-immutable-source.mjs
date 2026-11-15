@@ -9,7 +9,7 @@ const sha256=x=>createHash('sha256').update(x).digest('hex');
 const gitBlob=x=>createHash('sha1').update(Buffer.from('blob '+x.length+'\0')).update(x).digest('hex');
 const isDeclaration=p=>/\.d\.(?:ts|cts|mts|[^/]+\.ts)$/.test(p);
 function selection(triage,name,version){
- if(triage?.schema!=='therabridge-com02-definitelytyped-triage-v1'||
+ if(triage?.schema!=='therabridge-com02-definitelytyped-26-pinned-triage-v1'||
     triage.counts?.definitelyTypedVersions!==26||
     triage.counts?.publisherToSourceAttested!==0||
     triage.commercialApproval!==false||
