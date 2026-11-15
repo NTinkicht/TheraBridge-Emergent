@@ -1,3 +1,10 @@
+## 2026-11-15 — M5-01 UI audit next gates
+1. Qualify M5-01 source audit on exact branch HEAD: full required CI, SBOM/Smart CI and independent Codex review; fix failures before merge. Receipt is source-only and no screen/role acceptance.
+2. Use approved isolated synthetic environment to collect and inspect the seven-persona, 320/390/768/1024/1440 screenshots and full five-task-per-persona click/time/error journeys. Audit keyboard, screen reader, loading/empty/blocked/error and guardian dark-mode states. Store private, sanitized receipts tied to deployed SHA.
+3. Prioritize verified UX problems into grouped M5-02+ PRs while retaining Direction B tokens, tenant/role/specialty/guardian restrictions and G2/G2b NO-GO. No M5-01 closeout or source-only UX PASS.
+
+---
+
 ## 2026-11-15 — Protected M4-02 acceptance dependency (not a current PASS)
 1. Qualify and review exact-head protected deployment attestation PR, then merge under Rules 13–16. No protected hosted run yet.
 2. Confirm separately approved disposable synthetic two-valid-tenant hosted stack and isolated database; do not mutate Render's old shared demo or create persistent paid infrastructure without approval. Obtain read-only Render control-plane API secret TB_HOSTED_RENDER_READONLY_API_KEY within protected GitHub environment (name only).
