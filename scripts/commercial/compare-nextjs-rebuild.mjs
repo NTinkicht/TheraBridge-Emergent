@@ -3,14 +3,33 @@
 // published bytes. This does not attest the origin of the rebuilt input.
 import {readFileSync,statSync,writeFileSync} from 'node:fs';
 import {createHash,timingSafeEqual} from 'node:crypto';
-import {readArchive} from './inventory-nextjs-published-builds.mjs';
+import {readArchive,checkSRI} from './inventory-nextjs-published-builds.mjs';
 
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const ALLOW = new Set(['@next/env@14.2.35','@next/swc-linux-x64-gnu@14.2.33','@next/swc-linux-x64-musl@14.2.33']);
 const ARCHIVE_MAX = 48*1024*1024;
 const EXPECTED_STATUS='INTEGRITY_VERIFIED_PUBLISHED_FILE_INVENTORY_NOT_REPRODUCIBILITY';
 
-function compare(readiness, key, rebuilt) {
+// The readiness JSON is NOT a trust root. Reconstruct the published inventory
+// from independently supplied npm archive bytes and independently pinned yarn.lock SRI.
+function lockedIntegrity(lockfile,key){
+ if(typeof lockfile!=='string'||lockfile.length>2*1024*1024)throw Error('INVALID_PINNED_LOCKFILE');
+ const [name,version]=['@'+key.split('@')[1],key.split('@')[2]];
+ const quoted='"'+name+'@'+version+'":';
+ const matches=lockfile.split('\n').map((line,i)=>line===quoted?i:-1).filter(i=>i!==-1);
+ if(matches.length!==1)throw Error('MISSING_OR_DUPLICATE_PINNED_LOCK_ENTRY');
+ const lines=lockfile.split('\n');
+ const start=matches[0],block=lines.slice(start+1,start+6).join('\n');
+ const expectedResolved='https://registry.yarnpkg.com/'+name+'/-/'+name.split('/')[1]+'-'+version+'.tgz#';
+ const versionMatch=block.match(/^  version "([^"]+)"$/m);
+ const resolved=block.match(/^  resolved "([^"]+)"$/m);
+ const sri=block.match(/^  integrity (sha512-[A-Za-z0-9+/]+={0,2})$/m);
+ if(versionMatch?.[1]!==version||!resolved?.[1].startsWith(expectedResolved)||
+   !/^https:\/\/registry\.yarnpkg\.com\/[^\s"#]+#[a-f0-9]{40}$/.test(resolved[1])||!sri)
+  throw Error('UNTRUSTED_PINNED_LOCK_ENTRY');
+ return sri[1];
+}
+function compare(readiness, key, rebuilt, published, lockfile) {
  if (!ALLOW.has(key)) throw Error('UNEXPECTED_EXACT_PACKAGE');
  if (readiness?.schema!=='therabridge-com02-published-nextjs-archive-reproducibility-readiness-v1' ||
      readiness?.counts?.signedCandidates!==3 || readiness?.counts?.legallyApproved!==0 ||
@@ -30,6 +49,17 @@ function compare(readiness, key, rebuilt) {
      !Array.isArray(target.publishedFiles) || target.publishedFiles.length!==target.packageFileCount ||
      sha(Buffer.from(JSON.stringify(target.publishedFiles)))!==target.publishedFilesSha256)
    throw Error('UNTRUSTED_PUBLISHED_FILE_INVENTORY');
+ // Cross-check against actual package archive with the separately pinned lockfile
+ // integrity; changing the report's self-hashes cannot manufacture trusted bytes.
+ if(!Buffer.isBuffer(published)||published.length===0||published.length>ARCHIVE_MAX)
+  throw Error('INVALID_PUBLISHED_ARCHIVE_SIZE');
+ const sri=lockedIntegrity(lockfile,key);
+ const referenceSha=checkSRI(published,sri);
+ if(referenceSha!==target.publishedArchiveSha256)
+  throw Error('READINESS_NOT_BOUND_TO_PINNED_PUBLISHED_BYTES');
+ const publishedFiles=readArchive(published).files;
+ if(JSON.stringify(publishedFiles)!==JSON.stringify(target.publishedFiles))
+  throw Error('READINESS_PUBLISHED_FILES_NOT_AUTHENTICATED');
  if (!Buffer.isBuffer(rebuilt) || rebuilt.length===0 || rebuilt.length>ARCHIVE_MAX)
    throw Error('INVALID_REBUILT_ARCHIVE_SIZE');
  const archive=readArchive(rebuilt);
@@ -67,15 +97,19 @@ function compare(readiness, key, rebuilt) {
 }
 if(process.argv[1] && import.meta.url===new URL('file://'+process.argv[1]).href){
  try{
-   const [readinessPath,key,archivePath,outputPath]=process.argv.slice(2);
-   if(process.argv.length!==6 || new Set([readinessPath,archivePath,outputPath]).size!==3)
-     throw Error('USAGE: comparator.mjs readiness.json @next/name@version rebuilt.tgz output.json');
-   const st=statSync(archivePath);
-   if(!st.isFile()||st.size<1||st.size>ARCHIVE_MAX)throw Error('INVALID_REBUILT_ARCHIVE_SIZE');
-   const report=compare(JSON.parse(readFileSync(readinessPath,'utf8')),key,readFileSync(archivePath));
+   const [readinessPath,key,archivePath,publishedPath,outputPath]=process.argv.slice(2);
+   if(process.argv.length!==7 || new Set([readinessPath,archivePath,publishedPath,outputPath]).size!==4)
+     throw Error('USAGE: comparator.mjs readiness.json @next/name@version rebuilt.tgz published.tgz output.json');
+   for(const path of [archivePath,publishedPath]){
+     const st=statSync(path);
+     if(!st.isFile()||st.size<1||st.size>ARCHIVE_MAX)throw Error('INVALID_PACKAGE_ARCHIVE_SIZE');
+   }
+   const report=compare(JSON.parse(readFileSync(readinessPath,'utf8')),key,
+     readFileSync(archivePath),readFileSync(publishedPath),
+     readFileSync(new URL('../../yarn.lock',import.meta.url),'utf8'));
    writeFileSync(outputPath,JSON.stringify(report,null,2)+'\n',{flag:'wx'});
    console.log(JSON.stringify({outcome:report.outcome,package:report.package}));
    if(!report.archiveByteIdentical)process.exitCode=1;
  }catch(e){console.error('COM02_REBUILD_COMPARE_FAILED',e.message);process.exitCode=2;}
 }
-export {compare};
+export {compare,lockedIntegrity};
