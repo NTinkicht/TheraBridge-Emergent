@@ -69,14 +69,15 @@ export function ProductShell({ session, active, planned, children }: { session: 
   const mobileQuick = quickMobileNav(groups);
   const activeNav = nav.find((n) => n.key === active);
   const activeGroup = groups.find((group) => group.items.some((n) => n.key === active));
+  const activeGroupKey = activeGroup?.key;
   const family = ctx?.role === 'GUARDIAN';
   const contextId = ctx?.type === 'center' ? ctx.centerId : 'platform';
 
   // Never persist a menu or drawer state across a role/tenant context switch.
   useEffect(() => { setMoreOpen(false); setExpandedGroups({}); }, [ctx?.role, contextId]);
   useEffect(() => {
-    if (activeGroup) setExpandedGroups(previous => previous[activeGroup.key] ? previous : { ...previous, [activeGroup.key]: true });
-  }, [activeGroup?.key]);
+    if (activeGroupKey) setExpandedGroups(previous => previous[activeGroupKey] ? previous : { ...previous, [activeGroupKey]: true });
+  }, [activeGroupKey]);
   useEffect(() => {
     if (moreOpen) moreCloseRef.current?.focus();
   }, [moreOpen]);
