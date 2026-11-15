@@ -42,7 +42,7 @@ const fixture=()=>{
     ['foreign_child_masked',404],['stale_therapist_revoked',403],
     ['guardian_grant_withdrawn',403],['expired_session_denied',401]
    ].map(([step,httpStatus])=>({step,httpStatus,status:'PASS',
-     actorAuthenticated:true,existingTargetVerified:true}))
+     actorAuthenticated:step!=='expired_session_denied',existingTargetVerified:true}))
   }};
 };
 test('complete synthetic status contract qualifies only with external approval and two valid tenants',()=>{
