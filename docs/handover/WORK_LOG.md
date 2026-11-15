@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-01 review remediation
+PR #380 first source-only audit job PASS: 41 pages / 20 NAV entries / 175 unexecuted screen targets. Codex P2 found NAV extractor could drop spread entries and misparse double-quoted permission. Remediated with complete literal-array consumption and new negative tests; fresh exact-head CI/Codex still pending, no UX or clinical acceptance.
+
+---
+
 ## 2026-11-15 — M5-01 source audit foundation (implementation, unqualified)
 Opened an isolated M5-01 branch with Next App Router source route discovery, permission-filtered nav inventory, deterministic seven-persona/175-entry audit plan and negative route/parser tests. Wired CI to archive source-only evidence. Live screenshots and actual task timings not performed; future browser QA must remain synthetic, sanitized and scoped. #184 OPEN, G2/G2b NO-GO.
 
