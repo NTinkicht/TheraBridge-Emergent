@@ -17,7 +17,7 @@ async function fixture(t) {
   const navPath = join(root, 'ProductShell.tsx');
   async function nav(entries) {
     await writeFile(navPath, 'const NAV: unknown[] = [\n' + entries.map(x =>
-      "  { key: '" + x.key + "', href: '" + x.href + "', label: 'Test' },").join('\n') + '\n];\n');
+      "  { key: '" + x.key + "', href: '" + x.href + "', icon: Home, label: 'Test', short: 'Test' },").join('\n') + '\n];\n');
   }
   await page('app');
   await page('login');
@@ -50,7 +50,7 @@ test('NAV parser preserves separate permission-gated entries', () => {
   assert.equal(nav.length, 2);
   assert.notEqual(nav[0].permission, nav[1].permission);
   assert.throws(() => parseNav('const OTHER = []'), /NAV definition/);
-  assert.throws(() => parseNav("const NAV: unknown[] = [\n{ key: 'x', href: 'https://evil.example' },\n];\n"), /unsafe/);
+  assert.throws(() => parseNav("const NAV: unknown[] = [\n{ key: 'x', href: 'https://evil.example', icon: Home, label: 'X', short: 'X' },\n];\n"), /unsafe/);
 });
 
 test('source inventory refuses incomplete persona targets, not quietly records false PASS', async t => {
@@ -76,4 +76,20 @@ test('symbolic links are not traversed as route sources', async t => {
   await writeFile(join(fx.root, 'external', 'page.tsx'), 'secret data');
   await symlink(join(fx.root, 'external'), join(fx.appRoot, 'linked'));
   await assert.rejects(buildAudit({ appRoot: fx.appRoot, navPath: fx.navPath }), /Persona task entry routes missing/);
+});
+
+test('unrecognized NAV spread or reference is rejected, never silently omitted', () => {
+  const first = "{ key: 'home', href: '/app', icon: Home, label: 'Home', short: 'Home' }";
+  const wrapper = raw => 'const NAV: unknown[] = [\n' + raw + '\n];\n';
+  assert.throws(() => parseNav(wrapper(first + ', ...extraNav,')), /Unparsed NAV|Unsupported NAV/);
+  assert.throws(() => parseNav(wrapper('...extraNav, ' + first)), /Unsupported NAV/);
+  assert.throws(() => parseNav(wrapper(first + ", { key: 'other', href: buildRoute(), icon: Home, label: 'Other', short: 'Other' }")), /Unsupported NAV/);
+  assert.throws(() => parseNav(wrapper(first + ", { key: 'other', href: '/other', icon: Home, label: 'Other', short: 'Other', permission: permissionFor('admin') }")), /Unsupported NAV/);
+});
+
+test('literal double-quoted permissions are faithfully extracted and cannot masquerade as null', () => {
+  const src = 'const NAV: unknown[] = [\n' +
+    '{ key: "one", href: "/app", icon: Home, label: "Home", short: "Home", permission: "center.clinical.read" },\n' +
+    '];\n';
+  assert.equal(parseNav(src)[0].permission, 'center.clinical.read');
 });
