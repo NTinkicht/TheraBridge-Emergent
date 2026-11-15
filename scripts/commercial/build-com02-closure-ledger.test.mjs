@@ -104,7 +104,7 @@ test('rejects fake historical package revision, publication or legal approval',(
  const a=buildInputs();a[3].records[0].immutableSourceCommit=commit;
  assert.throws(()=>reconcile(...a),/COM02_FULL_SCOPE_/);
  const b=buildInputs();b[2].packages[0].verifiedPublisherToSourceArtifact=true;
- assert.throws(()=>reconcile(...b),/COM02_FULL_SCOPE_/);
+ assert.throws(()=>reconcile(...b),/UNSAFE_PACKAGE_ATTESTATION/);
  const c=buildInputs();c[0].exceptions[0].decision='APPROVED';
  assert.throws(()=>reconcile(...c),/COM02_FULL_SCOPE_/);
 });
@@ -122,7 +122,7 @@ test('rejects omitted asset, forged source hash, altered category and invented r
  const c=buildInputs();c[0].nonPackage[0].category='BRAND';
  assert.throws(()=>reconcile(...c),/COM02_FULL_SCOPE_/);
  const d=buildInputs();d[2].nonPackageAssets[0].commercialApproval=true;
- assert.throws(()=>reconcile(...d),/COM02_FULL_SCOPE_/);
+ assert.throws(()=>reconcile(...d),/UNSAFE_SOURCE_ASSET/);
 });
 test('forged image approval or fabricated digest cannot authorize release',()=>{
  const a=buildInputs();a[4].commercialApproval=true;
