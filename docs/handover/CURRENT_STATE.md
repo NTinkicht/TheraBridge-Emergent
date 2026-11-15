@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-01 keyboard and machine timing tranche (IN PR, NOT QUALIFIED)
+Merged prior source #380 and 175-viewport browser #381 baselines; this new independent PR adds route settling times, seven safe synthetic keyboard journeys (desktop Enter Home, mobile select focus/Shift+Tab, Enter sign-out), strict no-secret receipt and negative tests. No full-task measurements, human visual review, screen-reader approval or clinical gate changes. Full CI/Codex pending. #184 stays OPEN, G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — M5-01 browser observer Codex P2 remediations (REQUALIFICATION PENDING)
 Codex first-head review found two P2 accuracy defects: pre-hydration skeleton capture and HTTP-200 masking asynchronous client errors. Observer now uses bounded two-stage visible-loading settlement, explicit client error/permission denial and LOAD_TIMEOUT classifications. Unit regressions cover those failure modes. Full CI and final-head independent review pending; #184 remains OPEN and browser output is NOT human UX PASS. No G2/G2b changes.
 
