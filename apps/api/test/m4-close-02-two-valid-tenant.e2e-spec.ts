@@ -19,7 +19,7 @@ describe('M4-CLOSE-02 disposable two-valid-tenant acceptance (real PostgreSQL)',
     const p=await preAuth(h);
     const response=await h.http().post('/api/invitations/accept-new')
       .set('Origin',ORIGIN).set('Cookie',p.cookie).set('X-CSRF-Token',p.token)
-      .send({token,displayName:'Fictional Test User',password:PASSWORD}).expect(201);
+      .send({token,displayName:'Fictional Test User',password:PASSWORD}).expect(200);
     const sessionToken=cookieFrom(response,'tb_session');
     expect(sessionToken).toBeTruthy();
     return {token:sessionToken!,cookie:`tb_session=${sessionToken}`,csrf:response.body.csrfToken,body:response.body};
