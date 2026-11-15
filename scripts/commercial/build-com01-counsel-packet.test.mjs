@@ -37,6 +37,26 @@ test('missing or duplicated SaaS or Enterprise contract sections fail closed',()
  assert.throws(()=>buildPacket({...inputs,contracts:inputs.contracts.replace(line,'')}),/CONTRACT_SECTION/);
  assert.throws(()=>buildPacket({...inputs,contracts:inputs.contracts+'\n'+line}),/CONTRACT_SECTION/);
 });
+test('Codex P2: approved contract disclaimer or manipulated matrix cannot pass',()=>{
+ const signed=inputs.contracts.replace(
+  '**PUBLIC WORKING DRAFT — NOT A SIGNABLE AGREEMENT, OFFER, COPYRIGHT LICENSE OR PRODUCTION AUTHORIZATION.**',
+  '**APPROVED SIGNABLE AGREEMENT FOR CUSTOMERS.**'
+ );
+ assert.notEqual(signed,inputs.contracts);
+ assert.throws(()=>buildPacket({...inputs,contracts:signed}),/COM01_SOURCE_STATUS_NOT_FAIL_CLOSED/);
+ const cleared=inputs.contracts.replace(
+  '| Rights-holder, academic/student/partner contributions | Restricted COM-01 register #312 | OPEN |',
+  '| Rights-holder, academic/student/partner contributions | Restricted COM-01 register #312 | APPROVED |'
+ );
+ assert.notEqual(cleared,inputs.contracts);
+ assert.throws(()=>buildPacket({...inputs,contracts:cleared}),/COM01_CONTRACT_APPROVAL_MATRIX_NOT_BLOCKED/);
+ const clinical=inputs.contracts.replace(
+  '| G2/G2b and clinical/consent/safeguarding/AI release approval | Independent clinical governance | NO-GO |',
+  '| G2/G2b and clinical/consent/safeguarding/AI release approval | Independent clinical governance | GO |'
+ );
+ assert.notEqual(clinical,inputs.contracts);
+ assert.throws(()=>buildPacket({...inputs,contracts:clinical}),/COM01_CONTRACT_APPROVAL_MATRIX_NOT_BLOCKED/);
+});
 test('adopted proprietary notice is not accepted as a mere proposal',()=>{
  const notice=inputs.notice.replace('NOT ADOPTED','ADOPTED');
  assert.throws(()=>buildPacket({...inputs,notice}),/COM01_SOURCE_STATUS/);
