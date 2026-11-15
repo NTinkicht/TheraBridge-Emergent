@@ -3,6 +3,7 @@
 // A public repository can check document completeness, never ownership or signatures.
 import {readFileSync,writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
+import {assess as verifyCom05Draft} from './verify-com05-policy.mjs';
 
 const sha=x=>createHash('sha256').update(x).digest('hex');
 const requiredScopes=[
@@ -42,7 +43,7 @@ function buildPacket({rights,contracts,notice,launch}){
  if(!rights.startsWith('# COM-01: intellectual-property rights evidence register')||
     !rights.includes('Status: NOT VERIFIED')||
     !contracts.startsWith('# TheraBridge — MSA and SaaS / Enterprise contracting pack')||
-    !notice.includes('NOT ADOPTED'))
+    !notice.startsWith('# Proposed TheraBridge Proprietary Notice — NOT ADOPTED'))
   throw Error('COM01_SOURCE_STATUS_NOT_FAIL_CLOSED');
  const rows=rights.split(/\r?\n/).filter(line=>line.startsWith('| '));
  const categories=requiredScopes.map(([id,label])=>{
@@ -61,9 +62,8 @@ function buildPacket({rights,contracts,notice,launch}){
  });
  const decisions=legalGates.map(id=>({id,status:'UNRESOLVED',
   evidenceReference:'NOT_PROVIDED',humanSignoffVerified:false}));
- if(!launch.includes('commercialLicenseGranted')||!launch.includes('false')||
-    !launch.includes('G2_G2B_NO_GO')&&!launch.includes('g2NoGo'))
-  throw Error('COM01_CANNOT_CORROBORATE_LAUNCH_SAFETY');
+ try{verifyCom05Draft(JSON.parse(launch));}
+ catch{throw Error('COM01_CANNOT_CORROBORATE_LAUNCH_SAFETY');}
  return {
   schema:'therabridge-com01-counsel-evidence-intake-v1',
   status:'REVIEW_PACKET_ONLY_ALL_LEGAL_DECISIONS_OPEN',
