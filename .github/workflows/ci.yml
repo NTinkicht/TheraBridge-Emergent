@@ -178,6 +178,13 @@ jobs:
           path: /tmp/therabridge-m5-ui-source-baseline.json
           if-no-files-found: error
           retention-days: 30
+      - name: Archive M5-02 source-only task-area map (NOT UX or 66/91 approval)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-02-task-area-proposal-${{ github.sha }}
+          path: /tmp/therabridge-m5-task-areas.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Required portability files are present
         run: |
           for f in yarn.lock .env.example apps/api/.env.example apps/web/.env.example .nvmrc; do
