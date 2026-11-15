@@ -1,3 +1,8 @@
+## 2026-11-15 — M4-CLOSE-02 isolated two-valid-tenant qualification (IN PR; NOT HOSTED-ACCEPTED)
+Existing Render demo remains live on old deployment SHA 3cdd7226236a... (Nov 8); no deployment or shared DB mutation authorized. Test-only PR adds guarded real-PostgreSQL two-valid-centre access, cross-tenant denial, therapist revocation, expired-session tests and a fail-closed 8-check structured protected-hosted receipt validator. All new test/CI results PENDING. The previous protected 10-account run 42605446171 yielded 84 PASS / 0 FAIL / 14 BLOCKED, not current-HEAD or two-hosted-tenant sign-off. #176/#268 and G2/G2b remain OPEN/NO-GO. See docs/roadmap/M4-CLOSE-02-HOSTED-ACCEPTANCE.md.
+
+---
+
 ## 2026-11-15 — M4-CLOSE-01 evidence reconciliation (IN PR; unqualified)
 Seven of nine M4 parent issues closed (#175/#177–#182); #176 hosted acceptance and #183 historical audit remain open. Follow-ups #266 (212-row/1,023-step evidence), #268 (two-valid-tenant protected QA), #279 (historic feature-branch force-ref audit) remain OPEN. PR #358 merged 90% four-metric API/Web qualification (CI 43692201180; merge 800e5c27). New PR adds read-only ancestor checks for #274/#275/#276 plus non-force process runbook; **new PR CI and Codex NOT RUN/PENDING**; zero new acceptance/clinical approval. Canonical receipt: docs/roadmap/M4-CLOSE-01-EVIDENCE-RECONCILIATION.md. G2/G2b NO-GO.
 
