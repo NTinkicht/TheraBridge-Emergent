@@ -1,3 +1,8 @@
+## 2026-11-15 — M4-CLOSE-02 isolated real-PostgreSQL tests and fail-closed hosted receipt (NOT RUN)
+Added 3 new real PostgreSQL two-valid synthetic center HTTP tests (authorized reads, foreign-center/foreign-child 403/404 masking with a valid actor, suspended membership revocation even with stale assignment, expired session 401 without harming another center). Added hostile receipt tests for boolean-only v1, duplicate or missing checks, false positive HTTP 401, mismatched protected run, and missing independently existing targets. Execution on latest PR CI is PENDING; NO PASS claimed. Previous protected 42605446171 attempt 2 = 84 PASS / 0 FAIL / 14 policy BLOCKED, not final hosted acceptance. Real Render demo remains on 3cdd722... old SHA. No clinical G2/G2b approval.
+
+---
+
 ## 2026-11-15 — M4-CLOSE-01 ancestry and evidence audit (NOT RUN on new HEAD)
 New source-executing Node tests assert three exact historic merged SHAs #274/#275/#276, a read-only ancestry command sequence, failure on unreachable commit, incomplete history, forged scope and invalid SHA, plus false-lease and clinical-approval fields set to false. Full CI step wired with checkout fetch-depth 0. **Test execution and full exact-head CI PENDING**; do not claim PASS based on prior #358. Prior #358 exact-head 43692201180 and Web focused 43692201195 SUCCESS; API branches 90.03%, Web branches 90.08% at 93/154 full-source denominator. Hosted protected run 42605446171 attempt 2 = 84 PASS / 0 FAIL / 14 BLOCKED; hosted multi-tenant and revoked-account acceptance still NOT QUALIFIED. G2/G2b NO-GO.
 
