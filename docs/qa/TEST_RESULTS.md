@@ -1200,3 +1200,5 @@ New offline Node cases: allowlist only the 3 signed Next.js versions, exact SHA5
 2026-11-15 — COM-LAUNCH suite added (six tests) for default blocked SaaS/Enterprise, fabricated approval, fake image digest, duplicated/missing obligations, forged evidence, and clinical G2/real-patient bypass. CI-wired but NO exact-head run PASS claimed until completed. The validator cannot grant legal/clinical authorization.
 
 2026-11-15 — Added seven COM-02 comparator tests for authentic archive same/different bytes, altered contents, forged legal grant, unsupported identity, tampered file inventory, attacker-rehashed fake archive/readiness and mispinned SRI. CI integrated on latest main; run results pending. No source reproduction, commercial or clinical approval.
+
+2026-11-15 — COM-05 draft policy has seven Node regression suites for unpriced editions, forged license/quota, expiry not deleting data or blocking export, cross-tenant/billing-clinical bypass, unsafe phone-home or issuer, unauthorized lifecycle automation, invalid editions/states. Test implementation committed and wired into full CI; exact-head qualification PENDING. No approvals implied.

@@ -972,3 +972,5 @@ Implemented next coherent PR: strict 3 exact signed npm tarball registry retriev
 2026-11-15 — COM-LAUNCH added a strictly non-authorizing public edition decision register, a fail-closed Node verifier, six adversarial tests, a CI step and documentation mapped to existing COM-01/03/04/05/06. It cannot transform declaration files into lawyer signatures. No customers/contracts released.
 
 2026-11-15 — Resolved Codex P2 in stale #370 implementation, transferred corrected comparator and seven tests onto current main without losing merged COM-LAUNCH #373, M4 or unrelated changes. Replaced untrusted readiness-only comparison with SRI-authenticated published tarball and pinned yarn.lock cross-check. New PR qualification pending, no forced branch update.
+
+2026-11-15 — Began COM-05 #316 with one cohesive design/qualification branch: draft three-edition JSON, non-authorizing verifier, seven adversarial regression scenarios, CI step and detailed synthetic-only threat/transition specification. No billing code, patient data, clinical signing or commercial license grant introduced.
