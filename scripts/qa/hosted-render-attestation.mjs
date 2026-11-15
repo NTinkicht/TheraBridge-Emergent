@@ -29,7 +29,9 @@ export async function attestHostedDeployment({
   // deployment and zero newer pending/failed deployments before it.
   const records=deployments.map(x=>x?.deploy??x);
   const live=records.filter(x=>x?.status==='live');
-  if(live.length!==1 || records[0]?.id!==live[0]?.id)
+  if(live.length!==1 || records[0]?.status!=='live' ||
+     records[0]?.id!==live[0]?.id ||
+     new Set(records.map(x=>x?.id)).size!==records.length)
     throw Error('render_live_deploy_ambiguous_or_stale');
   if(live[0]?.commit?.id!==operatorSha)
     throw Error('render_live_sha_mismatch');
