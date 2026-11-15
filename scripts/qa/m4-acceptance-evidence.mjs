@@ -28,6 +28,46 @@ const secureRows=(report,kind,roles)=>{
    (/^[a-z_]+$/.test(r.step) || /^link:\/app(?:\/[a-z-]+)*$/.test(r.step)) &&
    /^[a-z_]+$/.test(r.reason));
 };
+// A handful of caller-supplied true booleans cannot establish a hosted
+// second tenant or revocation. Require individually attributable, same-run
+// observable checks. Even a schema-valid receipt needs external operator
+// corroboration and is NOT a cryptographic attestation by this validator.
+const TWO_TENANT_STEPS=Object.freeze([
+ 'authorized_center_a','authorized_center_b',
+ 'cross_center_a_to_b_denied','cross_center_b_to_a_denied',
+ 'foreign_child_masked','stale_therapist_revoked',
+ 'guardian_grant_withdrawn','expired_session_denied'
+]);
+export function validTwoTenantReceipt(value,sha,protectedRunId){
+ if(!value||typeof value!=='object'||Array.isArray(value)||
+    value.schema!==2||value.kind!=='protected_two_tenant_synthetic_receipt'||
+    value.syntheticOnly!==true||value.deployedSha!==sha||
+    value.protectedRunId!==protectedRunId||
+    value.operatorApproved!==true||
+    value.validTenantCount!==2||
+    value.disposableFixtureVerified!==true||
+    value.twoDistinctActiveCentersVerified!==true||
+    value.clinicalGatesUnchanged!==true||
+    !Array.isArray(value.checks)||value.checks.length!==TWO_TENANT_STEPS.length)
+   return false;
+ const found=new Set();
+ for(const check of value.checks){
+   if(!check||typeof check!=='object'||Array.isArray(check)||
+      !TWO_TENANT_STEPS.includes(check.step)||found.has(check.step)||
+      check.status!=='PASS'||check.actorAuthenticated!==true||
+      check.existingTargetVerified!==true||
+      typeof check.httpStatus!=='number'||!Number.isInteger(check.httpStatus))
+     return false;
+   if(check.step.startsWith('authorized_')){
+     if(check.httpStatus!==200)return false;
+   }else if(check.step==='expired_session_denied'){
+     if(check.httpStatus!==401)return false;
+   }else if(![403,404].includes(check.httpStatus))return false;
+   found.add(check.step);
+ }
+ return found.size===TWO_TENANT_STEPS.length;
+}
+
 const isPass=(report,role,step)=>
  report.rows.some(r=>r.role===role&&r.step===step&&r.status==='PASS');
 export function evaluateM4HostedEvidence({legacy,extra,deployedSha,verifiedSha,
@@ -77,17 +117,8 @@ export function evaluateM4HostedEvidence({legacy,extra,deployedSha,verifiedSha,
      'cross_assignment_denial','session_still_valid','session_cleanup'])
     if(!isPass(extra,role,step))reasons.push('extra_required_check_missing');
  }
- // An absent-center UUID is not a valid second tenant.
- if(!twoTenantEvidence || twoTenantEvidence.schema!==1 ||
-  twoTenantEvidence.syntheticOnly!==true ||
-  twoTenantEvidence.deployedSha!==deployedSha ||
-  !Number.isInteger(twoTenantEvidence.validTenantCount) ||
-  twoTenantEvidence.validTenantCount<2 ||
-  twoTenantEvidence.authorizedPositiveControlsPassed!==true ||
-  twoTenantEvidence.crossTenantDenied===undefined ||
-  twoTenantEvidence.crossTenantDenied!==true ||
-  twoTenantEvidence.revocationDenied!==true ||
-  twoTenantEvidence.operatorApproved!==true)
+ // A synthetic fixture pass cannot be used as a hosted acceptance receipt.
+ if(!validTwoTenantReceipt(twoTenantEvidence,deployedSha,legacy?.protectedRunId))
    reasons.push('two_valid_tenant_test_not_verified');
  return {qualified:reasons.length===0,reasons:[...new Set(reasons)].sort(),
   accountsExpected:10,clinicalActivationAuthorized:false};
