@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-03 P2 responsive More/scroll checks (NOT YET EXACT-HEAD CI)
+Prior CI head revealed TS native details `defaultOpen` unsupported; replaced by controlled `open` and Web build progressed. Exact-head Codex subsequently raised two P2: stale hidden modal after crossing desktop breakpoint, background scroll chain during drawer. Added scoped matchMedia listener and root/body style lock+restore; browser journeys now require 7/7 desktop+mobile navigation AND semantic closure at 1024 then 320 and scroll style restoration. Source tests assert breakpoints/lock cleanup. Full rerun & fresh Codex still required; no UX or clinical certification.
+
+---
+
 ## 2026-11-15 — M5-03 grouped shell (UNQUALIFIED UNTIL CI)
 Added source test ensuring 20 exact permission identities grouped as merged M5-02 eight-area proposal, preserving family-vs-center Activities. Browser CI seven roles each check desktop rail, mobile quick links, More dialog Tab/Shift+Tab and Escape focus, and exact granted current session navigation vs source NAV. Existing 175 route/viewport observations and M5-01 keyboard receipts retained/extended; no full screen-reader, human task or visual UX approval claimed. Clinical G2/G2b NO-GO.
 
