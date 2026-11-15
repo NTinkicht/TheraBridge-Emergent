@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-03 source/navigation implementation (PR in progress)
+Implemented live ProductShell eight-group task navigation based on merged #387 M5-02 taxonomy. Added desktop sidebar rail collapse, source-visible breadcrumbs, bottom mobile quick links and keyboardable More panel; kept mobile select for existing regressions. Added typed permission map and adversarial source test plus CI Chromium per-role More/permission exact equality and keyboard focus trap. Pending six exact-head checks and Codex; no clinical or hosted changes.
+
+---
+
 ## 2026-11-15 — M5-02 source crosswalk engineering tranche
 Created `scripts/design/m5-ia-crosswalk.mjs` and adversarial tests reading canonical CSV registers and existing ProductShell NAV; emits 66+91+20 grouped rows and 7-persona no-grants permission review. Added full CI artifact, owner-limited journey proposal, and explicit untested/blocked scopes. PR review/CI pending; no proof of clickability, usability or permissions, no production change.
 
