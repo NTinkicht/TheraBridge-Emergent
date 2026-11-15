@@ -1,3 +1,9 @@
+## 2026-11-15 — M5-01 exact-head requalification after P2
+1. Verify strict NAV parser new regression tests, actual full source inventory and six required CI jobs + SBOM/Smart CI on final PR #380 head. Obtain a NEW independent Codex review; resolve old P2 thread only after concrete correction is qualified.
+2. Merge only after green CI and independent final-head review. Retain 175 NOT_RUN source inventory targets for isolated synthetic visual + actual task capture in subsequent M5 work. #184 OPEN, clinical G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — M5-01 UI audit next gates
 1. Qualify M5-01 source audit on exact branch HEAD: full required CI, SBOM/Smart CI and independent Codex review; fix failures before merge. Receipt is source-only and no screen/role acceptance.
 2. Use approved isolated synthetic environment to collect and inspect the seven-persona, 320/390/768/1024/1440 screenshots and full five-task-per-persona click/time/error journeys. Audit keyboard, screen reader, loading/empty/blocked/error and guardian dark-mode states. Store private, sanitized receipts tied to deployed SHA.
