@@ -305,6 +305,17 @@ jobs:
             /tmp/therabridge-com01-counsel-intake.json
       - name: Build conservative actual-image candidate comparison (unattested means unresolved)
         run: node scripts/commercial/review-release-scope.mjs /tmp/therabridge-com02-bulk-rights-evidence.json docs/commercial/release-file-evidence.json /tmp/therabridge-com02-release-scope-review.json
+      - name: Test exhaustive 53-version 91-asset dual-edition COM-02 closure ledger
+        run: node --test scripts/commercial/build-com02-closure-ledger.test.mjs
+      - name: Generate fail-closed COM-02 per-component commercial rights and release blocker ledger
+        run: |
+          node scripts/commercial/build-com02-closure-ledger.mjs \
+            /tmp/therabridge-com02-exact-version-rights-queue.json \
+            /tmp/therabridge-com02-source-correspondence-candidates.json \
+            /tmp/therabridge-com02-bulk-rights-evidence.json \
+            /tmp/therabridge-com02-definitelytyped-26-triage.json \
+            docs/commercial/release-file-evidence.json \
+            /tmp/therabridge-com02-closure-ledger.json
       - name: Archive installed license evidence for full CI
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -327,6 +338,7 @@ jobs:
             /tmp/therabridge-com02-nextjs-published-build-readiness.json
             /tmp/therabridge-com02-source-correspondence-candidates.json
             /tmp/therabridge-com02-definitelytyped-26-triage.json
+            /tmp/therabridge-com02-closure-ledger.json
             /tmp/therabridge-com02-root-observation-reconciliation.json
             /tmp/therabridge-com02-bulk-rights-evidence.json
             /tmp/therabridge-com02-release-scope-review.json
