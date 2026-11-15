@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-03 source/navigation implementation (PR in progress)
+Implemented live ProductShell eight-group task navigation based on merged #387 M5-02 taxonomy. Added desktop sidebar rail collapse, source-visible breadcrumbs, bottom mobile quick links and keyboardable More panel; kept mobile select for existing regressions. Added typed permission map and adversarial source test plus CI Chromium per-role More/permission exact equality and keyboard focus trap. Pending six exact-head checks and Codex; no clinical or hosted changes.
+
+---
+
 ## 2026-11-15 — PR #311 live-session regression fixed
 Added failure-only diagnostics (synthetic API status/message and activity enum shape) to the live session browser check, which showed the client dropping the first objective edit after adding a library activity. Fixed the impure state updater in SessionEditor (UUID now minted outside the updater) with a regression test, and adapted the held-route race to Playwright 1.55 semantics. No API, authorization, clinical or licence behaviour changed.
 
