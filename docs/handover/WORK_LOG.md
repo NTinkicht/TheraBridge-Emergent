@@ -975,4 +975,6 @@ Implemented next coherent PR: strict 3 exact signed npm tarball registry retriev
 
 2026-11-15 — Began COM-05 #316 with one cohesive design/qualification branch: draft three-edition JSON, non-authorizing verifier, seven adversarial regression scenarios, CI step and detailed synthetic-only threat/transition specification. No billing code, patient data, clinical signing or commercial license grant introduced.
 
-2026-11-15 — Opened a consolidated COM-01/03/04 intake integrity branch based on merged main. Added script to derive non-sensitive legal packet from existing rights register, contract suite, non-adopted notice and COM-05 policy; seven negative tests, CI hook and counsel handoff, no duplicated contract pack or contributor names. CI and Codex pending.
+2026-11-15 — Opened a consolidated COM-01/03/04 intake integrity branch based on merged main. Added script to derive non-sensitive legal packet from existing rights register, contract suite, non-adopted notice and COM-05 policy; eight negative tests, CI hook and counsel handoff, no duplicated contract pack or contributor names. CI and Codex pending.
+
+2026-11-15 — COM-01 latest Codex P2 follow-up: draft agreement's NOT SIGNABLE disclaimer and all seven approval-matrix rows (OPEN/BLOCKED/NO-GO) now strictly validated; forged APPROVED/GO changes rejected. Reused strict COM-05 parser against misleading input. Fresh exact-head CI and Codex required; no clinical/commercial approval.
