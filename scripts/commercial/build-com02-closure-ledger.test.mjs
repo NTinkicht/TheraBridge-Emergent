@@ -11,12 +11,22 @@ const typesIds=types.map(x=>'@types/'+x);
 function splitId(value){const i=value.lastIndexOf('@');return {name:value.slice(0,i),version:value.slice(i+1)};}
 function buildInputs(){
  const versionIds=[...typesIds,...expectedNonTypes];
- const group=(i)=>i<26?'DT':i<41?'ROOT':i<48?'MISSING':i<51?'MONO':'LEGACY';
+ const rootNames=new Set(['@tokenizer/token','abstract-logging','consola','cssesc','dlv',
+  'emoji-regex','esrecurse','glob-to-regexp','jsesc','postcss-selector-parser',
+  'punycode','tmp','tr46','type-fest']);
+ const group=key=>{
+  const n=splitId(key).name;
+  if(n.startsWith('@types/'))return 'DT';
+  if(n.startsWith('@next/'))return 'MONO';
+  if(['eastasianwidth','natural-compare'].includes(n))return 'LEGACY';
+  if(rootNames.has(n))return 'ROOT';
+  return 'MISSING';
+ };
  const exceptions=versionIds.map((key,i)=>({
   ...splitId(key),tarballSha256:hash,dependencyScope:'INSTALLED_NON_DIRECT',...rightsField
  }));
  const correspondence=versionIds.map((key,i)=>{
-  const g=group(i);return {...splitId(key),
+  const g=group(key);return {...splitId(key),
    candidateGitHead:g==='ROOT'||g==='MONO'?commit:null,
    sourcePackageSha256:g==='ROOT'?hash:null,
    evidenceStatus:g==='DT'||g==='MISSING'?'SOURCE_REVISION_CANDIDATE_UNAVAILABLE':
@@ -99,9 +109,9 @@ test('rejects fake historical package revision, publication or legal approval',(
  assert.throws(()=>reconcile(...c),/COM02_FULL_SCOPE_/);
 });
 test('rejects changed 27-version group or imaginary upstream Git root hash',()=>{
- const a=buildInputs();a[1].records[26].evidenceStatus='SOURCE_REVISION_CANDIDATE_UNAVAILABLE';
+ const a=buildInputs();a[1].records[30].evidenceStatus='SOURCE_REVISION_CANDIDATE_UNAVAILABLE';
  assert.throws(()=>reconcile(...a),/COM02_FULL_SCOPE_/);
- const b=buildInputs();b[1].records[26].sourcePackageSha256=null;
+ const b=buildInputs();b[1].records[30].sourcePackageSha256=null;
  assert.throws(()=>reconcile(...b),/COM02_FULL_SCOPE_/);
 });
 test('rejects omitted asset, forged source hash, altered category and invented rights',()=>{
