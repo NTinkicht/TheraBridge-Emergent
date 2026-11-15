@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-01 keyboard route journeys and timing metric addition (UNQUALIFIED)
+Source instrumentation adds 175 route-settle time samples and seven keyboard-path samples to existing isolated synthetic browser CI. New negative tests reject forged PASS, invalid timings, missing/duplicated personas and unsafe receipt fields. Final-head execution not yet verified; task timings, human visual checks and screen-reader validation still NOT RUN. #184 OPEN, clinical G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — M5-01 client settlement and async failure classification (NEW HEAD PENDING)
 Codex P2 observations: 100ms post-DOM wait insufficient for hydrated screens; top-level HTTP 200 cannot prove client data load. Implemented visible loader + aria-busy bounded settling, explicit session/client error, forbidden/timeout outcomes and regression tests. Final-head CI and Codex NOT YET QUALIFIED. Screenshots are transient and not human-reviewed, #184 OPEN, G2/G2b NO-GO.
 
