@@ -548,8 +548,8 @@ jobs:
       - run: yarn playwright install --with-deps chromium
       - name: Idempotent synthetic Ahmed seed and real seven-role browser journey
         run: node scripts/design/run-demo-live.mjs
-      - name: M5-01 browser receipt schema adversarial tests
-        run: node --test scripts/design/m5-browser-observe.test.mjs
+      - name: M5-01 browser and keyboard receipt schema adversarial tests
+        run: node --test scripts/design/m5-browser-observe.test.mjs scripts/design/m5-keyboard-journey.test.mjs
       - name: Archive numeric-only synthetic viewport observations, never screenshots
         uses: actions/upload-artifact@v4
         with:
