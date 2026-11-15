@@ -1,3 +1,8 @@
+## 2026-11-15 — PR #311 exact-head CI round 1 and live-session root cause
+Head `29fdda8`: `test` (full API PostgreSQL e2e + all COM-02 Sigstore steps), `sbom`, `secret-scan`, `demo-journey`, `compose` PASS. `live-session` FAIL (reproduced twice): first autosave PATCH 422 *Performed activities require objective…* with `objectiveLength: 0` while outcome/assistance were set. Root cause: SessionEditor minted the new activity UUID **inside** the `setActivities` updater; Next 15's App Router runs React 19 (bundled 19.2 canary), whose update rebasing replays updaters, re-keying the row and dropping the first edit. Fixed by minting the id once per click outside the updater; new Jest regression (replayed updaters) FAILS on the old code and PASSES on the fix. Separately, Playwright 1.55 settles held routes when their handler is unrouted, so the live race test now continues the held PATCH before unrouting (same race exercised). Local: web tsc PASS, web Jest 114 suites / 1562 tests PASS, coverage audit PASS. New exact-head CI PENDING.
+
+---
+
 ## 2026-11-15 — PR #311 coherent security upgrade (LOCAL ONLY; EXACT-HEAD CI PENDING)
 Local workspace (Node 22.23.4 with `--ignore-engines` for install only; installed tree checked separately: 0 packages incompatible with Node 20.20.2):
 | Check | Result |

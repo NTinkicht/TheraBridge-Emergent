@@ -1,3 +1,8 @@
+## 2026-11-15 — PR #311 live-session regression fixed
+Added failure-only diagnostics (synthetic API status/message and activity enum shape) to the live session browser check, which showed the client dropping the first objective edit after adding a library activity. Fixed the impure state updater in SessionEditor (UUID now minted outside the updater) with a regression test, and adapted the held-route race to Playwright 1.55 semantics. No API, authorization, clinical or licence behaviour changed.
+
+---
+
 ## 2026-11-15 — PR #311 dependency security upgrade repair
 Diagnosed Dependabot #311 CI failures (Node 20 `cookie@2` engine error in install-based jobs; stale direct-dependency evidence in sbom). Rebuilt the bump as coherent Nest 11 / Fastify 5 / Next 15.5.29 / Playwright 1.55.1 on top of merged `main`, adapted two source call sites and one web test, re-baselined COM-02 exact-version evidence (47 versions, Next.js 15.5.29 pins, sharp-libvips LGPL accounted as unresolved, four retired root observations) and aligned Playwright workflow images. Local: API/web typecheck PASS, API/web build PASS, all `scripts/**/*.test.mjs` PASS, web Jest coverage suite PASS. API PostgreSQL e2e and npm Sigstore verification NOT RUN locally (no Prisma engine download / Sigstore TUF access in this workspace) — CI is the authority.
 
