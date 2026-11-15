@@ -27,7 +27,7 @@ function fixture(){
 test('reconciles all 15 separately inspected roots against full 53-version queue',()=>{
  const {candidates,observations}=fixture(),out=reconcile(candidates,observations);
  assert.deepEqual(out.counts,{originalVersions:53,observedSourceRoots:15,sourceManifestSha256Matches:15,
-  claimedRepositoriesDirect:13,alternateRepositoriesNotLineageProven:2,
+  claimedRepositoriesDirect:13,githubRepositoryRedirectsVerified:2,historicalCopyrightTransfersVerified:0,
   publicationToSourceBuildCorrespondenceVerified:0,legallyApproved:0});
  assert.equal(out.commercialLicenseGranted,false);
  assert.ok(out.records.every(x=>x.npmSourceRevisionIndependentlyVerified===false));
@@ -46,6 +46,18 @@ test('rejects fake official repository identity for historic moved/alternate roo
  const row=observations.records.find(x=>x.name==='tr46');
  row.observedRepository=row.registryClaimedRepository;row.observationStatus='DIRECT_CLAIMED_REPOSITORY_EXACT_COMMIT_MANIFEST_MATCH';
  assert.throws(()=>reconcile(candidates,observations),/HISTORICAL_REPOSITORY_ALIAS_UNVERIFIED/);
+});
+test('rejects forged GitHub repository redirect identities even at matching Git commits',()=>{
+ const a=fixture();
+ const source=a.observations.records.find(x=>x.name==='consola');
+ source.githubRepoRedirect.repositoryId='123456';
+ assert.throws(()=>reconcile(a.candidates,a.observations),/HISTORICAL_REPOSITORY_ALIAS_UNVERIFIED/);
+ const b=fixture();
+ b.observations.records.find(x=>x.name==='tr46').githubRepoRedirect.githubEndpointResolvesToSameRepositoryId=false;
+ assert.throws(()=>reconcile(b.candidates,b.observations),/HISTORICAL_REPOSITORY_ALIAS_UNVERIFIED/);
+ const c=fixture();
+ c.observations.records.find(x=>x.name==='cssesc').githubRepoRedirect={repositoryId:'fake'};
+ assert.throws(()=>reconcile(c.candidates,c.observations),/FORGED_DIRECT_REPOSITORY_CORROBORATION/);
 });
 test('rejects missing, duplicated or truncated 53-package queue',()=>{
  const a=fixture();a.observations.records.pop();
