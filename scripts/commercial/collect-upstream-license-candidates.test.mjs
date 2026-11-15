@@ -137,3 +137,25 @@ test('missing and invalid attestation advertisements stay explicitly unverified,
  assert.equal(output.records.length,2);
  assert(output.records.every(row=>row.publisherProvenanceIndependentlyVerified===false));
 });
+
+test('exact @types publisher hash is only a bounded untrusted content fingerprint',()=>{
+ const good='c'.repeat(64);
+ const p=parseManifest(Buffer.from(JSON.stringify({name:'@types/sample',version:'1.2.3',
+  typesPublisherContentHash:good,dist:{integrity:'sha512-AAAA'}})),'@types/sample','1.2.3');
+ assert.equal(p.candidateTypesPublisherContentHash,good);
+ assert.equal(p.candidateTypesPublisherHashStatus,'EXACT_VERSION_PUBLISHER_HASH_CANDIDATE');
+ assert.equal(p.publisherProvenanceIndependentlyVerified,false);
+ const absent=parseManifest(Buffer.from(JSON.stringify({name:'@types/sample',version:'1.2.3'})),'@types/sample','1.2.3');
+ assert.equal(absent.candidateTypesPublisherContentHash,null);
+ assert.equal(absent.candidateTypesPublisherHashStatus,'NOT_ADVERTISED');
+ for(const candidate of ['bad',good.toUpperCase(),good+'x',true]){
+  const d=parseManifest(Buffer.from(JSON.stringify({name:'@types/sample',version:'1.2.3',
+   typesPublisherContentHash:candidate})),'@types/sample','1.2.3');
+  assert.equal(d.candidateTypesPublisherContentHash,null);
+  assert.equal(d.candidateTypesPublisherHashStatus,'INVALID_PUBLISHER_HASH_CANDIDATE');
+ }
+ const wrongScope=parseManifest(Buffer.from(JSON.stringify({name:'alpha',version:'1.0.0',
+  typesPublisherContentHash:good})),'alpha','1.0.0');
+ assert.equal(wrongScope.candidateTypesPublisherHashStatus,'NOT_DEFINITELYTYPED');
+ assert.equal(wrongScope.candidateTypesPublisherContentHash,null);
+});
