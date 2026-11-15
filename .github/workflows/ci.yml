@@ -283,6 +283,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/commercial/probe-dt-source-snapshots.mjs /tmp/therabridge-com02-definitelytyped-26-triage.json /tmp/therabridge-com02-dt-snapshot-probes.json
+      - name: Validate 2023 prepublication immutable source comparison safety
+        run: node --test scripts/commercial/probe-dt-prepublication-snapshots.test.mjs
+      - name: Observe two exact 2023 DefinitelyTyped source snapshots without publication authority
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/commercial/probe-dt-prepublication-snapshots.mjs /tmp/therabridge-com02-definitelytyped-26-triage.json /tmp/therabridge-com02-dt-prepublication-probes.json
       - name: Validate immutable-source root observations, aliases, and false-approval boundaries
         run: node --test scripts/commercial/reconcile-independent-root-observations.test.mjs
       - name: Corroborate 15 source-root observations against exact 53 npm candidate report without authorizing lineage
@@ -356,6 +362,7 @@ jobs:
             /tmp/therabridge-com02-source-correspondence-candidates.json
             /tmp/therabridge-com02-definitelytyped-26-triage.json
             /tmp/therabridge-com02-dt-snapshot-probes.json
+            /tmp/therabridge-com02-dt-prepublication-probes.json
             /tmp/therabridge-com02-closure-ledger.json
             /tmp/therabridge-com02-root-observation-reconciliation.json
             /tmp/therabridge-com02-bulk-rights-evidence.json
