@@ -1,3 +1,8 @@
+## 2026-11-15 — M4-CLOSE-01 consolidated evidence/process work
+Read current GitHub M4 issue states and #176/#183/#266/#268/#279 evidence; did not reopen closed M4 engineering or claim the 49 historic pending issues implemented. Added a fail-closed, read-only Git ancestry checker for exact historical merge commits #274–#276 and adversarial tests for lost ancestor, shallow history and tampered scope; wired into full CI. Added explicit forward-only two-parent feature-branch merge procedure and candid limitation on original force-ref lease proof. New work is a PR checkpoint only: no CI or review PASS claimed yet; protected hosted acceptance, 1,023 controlled steps and clinical approval not performed.
+
+---
+
 ## 2026-11-11 — COM-02 #361 source-to-release followup first code chunk
 Merged prior #359 (merge SHA 16316d3f41c1f1c1b9f20b8ea5ce00961dc6dd4e). Opened #361 as a bundled release-scope and exact package provenance wave. Added `review-release-scope.mjs`, its adversarial unit tests, digest-pin schema `release-file-evidence.json` (zero invented release image records), and full-CI publication of source asset/release rights comparisons. Fail-closed package/version/asset inventory counts, candidate image digest/path, no final legal/clinical approvals. No test PASS claimed until CI.
 
