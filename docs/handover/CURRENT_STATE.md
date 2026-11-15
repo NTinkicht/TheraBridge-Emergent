@@ -1,3 +1,13 @@
+## 2026-11-15 — M5-01 Codex P2 NAV parser correction (NEW HEAD UNQUALIFIED)
+First CI source-audit step PASS at reviewed-old HEAD 838d0daa; artifact measured 41 canonical pages, 20 NAV entries, 175 NOT_RUN targets; zero screenshots or owner/clinical approvals. Codex P2 on that SHA identified silent omission of NAV spreads and double-quoted permission parsing. Replaced the parser with literal-only complete-consumption logic and adversarial tests rejecting unsupported entries/expressions, accepting exact double-quoted permissions. **New head full CI and fresh independent Codex review PENDING**; PR #380 remains OPEN, #184 OPEN, G2/G2b NO-GO.
+
+---
+
+## 2026-11-15 — M5-01 initial source UI audit (OPEN PR; NOT QUALIFIED)
+Source inventory of Next pages and permission-filtered ProductShell NAV, plus a planned seven-persona × five-viewport × five-entry capture matrix. Added fail-closed duplicate/orphan-route checks and no-secret source metrics. CI and independent Codex review pending; **zero browser screenshots, zero usability measurements, zero accessibility approvals**. Never call SOURCE_INDEXED_ONLY an observed UX result. Details: docs/roadmap/M5-01-UI-SOURCE-BASELINE.md; #184 remains OPEN, G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — M4-CLOSE-02 protected Render SHA attestation (IN PR, NOT QUALIFIED)
 PR adds read-only Render service identity and latest-LIVE deployment API checks *before* protected ten-account credentials. Current shared demo old SHA 3cdd722... differs from main. Render workspace has no disposable TheraBridge test service or Postgres instance; no infrastructure changed. Secret TB_HOSTED_RENDER_READONLY_API_KEY is required but NOT VERIFIED configured. Guard tests and full CI NOT RUN on new HEAD; protected two-valid-tenant acceptance remains NOT RUN and #176/#268 OPEN. Details: docs/roadmap/M4-CLOSE-02-PROTECTED-EXECUTION-READINESS.md. G2/G2b NO-GO.
 
