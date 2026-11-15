@@ -1,3 +1,18 @@
+## 2026-11-15 — Next 16.4.6 + React 19.3 (LOCAL ONLY; EXACT-HEAD CI PENDING)
+| Check | Result |
+|---|---|
+| Installed tree Node 20.20.2 engine compatibility | PASS (0 incompatible) |
+| Web `tsc --noEmit`; `next build` (Turbopack) | PASS — 41 app routes + `/_not-found`, `ƒ Proxy` present |
+| Web `node --test` | PASS (6/6) |
+| Web Jest full-source suite on React 19.3.1 | PASS (114 suites / 1563 tests), coverage audit PASS |
+| All `scripts/**/*.test.mjs` | PASS |
+| CI `test` job non-DB steps replayed (incl. COM-02 closure ledger, DT probes, M4-08 inventory, M2-H06) | PASS |
+| COM-02 Sigstore steps 37/40 | NOT RUN locally (workspace cannot reach Sigstore; same as `main`) |
+| API PostgreSQL e2e, live-session, demo-journey, preview-container, compose | NOT RUN locally |
+| npm advisory bulk check | 3 remaining (dev-tool transitive), down from 7 |
+
+---
+
 ## 2026-11-15 — PR #311 exact-head CI round 1 and live-session root cause
 Head `29fdda8`: `test` (full API PostgreSQL e2e + all COM-02 Sigstore steps), `sbom`, `secret-scan`, `demo-journey`, `compose` PASS. `live-session` FAIL (reproduced twice): first autosave PATCH 422 *Performed activities require objective…* with `objectiveLength: 0` while outcome/assistance were set. Root cause: SessionEditor minted the new activity UUID **inside** the `setActivities` updater; Next 15's App Router runs React 19 (bundled 19.2 canary), whose update rebasing replays updaters, re-keying the row and dropping the first edit. Fixed by minting the id once per click outside the updater; new Jest regression (replayed updaters) FAILS on the old code and PASSES on the fix. Separately, Playwright 1.55 settles held routes when their handler is unrouted, so the live race test now continues the held PATCH before unrouting (same race exercised). Local: web tsc PASS, web Jest 114 suites / 1562 tests PASS, coverage audit PASS. New exact-head CI PENDING.
 

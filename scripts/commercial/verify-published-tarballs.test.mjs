@@ -154,37 +154,37 @@ test('missing direct installed dependency is a legal-unresolved row with no impl
  assert.equal(x.status,'DIRECT_DEPENDENCY_NOT_INSTALLED');assert.equal(x.licenseObligationsReviewed,false);
 });
 
-test('expanded archive allowance is pinned ONLY to Next.js 15.5.29',()=>{
- const normal=packageLimits('next','15.5.30');
- const current=packageLimits('next','15.5.29');
+test('expanded archive allowance is pinned ONLY to Next.js 16.4.6',()=>{
+ const normal=packageLimits('next','16.4.7');
+ const current=packageLimits('next','16.4.6');
  assert.equal(normal.gzipBytes,16*1024*1024);
  assert.equal(normal.tarBytes,64*1024*1024);
  assert.equal(current.gzipBytes,48*1024*1024);
  assert.equal(current.tarBytes,256*1024*1024);
- assert.equal(current.exception,'PINNED_NEXT_JS_15_5_29');
- assert.deepEqual(packageLimits('@next/env','15.5.29'),normal);
+ assert.equal(current.exception,'PINNED_NEXT_JS_16_4_6');
+ assert.deepEqual(packageLimits('@next/env','16.4.6'),normal);
 });
 test('pinned limit exception still requires exact publisher integrity',async()=>{
  const f=fixture();
- f.installed.records[0].name='next';f.installed.records[0].version='15.5.29';
+ f.installed.records[0].name='next';f.installed.records[0].version='16.4.6';
  f.direct.records[0].name='next';
- f.lockText=f.lockText.replace(/alpha/g,'next').replace(/1\.0\.0/g,'15.5.29');
+ f.lockText=f.lockText.replace(/alpha/g,'next').replace(/1\.0\.0/g,'16.4.6');
  const limits=[];
  const report=await audit(f,{fetchBuffer:async(_url,options)=>{limits.push(options);return Buffer.from('tampered');}});
- assert.equal(limits[0].exception,'PINNED_NEXT_JS_15_5_29');
+ assert.equal(limits[0].exception,'PINNED_NEXT_JS_16_4_6');
  assert.equal(report.records[0].status,'UNRESOLVED_INTEGRITY_MISMATCH');
  assert.equal(report.legallyApproved,0);
 });
 
-test('only the two pinned SWC Linux 15.5.29 artifacts gain expanded archive limits',()=>{
+test('only the two pinned SWC Linux 16.4.6 artifacts gain expanded archive limits',()=>{
  const names=['@next/swc-linux-x64-gnu','@next/swc-linux-x64-musl'];
  for(const name of names){
-  const budget=packageLimits(name,'15.5.29');
+  const budget=packageLimits(name,'16.4.6');
   assert.equal(budget.gzipBytes,48*1024*1024);
   assert.equal(budget.tarBytes,256*1024*1024);
-  assert.equal(budget.exception,'PINNED_NEXT_SWC_LINUX_15_5_29');
-  assert.equal(packageLimits(name,'15.5.30').gzipBytes,16*1024*1024);
+  assert.equal(budget.exception,'PINNED_NEXT_SWC_LINUX_16_4_6');
+  assert.equal(packageLimits(name,'16.4.7').gzipBytes,16*1024*1024);
  }
- assert.equal(packageLimits('@next/swc-darwin-x64','15.5.29').gzipBytes,16*1024*1024);
- assert.equal(packageLimits('unrelated','15.5.29').gzipBytes,16*1024*1024);
+ assert.equal(packageLimits('@next/swc-darwin-x64','16.4.6').gzipBytes,16*1024*1024);
+ assert.equal(packageLimits('unrelated','16.4.6').gzipBytes,16*1024*1024);
 });

@@ -12,12 +12,12 @@ function fixture(){
  const records=[{name,version,publisherContentHashCandidate:expected,
   publisherContentHashStatus:'EXACT_VERSION_PUBLISHER_HASH_CANDIDATE',
   npmPublisherToSourceIndependentlyVerified:false,sourceContentHashIndependentlyMatched:false}];
- for(let i=0;i<25;i++)records.push({name:'@types/pkg'+i,version:'1.0.0',
+ for(let i=0;i<24;i++)records.push({name:'@types/pkg'+i,version:'1.0.0',
   publisherContentHashCandidate:key('package'+i),
   publisherContentHashStatus:'EXACT_VERSION_PUBLISHER_HASH_CANDIDATE',
   npmPublisherToSourceIndependentlyVerified:false,sourceContentHashIndependentlyMatched:false});
  return {schema:'therabridge-com02-definitelytyped-26-pinned-triage-v1',
-  counts:{definitelyTypedVersions:26,publisherToSourceAttested:0},commercialApproval:false,records};
+  counts:{definitelyTypedVersions:25,publisherToSourceAttested:0},commercialApproval:false,records};
 }
 function mockGitHub({corrupt=false}={}){
  const src=Buffer.from(source),json=Buffer.from(pkg);
@@ -79,7 +79,7 @@ test('cannot forge confirmed provenance or commercial approval in triage',()=>{
  const dup=fixture();dup.records[2].name=dup.records[1].name;
  assert.throws(()=>selection(dup,name,version),/UNSAFE_PUBLISHER_ROW/);
 });
-test('must match exact version and canonical 26-element fingerprint set',()=>{
+test('must match exact version and canonical 25-element fingerprint set',()=>{
  const input=fixture();input.records.pop();
  assert.throws(()=>selection(input,name,version),/UNSAFE_EXACT_PUBLISHER_TRIAGE/);
  const exact=fixture();exact.records[0].publisherContentHashCandidate=null;

@@ -16,18 +16,18 @@ function fixture(){
   sourceVersionCorrespondence:'NOT_INDEPENDENTLY_ATTESTED',
   commercialApproval:false
  }));
- for(let i=0;i<36;i++)candidates.push({
+ for(let i=0;i<35;i++)candidates.push({
   name:'unmapped-test-'+i,version:'1.0.0',
   sourceVersionCorrespondence:'NOT_INDEPENDENTLY_ATTESTED',commercialApproval:false
  });
  return {candidates:{schema:'therabridge-com02-githead-source-corroboration-candidates-v1',
-  counts:{exceptions:47,stillRequiresIndependentAttestation:47,legallyApproved:0},
+  counts:{exceptions:46,stillRequiresIndependentAttestation:46,legallyApproved:0},
   finalNoticesIssued:false,commercialLicenseGranted:false,records:candidates},
   observations:clone(evidence)};
 }
-test('reconciles 11 current and 4 retired frozen roots against full 47-version queue',()=>{
+test('reconciles 11 current and 4 retired frozen roots against full 46-version queue',()=>{
  const {candidates,observations}=fixture(),out=reconcile(candidates,observations);
- assert.deepEqual(out.counts,{originalVersions:47,observedSourceRoots:15,
+ assert.deepEqual(out.counts,{originalVersions:46,observedSourceRoots:15,
   boundToCurrentPopulation:11,retiredNotInCurrentPopulation:4,sourceManifestSha256Matches:11,
   claimedRepositoriesDirect:11,githubRepositoryRedirectsVerified:2,historicalCopyrightTransfersVerified:0,
   publicationToSourceBuildCorrespondenceVerified:0,legallyApproved:0});
@@ -69,7 +69,7 @@ test('rejects forged GitHub repository redirect identities even at matching Git 
  c.observations.records.find(x=>x.name==='cssesc').githubRepoRedirect={repositoryId:'fake'};
  assert.throws(()=>reconcile(c.candidates,c.observations),/FORGED_DIRECT_REPOSITORY_CORROBORATION/);
 });
-test('rejects missing, duplicated or truncated 47-package queue',()=>{
+test('rejects missing, duplicated or truncated 46-package queue',()=>{
  const a=fixture();a.observations.records.pop();
  assert.throws(()=>reconcile(a.candidates,a.observations),/UNTRUSTED_OBSERVATION_ENVELOPE/);
  const b=fixture();b.candidates.records[15]=clone(b.candidates.records[0]);

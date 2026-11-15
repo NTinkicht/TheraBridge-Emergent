@@ -3,6 +3,7 @@
 // A match proves content at this snapshot, not a historical publication build.
 import {readFileSync,writeFileSync} from 'node:fs';
 import {verify} from './verify-dt-immutable-source.mjs';
+import {DEFINITELYTYPED_VERSIONS as DT} from './com02-nextjs-pins.mjs';
 const sourceCommit='b87d8b54b28154cc9f6054238ff4ae63faa76000';
 const laterCookiejarCommit='7aa25146316b7bafa0863d69bc5f125cde97f216';
 const candidates=Object.freeze([
@@ -12,8 +13,8 @@ const candidates=Object.freeze([
 ]);
 async function probeHistorical(triage,{verifier=verify,token=''}={}){
  if(triage?.schema!=='therabridge-com02-definitelytyped-26-pinned-triage-v1'||
-  triage?.counts?.definitelyTypedVersions!==26||triage.commercialApproval!==false||
-  !Array.isArray(triage.records)||triage.records.length!==26)
+  triage?.counts?.definitelyTypedVersions!==DT||triage.commercialApproval!==false||
+  !Array.isArray(triage.records)||triage.records.length!==DT)
    throw Error('UNSAFE_DEFINITELYTYPED_TRIAGE');
  const observations=[];
  for(const candidate of candidates){
@@ -52,7 +53,7 @@ async function probeHistorical(triage,{verifier=verify,token=''}={}){
   sourceCommitTimeExternallyAuthenticatedInThisReceipt:false,
   reportedPublishDatesArePublisherMetadataNotSignedProof:true,
   immutableSourceMatchCount:observations.filter(x=>x.immutableSourceByteMatch).length,
-  candidateCount:3,definitelyTypedVersions:26,
+  candidateCount:3,definitelyTypedVersions:DT,
   otherNpmExceptionVersionsUnresolved:27,sourceAssetsRequiringRightsReview:91,
   historicalPublisherBuildAttestations:0,legalApprovals:0,
   actualSaasReleaseImageVerified:false,actualEnterpriseReleaseImageVerified:false,

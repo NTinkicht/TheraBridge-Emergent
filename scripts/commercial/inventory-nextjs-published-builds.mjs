@@ -116,11 +116,13 @@ function sourceRecipe(bytes,expected){
   throw Error('SOURCE_BUILD_RECIPE_VERSION_MISMATCH');
  const scripts=manifest.scripts||{};
  if(expected.name==='@next/env'){
-  if(typeof scripts.release!=='string'||!scripts.release.includes('ncc build')||
+  // Next.js 16 renamed the @next/env ncc release script to `build:source`.
+  const build=scripts['build:source'];
+  if(typeof build!=='string'||!build.includes('ncc build')||
      typeof scripts.types!=='string'||!scripts.types.includes('tsc '))
    throw Error('ENV_SOURCE_BUILD_RECIPE_MISSING');
   return {type:'NCC_TYPESCRIPT_RELEASE_BUILD',sourcePackageSha256:sha(bytes),
-   commands:{release:scripts.release,types:scripts.types},
+   commands:{buildSource:build,types:scripts.types},
    pinnedBuildInputs:{ncc:manifest.devDependencies?.['@vercel/ncc']||null},
    reproduciblePublishedArchive:false};
  }

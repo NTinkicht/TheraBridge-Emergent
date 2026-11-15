@@ -1,3 +1,8 @@
+## 2026-11-15 — Next 16 / React 19 work unit
+Branched from merged #311 (`81ad2aa`). Upgraded web to Next 16.4.6 and React 19.3.1, renamed middleware to the Next 16 `proxy` convention, fixed React 19 typing, re-baselined COM-02 exact-version pins (46 versions / 25 DefinitelyTyped / Next 16.4.6 signed chain). Local: web tsc + Turbopack build PASS (same 41 routes + not-found), web node tests 6/6, web Jest 114 suites / 1563 tests on React 19 PASS, all `scripts/**/*.test.mjs` PASS, COM-02 CI steps replayed PASS except the two Sigstore-dependent steps that cannot run in this workspace (same as `main`). API e2e / browser / container jobs NOT RUN locally.
+
+---
+
 ## 2026-11-15 — PR #311 live-session regression fixed
 Added failure-only diagnostics (synthetic API status/message and activity enum shape) to the live session browser check, which showed the client dropping the first objective edit after adding a library activity. Fixed the impure state updater in SessionEditor (UUID now minted outside the updater) with a regression test, and adapted the held-route race to Playwright 1.55 semantics. No API, authorization, clinical or licence behaviour changed.
 

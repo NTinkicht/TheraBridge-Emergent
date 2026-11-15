@@ -3,6 +3,7 @@
 // A matching fingerprint is NOT an independently verified npm build or license.
 import {readFileSync,writeFileSync} from 'node:fs';
 import {createHash,timingSafeEqual} from 'node:crypto';
+import {DEFINITELYTYPED_VERSIONS as DT} from './com02-nextjs-pins.mjs';
 const h40=/^[a-f0-9]{40}$/;
 const h64=/^[a-f0-9]{64}$/;
 const sha256=x=>createHash('sha256').update(x).digest('hex');
@@ -10,10 +11,10 @@ const gitBlob=x=>createHash('sha1').update(Buffer.from('blob '+x.length+'\0')).u
 const isDeclaration=p=>/\.d\.(?:ts|cts|mts|[^/]+\.ts)$/.test(p);
 function selection(triage,name,version){
  if(triage?.schema!=='therabridge-com02-definitelytyped-26-pinned-triage-v1'||
-    triage.counts?.definitelyTypedVersions!==26||
+    triage.counts?.definitelyTypedVersions!==DT||
     triage.counts?.publisherToSourceAttested!==0||
     triage.commercialApproval!==false||
-    !Array.isArray(triage.records)||triage.records.length!==26||
+    !Array.isArray(triage.records)||triage.records.length!==DT||
     !/^@types\/[a-z0-9_-]+$/.test(name)||!/^\d+\.\d+\.\d+$/.test(version))
   throw Error('UNSAFE_EXACT_PUBLISHER_TRIAGE');
  const ids=new Set();

@@ -24,26 +24,26 @@ const make=()=>{
    saasNetworkRights:'PENDING_COUNSEL_REVIEW',
    enterpriseRedistributionRights:'PENDING_COUNSEL_REVIEW'});
  }
- // Verify rejection of a missing external 47-version population, too.
+ // Verify rejection of a missing external 46-version population, too.
  for(let i=0;i<21;i++){
   const name='other-'+i,version='1.0.0';
   u.push({name,version});c.push({name,version});q.push({name,version});
  }
  return [
   {schema:'therabridge-com02-upstream-authority-candidates-v1',
-   counts:{exceptions:47},records:u,commercialLicenseGranted:false,finalNoticesIssued:false},
+   counts:{exceptions:46},records:u,commercialLicenseGranted:false,finalNoticesIssued:false},
   {schema:'therabridge-com02-githead-source-corroboration-candidates-v1',
-   counts:{exceptions:47},records:c,commercialLicenseGranted:false,finalNoticesIssued:false},
+   counts:{exceptions:46},records:c,commercialLicenseGranted:false,finalNoticesIssued:false},
   {schema:'therabridge-com02-exact-version-rights-queue-v1',
-   counts:{exceptions:47},exceptions:q,commercialLicenseGranted:false,finalNoticesIssued:false}
+   counts:{exceptions:46},exceptions:q,commercialLicenseGranted:false,finalNoticesIssued:false}
  ];
 };
 const clone=x=>structuredClone(x);
-test('26 exact SRI-bound package rights rows and zero invented source lineage',()=>{
+test('25 exact SRI-bound package rights rows and zero invented source lineage',()=>{
  const report=build(...make());
- assert.equal(report.counts.definitelyTypedVersions,26);
+ assert.equal(report.counts.definitelyTypedVersions,25);
  assert.equal(report.counts.publisherToSourceAttested,0);
- assert.equal(report.records.length,26);
+ assert.equal(report.records.length,25);
  assert.equal(report.commercialApproval,false);
  assert.ok(report.records.every(x=>x.immutableSourceCommit===null&&
   x.npmPublisherToSourceIndependentlyVerified===false&&

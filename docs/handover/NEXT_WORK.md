@@ -1,3 +1,10 @@
+## 2026-11-15 — Next 16 PR qualification
+1. Exact-head six required jobs + sbom/Smart CI; watch live-session/demo-journey (React 19 + Turbopack production build) and preview-container image SBOM.
+2. Independent Codex review of the final green HEAD; disposition every finding (Rule 13) before any Rule 16 merge.
+3. Then: Node 22 LTS runtime (ADR-0001 update) + NestJS 12 as one work unit, which also removes the `light-my-request` dedupe; counsel decision on LGPL `@img/sharp-libvips-*` (or omit `sharp` from release images).
+
+---
+
 ## 2026-11-15 — PR #311 qualification
 1. Verify all six required CI jobs + SBOM/Smart CI on the new #311 HEAD, especially API PostgreSQL e2e under Nest 11/Fastify 5 and the COM-02 Sigstore steps (expect 5 verified signed subjects: 3 Next.js + 2 sharp-libvips). Fix real failures without weakening fail-closed checks.
 2. Obtain independent final-head Codex review; record FIX_NOW / DEFER_ISSUE / DECLINE_WITH_REASON for every finding before any Rule 16 merge.

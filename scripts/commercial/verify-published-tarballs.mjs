@@ -8,15 +8,15 @@ import https from 'node:https';
 const HOSTS=new Set(['registry.yarnpkg.com','registry.npmjs.org']);
 const LICENSE=/^(?:licen[cs]e|copying|notice|copyright)(?:\.[a-z0-9_-]+)?$/i;
 const MAX_GZIP=16*1024*1024,MAX_TAR=64*1024*1024,MAX_TEXT=1024*1024;
-// Isolated exact-version exception: Next.js 15.5.29 archive exceeds 16MiB.
+// Isolated exact-version exception: Next.js 16.4.6 archive exceeds 16MiB.
 // No other package inherits these expanded limits; integrity remains mandatory.
-const NEXT_EXCEPTION={name:'next',version:'15.5.29',gzipBytes:48*1024*1024,tarBytes:256*1024*1024};
+const NEXT_EXCEPTION={name:'next',version:'16.4.6',gzipBytes:48*1024*1024,tarBytes:256*1024*1024};
 const SWC_EXCEPTIONS=new Set(['@next/swc-linux-x64-gnu','@next/swc-linux-x64-musl']);
 function packageLimits(name,version){
  if(name===NEXT_EXCEPTION.name&&version===NEXT_EXCEPTION.version)
-  return {gzipBytes:NEXT_EXCEPTION.gzipBytes,tarBytes:NEXT_EXCEPTION.tarBytes,exception:'PINNED_NEXT_JS_15_5_29'};
- if(version==='15.5.29'&&SWC_EXCEPTIONS.has(name))
-  return {gzipBytes:48*1024*1024,tarBytes:256*1024*1024,exception:'PINNED_NEXT_SWC_LINUX_15_5_29'};
+  return {gzipBytes:NEXT_EXCEPTION.gzipBytes,tarBytes:NEXT_EXCEPTION.tarBytes,exception:'PINNED_NEXT_JS_16_4_6'};
+ if(version==='16.4.6'&&SWC_EXCEPTIONS.has(name))
+  return {gzipBytes:48*1024*1024,tarBytes:256*1024*1024,exception:'PINNED_NEXT_SWC_LINUX_16_4_6'};
  return {gzipBytes:MAX_GZIP,tarBytes:MAX_TAR,exception:null};
 }
 function parseLock(source){

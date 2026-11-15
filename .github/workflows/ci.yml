@@ -273,7 +273,7 @@ jobs:
         run: node --test scripts/commercial/corroborate-source-revisions.test.mjs
       - name: Collect version-pinned source root manifest corroboration candidates (not legal authority)
         run: node scripts/commercial/corroborate-source-revisions.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-source-correspondence-candidates.json
-      - name: Validate exact 26 DefinitelyTyped unresolved source lineage and rights targets
+      - name: Validate exact pinned DefinitelyTyped (25) unresolved source lineage and rights targets
         run: node --test scripts/commercial/build-definitelytyped-triage.test.mjs
       - name: Build exact DefinitelyTyped version-specific third-party rights followup receipt
         run: node scripts/commercial/build-definitelytyped-triage.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-source-correspondence-candidates.json /tmp/therabridge-com02-exact-version-rights-queue.json /tmp/therabridge-com02-definitelytyped-26-triage.json
@@ -291,7 +291,7 @@ jobs:
         run: node scripts/commercial/probe-dt-prepublication-snapshots.mjs /tmp/therabridge-com02-definitelytyped-26-triage.json /tmp/therabridge-com02-dt-prepublication-probes.json
       - name: Validate immutable-source root observations, aliases, and false-approval boundaries
         run: node --test scripts/commercial/reconcile-independent-root-observations.test.mjs
-      - name: Corroborate 15 frozen source-root observations (11 current, 4 retired) against exact 47 npm candidate report without authorizing lineage
+      - name: Corroborate 15 frozen source-root observations (11 current, 4 retired) against exact 46 npm candidate report without authorizing lineage
         run: node scripts/commercial/reconcile-independent-root-observations.mjs /tmp/therabridge-com02-source-correspondence-candidates.json docs/commercial/com02-independent-root-observations.json /tmp/therabridge-com02-root-observation-reconciliation.json
       - name: Validate fail-closed exact-commit LICENSE/NOTICE text hashing
         run: node --test scripts/commercial/verify-immutable-license-texts.test.mjs
@@ -328,7 +328,7 @@ jobs:
             /tmp/therabridge-com01-counsel-intake.json
       - name: Build conservative actual-image candidate comparison (unattested means unresolved)
         run: node scripts/commercial/review-release-scope.mjs /tmp/therabridge-com02-bulk-rights-evidence.json docs/commercial/release-file-evidence.json /tmp/therabridge-com02-release-scope-review.json
-      - name: Test exhaustive exact-version (47 after PR #311) 91-asset dual-edition COM-02 closure ledger
+      - name: Test exhaustive exact-version (46 since Next 16) 91-asset dual-edition COM-02 closure ledger
         run: node --test scripts/commercial/build-com02-closure-ledger.test.mjs
       - name: Generate fail-closed COM-02 per-component commercial rights and release blocker ledger
         run: |

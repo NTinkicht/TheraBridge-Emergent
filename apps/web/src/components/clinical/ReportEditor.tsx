@@ -47,7 +47,7 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
   const local = useRef(sections);
   const ver = useRef(d.report.version);
   const dirty = useRef(false);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // A decision remounts the editor at its new report version. Lock the
   // parent synchronously so no unsaved text can be typed after the flush.
   const decisionBusy = useRef(false);
