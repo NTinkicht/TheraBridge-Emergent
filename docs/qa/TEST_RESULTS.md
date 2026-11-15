@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-02 IA static-source proposal (NOT YET CI QUALIFIED)
+New unit and source-fixture tests enforce exactly the existing permission-specific ProductShell NAV mapping, center/guardian same-URL isolation, filtered visibility, no stale assignments and no unsafe/orphan entries. Source-only receipt scheduled in CI. Controlled spec rows for 66/91/55/1023 remain zero, BLOCKED pending #266. No runtime browser, full task, accessibility, human UX or clinical approval claimed.
+
+---
+
 ## 2026-11-15 — M5-01 keyboard route journeys and timing metric addition (UNQUALIFIED)
 Source instrumentation adds 175 route-settle time samples and seven keyboard-path samples to existing isolated synthetic browser CI. New negative tests reject forged PASS, invalid timings, missing/duplicated personas and unsafe receipt fields. Final-head execution not yet verified; task timings, human visual checks and screen-reader validation still NOT RUN. #184 OPEN, clinical G2/G2b NO-GO.
 
