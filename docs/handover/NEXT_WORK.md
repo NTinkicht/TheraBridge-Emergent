@@ -1,3 +1,10 @@
+## 2026-11-15 — M5-02 canonical IA source proposal gates
+1. Qualify exact-head CI/Smart CI/SBOM and independent Codex; inspect 66/91/20 crosswalk receipt, resolve source or status mismatches. Merge only with 6 original CI jobs green and no unresolved reviews.
+2. Secure actual role mental-model workshop and approved clickable wireframes. For each canonical row reconcile real authorized destination, role/specialty permission, not-available vs policy-blocked distinction and 1,023 controlled step IDs from authorized private source, without leaking titles/metadata to unauthorized roles.
+3. Then implement M5-03 permission-filtered collapsible desktop sidebar/mobile bottom nav with bounded task hierarchy, accessibility, 5 viewports, synthetic browser/visual/usability and owner signoff. #184 and #185 stay OPEN until complete. G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — M5-01 next gate after keyboard/machine timing implementation
 1. Qualify third tranche: inspect numeric browser receipt for all 175 timed routes and seven keyboard personas; disposition `NOT_OBSERVED` focus transitions as investigation candidates. Check full CI six jobs, Smart CI/SBOM and fresh exact-head Codex review before merging.
 2. M5-01 #184 remains OPEN for private human-reviewed screenshots, real full-task duration/click/error capture, screen-reader and focus-visible review, low-bandwidth + family dark-mode evidence, and owner signoff. No fabricated UX PASS, no G2/G2b change.
