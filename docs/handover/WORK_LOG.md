@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-01 third audit tranche, engineering implementation
+Added seven role keyboard journey checks with direct keyboard Home/sign-out activation and mobile focus behavior, numeric page-settling timings on existing 175 synthetic visits, validation tests and CI wiring. No clinical action or external production fixtures. Await exact-head CI and independent Codex; NOT UX acceptance.
+
+---
+
 ## 2026-11-15 — M5-01 Codex P2 browser evidence fixes
 New head avoids calling loading skeletons successful pages and marks visible asynchronous client-error, page-forbidden, timed-out loading separately. Added negative/unit tests; exact-head full CI/Codex still pending. All pixels remain transient, no clinical approval.
 
