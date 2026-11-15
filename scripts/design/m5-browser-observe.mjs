@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { PERSONAS, VIEWPORTS } from '../qa/m5-route-audit.mjs';
+import { observeKeyboardJourney, validateKeyboardJourneys } from './m5-keyboard-journey.mjs';
 
 const BASE = 'http://127.0.0.1:3000';
 const ACCOUNT = Object.freeze({
@@ -75,7 +76,8 @@ export function validateBrowserReceipt(receipt) {
       receipt?.governance?.visualApproval !== 'NOT_OBTAINED' ||
       receipt?.governance?.accessibilityApproval !== 'NOT_OBTAINED' ||
       receipt?.governance?.realTaskTiming !== 'NOT_RUN' ||
-      !Array.isArray(receipt?.observations) || receipt.observations.length !== 175)
+      !Array.isArray(receipt?.observations) || receipt.observations.length !== 175 ||
+      !validateKeyboardJourneys(receipt.keyboardJourneys))
     throw new Error('M5 browser receipt missing or falsely approved');
   const expected = new Set(PERSONAS.flatMap(p => VIEWPORTS.flatMap(width => p.routes.map(route => [p.id, width, route].join('|')))));
   const observed = new Set();
@@ -86,6 +88,7 @@ export function validateBrowserReceipt(receipt) {
     if (x.screenshotStatus !== 'CAPTURED_NOT_REVIEWED' ||
         !/^[0-9a-f]{64}$/.test(x.screenshotSha256) ||
         !Number.isFinite(x.documentWidth) || !Number.isFinite(x.viewportWidth) ||
+        !Number.isInteger(x.routeSettleMs) || x.routeSettleMs < 0 || x.routeSettleMs > 30000 ||
         !['ROUTE_RENDERED', 'ROUTE_REDIRECTED', 'ERROR_STATE', 'LOGIN_REQUIRED', 'LOAD_TIMEOUT', 'ROUTE_DENIED'].includes(x.outcome) ||
         !['PRESENT', 'ABSENT'].includes(x.navigationStatus) ||
         !['PRESENT', 'ABSENT'].includes(x.mainLandmarkStatus) ||
@@ -108,6 +111,7 @@ export async function runBrowserAudit({ passwords, output }) {
   const browser = await chromium.launch({ args: ['--disable-dev-shm-usage'] });
   const dir = await mkdtemp(join(tmpdir(), 'therabridge-m5-audit-'));
   const observations = [];
+  const keyboardJourneys = [];
   try {
     for (const persona of PERSONAS) {
       const context = await browser.newContext({ viewport: { width: 390, height: 850 }, reducedMotion: 'reduce' });
@@ -129,8 +133,10 @@ export async function runBrowserAudit({ passwords, output }) {
           for (const route of persona.routes) {
             assert(safe(route), 'Refuse non-local or dynamic unseeded route');
             // Navigation only; do not perform clinical mutations or persist browser state.
+            const pageStart = performance.now();
             const response = await page.goto(BASE + route, { waitUntil: 'domcontentloaded', timeout: 20000 });
             const settled = await observeSettledPage(page);
+            const routeSettleMs = Math.max(0, Math.round(performance.now() - pageStart));
             const dimensions = await page.evaluate(() => ({
               viewport: document.documentElement.clientWidth,
               document: document.documentElement.scrollWidth,
@@ -147,7 +153,7 @@ export async function runBrowserAudit({ passwords, output }) {
             const path = join(dir, persona.id + '-' + width + '-' + persona.routes.indexOf(route) + '.png');
             await writeFile(path, snap, { mode: 0o600 });
             observations.push({
-              persona: persona.id, viewportWidth: width, route, outcome,
+              persona: persona.id, viewportWidth: width, route, outcome, routeSettleMs,
               screenshotStatus: 'CAPTURED_NOT_REVIEWED', screenshotSha256: hash(snap),
               documentWidth: dimensions.document, navigationStatus: dimensions.nav ? 'PRESENT' : 'ABSENT',
               mainLandmarkStatus: dimensions.main ? 'PRESENT' : 'ABSENT',
@@ -155,6 +161,7 @@ export async function runBrowserAudit({ passwords, output }) {
             });
           }
         }
+        keyboardJourneys.push(await observeKeyboardJourney(page, persona, { base: BASE, settle: observeSettledPage }));
       } finally {
         await context.close();
       }
@@ -169,8 +176,10 @@ export async function runBrowserAudit({ passwords, output }) {
         screenshotsArchived: 0, screenshotsReviewedByHuman: 0,
         overflowObservations: observations.filter(x => x.horizontalOverflow === 'OBSERVED').length,
         routeErrorsOrRedirects: observations.filter(x => x.outcome !== 'ROUTE_RENDERED').length,
+        keyboardPersonasMeasured: keyboardJourneys.length,
+        completeHumanTasksMeasured: 0,
       },
-      observations,
+      observations, keyboardJourneys,
     };
     validateBrowserReceipt(receipt);
     await writeFile(output, JSON.stringify(receipt, null, 2) + '\n', { mode: 0o600 });
