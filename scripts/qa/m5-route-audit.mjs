@@ -49,17 +49,40 @@ export function routeFromFile(file) {
 export function parseNav(source) {
   const match = source.match(/const NAV:[\s\S]*?=\s*\[([\s\S]*?)\n\];/);
   if (!match) throw new Error('ProductShell NAV definition missing or changed: manual review required');
-  const items = [...match[1].matchAll(/\{([^{}]*\bkey:[^{}]*)\}/g)].map(m => {
-    const part = m[1];
-    const href = part.match(/\bhref:\s*'([^']+)'/)?.[1];
-    const key = part.match(/\bkey:\s*'([^']+)'/)?.[1];
-    const permission = part.match(/\bpermission:\s*'([^']+)'/)?.[1] ?? null;
-    const label = part.match(/\blabel:\s*'([^']+)'/)?.[1] ?? '';
-    if (!href || !key || !/^\/[a-zA-Z0-9/_.-]*$/.test(href)) throw new Error('Unparseable or unsafe navigation item');
-    return { key, href, label, permission };
-  });
-  if (!items.length) throw new Error('Empty NAV extraction: cannot certify route inventory');
-  return items;
+  const raw = match[1];
+  // The navigation contract is intentionally literal-only. Unrecognized spreads,
+  // references, comments, computed fields or nested expressions BLOCK rather than
+  // silently disappearing from the source audit.
+  const entries = [], expression = /\{([^{}]*)\}/g;
+  let cursor = 0;
+  for (const item of raw.matchAll(expression)) {
+    if (!/^[\s,]*$/.test(raw.slice(cursor, item.index))) throw new Error('Unsupported NAV syntax outside literal item');
+    cursor = item.index + item[0].length;
+    const fields = new Map();
+    for (const fragment of item[1].split(',').map(x => x.trim()).filter(Boolean)) {
+      const field = fragment.match(/^([A-Za-z]+)\s*:\s*(.+)$/s);
+      if (!field || !['key', 'href', 'icon', 'label', 'short', 'permission'].includes(field[1]) ||
+          fields.has(field[1])) throw new Error('Unsupported or duplicate NAV field');
+      const name = field[1], value = field[2].trim();
+      if (name === 'icon') {
+        if (!/^[A-Za-z_$][\w$]*$/.test(value)) throw new Error('Unsupported NAV icon expression');
+        fields.set(name, value);
+      } else {
+        const str = value.match(/^(['"])([^'"]*)\1$/);
+        if (!str || !str[2] || str[2].includes('\\')) throw new Error('Unsupported NAV literal value for ' + name);
+        fields.set(name, str[2]);
+      }
+    }
+    if (!fields.has('key') || !fields.has('href') || !fields.has('label') ||
+        !fields.has('short') || !fields.has('icon')) throw new Error('Incomplete NAV literal item');
+    const href = fields.get('href');
+    if (!/^\/[a-zA-Z0-9/_.-]*$/.test(href)) throw new Error('Unsafe NAV href');
+    entries.push({ key: fields.get('key'), href, label: fields.get('label'),
+      permission: fields.get('permission') ?? null });
+  }
+  if (!/^[\s,]*$/.test(raw.slice(cursor))) throw new Error('Unparsed NAV entries or spread syntax');
+  if (!entries.length) throw new Error('Empty NAV extraction: cannot certify route inventory');
+  return entries;
 }
 
 export function capturePlan(personas = PERSONAS, viewports = VIEWPORTS) {
