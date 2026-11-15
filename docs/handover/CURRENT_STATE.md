@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-03 eight-area grouped ProductShell (IN PR, NOT QUALIFIED)
+M5-01 #184 and M5-02 #185 are CLOSED in GitHub; merged M5-02 #387 provides eight-area source proposal. M5-03 #186 first executable shell tranche adds exactly eight permission-filtered desktop task areas, optional compact icon rail, authorized breadcrumb, mobile three-link quickbar and complete More dialog with keyboard focus return; original mobile dropdown retained for compatibility. New CI source-crosswalk check and seven synthetic-role actual session permission/More/rail test. No API role changes, no persistent stale context, G2/G2b NO-GO. Final-head CI/Codex and manual UX acceptance pending; #186 OPEN.
+
+---
+
 ## 2026-11-15 — PR #311 merged with latest `main` (#383–#387) and closure ledger re-baselined
 `main` added the COM-02 exhaustive closure ledger (#384) and DefinitelyTyped publisher fingerprints (#386), both pinned to the old 53-version population. Merged and re-baselined to the exact 47-version set using the shared pins: 26 DefinitelyTyped (unchanged), 11 root-manifest, 7 missing-revision (incl. Next.js 15.5.29, which has signed provenance but no registry gitHead), 2 subpath-published LGPL `@img/sharp-libvips-*` (root manifest 404 accepted for those exact ids only), 1 legacy repository. 91 assets and every BLOCKED/UNRESOLVED/NO-GO conclusion unchanged. Previous #311 head `79e106c` was green on all six required jobs + sbom + Smart CI gate; new merge head requalification PENDING.
 
