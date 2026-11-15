@@ -1,3 +1,9 @@
+## 2026-11-15 — M5-03 reviewer correction final qualification
+1. Re-run exact-HEAD PR #393 six original CI jobs, SBOM/Smart CI and dedicated Web coverage after `<details>` type and More breakpoint/scroll remediations. Inspect seven-role Chromium keyboard receipt for permission equality, focus trap/return, rail collapse, responsive closure and background scroll restoration. Obtain new Codex review for final head, resolve P2 threads only after code qualification.
+2. Merge only with green full CI, Codex zero unresolved and mergeable latest main. Keep #186 OPEN for human image/screen-reader/low bandwidth/full workflow UX and center/child/specialty navigation context. G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — M5-03 immediate next qualifications
 1. Run full CI for M5-03 eight-area shell PR; inspect failures including Chromium seven-role permission-index exact equality, desktop rail compact/expanded, mobile More focus trap/return, five viewports, family light theme; fix exact-head Codex comments before merge.
 2. After merge, M5-03 #186 remains OPEN for private before/after screenshots and owner signoff, real screen-reader/focus/contrast, responsive and low-bandwidth, safe role/center/specialty switching, explicit dynamic hierarchy, and retiring duplicate mobile select only after equivalent tested replacement.
