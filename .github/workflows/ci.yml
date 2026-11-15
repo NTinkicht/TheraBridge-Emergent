@@ -277,6 +277,12 @@ jobs:
         run: node --test scripts/commercial/build-definitelytyped-triage.test.mjs
       - name: Build exact DefinitelyTyped version-specific third-party rights followup receipt
         run: node scripts/commercial/build-definitelytyped-triage.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-source-correspondence-candidates.json /tmp/therabridge-com02-exact-version-rights-queue.json /tmp/therabridge-com02-definitelytyped-26-triage.json
+      - name: Validate exact-Git DefinitelyTyped hash reconstruction boundaries
+        run: node --test scripts/commercial/verify-dt-immutable-source.test.mjs
+      - name: Observe two real immutable DefinitelyTyped snapshots (NEVER publisher proof)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/commercial/probe-dt-source-snapshots.mjs /tmp/therabridge-com02-definitelytyped-26-triage.json /tmp/therabridge-com02-dt-snapshot-probes.json
       - name: Validate immutable-source root observations, aliases, and false-approval boundaries
         run: node --test scripts/commercial/reconcile-independent-root-observations.test.mjs
       - name: Corroborate 15 source-root observations against exact 53 npm candidate report without authorizing lineage
@@ -349,6 +355,7 @@ jobs:
             /tmp/therabridge-com02-nextjs-published-build-readiness.json
             /tmp/therabridge-com02-source-correspondence-candidates.json
             /tmp/therabridge-com02-definitelytyped-26-triage.json
+            /tmp/therabridge-com02-dt-snapshot-probes.json
             /tmp/therabridge-com02-closure-ledger.json
             /tmp/therabridge-com02-root-observation-reconciliation.json
             /tmp/therabridge-com02-bulk-rights-evidence.json
