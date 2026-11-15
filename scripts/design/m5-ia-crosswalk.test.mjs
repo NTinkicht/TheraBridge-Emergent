@@ -35,4 +35,6 @@ test('family and clinical shared activities remain separate permission-condition
   assert.equal(entries.length, 2);
   assert.deepEqual(new Set(entries.map(x => x.permission)),
     new Set(['family.activities.read', 'center.activities.read']));
+  assert.equal(entries.find(x => x.permission === 'family.activities.read').proposedArea, 'family');
+  assert.equal(entries.find(x => x.permission === 'center.activities.read').proposedArea, 'sessions');
 });
