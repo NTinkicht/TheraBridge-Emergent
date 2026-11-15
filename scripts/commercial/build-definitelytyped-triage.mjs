@@ -65,8 +65,18 @@ function build(upstream,correspondence,rights){
      e.saasNetworkRights!=='PENDING_COUNSEL_REVIEW'||
      e.enterpriseRedistributionRights!=='PENDING_COUNSEL_REVIEW')
    throw Error('INVALID_DEFINITELYTYPED_EVIDENCE_'+k);
+  const publisherContentHash=a.candidateTypesPublisherContentHash??null;
+  const hashStatus=a.candidateTypesPublisherHashStatus??'NOT_ADVERTISED';
+  if(!['EXACT_VERSION_PUBLISHER_HASH_CANDIDATE','NOT_ADVERTISED',
+      'INVALID_PUBLISHER_HASH_CANDIDATE'].includes(hashStatus)||
+     (publisherContentHash!==null&&!hex64.test(publisherContentHash))||
+     (hashStatus==='EXACT_VERSION_PUBLISHER_HASH_CANDIDATE')!==!!publisherContentHash)
+   throw Error('UNSAFE_TYPES_PUBLISHER_CONTENT_HASH_'+k);
   return {
    name:a.name,version:a.version,dependencyScope:a.dependencyScope,
+   publisherContentHashCandidate:publisherContentHash,
+   publisherContentHashStatus:hashStatus,
+   sourceContentHashIndependentlyMatched:false,
    publisherTarballSha256:e.tarballSha256,
    registryManifestSha256:a.registryManifestSha256,
    integritySha256:sha(a.lockedIntegrity),
@@ -90,6 +100,8 @@ function build(upstream,correspondence,rights){
    correspondence:sha(JSON.stringify(correspondence)),
    rights:sha(JSON.stringify(rights))},
   counts:{sourceExceptionVersions:53,definitelyTypedVersions:26,
+   publisherContentHashesAdvertised:records.filter(x=>x.publisherContentHashCandidate!==null).length,
+   historicalGitSourceContentMatches:0,
    publisherToSourceAttested:0,sourceLicenseLegallyApproved:0,
    commercialLicensesGranted:0},
   records,commercialApproval:false,finalNoticesIssued:false,
