@@ -1,3 +1,7 @@
+## Codex P2 resolution — responsive drawer lifecycle, exact-head requalification pending
+
+An independent Codex review of the preceding head flagged two genuine P2 usability risks: (1) opening More at 320px then crossing the 768px breakpoint could leave hidden state active and restore a focus-behind-modal when resized back; (2) the workspace could scroll behind the fixed drawer. The current implementation listens for the desktop breakpoint **only while the drawer is open**, closes it and moves focus to the visible desktop rail control, applies temporary `body` and root overflow locks, restores the previous styles on exit/unmount, and contains panel scroll chaining. Seven-persona Chromium regressions assert actual scroll lock/restoration, closure across 320 → 1024 → 320px, semantic `aria-expanded=false`, prior More focus/keyboard trap and correct session-permission links. **Do not call this PASS until final-head CI and independent rereview finish.** All G2/G2b restrictions unchanged.
+
 # M5-03 — Permission-aware grouped app shell and mobile navigation (first engineering tranche)
 
 **Status:** source implementation in review, not visual/accessibility acceptance. Tracks [#186](https://github.com/NTinkicht/TheraBridge-Emergent/issues/186), builds on the eight-area proposed M5-02 model merged in [#387](https://github.com/NTinkicht/TheraBridge-Emergent/pull/387).
