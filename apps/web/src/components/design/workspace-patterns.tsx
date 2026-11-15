@@ -110,7 +110,7 @@ export function CompactTable({ columns, rows, caption, tone = 'clinical', emptyM
   caption: string; tone?: Tone; emptyMessage?: string;
 }) {
   const family = tone === 'family';
-  return <div className={`max-w-full overflow-x-auto rounded-card border ${family ? 'border-fam-border bg-fam-surface text-fam-ink' : 'border-border-light bg-surface-white text-brand-ink'}`}>
+  return <div role="region" aria-label={`${caption} (scroll horizontally for all columns)`} tabIndex={0} className={`max-w-full overflow-x-auto rounded-card border ${family ? 'border-fam-border bg-fam-surface text-fam-ink' : 'border-border-light bg-surface-white text-brand-ink'}`}>
     <table className="w-full min-w-[480px] border-collapse text-left text-sm">
       <caption className="sr-only">{caption}</caption>
       <thead className={family ? 'bg-fam-tile' : 'bg-surface-subtle'}>
