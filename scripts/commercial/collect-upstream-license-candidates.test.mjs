@@ -157,4 +157,5 @@ test('exact @types publisher hash is only a bounded untrusted content fingerprin
  const wrongScope=parseManifest(Buffer.from(JSON.stringify({name:'alpha',version:'1.0.0',
   typesPublisherContentHash:good})),'alpha','1.0.0');
  assert.equal(wrongScope.candidateTypesPublisherHashStatus,'NOT_DEFINITELYTYPED');
+ assert.equal(wrongScope.candidateTypesPublisherContentHash,null);
 });
