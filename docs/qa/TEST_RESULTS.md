@@ -21,6 +21,16 @@ Local workspace (Node 22.23.4 with `--ignore-engines` for install only; installe
 
 ---
 
+## 2026-11-15 — M5-02 task IA crosswalk (UNQUALIFIED source design)
+Added canonical inventory-to-eight-task-area pure source model, enforcing 66 feature IDs, 91 workflow IDs, 20 current nav rows, 7 persona review candidates, two V2 excluded items and no false route permission or UX pass. Adversarial tests and CI receipt wired, but final-head run not yet verified. No in-app change, no screenshots, no screen reader, no end-to-end clickable task tests and no approved human UX signoff; #185 OPEN, G2/G2b NO-GO.
+
+---
+
+## 2026-11-15 — M5-01 keyboard route journeys and timing metric addition (UNQUALIFIED)
+Source instrumentation adds 175 route-settle time samples and seven keyboard-path samples to existing isolated synthetic browser CI. New negative tests reject forged PASS, invalid timings, missing/duplicated personas and unsafe receipt fields. Final-head execution not yet verified; task timings, human visual checks and screen-reader validation still NOT RUN. #184 OPEN, clinical G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — M5-01 client settlement and async failure classification (NEW HEAD PENDING)
 Codex P2 observations: 100ms post-DOM wait insufficient for hydrated screens; top-level HTTP 200 cannot prove client data load. Implemented visible loader + aria-busy bounded settling, explicit session/client error, forbidden/timeout outcomes and regression tests. Final-head CI and Codex NOT YET QUALIFIED. Screenshots are transient and not human-reviewed, #184 OPEN, G2/G2b NO-GO.
 
@@ -1260,3 +1270,7 @@ New offline Node cases: allowlist only the 3 signed Next.js versions, exact SHA5
 2026-11-15 — Additional corroboration: GitHub API resolves `nuxt/consola` -> `unjs/consola` to repository ID `127546642`, and `Sebmaster/tr46.js` -> `jsdom/tr46` to repository ID `36964214`. Same exact original Git revisions contain matching name/version manifests. This verifies current GitHub repository redirects, not legal copyright transfer, npm publisher-to-source build proof, or redistribution clearance. Added frozen IDs and forgery regression; exact-head CI/Codex must requalify.
 
 2026-11-15 — COM-02 DefinitelyTyped 26-version audit: added six Node adversarial test scenarios for exact 53-way membership, 26 versions and two node majors, SRI/registry/tarball mismatches, fabricated immutable commits and authority, forged approvals and missing/duplicated rows. New per-commit CI artifact is unapproved candidate evidence. Exact-head CI/Codex PENDING; no false publication lineage.
+
+2026-11-15 — New COM-02 closure ledger regression scenarios cover exact 53/26/27 population; 15+7+3+2 group classification; 91 source asset hashes and 73+15+3 category conservation; fabricated publisher/revision/approval, missing or duplicated package records, altered image approval; missing or unverified SaaS/Enterprise release claims. CI wired; exact-head full qualification pending. Neither legal nor clinical approval issued.
+
+2026-11-15 — New DT publisher hash tests: 64-lowercase hex @types fingerprint candidate capture, missing/malformed/non-type differentiation, no publisher authority, and 26-version triage count/status. Reject mismatched hash/status, fabricated verified status, missing Git sha and false rights upgrades. CI existing collector and DT triage tests are wired; run outcome pending.

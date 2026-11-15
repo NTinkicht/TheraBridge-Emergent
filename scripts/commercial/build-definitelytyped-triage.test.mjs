@@ -91,3 +91,27 @@ test('missing/forged cross-source joining of 47 version population rejected',()=
  const b=make();b[2].counts.exceptions=52;
  assert.throws(()=>build(...b),/UNSAFE_COM02_EVIDENCE_ENVELOPE/);
 });
+
+test('published exact-version type-content fingerprint is a candidate, not Git source proof',()=>{
+ const a=make();
+ a[0].records[0].candidateTypesPublisherContentHash='d'.repeat(64);
+ a[0].records[0].candidateTypesPublisherHashStatus='EXACT_VERSION_PUBLISHER_HASH_CANDIDATE';
+ const out=build(...a);
+ assert.equal(out.counts.publisherContentHashesAdvertised,1);
+ assert.equal(out.counts.historicalGitSourceContentMatches,0);
+ assert.equal(out.records[0].publisherContentHashCandidate,'d'.repeat(64));
+ assert.equal(out.records[0].sourceContentHashIndependentlyMatched,false);
+ assert.equal(out.records[0].npmPublisherToSourceIndependentlyVerified,false);
+ assert.equal(out.commercialApproval,false);
+ for(const mutate of [
+  row=>{row.candidateTypesPublisherContentHash='d'.repeat(63);},
+  row=>{row.candidateTypesPublisherContentHash=null;},
+  row=>{row.candidateTypesPublisherHashStatus='VERIFIED';}
+ ]){
+  const b=make();
+  b[0].records[0].candidateTypesPublisherContentHash='d'.repeat(64);
+  b[0].records[0].candidateTypesPublisherHashStatus='EXACT_VERSION_PUBLISHER_HASH_CANDIDATE';
+  mutate(b[0].records[0]);
+  assert.throws(()=>build(...b),/UNSAFE_TYPES_PUBLISHER_CONTENT_HASH/);
+ }
+});

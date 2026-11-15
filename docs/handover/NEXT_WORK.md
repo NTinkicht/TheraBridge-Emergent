@@ -5,6 +5,19 @@
 
 ---
 
+## 2026-11-15 — M5-02 canonical IA source proposal gates
+1. Qualify exact-head CI/Smart CI/SBOM and independent Codex; inspect 66/91/20 crosswalk receipt, resolve source or status mismatches. Merge only with 6 original CI jobs green and no unresolved reviews.
+2. Secure actual role mental-model workshop and approved clickable wireframes. For each canonical row reconcile real authorized destination, role/specialty permission, not-available vs policy-blocked distinction and 1,023 controlled step IDs from authorized private source, without leaking titles/metadata to unauthorized roles.
+3. Then implement M5-03 permission-filtered collapsible desktop sidebar/mobile bottom nav with bounded task hierarchy, accessibility, 5 viewports, synthetic browser/visual/usability and owner signoff. #184 and #185 stay OPEN until complete. G2/G2b NO-GO.
+
+---
+
+## 2026-11-15 — M5-01 next gate after keyboard/machine timing implementation
+1. Qualify third tranche: inspect numeric browser receipt for all 175 timed routes and seven keyboard personas; disposition `NOT_OBSERVED` focus transitions as investigation candidates. Check full CI six jobs, Smart CI/SBOM and fresh exact-head Codex review before merging.
+2. M5-01 #184 remains OPEN for private human-reviewed screenshots, real full-task duration/click/error capture, screen-reader and focus-visible review, low-bandwidth + family dark-mode evidence, and owner signoff. No fabricated UX PASS, no G2/G2b change.
+
+---
+
 ## 2026-11-15 — M5-01 browser observer requalification
 Verify full latest-head CI including 175-route screenshot capture and numeric receipt, resolve any true test failures; get independent final-head Codex zero unresolved. Merge only after six required jobs, SBOM/Smart CI green. Inspect receipt for denied, redirects, load timeouts, error and horizontal-overflow candidates, without claiming visual review or #184 closure.
 
@@ -1147,3 +1160,7 @@ Run new real CI archive/recipe evidence and inspect exact signed source versions
 2026-11-15 — Additional corroboration: GitHub API resolves `nuxt/consola` -> `unjs/consola` to repository ID `127546642`, and `Sebmaster/tr46.js` -> `jsdom/tr46` to repository ID `36964214`. Same exact original Git revisions contain matching name/version manifests. This verifies current GitHub repository redirects, not legal copyright transfer, npm publisher-to-source build proof, or redistribution clearance. Added frozen IDs and forgery regression; exact-head CI/Codex must requalify.
 
 2026-11-15 — Qualify the 26 DefinitelyTyped evidence receipt with exact-head full CI and independent Codex before merging. Next genuine proof is independently authenticated publisher historical revision and tarball/source correspondence for individual exact versions; avoid current-master inference. Keep remaining 27 versions and 91 assets in unresolved queue; need production SaaS/Enterprise image digests and IP/counsel decisions, G2/G2b NO-GO.
+
+2026-11-15 — Qualify COM-02 closure ledger PR through full exact-head CI, preview load, independent Codex review and merge after all gates. Next real evidence: authoritative historical publisher/build-to-source revision for all 26 DT versions; 15 source-root npm build attestations; 7 missing commits; 3 Next monorepo subpackage builds; 2 repository-origin cases; rights for 91 assets and *actual* pinned SaaS/Enterprise image/deploy/delivery SBOM with third-party redistribution review. Do not substitute synthetic Render preview.
+
+2026-11-15 — Qualify publisher-fingerprint PR with exact-head full CI, artifact inspection and Codex; merge after all gates and reconcile concurrent COM-02 closure ledger. Then obtain 26 authentic historical DT commits and reproduce exact publisher content hash at each source revision, with independent published npm tarball/build verification. Never infer source-to-publisher signature or legal license from hash alone; actual release OCI and 91 asset rights still open.

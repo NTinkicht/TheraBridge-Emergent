@@ -169,6 +169,17 @@ jobs:
         run: |
           node --test scripts/qa/m5-route-audit.test.mjs
           node scripts/qa/m5-route-audit.mjs /tmp/therabridge-m5-ui-source-baseline.json
+      - name: M5-02 canonical 66/91 requirement-to-task IA proposal (no authorization)
+        run: |
+          node --test scripts/design/m5-ia-crosswalk.test.mjs
+          node scripts/design/m5-ia-crosswalk.mjs /tmp/therabridge-m5-ia-proposal.json
+      - name: Archive source-only M5-02 navigation grouping proposal
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-02-source-ia-proposal-${{ github.sha }}
+          path: /tmp/therabridge-m5-ia-proposal.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Archive M5-01 source-only audit receipt (NOT screenshots or UX clearance)
         uses: actions/upload-artifact@v4
         with:
@@ -305,6 +316,17 @@ jobs:
             /tmp/therabridge-com01-counsel-intake.json
       - name: Build conservative actual-image candidate comparison (unattested means unresolved)
         run: node scripts/commercial/review-release-scope.mjs /tmp/therabridge-com02-bulk-rights-evidence.json docs/commercial/release-file-evidence.json /tmp/therabridge-com02-release-scope-review.json
+      - name: Test exhaustive 53-version 91-asset dual-edition COM-02 closure ledger
+        run: node --test scripts/commercial/build-com02-closure-ledger.test.mjs
+      - name: Generate fail-closed COM-02 per-component commercial rights and release blocker ledger
+        run: |
+          node scripts/commercial/build-com02-closure-ledger.mjs \
+            /tmp/therabridge-com02-exact-version-rights-queue.json \
+            /tmp/therabridge-com02-source-correspondence-candidates.json \
+            /tmp/therabridge-com02-bulk-rights-evidence.json \
+            /tmp/therabridge-com02-definitelytyped-26-triage.json \
+            docs/commercial/release-file-evidence.json \
+            /tmp/therabridge-com02-closure-ledger.json
       - name: Archive installed license evidence for full CI
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -327,6 +349,7 @@ jobs:
             /tmp/therabridge-com02-nextjs-published-build-readiness.json
             /tmp/therabridge-com02-source-correspondence-candidates.json
             /tmp/therabridge-com02-definitelytyped-26-triage.json
+            /tmp/therabridge-com02-closure-ledger.json
             /tmp/therabridge-com02-root-observation-reconciliation.json
             /tmp/therabridge-com02-bulk-rights-evidence.json
             /tmp/therabridge-com02-release-scope-review.json
@@ -548,8 +571,8 @@ jobs:
       - run: yarn playwright install --with-deps chromium
       - name: Idempotent synthetic Ahmed seed and real seven-role browser journey
         run: node scripts/design/run-demo-live.mjs
-      - name: M5-01 browser receipt schema adversarial tests
-        run: node --test scripts/design/m5-browser-observe.test.mjs
+      - name: M5-01 browser and keyboard receipt schema adversarial tests
+        run: node --test scripts/design/m5-browser-observe.test.mjs scripts/design/m5-keyboard-journey.test.mjs
       - name: Archive numeric-only synthetic viewport observations, never screenshots
         uses: actions/upload-artifact@v4
         with:

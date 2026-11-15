@@ -10,10 +10,13 @@ const make = () => ({
     realTaskTiming: 'NOT_RUN', clinicalGate: 'NO_GO_G2_G2b' },
   observations: PERSONAS.flatMap(p => VIEWPORTS.flatMap(width => p.routes.map(route => ({
     persona: p.id, viewportWidth: width, route, screenshotStatus: 'CAPTURED_NOT_REVIEWED',
-    screenshotSha256: 'a'.repeat(64), documentWidth: width,
+    screenshotSha256: 'a'.repeat(64), documentWidth: width, routeSettleMs: 250,
     navigationStatus: 'PRESENT', mainLandmarkStatus: 'PRESENT',
     horizontalOverflow: 'NONE', outcome: 'ROUTE_RENDERED',
-  }))))
+  })))),
+  keyboardJourneys: PERSONAS.map(p => ({ persona: p.id, desktopHomeViaEnter: 'OBSERVED',
+    mobileSelectFocus: 'OBSERVED', mobileShiftTabToSignOut: 'NOT_OBSERVED',
+    signOutViaEnter: 'OBSERVED', desktopNavigationMs: 123 }))
 });
 
 test('exact seven persona × five viewport × five route receipt is accepted without approval', () => {
@@ -84,4 +87,17 @@ test('receipt supports explicitly timed-out and client-denied observations but n
   r.observations[0].outcome = 'LOAD_TIMEOUT';
   r.observations[1].outcome = 'ROUTE_DENIED';
   assert.equal(validateBrowserReceipt(r), true);
+});
+
+test('numeric route measurements cannot be forged, negative or unbounded', () => {
+  for (const bad of [undefined, -1, NaN, '123', 30001]) {
+    const r = make();
+    r.observations[0].routeSettleMs = bad;
+    assert.throws(() => validateBrowserReceipt(r), /incomplete|unsafe|certified/);
+  }
+});
+test('all 7 keyboard personas are mandatory and cannot be copied from a different role', () => {
+  const r = make();
+  r.keyboardJourneys[2].persona = 'guardian';
+  assert.throws(() => validateBrowserReceipt(r), /Duplicate|unknown/);
 });

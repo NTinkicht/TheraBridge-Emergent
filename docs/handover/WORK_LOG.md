@@ -8,6 +8,16 @@ Diagnosed Dependabot #311 CI failures (Node 20 `cookie@2` engine error in instal
 
 ---
 
+## 2026-11-15 — M5-02 source crosswalk engineering tranche
+Created `scripts/design/m5-ia-crosswalk.mjs` and adversarial tests reading canonical CSV registers and existing ProductShell NAV; emits 66+91+20 grouped rows and 7-persona no-grants permission review. Added full CI artifact, owner-limited journey proposal, and explicit untested/blocked scopes. PR review/CI pending; no proof of clickability, usability or permissions, no production change.
+
+---
+
+## 2026-11-15 — M5-01 third audit tranche, engineering implementation
+Added seven role keyboard journey checks with direct keyboard Home/sign-out activation and mobile focus behavior, numeric page-settling timings on existing 175 synthetic visits, validation tests and CI wiring. No clinical action or external production fixtures. Await exact-head CI and independent Codex; NOT UX acceptance.
+
+---
+
 ## 2026-11-15 — M5-01 Codex P2 browser evidence fixes
 New head avoids calling loading skeletons successful pages and marks visible asynchronous client-error, page-forbidden, timed-out loading separately. Added negative/unit tests; exact-head full CI/Codex still pending. All pixels remain transient, no clinical approval.
 
@@ -1019,3 +1029,7 @@ Implemented next coherent PR: strict 3 exact signed npm tarball registry retriev
 2026-11-15 — Additional corroboration: GitHub API resolves `nuxt/consola` -> `unjs/consola` to repository ID `127546642`, and `Sebmaster/tr46.js` -> `jsdom/tr46` to repository ID `36964214`. Same exact original Git revisions contain matching name/version manifests. This verifies current GitHub repository redirects, not legal copyright transfer, npm publisher-to-source build proof, or redistribution clearance. Added frozen IDs and forgery regression; exact-head CI/Codex must requalify.
 
 2026-11-15 — Read the real #379 CI ZIP, crosschecked upstream registry metadata, source-correspondence and 53-version published tarball rights JSON: 26 @types/ versions claim DefinitelyTyped with exact registry metadata and lock integrity, but zero source revision candidates. Added source-only 26-version join checker, six adversarial tests, CI artifact receipt, docs; no invented commit, publisher proof, license or clinical approval.
+
+2026-11-15 — Added one integrated COM-02 technical closure ledger: crosscheck CI-generated 53 exact-version rights, source correspondence and bulk reports; 26 DefinitelyTyped outputs; 91 tracked source assets; independently validate image candidate file lists for SaaS and Enterprise via existing release-scope scanner. Eight synthetic adversarial tests and full CI artifact step, no invented hashes or deployment receipts. Contract/owner counsel decisions still external. Qualification pending.
+
+2026-11-15 — Added bounded `@types` `typesPublisherContentHash` extraction in existing exact registry manifest collector, explicit missing/invalid status, plus 26-version triage carry-through and adversarial tests. Upstream pinned generation and SHA-256 normalization algorithm documented; no origin-tag guess or signature conferral. Exact-head CI and independent Codex pending.

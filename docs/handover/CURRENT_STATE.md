@@ -4,6 +4,16 @@ COM-02 evidence re-baselined, never approved: exact unresolved population 53 →
 
 ---
 
+## 2026-11-15 — M5-02 canonical task IA proposal IN PR (not qualified)
+A design-only, source-derived eight-area navigation taxonomy maps all 66 features, 91 workflows and 20 current permission-conditioned NAV entries with seven role review candidates. No UI refactor, real permission grant, clinical/UX approval or authorized route added. Feature #39 and WF-X6 remain V2 excluded. Exact-head CI/Codex required. #185 remains OPEN; G2/G2b NO-GO.
+
+---
+
+## 2026-11-15 — M5-01 keyboard and machine timing tranche (IN PR, NOT QUALIFIED)
+Merged prior source #380 and 175-viewport browser #381 baselines; this new independent PR adds route settling times, seven safe synthetic keyboard journeys (desktop Enter Home, mobile select focus/Shift+Tab, Enter sign-out), strict no-secret receipt and negative tests. No full-task measurements, human visual review, screen-reader approval or clinical gate changes. Full CI/Codex pending. #184 stays OPEN, G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — M5-01 browser observer Codex P2 remediations (REQUALIFICATION PENDING)
 Codex first-head review found two P2 accuracy defects: pre-hydration skeleton capture and HTTP-200 masking asynchronous client errors. Observer now uses bounded two-stage visible-loading settlement, explicit client error/permission denial and LOAD_TIMEOUT classifications. Unit regressions cover those failure modes. Full CI and final-head independent review pending; #184 remains OPEN and browser output is NOT human UX PASS. No G2/G2b changes.
 
@@ -950,3 +960,7 @@ After merged #367, PR work inventories exact 3 signed npm package archives from 
 2026-11-15 — Additional corroboration: GitHub API resolves `nuxt/consola` -> `unjs/consola` to repository ID `127546642`, and `Sebmaster/tr46.js` -> `jsdom/tr46` to repository ID `36964214`. Same exact original Git revisions contain matching name/version manifests. This verifies current GitHub repository redirects, not legal copyright transfer, npm publisher-to-source build proof, or redistribution clearance. Added frozen IDs and forgery regression; exact-head CI/Codex must requalify.
 
 2026-11-15 — COM-02 PR #379 is already merged with full CI and clean Codex. The latest verified source evidence artifact (run 43710311891) contains 26 exact @types/DefinitelyTyped rows (6 direct, 20 non-direct), no immutable npm gitHead and no independent source lineage. A targeted fail-closed 26-version evidence-receipt implementation is open on a new branch; all rights and G2/G2b stay NO-GO.
+
+2026-11-15 — COM-02 next consolidated 53-version/91-asset/two-edition release readiness matrix in review branch. Exact frozen groups: DT 26 (no historical Git commit); 15 source-root metadata-only; 7 no revision; 3 Next monorepo source-subpath gaps; 2 untrusted origins. The commercial release-image manifest has no SaaS or Enterprise image, independent publication or deployed-product receipt. All owner/asset/redistribution rights OPEN and G2/G2b NO-GO. PR #379 and #382 were merged, not reopened.
+
+2026-11-15 — New COM-02 exact DefinitelyTyped publisher metadata discovery branch: upstream DefinitelyTyped-tools `typesPublisherContentHash` algorithm independently located in pinned source; capture per-exact-version 64-hex registry candidate fingerprints and emit counts in DT 26-version report. This identifies publisher-supplied content fingerprints but no authentic historical Git source commit, trusted build lineage, copyright permission, customer OCI or clinical GO.
