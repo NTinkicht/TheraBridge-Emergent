@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useId, type KeyboardEvent, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { Tone } from './ui';
 
