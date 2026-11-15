@@ -1,3 +1,10 @@
+## 2026-11-15 — Protected M4-02 acceptance dependency (not a current PASS)
+1. Qualify and review exact-head protected deployment attestation PR, then merge under Rules 13–16. No protected hosted run yet.
+2. Confirm separately approved disposable synthetic two-valid-tenant hosted stack and isolated database; do not mutate Render's old shared demo or create persistent paid infrastructure without approval. Obtain read-only Render control-plane API secret TB_HOSTED_RENDER_READONLY_API_KEY within protected GitHub environment (name only).
+3. After real deployment matches checkout SHA, operator dispatches protected ten-account workflow and separately runs genuine two-hosted-center, guardian withdrawal, therapist suspension and expiry probes. Keep policy cases BLOCKED, publish only sanitized receipts. #176/#268 remain OPEN until independently accepted; G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — M4-CLOSE-02 completion requirements
 1. Qualify isolated real-PostgreSQL M4-CLOSE-02 tests and eight-check hosted evidence validator on full new PR CI. Fix real failures, independently review exact final HEAD, merge under Rules 13-16.
 2. With explicit operator approval, create *disposable isolated* two-valid-tenant hosted fixture; do not mutate the live shared demo. Verify deployment SHA independently; currently demo is pinned to old 3cdd722... SHA. Request protected workflow approval for all ten synthetic accounts on main, then run actual multi-tenant auth/revocation/guardian/cookie/session probes.

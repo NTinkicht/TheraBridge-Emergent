@@ -1,3 +1,8 @@
+## 2026-11-15 — Protected hosted Render deployment attestation negative tests (NOT RUN)
+Added mock Render HTTP GET checks for one latest live deployment with same exact SHA as operator input and current checkout; rejects wrong repo/service, missing token, malformed SHA, stale/newer failed deploy, multiple live deployments and non-200 response. Wired into protected workflow ahead of credential preflight. No protected environment access, no live hosted test, no new CI result yet. Old Render service remains 3cdd722...; previous ten-account run 84 PASS / 0 FAIL / 14 governance BLOCKED does not satisfy M4-02 hosted two-tenant gate. G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — M4-CLOSE-02 isolated real-PostgreSQL tests and fail-closed hosted receipt (NOT RUN)
 Added 3 new real PostgreSQL two-valid synthetic center HTTP tests (authorized reads, foreign-center/foreign-child 403/404 masking with a valid actor, suspended membership revocation even with stale assignment, expired session 401 without harming another center). Added hostile receipt tests for boolean-only v1, duplicate or missing checks, false positive HTTP 401, mismatched protected run, and missing independently existing targets. Execution on latest PR CI is PENDING; NO PASS claimed. Previous protected 42605446171 attempt 2 = 84 PASS / 0 FAIL / 14 policy BLOCKED, not final hosted acceptance. Real Render demo remains on 3cdd722... old SHA. No clinical G2/G2b approval.
 

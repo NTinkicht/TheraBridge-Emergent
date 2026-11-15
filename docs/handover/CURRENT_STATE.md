@@ -1,3 +1,8 @@
+## 2026-11-15 — M4-CLOSE-02 protected Render SHA attestation (IN PR, NOT QUALIFIED)
+PR adds read-only Render service identity and latest-LIVE deployment API checks *before* protected ten-account credentials. Current shared demo old SHA 3cdd722... differs from main. Render workspace has no disposable TheraBridge test service or Postgres instance; no infrastructure changed. Secret TB_HOSTED_RENDER_READONLY_API_KEY is required but NOT VERIFIED configured. Guard tests and full CI NOT RUN on new HEAD; protected two-valid-tenant acceptance remains NOT RUN and #176/#268 OPEN. Details: docs/roadmap/M4-CLOSE-02-PROTECTED-EXECUTION-READINESS.md. G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — M4-CLOSE-02 isolated two-valid-tenant qualification (IN PR; NOT HOSTED-ACCEPTED)
 Existing Render demo remains live on old deployment SHA 3cdd7226236a... (Nov 8); no deployment or shared DB mutation authorized. Test-only PR adds guarded real-PostgreSQL two-valid-centre access, cross-tenant denial, therapist revocation, expired-session tests and a fail-closed 8-check structured protected-hosted receipt validator. All new test/CI results PENDING. The previous protected 10-account run 42605446171 yielded 84 PASS / 0 FAIL / 14 BLOCKED, not current-HEAD or two-hosted-tenant sign-off. #176/#268 and G2/G2b remain OPEN/NO-GO. See docs/roadmap/M4-CLOSE-02-HOSTED-ACCEPTANCE.md.
 
