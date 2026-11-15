@@ -1,3 +1,9 @@
+## 2026-11-15 — M5-01 next gate after keyboard/machine timing implementation
+1. Qualify third tranche: inspect numeric browser receipt for all 175 timed routes and seven keyboard personas; disposition `NOT_OBSERVED` focus transitions as investigation candidates. Check full CI six jobs, Smart CI/SBOM and fresh exact-head Codex review before merging.
+2. M5-01 #184 remains OPEN for private human-reviewed screenshots, real full-task duration/click/error capture, screen-reader and focus-visible review, low-bandwidth + family dark-mode evidence, and owner signoff. No fabricated UX PASS, no G2/G2b change.
+
+---
+
 ## 2026-11-15 — M5-01 browser observer requalification
 Verify full latest-head CI including 175-route screenshot capture and numeric receipt, resolve any true test failures; get independent final-head Codex zero unresolved. Merge only after six required jobs, SBOM/Smart CI green. Inspect receipt for denied, redirects, load timeouts, error and horizontal-overflow candidates, without claiming visual review or #184 closure.
 
