@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-02 task-area source tranche (NEW PR, UNQUALIFIED)
+M5-01 #184 currently CLOSED per live GitHub issue state; source/capture and keyboard PRs #380/#381/#383 merged. Building M5-02 #185 initial permission-specific task area proposal: 20 source ProductShell NAV entries in seven task areas, exact permission visibility checks, non-primary route review queue, clear **BLOCKED** mapping for controlled 66/91/55/1023 authoritative source under #266. No runtime app nav change, no UX owner/clickable-wireframe acceptance or clinical GO; CI/review pending.
+
+---
+
 ## 2026-11-15 — M5-01 keyboard and machine timing tranche (IN PR, NOT QUALIFIED)
 Merged prior source #380 and 175-viewport browser #381 baselines; this new independent PR adds route settling times, seven safe synthetic keyboard journeys (desktop Enter Home, mobile select focus/Shift+Tab, Enter sign-out), strict no-secret receipt and negative tests. No full-task measurements, human visual review, screen-reader approval or clinical gate changes. Full CI/Codex pending. #184 stays OPEN, G2/G2b NO-GO.
 
