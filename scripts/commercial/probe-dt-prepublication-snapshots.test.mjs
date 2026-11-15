@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {probeHistorical,sourceCommit,candidates} from './probe-dt-prepublication-snapshots.mjs';
+import {probeHistorical,sourceCommit,laterCookiejarCommit,candidates} from './probe-dt-prepublication-snapshots.mjs';
 const triage={schema:'therabridge-com02-definitelytyped-26-pinned-triage-v1',
  counts:{definitelyTypedVersions:26},commercialApproval:false,
  records:Array.from({length:26},(_,i)=>({name:'@types/test'+i,version:'1.0.0'}))};
@@ -11,9 +11,9 @@ const mock=async(t,c)=>({name:c.name,version:c.version,sourceCommit:c.commit,sou
  publisherToSourceAttested:false,commercialApproval:false,
  independentlyVerifiedHistoricPublishCommit:false,
  independentlyVerifiedNpmBuiltFromThisCommit:false});
-test('two 2023 candidate snapshots never grant historical publisher lineage, licensing or clinical approval',async()=>{
+test('three 2023 candidate snapshots never grant historical publisher lineage, licensing or clinical approval',async()=>{
  const r=await probeHistorical(triage,{verifier:mock});
- assert.equal(r.immutableSourceMatchCount,2);
+ assert.equal(r.immutableSourceMatchCount,3);
  assert.equal(r.historicalPublisherBuildAttestations,0);
  assert.equal(r.legalApprovals,0);
  assert.equal(r.sourceCommitTimeExternallyAuthenticatedInThisReceipt,false);
@@ -22,7 +22,8 @@ test('two 2023 candidate snapshots never grant historical publisher lineage, lic
  assert.equal(r.g2ClinicalApproved,false);
  assert.equal(r.g2bClinicalApproved,false);
  assert.deepEqual(r.observations.map(x=>x.reportedNpmUpdatedAt),candidates.map(x=>x.reportedNpmUpdatedAt));
- assert.ok(r.observations.every(x=>!x.publicationLineageIndependentlyVerified&&x.sourceCommit===sourceCommit));
+ assert.ok(r.observations.every(x=>!x.publicationLineageIndependentlyVerified));
+ assert.deepEqual(r.observations.map(x=>x.sourceCommit),[sourceCommit,sourceCommit,laterCookiejarCommit]);
 });
 test('forged verified publishing state is rejected as unavailable, not promoted to proof',async()=>{
  const r=await probeHistorical(triage,{verifier:async(t,c)=>({...await mock(t,c),publisherToSourceAttested:true})});
