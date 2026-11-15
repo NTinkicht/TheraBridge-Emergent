@@ -1,3 +1,10 @@
+## 2026-11-15 — M4-CLOSE-02 completion requirements
+1. Qualify isolated real-PostgreSQL M4-CLOSE-02 tests and eight-check hosted evidence validator on full new PR CI. Fix real failures, independently review exact final HEAD, merge under Rules 13-16.
+2. With explicit operator approval, create *disposable isolated* two-valid-tenant hosted fixture; do not mutate the live shared demo. Verify deployment SHA independently; currently demo is pinned to old 3cdd722... SHA. Request protected workflow approval for all ten synthetic accounts on main, then run actual multi-tenant auth/revocation/guardian/cookie/session probes.
+3. Retain actual sanitized per-probe receipts and any governance BLOCKED classifications; never infer hosted PASS from offline Jest success or boolean receipt inputs. Keep #176/#268 and epic #167 OPEN until accepted. G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — M4 closeout order (no reopening M4-08)
 1. Qualify M4-CLOSE-01 evidence/process PR: run full exact-head CI including new ancestry negative-path tests and reviewer disposition, then merge if Rule 16 fully satisfied. No automatic closure of #266/#279/#183.
 2. M4-CLOSE-02: prepare and run operator-authorized disposable **two valid tenant** hosted acceptance; independently attest deployed SHA and 10-role private session/revocation/guardian boundaries. Record PASS/FAIL/BLOCKED honestly; #176/#268 remain OPEN until executed. Never modify live shared demo tenants for test isolation.
