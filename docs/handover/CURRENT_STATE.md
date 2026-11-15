@@ -1,3 +1,8 @@
+## 2026-11-15 — M4-CLOSE-01 evidence reconciliation (IN PR; unqualified)
+Seven of nine M4 parent issues closed (#175/#177–#182); #176 hosted acceptance and #183 historical audit remain open. Follow-ups #266 (212-row/1,023-step evidence), #268 (two-valid-tenant protected QA), #279 (historic feature-branch force-ref audit) remain OPEN. PR #358 merged 90% four-metric API/Web qualification (CI 43692201180; merge 800e5c27). New PR adds read-only ancestor checks for #274/#275/#276 plus non-force process runbook; **new PR CI and Codex NOT RUN/PENDING**; zero new acceptance/clinical approval. Canonical receipt: docs/roadmap/M4-CLOSE-01-EVIDENCE-RECONCILIATION.md. G2/G2b NO-GO.
+
+---
+
 ## 2026-11-11 — COM-02 #361 release scope comparator (IMPLEMENTED, CI PENDING)
 After #359 merged with full CI and clean Codex, opened one grouped #361 release-image and source publication attestation followup. Implemented conservative exact asset SHA-256-to-pinned OCI image file candidate comparison, preserving all 53 package and 91 asset exception rows, no uploaded/signed release images yet. The checked-in image evidence manifest is empty; no shipping status is independently attested. No source-to-publisher attestation, customer license approval, final THIRD_PARTY_NOTICES or clinical G2/G2b gate changes. Added regression tests/CI artifact; exact-head full CI and independent review NOT YET QUALIFIED.
 
