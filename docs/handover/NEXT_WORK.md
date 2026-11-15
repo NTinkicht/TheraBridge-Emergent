@@ -1,3 +1,11 @@
+## 2026-11-15 — M4 closeout order (no reopening M4-08)
+1. Qualify M4-CLOSE-01 evidence/process PR: run full exact-head CI including new ancestry negative-path tests and reviewer disposition, then merge if Rule 16 fully satisfied. No automatic closure of #266/#279/#183.
+2. M4-CLOSE-02: prepare and run operator-authorized disposable **two valid tenant** hosted acceptance; independently attest deployed SHA and 10-role private session/revocation/guardian boundaries. Record PASS/FAIL/BLOCKED honestly; #176/#268 remain OPEN until executed. Never modify live shared demo tenants for test isolation.
+3. Map canonical 212 rows and 1,023 workflow steps only against authoritative private approved source; preserve M5–M11 routing, original excluded V2 entries and missing clinical signatures.
+4. Close #183/#279 and epic #167 only after evidence/reviewer and owner disposition; otherwise record explicit blocked dependency and keep OPEN. Clinical G2/G2b NO-GO; no 95% expansion.
+
+---
+
 ## 2026-11-11 — COM-02 #361 planned evidence-to-rights completion
 Qualify exact-head CI, resolve Codex findings and preserve all clinical and legal gates. Obtain independently captured and signed real SaaS and enterprise OCI digest/file/SBOM release evidence; currently NONE exists and the per-asset release status remains UNKNOWN. Independently corroborate all 53 package publication/repository commits (including DefinitelyTyped 26, other missing Git SHA 7, Next.js monorepo 3, untrusted repo URL 2, root matches 15) before legal-source assertions. Verify 91 asset source and redistributed rights, semantic-PAX exception and OS/native dependencies. Human owner/UAE counsel must approve actual enterprise vs SaaS rights, IP ownership and terms.
 
