@@ -1202,3 +1202,7 @@ New offline Node cases: allowlist only the 3 signed Next.js versions, exact SHA5
 2026-11-15 — Added seven COM-02 comparator tests for authentic archive same/different bytes, altered contents, forged legal grant, unsupported identity, tampered file inventory, attacker-rehashed fake archive/readiness and mispinned SRI. CI integrated on latest main; run results pending. No source reproduction, commercial or clinical approval.
 
 2026-11-15 — COM-05 draft policy has seven Node regression suites for unpriced editions, forged license/quota, expiry not deleting data or blocking export, cross-tenant/billing-clinical bypass, unsafe phone-home or issuer, unauthorized lifecycle automation, invalid editions/states. Test implementation committed and wired into full CI; exact-head qualification PENDING. No approvals implied.
+
+2026-11-15 — COM-01 new eight-test Node suite validates eight unresolved rights categories, nine draft contract sections, eleven non-approving decision IDs and SHA source references; rejects omitted/duplicated scope or contract section, forged OPEN-to-VERIFIED rights row, adopted proposed notice, missing clinical safeguard and leaks of raw contributor/contract text. CI wired; exact-head outcome PENDING.
+
+2026-11-15 — COM-01 latest Codex P2 follow-up: draft agreement's NOT SIGNABLE disclaimer and all seven approval-matrix rows (OPEN/BLOCKED/NO-GO) now strictly validated; forged APPROVED/GO changes rejected. Reused strict COM-05 parser against misleading input. Fresh exact-head CI and Codex required; no clinical/commercial approval.
