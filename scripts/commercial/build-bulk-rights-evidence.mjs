@@ -83,7 +83,7 @@ function validateInputs(register,correspondence,config){
    throw Error('CURATED_SOURCE_NOT_EXACT_REGISTRY_MATCH');
   // A prior bounded source read may fail transiently while the exact locked
   // source identity remains the same. Preserve the unresolved row instead of
-  // dropping the 53-version report or inventing a positive correspondence.
+  // dropping the exact-version report or inventing a positive correspondence.
   const temporarilyUnavailable=corresponding.evidenceStatus==='UPSTREAM_TIMEOUT'||
    corresponding.evidenceStatus==='SOURCE_FETCH_FAILED'||
    /^UPSTREAM_HTTP_\d{3}$/.test(corresponding.evidenceStatus??'');

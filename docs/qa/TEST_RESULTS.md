@@ -1,3 +1,21 @@
+## 2026-11-15 — PR #311 coherent security upgrade (LOCAL ONLY; EXACT-HEAD CI PENDING)
+Local workspace (Node 22.23.4 with `--ignore-engines` for install only; installed tree checked separately: 0 packages incompatible with Node 20.20.2):
+| Check | Result |
+|---|---|
+| API `tsc --noEmit` (Prisma client generated offline) | PASS |
+| API `nest build` | PASS |
+| Web `tsc --noEmit`, `next build` (Next 15.5.29) | PASS |
+| Web `node --test` unit tests | PASS (6/6) |
+| Web Jest full-source coverage suite | PASS (114 suites) |
+| All `scripts/**/*.test.mjs` | PASS |
+| CI `test` job COM-02 steps 13–34, 36–37, 39–57 replayed | PASS |
+| COM-02 steps 35/38 (npm 11.19.1 Sigstore receipt) | NOT RUN locally — same local limitation as `main`; CI authoritative |
+| Direct dependency evidence check | PASS (39 entries, approval NONE) |
+| API PostgreSQL e2e, live-session, demo-journey, preview-container, compose | NOT RUN locally |
+| npm advisory bulk check of yarn.lock | 7 remaining (pre-existing transitive), down from 63 on main |
+
+---
+
 ## 2026-11-15 — M5-01 client settlement and async failure classification (NEW HEAD PENDING)
 Codex P2 observations: 100ms post-DOM wait insufficient for hydrated screens; top-level HTTP 200 cannot prove client data load. Implemented visible loader + aria-busy bounded settling, explicit session/client error, forbidden/timeout outcomes and regression tests. Final-head CI and Codex NOT YET QUALIFIED. Screenshots are transient and not human-reviewed, #184 OPEN, G2/G2b NO-GO.
 

@@ -1,3 +1,10 @@
+## 2026-11-15 — PR #311 qualification
+1. Verify all six required CI jobs + SBOM/Smart CI on the new #311 HEAD, especially API PostgreSQL e2e under Nest 11/Fastify 5 and the COM-02 Sigstore steps (expect 5 verified signed subjects: 3 Next.js + 2 sharp-libvips). Fix real failures without weakening fail-closed checks.
+2. Obtain independent final-head Codex review; record FIX_NOW / DEFER_ISSUE / DECLINE_WITH_REASON for every finding before any Rule 16 merge.
+3. Follow-ups to track as issues: Node 20 runtime is past upstream EOL (Apr 2026) — move approved runtime to Node 22 LTS (ADR update) and then drop the `light-my-request` 6.6.0 dedupe; counsel review of LGPL-3.0-or-later libvips binaries shipped via Next's optional `sharp` (or disable image optimisation/omit `sharp` from release images); residual pre-existing advisories (`postcss@8.4.31` inside Next 15, `glob`/`minimatch` via `@nestjs/cli`, `deepmerge`); evaluate Next 16 / Nest 12 as a separate planned work unit.
+
+---
+
 ## 2026-11-15 — M5-01 browser observer requalification
 Verify full latest-head CI including 175-route screenshot capture and numeric receipt, resolve any true test failures; get independent final-head Codex zero unresolved. Merge only after six required jobs, SBOM/Smart CI green. Inspect receipt for denied, redirects, load timeouts, error and horizontal-overflow candidates, without claiming visual review or #184 closure.
 

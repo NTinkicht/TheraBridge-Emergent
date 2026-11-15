@@ -7,50 +7,61 @@ import {TextDecoder} from 'node:util';
 import {select} from './verify-npm-provenance-observation.mjs';
 import {bundleStatements} from './verify-npm-sigstore-bundles.mjs';
 import {fetchRaw} from './verify-immutable-license-texts.mjs';
+import {NEXTJS_TARGETS as TARGETS,NEXTJS_SOURCE_REF,OUT_OF_SCOPE_SIGNED,
+ COM02_UNRESOLVED_VERSIONS,NEXTJS_SIGNED_COUNT,ALL_SIGNED_COUNT,REMAINING_WITHOUT_SIGSTORE} from './com02-nextjs-pins.mjs';
 
 const sha=x=>createHash('sha256').update(x).digest('hex');
 const key=x=>JSON.stringify([x.name,x.version]);
-const TARGETS=Object.freeze({
- '@next/env@14.2.35':{path:'packages/next-env/package.json',sourceName:'@next/env'},
- '@next/swc-linux-x64-gnu@14.2.33':{path:'packages/next-swc/package.json',sourceName:'@next/swc'},
- '@next/swc-linux-x64-musl@14.2.33':{path:'packages/next-swc/package.json',sourceName:'@next/swc'}
-});
+const OUT_OF_SCOPE=new Set(OUT_OF_SCOPE_SIGNED);
 const REPO='https://github.com/vercel/next.js';
 const REV=/^[a-f0-9]{40}$/;
 
 function validate(candidates,verified,rawBytes){
  const selected=select(candidates);
- if(candidates.records.length!==53||selected.length!==3||
-    selected.some(x=>!TARGETS[x.name+'@'+x.version]))
-  throw Error('EXPECTED_COM02_53_AND_3_REGISTRY_IDENTITIES');
+ const ids=selected.map(x=>x.name+'@'+x.version);
+ const nextjs=selected.filter(x=>TARGETS[x.name+'@'+x.version]);
+ if(candidates.records.length!==COM02_UNRESOLVED_VERSIONS||selected.length!==ALL_SIGNED_COUNT||
+    new Set(ids).size!==ALL_SIGNED_COUNT||nextjs.length!==NEXTJS_SIGNED_COUNT||
+    ids.some(k=>!TARGETS[k]&&!OUT_OF_SCOPE.has(k))||
+    OUT_OF_SCOPE_SIGNED.some(k=>!ids.includes(k)))
+  throw Error('EXPECTED_COM02_EXACT_REGISTRY_IDENTITIES');
  if(verified?.schema!=='therabridge-com02-verified-npm-sigstore-candidates-v1'||
     verified.trustedVerifier?.name!=='npm'||
     verified.trustedVerifier?.version!=='11.19.1'||
     verified.trustedVerifier?.exitCode!==0||
     verified.trustedVerifier?.resultHashSha256!==sha(rawBytes)||
     verified.inputManifestSha256!==sha(Buffer.from(JSON.stringify(candidates)))||
-    verified.counts?.unresolvedExactVersionPackages!==53||
-    verified.counts?.attestationCandidates!==3||
-    verified.counts?.verifiedSignedSubjectsAndDigests!==3||
+    verified.counts?.unresolvedExactVersionPackages!==COM02_UNRESOLVED_VERSIONS||
+    verified.counts?.attestationCandidates!==ALL_SIGNED_COUNT||
+    verified.counts?.verifiedSignedSubjectsAndDigests!==ALL_SIGNED_COUNT||
     verified.counts?.independentlyCorroboratedPublisherToSource!==0||
     verified.counts?.legallyApproved!==0||
     verified.finalNoticesIssued!==false||
     verified.commercialLicenseGranted!==false||
     verified.g2ClinicalApproved!==false||
     verified.g2bClinicalApproved!==false||
-    !Array.isArray(verified.records)||verified.records.length!==3)
+    !Array.isArray(verified.records)||verified.records.length!==ALL_SIGNED_COUNT)
   throw Error('UNTRUSTED_SIGSTORE_AUDIT_RECEIPT');
  let raw;
  try{raw=JSON.parse(rawBytes.toString('utf8'));}
  catch{throw Error('INVALID_RAW_NPM_VERIFIED_BUNDLES');}
- if(!Array.isArray(raw?.verified)||raw.verified.length!==3||
+ if(!Array.isArray(raw?.verified)||raw.verified.length!==ALL_SIGNED_COUNT||
     !Array.isArray(raw.invalid)||raw.invalid.length||
     !Array.isArray(raw.missing)||raw.missing.length)
   throw Error('UNEXPECTED_NPM_BUNDLE_VERIFICATION_RESULT');
  const trusted=new Map(verified.records.map(x=>[key(x),x]));
  const byRaw=new Map(raw.verified.map(x=>[key(x),x]));
- if(trusted.size!==3||byRaw.size!==3)throw Error('DUPLICATED_VERIFIED_PACKAGE');
- return selected.map(candidate=>{
+ if(trusted.size!==ALL_SIGNED_COUNT||byRaw.size!==ALL_SIGNED_COUNT)throw Error('DUPLICATED_VERIFIED_PACKAGE');
+ // Non-Next.js signed packages must be verified and accounted for, but are
+ // never corroborated here; they remain UNRESOLVED for counsel review.
+ for(const candidate of selected.filter(x=>!TARGETS[x.name+'@'+x.version])){
+  const receipt=trusted.get(key(candidate));
+  if(!receipt||!byRaw.get(key(candidate))||
+    receipt.signatureEvidenceStatus!=='PINNED_NPM_SIGSTORE_BUNDLE_VERIFIED_SUBJECT_AND_DIGEST'||
+    receipt.exactRegistryLockMatch!==true||receipt.commercialApproval!==false)
+   throw Error('INCOMPLETE_OUT_OF_SCOPE_SIGNED_RECEIPT');
+ }
+ return nextjs.map(candidate=>{
   const receipt=trusted.get(key(candidate)),source=byRaw.get(key(candidate));
   if(!receipt||!source||
     receipt.signatureEvidenceStatus!=='PINNED_NPM_SIGSTORE_BUNDLE_VERIFIED_SUBJECT_AND_DIGEST'||
@@ -69,7 +80,7 @@ function validate(candidates,verified,rawBytes){
   const claims=slsa?.sourceRevisionClaims;
   if(!Array.isArray(claims)||claims.length!==1||
      claims[0].repositoryClaim!==REPO||
-     claims[0].sourceRefClaim!=='refs/heads/14-2-1'||
+     claims[0].sourceRefClaim!==NEXTJS_SOURCE_REF||
      !REV.test(claims[0].revisionClaim))
     throw Error('UNEXPECTED_NEXTJS_SLSA_COMMIT_CLAIM');
   return {name:candidate.name,version:candidate.version,lockedIntegrity:candidate.lockedIntegrity,
@@ -103,7 +114,7 @@ async function corroborate(candidates,verified,rawBytes,{fetcher=fetchRaw}={}){
    trustedSignedPackageAndDigest:true,
    signedSourceRepository:REPO,
    signedSourceRevision:row.signedRevision,
-   signedSourceRef:'refs/heads/14-2-1',
+   signedSourceRef:NEXTJS_SOURCE_REF,
    sourcePackagePath:row.sourceSpec.path,
    expectedSourcePackageName:row.sourceSpec.sourceName,
    sourceManifestSha256:null,sourceManifestBytes:null,
@@ -137,13 +148,15 @@ async function corroborate(candidates,verified,rawBytes,{fetcher=fetchRaw}={}){
   fullRegistryCandidateSha256:sha(Buffer.from(JSON.stringify(candidates))),
   npmVerifiedBundleSha256:sha(rawBytes),
   verifiedSigstoreReceiptSha256:sha(Buffer.from(JSON.stringify(verified))),
-  counts:{allOriginalUnresolvedVersions:53,sigstoreSignedPackages:3,
+  counts:{allOriginalUnresolvedVersions:COM02_UNRESOLVED_VERSIONS,sigstoreSignedPackages:NEXTJS_SIGNED_COUNT,
+   outOfScopeSigstoreSignedPackages:OUT_OF_SCOPE_SIGNED.length,
    sourceManifestMatches:results.filter(x=>x.sourceManifestStatus.includes('_MANIFEST_MATCH')).length,
    exactPackageSourceManifestMatches:results.filter(x=>x.sourceManifestStatus==='SIGNED_REVISION_IMMUTABLE_EXACT_PACKAGE_MANIFEST_MATCH').length,
    nativeBinaryParentSourceMatches:results.filter(x=>x.sourceManifestStatus==='SIGNED_REVISION_IMMUTABLE_PARENT_SWC_SOURCE_MANIFEST_MATCH_ONLY').length,
-   remainingWithoutAdvertisedSigstore:50,
+   remainingWithoutAdvertisedSigstore:REMAINING_WITHOUT_SIGSTORE,
    independentlyReproducedPublishedNpmTarballs:0,
    legallyApproved:0},
+  outOfScopeSignedPackages:[...OUT_OF_SCOPE_SIGNED],
   records:results,finalNoticesIssued:false,commercialLicenseGranted:false,
   g2ClinicalApproved:false,g2bClinicalApproved:false};
 }

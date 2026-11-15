@@ -7,6 +7,8 @@ import {gunzipSync} from 'node:zlib';
 import https from 'node:https';
 import {validate as validateSource} from './corroborate-signed-nextjs-source.mjs';
 import {fetchRaw} from './verify-immutable-license-texts.mjs';
+import {NEXTJS_VERSION,COM02_UNRESOLVED_VERSIONS,NEXTJS_SIGNED_COUNT,OUT_OF_SCOPE_SIGNED,
+ REMAINING_WITHOUT_SIGSTORE} from './com02-nextjs-pins.mjs';
 
 const sha=b=>createHash('sha256').update(b).digest('hex');
 const hash512=b=>createHash('sha512').update(b).digest();
@@ -19,8 +21,7 @@ const filesFor=Object.freeze({
  '@next/swc-linux-x64-musl':'packages/next-swc/package.json'
 });
 function tarballUrl(name,version){
- if(!Object.hasOwn(filesFor,name)||!['14.2.35','14.2.33'].includes(version)||
-    (name==='@next/env')!==(version==='14.2.35'))
+ if(!Object.hasOwn(filesFor,name)||version!==NEXTJS_VERSION)
    throw Error('UNEXPECTED_NPM_PACKAGE');
  const encoded=encodeURIComponent(name);
  const basename=name.split('/').pop();
@@ -132,7 +133,7 @@ function sourceRecipe(bytes,expected){
   requiresSourceToolchainCargoLockAndTarget:true,reproduciblePublishedArchive:false};
 }
 function reportStatus(records){
- const complete=records.length===3&&records.every(x=>
+ const complete=records.length===NEXTJS_SIGNED_COUNT&&records.every(x=>
   x.archiveStatus==='INTEGRITY_VERIFIED_PUBLISHED_FILE_INVENTORY_NOT_REPRODUCIBILITY'&&
   x.buildRecipeStatus==='SIGNED_COMMIT_BUILD_RECIPE_CAPTURED_NOT_EXECUTED');
  if(complete)return 'ALL_THREE_PUBLISHED_ARCHIVE_INVENTORIES_AND_RECIPES_VERIFIED_NOT_REPRODUCIBLE_BUILDS';
@@ -146,16 +147,17 @@ async function inventory(candidates,verified,raw,sourceReport,{fetchArchive=down
     sourceReport.fullRegistryCandidateSha256!==sha(Buffer.from(JSON.stringify(candidates)))||
     sourceReport.npmVerifiedBundleSha256!==sha(raw)||
     sourceReport.verifiedSigstoreReceiptSha256!==sha(Buffer.from(JSON.stringify(verified)))||
-    sourceReport.counts?.allOriginalUnresolvedVersions!==53||
-    sourceReport.counts?.sigstoreSignedPackages!==3||
+    sourceReport.counts?.allOriginalUnresolvedVersions!==COM02_UNRESOLVED_VERSIONS||
+    sourceReport.counts?.sigstoreSignedPackages!==NEXTJS_SIGNED_COUNT||
+    sourceReport.counts?.outOfScopeSigstoreSignedPackages!==OUT_OF_SCOPE_SIGNED.length||
     sourceReport.counts?.independentlyReproducedPublishedNpmTarballs!==0||
     sourceReport.counts?.legallyApproved!==0||
     sourceReport.finalNoticesIssued!==false||sourceReport.commercialLicenseGranted!==false||
     sourceReport.g2ClinicalApproved!==false||sourceReport.g2bClinicalApproved!==false||
-    !Array.isArray(sourceReport.records)||sourceReport.records.length!==3)
+    !Array.isArray(sourceReport.records)||sourceReport.records.length!==NEXTJS_SIGNED_COUNT)
   throw Error('UNTRUSTED_SOURCE_RECONCILIATION');
  const rows=new Map(sourceReport.records.map(r=>[JSON.stringify([r.name,r.version]),r]));
- if(rows.size!==3)throw Error('DUPLICATE_SOURCE_RECONCILIATION');
+ if(rows.size!==NEXTJS_SIGNED_COUNT)throw Error('DUPLICATE_SOURCE_RECONCILIATION');
  const records=[];
  for(const e of expected){
   const src=rows.get(JSON.stringify([e.name,e.version]));
@@ -212,11 +214,12 @@ async function inventory(candidates,verified,raw,sourceReport,{fetchArchive=down
   status:reportStatus(records),
   inputSigstoreReceiptSha256:sha(Buffer.from(JSON.stringify(verified))),
   inputSourceReconciliationSha256:sha(Buffer.from(JSON.stringify(sourceReport))),
-  counts:{allUnresolvedPackages:53,signedCandidates:3,
+  counts:{allUnresolvedPackages:COM02_UNRESOLVED_VERSIONS,signedCandidates:NEXTJS_SIGNED_COUNT,
+   outOfScopeSignedNonNextjsPackages:OUT_OF_SCOPE_SIGNED.length,
    tarballsWithVerifiedSRI:records.filter(r=>r.archiveStatus==='INTEGRITY_VERIFIED_PUBLISHED_FILE_INVENTORY_NOT_REPRODUCIBILITY').length,
    immutableBuildRecipesCaptured:records.filter(r=>r.buildRecipeStatus==='SIGNED_COMMIT_BUILD_RECIPE_CAPTURED_NOT_EXECUTED').length,
    nativeSWCTarballsRebuiltByteIdentically:0,completePublishedArchivesReproduced:0,
-   otherNpmVersionsWithoutAdvertisedSigstore:50,legallyApproved:0},
+   otherNpmVersionsWithoutAdvertisedSigstore:REMAINING_WITHOUT_SIGSTORE,legallyApproved:0},
   records,finalNoticesIssued:false,commercialLicenseGranted:false,
   g2ClinicalApproved:false,g2bClinicalApproved:false};
 }

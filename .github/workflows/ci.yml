@@ -268,7 +268,7 @@ jobs:
         run: node scripts/commercial/build-definitelytyped-triage.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-source-correspondence-candidates.json /tmp/therabridge-com02-exact-version-rights-queue.json /tmp/therabridge-com02-definitelytyped-26-triage.json
       - name: Validate immutable-source root observations, aliases, and false-approval boundaries
         run: node --test scripts/commercial/reconcile-independent-root-observations.test.mjs
-      - name: Corroborate 15 source-root observations against exact 53 npm candidate report without authorizing lineage
+      - name: Corroborate 15 frozen source-root observations (11 current, 4 retired) against exact 47 npm candidate report without authorizing lineage
         run: node scripts/commercial/reconcile-independent-root-observations.mjs /tmp/therabridge-com02-source-correspondence-candidates.json docs/commercial/com02-independent-root-observations.json /tmp/therabridge-com02-root-observation-reconciliation.json
       - name: Validate fail-closed exact-commit LICENSE/NOTICE text hashing
         run: node --test scripts/commercial/verify-immutable-license-texts.test.mjs

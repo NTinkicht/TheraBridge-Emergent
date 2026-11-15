@@ -1,3 +1,8 @@
+## 2026-11-15 — PR #311 dependency security upgrade repair
+Diagnosed Dependabot #311 CI failures (Node 20 `cookie@2` engine error in install-based jobs; stale direct-dependency evidence in sbom). Rebuilt the bump as coherent Nest 11 / Fastify 5 / Next 15.5.29 / Playwright 1.55.1 on top of merged `main`, adapted two source call sites and one web test, re-baselined COM-02 exact-version evidence (47 versions, Next.js 15.5.29 pins, sharp-libvips LGPL accounted as unresolved, four retired root observations) and aligned Playwright workflow images. Local: API/web typecheck PASS, API/web build PASS, all `scripts/**/*.test.mjs` PASS, web Jest coverage suite PASS. API PostgreSQL e2e and npm Sigstore verification NOT RUN locally (no Prisma engine download / Sigstore TUF access in this workspace) — CI is the authority.
+
+---
+
 ## 2026-11-15 — M5-01 Codex P2 browser evidence fixes
 New head avoids calling loading skeletons successful pages and marks visible asynchronous client-error, page-forbidden, timed-out loading separately. Added negative/unit tests; exact-head full CI/Codex still pending. All pixels remain transient, no clinical approval.
 

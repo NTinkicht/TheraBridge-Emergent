@@ -24,18 +24,18 @@ const make=()=>{
    saasNetworkRights:'PENDING_COUNSEL_REVIEW',
    enterpriseRedistributionRights:'PENDING_COUNSEL_REVIEW'});
  }
- // Verify rejection of a missing external 53-version population, too.
- for(let i=0;i<27;i++){
+ // Verify rejection of a missing external 47-version population, too.
+ for(let i=0;i<21;i++){
   const name='other-'+i,version='1.0.0';
   u.push({name,version});c.push({name,version});q.push({name,version});
  }
  return [
   {schema:'therabridge-com02-upstream-authority-candidates-v1',
-   counts:{exceptions:53},records:u,commercialLicenseGranted:false,finalNoticesIssued:false},
+   counts:{exceptions:47},records:u,commercialLicenseGranted:false,finalNoticesIssued:false},
   {schema:'therabridge-com02-githead-source-corroboration-candidates-v1',
-   counts:{exceptions:53},records:c,commercialLicenseGranted:false,finalNoticesIssued:false},
+   counts:{exceptions:47},records:c,commercialLicenseGranted:false,finalNoticesIssued:false},
   {schema:'therabridge-com02-exact-version-rights-queue-v1',
-   counts:{exceptions:53},exceptions:q,commercialLicenseGranted:false,finalNoticesIssued:false}
+   counts:{exceptions:47},exceptions:q,commercialLicenseGranted:false,finalNoticesIssued:false}
  ];
 };
 const clone=x=>structuredClone(x);
@@ -53,9 +53,9 @@ test('26 exact SRI-bound package rights rows and zero invented source lineage',(
 });
 test('missing, duplicate, or version-drifted type package rejected',()=>{
  const a=make();a[0].records=a[0].records.filter(x=>x.name!=='@types/react');
- assert.throws(()=>build(...a),/EXPECTED_53|DEFINITELYTYPED/);
+ assert.throws(()=>build(...a),/EXPECTED_COM02_POPULATION|DEFINITELYTYPED/);
  const b=make();b[0].records[0].version='8.0.0';
- assert.throws(()=>build(...b),/MISSING_53_WAY_JOIN|DEFINITELYTYPED/);
+ assert.throws(()=>build(...b),/MISSING_COM02_WAY_JOIN|DEFINITELYTYPED/);
  const c=make();c[0].records[1]=clone(c[0].records[0]);
  assert.throws(()=>build(...c),/DUPLICATE_UPSTREAM/);
 });
@@ -85,9 +85,9 @@ test('commercial rights or clinical and notices claims never upgraded from sourc
  const d=make();d[0].records[0].enterpriseRedistributionRights='APPROVED';
  assert.throws(()=>build(...d),/INVALID_DEFINITELYTYPED/);
 });
-test('missing/forged cross-source joining of 53 version population rejected',()=>{
+test('missing/forged cross-source joining of 47 version population rejected',()=>{
  const a=make();a[1].records[30].version='0.0.1';
- assert.throws(()=>build(...a),/MISSING_53_WAY_JOIN/);
+ assert.throws(()=>build(...a),/MISSING_COM02_WAY_JOIN/);
  const b=make();b[2].counts.exceptions=52;
  assert.throws(()=>build(...b),/UNSAFE_COM02_EVIDENCE_ENVELOPE/);
 });
