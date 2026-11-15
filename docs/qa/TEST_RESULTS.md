@@ -1,3 +1,8 @@
+## 2026-11-15 — M5-03 grouped shell (UNQUALIFIED UNTIL CI)
+Added source test ensuring 20 exact permission identities grouped as merged M5-02 eight-area proposal, preserving family-vs-center Activities. Browser CI seven roles each check desktop rail, mobile quick links, More dialog Tab/Shift+Tab and Escape focus, and exact granted current session navigation vs source NAV. Existing 175 route/viewport observations and M5-01 keyboard receipts retained/extended; no full screen-reader, human task or visual UX approval claimed. Clinical G2/G2b NO-GO.
+
+---
+
 ## 2026-11-15 — M5-02 task IA crosswalk (UNQUALIFIED source design)
 Added canonical inventory-to-eight-task-area pure source model, enforcing 66 feature IDs, 91 workflow IDs, 20 current nav rows, 7 persona review candidates, two V2 excluded items and no false route permission or UX pass. Adversarial tests and CI receipt wired, but final-head run not yet verified. No in-app change, no screenshots, no screen reader, no end-to-end clickable task tests and no approved human UX signoff; #185 OPEN, G2/G2b NO-GO.
 
