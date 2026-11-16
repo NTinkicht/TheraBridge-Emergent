@@ -69,7 +69,9 @@ test('bounded TAR parser extracts only a unique unmodified npm root manifest',()
  assert.throws(()=>extractPublishedManifest(Buffer.from('not-a-gzip')),/INVALID_GZIP/);
 });
 test('all 9 source-root packages compared, but no published provenance or rights granted',async()=>{
- const f=fixture(),result=await buildSourceComparison(f.queue,f.observations,f.rootReceipt,f.lock,{fetchBuffer:f.fetchBuffer});
+ const f=fixture();
+ assert.equal(f.cache.size,roots.length,'Each exact-version archive must have its own URL');
+ const result=await buildSourceComparison(f.queue,f.observations,f.rootReceipt,f.lock,{fetchBuffer:f.fetchBuffer});
  assert.equal(result.records.length,9);
  assert.equal(result.counts.sourceRootCandidates,9);
  assert.equal(result.counts.manifestByteMatches,0); // npm-generated manifest differs from source revision
