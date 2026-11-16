@@ -60,7 +60,8 @@ test('bounded TAR parser extracts only a unique unmodified npm root manifest',()
  assert.throws(()=>extractPublishedManifest(gzipSync(Buffer.concat([tarEntry('package/../package.json',t.manifest),Buffer.alloc(1024)]))),/UNSAFE_PATH/);
  assert.throws(()=>extractPublishedManifest(gzipSync(Buffer.concat([tarEntry('package/package.json',t.manifest),tarEntry('package/package.json',t.manifest),Buffer.alloc(1024)]))),/DUPLICATE/);
  assert.throws(()=>extractPublishedManifest(gzipSync(Buffer.concat([tarEntry('package/package.json',t.manifest,{type:120}),Buffer.alloc(1024)]))),/UNSUPPORTED_TAR_SEMANTICS/);
- assert.throws(()=>extractPublishedManifest(gzipSync(Buffer.from('oops'))),/INVALID_GZIP/);
+ assert.throws(()=>extractPublishedManifest(gzipSync(Buffer.from('oops'))),/MISSING_MANIFEST_OR_TERMINATOR/);
+ assert.throws(()=>extractPublishedManifest(Buffer.from('not-a-gzip')),/INVALID_GZIP/);
 });
 test('all 11 source-root packages compared, but no published provenance or rights granted',async()=>{
  const f=fixture(),result=await buildSourceComparison(f.queue,f.observations,f.rootReceipt,f.lock,{fetchBuffer:f.fetchBuffer});
