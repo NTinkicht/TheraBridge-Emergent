@@ -346,7 +346,7 @@ jobs:
         run: node scripts/commercial/build-com02-nondt-workqueue.mjs /tmp/therabridge-com02-closure-ledger.json /tmp/therabridge-com02-nondt-workqueue.json
       - name: Test SRI-qualified non-DT archive vs immutable source manifest comparison
         run: node --test scripts/commercial/compare-nondt-published-manifests.test.mjs
-      - name: Observe 9 current npm published manifest bytes (not publication/source attestation)
+      - name: Compare 9 observed npm source roots and flag tenth unobserved candidate (no attestation)
         run: |
           node scripts/commercial/compare-nondt-published-manifests.mjs \
             /tmp/therabridge-com02-nondt-workqueue.json \
