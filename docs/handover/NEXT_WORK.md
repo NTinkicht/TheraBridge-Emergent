@@ -1,3 +1,8 @@
+## 2026-11-17 — COM-02 #399 measured receipt next actions
+1. Qualify final updated Rule 7 head against the six full CI jobs, SBOM, Smart CI, and new 11-version archive evidence. Request exact-head independent Codex review, disposition findings, and merge only under Rule 16.
+2. Investigate the single **@tokenizer/token@0.3.0** published package.json raw-byte mismatch without assuming malicious packaging or authorized source correspondence. Compare canonical manifest field changes, and independently establish full package-file source/build recipe linkage for all 11; no fabricated publication attestations.
+3. Continue 7 no-revision versions, 2 native sharp-libvips subpaths, 1 untrusted repository origin, 25 DefinitelyTyped histories, 91 rights assets and real SaaS/Enterprise signed OCI/deployment or delivery evidence. Counsel/rights-holder approvals and clinical G2/G2b remain NO-GO.
+
 ## 2026-11-17 — COM-02 PR #399 current next gates
 1. Run full exact-head CI; inspect real 11-package SRI-verification receipt: how many matches, mismatches, unavailable; resolve any TAR/PAX or network errors without weakening parser. Validate same-run archive digest and untrusted source disclaimer.
 2. Request independent Codex on final stable green head and disposition every finding; update all four Rule 7 docs with actual result. Merge only under Rule 16.
