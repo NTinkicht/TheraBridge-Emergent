@@ -1,3 +1,6 @@
+## 2026-11-17 — COM-02 #399 test-failure correction
+Real GitHub run 43948504113 exposed one test-only expectation mismatch in TAR parser negative path; corrected to recognize valid gzip with no TAR manifest and added a separate invalid-gzip case at commit 8608d5d. Existing production fail-closed behavior unchanged. Four other new subtests passed. Live npm archive comparison remains NOT RUN until revised CI passes; no publisher-to-source attestation or rights approval.
+
 ## 2026-11-17 — COM-02 PR #399 implementation tranche 1
 Implemented scripts/commercial/compare-nondt-published-manifests.mjs and adversarial tests. Producer takes same-run non-DT workqueue plus frozen independent Git source-root observations and current yarn.lock; it downloads pinned npm registry .tgz, verifies Yarn SRI and earlier tarball sha256, parses bounded package/package.json without trusting PAX/GNU semantic overrides, and compares raw package.json SHA-256 to immutable source-manifest observation for all 11 source-root rows. Hardened fail-closed approval flags and categorical difference vs unavailability. New CI runs tests and archives receipt with licensing evidence, no claim of real npm source-build attestation. Tests/CI after implementation PENDING; not merged.
  
