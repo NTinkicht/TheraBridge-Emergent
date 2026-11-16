@@ -68,6 +68,32 @@ export async function runChild360BrowserAcceptance({ passwords }) {
           const tabsInDom = await topTabs.evaluateAll(nodes => nodes.map(n=>n.getAttribute('data-testid')));
           assert.deepEqual(tabsInDom,tabs.map(x=>'clinical-tab-'+x),'Tab order and stable IDs');
           assert.equal(await page.locator('[data-testid="clinical-synthetic-banner"]').count(),1,'Clinical synthetic warning must persist');
+          // M5-05: task-first Overview. Historic evidence is collapsed rather than
+          // deleted; the native disclosure remains keyboard operable and scoped.
+          const disclosures=['team','activity','history',...(role==='THERAPIST'?['practice']:[])];
+          for(const section of disclosures){
+            const region=page.getByTestId('child360-disclosure-'+section);
+            const details=region.locator('details');
+            assert.equal(await details.count(),1,'Missing native '+section+' disclosure');
+            assert.equal(await details.getAttribute('open'),null,'Long-form '+section+' details start collapsed');
+            const summary=details.locator('summary');
+            await summary.focus();
+            await page.keyboard.press('Enter');
+            assert.equal(await details.getAttribute('open'),'','Keyboard must expand '+section+' details');
+            if(section==='team'){
+              await page.getByTestId('child360-care-team').waitFor({state:'visible'});
+              assert(await page.getByTestId('child360-care-team-list').locator('li').count()>0,
+                'Team details must retain authorized assigned therapists');
+            }
+            if(section==='history'){
+              await page.getByTestId('child360-clinical-timeline').waitFor({state:'visible'});
+              assert(await page.getByTestId('child360-timeline-count').isVisible(),
+                'Clinical history must remain available without new permissions');
+            }
+            await summary.focus();
+            await page.keyboard.press('Enter');
+            assert.equal(await details.getAttribute('open'),null,'Keyboard must collapse '+section+' details');
+          }
           for (const tab of tabs) {
             const button=page.getByTestId('clinical-tab-'+tab);
             await button.click();
