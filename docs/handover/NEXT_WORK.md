@@ -1,3 +1,8 @@
+## 2026-11-17 — COM-02 Node24 same-run nine-root verification next gates
+1. Run new exact-head CI for **44=21 DT+23 non-DT** with 9 current root observations and 6 retired; inspect offline regression tests, live nine-package SRI+SHA256 archive receipt, source-root correspondence digest equality, matched/different/unavailable totals.
+2. Obtain final independent Codex on that same green HEAD, disposition any new finding, pass six required jobs, Smart CI, SBOM, commercial qualification and merge without overwriting concurrent M5/Node24 changes. Supersede old PR #399 only when new PR is qualified.
+3. Investigate @tokenizer/token manifest mismatch #402; independently authenticate exact publisher-to-source build history and compare complete archive file sets. Other 23 non-DT, 21 DT, 91 assets, actual signed SaaS/Enterprise OCI distribution, counsel and G2/G2b remain unresolved.
+
 ## 2026-11-16 — Node 24 / NestJS 12 PR qualification
 1. Exact-head six required jobs on Node 24 (API Jest + PostgreSQL e2e are the main risk: lifecycle hook ordering, HTTP adapter error mapping, `ConsoleLogger` structured params).
 2. Codex review of the final green HEAD; Rule 13 ledger for every finding.
