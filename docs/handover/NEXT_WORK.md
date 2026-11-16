@@ -1,3 +1,9 @@
+## 2026-11-16 — COM-02 PR #397 Rule 7 and exact-head qualification
+1. Run exact-head CI after handover/QA fixes; verify complete six required CI jobs, SBOM, Smart CI and commercial-inventory qualification. Confirm both new workqueue tests and same-run generator PASS and inspect archived therabridge-com02-nondt-workqueue.json; verify 47=26+21 currently without claiming publisher authority.
+2. Request fresh Codex review for final head after the P1 four-file handover correction; resolve review thread only when correction is checked, and merge only with zero unresolved findings, clean current-main ancestry and required checks green.
+3. If independent dependency PR #394 merges, rerun existing evidence generators and closure-queue qualification for proposed 46=25+21. Do not paste historical 53=26+27 counts into current claims.
+4. Next substantive proof: obtain authenticated npm publication/build-to-source correspondence for all 21 non-DT versions and historical exact-release evidence for 26 DT versions (or rebaselined counts), resolve 91 asset rights, two *actual* pinned OCI release/delivery/SBOM receipts and human counsel/owner grants. G2/G2b NO-GO, public GitHub stays public, no production clinical processing.
+
 ## 2026-11-15 — M5-03 reviewer correction final qualification
 1. Re-run exact-HEAD PR #393 six original CI jobs, SBOM/Smart CI and dedicated Web coverage after `<details>` type and More breakpoint/scroll remediations. Inspect seven-role Chromium keyboard receipt for permission equality, focus trap/return, rail collapse, responsive closure and background scroll restoration. Obtain new Codex review for final head, resolve P2 threads only after code qualification.
 2. Merge only with green full CI, Codex zero unresolved and mergeable latest main. Keep #186 OPEN for human image/screen-reader/low bandwidth/full workflow UX and center/child/specialty navigation context. G2/G2b NO-GO.
