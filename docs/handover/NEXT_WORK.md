@@ -1,3 +1,8 @@
+## 2026-11-17 — COM-02 #404 ten-root full population closure checks
+1. Re-run exact-head CI and inspect nine SRI-qualified manifest comparisons plus **one pinned unobserved root**; verify counts ten root candidates = nine with frozen observations + one `SOURCE_OBSERVATION_PENDING_CURRENT_LOCKED_PACKAGE` (included as unavailable), no falsely verified archive/source claim.
+2. Independent Codex review/Rule13 disposition and all six full CI jobs, SBOM/Smart CI, commercial inventory qualification green, clean main ancestry before merge. No legacy stale #399 merge.
+3. Open a follow-up to independently freeze unicode-emoji-modifier-base@1.0.0 source Git object/manifest hash and compare exact archive; investigate @tokenizer/token mismatch #402. Continue 21 DT, 23 non-DT, 91 assets, actual edition OCI and counsel/clinical controls with fail-closed decisions.
+
 ## 2026-11-17 — COM-02 Node24 same-run nine-root verification next gates
 1. Run new exact-head CI for **44=21 DT+23 non-DT** with 9 current root observations and 6 retired; inspect offline regression tests, live nine-package SRI+SHA256 archive receipt, source-root correspondence digest equality, matched/different/unavailable totals.
 2. Obtain final independent Codex on that same green HEAD, disposition any new finding, pass six required jobs, Smart CI, SBOM, commercial qualification and merge without overwriting concurrent M5/Node24 changes. Supersede old PR #399 only when new PR is qualified.
