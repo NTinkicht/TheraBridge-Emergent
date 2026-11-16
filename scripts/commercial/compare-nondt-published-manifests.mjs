@@ -92,6 +92,19 @@ async function buildSourceComparison(queue,observations,rootReceipt,lockText,{fe
   if(row.category!=='SOURCE_ROOT_MANIFEST_ONLY')continue;
   const obs=source.get(key);
   const live=liveRoots.get(key);
+  // New to the Node24/Jest30 lock: source correspondence reports a candidate
+  // commit for this exact version, but the frozen independent root observation
+  // register does not contain it. Preserve the row as unresolved, never claim
+  // that the nine corroborated roots cover all ten current root candidates.
+  if(!obs&&!live&&row.name==='unicode-emoji-modifier-base'&&row.version==='1.0.0'&&
+     row.sourceCommitCandidate==='16333bdecc0e399f18bedd00b36995f3399ac5ec'){
+   records.push({name:row.name,version:row.version,sourceCommitCandidate:row.sourceCommitCandidate,
+    lockedArchiveSha256:row.publishedTarballSha256,sourceManifestSha256:null,
+    publishedManifestSha256:null,archiveIntegrityVerified:false,
+    status:'SOURCE_OBSERVATION_PENDING_CURRENT_LOCKED_PACKAGE',
+    publicationToSourceIndependentlyAttested:false,legalApproval:false,commercialApproval:false});
+   continue;
+  }
   if(!obs||!live||live.commit!==obs.commit||live.sourceManifestSha256!==obs.sourceManifestSha256||
      obs.commit!==row.sourceCommitCandidate||!h40.test(obs.commit||'')||
      !h64.test(obs.sourceManifestSha256||'')||obs.npmTarballBuiltFromSourceIndependentlyVerified!==false||
@@ -132,16 +145,19 @@ async function buildSourceComparison(queue,observations,rootReceipt,lockText,{fe
   }
   records.push(out);
  }
- if(records.length!==9)fail('SOURCE_ROOT_COUNT_DRIFT');
+ if(records.length!==10)fail('SOURCE_ROOT_COUNT_DRIFT');
  records.sort((a,b)=>a.name.localeCompare(b.name,'en'));
  return {schema:'therabridge-com02-nondt-published-manifest-byte-comparison-v1',
   status:'CANDIDATE_SOURCE_MANIFEST_COMPARISON_NOT_PUBLISHER_ATTESTATION',
   inputSha256:{queue:sha(JSON.stringify(queue)),observations:sha(JSON.stringify(observations)),
     liveSourceRootReceipt:sha(JSON.stringify(rootReceipt)),lock:sha(lockText)},
-  counts:{allNonDT:23,sourceRootCandidates:9,
+  counts:{allNonDT:23,sourceRootCandidates:10,
+    sourceRootsWithFrozenObservations:9,
+    missingSourceObservations:records.filter(x=>x.status==='SOURCE_OBSERVATION_PENDING_CURRENT_LOCKED_PACKAGE').length,
     manifestByteMatches:records.filter(x=>x.status==='PUBLISHED_MANIFEST_BYTES_MATCH_IMMUTABLE_SOURCE_UNATTESTED').length,
     manifestByteDifferences:records.filter(x=>x.status==='PUBLISHED_MANIFEST_BYTES_DIFFER_FROM_IMMUTABLE_SOURCE').length,
-    unavailable:records.filter(x=>x.status.startsWith('UNAVAILABLE')||x.status==='SOURCE_NOT_CORROBORATED_SAME_RUN').length,
+    unavailable:records.filter(x=>x.status.startsWith('UNAVAILABLE')||x.status==='SOURCE_NOT_CORROBORATED_SAME_RUN'||
+      x.status==='SOURCE_OBSERVATION_PENDING_CURRENT_LOCKED_PACKAGE').length,
     publisherToSourceAttested:0,legallyApproved:0},
   records,commercialApproval:false,g2ClinicalApproved:false,g2bClinicalApproved:false};
 }
