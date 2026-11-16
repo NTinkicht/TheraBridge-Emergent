@@ -1,3 +1,6 @@
+## 2026-11-16 — COM-02 next WU started after #398 merge
+Confirmed merged code workqueue and exact 46=25+21 baseline after #394; opened next 21-version publication/source work unit with separate 11 source-root, 7 revision-missing, 2 libvips subpath and 1 untrusted-origin categories. No evidence collection or code implemented in new WU yet; tests NOT RUN, no independent npm publisher/source, edition release or legal attestation.
+
 ## 2026-11-16 — COM-02 workqueue conflict-free carry-forward
 After concurrent merge #394 advanced dependency identity to 46=25+21 and made #397 non-mergeable, rebuilt the COM-02 non-DT workqueue on current main without force push. Carried two scripts, CI wiring and artifact archive, and the 21-version evidence categorization. Historical #397 new-step tests PASS but do not qualify this new head; re-run full CI and independent Codex. Rule 7 documents reconciled on successor. All publisher/source lineage and third-party commercial permissions unresolved, G2/G2b NO-GO.
 
