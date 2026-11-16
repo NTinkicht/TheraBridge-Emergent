@@ -1,3 +1,6 @@
+## 2026-11-17 — COM-02 Node24 exact-version synthetic tarball test correction
+Updated offline tests to disambiguate emoji-regex@8.0.0 and emoji-regex@9.2.2 by unique archive URL path rather than package name; added independent fixture cardinality assertion (9 unique URLs). **Revised HEAD CI NOT RUN/PENDING.** No current nine-root empirical comparison claimed; earlier 10/11 archive result remains historical only. No independent publisher-source or rights approval.
+
 ## 2026-11-17 — COM-02 current Node24 44-version root evidence (NOT YET RUN)
 New clean-main source comparison uses latest 44 exceptions = 21 DefinitelyTyped + 23 others, nine pinned live root observations. CI wired with strict Yarn SRI and archive SHA256, original root package.json vs immutable Git source bytes, same-run workqueue correspondence SHA binding, unavailable-source counter and adversarial tests for forged counts/digests/rights and unsafe TAR. **New exact-head CI: NOT RUN/PENDING; real 9-archive result: NOT RUN; independent final-head Codex: NOT RUN/PENDING.** Historical old-dependency run 43949059624 passed 11/11 archives, 10 exact manifest matches, one @tokenizer/token mismatch; not current Node24 test evidence. G2/G2b, legal, edition shipping and source publication remain unapproved.
 
