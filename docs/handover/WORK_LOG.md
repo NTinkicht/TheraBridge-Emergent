@@ -1,3 +1,6 @@
+## 2026-11-17 — COM-02 nine-root Node24 fixture identity correction (unqualified head)
+New Node24 exact-version fixture has two active emoji-regex versions; initial fixture lookup by package name could return the wrong version's synthetic tarball. Replaced with unique exact-version tarball URL paths and per-path fixture bytes, asserted fixture cache cardinality equals nine roots. Security/commercial code unchanged, new final-head CI and Codex review PENDING.
+
 ## 2026-11-17 — COM-02 Node24/Nest12 rebase after PR #400
 PR #399 had two Codex P2 findings: accept wrong source-correspondence SHA and omit unavailable-source reads in summary. Both fixed and regression-tested in prior branch, but subsequent PR #400 Node24/NestJS12/Jest30 merged new lockfile population 44=21+23 with 9 source-root candidates, making old PR non-mergeable. New clean-main successor carries unchanged security controls plus correct current population and 9-root fixtures, CI artifact steps and Rule7 notes. Current new-head CI NOT RUN/PENDING. Historical 10 match/1 differ cannot be represented as current nine-root result. #402 tracks tokenizer mismatch. Commercial/clinical NO-GO.
 
