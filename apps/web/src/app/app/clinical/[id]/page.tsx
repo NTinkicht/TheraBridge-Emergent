@@ -138,7 +138,7 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
   if (!data) return <Card className="p-5"><SkeletonRows rows={5} testId="clinical-loading" /></Card>;
   const panelContent = (
     <>
-      {tab === 'overview' && <Child360 ws={sharedData!} centerId={centerId} onNavigate={changeTab} />}
+      {tab === 'overview' && <Child360 ws={sharedData!} centerId={centerId} onNavigate={changeTab} compact={COMPACT_CHILD_360} />}
         {tab === 'plan' && <PlansPanel centerId={centerId} ws={sharedData!} run={run}
           pagination={{ hasMore: currentPages?.hasMore ?? data.hasMorePlans, loading: pageLoading, error: pageError, load: loadOlderPlans }} />}
         {tab === 'assessments' && <AssessmentsPanel centerId={centerId} ws={sharedData!} run={run}
