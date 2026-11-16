@@ -7,6 +7,9 @@ const upstream = trustedOrigin(process.env.API_UPSTREAM_ORIGIN ?? 'http://127.0.
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // The app never uses next/image. Keep the /_next/image optimizer off so it is
+  // not served, and so release images can omit `sharp` (LGPL libvips binaries).
+  images: { unoptimized: true },
   async headers() {
     return [{
       source: '/:path*',

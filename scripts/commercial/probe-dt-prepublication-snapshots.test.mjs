@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {probeHistorical,sourceCommit,laterCookiejarCommit,candidates} from './probe-dt-prepublication-snapshots.mjs';
 const triage={schema:'therabridge-com02-definitelytyped-26-pinned-triage-v1',
- counts:{definitelyTypedVersions:26},commercialApproval:false,
- records:Array.from({length:26},(_,i)=>({name:'@types/test'+i,version:'1.0.0'}))};
+ counts:{definitelyTypedVersions:25},commercialApproval:false,
+ records:Array.from({length:25},(_,i)=>({name:'@types/test'+i,version:'1.0.0'}))};
 const mock=async(t,c)=>({name:c.name,version:c.version,sourceCommit:c.commit,sourceRoot:c.sourceRoot,
  immutableSourceByteMatch:true,sourceVersionCompatible:true,sourceContentHash:'f'.repeat(64),
  publisherContentHashCandidate:'f'.repeat(64),files:[{path:'index.d.ts'}],
@@ -38,7 +38,7 @@ test('source and exact version swapping is rejected without substituting another
 test('Git upstream failure remains unresolved and the right queue is preserved',async()=>{
  const r=await probeHistorical(triage,{verifier:async()=>{throw Error('UPSTREAM_RATE_LIMIT');}});
  assert.equal(r.immutableSourceMatchCount,0);
- assert.equal(r.definitelyTypedVersions,26);
+ assert.equal(r.definitelyTypedVersions,25);
  assert.equal(r.otherNpmExceptionVersionsUnresolved,27);
  assert.equal(r.sourceAssetsRequiringRightsReview,91);
  assert.ok(r.observations.every(x=>x.status==='HISTORICAL_SNAPSHOT_PROBE_UNAVAILABLE'));
@@ -47,7 +47,7 @@ test('invalid source triage fails closed without attempting network probes',asyn
  let calls=0;
  const f=async()=>{calls++;return {};};
  for(const changed of [{...triage,commercialApproval:true},{...triage,records:triage.records.slice(1)},
-  {...triage,counts:{definitelyTypedVersions:25}}]){
+  {...triage,counts:{definitelyTypedVersions:26}}]){
   await assert.rejects(probeHistorical(changed,{verifier:f}),/UNSAFE_DEFINITELYTYPED_TRIAGE/);
  }
  assert.equal(calls,0);

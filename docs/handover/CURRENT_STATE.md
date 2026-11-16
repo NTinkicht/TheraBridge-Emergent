@@ -1,3 +1,18 @@
+## 2026-11-16 — #394 Codex P2 fixed: sharp/libvips removed from every image layer
+Codex (review of `6a6da78`, P2) correctly found that the previous separate `RUN` only hid `sharp`/`@img` from the merged filesystem: the binaries stayed recoverable from the committed `yarn install` layer, and Yarn's package cache was not cleaned. Both Dockerfiles now install, delete `node_modules/sharp` and `node_modules/@img`, run `yarn cache clean`, and verify `/repo` plus the Yarn cache are free of them **in one `RUN` instruction (one layer)**. CI additionally scans every layer of the built preview image and the compose web image (`scripts/preview/check-image-no-sharp.sh`, via `docker save`) and fails on any `node_modules/sharp|@img` path or `libvips*.so`. The earlier claim "never shipped" is only true from this fix onward.
+
+---
+
+## 2026-11-15 — Next image optimizer disabled; `sharp`/libvips removed from release images (#394)
+TheraBridge never imports `next/image`, so Next's optional `sharp` (LGPL-3.0-or-later `@img/sharp-libvips-*` binaries) was installed and shipped but never executed. `next.config.mjs` now sets `images: { unoptimized: true }` (the `/_next/image` endpoint returns 404), and both runtime images (`Dockerfile.preview`, `apps/web/Dockerfile`) delete every `node_modules/sharp` and `node_modules/@img` after `yarn install` and before the web build, failing the build if any remain. A contract test fails if `next/image` is imported, the flag is removed, or either Dockerfile loses the fail-closed strip. The packages remain in `yarn.lock` and the CI install, so COM-02 still tracks them as UNRESOLVED development/CI dependencies; the counsel question narrows from distribution to dev-tool use. Re-enabling image optimization requires a new owner/counsel decision.
+
+---
+
+## 2026-11-15 — Next.js 16.4.6 + React 19.3 web upgrade (DRAFT PR, NOT QUALIFIED)
+Follows merged #311. Next.js 15 left Maintenance LTS on 2026-10-21, so the web app moves to Next 16.4.6 (Active LTS) on the unchanged Node 20 runtime (Next 16 needs >=20.9). The app's own `react`/`react-dom` are now 19.3.1 (+ `@types/react(-dom)` 19.3.0, `react-test-renderer` 19.3.1), so unit tests run the same React major as the App Router's bundled 19.3 canary — the mismatch that hid the #311 SessionEditor bug. Code: `src/middleware.ts` → `src/proxy.ts` (`proxy` export, same matcher, still a convenience redirect only — the API makes every authorization decision); one React 19 `useRef` typing fix; `tsconfig` `jsx: react-jsx` + `.next/dev/types` include (the values Next 16 enforces). Builds use Turbopack (default) with no webpack config. npm advisory bulk check: 7 → 3 (the high `postcss@8.4.31` pinned inside Next 15 is gone; remaining `glob`/`minimatch` via `@nestjs/cli`, `deepmerge`). COM-02 re-baselined, nothing approved: population 47 → 46; DefinitelyTyped 26 → 25 (`@types/react`/`react-dom` 19.3.0, `@types/prop-types` dropped) now pinned once as `DEFINITELYTYPED_VERSIONS` (schema ids containing `-26-` are kept as stable identifiers); Next.js chain pins 16.4.6 / `refs/tags/v16.4.6`; `@next/env` source recipe now `build:source`. NestJS stays on 11 (Nest 12 needs Node 22). Exact-head CI and Codex review PENDING.
+
+---
+
 ## 2026-11-15 — M5-03 Codex P2 remediation (UNQUALIFIED new HEAD)
 First M5-03 grouped shell PR #393 correctly built after native <details> type fix; new independent Codex review identified responsive More drawer stale-open/focus and background-scroll risks. Added desktop breakpoint close + visible rail focus, scoped body/root overflow lock with cleanup restoration and overscroll containment; seven-role Chromium resizing and scroll state negative-tested. All CI and new exact-head Codex required again; #186 OPEN, G2/G2b NO-GO.
 

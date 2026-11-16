@@ -66,7 +66,7 @@ describe('M4-08 middleware is a redirect aid and never an authorization decision
       redirect:jest.fn(url=>({kind:'redirect',url}))
     }
   }));
-  const source=()=>require('../src/middleware');
+  const source=()=>require('../src/proxy');
   const next=()=>require('next/server').NextResponse;
   const request=(cookies,pathname='/app/children',search='?token=fictional-sensitive')=>({
     cookies:{has:jest.fn(k=>cookies.includes(k))},
@@ -74,25 +74,29 @@ describe('M4-08 middleware is a redirect aid and never an authorization decision
   });
   beforeEach(()=>{next().next.mockClear();next().redirect.mockClear();});
   it('passes __Host session cookie through without mistaking this for API authorization',()=>{
-    const result=source().middleware(request(['__Host-tb_session']));
+    const result=source().proxy(request(['__Host-tb_session']));
     expect(result.kind).toBe('next');
     expect(next().redirect).not.toHaveBeenCalled();
   });
   it('passes legacy session cookie through but leaves permission checks to API',()=>{
-    const result=source().middleware(request(['tb_session']));
+    const result=source().proxy(request(['tb_session']));
     expect(result.kind).toBe('next');
     expect(next().redirect).not.toHaveBeenCalled();
   });
   it('redirects absent sessions to login and drops the original sensitive query',()=>{
-    const result=source().middleware(request([],'/app/clinical','?private_token=fictional'));
+    const result=source().proxy(request([],'/app/clinical','?private_token=fictional'));
     expect(result.kind).toBe('redirect');
     expect(result.url).toMatchObject({pathname:'/login',search:''});
     expect(next().next).not.toHaveBeenCalled();
   });
   it('does not mistake an unrelated cookie for a session',()=>{
-    const result=source().middleware(request(['fictional_other_cookie'],'/account/settings'));
+    const result=source().proxy(request(['fictional_other_cookie'],'/account/settings'));
     expect(result.kind).toBe('redirect');
     expect(result.url.pathname).toBe('/login');
+  });
+  it('uses only the Next 16 proxy convention (no deprecated middleware export)',()=>{
+    expect(typeof source().proxy).toBe('function');
+    expect(source().middleware).toBeUndefined();
   });
   it('restricts navigation matcher to authenticated app, account and context entry points',()=>{
     expect(source().config.matcher).toEqual(['/app/:path*','/account/:path*','/select-context']);

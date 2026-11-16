@@ -57,25 +57,25 @@ function buildInputs(){
    commercialApproval:false}));
  return [
   {schema:'therabridge-com02-exact-version-rights-queue-v1',
-   counts:{exceptions:47,nonPackageAssets:91},exceptions,nonPackage:assets,
+   counts:{exceptions:46,nonPackageAssets:91},exceptions,nonPackage:assets,
    finalNoticesIssued:false,commercialLicenseGranted:false},
   {schema:'therabridge-com02-githead-source-corroboration-candidates-v1',
-   counts:{exceptions:47},records:correspondence,
+   counts:{exceptions:46},records:correspondence,
    finalNoticesIssued:false,commercialLicenseGranted:false},
   {schema:'therabridge-com02-bulk-rights-review-v1',
-   counts:{packages:47,nonPackageAssets:91,packagesStillRequiringIndependentAttestation:47,
+   counts:{packages:46,nonPackageAssets:91,packagesStillRequiringIndependentAttestation:46,
     legallyApproved:0},packages:bulkPackages,nonPackageAssets:bulkAssets,
    finalNoticesIssued:false,commercialLicenseGranted:false},
   {schema:'therabridge-com02-definitelytyped-26-pinned-triage-v1',
-   counts:{definitelyTypedVersions:26,publisherToSourceAttested:0},
+   counts:{definitelyTypedVersions:25,publisherToSourceAttested:0},
    records:dtRecords,finalNoticesIssued:false,commercialApproval:false},
   {schema:'therabridge-com02-release-file-evidence-v1',commercialApproval:false,images:[]}
  ];
 }
 test('comprehensive exact-version, asset and two-edition zero-approval report',()=>{
  const r=reconcile(...buildInputs());
- assert.equal(r.counts.npmExceptionVersions,47);
- assert.equal(r.counts.definitelyTypedVersions,26);
+ assert.equal(r.counts.npmExceptionVersions,46);
+ assert.equal(r.counts.definitelyTypedVersions,25);
  assert.equal(r.counts.otherNpmVersions,21);
  assert.equal(r.counts.SOURCE_ROOT_MANIFEST_ONLY,11);
  assert.equal(r.counts.MISSING_IMMUTABLE_SOURCE_REVISION,7);
@@ -94,7 +94,7 @@ test('rejects missing or substituted DefinitelyTyped versions',()=>{
  const b=buildInputs();b[3].records[0].version='99.99.99';
  assert.throws(()=>reconcile(...b),/COM02_FULL_SCOPE_/);
 });
-test('rejects missing source row or repeated 47-version identity',()=>{
+test('rejects missing source row or repeated 46-version identity',()=>{
  const a=buildInputs();a[1].records.pop();
  assert.throws(()=>reconcile(...a),/COM02_FULL_SCOPE_/);
  const b=buildInputs();b[0].exceptions[1].name=b[0].exceptions[0].name;

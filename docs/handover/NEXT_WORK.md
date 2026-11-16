@@ -1,3 +1,10 @@
+## 2026-11-15 — Next 16 PR qualification
+1. Exact-head six required jobs + sbom/Smart CI; watch live-session/demo-journey (React 19 + Turbopack production build) and preview-container image SBOM.
+2. Independent Codex review of the final green HEAD; disposition every finding (Rule 13) before any Rule 16 merge.
+3. Then: Node 22 LTS runtime (ADR-0001 update) + NestJS 12 as one work unit, which also removes the `light-my-request` dedupe; counsel note that LGPL `@img/sharp-libvips-*` is now dev/CI-only (stripped from release images; image optimizer disabled).
+
+---
+
 ## 2026-11-15 — M5-03 reviewer correction final qualification
 1. Re-run exact-HEAD PR #393 six original CI jobs, SBOM/Smart CI and dedicated Web coverage after `<details>` type and More breakpoint/scroll remediations. Inspect seven-role Chromium keyboard receipt for permission equality, focus trap/return, rail collapse, responsive closure and background scroll restoration. Obtain new Codex review for final head, resolve P2 threads only after code qualification.
 2. Merge only with green full CI, Codex zero unresolved and mergeable latest main. Keep #186 OPEN for human image/screen-reader/low bandwidth/full workflow UX and center/child/specialty navigation context. G2/G2b NO-GO.

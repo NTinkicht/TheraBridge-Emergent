@@ -2,13 +2,14 @@
 // Bounded public Git snapshot probes. Nothing here proves a historical npm build.
 import {readFileSync,writeFileSync} from 'node:fs';
 import {verify} from './verify-dt-immutable-source.mjs';
+import {DEFINITELYTYPED_VERSIONS as DT} from './com02-nextjs-pins.mjs';
 const pinnedSource='302dab5cd36dba67332a8fde616727f7936de115';
 const candidates=[
  {name:'@types/methods',version:'1.1.4',sourceRoot:'types/methods'},
  {name:'@types/cookiejar',version:'2.1.5',sourceRoot:'types/cookiejar'}
 ];
 async function probe(triage,options={}){
- if(triage?.counts?.definitelyTypedVersions!==26)throw Error('DEFINITELYTYPED_26_REQUIRED');
+ if(triage?.counts?.definitelyTypedVersions!==DT)throw Error('DEFINITELYTYPED_EXACT_COUNT_REQUIRED');
  const observations=[];
  for(const candidate of candidates){
   try{
@@ -33,7 +34,7 @@ async function probe(triage,options={}){
   sourceCommitHistoricallyBoundToPublisher:false,
   sourceRootSnapshotMatches:observations.filter(x=>x.immutableSourceByteMatch===true).length,
   publicationToSourceAttestations:0,
-  totalDefinitelyTypedVersionsRequiringHistoricalAuthority:26,
+  totalDefinitelyTypedVersionsRequiringHistoricalAuthority:DT,
   otherNpmExceptionVersionsUnresolved:27,
   sourceAssetsRequiringRightsReview:91,
   actualSaasReleaseImageVerified:false,

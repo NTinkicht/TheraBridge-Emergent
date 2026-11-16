@@ -1,3 +1,37 @@
+## 2026-11-16 — #394 Codex P2 (image layers) fix (LOCAL; exact-head CI PENDING)
+| Check | Result |
+|---|---|
+| `check-image-no-sharp.sh` on simulated `docker save` archives | PASS clean (2 layers incl. gzip); FAIL as expected on a layer with Yarn-cached `sharp`; FAIL as expected with no layers |
+| `m2-h06-frontend.test.mjs` same-layer contract | PASS (9/9); FAILS as expected when the strip is moved back to its own `RUN` |
+| Real image build + layer scan | NOT RUN locally (no Docker daemon) — `preview-container` and `compose` CI authoritative |
+
+---
+
+## 2026-11-15 — #394 sharp removal (LOCAL; exact-head CI PENDING)
+| Check | Result |
+|---|---|
+| `next build` + `next start` with `sharp`/`@img` removed | PASS — `/login` 200, `/_next/image` 404 |
+| Strip command on a simulated tree (root + nested `sharp`, `@img`) | PASS — all removed, verification passes |
+| `scripts/qa/m2-h06-frontend.test.mjs` incl. new image/sharp contract | PASS (9/9); negative check with an injected `next/image` import FAILS as expected |
+| Docker image build | NOT RUN locally (no Docker daemon) — `preview-container`/`compose` CI authoritative |
+
+---
+
+## 2026-11-15 — Next 16.4.6 + React 19.3 (LOCAL ONLY; EXACT-HEAD CI PENDING)
+| Check | Result |
+|---|---|
+| Installed tree Node 20.20.2 engine compatibility | PASS (0 incompatible) |
+| Web `tsc --noEmit`; `next build` (Turbopack) | PASS — 41 app routes + `/_not-found`, `ƒ Proxy` present |
+| Web `node --test` | PASS (6/6) |
+| Web Jest full-source suite on React 19.3.1 | PASS (114 suites / 1563 tests), coverage audit PASS |
+| All `scripts/**/*.test.mjs` | PASS |
+| CI `test` job non-DB steps replayed (incl. COM-02 closure ledger, DT probes, M4-08 inventory, M2-H06) | PASS |
+| COM-02 Sigstore steps 37/40 | NOT RUN locally (workspace cannot reach Sigstore; same as `main`) |
+| API PostgreSQL e2e, live-session, demo-journey, preview-container, compose | NOT RUN locally |
+| npm advisory bulk check | 3 remaining (dev-tool transitive), down from 7 |
+
+---
+
 ## 2026-11-15 — M5-03 P2 responsive More/scroll checks (NOT YET EXACT-HEAD CI)
 Prior CI head revealed TS native details `defaultOpen` unsupported; replaced by controlled `open` and Web build progressed. Exact-head Codex subsequently raised two P2: stale hidden modal after crossing desktop breakpoint, background scroll chain during drawer. Added scoped matchMedia listener and root/body style lock+restore; browser journeys now require 7/7 desktop+mobile navigation AND semantic closure at 1024 then 320 and scroll style restoration. Source tests assert breakpoints/lock cleanup. Full rerun & fresh Codex still required; no UX or clinical certification.
 

@@ -111,3 +111,28 @@ test('M2-H06 #130: Next.js response headers and existing diagnostics route gates
     assert.match(read('apps/web/src/app/' + name), /role="alert"/);
   }
 });
+
+test('Next image optimizer stays disabled and release images never ship sharp/libvips', async () => {
+  const config = (await import('../../apps/web/next.config.mjs')).default;
+  assert.equal(config.images?.unoptimized, true);
+  // Re-enabling optimization requires next/image usage review and a counsel decision on LGPL libvips.
+  const { spawnSync } = await import('node:child_process');
+  const src = new URL('../../apps/web/src', import.meta.url).pathname;
+  const grep = spawnSync('grep', ['-rlE', "from ['\"]next/(legacy/)?image['\"]", src], { encoding: 'utf8' });
+  assert.equal(grep.status, 1, 'next/image is imported while the optimizer is disabled: ' + grep.stdout);
+  for (const dockerfile of ['Dockerfile.preview', 'apps/web/Dockerfile']) {
+    // Join line continuations so each entry is one Dockerfile instruction (= one image layer).
+    const instructions = read(dockerfile).replace(/\\\n/g, ' ').split('\n');
+    const install = instructions.filter(x => x.includes('yarn install --frozen-lockfile'));
+    assert.equal(install.length, 1, dockerfile + ' must install dependencies exactly once');
+    // Removal must happen in the SAME layer as the install, or the binaries stay recoverable from it.
+    assert.match(install[0], /^RUN yarn install .*-path '\*\/node_modules\/sharp' -o -path '\*\/node_modules\/@img'.*-exec rm -rf/, dockerfile);
+    assert.match(install[0], /&&\s+yarn cache clean\s+&&/, dockerfile + ' must drop Yarn cached package copies in the install layer');
+    assert.match(install[0], /&&\s+!\s+find \/repo "\$\(yarn cache dir\)" -type d .*\| grep -q \.$/, dockerfile + ' must fail closed if sharp/@img remain');
+    assert.ok(instructions.findIndex(x => x.includes('yarn install')) < instructions.findIndex(x => x.includes('yarn workspace @therabridge/web build')), dockerfile);
+  }
+  // Built images are also scanned layer by layer in CI, not only the merged filesystem.
+  const ci = read('.github/workflows/ci.yml');
+  assert.match(ci, /check-image-no-sharp\.sh tb-synthetic-preview:ci/);
+  assert.match(ci, /check-image-no-sharp\.sh "\$\(docker compose images -q web\)"/);
+});

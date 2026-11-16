@@ -6,7 +6,7 @@ import {readFileSync,statSync,writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {reviewReleaseScope} from './review-release-scope.mjs';
 import {expected as typeVersions} from './build-definitelytyped-triage.mjs';
-import {COM02_UNRESOLVED_VERSIONS as N,OUT_OF_SCOPE_SIGNED} from './com02-nextjs-pins.mjs';
+import {COM02_UNRESOLVED_VERSIONS as N,OUT_OF_SCOPE_SIGNED,DEFINITELYTYPED_VERSIONS as DT} from './com02-nextjs-pins.mjs';
 const sha=x=>createHash('sha256').update(x).digest('hex');
 const hex=/^[0-9a-f]{64}$/;
 const id=x=>JSON.stringify([x.name,x.version]);
@@ -18,8 +18,8 @@ const categoryMap=new Map([
 ]);
 const expectedNonTypes=[
  '@img/sharp-libvips-linux-x64@1.3.4','@img/sharp-libvips-linuxmusl-x64@1.3.4',
- '@next/env@15.5.29','@next/swc-linux-x64-gnu@15.5.29',
- '@next/swc-linux-x64-musl@15.5.29',
+ '@next/env@16.4.6','@next/swc-linux-x64-gnu@16.4.6',
+ '@next/swc-linux-x64-musl@16.4.6',
  '@tokenizer/token@0.3.0','abstract-logging@2.0.1',
  'client-only@0.0.1','cssesc@3.0.0',
  'dlv@1.1.3','emoji-regex@8.0.0',
@@ -33,7 +33,7 @@ const expectedNonTypes=[
 // manifest (immutable root read is HTTP 404). Only these may take that status;
 // any other 404 or unknown status still fails closed.
 const SUBPATH_PUBLISHED=new Set(OUT_OF_SCOPE_SIGNED);
-// Next.js 15.5.29 packages carry signed SLSA provenance but no registry gitHead,
+// Next.js 16.4.6 packages carry signed SLSA provenance but no registry gitHead,
 // so their source-revision candidate is unavailable here (see the Next.js chain).
 const NEXTJS_GROUP='MISSING_IMMUTABLE_SOURCE_REVISION';
 const groupNames=['DEFINITELYTYPED_HISTORICAL_RELEASE','SOURCE_ROOT_MANIFEST_ONLY',
@@ -59,7 +59,7 @@ function reconcile(rights,correspondence,bulk,types,release){
     rights.counts?.exceptions!==N||rights.counts?.nonPackageAssets!==91||
     correspondence.counts?.exceptions!==N||
     bulk.counts?.packages!==N||bulk.counts?.nonPackageAssets!==91||
-    types.counts?.definitelyTypedVersions!==26||
+    types.counts?.definitelyTypedVersions!==DT||
     types.counts?.publisherToSourceAttested!==0||
     rights.finalNoticesIssued!==false||bulk.finalNoticesIssued!==false||
     correspondence.finalNoticesIssued!==false||types.finalNoticesIssued!==false||
@@ -69,7 +69,7 @@ function reconcile(rights,correspondence,bulk,types,release){
  const r=indexed(rights.exceptions,N,'RIGHTS');
  const c=indexed(correspondence.records,N,'SOURCE');
  const b=indexed(bulk.packages,N,'BULK');
- const d=indexed(types.records,26,'TYPES');
+ const d=indexed(types.records,DT,'TYPES');
  const sourceIds=new Set([...r.keys()]);
  if([...c.keys(),...b.keys()].some(k=>!sourceIds.has(k)))fail('MISSING_EXACT_VERSION_JOIN');
  const mustTypes=typeVersions.map(x=>'@types/'+x).sort();
@@ -142,7 +142,7 @@ function reconcile(rights,correspondence,bulk,types,release){
  }
  packages.sort((a,b)=>a.name.localeCompare(b.name,'en')||a.version.localeCompare(b.version,'en'));
  const groups=Object.fromEntries(groupNames.map(g=>[g,packages.filter(x=>x.group===g).length]));
- if(groups.DEFINITELYTYPED_HISTORICAL_RELEASE!==26||
+ if(groups.DEFINITELYTYPED_HISTORICAL_RELEASE!==DT||
     groups.SOURCE_ROOT_MANIFEST_ONLY!==11||
     groups.MISSING_IMMUTABLE_SOURCE_REVISION!==7||
     groups.MONOREPO_SOURCE_SUBPATH_NOT_ATTESTED!==2||
@@ -196,7 +196,7 @@ function reconcile(rights,correspondence,bulk,types,release){
     correspondence:sha(JSON.stringify(correspondence)),
     bulk:sha(JSON.stringify(bulk)),definitelyTyped:sha(JSON.stringify(types)),
     candidateRelease:sha(JSON.stringify(release))},
-  counts:{npmExceptionVersions:N,definitelyTypedVersions:26,otherNpmVersions:expectedNonTypes.length,
+  counts:{npmExceptionVersions:N,definitelyTypedVersions:DT,otherNpmVersions:expectedNonTypes.length,
    ...groups,nonPackageAssets:91,assetCategories:assetCounts,
    productionSaasImagesIndependentlyAuthenticated:0,
    enterpriseDeliverablesIndependentlyAuthenticated:0,

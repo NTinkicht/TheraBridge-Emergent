@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-// COM-02: freeze 26 exact @types package/version obligations to same-run evidence.
+// COM-02: freeze the exact @types package/version obligations (DEFINITELYTYPED_VERSIONS) to same-run evidence.
 // Population size is pinned once in com02-nextjs-pins.mjs (COM02_UNRESOLVED_VERSIONS).
 // npm metadata/lock SRI != immutable DefinitelyTyped commit or publisher lineage.
 import {readFileSync,statSync,writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-import {COM02_UNRESOLVED_VERSIONS as N} from './com02-nextjs-pins.mjs';
+import {COM02_UNRESOLVED_VERSIONS as N,DEFINITELYTYPED_VERSIONS as DT} from './com02-nextjs-pins.mjs';
 const sha=x=>createHash('sha256').update(x).digest('hex');
 const expected=[
  'babel__core@7.20.5','babel__generator@7.27.0','babel__template@7.4.4',
@@ -12,11 +12,12 @@ const expected=[
  'eslint-scope@3.7.7','estree@1.0.9','graceful-fs@4.1.9',
  'istanbul-lib-coverage@2.0.6','istanbul-lib-report@3.0.3',
  'istanbul-reports@3.0.4','jest@29.5.14','json-schema@7.0.15',
- 'methods@1.1.4','node@20.19.43','node@26.6.5','prop-types@15.7.15',
- 'react@18.3.31','react-dom@18.3.7','stack-utils@2.0.3',
+ 'methods@1.1.4','node@20.19.43','node@26.6.5',
+ 'react@19.3.0','react-dom@19.3.0','stack-utils@2.0.3',
  'superagent@8.1.11','supertest@6.0.3','validator@13.15.10',
  'yargs@17.0.35','yargs-parser@21.0.3'
 ];
+if(expected.length!==DT)throw Error('DEFINITELYTYPED_PIN_MISMATCH');
 const id=x=>x.name+'@'+x.version;
 const hex64=/^[a-f0-9]{64}$/;
 const integrity=/^sha512-[A-Za-z0-9+/]+={0,2}$/;
@@ -101,7 +102,7 @@ function build(upstream,correspondence,rights){
   evidenceSha256:{upstream:sha(JSON.stringify(upstream)),
    correspondence:sha(JSON.stringify(correspondence)),
    rights:sha(JSON.stringify(rights))},
-  counts:{sourceExceptionVersions:N,definitelyTypedVersions:26,
+  counts:{sourceExceptionVersions:N,definitelyTypedVersions:DT,
    publisherContentHashesAdvertised:records.filter(x=>x.publisherContentHashCandidate!==null).length,
    historicalGitSourceContentMatches:0,
    publisherToSourceAttested:0,sourceLicenseLegallyApproved:0,

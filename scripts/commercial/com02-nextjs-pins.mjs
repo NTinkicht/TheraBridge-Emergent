@@ -2,10 +2,14 @@
 // Changing any value here is a deliberate evidence re-baseline that must be
 // reviewed with the dependency change that caused it. These are identity pins
 // only; they never grant license, commercial, SaaS or clinical approval.
-export const NEXTJS_VERSION='15.5.29';
-export const NEXTJS_SOURCE_REF='refs/tags/v15.5.29';
+export const NEXTJS_VERSION='16.4.6';
+export const NEXTJS_SOURCE_REF='refs/tags/v16.4.6';
 // Exact unresolved exception versions in the frozen upstream candidate register.
-export const COM02_UNRESOLVED_VERSIONS=47;
+export const COM02_UNRESOLVED_VERSIONS=46;
+// Exact DefinitelyTyped (@types/*) versions inside that population. Schema ids
+// such as 'therabridge-com02-definitelytyped-26-pinned-triage-v1' are stable
+// identifiers, not counts (26 before React 19 types; 25 since).
+export const DEFINITELYTYPED_VERSIONS=25;
 // Signed Next.js packages handled by the Next.js corroboration/inventory chain.
 export const NEXTJS_TARGETS=Object.freeze({
  ['@next/env@'+NEXTJS_VERSION]:Object.freeze({path:'packages/next-env/package.json',sourceName:'@next/env'}),
