@@ -1,3 +1,8 @@
+## 2026-11-16 — COM-02 successor qualification after Next 16 merge
+1. Qualify new main-based non-DT workqueue PR on exact head after #394: test generator and same-run archived JSON against **46=25 DT+21 non-DT**. Six full CI jobs + Smart CI + SBOM, independent final-head Codex, zero unresolved comments and clean mergeability required.
+2. Supersede #397 only after successor successfully carries all eight changed paths and qualification; do not merge stale #397 over #394 or force-push incompatible history.
+3. Obtain authentic version-specific npm publication/build-to-source proof for 21 non-DT and 25 DT, plus 91 asset rights and actual digest-pinned SaaS/Enterprise OCI delivery/production receipts. Counsel/rights-holder grant separate from technical hashes. G2/G2b NO-GO.
+
 ## 2026-11-15 — Next 16 PR qualification
 1. Exact-head six required jobs + sbom/Smart CI; watch live-session/demo-journey (React 19 + Turbopack production build) and preview-container image SBOM.
 2. Independent Codex review of the final green HEAD; disposition every finding (Rule 13) before any Rule 16 merge.

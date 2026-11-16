@@ -1,3 +1,6 @@
+## 2026-11-16 — COM-02 non-DT successor after PR #394 Next.js 16 (NOT YET QUALIFIED)
+Current merged-main locked population is **46=25 DefinitelyTyped+21 other**. New successor reproduces workqueue tests and CI report archiving from #397 on updated main. #397's pre-upgrade CI run 43804692729 had the new workqueue test and generation PASS, and initial P1 handover records corrected; those results cannot be represented as testing the successor's upgraded dependency graph. Final-head successor CI = NOT RUN/PENDING, final-head Codex = PENDING; no publisher, commercial or clinical attestation, actual release image nor human legal approval. Earlier 53=26+27 and 47=26+21 are historical.
+
 ## 2026-11-16 — #394 Codex P2 (image layers) fix (LOCAL; exact-head CI PENDING)
 | Check | Result |
 |---|---|
