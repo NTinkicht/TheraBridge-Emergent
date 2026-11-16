@@ -72,7 +72,7 @@ export async function runChild360BrowserAcceptance({ passwords }) {
             const button=page.getByTestId('clinical-tab-'+tab);
             await button.click();
             assert.equal(await button.getAttribute('aria-selected'),'true','Selected primary tab state');
-            const panels=page.getByRole('tabpanel');
+            const panels=page.getByRole('tablist',{name:'Child 360 sections'}).locator('..').locator(':scope > [role="tabpanel"]');
             assert.equal(await panels.count(),1,'Only one active clinical tabpanel may mount');
             assert.equal(await panels.getAttribute('aria-labelledby'),await button.getAttribute('id'),'Panel must name selected tab');
             assert.equal(await page.locator('[data-testid^="clinical-tab-"][aria-selected="true"]').count(),1);
