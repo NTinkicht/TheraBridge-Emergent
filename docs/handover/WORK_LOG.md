@@ -1,3 +1,6 @@
+## 2026-11-17 — COM-02 #404 real CI discrepancy and fail-closed remediation
+Inspected failed live CI 43951606835 and same-run artifact: workqueue has ten root candidates, while frozen root reconciliation binds nine; exact missing root unicode-emoji-modifier-base@1.0.0 (Git candidate 16333bdecc0e399f18bedd00b36995f3399ac5ec). New logic accepts only that pinned exact identity as pending external frozen observation; never marks npm archive/source bytes verified, adds to unavailable and reports all ten root candidates. Expanded synthetic fixtures and negative tests for forged new root/commit, correct nine frozen comparisons and tenth pending, plus CI step wording. New exact-head test and Codex pending. All 91 assets, actual commercial images, source-publisher lineage, counsel and G2/G2b remain unresolved.
+
 ## 2026-11-17 — COM-02 nine-root Node24 fixture identity correction (unqualified head)
 New Node24 exact-version fixture has two active emoji-regex versions; initial fixture lookup by package name could return the wrong version's synthetic tarball. Replaced with unique exact-version tarball URL paths and per-path fixture bytes, asserted fixture cache cardinality equals nine roots. Security/commercial code unchanged, new final-head CI and Codex review PENDING.
 
