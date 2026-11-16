@@ -1,3 +1,6 @@
+## 2026-11-17 — COM-02 PR #399 final qualification following two P2 corrections
+Run offline adversarial tests and live same-run comparison against exact final HEAD; fail if root receipt and workqueue correspondence digests differ. Verify unavailable includes all temporarily unreadable source records and measured 11 candidate totals reconcile. Obtain independent Codex review of final changed HEAD; explicitly disposition both P2 inline findings, verify all six CI jobs, SBOM/Smart CI and commercial qualification green before merge. Investigate @tokenizer/token@0.3.0 as #402; 25 DT, other 10 non-DT, 91 assets, real edition image receipts, counsel and G2/G2b remain unresolved.
+
 ## 2026-11-17 — COM-02 #399 measured receipt next actions
 1. Qualify final updated Rule 7 head against the six full CI jobs, SBOM, Smart CI, and new 11-version archive evidence. Request exact-head independent Codex review, disposition findings, and merge only under Rule 16.
 2. Investigate the single **@tokenizer/token@0.3.0** published package.json raw-byte mismatch without assuming malicious packaging or authorized source correspondence. Compare canonical manifest field changes, and independently establish full package-file source/build recipe linkage for all 11; no fabricated publication attestations.
