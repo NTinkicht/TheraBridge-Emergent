@@ -1,3 +1,15 @@
+## 2026-11-16 — M5-05 PR #403 disclosure qualification evidence (CURRENT HEAD PENDING)
+| Check | Result / evidence |
+|---|---|
+| Static implementation: default OFF, native `details`, same authorized read models | IMPLEMENTED in PR #403; no production activation |
+| Previous source HEAD `fc2c3ff40e` isolated flagged `m5-child360-browser`: Enter expand/collapse + scoped care team/history, 3 roles × 5 widths | PASS (GitHub Actions CI run 43950893656, before Rule 7 docs correction) |
+| Previous HEAD `fc2c3ff40e` `live-session`, dedicated web coverage | PASS (same CI/coverage runs, before documentation changes) |
+| Current docs-corrected HEAD: complete six required CI jobs, preview-container, Compose, Smart CI gate, web coverage and final Codex review | **NOT RUN / PENDING** at time of this entry; prior-head green status must not transfer |
+| New real-user task navigation timings, human screen-reader/WCAG and manual five-width visual acceptance | **NOT RUN / NOT OBTAINED** |
+| Low-bandwidth, loading/error/blocked-state browser acceptance | **NOT RUN** |
+| Clinical signing, consent/release/AI/STT G2/G2b approval | **NO-GO**, unchanged |
+Codex previous-head P1 Rule 7 handover evidence was dispositioned **FIX_NOW** in this same PR. Synthetic only; no screenshots or private clinical payloads are archived. M5-05 #188 remains OPEN.
+
 ## 2026-11-16 — #400 CI rounds 1–2 fixes
 Round 2 (`264a8ad`): **all 70 API Jest suites / 1585 tests PASS on Node 24.22.2 + NestJS 12**; `live-session`, `demo-journey`, `preview-container`, `sbom`, `secret-scan` PASS. The only failure was the M4-07 performance receipt validator pinning `nodeMajor === 20`; it now requires 24 (the approved runtime) and a new test rejects 20/22/26.
 Round 1 on Node 24.22.2: API Jest failed with `Must use import to load ES Module` — Jest 30's `require(esm)` path also needs `vm.SourceTextModule`, i.e. `--experimental-vm-modules` (the migration guide only mentions Node >=24.9). The API `test` and `test:coverage:core` scripts now append `--experimental-vm-modules` to `NODE_OPTIONS`. `demo-journey`/`live-session` failed in `ts-node` seeding with TS 6 `TS5011` (explicit `rootDir` now required with `outDir`): the API base tsconfig sets `rootDir: "./"` (build config keeps `./src`). Local: ts-node seed compile error gone, `tsc` PASS, `nest build` output unchanged (`dist/main.js`), built app loads.

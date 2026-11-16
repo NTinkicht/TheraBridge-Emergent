@@ -1,3 +1,8 @@
+## 2026-11-16 — M5-05 PR #403 exact-head qualification and remaining UX acceptance
+1. Qualify the documentation-updated HEAD of #403: dedicated flagged synthetic Chromium disclosure keyboard checks for three clinical roles × five widths, default legacy seven-role demo, full test/coverage, live-session, preview-container, compose, SBOM, secret scan and Smart CI. Review new Codex findings and record FIX_NOW/DEFER_ISSUE/DECLINE_WITH_REASON for every comment; do not reuse the prior `fc2c3ff40e` test receipt as approval for a later HEAD.
+2. Merge only after current-head required checks green, no actionable P1/P2, final independent review and clean GitHub mergeability. Keep `NEXT_PUBLIC_M5_CHILD_COMPACT` OFF by default; never change G2/G2b NO-GO or specialty permissions.
+3. M5-05 #188 must remain OPEN for human assistive-technology and screen-reader review, redacted five-width before/after visuals with owner acceptance, low bandwidth, loading/error/blocked-state journeys and clinician task-flow validation. No human WCAG or clinical signoff is implied by automation.
+
 ## 2026-11-16 — Node 24 / NestJS 12 PR qualification
 1. Exact-head six required jobs on Node 24 (API Jest + PostgreSQL e2e are the main risk: lifecycle hook ordering, HTTP adapter error mapping, `ConsoleLogger` structured params).
 2. Codex review of the final green HEAD; Rule 13 ledger for every finding.
