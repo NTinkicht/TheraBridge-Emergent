@@ -11,7 +11,7 @@ const good = () => ({
   },
   apiResponseSqlCalls: { perRequest: 2, evidence: 'health.service.ts has two sequential prisma.$queryRaw queries; source-level count, not SQL trace' },
   database: { queryPlanPresent: true, scope: 'appointment scoped, bounded, time-ordered SELECT', planNode: 'Limit' },
-  process: { rssStartBytes: 10000, observedRssPeakBytes: 20000, nodeMajor: 20 },
+  process: { rssStartBytes: 10000, observedRssPeakBytes: 20000, nodeMajor: 24 },
 });
 test('well-formed truthful disposable receipt passes', () => assert.deepEqual(validateM4Performance(good()), []));
 test('refuses external origins and unauthorized production label', () => {
@@ -45,4 +45,10 @@ test('rejects unexpected fields at every nested level even without suspicious ke
     modify(x);
     assert.ok(validateM4Performance(x).length, 'Expected rejection of nested field');
   }
+});
+test('receipt must come from the approved Node 24 runtime (EOL Node 20 rejected)', () => {
+ for (const major of [20, 22, 26]) {
+  const x = good(); x.process.nodeMajor = major;
+  assert.deepEqual(validateM4Performance(x), ['Unexpected or invalid process metadata']);
+ }
 });

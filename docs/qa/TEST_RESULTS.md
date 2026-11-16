@@ -1,4 +1,5 @@
-## 2026-11-16 — #400 CI round 1 fixes
+## 2026-11-16 — #400 CI rounds 1–2 fixes
+Round 2 (`264a8ad`): **all 70 API Jest suites / 1585 tests PASS on Node 24.22.2 + NestJS 12**; `live-session`, `demo-journey`, `preview-container`, `sbom`, `secret-scan` PASS. The only failure was the M4-07 performance receipt validator pinning `nodeMajor === 20`; it now requires 24 (the approved runtime) and a new test rejects 20/22/26.
 Round 1 on Node 24.22.2: API Jest failed with `Must use import to load ES Module` — Jest 30's `require(esm)` path also needs `vm.SourceTextModule`, i.e. `--experimental-vm-modules` (the migration guide only mentions Node >=24.9). The API `test` and `test:coverage:core` scripts now append `--experimental-vm-modules` to `NODE_OPTIONS`. `demo-journey`/`live-session` failed in `ts-node` seeding with TS 6 `TS5011` (explicit `rootDir` now required with `outDir`): the API base tsconfig sets `rootDir: "./"` (build config keeps `./src`). Local: ts-node seed compile error gone, `tsc` PASS, `nest build` output unchanged (`dist/main.js`), built app loads.
 
 ---
