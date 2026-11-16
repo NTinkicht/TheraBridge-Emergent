@@ -25,9 +25,11 @@ function fixture(){
  const cache=new Map();
  const files=[];
  const records=roots.map((r,i)=>{
-  const item=archive(r.name,r.version);cache.set(r.name+'@'+r.version,item.bytes);
+  const item=archive(r.name,r.version);
+  const path='/'+r.name+'/-/'+r.name.split('/').at(-1)+'-'+r.version+'.tgz';
+  cache.set(path,item.bytes);
   files.push('"'+r.name+'@^'+r.version+'":','  version "'+r.version+'"',
-    '  resolved "https://registry.npmjs.org/'+r.name+'/-/archive.tgz"',
+    '  resolved "https://registry.npmjs.org'+path+'"',
     '  integrity sha512-'+createHash('sha512').update(item.bytes).digest('base64'),'');
   return {name:r.name,version:r.version,category:'SOURCE_ROOT_MANIFEST_ONLY',
    publishedTarballSha256:sha(item.bytes),sourceCommitCandidate:r.commit,
@@ -56,8 +58,7 @@ function fixture(){
    status:retired.has(r.name+'@'+r.version)?'RETIRED_NOT_IN_CURRENT_LOCKED_POPULATION':
     'DIRECT_CLAIMED_REPOSITORY_EXACT_COMMIT_MANIFEST_MATCH'}))};
  return {queue,lock,cache,rootReceipt:receipt,observations:snapshot,
-  fetchBuffer:async url=>{const u=decodeURIComponent(url.pathname);const name=roots.find(r=>u.includes(r.name))?.name;
-    return cache.get(name+'@'+roots.find(r=>r.name===name)?.version);}};
+  fetchBuffer:async url=>cache.get(url.pathname)};
 }
 test('bounded TAR parser extracts only a unique unmodified npm root manifest',()=>{
  const t=archive('alpha','1.0.0');assert.deepEqual(extractPublishedManifest(t.bytes),t.manifest);
