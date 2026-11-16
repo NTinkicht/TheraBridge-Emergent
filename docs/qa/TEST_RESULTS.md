@@ -1,3 +1,6 @@
+## 2026-11-17 — COM-02 current-main carry-forward QA truth
+Prior exact-run 43952347637 and 43952897398 on predecessor licensing branch: adversarial offline comparison tests PASS; nine original npm archive comparisons PASS, **8 raw published package.json SHA-256 matches**, **1 source difference (@tokenizer/token@0.3.0)**, **1 current source-root pending frozen observation (unicode-emoji-modifier-base@1.0.0)**; all nine attempted tarballs Yarn SRI plus archive SHA256 verified; 0 publisher-source independently attested, 0 legal approvals. Codex P1 on tenth root and emoji-regex two-version fixture both fixed and tested; original threads resolved. Latest-main carry-forward head **NOT RUN / NOT QUALIFIED** until new six-job CI, SBOM and independent Codex. G2/G2b NO-GO.
+
 ## 2026-11-16 — M5-05 PR #403 disclosure qualification evidence (CURRENT HEAD PENDING)
 | Check | Result / evidence |
 |---|---|
