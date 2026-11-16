@@ -1,3 +1,6 @@
+## 2026-11-17 — COM-02 PR #399 implementation tranche 1
+Implemented scripts/commercial/compare-nondt-published-manifests.mjs and adversarial tests. Producer takes same-run non-DT workqueue plus frozen independent Git source-root observations and current yarn.lock; it downloads pinned npm registry .tgz, verifies Yarn SRI and earlier tarball sha256, parses bounded package/package.json without trusting PAX/GNU semantic overrides, and compares raw package.json SHA-256 to immutable source-manifest observation for all 11 source-root rows. Hardened fail-closed approval flags and categorical difference vs unavailability. New CI runs tests and archives receipt with licensing evidence, no claim of real npm source-build attestation. Tests/CI after implementation PENDING; not merged.
+ 
 ## 2026-11-16 — COM-02 next WU started after #398 merge
 Confirmed merged code workqueue and exact 46=25+21 baseline after #394; opened next 21-version publication/source work unit with separate 11 source-root, 7 revision-missing, 2 libvips subpath and 1 untrusted-origin categories. No evidence collection or code implemented in new WU yet; tests NOT RUN, no independent npm publisher/source, edition release or legal attestation.
 
