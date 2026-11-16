@@ -351,6 +351,7 @@ jobs:
           node scripts/commercial/compare-nondt-published-manifests.mjs \
             /tmp/therabridge-com02-nondt-workqueue.json \
             docs/commercial/com02-independent-root-observations.json \
+            /tmp/therabridge-com02-root-observation-reconciliation.json \
             yarn.lock \
             /tmp/therabridge-com02-nondt-published-manifest-comparison.json
       - name: Archive installed license evidence for full CI
