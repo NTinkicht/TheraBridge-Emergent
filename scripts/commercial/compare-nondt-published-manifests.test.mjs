@@ -114,7 +114,7 @@ test('same-run transient source read cannot be upgraded to verified source-byte 
  assert.equal(out.counts.manifestByteMatches+out.counts.manifestByteDifferences+out.counts.unavailable,9);
 });
 
-test('all transient source corroborations remain unavailable in complete 11-row summary',async()=>{
+test('all transient source corroborations remain unavailable in complete 9-row summary',async()=>{
  const f=fixture();
  for(const row of f.rootReceipt.records){
   if(!retired.has(row.name+'@'+row.version))row.status='TRANSIENT_SOURCE_READ_UNAVAILABLE_REMAIN_UNVERIFIED';
