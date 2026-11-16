@@ -3,6 +3,9 @@ Branched from `9d5ec6b` (#394). Researched the NestJS 11→12 migration guide (N
 
 ---
 
+## 2026-11-16 — COM-02 workqueue conflict-free carry-forward
+After concurrent merge #394 advanced dependency identity to 46=25+21 and made #397 non-mergeable, rebuilt the COM-02 non-DT workqueue on current main without force push. Carried two scripts, CI wiring and artifact archive, and the 21-version evidence categorization. Historical #397 new-step tests PASS but do not qualify this new head; re-run full CI and independent Codex. Rule 7 documents reconciled on successor. All publisher/source lineage and third-party commercial permissions unresolved, G2/G2b NO-GO.
+
 ## 2026-11-15 — Next 16 / React 19 work unit
 Branched from merged #311 (`81ad2aa`). Upgraded web to Next 16.4.6 and React 19.3.1, renamed middleware to the Next 16 `proxy` convention, fixed React 19 typing, re-baselined COM-02 exact-version pins (46 versions / 25 DefinitelyTyped / Next 16.4.6 signed chain). Local: web tsc + Turbopack build PASS (same 41 routes + not-found), web node tests 6/6, web Jest 114 suites / 1563 tests on React 19 PASS, all `scripts/**/*.test.mjs` PASS, COM-02 CI steps replayed PASS except the two Sigstore-dependent steps that cannot run in this workspace (same as `main`). API e2e / browser / container jobs NOT RUN locally.
 

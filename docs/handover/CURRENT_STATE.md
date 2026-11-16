@@ -3,6 +3,9 @@ Node 20 has been end-of-life since 2026-04-30. ADR-0001 Amendment 1 (proposed; o
 
 ---
 
+## 2026-11-16 — COM-02 non-DT workqueue successor to #397 after merged #394 (UNQUALIFIED)
+The Next.js 16/React 19 PR #394 merged during qualification of #397, changing the exact COM-02 ledger population to 46 = 25 DefinitelyTyped + 21 other npm versions; the 53/26/27 and 47/26/21 snapshots are historical, not current. Recreated the workqueue script, adversarial tests, same-run CI generation and archived evidence on a clean Next 16 main-based successor branch, without overwriting dependency or M5 work. PR #397's prior CI showed both new steps PASS and Codex P1 Rule 7 correction, but that head predates #394 and does not qualify the successor. Successor exact-head CI, signed archive receipt and fresh Codex NOT RUN/PENDING. No independent publisher-to-source proof, 91 asset permissions, real SaaS/Enterprise delivery proof, counsel release, or G2/G2b GO.
+
 ## 2026-11-16 — #394 Codex P2 fixed: sharp/libvips removed from every image layer
 Codex (review of `6a6da78`, P2) correctly found that the previous separate `RUN` only hid `sharp`/`@img` from the merged filesystem: the binaries stayed recoverable from the committed `yarn install` layer, and Yarn's package cache was not cleaned. Both Dockerfiles now install, delete `node_modules/sharp` and `node_modules/@img`, run `yarn cache clean`, and verify `/repo` plus the Yarn cache are free of them **in one `RUN` instruction (one layer)**. CI additionally scans every layer of the built preview image and the compose web image (`scripts/preview/check-image-no-sharp.sh`, via `docker save`) and fails on any `node_modules/sharp|@img` path or `libvips*.so`. The earlier claim "never shipped" is only true from this fix onward.
 
