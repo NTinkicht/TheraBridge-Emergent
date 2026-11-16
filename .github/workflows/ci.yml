@@ -344,6 +344,15 @@ jobs:
         run: node --test scripts/commercial/build-com02-nondt-workqueue.test.mjs
       - name: Derive non-DefinitelyTyped workqueue from same-run COM-02 ledger (never approval)
         run: node scripts/commercial/build-com02-nondt-workqueue.mjs /tmp/therabridge-com02-closure-ledger.json /tmp/therabridge-com02-nondt-workqueue.json
+      - name: Test SRI-qualified non-DT archive vs immutable source manifest comparison
+        run: node --test scripts/commercial/compare-nondt-published-manifests.test.mjs
+      - name: Observe 11 real npm published manifest bytes (not publication/source attestation)
+        run: |
+          node scripts/commercial/compare-nondt-published-manifests.mjs \
+            /tmp/therabridge-com02-nondt-workqueue.json \
+            docs/commercial/com02-independent-root-observations.json \
+            yarn.lock \
+            /tmp/therabridge-com02-nondt-published-manifest-comparison.json
       - name: Archive installed license evidence for full CI
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -370,6 +379,7 @@ jobs:
             /tmp/therabridge-com02-dt-prepublication-probes.json
             /tmp/therabridge-com02-closure-ledger.json
             /tmp/therabridge-com02-nondt-workqueue.json
+            /tmp/therabridge-com02-nondt-published-manifest-comparison.json
             /tmp/therabridge-com02-root-observation-reconciliation.json
             /tmp/therabridge-com02-bulk-rights-evidence.json
             /tmp/therabridge-com02-release-scope-review.json
