@@ -1,3 +1,6 @@
+## 2026-11-17 — COM-02 #399 original npm archive observation result
+From real GitHub Actions CI run 43949059624 same-run installed-license artifact, parsed thermabridge-com02-nondt-published-manifest-comparison.json: 11 source-root rows, 10 PUBLISHED_MANIFEST_BYTES_MATCH_IMMUTABLE_SOURCE_UNATTESTED, 1 PUBLISHED_MANIFEST_BYTES_DIFFER_FROM_IMMUTABLE_SOURCE for @tokenizer/token@0.3.0, zero unavailable. All 11 archiveIntegrityVerified=true; no independent npm publication-to-source attestations. Result reflects only published package.json raw bytes, not full archive file-by-file source provenance. Updated Rule 7; final-head CI/Codex to requalify.
+
 ## 2026-11-17 — COM-02 #399 test-failure correction
 Real GitHub run 43948504113 exposed one test-only expectation mismatch in TAR parser negative path; corrected to recognize valid gzip with no TAR manifest and added a separate invalid-gzip case at commit 8608d5d. Existing production fail-closed behavior unchanged. Four other new subtests passed. Live npm archive comparison remains NOT RUN until revised CI passes; no publisher-to-source attestation or rights approval.
 
