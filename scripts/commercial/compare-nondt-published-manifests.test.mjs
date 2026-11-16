@@ -37,7 +37,13 @@ function fixture(){
    commerciallyCleared:false,saasNetworkRightsApproved:false,
    enterpriseRedistributionRightsApproved:false,actualEditionDistributionVerified:false};
  });
- for(let i=0;i<14;i++)records.push({name:'mock-other-'+i,version:'1.0.0',
+ records.push({name:'unicode-emoji-modifier-base',version:'1.0.0',
+   category:'SOURCE_ROOT_MANIFEST_ONLY',publishedTarballSha256:'b'.repeat(64),
+   sourceCommitCandidate:'16333bdecc0e399f18bedd00b36995f3399ac5ec',
+   npmPublicationBuildAttested:false,sourceRightsApproved:false,
+   commerciallyCleared:false,saasNetworkRightsApproved:false,
+   enterpriseRedistributionRightsApproved:false,actualEditionDistributionVerified:false});
+ for(let i=0;i<13;i++)records.push({name:'mock-other-'+i,version:'1.0.0',
    category:'MISSING_IMMUTABLE_SOURCE_REVISION',publishedTarballSha256:'b'.repeat(64),
    npmPublicationBuildAttested:false,sourceRightsApproved:false,commerciallyCleared:false,
    saasNetworkRightsApproved:false,enterpriseRedistributionRightsApproved:false,
@@ -68,15 +74,19 @@ test('bounded TAR parser extracts only a unique unmodified npm root manifest',()
  assert.throws(()=>extractPublishedManifest(gzipSync(Buffer.from('oops'))),/MISSING_MANIFEST_OR_TERMINATOR/);
  assert.throws(()=>extractPublishedManifest(Buffer.from('not-a-gzip')),/INVALID_GZIP/);
 });
-test('all 9 source-root packages compared, but no published provenance or rights granted',async()=>{
+test('nine pinned source roots compared and one new root retained unresolved without approval',async()=>{
  const f=fixture();
  assert.equal(f.cache.size,roots.length,'Each exact-version archive must have its own URL');
  const result=await buildSourceComparison(f.queue,f.observations,f.rootReceipt,f.lock,{fetchBuffer:f.fetchBuffer});
- assert.equal(result.records.length,9);
- assert.equal(result.counts.sourceRootCandidates,9);
+ assert.equal(result.records.length,10);
+ assert.equal(result.counts.sourceRootCandidates,10);
+ assert.equal(result.counts.sourceRootsWithFrozenObservations,9);
+ assert.equal(result.counts.missingSourceObservations,1);
+ assert.equal(result.counts.unavailable,1);
  assert.equal(result.counts.manifestByteMatches,0); // npm-generated manifest differs from source revision
  assert.equal(result.counts.publisherToSourceAttested,0);
- assert(result.records.every(x=>x.archiveIntegrityVerified&&x.status==='PUBLISHED_MANIFEST_BYTES_DIFFER_FROM_IMMUTABLE_SOURCE'));
+ assert.equal(result.records.filter(x=>x.archiveIntegrityVerified&&x.status==='PUBLISHED_MANIFEST_BYTES_DIFFER_FROM_IMMUTABLE_SOURCE').length,9);
+ assert.equal(result.records.find(x=>x.name==='unicode-emoji-modifier-base')?.status,'SOURCE_OBSERVATION_PENDING_CURRENT_LOCKED_PACKAGE');
  assert(result.records.every(x=>x.publicationToSourceIndependentlyAttested===false&&x.legalApproval===false));
 });
 test('frozen archive hash mismatch, SRI drift and forged approvals block entire evidence run',async()=>{
@@ -89,6 +99,8 @@ test('frozen archive hash mismatch, SRI drift and forged approvals block entire 
   f=>f.queue.sourceEvidenceSha256.correspondence='not-a-digest',
   f=>f.rootReceipt.records[0].sourceManifestSha256='f'.repeat(64),
   f=>f.queue.records[0].sourceCommitCandidate='f'.repeat(40),
+  f=>f.queue.records[9].name='untrusted-new-root',
+  f=>f.queue.records[9].sourceCommitCandidate='f'.repeat(40),
   f=>f.queue.counts.nonDefinitelyTyped=20,
   f=>f.queue.records.pop(),
   f=>{f.lock=f.lock.replace('sha512-','sha512-AAAA');},
@@ -101,9 +113,10 @@ test('frozen archive hash mismatch, SRI drift and forged approvals block entire 
 test('upstream network failure is unresolved, not falsely matched',async()=>{
  const f=fixture();
  const result=await buildSourceComparison(f.queue,f.observations,f.rootReceipt,f.lock,{fetchBuffer:async()=>{throw Error('TIMEOUT')}});
- assert.equal(result.counts.unavailable,9);
+ assert.equal(result.counts.unavailable,10);
  assert.equal(result.counts.publisherToSourceAttested,0);
- assert(result.records.every(x=>!x.archiveIntegrityVerified&&x.status==='UNAVAILABLE_TIMEOUT'));
+ assert.equal(result.records.filter(x=>!x.archiveIntegrityVerified&&x.status==='UNAVAILABLE_TIMEOUT').length,9);
+ assert.equal(result.records.find(x=>x.name==='unicode-emoji-modifier-base')?.status,'SOURCE_OBSERVATION_PENDING_CURRENT_LOCKED_PACKAGE');
 });
 
 test('same-run transient source read cannot be upgraded to verified source-byte comparison',async()=>{
@@ -113,19 +126,20 @@ test('same-run transient source read cannot be upgraded to verified source-byte 
  const out=await buildSourceComparison(f.queue,f.observations,f.rootReceipt,f.lock,{fetchBuffer:f.fetchBuffer});
  assert.equal(out.records.find(x=>x.name+'@'+x.version===id).status,'SOURCE_NOT_CORROBORATED_SAME_RUN');
  assert.equal(out.counts.publisherToSourceAttested,0);
- assert.equal(out.counts.unavailable,1);
- assert.equal(out.counts.manifestByteMatches+out.counts.manifestByteDifferences+out.counts.unavailable,9);
+ assert.equal(out.counts.unavailable,2);
+ assert.equal(out.counts.manifestByteMatches+out.counts.manifestByteDifferences+out.counts.unavailable,10);
 });
 
-test('all transient source corroborations remain unavailable in complete 9-row summary',async()=>{
+test('all transient source corroborations and unobserved tenth root remain unavailable',async()=>{
  const f=fixture();
  for(const row of f.rootReceipt.records){
   if(!retired.has(row.name+'@'+row.version))row.status='TRANSIENT_SOURCE_READ_UNAVAILABLE_REMAIN_UNVERIFIED';
  }
  const out=await buildSourceComparison(f.queue,f.observations,f.rootReceipt,f.lock,{fetchBuffer:f.fetchBuffer});
- assert.equal(out.counts.unavailable,9);
+ assert.equal(out.counts.unavailable,10);
  assert.equal(out.counts.manifestByteMatches,0);
  assert.equal(out.counts.manifestByteDifferences,0);
- assert(out.records.every(x=>x.status==='SOURCE_NOT_CORROBORATED_SAME_RUN'));
+ assert.equal(out.records.filter(x=>x.status==='SOURCE_NOT_CORROBORATED_SAME_RUN').length,9);
+ assert.equal(out.records.find(x=>x.name==='unicode-emoji-modifier-base')?.status,'SOURCE_OBSERVATION_PENDING_CURRENT_LOCKED_PACKAGE');
  assert.equal(out.counts.publisherToSourceAttested,0);
 });
