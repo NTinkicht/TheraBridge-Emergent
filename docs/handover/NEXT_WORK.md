@@ -1,3 +1,8 @@
+## 2026-11-17 — COM-02 PR #399 current next gates
+1. Run full exact-head CI; inspect real 11-package SRI-verification receipt: how many matches, mismatches, unavailable; resolve any TAR/PAX or network errors without weakening parser. Validate same-run archive digest and untrusted source disclaimer.
+2. Request independent Codex on final stable green head and disposition every finding; update all four Rule 7 docs with actual result. Merge only under Rule 16.
+3. Continue genuine Git commit/source tree and published npm archive file-by-file comparison (beyond root package.json), and authenticated npm publisher build-to-commit signatures. Remaining 7 revision gaps, 2 libvips native subpaths, 1 untrusted origin, 25 DefinitelyTyped versions, 91 assets, actual OCI editions and legal G2/G2b external approvals remain OPEN.
+ 
 ## 2026-11-16 — Execute next COM-02 21-version publisher/source evidence work unit
 1. Starting from merged #398 and exact 46=25+21 lock baseline, implement independent registry SRI-qualified tarball archive vs immutable upstream source comparisons for all 11 source-root candidates, record per-file match, difference and generated-file caveats without granting publisher lineage.
 2. Validate authentic publisher/build subject and source commit/recipe only with independently trusted signed evidence. Triage 7 missing revisions, 2 native libvips source-subpath/real-edition exclusion claims and 1 legacy repository.
