@@ -1,3 +1,6 @@
+## 2026-11-17 — COM-02 11-npm-root tarball/source-manifest comparisons (PR #399)
+New offline adversarial Node scenarios: original SRI-qualified tarball manifest observation, source bytes mismatch without false publisher attestation, duplicate/traversal/PAX TAR fail closed, incorrect archive SHA, mutated lock integrity, altered source commit, false commercial rights, missing/duplicate queue version and upstream network failure. CI generation and artifact steps wired. **New tests NOT RUN at this checkpoint; live 11 npm TAR comparisons NOT RUN; all six full CI jobs PENDING; final independent Codex PENDING.** Zero publisher/source, legal, Enterprise/SaaS image and G2/G2b approvals asserted. Current lock exception count 46=25+21.
+ 
 ## 2026-11-16 — COM-02 21-version publisher/source next WU (planning-only)
 Predecessor PR #398: full six required CI jobs plus SBOM and Smart CI PASS; independent exact-head Codex no findings; merged as 70b1e6928632e6b44efcf7d1ca4e1301dedede4e. New publisher/source correspondence WU documentation is PLANNED ONLY: implementation NOT RUN, new test cases NOT RUN, CI NOT RUN, independent review PENDING. Current population 46=25 DT+21 non-DT; 11 root-only, 7 missing revision, 2 native subpath, 1 untrusted origin. No commercial/clinical approval.
 
