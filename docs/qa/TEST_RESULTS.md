@@ -1,3 +1,6 @@
+## 2026-11-17 — COM-02 #404 source-root population negative result and correction
+GitHub run 43951606835: new offline comparison tests 6/6 PASS, live comparator FAIL with `COM02_ARCHIVE_SOURCE_SOURCE_OBSERVATION_NOT_BOUND` because the full current workqueue contains **10** root candidates, but frozen observation receipt only covers **9**. Inspected same-run artifact and identified exact tenth `unicode-emoji-modifier-base@1.0.0`. Fix explicitly counts it as pending missing frozen source observation, not verified; updates 10-root summary, 9 real archive comparison attempts, and negative tests for forged identity, all-unavailable and transient handling. **Fixed exact HEAD CI, nine live comparisons and final Codex NOT RUN/PENDING**. Previous Node22 10/11 evidence remains historical. Zero publisher build, legal or G2/G2b approval.
+
 ## 2026-11-17 — COM-02 Node24 exact-version synthetic tarball test correction
 Updated offline tests to disambiguate emoji-regex@8.0.0 and emoji-regex@9.2.2 by unique archive URL path rather than package name; added independent fixture cardinality assertion (9 unique URLs). **Revised HEAD CI NOT RUN/PENDING.** No current nine-root empirical comparison claimed; earlier 10/11 archive result remains historical only. No independent publisher-source or rights approval.
 
