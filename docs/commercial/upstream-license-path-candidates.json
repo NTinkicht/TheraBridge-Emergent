@@ -25,6 +25,17 @@
       "commercialApproval": false
     },
     {
+      "name": "emoji-regex",
+      "version": "9.2.2",
+      "owner": "mathiasbynens",
+      "repository": "emoji-regex",
+      "commit": "0ffa466d7ab65af304d03dddd3a92a2d8268e7ce",
+      "paths": [
+        "LICENSE-MIT.txt"
+      ],
+      "commercialApproval": false
+    },
+    {
       "name": "jsesc",
       "version": "3.1.0",
       "owner": "mathiasbynens",
@@ -43,17 +54,6 @@
       "commit": "d90b6e38a0c79d07b02bf0d602bc242fe94be6b9",
       "paths": [
         "LICENSE-MIT"
-      ],
-      "commercialApproval": false
-    },
-    {
-      "name": "punycode",
-      "version": "2.3.1",
-      "owner": "mathiasbynens",
-      "repository": "punycode.js",
-      "commit": "9e1b2cda98d215d3a73fcbfe93c62e021f4ba768",
-      "paths": [
-        "LICENSE-MIT.txt"
       ],
       "commercialApproval": false
     },

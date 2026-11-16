@@ -23,10 +23,15 @@ function flush(){
  for(const selector of descriptors){
   const match=selector.match(/^((?:@[^/]+\/)?[^@\s]+)@(.+)$/);
   if(!match)throw Error('Unsupported Yarn selector');
-  const key=JSON.stringify([match[1],version]);
-  const candidates=locked.get(key)??[];
-  if(!candidates.some(c=>c.resolved===resolved&&c.integrity===integrity))candidates.push({resolved,integrity});
-  locked.set(key,candidates);
+  // Yarn npm aliases (`alias@npm:real@range`) install the REAL package (its
+  // package.json name is `real`), so bind the exact version to that name too.
+  const alias=match[2].match(/^npm:((?:@[^/]+\/)?[^@\s]+)@.+$/);
+  for(const name of alias?[match[1],alias[1]]:[match[1]]){
+   const key=JSON.stringify([name,version]);
+   const candidates=locked.get(key)??[];
+   if(!candidates.some(c=>c.resolved===resolved&&c.integrity===integrity))candidates.push({resolved,integrity});
+   locked.set(key,candidates);
+  }
  }
  descriptors=[];version=null;resolved=null;integrity=null;
 }

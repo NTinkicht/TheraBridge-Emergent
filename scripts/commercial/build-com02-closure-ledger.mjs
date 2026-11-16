@@ -19,20 +19,22 @@ const categoryMap=new Map([
 const expectedNonTypes=[
  '@img/sharp-libvips-linux-x64@1.3.4','@img/sharp-libvips-linuxmusl-x64@1.3.4',
  '@next/env@16.4.6','@next/swc-linux-x64-gnu@16.4.6',
- '@next/swc-linux-x64-musl@16.4.6',
- '@tokenizer/token@0.3.0','abstract-logging@2.0.1',
- 'client-only@0.0.1','cssesc@3.0.0',
- 'dlv@1.1.3','emoji-regex@8.0.0',
- 'esrecurse@4.3.0','exit@0.1.2',
- 'glob-to-regexp@0.4.1','imurmurhash@0.1.4',
- 'jest-pnp-resolver@1.2.3','jsesc@3.1.0',
- 'natural-compare@1.4.0','postcss-selector-parser@6.1.5',
- 'punycode@2.3.1','type-fest@4.41.0'
+ '@next/swc-linux-x64-musl@16.4.6','@pkgr/core@0.3.6',
+ '@tokenizer/token@0.3.0','@unrs/resolver-binding-linux-x64-gnu@1.13.0',
+ '@unrs/resolver-binding-linux-x64-musl@1.13.0','abstract-logging@2.0.1',
+ 'client-only@0.0.1','cssesc@3.0.0','dlv@1.1.3','eastasianwidth@0.2.0',
+ 'emoji-regex@8.0.0','emoji-regex@9.2.2','exit-x@0.2.2',
+ 'imurmurhash@0.1.4','jsesc@3.1.0','natural-compare@1.4.0',
+ 'postcss-selector-parser@6.1.5','type-fest@4.41.0',
+ 'unicode-emoji-modifier-base@1.0.0'
 ];
-// Exact packages published from a repository SUBPATH whose root has no package
-// manifest (immutable root read is HTTP 404). Only these may take that status;
-// any other 404 or unknown status still fails closed.
-const SUBPATH_PUBLISHED=new Set(OUT_OF_SCOPE_SIGNED);
+// Exact packages published from a repository SUBPATH (monorepo). The two
+// libvips binaries' repository root has no manifest at all (HTTP 404); only
+// they may take that status, and any other 404 or unknown status fails closed.
+const SUBPATH_PUBLISHED=new Set(['@img/sharp-libvips-linux-x64@1.3.4',
+ '@img/sharp-libvips-linuxmusl-x64@1.3.4','@pkgr/core@0.3.6']);
+const ROOT_404_ALLOWED=new Set(['@img/sharp-libvips-linux-x64@1.3.4','@img/sharp-libvips-linuxmusl-x64@1.3.4']);
+if([...SUBPATH_PUBLISHED].some(x=>!OUT_OF_SCOPE_SIGNED.includes(x)))throw Error('SUBPATH_PIN_NOT_SIGNED_OUT_OF_SCOPE');
 // Next.js 16.4.6 packages carry signed SLSA provenance but no registry gitHead,
 // so their source-revision candidate is unavailable here (see the Next.js chain).
 const NEXTJS_GROUP='MISSING_IMMUTABLE_SOURCE_REVISION';
@@ -117,7 +119,7 @@ function reconcile(rights,correspondence,bulk,types,release){
   }else{
    const exactId=e.name+'@'+e.version;
    if(dt)fail('UNEXPECTED_OTHER_SOURCE_GROUP');
-   if(SUBPATH_PUBLISHED.has(exactId)&&s.evidenceStatus==='UPSTREAM_HTTP_404'&&s.sourcePackageSha256==null)
+   if(ROOT_404_ALLOWED.has(exactId)&&s.evidenceStatus==='UPSTREAM_HTTP_404'&&s.sourcePackageSha256==null)
      group='MONOREPO_SOURCE_SUBPATH_NOT_ATTESTED';
    else if(categoryMap.has(s.evidenceStatus))group=categoryMap.get(s.evidenceStatus);
    else fail('UNEXPECTED_OTHER_SOURCE_GROUP');
@@ -143,10 +145,10 @@ function reconcile(rights,correspondence,bulk,types,release){
  packages.sort((a,b)=>a.name.localeCompare(b.name,'en')||a.version.localeCompare(b.version,'en'));
  const groups=Object.fromEntries(groupNames.map(g=>[g,packages.filter(x=>x.group===g).length]));
  if(groups.DEFINITELYTYPED_HISTORICAL_RELEASE!==DT||
-    groups.SOURCE_ROOT_MANIFEST_ONLY!==11||
+    groups.SOURCE_ROOT_MANIFEST_ONLY!==10||
     groups.MISSING_IMMUTABLE_SOURCE_REVISION!==7||
-    groups.MONOREPO_SOURCE_SUBPATH_NOT_ATTESTED!==2||
-    groups.LEGACY_REPO_ORIGIN_UNTRUSTED!==1)fail('GROUP_COUNT_DRIFT');
+    groups.MONOREPO_SOURCE_SUBPATH_NOT_ATTESTED!==3||
+    groups.LEGACY_REPO_ORIGIN_UNTRUSTED!==3)fail('GROUP_COUNT_DRIFT');
  const assetByPath=new Map();
  if(rights.nonPackage.length!==91||bulk.nonPackageAssets.length!==91||
     scoped.assets.length!==91)fail('ASSET_COUNT_DRIFT');

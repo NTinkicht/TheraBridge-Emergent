@@ -1,3 +1,10 @@
+## 2026-11-16 — Node 24 / NestJS 12 PR qualification
+1. Exact-head six required jobs on Node 24 (API Jest + PostgreSQL e2e are the main risk: lifecycle hook ordering, HTTP adapter error mapping, `ConsoleLogger` structured params).
+2. Codex review of the final green HEAD; Rule 13 ledger for every finding.
+3. Owner sign-off of ADR-0001 Amendment 1 by merging; then consider Node 26 once Prisma/argon2 are verified on it, and Prisma 6 as a separate unit.
+
+---
+
 ## 2026-11-16 — COM-02 successor qualification after Next 16 merge
 1. Qualify new main-based non-DT workqueue PR on exact head after #394: test generator and same-run archived JSON against **46=25 DT+21 non-DT**. Six full CI jobs + Smart CI + SBOM, independent final-head Codex, zero unresolved comments and clean mergeability required.
 2. Supersede #397 only after successor successfully carries all eight changed paths and qualification; do not merge stale #397 over #394 or force-push incompatible history.

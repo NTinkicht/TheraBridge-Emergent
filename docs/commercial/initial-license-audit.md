@@ -11,7 +11,7 @@ Evidence date: 2026-11-09. **PRELIMINARY — NOT A COMPLETE COMPLIANCE AUDIT.** 
 | `yarn.lock` | Present; dependency pin/integrity records | Generate complete license-attributed SBOM and dependency license verification, including transitive deps |
 | API dependencies | NestJS, Fastify integration, Prisma, argon2, RxJS, validator/transformer and utilities | Check direct and transitive terms, redistribution and notices |
 | Web dependencies | Next.js, React, Lucide React and three Fontsource font packages | Audit library, icon and actual typeface licenses; confirm attribution and redistribution needs |
-| `Dockerfile.preview` | Uses `node:20-bookworm-slim`, apt system packages and Yarn install | Include base image, OS packages, binaries and their notices in enterprise distribution review |
+| `Dockerfile.preview` | Uses `node:24-bookworm-slim` (was `node:20` before 2026-11-16), apt system packages and Yarn install | Include base image, OS packages, binaries and their notices in enterprise distribution review |
 | `docs/emergent/brand/LOGO_DERIVATIVES.md` | Original logo at `assets/brand/original/TheraBridge-Logo-original.jpg` generates multiple deployed images | Record creator, assignment/permission and trademark clearance; derived image does not establish source ownership |
 | `docs/product/MASTER_BLUEPRINT.md` | Explicitly synthetic only, clinical workflows disabled until authorization | Preserve the production/clinical NO-GO separately from licensing work |
 

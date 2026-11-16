@@ -48,3 +48,17 @@ test('retains missing integrity and untrusted sources as unresolved evidence',t=
  assert.equal(r.records.find(x=>x.name==='alpha').lockStatus,'LOCK_INTEGRITY_UNAVAILABLE');
  assert.equal(r.records.find(x=>x.name==='@scope/bravo').lockCandidates[0].resolvedSourceKind,'OTHER_OR_MISSING_SOURCE');
 });
+test('Yarn npm alias binds the installed REAL package name/version only (Jest 30 react-is-18)',t=>{
+ const alias='\n"@jest/react-is-18@npm:react-is@^18.3.1":\n  version "18.3.1"\n  resolved "https://registry.yarnpkg.com/react-is/-/react-is-18.3.1.tgz#e8"\n  integrity sha512-react18==\n';
+ const {result,out}=run(t,x=>{x.records[2]={...x.records[2],name:'react-is',version:'18.3.1'};return x},x=>x+alias);
+ assert.equal(result.status,0,result.stderr);
+ const r=JSON.parse(readFileSync(out,'utf8'));
+ const row=r.records.find(x=>x.name==='react-is');
+ assert.equal(row.lockStatus,'LOCK_METADATA_PRESENT_NOT_TARBALL_VERIFIED');
+ assert.equal(r.summary.LOCK_METADATA_PRESENT_NOT_TARBALL_VERIFIED,3);
+ assert.equal(row.lockCandidates.length,1);
+ assert.equal(row.lockCandidates[0].declaredIntegrity,'sha512-react18==');
+ // A different real version under the alias is still not a lock match.
+ const b=run(t,x=>{x.records[2]={...x.records[2],name:'react-is',version:'18.3.0'};return x},x=>x+alias);
+ assert.equal(JSON.parse(readFileSync(b.out,'utf8')).summary.INSTALLED_VERSION_NOT_IN_LOCK,1);
+});

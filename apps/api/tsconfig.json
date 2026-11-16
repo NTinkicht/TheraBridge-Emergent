@@ -12,7 +12,7 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
+    "rootDir": "./",
     "types": ["node", "jest"]
   },
   "include": ["src", "test"]

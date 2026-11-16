@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {reconcile} from './reconcile-independent-root-observations.mjs';
 const evidence=JSON.parse(readFileSync(new URL('../../docs/commercial/com02-independent-root-observations.json',import.meta.url),'utf8'));
 const clone=x=>structuredClone(x);
-const RETIRED=['consola@2.15.3','emoji-regex@9.2.2','tmp@0.0.33','tr46@0.0.3'];
+const RETIRED=['consola@2.15.3','esrecurse@4.3.0','glob-to-regexp@0.4.1','punycode@2.3.1','tmp@0.0.33','tr46@0.0.3'];
 function fixture(){
  const candidates=evidence.records.filter(r=>!RETIRED.includes(r.name+'@'+r.version)).map(r=>({
   name:r.name,version:r.version,candidateGitHead:r.commit,
@@ -21,15 +21,15 @@ function fixture(){
   sourceVersionCorrespondence:'NOT_INDEPENDENTLY_ATTESTED',commercialApproval:false
  });
  return {candidates:{schema:'therabridge-com02-githead-source-corroboration-candidates-v1',
-  counts:{exceptions:46,stillRequiresIndependentAttestation:46,legallyApproved:0},
+  counts:{exceptions:44,stillRequiresIndependentAttestation:44,legallyApproved:0},
   finalNoticesIssued:false,commercialLicenseGranted:false,records:candidates},
   observations:clone(evidence)};
 }
-test('reconciles 11 current and 4 retired frozen roots against full 46-version queue',()=>{
+test('reconciles 9 current and 6 retired frozen roots against full 44-version queue',()=>{
  const {candidates,observations}=fixture(),out=reconcile(candidates,observations);
- assert.deepEqual(out.counts,{originalVersions:46,observedSourceRoots:15,
-  boundToCurrentPopulation:11,retiredNotInCurrentPopulation:4,sourceManifestSha256Matches:11,
-  claimedRepositoriesDirect:11,githubRepositoryRedirectsVerified:2,historicalCopyrightTransfersVerified:0,
+ assert.deepEqual(out.counts,{originalVersions:44,observedSourceRoots:15,
+  boundToCurrentPopulation:9,retiredNotInCurrentPopulation:6,sourceManifestSha256Matches:9,
+  claimedRepositoriesDirect:9,githubRepositoryRedirectsVerified:2,historicalCopyrightTransfersVerified:0,
   publicationToSourceBuildCorrespondenceVerified:0,legallyApproved:0});
  assert.equal(out.commercialLicenseGranted,false);
  assert.ok(out.records.every(x=>x.npmSourceRevisionIndependentlyVerified===false&&x.rightsApproved===false));
@@ -69,7 +69,7 @@ test('rejects forged GitHub repository redirect identities even at matching Git 
  c.observations.records.find(x=>x.name==='cssesc').githubRepoRedirect={repositoryId:'fake'};
  assert.throws(()=>reconcile(c.candidates,c.observations),/FORGED_DIRECT_REPOSITORY_CORROBORATION/);
 });
-test('rejects missing, duplicated or truncated 46-package queue',()=>{
+test('rejects missing, duplicated or truncated 44-package queue',()=>{
  const a=fixture();a.observations.records.pop();
  assert.throws(()=>reconcile(a.candidates,a.observations),/UNTRUSTED_OBSERVATION_ENVELOPE/);
  const b=fixture();b.candidates.records[15]=clone(b.candidates.records[0]);
@@ -90,7 +90,7 @@ test('safe transient network failure preserves existing unresolved observation',
  candidates.records[0].evidenceStatus='UPSTREAM_TIMEOUT';
  candidates.records[0].sourcePackageSha256=null;
  const report=reconcile(candidates,observations);
- assert.equal(report.counts.sourceManifestSha256Matches,10);
+ assert.equal(report.counts.sourceManifestSha256Matches,8);
  assert.equal(report.records.filter(x=>x.status==='TRANSIENT_SOURCE_READ_UNAVAILABLE_REMAIN_UNVERIFIED').length,1);
  assert.equal(report.counts.legallyApproved,0);
 });

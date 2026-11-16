@@ -1,3 +1,8 @@
+## 2026-11-16 — Node 24 LTS + NestJS 12
+Branched from `9d5ec6b` (#394). Researched the NestJS 11→12 migration guide (Node/TS/Jest/ESM/lifecycle/logger changes) and Node release status; chose Node 24 LTS and recorded it as ADR-0001 Amendment 1. Upgraded API tooling, removed the Node-20 lockfile dedupe, fixed TS 6 deprecations, taught both COM-02 lock parsers Yarn `npm:` aliases (with tests), and re-baselined COM-02 pins/observations/curated paths. Local (Node 22.23.4, no Node 24 available here): API `tsc` + `nest build` PASS and built app loads Nest 12 via `require(esm)`; web tsc/build/node tests/Jest (115 suites / 1570 tests on Jest 30) PASS; all `scripts/**/*.test.mjs` PASS; COM-02 CI steps replayed PASS except the two Sigstore-dependent ones (same as `main`). API Jest suites that import Nest 12 **cannot run on Node 22** (`ERR_REQUIRE_ESM`, as documented) — NOT RUN locally; CI on Node 24 is authoritative.
+
+---
+
 ## 2026-11-16 — COM-02 workqueue conflict-free carry-forward
 After concurrent merge #394 advanced dependency identity to 46=25+21 and made #397 non-mergeable, rebuilt the COM-02 non-DT workqueue on current main without force push. Carried two scripts, CI wiring and artifact archive, and the 21-version evidence categorization. Historical #397 new-step tests PASS but do not qualify this new head; re-run full CI and independent Codex. Rule 7 documents reconciled on successor. All publisher/source lineage and third-party commercial permissions unresolved, G2/G2b NO-GO.
 

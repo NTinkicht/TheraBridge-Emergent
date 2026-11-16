@@ -18,11 +18,13 @@ const expectedNames=[
  'postcss-selector-parser@6.1.5','punycode@2.3.1','tmp@0.0.33',
  'tr46@0.0.3','type-fest@4.41.0'
 ];
-// Frozen 2026-11-15 observations whose exact versions left the locked
-// dependency population (PR #311 Nest 11 / Next 15 upgrade). They stay in
-// the dated snapshot and are structurally re-validated, but are never bound
-// to current evidence; if one reappears in the lock it must be re-reviewed.
-const RETIRED=new Set(['consola@2.15.3','emoji-regex@9.2.2','tmp@0.0.33','tr46@0.0.3']);
+// Frozen 2026-11-15 observations whose exact versions are NOT in the current
+// locked dependency population (#311 Nest 11 / Next 15; Node 24 / Nest 12 /
+// Jest 30). They stay in the dated snapshot and are structurally re-validated,
+// but are never bound to current evidence; if one reappears in the lock it must
+// be re-reviewed (emoji-regex@9.2.2 returned with Jest 30 and is bound again).
+const RETIRED=new Set(['consola@2.15.3','esrecurse@4.3.0','glob-to-regexp@0.4.1',
+ 'punycode@2.3.1','tmp@0.0.33','tr46@0.0.3']);
 const RETIRED_STATUS='RETIRED_NOT_IN_CURRENT_LOCKED_POPULATION';
 const allowedAliases=new Map([
  ['consola@2.15.3',['nuxt/consola','unjs/consola','127546642']],
