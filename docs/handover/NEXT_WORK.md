@@ -1,3 +1,8 @@
+## 2026-11-17 — COM-02 final current-main qualification
+1. Qualify fresh merged-M5 main-based licensing head: all six full CI jobs, Smart CI, SBOM, commercial inventory. Confirm nine SRI-authenticated archive manifest comparisons plus tenth pinned unobserved root, and same-run SHA-256 correspondence receipt with no false approval.
+2. Complete independent final-head Codex review, disposition all comments, clean GitHub mergeability, then merge only under Rule16. Do not merge old PR #404 after M5-05 changed main or lose its handover updates.
+3. Next COM-02 evidence: independently freeze unicode-emoji-modifier-base source #405, explain @tokenizer/token npm source-manifest difference #402; all 44 exact npm exceptions, 91 assets, authentic production SaaS and customer Enterprise OCI receipts, counsel and clinical G2/G2b stay OPEN/NO-GO.
+
 ## 2026-11-16 — M5-05 PR #403 exact-head qualification and remaining UX acceptance
 1. Qualify the documentation-updated HEAD of #403: dedicated flagged synthetic Chromium disclosure keyboard checks for three clinical roles × five widths, default legacy seven-role demo, full test/coverage, live-session, preview-container, compose, SBOM, secret scan and Smart CI. Review new Codex findings and record FIX_NOW/DEFER_ISSUE/DECLINE_WITH_REASON for every comment; do not reuse the prior `fc2c3ff40e` test receipt as approval for a later HEAD.
 2. Merge only after current-head required checks green, no actionable P1/P2, final independent review and clean GitHub mergeability. Keep `NEXT_PUBLIC_M5_CHILD_COMPACT` OFF by default; never change G2/G2b NO-GO or specialty permissions.
