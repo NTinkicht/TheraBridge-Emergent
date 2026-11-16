@@ -604,6 +604,50 @@ jobs:
       - if: always()
         run: rm -f .workspace/local-credentials/childrens-home-demo.json
 
+  m5-child360-browser:
+    # Separate isolated CI build; production/default flag stays OFF.
+    needs: smart-plan
+    if: needs.smart-plan.outputs.mode == 'full' || needs.smart-plan.outputs.mode == 'web-style'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-bookworm
+        env:
+          POSTGRES_USER: therabridge
+          POSTGRES_PASSWORD: ci_only_password
+          POSTGRES_DB: therabridge_demo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U therabridge -d therabridge_demo_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://therabridge:ci_only_password@127.0.0.1:5432/therabridge_demo_test?schema=public
+      DEPLOYMENT_ENV: ci
+      API_UPSTREAM_ORIGIN: http://127.0.0.1:8001
+      NEXT_PUBLIC_M5_CHILD_COMPACT: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: yarn workspace @therabridge/api prisma generate
+      - run: yarn workspace @therabridge/api prisma migrate deploy
+      - name: M5-05 synthetic receipt adversarial regression
+        run: node --test scripts/design/m5-child360-browser.test.mjs
+      - run: yarn workspace @therabridge/api build
+      - run: yarn workspace @therabridge/web build
+      - run: yarn playwright install --with-deps chromium
+      - name: Observe flagged Child 360 in real browser across therapist, supervisor and denied roles
+        run: node scripts/design/run-demo-live.mjs
+      - if: always()
+        run: rm -f .workspace/local-credentials/childrens-home-demo.json
+
   compose:
     timeout-minutes: 25
     runs-on: ubuntu-24.04
@@ -777,6 +821,7 @@ jobs:
       - test
       - live-session
       - demo-journey
+      - m5-child360-browser
       - compose
       - preview-container
       - smart-targeted

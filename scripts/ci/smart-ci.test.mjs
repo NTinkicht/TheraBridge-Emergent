@@ -11,6 +11,7 @@ test('documentation changes require only security scan and targeted validation',
  assert.equal(x.required['secret-scan'],'success');
  assert.equal(x.required['sbom'],'success');
  assert.equal(x.required['smart-targeted'],'success');
+ assert.equal(x.required['m5-child360-browser'],'skipped');
 });
 test('CSS and public assets change selects Web + browser, not database or Docker',()=>{
  const x=eligible(paths('apps/web/src/app/globals.css','apps/web/public/logo.png'));
@@ -18,6 +19,7 @@ test('CSS and public assets change selects Web + browser, not database or Docker
  assert.equal(x.required['sbom'],'success');
  assert.equal(x.required['live-session'],'success');
  assert.equal(x.required['demo-journey'],'success');
+ assert.equal(x.required['m5-child360-browser'],'success');
  assert.equal(x.required['compose'],'skipped');
 });
 test('security, DB, clinical, dependencies, workflows, scripts, missing and mixed paths force full CI',()=>{

@@ -4,6 +4,7 @@ import { randomBytes } from 'node:crypto';
 import { rm } from 'node:fs/promises';
 import { PrismaClient } from '@prisma/client';
 import { runBrowserAudit } from './m5-browser-observe.mjs';
+import { runChild360BrowserAcceptance } from './m5-child360-browser.mjs';
 
 const dbUrl = new URL(process.env.DATABASE_URL ?? '');
 if (process.env.DEPLOYMENT_ENV !== 'ci' || !['127.0.0.1', 'localhost'].includes(dbUrl.hostname) || !dbUrl.pathname.endsWith('_demo_test')) {
@@ -70,9 +71,15 @@ try {
   start('node', ['node_modules/next/dist/bin/next', 'start', 'apps/web', '-H', '127.0.0.1', '-p', '3000']);
   await ready('http://127.0.0.1:8001/api/health');
   await ready('http://127.0.0.1:3000/login');
-  await run('node', ['scripts/design/check-demo-journey.mjs']);
-  await run('node', ['scripts/design/check-handover-sessions.mjs']);
-  await runBrowserAudit({ passwords: demoPasswords, output: '/tmp/therabridge-m5-01-browser-observations.json' });
+  if (process.env.NEXT_PUBLIC_M5_CHILD_COMPACT === 'true') {
+    // Dedicated browser acceptance job: build-time flag is ON only in this
+    // synthetic CI process. The ordinary seven-role job stays unchanged.
+    await runChild360BrowserAcceptance({ passwords: demoPasswords });
+  } else {
+    await run('node', ['scripts/design/check-demo-journey.mjs']);
+    await run('node', ['scripts/design/check-handover-sessions.mjs']);
+    await runBrowserAudit({ passwords: demoPasswords, output: '/tmp/therabridge-m5-01-browser-observations.json' });
+  }
 } finally {
   for (const p of children) if (p.exitCode === null) p.kill('SIGTERM');
   await db.$disconnect();
