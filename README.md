@@ -4,7 +4,7 @@ Synthetic-data-only, non-clinical proof of concept built with NestJS/Fastify, Pr
 
 ## Local development
 
-Use Node 20 and Yarn 1. Install dependencies with `yarn install --frozen-lockfile`. Copy `.env.example` to `.env` and configure local-only secrets and PostgreSQL; refer to `apps/api/.env.example` for required API flags. Start disposable dependencies with `docker compose up --build --wait`, or run the API and web workspaces with `yarn dev:api` and `yarn dev:web` against an independently configured local database. Do not point local tools at shared or patient databases.
+Use Node 24 (see `.nvmrc`) and Yarn 1. Install dependencies with `yarn install --frozen-lockfile`. Copy `.env.example` to `.env` and configure local-only secrets and PostgreSQL; refer to `apps/api/.env.example` for required API flags. Start disposable dependencies with `docker compose up --build --wait`, or run the API and web workspaces with `yarn dev:api` and `yarn dev:web` against an independently configured local database. Do not point local tools at shared or patient databases.
 
 ## Quality gates
 

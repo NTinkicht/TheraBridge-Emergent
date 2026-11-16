@@ -37,7 +37,9 @@ function parseLock(source){
    flush();if(!line.endsWith(':'))throw Error('BAD_SELECTOR');
    const matches=[...line.slice(0,-1).matchAll(/(?:^|,\s*)"?((?:@[^/]+\/)?[^@",\s]+)@([^",]+?)"?(?=,|$)/g)];
    if(!matches.length)throw Error('BAD_SELECTOR');
-   names=matches.map(m=>m[1]);
+   // Yarn npm aliases (`alias@npm:real@range`) install the REAL package, whose
+   // package.json name is `real`: bind the locked version to both names.
+   names=[...new Set(matches.flatMap(m=>{const a=m[2].match(/^npm:((?:@[^/]+\/)?[^@\s]+)@.+$/);return a?[m[1],a[1]]:[m[1]];}))];
   }else if(/^  version "/.test(line))version=line.match(/^  version "([^"]+)"/)?.[1]??null;
   else if(/^  resolved "/.test(line))resolved=line.match(/^  resolved "([^"]+)"/)?.[1]??null;
   else if(/^  integrity /.test(line))integrity=line.slice('  integrity '.length).trim();

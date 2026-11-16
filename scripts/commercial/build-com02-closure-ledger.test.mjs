@@ -12,14 +12,15 @@ function splitId(value){const i=value.lastIndexOf('@');return {name:value.slice(
 function buildInputs(){
  const versionIds=[...typesIds,...expectedNonTypes];
  const rootNames=new Set(['@tokenizer/token','abstract-logging','cssesc','dlv',
-  'emoji-regex','esrecurse','glob-to-regexp','jsesc','postcss-selector-parser',
-  'punycode','type-fest']);
+  'emoji-regex','jsesc','postcss-selector-parser','type-fest','unicode-emoji-modifier-base']);
  const group=key=>{
   const n=splitId(key).name;
   if(n.startsWith('@types/'))return 'DT';
   // Subpath-published signed libvips binaries: repository root has no manifest.
   if(n.startsWith('@img/sharp-libvips-'))return 'MONO';
-  if(['natural-compare'].includes(n))return 'LEGACY';
+  // Monorepo subpath package whose root manifest has a different identity.
+  if(n==='@pkgr/core')return 'MONO_ID';
+  if(['eastasianwidth','exit-x','natural-compare'].includes(n))return 'LEGACY';
   if(rootNames.has(n))return 'ROOT';
   return 'MISSING';
  };
@@ -28,11 +29,11 @@ function buildInputs(){
  }));
  const correspondence=versionIds.map((key,i)=>{
   const g=group(key);return {...splitId(key),
-   candidateGitHead:g==='ROOT'||g==='MONO'?commit:null,
+   candidateGitHead:g==='ROOT'||g==='MONO'||g==='MONO_ID'?commit:null,
    sourcePackageSha256:g==='ROOT'?hash:null,
    evidenceStatus:g==='DT'||g==='MISSING'?'SOURCE_REVISION_CANDIDATE_UNAVAILABLE':
     g==='ROOT'?'REGISTRY_GITHEAD_MATCHES_IMMUTABLE_SOURCE_ROOT_MANIFEST_ONLY':
-    g==='MONO'?'UPSTREAM_HTTP_404':'UNTRUSTED_REPOSITORY',
+    g==='MONO'?'UPSTREAM_HTTP_404':g==='MONO_ID'?'SOURCE_PACKAGE_IDENTITY_MISMATCH':'UNTRUSTED_REPOSITORY',
    sourceVersionCorrespondence:'NOT_INDEPENDENTLY_ATTESTED',
    commercialApproval:false};
  });
@@ -57,30 +58,30 @@ function buildInputs(){
    commercialApproval:false}));
  return [
   {schema:'therabridge-com02-exact-version-rights-queue-v1',
-   counts:{exceptions:46,nonPackageAssets:91},exceptions,nonPackage:assets,
+   counts:{exceptions:44,nonPackageAssets:91},exceptions,nonPackage:assets,
    finalNoticesIssued:false,commercialLicenseGranted:false},
   {schema:'therabridge-com02-githead-source-corroboration-candidates-v1',
-   counts:{exceptions:46},records:correspondence,
+   counts:{exceptions:44},records:correspondence,
    finalNoticesIssued:false,commercialLicenseGranted:false},
   {schema:'therabridge-com02-bulk-rights-review-v1',
-   counts:{packages:46,nonPackageAssets:91,packagesStillRequiringIndependentAttestation:46,
+   counts:{packages:44,nonPackageAssets:91,packagesStillRequiringIndependentAttestation:44,
     legallyApproved:0},packages:bulkPackages,nonPackageAssets:bulkAssets,
    finalNoticesIssued:false,commercialLicenseGranted:false},
   {schema:'therabridge-com02-definitelytyped-26-pinned-triage-v1',
-   counts:{definitelyTypedVersions:25,publisherToSourceAttested:0},
+   counts:{definitelyTypedVersions:21,publisherToSourceAttested:0},
    records:dtRecords,finalNoticesIssued:false,commercialApproval:false},
   {schema:'therabridge-com02-release-file-evidence-v1',commercialApproval:false,images:[]}
  ];
 }
 test('comprehensive exact-version, asset and two-edition zero-approval report',()=>{
  const r=reconcile(...buildInputs());
- assert.equal(r.counts.npmExceptionVersions,46);
- assert.equal(r.counts.definitelyTypedVersions,25);
- assert.equal(r.counts.otherNpmVersions,21);
- assert.equal(r.counts.SOURCE_ROOT_MANIFEST_ONLY,11);
+ assert.equal(r.counts.npmExceptionVersions,44);
+ assert.equal(r.counts.definitelyTypedVersions,21);
+ assert.equal(r.counts.otherNpmVersions,23);
+ assert.equal(r.counts.SOURCE_ROOT_MANIFEST_ONLY,10);
  assert.equal(r.counts.MISSING_IMMUTABLE_SOURCE_REVISION,7);
- assert.equal(r.counts.MONOREPO_SOURCE_SUBPATH_NOT_ATTESTED,2);
- assert.equal(r.counts.LEGACY_REPO_ORIGIN_UNTRUSTED,1);
+ assert.equal(r.counts.MONOREPO_SOURCE_SUBPATH_NOT_ATTESTED,3);
+ assert.equal(r.counts.LEGACY_REPO_ORIGIN_UNTRUSTED,3);
  assert.deepEqual(r.counts.assetCategories,{IMAGE_OR_ICON:73,BRAND:15,CONTAINER_BUILD:3});
  assert.equal(r.assets.length,91);
  assert.deepEqual(r.editions.map(x=>x.edition),['SAAS','ENTERPRISE']);
@@ -94,7 +95,7 @@ test('rejects missing or substituted DefinitelyTyped versions',()=>{
  const b=buildInputs();b[3].records[0].version='99.99.99';
  assert.throws(()=>reconcile(...b),/COM02_FULL_SCOPE_/);
 });
-test('rejects missing source row or repeated 46-version identity',()=>{
+test('rejects missing source row or repeated 44-version identity',()=>{
  const a=buildInputs();a[1].records.pop();
  assert.throws(()=>reconcile(...a),/COM02_FULL_SCOPE_/);
  const b=buildInputs();b[0].exceptions[1].name=b[0].exceptions[0].name;
@@ -109,7 +110,7 @@ test('rejects fake historical package revision, publication or legal approval',(
  const c=buildInputs();c[0].exceptions[0].decision='APPROVED';
  assert.throws(()=>reconcile(...c),/COM02_FULL_SCOPE_/);
 });
-test('rejects changed 21-version group or imaginary upstream Git root hash',()=>{
+test('rejects changed 23-version group or imaginary upstream Git root hash',()=>{
  const root=buildInputs()[1].records.findIndex(x=>x.name==='@tokenizer/token');
  const a=buildInputs();a[1].records[root].evidenceStatus='SOURCE_REVISION_CANDIDATE_UNAVAILABLE';
  assert.throws(()=>reconcile(...a),/COM02_FULL_SCOPE_/);
@@ -125,6 +126,14 @@ test('only the pinned subpath-published packages may carry a root-manifest 404',
  assert.throws(()=>reconcile(...b),/COM02_FULL_SCOPE_UNEXPECTED_OTHER_SOURCE_GROUP/);
  const c=buildInputs();c[1].records[idx('@img/sharp-libvips-linux-x64')].sourcePackageSha256='a'.repeat(64);
  assert.throws(()=>reconcile(...c),/COM02_FULL_SCOPE_/);
+});
+test('only pinned subpath packages may be monorepo-classified; unrs bindings stay missing-revision',()=>{
+ const idx=name=>buildInputs()[1].records.findIndex(x=>x.name===name);
+ const a=buildInputs();a[1].records[idx('@unrs/resolver-binding-linux-x64-gnu')].evidenceStatus='SOURCE_PACKAGE_IDENTITY_MISMATCH';
+ a[1].records[idx('@unrs/resolver-binding-linux-x64-gnu')].candidateGitHead=commit;
+ assert.throws(()=>reconcile(...a),/COM02_FULL_SCOPE_MONOREPO_ORIGIN_CLASSIFICATION/);
+ const b=buildInputs();b[1].records[idx('@pkgr/core')].evidenceStatus='UPSTREAM_HTTP_404';
+ assert.throws(()=>reconcile(...b),/COM02_FULL_SCOPE_UNEXPECTED_OTHER_SOURCE_GROUP/);
 });
 test('signed Next.js packages without registry gitHead stay in the missing-revision group',()=>{
  const i=buildInputs()[1].records.findIndex(x=>x.name==='@next/env');

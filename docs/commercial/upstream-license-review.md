@@ -57,7 +57,7 @@ These are **upstream publisher statements**, not checksums of the actual package
 
 ## Binary, assets and service findings (OPEN)
 
-- Preview uses `node:20-bookworm-slim`; official Node Docker documentation identifies Bookworm as Debian 12: https://github.com/nodejs/docker-node . The **Dockerfile** adds `openssl`, `ca-certificates`, `tini`. Separate Debian/OS package attribution and license examination is still required.
+- Preview uses `node:24-bookworm-slim` (was `node:20-bookworm-slim` before 2026-11-16; same Debian 12 base); official Node Docker documentation identifies Bookworm as Debian 12: https://github.com/nodejs/docker-node . The **Dockerfile** adds `openssl`, `ca-certificates`, `tini`. Separate Debian/OS package attribution and license examination is still required.
 - `docker-compose.yml` service images and deployment-specific digests need independent inventories; the preview-container SBOM is insufficient for redistributing those.
 - Original TheraBridge logo, derivative marks and catalogue illustrations have **no proven author/assignment records** from the files inspected. The asset inventory hashes them but does not establish ownership.
 - Fonts: Fontsource warns that font files have individual licenses, which may differ from the package wrapper: https://github.com/fontsource/fontsource .

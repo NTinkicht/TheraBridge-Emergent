@@ -48,7 +48,7 @@ export function validateM4Performance(report) {
       !Number.isSafeInteger(report.process.rssStartBytes) || report.process.rssStartBytes <= 0 ||
       !Number.isSafeInteger(report.process.observedRssPeakBytes) ||
       report.process.observedRssPeakBytes < report.process.rssStartBytes ||
-      report.process.nodeMajor !== 20) {
+      report.process.nodeMajor !== 24) {  // ADR-0001 Amendment 1 runtime (.nvmrc)
     errors.push('Unexpected or invalid process metadata');
   }
   return errors;

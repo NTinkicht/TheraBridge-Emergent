@@ -15,7 +15,10 @@ const targets=[
 const C3='ebb95f8add54eee8bed840e3fb587e4cbec857d7';
 const outOfScope=[
  ['@img/sharp-libvips-linux-x64','1.3.4',C3,'https://github.com/lovell/sharp-libvips','refs/tags/v1.3.4'],
- ['@img/sharp-libvips-linuxmusl-x64','1.3.4',C3,'https://github.com/lovell/sharp-libvips','refs/tags/v1.3.4']
+ ['@img/sharp-libvips-linuxmusl-x64','1.3.4',C3,'https://github.com/lovell/sharp-libvips','refs/tags/v1.3.4'],
+ ['@pkgr/core','0.3.6',C3,'https://github.com/un-ts/pkgr','refs/tags/v0.3.6'],
+ ['@unrs/resolver-binding-linux-x64-gnu','1.13.0',C3,'https://github.com/unrs/unrs-resolver','refs/tags/v1.13.0'],
+ ['@unrs/resolver-binding-linux-x64-musl','1.13.0',C3,'https://github.com/unrs/unrs-resolver','refs/tags/v1.13.0']
 ];
 const source='https://github.com/vercel/next.js';
 const PUBLISH='https://github.com/npm/attestation/tree/main/specs/publish/v0.1';
@@ -43,14 +46,14 @@ function fixture(){
   saasNetworkRights:'PENDING_COUNSEL_REVIEW',
   enterpriseRedistributionRights:'PENDING_COUNSEL_REVIEW'
  }));
- for(let i=0;i<41;i++)records.push({
+ for(let i=0;i<36;i++)records.push({
   name:'other'+i,version:'1.0.0',lockedIntegrity:sri,
   candidateRegistryAttestationStatus:'NOT_ADVERTISED',
   publisherProvenanceIndependentlyVerified:false,commercialApproval:false,
   legalReviewStatus:'UNRESOLVED',saasNetworkRights:'PENDING_COUNSEL_REVIEW',
   enterpriseRedistributionRights:'PENDING_COUNSEL_REVIEW'});
  const candidates={schema:'therabridge-com02-upstream-authority-candidates-v1',
-  counts:{exceptions:46,registryAttestationPointersAdvertised:5,
+  counts:{exceptions:44,registryAttestationPointersAdvertised:8,
    legallyApproved:0,independentlyVerifiedPublisherProvenance:0},
   records,finalNoticesIssued:false,commercialLicenseGranted:false};
  const verifiedRows=signed.map(row=>{
@@ -65,13 +68,13 @@ function fixture(){
  const verified={schema:'therabridge-com02-verified-npm-sigstore-candidates-v1',
   trustedVerifier:{name:'npm',version:'11.19.1',exitCode:0,resultHashSha256:sha(raw)},
   inputManifestSha256:sha(Buffer.from(JSON.stringify(candidates))),
-  counts:{unresolvedExactVersionPackages:46,attestationCandidates:5,
-   verifiedSignedSubjectsAndDigests:5,independentlyCorroboratedPublisherToSource:0,legallyApproved:0},
+  counts:{unresolvedExactVersionPackages:44,attestationCandidates:8,
+   verifiedSignedSubjectsAndDigests:8,independentlyCorroboratedPublisherToSource:0,legallyApproved:0},
   records:verifiedRows,finalNoticesIssued:false,commercialLicenseGranted:false,
   g2ClinicalApproved:false,g2bClinicalApproved:false};
  return {candidates,verified,raw};
 }
-test('cross-check complete 46-version queue, exact 3 Next.js signed sources and 2 accounted out-of-scope signatures',()=>{
+test('cross-check complete 44-version queue, exact 3 Next.js signed sources and 5 accounted out-of-scope signatures',()=>{
  const f=fixture();
  const rows=validate(f.candidates,f.verified,f.raw);
  assert.equal(rows.length,3);
@@ -87,13 +90,13 @@ test('independently hash exact immutable source manifests without claiming nativ
   if(url.includes('/packages/next-swc/'))return Buffer.from('{"name":"@next/swc","version":"16.4.6"}');
   throw Error('UNEXPECTED_URL');
  }});
- assert.equal(out.counts.allOriginalUnresolvedVersions,46);
+ assert.equal(out.counts.allOriginalUnresolvedVersions,44);
  assert.equal(out.counts.sigstoreSignedPackages,3);
- assert.equal(out.counts.outOfScopeSigstoreSignedPackages,2);
+ assert.equal(out.counts.outOfScopeSigstoreSignedPackages,5);
  assert.equal(out.counts.sourceManifestMatches,3);
  assert.equal(out.counts.exactPackageSourceManifestMatches,1);
  assert.equal(out.counts.nativeBinaryParentSourceMatches,2);
- assert.equal(out.counts.remainingWithoutAdvertisedSigstore,41);
+ assert.equal(out.counts.remainingWithoutAdvertisedSigstore,36);
  assert.equal(out.records.some(x=>x.name.startsWith('@img/')),false);
  assert.equal(out.counts.independentlyReproducedPublishedNpmTarballs,0);
  assert.equal(out.counts.legallyApproved,0);
@@ -129,10 +132,11 @@ test('reject forged Sigstore receipt, modified raw bundles, missing original pac
   f=>{f.verified.records.push({...f.verified.records[0]});},
   f=>{f.raw=Buffer.from('{"verified":[],"invalid":[],"missing":[]}');},
   // An out-of-scope signed package must stay accounted for and verified.
-  f=>{f.candidates.records.splice(3,1);f.candidates.counts.exceptions=45;},
+  f=>{f.candidates.records.splice(3,1);f.candidates.counts.exceptions=43;},
   f=>{f.candidates.records[3].name='@img/sharp-libvips-darwin-arm64';},
   f=>{f.verified.records[3].signatureEvidenceStatus='UNVERIFIED_OR_NOT_EXPORTED';},
   f=>{f.verified.records[4].commercialApproval=true;},
+  f=>{f.verified.records[7].signatureEvidenceStatus='UNVERIFIED_OR_NOT_EXPORTED';},
   // A previously pinned Next.js version or source ref is no longer trusted.
   f=>{f.candidates.records[0].version='15.5.29';}
  ]){

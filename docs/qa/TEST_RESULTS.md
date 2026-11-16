@@ -10,6 +10,26 @@
 | Clinical signing, consent/release/AI/STT G2/G2b approval | **NO-GO**, unchanged |
 Codex previous-head P1 Rule 7 handover evidence was dispositioned **FIX_NOW** in this same PR. Synthetic only; no screenshots or private clinical payloads are archived. M5-05 #188 remains OPEN.
 
+## 2026-11-16 — #400 CI rounds 1–2 fixes
+Round 2 (`264a8ad`): **all 70 API Jest suites / 1585 tests PASS on Node 24.22.2 + NestJS 12**; `live-session`, `demo-journey`, `preview-container`, `sbom`, `secret-scan` PASS. The only failure was the M4-07 performance receipt validator pinning `nodeMajor === 20`; it now requires 24 (the approved runtime) and a new test rejects 20/22/26.
+Round 1 on Node 24.22.2: API Jest failed with `Must use import to load ES Module` — Jest 30's `require(esm)` path also needs `vm.SourceTextModule`, i.e. `--experimental-vm-modules` (the migration guide only mentions Node >=24.9). The API `test` and `test:coverage:core` scripts now append `--experimental-vm-modules` to `NODE_OPTIONS`. `demo-journey`/`live-session` failed in `ts-node` seeding with TS 6 `TS5011` (explicit `rootDir` now required with `outDir`): the API base tsconfig sets `rootDir: "./"` (build config keeps `./src`). Local: ts-node seed compile error gone, `tsc` PASS, `nest build` output unchanged (`dist/main.js`), built app loads.
+
+---
+
+## 2026-11-16 — Node 24 LTS + NestJS 12 (LOCAL ONLY on Node 22; EXACT-HEAD CI PENDING)
+| Check | Result |
+|---|---|
+| Installed tree vs Node 24.22.1 engines | PASS (0 incompatible) |
+| API `tsc --noEmit` (TS 6.0.3), `nest build` (CLI 12), `require('dist/app.module.js')` | PASS |
+| API Jest suite importing Nest 12 | NOT RUN — Node 22 fails with documented `ERR_REQUIRE_ESM`; requires Node >=24.9 (CI) |
+| API Jest suite without Nest imports (`fingerprints`) | PASS (2/2) on Jest 30 |
+| Web `tsc`, `next build`, node tests, Jest 30 full-source suite | PASS (6/6; 115 suites / 1570 tests) |
+| All `scripts/**/*.test.mjs` (incl. new Yarn-alias tests) | PASS |
+| CI `test` non-DB steps replayed | PASS except Sigstore steps 37/40 (local limitation, same as `main`) and M4-09 ancestry (shallow clone) |
+| npm advisory bulk check | 3 (dev tooling: `glob`, `minimatch`, `deepmerge`) |
+
+---
+
 ## 2026-11-16 — COM-02 non-DT successor after PR #394 Next.js 16 (NOT YET QUALIFIED)
 Current merged-main locked population is **46=25 DefinitelyTyped+21 other**. New successor reproduces workqueue tests and CI report archiving from #397 on updated main. #397's pre-upgrade CI run 43804692729 had the new workqueue test and generation PASS, and initial P1 handover records corrected; those results cannot be represented as testing the successor's upgraded dependency graph. Final-head successor CI = NOT RUN/PENDING, final-head Codex = PENDING; no publisher, commercial or clinical attestation, actual release image nor human legal approval. Earlier 53=26+27 and 47=26+21 are historical.
 

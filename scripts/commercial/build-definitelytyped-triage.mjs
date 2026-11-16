@@ -7,15 +7,12 @@ import {createHash} from 'node:crypto';
 import {COM02_UNRESOLVED_VERSIONS as N,DEFINITELYTYPED_VERSIONS as DT} from './com02-nextjs-pins.mjs';
 const sha=x=>createHash('sha256').update(x).digest('hex');
 const expected=[
- 'babel__core@7.20.5','babel__generator@7.27.0','babel__template@7.4.4',
- 'babel__traverse@7.28.0','cookiejar@2.1.5','eslint@9.6.1',
- 'eslint-scope@3.7.7','estree@1.0.9','graceful-fs@4.1.9',
- 'istanbul-lib-coverage@2.0.6','istanbul-lib-report@3.0.3',
- 'istanbul-reports@3.0.4','jest@29.5.14','json-schema@7.0.15',
- 'methods@1.1.4','node@20.19.43','node@26.6.5',
- 'react@19.3.0','react-dom@19.3.0','stack-utils@2.0.3',
- 'superagent@8.1.11','supertest@6.0.3','validator@13.15.10',
- 'yargs@17.0.35','yargs-parser@21.0.3'
+ 'babel__core@7.20.5','babel__generator@7.27.0','babel__template@7.4.4','babel__traverse@7.28.0',
+ 'cookiejar@2.1.5','istanbul-lib-coverage@2.0.6','istanbul-lib-report@3.0.3','istanbul-reports@3.0.4',
+ 'jest@30.0.0','methods@1.1.4','node@20.19.43','node@24.19.2',
+ 'node@26.6.5','react-dom@19.3.0','react@19.3.0','stack-utils@2.0.3',
+ 'superagent@8.1.11','supertest@6.0.3','validator@13.15.10','yargs-parser@21.0.3',
+ 'yargs@17.0.35'
 ];
 if(expected.length!==DT)throw Error('DEFINITELYTYPED_PIN_MISMATCH');
 const id=x=>x.name+'@'+x.version;

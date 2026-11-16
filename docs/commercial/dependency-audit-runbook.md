@@ -1,6 +1,6 @@
 # Dependency inventory runbook (COM-02)
 
-Use Node 20 or later from repository root:
+Use Node 24 (`.nvmrc`) from repository root:
 
 ```sh
 node scripts/commercial/inventory-direct-deps.mjs --output direct-dependency-inventory.json
