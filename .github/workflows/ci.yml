@@ -608,6 +608,8 @@ jobs:
       - run: cp .env.example .env
       - run: docker compose build
       - run: docker compose up -d --wait
+      - name: Verify no web image layer ships sharp/libvips (incl. Yarn cache)
+        run: bash scripts/preview/check-image-no-sharp.sh "$(docker compose images -q web)"
       - name: Verify API and web runtime identities are non-root
         run: |
           test "$(docker compose exec -T api id -u)" = 1000
@@ -659,6 +661,8 @@ jobs:
           node --check scripts/preview/generate-secrets.mjs
       - name: Build unified preview image
         run: docker build -f Dockerfile.preview -t tb-synthetic-preview:ci .
+      - name: Verify no preview image layer ships sharp/libvips (incl. Yarn cache)
+        run: bash scripts/preview/check-image-no-sharp.sh tb-synthetic-preview:ci
       - name: Generate container OS/runtime CycloneDX evidence from built preview image
         uses: anchore/sbom-action@v0
         with:

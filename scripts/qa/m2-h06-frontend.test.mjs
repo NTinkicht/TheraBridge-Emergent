@@ -121,11 +121,18 @@ test('Next image optimizer stays disabled and release images never ship sharp/li
   const grep = spawnSync('grep', ['-rlE', "from ['\"]next/(legacy/)?image['\"]", src], { encoding: 'utf8' });
   assert.equal(grep.status, 1, 'next/image is imported while the optimizer is disabled: ' + grep.stdout);
   for (const dockerfile of ['Dockerfile.preview', 'apps/web/Dockerfile']) {
-    const text = read(dockerfile);
-    const install = text.indexOf('yarn install --frozen-lockfile');
-    const strip = text.indexOf("-path '*/node_modules/sharp' -o -path '*/node_modules/@img'");
-    const build = text.indexOf('yarn workspace @therabridge/web build');
-    assert.ok(install >= 0 && strip > install && strip < build, dockerfile + ' must strip sharp/@img after install and before the web build');
-    assert.match(text, /! find \/repo -type d .*node_modules\/sharp.*\| grep -q \./, dockerfile + ' must fail closed if sharp/@img remain');
+    // Join line continuations so each entry is one Dockerfile instruction (= one image layer).
+    const instructions = read(dockerfile).replace(/\\\n/g, ' ').split('\n');
+    const install = instructions.filter(x => x.includes('yarn install --frozen-lockfile'));
+    assert.equal(install.length, 1, dockerfile + ' must install dependencies exactly once');
+    // Removal must happen in the SAME layer as the install, or the binaries stay recoverable from it.
+    assert.match(install[0], /^RUN yarn install .*-path '\*\/node_modules\/sharp' -o -path '\*\/node_modules\/@img'.*-exec rm -rf/, dockerfile);
+    assert.match(install[0], /&&\s+yarn cache clean\s+&&/, dockerfile + ' must drop Yarn cached package copies in the install layer');
+    assert.match(install[0], /&&\s+!\s+find \/repo "\$\(yarn cache dir\)" -type d .*\| grep -q \.$/, dockerfile + ' must fail closed if sharp/@img remain');
+    assert.ok(instructions.findIndex(x => x.includes('yarn install')) < instructions.findIndex(x => x.includes('yarn workspace @therabridge/web build')), dockerfile);
   }
+  // Built images are also scanned layer by layer in CI, not only the merged filesystem.
+  const ci = read('.github/workflows/ci.yml');
+  assert.match(ci, /check-image-no-sharp\.sh tb-synthetic-preview:ci/);
+  assert.match(ci, /check-image-no-sharp\.sh "\$\(docker compose images -q web\)"/);
 });

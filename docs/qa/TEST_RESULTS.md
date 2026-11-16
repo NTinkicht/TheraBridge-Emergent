@@ -1,3 +1,12 @@
+## 2026-11-16 — #394 Codex P2 (image layers) fix (LOCAL; exact-head CI PENDING)
+| Check | Result |
+|---|---|
+| `check-image-no-sharp.sh` on simulated `docker save` archives | PASS clean (2 layers incl. gzip); FAIL as expected on a layer with Yarn-cached `sharp`; FAIL as expected with no layers |
+| `m2-h06-frontend.test.mjs` same-layer contract | PASS (9/9); FAILS as expected when the strip is moved back to its own `RUN` |
+| Real image build + layer scan | NOT RUN locally (no Docker daemon) — `preview-container` and `compose` CI authoritative |
+
+---
+
 ## 2026-11-15 — #394 sharp removal (LOCAL; exact-head CI PENDING)
 | Check | Result |
 |---|---|
