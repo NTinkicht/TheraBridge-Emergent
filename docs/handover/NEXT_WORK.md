@@ -1,3 +1,8 @@
+## 2026-11-17 — COM-02 #404 final exact-head gates after 8+1+1 empirical result
+1. Qualify final Rule7-updated head with all six required CI jobs, Smart CI, SBOM and commercial inventory and get an independent Codex review for exactly that HEAD. Explicitly disposition original P1 ten-vs-nine root and emoji-regex fixture findings with verified run 43952347637, resolve comments only after evidence, and merge only when no conflicts/failing checks.
+2. Pursue pinned `unicode-emoji-modifier-base@1.0.0` independent Git manifest/archive evidence #405; investigate `@tokenizer/token@0.3.0` byte mismatch #402. Never promote manifest matches to publisher/build attestation.
+3. Continue remaining 21 DefinitelyTyped and 23 non-DT npm release lineages, 91 asset-rights obligations, genuine independently signed SaaS production and delivered Enterprise OCI release receipts, counsel approvals and clinical G2/G2b NO-GO.
+
 ## 2026-11-17 — COM-02 #404 ten-root full population closure checks
 1. Re-run exact-head CI and inspect nine SRI-qualified manifest comparisons plus **one pinned unobserved root**; verify counts ten root candidates = nine with frozen observations + one `SOURCE_OBSERVATION_PENDING_CURRENT_LOCKED_PACKAGE` (included as unavailable), no falsely verified archive/source claim.
 2. Independent Codex review/Rule13 disposition and all six full CI jobs, SBOM/Smart CI, commercial inventory qualification green, clean main ancestry before merge. No legacy stale #399 merge.
