@@ -1,3 +1,8 @@
+## 2026-11-16 — #400 CI round 1 fixes
+Round 1 on Node 24.22.2: API Jest failed with `Must use import to load ES Module` — Jest 30's `require(esm)` path also needs `vm.SourceTextModule`, i.e. `--experimental-vm-modules` (the migration guide only mentions Node >=24.9). The API `test` and `test:coverage:core` scripts now append `--experimental-vm-modules` to `NODE_OPTIONS`. `demo-journey`/`live-session` failed in `ts-node` seeding with TS 6 `TS5011` (explicit `rootDir` now required with `outDir`): the API base tsconfig sets `rootDir: "./"` (build config keeps `./src`). Local: ts-node seed compile error gone, `tsc` PASS, `nest build` output unchanged (`dist/main.js`), built app loads.
+
+---
+
 ## 2026-11-16 — Node 24 LTS + NestJS 12 (LOCAL ONLY on Node 22; EXACT-HEAD CI PENDING)
 | Check | Result |
 |---|---|
