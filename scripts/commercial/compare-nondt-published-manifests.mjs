@@ -51,7 +51,7 @@ async function fetchArchive(url){
   req.on('timeout',()=>req.destroy(Error('TIMEOUT')));req.on('error',reject);
  });
 }
-async function buildSourceComparison(queue,observations,lockText,{fetchBuffer=fetchArchive}={}){
+async function buildSourceComparison(queue,observations,rootReceipt,lockText,{fetchBuffer=fetchArchive}={}){
  if(queue?.schema!=='therabridge-com02-nondt-publication-evidence-workqueue-v1'||
    queue.counts?.allExceptions!==46||queue.counts?.definitelyTypedExcluded!==25||
    queue.counts?.nonDefinitelyTyped!==21||queue.commercialApproval!==false||
@@ -62,6 +62,20 @@ async function buildSourceComparison(queue,observations,lockText,{fetchBuffer=fe
    observations.legallyApproved!==0||observations.commercialLicenseGranted!==false||
    !Array.isArray(observations.records)||observations.records.length!==15)fail('UNTRUSTED_ENVELOPE');
  const lock=parseLock(lockText),seen=new Set(),records=[];
+ if(rootReceipt?.schema!=='therabridge-com02-15root-observation-crosscheck-v1'||
+    rootReceipt.counts?.originalVersions!==46||
+    rootReceipt.counts?.boundToCurrentPopulation!==11||
+    rootReceipt.counts?.publicationToSourceBuildCorrespondenceVerified!==0||
+    rootReceipt.counts?.legallyApproved!==0||rootReceipt.commercialLicenseGranted!==false||
+    !Array.isArray(rootReceipt.records)||rootReceipt.records.length!==15||
+    rootReceipt.observationSha256!==sha(JSON.stringify(observations)))
+   fail('SAME_RUN_ROOT_RECEIPT_NOT_BOUND');
+ const liveRoots=new Map();
+ for(const x of rootReceipt.records){
+   const id=JSON.stringify([x.name,x.version]);
+   if(liveRoots.has(id))fail('DUPLICATE_LIVE_ROOT');
+   liveRoots.set(id,x);
+ }
  const source=new Map(observations.records.map(x=>[JSON.stringify([x.name,x.version]),x]));
  if(source.size!==15)fail('DUPLICATED_SOURCE_OBSERVATIONS');
  for(const row of queue.records){
@@ -74,11 +88,16 @@ async function buildSourceComparison(queue,observations,lockText,{fetchBuffer=fe
   seen.add(key);
   if(row.category!=='SOURCE_ROOT_MANIFEST_ONLY')continue;
   const obs=source.get(key);
-  if(!obs||obs.commit!==row.sourceCommitCandidate||!h40.test(obs.commit||'')||
+  const live=liveRoots.get(key);
+  if(!obs||!live||live.commit!==obs.commit||live.sourceManifestSha256!==obs.sourceManifestSha256||
+     obs.commit!==row.sourceCommitCandidate||!h40.test(obs.commit||'')||
      !h64.test(obs.sourceManifestSha256||'')||obs.npmTarballBuiltFromSourceIndependentlyVerified!==false||
      obs.sourceLicenseTextLegallyApproved!==false||obs.commercialApproval!==false||
      obs.observationStatus!=='DIRECT_CLAIMED_REPOSITORY_EXACT_COMMIT_MANIFEST_MATCH')
    fail('SOURCE_OBSERVATION_NOT_BOUND');
+  const liveVerified=live.status==='DIRECT_CLAIMED_REPOSITORY_EXACT_COMMIT_MANIFEST_MATCH';
+  if(!liveVerified&&live.status!=='TRANSIENT_SOURCE_READ_UNAVAILABLE_REMAIN_UNVERIFIED')
+    fail('SOURCE_NOT_CORROBORATED_SAME_RUN');
   const candidates=lock.get(key)||[];
   if(candidates.length!==1)fail('AMBIGUOUS_OR_MISSING_LOCK_SOURCE');
   const url=validatedUrl(candidates[0].resolved);
@@ -87,6 +106,7 @@ async function buildSourceComparison(queue,observations,lockText,{fetchBuffer=fe
     publishedManifestSha256:null,archiveIntegrityVerified:false,
     status:'UNAVAILABLE',publicationToSourceIndependentlyAttested:false,
     legalApproval:false,commercialApproval:false};
+  if(!liveVerified){out.status='SOURCE_NOT_CORROBORATED_SAME_RUN';records.push(out);continue;}
   try{
    const bytes=await fetchBuffer(url);
    if(!Buffer.isBuffer(bytes)||bytes.length>MAX_GZIP)fail('BAD_FETCH_BYTES');
@@ -113,7 +133,8 @@ async function buildSourceComparison(queue,observations,lockText,{fetchBuffer=fe
  records.sort((a,b)=>a.name.localeCompare(b.name,'en'));
  return {schema:'therabridge-com02-nondt-published-manifest-byte-comparison-v1',
   status:'CANDIDATE_SOURCE_MANIFEST_COMPARISON_NOT_PUBLISHER_ATTESTATION',
-  inputSha256:{queue:sha(JSON.stringify(queue)),observations:sha(JSON.stringify(observations)),lock:sha(lockText)},
+  inputSha256:{queue:sha(JSON.stringify(queue)),observations:sha(JSON.stringify(observations)),
+    liveSourceRootReceipt:sha(JSON.stringify(rootReceipt)),lock:sha(lockText)},
   counts:{allNonDT:21,sourceRootCandidates:11,
     manifestByteMatches:records.filter(x=>x.status==='PUBLISHED_MANIFEST_BYTES_MATCH_IMMUTABLE_SOURCE_UNATTESTED').length,
     manifestByteDifferences:records.filter(x=>x.status==='PUBLISHED_MANIFEST_BYTES_DIFFER_FROM_IMMUTABLE_SOURCE').length,
@@ -124,11 +145,11 @@ async function buildSourceComparison(queue,observations,lockText,{fetchBuffer=fe
 if(process.argv[1]&&import.meta.url===new URL('file://'+process.argv[1]).href){
  try{
   const args=process.argv.slice(2);
-  if(args.length!==4||new Set(args).size!==4)fail('USAGE');
-  const [q,o,lock,dest]=args;
-  for(const p of [q,o,lock])if(statSync(p).size>32*1024*1024)fail('INPUT_TOO_LARGE');
+  if(args.length!==5||new Set(args).size!==5)fail('USAGE');
+  const [q,o,receipt,lock,dest]=args;
+  for(const p of [q,o,receipt,lock])if(statSync(p).size>32*1024*1024)fail('INPUT_TOO_LARGE');
   const result=await buildSourceComparison(JSON.parse(readFileSync(q,'utf8')),
-    JSON.parse(readFileSync(o,'utf8')),readFileSync(lock,'utf8'));
+    JSON.parse(readFileSync(o,'utf8')),JSON.parse(readFileSync(receipt,'utf8')),readFileSync(lock,'utf8'));
   writeFileSync(dest,JSON.stringify(result,null,2)+'\n',{flag:'wx'});
   console.log(JSON.stringify(result.counts));
  }catch(e){console.error('COM02_SOURCE_COMPARISON_NOT_AUTHORIZED',e.message);process.exitCode=1;}
