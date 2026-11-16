@@ -1,3 +1,8 @@
+## 2026-11-16 — Execute next COM-02 21-version publisher/source evidence work unit
+1. Starting from merged #398 and exact 46=25+21 lock baseline, implement independent registry SRI-qualified tarball archive vs immutable upstream source comparisons for all 11 source-root candidates, record per-file match, difference and generated-file caveats without granting publisher lineage.
+2. Validate authentic publisher/build subject and source commit/recipe only with independently trusted signed evidence. Triage 7 missing revisions, 2 native libvips source-subpath/real-edition exclusion claims and 1 legacy repository.
+3. Add adversarial tests, same-run CI evidence and four Rule 7 records; full exact-head CI and independent Codex before merge. 25 DT and 91 assets remain open; no actual SaaS/Enterprise OCI release proofs or G2/G2b clinical authorization.
+
 ## 2026-11-16 — COM-02 successor qualification after Next 16 merge
 1. Qualify new main-based non-DT workqueue PR on exact head after #394: test generator and same-run archived JSON against **46=25 DT+21 non-DT**. Six full CI jobs + Smart CI + SBOM, independent final-head Codex, zero unresolved comments and clean mergeability required.
 2. Supersede #397 only after successor successfully carries all eight changed paths and qualification; do not merge stale #397 over #394 or force-push incompatible history.
