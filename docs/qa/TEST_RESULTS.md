@@ -1,3 +1,6 @@
+## 2026-11-16 — COM-02 21-version publisher/source next WU (planning-only)
+Predecessor PR #398: full six required CI jobs plus SBOM and Smart CI PASS; independent exact-head Codex no findings; merged as 70b1e6928632e6b44efcf7d1ca4e1301dedede4e. New publisher/source correspondence WU documentation is PLANNED ONLY: implementation NOT RUN, new test cases NOT RUN, CI NOT RUN, independent review PENDING. Current population 46=25 DT+21 non-DT; 11 root-only, 7 missing revision, 2 native subpath, 1 untrusted origin. No commercial/clinical approval.
+
 ## 2026-11-16 — COM-02 non-DT successor after PR #394 Next.js 16 (NOT YET QUALIFIED)
 Current merged-main locked population is **46=25 DefinitelyTyped+21 other**. New successor reproduces workqueue tests and CI report archiving from #397 on updated main. #397's pre-upgrade CI run 43804692729 had the new workqueue test and generation PASS, and initial P1 handover records corrected; those results cannot be represented as testing the successor's upgraded dependency graph. Final-head successor CI = NOT RUN/PENDING, final-head Codex = PENDING; no publisher, commercial or clinical attestation, actual release image nor human legal approval. Earlier 53=26+27 and 47=26+21 are historical.
 
