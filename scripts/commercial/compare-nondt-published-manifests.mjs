@@ -68,7 +68,10 @@ async function buildSourceComparison(queue,observations,rootReceipt,lockText,{fe
     rootReceipt.counts?.publicationToSourceBuildCorrespondenceVerified!==0||
     rootReceipt.counts?.legallyApproved!==0||rootReceipt.commercialLicenseGranted!==false||
     !Array.isArray(rootReceipt.records)||rootReceipt.records.length!==15||
-    rootReceipt.observationSha256!==sha(JSON.stringify(observations)))
+    rootReceipt.observationSha256!==sha(JSON.stringify(observations))||
+    !h64.test(queue.sourceEvidenceSha256?.correspondence||'')||
+    !h64.test(rootReceipt.correspondenceSha256||'')||
+    rootReceipt.correspondenceSha256!==queue.sourceEvidenceSha256.correspondence)
    fail('SAME_RUN_ROOT_RECEIPT_NOT_BOUND');
  const liveRoots=new Map();
  for(const x of rootReceipt.records){
@@ -138,7 +141,7 @@ async function buildSourceComparison(queue,observations,rootReceipt,lockText,{fe
   counts:{allNonDT:21,sourceRootCandidates:11,
     manifestByteMatches:records.filter(x=>x.status==='PUBLISHED_MANIFEST_BYTES_MATCH_IMMUTABLE_SOURCE_UNATTESTED').length,
     manifestByteDifferences:records.filter(x=>x.status==='PUBLISHED_MANIFEST_BYTES_DIFFER_FROM_IMMUTABLE_SOURCE').length,
-    unavailable:records.filter(x=>x.status.startsWith('UNAVAILABLE')).length,
+    unavailable:records.filter(x=>x.status.startsWith('UNAVAILABLE')||x.status==='SOURCE_NOT_CORROBORATED_SAME_RUN').length,
     publisherToSourceAttested:0,legallyApproved:0},
   records,commercialApproval:false,g2ClinicalApproved:false,g2bClinicalApproved:false};
 }
