@@ -1,3 +1,6 @@
+## 2026-11-17 — COM-02 PR #399 reviewer findings P2 FIX_NOW
+Codex @ 4129a360 raised P2 (1) root receipt's independent source correspondence digest not linked to the workqueue and (2) source-read unavailability missing from counts. Fixes at commits 9dc6e19 and 88a8fea add strict 64-hex SHA-256 equality and conservative unavailable count, plus cross-run digest forgery and all-transient source regression tests. Historical npm observation 10 match/1 differ is unchanged; successor evidence and exact-head qualification PENDING. No source-publisher or legal clearance.
+
 ## 2026-11-17 — COM-02 #399 original npm archive observation result
 From real GitHub Actions CI run 43949059624 same-run installed-license artifact, parsed thermabridge-com02-nondt-published-manifest-comparison.json: 11 source-root rows, 10 PUBLISHED_MANIFEST_BYTES_MATCH_IMMUTABLE_SOURCE_UNATTESTED, 1 PUBLISHED_MANIFEST_BYTES_DIFFER_FROM_IMMUTABLE_SOURCE for @tokenizer/token@0.3.0, zero unavailable. All 11 archiveIntegrityVerified=true; no independent npm publication-to-source attestations. Result reflects only published package.json raw bytes, not full archive file-by-file source provenance. Updated Rule 7; final-head CI/Codex to requalify.
 
