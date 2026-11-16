@@ -340,6 +340,10 @@ jobs:
             /tmp/therabridge-com02-definitelytyped-26-triage.json \
             docs/commercial/release-file-evidence.json \
             /tmp/therabridge-com02-closure-ledger.json
+      - name: Test non-DefinitelyTyped exact-version evidence workqueue
+        run: node --test scripts/commercial/build-com02-nondt-workqueue.test.mjs
+      - name: Derive non-DefinitelyTyped workqueue from same-run COM-02 ledger (never approval)
+        run: node scripts/commercial/build-com02-nondt-workqueue.mjs /tmp/therabridge-com02-closure-ledger.json /tmp/therabridge-com02-nondt-workqueue.json
       - name: Archive installed license evidence for full CI
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -365,6 +369,7 @@ jobs:
             /tmp/therabridge-com02-dt-snapshot-probes.json
             /tmp/therabridge-com02-dt-prepublication-probes.json
             /tmp/therabridge-com02-closure-ledger.json
+            /tmp/therabridge-com02-nondt-workqueue.json
             /tmp/therabridge-com02-root-observation-reconciliation.json
             /tmp/therabridge-com02-bulk-rights-evidence.json
             /tmp/therabridge-com02-release-scope-review.json
