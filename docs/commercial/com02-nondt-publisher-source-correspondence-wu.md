@@ -2,7 +2,7 @@
 
 **Status: IMPLEMENTED, EXACT-HEAD CI AND INDEPENDENT REVIEW PENDING. NOT publisher/build attestation or legal clearance.**
 
-Follows merged PR #398, supersedes stale-base PR #399 following PR #400's Node 24 / NestJS 12 / Jest 30 upgrade. The current exact npm exception population is **44 = 21 DefinitelyTyped + 23 non-DefinitelyTyped**. Of these, **9** currently locked packages have immutable source-root `package.json` observations, reconciled from 15 historical records (6 retired); other exception categories remain unresolved.
+Follows merged PR #398, supersedes stale-base PR #399 following PR #400's Node 24 / NestJS 12 / Jest 30 upgrade. The current exact npm exception population is **44 = 21 DefinitelyTyped + 23 non-DefinitelyTyped**. Of these, **10** currently locked packages are categorized as source-root candidates. **Nine** have independently frozen source-root `package.json` observations (from 15 historical records, six retired); **one additional exact current root, `unicode-emoji-modifier-base@1.0.0`, lacks a frozen independent observation and must remain explicitly unavailable**, never silently omitted.
 
 ## Executable evidence
 
@@ -12,15 +12,15 @@ Follows merged PR #398, supersedes stale-base PR #399 following PR #400's Node 2
 - Independently recomputed Git source-root reconciliation, bound **by SHA-256** to the same-run workqueue's correspondence digest
 - The current frozen Yarn v1 lock
 
-For each of nine current root candidates, download the pinned npm archive only from allowlisted registry HTTPS URLs, verify Yarn SRI and frozen tarball SHA-256, extract the original `package/package.json` bytes through a bounded fail-closed TAR parser, and compare their SHA-256 with separately corroborated immutable Git-source manifest bytes. Reject contradictory digests, duplicate/unsafe TAR entries, PAX/GNU override formats, forged approval, version/count drift. Transient Git source-read failures count as **unavailable**, never as verified or silently omitted.
+For each of nine independently observed root candidates, download the pinned npm archive only from allowlisted registry HTTPS URLs, verify Yarn SRI and frozen tarball SHA-256, extract the original `package/package.json` bytes through a bounded fail-closed TAR parser, and compare their SHA-256 with separately corroborated immutable Git-source manifest bytes. Reject contradictory digests, duplicate/unsafe TAR entries, PAX/GNU override formats, forged approval, version/count drift. Transient Git source-read failures count as **unavailable**, never as verified or silently omitted.
 
-Output is archived as `/tmp/therabridge-com02-nondt-published-manifest-comparison.json` with source input digests, exact per-version result, and **zero** independent publication-to-source/rights approvals. The `SOURCE_NOT_CORROBORATED_SAME_RUN` cases remain unavailable. Byte comparison of only root manifest does not prove npm build provenance or whole archive/source equality.
+The tenth candidate, `unicode-emoji-modifier-base@1.0.0`, is emitted with status `SOURCE_OBSERVATION_PENDING_CURRENT_LOCKED_PACKAGE` and zero source/archive verification in this comparator; obtaining a current immutable source observation is separately required. Output is archived as `/tmp/therabridge-com02-nondt-published-manifest-comparison.json` with source input digests, exact per-version result, and **zero** independent publication-to-source/rights approvals. The `SOURCE_NOT_CORROBORATED_SAME_RUN` cases remain unavailable. Byte comparison of only root manifest does not prove npm build provenance or whole archive/source equality.
 
 ## Historical evidence and current rebaseline
 
 The prior Node 22 / NestJS 11 lock contained 46=25+21 exceptions and 11 source-root candidates. Historical CI 43949059624 found **10 exact published manifest matches**, **1 raw mismatch** for `@tokenizer/token@0.3.0`, and **0 unavailable**; that evidence does **not** qualify the new 44-version lock. The single manifest mismatch is tracked by #402.
 
-Current nine-root Node24/Jest30 population requires fresh CI receipts. Published archive integrity, raw manifest correspondence, source-build issuer, counsel approval, copyright ownership and actual SaaS/Enterprise OCI distribution must remain separate.
+The current Node24/Jest30 workqueue has ten root candidates, of which nine are eligible for frozen-observation comparisons and one remains pending; fresh CI receipts are required. Published archive integrity, raw manifest correspondence, source-build issuer, counsel approval, copyright ownership and actual SaaS/Enterprise OCI distribution must remain separate.
 
 ## Release safety / outstanding work
 
