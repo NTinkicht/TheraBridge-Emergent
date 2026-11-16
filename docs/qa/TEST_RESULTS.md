@@ -1,3 +1,15 @@
+## 2026-11-16 — M5-05 PR #403 disclosure qualification evidence (CURRENT HEAD PENDING)
+| Check | Result / evidence |
+|---|---|
+| Static implementation: default OFF, native `details`, same authorized read models | IMPLEMENTED in PR #403; no production activation |
+| Previous source HEAD `fc2c3ff40e` isolated flagged `m5-child360-browser`: Enter expand/collapse + scoped care team/history, 3 roles × 5 widths | PASS (GitHub Actions CI run 43950893656, before Rule 7 docs correction) |
+| Previous HEAD `fc2c3ff40e` `live-session`, dedicated web coverage | PASS (same CI/coverage runs, before documentation changes) |
+| Current docs-corrected HEAD: complete six required CI jobs, preview-container, Compose, Smart CI gate, web coverage and final Codex review | **NOT RUN / PENDING** at time of this entry; prior-head green status must not transfer |
+| New real-user task navigation timings, human screen-reader/WCAG and manual five-width visual acceptance | **NOT RUN / NOT OBTAINED** |
+| Low-bandwidth, loading/error/blocked-state browser acceptance | **NOT RUN** |
+| Clinical signing, consent/release/AI/STT G2/G2b approval | **NO-GO**, unchanged |
+Codex previous-head P1 Rule 7 handover evidence was dispositioned **FIX_NOW** in this same PR. Synthetic only; no screenshots or private clinical payloads are archived. M5-05 #188 remains OPEN.
+
 ## 2026-11-16 — COM-02 non-DT successor after PR #394 Next.js 16 (NOT YET QUALIFIED)
 Current merged-main locked population is **46=25 DefinitelyTyped+21 other**. New successor reproduces workqueue tests and CI report archiving from #397 on updated main. #397's pre-upgrade CI run 43804692729 had the new workqueue test and generation PASS, and initial P1 handover records corrected; those results cannot be represented as testing the successor's upgraded dependency graph. Final-head successor CI = NOT RUN/PENDING, final-head Codex = PENDING; no publisher, commercial or clinical attestation, actual release image nor human legal approval. Earlier 53=26+27 and 47=26+21 are historical.
 
