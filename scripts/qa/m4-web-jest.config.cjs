@@ -10,7 +10,7 @@ module.exports = {
     '^.+\\.tsx?$': [require.resolve('ts-jest'), {
       isolatedModules: true,
       tsconfig: {
-        target: 'ES2022', module: 'CommonJS', moduleResolution: 'Node',
+        target: 'ES2022', module: 'CommonJS',
         esModuleInterop: true, jsx: 'react-jsx', allowJs: false,
       },
     }],

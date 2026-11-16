@@ -1,3 +1,8 @@
+## 2026-11-16 — Node 24 LTS + NestJS 12
+Branched from `9d5ec6b` (#394). Researched the NestJS 11→12 migration guide (Node/TS/Jest/ESM/lifecycle/logger changes) and Node release status; chose Node 24 LTS and recorded it as ADR-0001 Amendment 1. Upgraded API tooling, removed the Node-20 lockfile dedupe, fixed TS 6 deprecations, taught both COM-02 lock parsers Yarn `npm:` aliases (with tests), and re-baselined COM-02 pins/observations/curated paths. Local (Node 22.23.4, no Node 24 available here): API `tsc` + `nest build` PASS and built app loads Nest 12 via `require(esm)`; web tsc/build/node tests/Jest (115 suites / 1570 tests on Jest 30) PASS; all `scripts/**/*.test.mjs` PASS; COM-02 CI steps replayed PASS except the two Sigstore-dependent ones (same as `main`). API Jest suites that import Nest 12 **cannot run on Node 22** (`ERR_REQUIRE_ESM`, as documented) — NOT RUN locally; CI on Node 24 is authoritative.
+
+---
+
 ## 2026-11-15 — Next 16 / React 19 work unit
 Branched from merged #311 (`81ad2aa`). Upgraded web to Next 16.4.6 and React 19.3.1, renamed middleware to the Next 16 `proxy` convention, fixed React 19 typing, re-baselined COM-02 exact-version pins (46 versions / 25 DefinitelyTyped / Next 16.4.6 signed chain). Local: web tsc + Turbopack build PASS (same 41 routes + not-found), web node tests 6/6, web Jest 114 suites / 1563 tests on React 19 PASS, all `scripts/**/*.test.mjs` PASS, COM-02 CI steps replayed PASS except the two Sigstore-dependent steps that cannot run in this workspace (same as `main`). API e2e / browser / container jobs NOT RUN locally.
 

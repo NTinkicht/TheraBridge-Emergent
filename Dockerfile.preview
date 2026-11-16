@@ -1,6 +1,6 @@
 # Synthetic preview only. Next.js + NestJS in ONE container and ONE public port.
 # No real patient data, approval, signing, release or real audio/STT/AI.
-FROM node:20-bookworm-slim
+FROM node:24-bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates tini && rm -rf /var/lib/apt/lists/*
 WORKDIR /repo
 COPY package.json yarn.lock ./

@@ -24,32 +24,32 @@ const make=()=>{
    saasNetworkRights:'PENDING_COUNSEL_REVIEW',
    enterpriseRedistributionRights:'PENDING_COUNSEL_REVIEW'});
  }
- // Verify rejection of a missing external 46-version population, too.
- for(let i=0;i<21;i++){
+ // Verify rejection of a missing external 44-version population, too.
+ for(let i=0;i<23;i++){
   const name='other-'+i,version='1.0.0';
   u.push({name,version});c.push({name,version});q.push({name,version});
  }
  return [
   {schema:'therabridge-com02-upstream-authority-candidates-v1',
-   counts:{exceptions:46},records:u,commercialLicenseGranted:false,finalNoticesIssued:false},
+   counts:{exceptions:44},records:u,commercialLicenseGranted:false,finalNoticesIssued:false},
   {schema:'therabridge-com02-githead-source-corroboration-candidates-v1',
-   counts:{exceptions:46},records:c,commercialLicenseGranted:false,finalNoticesIssued:false},
+   counts:{exceptions:44},records:c,commercialLicenseGranted:false,finalNoticesIssued:false},
   {schema:'therabridge-com02-exact-version-rights-queue-v1',
-   counts:{exceptions:46},exceptions:q,commercialLicenseGranted:false,finalNoticesIssued:false}
+   counts:{exceptions:44},exceptions:q,commercialLicenseGranted:false,finalNoticesIssued:false}
  ];
 };
 const clone=x=>structuredClone(x);
-test('25 exact SRI-bound package rights rows and zero invented source lineage',()=>{
+test('21 exact SRI-bound package rights rows and zero invented source lineage',()=>{
  const report=build(...make());
- assert.equal(report.counts.definitelyTypedVersions,25);
+ assert.equal(report.counts.definitelyTypedVersions,21);
  assert.equal(report.counts.publisherToSourceAttested,0);
- assert.equal(report.records.length,25);
+ assert.equal(report.records.length,21);
  assert.equal(report.commercialApproval,false);
  assert.ok(report.records.every(x=>x.immutableSourceCommit===null&&
   x.npmPublisherToSourceIndependentlyVerified===false&&
   x.enterpriseRedistributionRights==='PENDING_COUNSEL_REVIEW'));
  const names=report.records.filter(x=>x.name==='@types/node');
- assert.deepEqual(names.map(x=>x.version),['20.19.43','26.6.5']);
+ assert.deepEqual(names.map(x=>x.version),['20.19.43','24.19.2','26.6.5']);
 });
 test('missing, duplicate, or version-drifted type package rejected',()=>{
  const a=make();a[0].records=a[0].records.filter(x=>x.name!=='@types/react');

@@ -19,7 +19,7 @@ docker compose down -v                  # remove containers and the synthetic DB
 
 ## Option B: Node on the host
 
-Requirements: Node 20 (`.nvmrc`), Yarn 1.22, PostgreSQL 15 or 16.
+Requirements: Node 24 (`.nvmrc`, >=24.9), Yarn 1.22, PostgreSQL 15 or 16.
 
 ```bash
 yarn install --frozen-lockfile

@@ -1,3 +1,17 @@
+## 2026-11-16 — Node 24 LTS + NestJS 12 (LOCAL ONLY on Node 22; EXACT-HEAD CI PENDING)
+| Check | Result |
+|---|---|
+| Installed tree vs Node 24.22.1 engines | PASS (0 incompatible) |
+| API `tsc --noEmit` (TS 6.0.3), `nest build` (CLI 12), `require('dist/app.module.js')` | PASS |
+| API Jest suite importing Nest 12 | NOT RUN — Node 22 fails with documented `ERR_REQUIRE_ESM`; requires Node >=24.9 (CI) |
+| API Jest suite without Nest imports (`fingerprints`) | PASS (2/2) on Jest 30 |
+| Web `tsc`, `next build`, node tests, Jest 30 full-source suite | PASS (6/6; 115 suites / 1570 tests) |
+| All `scripts/**/*.test.mjs` (incl. new Yarn-alias tests) | PASS |
+| CI `test` non-DB steps replayed | PASS except Sigstore steps 37/40 (local limitation, same as `main`) and M4-09 ancestry (shallow clone) |
+| npm advisory bulk check | 3 (dev tooling: `glob`, `minimatch`, `deepmerge`) |
+
+---
+
 ## 2026-11-16 — #394 Codex P2 (image layers) fix (LOCAL; exact-head CI PENDING)
 | Check | Result |
 |---|---|

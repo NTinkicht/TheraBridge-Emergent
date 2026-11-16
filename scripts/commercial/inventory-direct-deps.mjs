@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // COM-02: deterministic direct dependency inventory, NOT a legal/license determination.
-// Node >=20. No network access; does not modify package files.
+// Node >=24 (.nvmrc). No network access; does not modify package files.
 import { existsSync, readFileSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 

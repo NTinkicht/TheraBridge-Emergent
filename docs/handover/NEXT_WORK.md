@@ -1,3 +1,10 @@
+## 2026-11-16 — Node 24 / NestJS 12 PR qualification
+1. Exact-head six required jobs on Node 24 (API Jest + PostgreSQL e2e are the main risk: lifecycle hook ordering, HTTP adapter error mapping, `ConsoleLogger` structured params).
+2. Codex review of the final green HEAD; Rule 13 ledger for every finding.
+3. Owner sign-off of ADR-0001 Amendment 1 by merging; then consider Node 26 once Prisma/argon2 are verified on it, and Prisma 6 as a separate unit.
+
+---
+
 ## 2026-11-15 — Next 16 PR qualification
 1. Exact-head six required jobs + sbom/Smart CI; watch live-session/demo-journey (React 19 + Turbopack production build) and preview-container image SBOM.
 2. Independent Codex review of the final green HEAD; disposition every finding (Rule 13) before any Rule 16 merge.
