@@ -821,6 +821,7 @@ jobs:
       - test
       - live-session
       - demo-journey
+      - m5-child360-browser
       - compose
       - preview-container
       - smart-targeted
