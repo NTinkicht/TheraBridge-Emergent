@@ -1,3 +1,6 @@
+## 2026-11-18 — WU4-C illustration proposal UI
+PR #435 adds an authenticated staff-only metadata proposal/rejection panel on the existing activity library; no guardian image preview, unapproved upload or publication; G2/G2b NO-GO.
+
 ## 2026-11-17 — WU3 M5-10 / M5-04 shared accessibility and performance · CURRENT_STATE.md
 Implemented WAI-ARIA horizontal tabs with RTL Arrow/Home/End and disabled navigation, focusable skip-to-main link and named main, explicit focus/reduced-motion/RTL CSS, accessible focusable calendar hours with date-inclusive appointment names and bounded layout, linear source-bound goal history bucketing, and optional shared compact mobile cards preserving desktop semantic table. Coordinator exception view opts into cards at narrow widths. Jest includes mounted RTL, dense exact-version history and mobile/table contracts. No changes to role, tenant, clinical release, consent or server mutation rules; G2/G2b NO-GO unchanged. Exact-HEAD CI, Codex, redacted five-width screenshots, real NVDA/VoiceOver, WCAG contrast, low-bandwidth and measured task performance **PENDING/NOT RUN**; no issue closure claim for #187/#193.
 

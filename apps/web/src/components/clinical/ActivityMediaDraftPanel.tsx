@@ -41,7 +41,7 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
   }, [open, base]);
 
   const submit = async () => {
-    if (!templateVersion || busy) return;
+    if (!templateVersion || busy || loading) return;
     setBusy(true); setError(''); setNotice('');
     try {
       const saved = await activityMediaDrafts.propose(centerId, templateId, { ...form, templateVersion,
@@ -74,7 +74,7 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
     </label>;
 
   return <section className="space-y-3" data-testid={`media-drafts-${templateId}`}>
-    <Button variant="secondary" size="sm" aria-expanded={open} onClick={() => setOpen(v => !v)}>
+    <Button variant="secondary" size="sm" aria-expanded={open} onClick={() => { if (!open) setLoading(true); setOpen(!open); }}>
       <FileImage size={16} aria-hidden="true" />{open ? 'Close illustration proposals' : 'Illustration proposals'}
     </Button>
     {open && <Card className="space-y-4 p-4">
@@ -102,7 +102,7 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
         <div className="sm:col-span-2">{field('altText', 'Proposed accessible description', 'Describe the action and relevant materials')}</div>
         {form.sourceType === 'GENERATED' && <div className="sm:col-span-2">{field('providerTerms', 'Provider commercial terms evidence', 'Required for AI-generated proposals')}</div>}
       </div>
-      <Button onClick={() => void submit()} disabled={busy || !templateVersion || form.styleVersion.trim().length < 4 ||
+      <Button onClick={() => void submit()} disabled={busy || loading || !templateVersion || form.styleVersion.trim().length < 4 ||
         form.sceneType.trim().length < 3 || form.license.trim().length < 4 ||
         form.sourceReference.trim().length < 8 || form.altText.trim().length < 10 ||
         (form.sourceType === 'GENERATED' && form.providerTerms.trim().length === 0)}>

@@ -15,7 +15,8 @@ describe('WU4-C private, draft-only illustration UX boundary', () => {
   it('keeps genuine errors, busy states, canceled rejection and optimistic revision', () => {
     expect(comp).toContain('role="alert"');
     expect(comp).toContain('disabled={busy');
-    expect(comp).toContain('version: draft.version');
+    expect(comp).toContain('activityMediaDrafts.reject(centerId, templateId, draft.id, draft.version, reason.trim())');
+    expect(comp).toContain('busy || loading');
     expect(comp).toContain('setRejecting(null)');
   });
   it('requires written provenance and commercial terms for generated art', () => {
@@ -23,5 +24,20 @@ describe('WU4-C private, draft-only illustration UX boundary', () => {
     expect(comp).toContain('sourceReference');
     expect(comp).toContain('providerTerms');
     expect(comp).toContain('altText');
+  });
+});
+
+describe('WU4-C real API helper optimistic revision', () => {
+  it('passes the exact revision and reason to the authenticated POST', async () => {
+    const { rest } = require('../src/lib/auth');
+    const { activityMediaDrafts } = require('../src/lib/activity-media');
+    const send = jest.spyOn(rest, 'send').mockResolvedValueOnce({ id: 'draft', state: 'REJECTED', version: 8 });
+    try {
+      const value = await activityMediaDrafts.reject('center-1', 'activity-2', 'draft-3', 7, 'Anatomically incorrect hand pose');
+      expect(value.version).toBe(8);
+      expect(send).toHaveBeenCalledWith('POST',
+        '/api/centers/center-1/activities/activity-2/media-drafts/draft-3/reject',
+        { version: 7, reason: 'Anatomically incorrect hand pose' });
+    } finally { send.mockRestore(); }
   });
 });
