@@ -5,7 +5,7 @@ const React=require('react');
 const Renderer=require('react-test-renderer');
 const {act,create}=Renderer;
 const h=React.createElement;
-const {WorkspaceTabs}=require('../src/components/design/workspace-patterns');
+const {WorkspaceTabs,CompactTable}=require('../src/components/design/workspace-patterns');
 const {summarizeObservations}=require('../src/lib/progress-analysis');
 const read=name=>fs.readFileSync(path.join(__dirname,'../src',name),'utf8');
 const tabs=[
@@ -49,6 +49,26 @@ describe('M5-10 keyboard, RTL, focus landmarks and responsive contracts',()=>{
   expect(css).toContain('scroll-padding-block-start');
   expect(css).toContain('var(--focus-ring');
   expect(css).toContain('[dir="rtl"]');
+ });
+ it('small-screen alternatives keep the exact same record cells and an accessible desktop caption',async()=>{
+  let tree;
+  await act(async()=>{tree=create(h(CompactTable,{caption:'Authorized schedule exceptions',
+    columns:[{id:'date',label:'Date'},{id:'status',label:'Status'}],
+    rows:[{id:'one',cells:{date:'2099-01-01',status:'Cancelled'}}],mobileCards:true}));});
+  const text=JSON.stringify(tree.toJSON());
+  expect(tree.root.findByProps({'data-testid':'compact-mobile-cards'})).toBeTruthy();
+  expect(tree.root.findByType('caption').props.children).toBe('Authorized schedule exceptions');
+  expect(text).toContain('2099-01-01');
+  expect(text).toContain('Cancelled');
+  expect(tree.root.findByProps({role:'region'}).props.tabIndex).toBe(0);
+  await act(async()=>tree.unmount());
+ });
+ it('calendar dense-source performance scans without unbounded spread arguments',()=>{
+  const code=read('components/operations/Calendar.tsx');
+  expect(code).toContain('for (const a of items)');
+  expect(code).not.toContain('Math.min(7, ...mins');
+  expect(code).toContain('aria-label="Appointment calendar hours"');
+  expect(code).toContain('dayTitle(dayKey(a.startsAt)');
  });
  it('dense observations remain sorted, scoped to exact plan version and numerically identical',()=>{
   const observations=Array.from({length:1500},(_,i)=>({
