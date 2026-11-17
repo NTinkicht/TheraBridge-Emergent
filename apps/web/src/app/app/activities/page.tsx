@@ -158,7 +158,7 @@ function FamilyActivities({ session, onError }: { session: SessionInfo; onError:
   const fetcher = useCallback(() => clinicalApi.family(centerId), [centerId]);
   const { data, failed, reload } = useLoad(fetcher, onError);
   return (
-    <div className="theme-family-light space-y-5 rounded-card bg-fam-canvas p-4 text-fam-ink md:p-6" data-testid="family-activities">
+    <div className="theme-family-auto space-y-5 rounded-card bg-fam-canvas p-4 text-fam-ink md:p-6" data-testid="family-activities">
       <div>
         <h1 className="font-display text-[26px] font-bold">Activities at home</h1>
         <p className="mt-1 rounded-control bg-fam-warm p-3 text-[14px]" data-testid="family-activities-sample-note">These are <strong>sample activities</strong> from a synthetic library, chosen for your child’s services. Your therapist hasn’t shared a home plan here yet, because sharing plans is switched off in this version.</p>
