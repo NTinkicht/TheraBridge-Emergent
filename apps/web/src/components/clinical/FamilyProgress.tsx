@@ -12,9 +12,9 @@ const FAMILY_STATUS = {
 } as const;
 
 // The warm family-facing progress format. Used for the internal unreleased preview and the synthetic family example.
-export function FamilyProgress({ data, banner, testId }: { data: Data; banner: React.ReactNode; testId: string }) {
+export function FamilyProgress({ data, banner, testId, theme = 'light' }: { data: Data; banner: React.ReactNode; testId: string; theme?: 'light' | 'auto' }) {
   return (
-    <div className="theme-family-light space-y-5 rounded-card bg-fam-canvas p-4 text-fam-ink md:p-6" data-testid={testId}>
+    <div className={`${theme === 'auto' ? 'theme-family-auto' : 'theme-family-light'} space-y-5 rounded-card bg-fam-canvas p-4 text-fam-ink md:p-6`} data-testid={testId}>
       {banner}
       <header className="flex items-start gap-3">
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-fam-accentTint text-fam-accent"><Sprout size={22} aria-hidden="true" /></span>

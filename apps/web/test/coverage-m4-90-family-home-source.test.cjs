@@ -34,7 +34,7 @@ const kid=(more={})=>({
 });
 const family=(children=[kid()])=>({center:{name:'Fictional Center',timezone:'Asia/Dubai'},children});
 let tree=null,onError;
-const mount=async()=>act(async()=>{tree=create(h(FamilyHome,{centerId:'fictional-center',onError}));
+const mount=async(permissions)=>act(async()=>{tree=create(h(FamilyHome,{centerId:'fictional-center',onError,permissions}));
  await Promise.resolve();await Promise.resolve();});
 const find=id=>tree.root.findAllByProps({'data-testid':id});
 const get=id=>tree.root.findByProps({'data-testid':id});
@@ -170,12 +170,80 @@ describe('M4-08 real family-home branch qualification honors private child/visit
   await mount();expect(find('family-unread')).toHaveLength(0);
   expect(get('family-messages-link')).toBeTruthy();
  });
- it('multiple authorized child links each get independent reminder state',async()=>{
-  mockData=family([kid(),kid({id:'child-b',name:'Another fictional child',
-   fullName:'Another Fictional Child',remindersEnabled:true})]);await mount();
+ it('three authorized siblings show one focused child at a time and retain server-confirmed reminder preferences',async()=>{
+  mockData=family([
+    kid(),kid({id:'child-b',name:'Second fictional child',fullName:'Second Fictional Child',remindersEnabled:true}),
+    kid({id:'child-c',name:'Third fictional child',fullName:'Third Fictional Child',remindersEnabled:false})
+  ]);await mount();
+  expect(get('family-sibling-switcher')).toBeTruthy();
   expect(get('family-reminders-toggle-child-a').props['aria-checked']).toBe(false);
-  expect(get('family-reminders-toggle-child-b').props['aria-checked']).toBe(true);
+  expect(find('family-child-child-b')).toHaveLength(0);
   await click('family-reminders-toggle-child-a');
+  await click('family-switch-child-b');
+  expect(find('family-child-child-a')).toHaveLength(0);
   expect(get('family-reminders-toggle-child-b').props['aria-checked']).toBe(true);
+  await click('family-switch-child-c');
+  expect(get('family-reminders-toggle-child-c').props['aria-checked']).toBe(false);
+  await click('family-switch-child-a');
+  expect(get('family-reminders-toggle-child-a').props['aria-checked']).toBe(true);
+  expect(opsApi.setReminders).toHaveBeenCalledWith('fictional-center','child-a',true);
+
  });
+ it('in-flight reminder save remains pending and updates the visible sibling after a round trip',async()=>{
+  let complete;
+  const deferred=new Promise(resolve=>{ complete=resolve; });
+  opsApi.setReminders.mockReturnValueOnce(deferred);
+  mockData=family([kid(),kid({id:'child-b',name:'Second fictional child'})]);
+  await mount();
+  await click('family-reminders-toggle-child-a');
+  expect(get('family-reminders-toggle-child-a').props.disabled).toBe(true);
+  await click('family-switch-child-b');
+  await click('family-switch-child-a');
+  expect(get('family-reminders-toggle-child-a').props.disabled).toBe(true);
+  expect(get('family-reminders-toggle-child-a').props['aria-checked']).toBe(false);
+  await act(async()=>{complete({remindersEnabled:true});await Promise.resolve();await Promise.resolve();});
+  expect(get('family-reminders-toggle-child-a').props.disabled).toBe(false);
+  expect(get('family-reminders-toggle-child-a').props['aria-checked']).toBe(true);
+  expect(opsApi.setReminders).toHaveBeenCalledTimes(1);
+ });
+ it('failed in-flight sibling save preserves last confirmed state when child is reselected',async()=>{
+  let rejectSave;
+  opsApi.setReminders.mockReturnValueOnce(new Promise((_,reject)=>{rejectSave=reject;}));
+  mockData=family([kid(),kid({id:'child-b'})]);
+  await mount();await click('family-reminders-toggle-child-a');
+  await click('family-switch-child-b');await click('family-switch-child-a');
+  await act(async()=>{rejectSave(new Error('Synthetic network refusal'));await Promise.resolve();await Promise.resolve();});
+  expect(get('family-reminders-toggle-child-a').props['aria-checked']).toBe(false);
+  expect(get('family-reminders-toggle-child-a').props.disabled).toBe(false);
+  expect(html()).toContain('That didn');
+  expect(onError).toHaveBeenCalledTimes(1);
+  expect(opsApi.setReminders).toHaveBeenCalledTimes(1);
+  await click('family-reminders-toggle-child-a');
+  expect(html()).not.toContain('That didn');
+  expect(get('family-reminders-toggle-child-a').props['aria-checked']).toBe(true);
+ });
+ it('permission-scoped family quick tasks never surface ungranted navigation or fetch messages',async()=>{
+  await mount(['family.portal.read']);
+  expect(find('family-quick-practice')).toHaveLength(0);
+  expect(find('family-quick-documents')).toHaveLength(0);
+  expect(find('family-messages-link')).toHaveLength(0);
+  expect(messagesApi.list).not.toHaveBeenCalled();
+ });
+ it('family light/dark selection uses the prepaint auto theme instead of forcing light',async()=>{
+  await mount(['family.portal.read','center.messages.use']);
+  expect(get('family-home').props.className).toContain('theme-family-auto');
+  expect(get('family-home').props.className).not.toContain('theme-family-light');
+  expect(get('family-quick-tasks')).toBeTruthy();
+ });
+ it('revoked family projection removes formerly visible child and sibling switcher',async()=>{
+  mockData=family([kid(),kid({id:'child-b'})]);await mount();
+  await click('family-switch-child-b');
+  expect(get('family-child-child-b')).toBeTruthy();
+  mockData=family([]);
+  await act(async()=>tree.update(h(FamilyHome,{centerId:'fictional-center',onError})));
+  expect(find('family-child-child-b')).toHaveLength(0);
+  expect(find('family-sibling-switcher')).toHaveLength(0);
+  expect(get('family-empty')).toBeTruthy();
+ });
+
 });
