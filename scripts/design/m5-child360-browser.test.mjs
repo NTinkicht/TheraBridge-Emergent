@@ -7,12 +7,14 @@ const receipt=()=>({
   featureFlag:'ENABLED_CI_ONLY',clinicalGate:'NO_GO_G2_G2b',
   humanUsabilityApproval:'NOT_OBTAINED',accessibilityApproval:'NOT_OBTAINED',
   personas:3,observations:15,deniedRoles:1,navigationFailures:0,
+  slowLoads:15,failuresRecovered:15,
 });
 test('evidence must report three synthetic roles and exactly fifteen five-width observations',()=>{
   assert.equal(validateChild360Receipt(receipt()),true);
   for(const [field,value] of [
     ['observations',14],['observations',16],['personas',2],['deniedRoles',0],
-    ['navigationFailures',1],['featureFlag','DISABLED'],['clinicalGate','GO'],
+    ['navigationFailures',1],['slowLoads',14],['slowLoads',16],
+    ['failuresRecovered',14],['failuresRecovered',16],['featureFlag','DISABLED'],['clinicalGate','GO'],
     ['humanUsabilityApproval','APPROVED'],['accessibilityApproval','PASS'],
   ]){
     const invalid={...receipt(),[field]:value};
