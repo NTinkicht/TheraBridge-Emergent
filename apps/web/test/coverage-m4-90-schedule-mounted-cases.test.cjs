@@ -5,7 +5,11 @@ const {act,create}=Renderer,h=React.createElement;
 let mockSession,mockLoaded,mockFetcher,mockWide=true,mockListeners=[];
 jest.mock('@/components/centers/kit',()=>({
  Workspace:({children})=>children(mockSession,jest.fn()),
- useLoad:fetcher=>{mockFetcher=fetcher;return mockLoaded;},
+ useLoad:fetcher=>{
+  mockFetcher=fetcher;
+  return {...mockLoaded, data: mockLoaded.data
+    ? {queryKey:fetcher.queryKey,result:mockLoaded.data} : null};
+ },
  PageTitle:({title,action,testId})=>h('header',{'data-testid':testId},title,action),
  SelectField:({value,onChange,options,testId})=>h('select',{'data-testid':testId,value,onChange:e=>onChange(e.target.value)},
   options.map(o=>h('option',{key:o.value,value:o.value},o.label)))
