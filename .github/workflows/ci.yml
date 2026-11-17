@@ -362,6 +362,14 @@ jobs:
             /tmp/therabridge-com02-nondt-workqueue.json \
             yarn.lock \
             /tmp/therabridge-com02-root-405-evidence.json
+      - name: Test pinned tokenizer npm/source manifest difference classification
+        run: node --test scripts/commercial/explain-com02-tokenizer-402.test.mjs
+      - name: Explain authentic @tokenizer/token raw manifest mismatch without publisher attribution
+        run: |
+          node scripts/commercial/explain-com02-tokenizer-402.mjs \
+            /tmp/therabridge-com02-nondt-workqueue.json \
+            yarn.lock \
+            /tmp/therabridge-com02-tokenizer-402-diff.json
       - name: Archive installed license evidence for full CI
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -390,6 +398,7 @@ jobs:
             /tmp/therabridge-com02-nondt-workqueue.json
             /tmp/therabridge-com02-nondt-published-manifest-comparison.json
             /tmp/therabridge-com02-root-405-evidence.json
+            /tmp/therabridge-com02-tokenizer-402-diff.json
             /tmp/therabridge-com02-root-observation-reconciliation.json
             /tmp/therabridge-com02-bulk-rights-evidence.json
             /tmp/therabridge-com02-release-scope-review.json
