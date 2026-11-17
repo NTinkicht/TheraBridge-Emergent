@@ -1068,3 +1068,7 @@ Implemented next coherent PR: strict 3 exact signed npm tarball registry retriev
 
 ## 2026-11-17 — COM-02 latest-main reconciliation after M5 #403
 Ported immutable-source/nine npm published-manifest comparison (with pending tenth) and 6 adversarial offline tests onto clean main after M5-05 merged. Preserved M5 code and handover changes and exact 44-version lock. Historical artifacts 43952347637 and 43952897398 both passed the new test/generator and measured 8 match, 1 mismatch, 1 pending/unavailable. Original Codex P1 on missing tenth/emoji-regex version collisions fixed, tested and threads resolved in predecessor #404. New current-main CI, Codex and merge still pending. Legal, publishing, real edition and G2/G2b gates unchanged.
+
+## 2026-11-17 — COM-02 #405 implemented additive Git object/npm archive comparator
+Created standalone verify-com02-root-405.mjs with exact immutable source URL, independently pinned Git SHA1/SHA256, published npm Yarn SRI and SHA256 verification, strict TAR manifest parser, exact name/version, no redirects, bounded network reads, negative tests for forged commits/digests/identity/approvals. CI both runs adversarial tests and archives real receipt in installed-license bundle without changing historical 15-row frozen observations. New-head full CI NOT RUN/PENDING; actual npm manifest comparison NOT YET OBSERVED. No publication-to-source, legal or clinical approval.
+
