@@ -14,6 +14,23 @@
 | Clinical G2/G2b and commercial rights approvals | **NO-GO**, unchanged |
 Details: `docs/qa/CI-PARALLEL-CRITICAL-PATH-2026-11-17.md`.
 
+## 2026-11-17 — M5 WU1 #413 Rule 7 correction / qualification matrix
+| Verification | Evidence / accurate status |
+| --- | --- |
+| Permission-filtered eight-area shell and shared workspace patterns | Previously merged #393 / #395; preserved |
+| Desktop/mobile authorized destination search; no-match status; desktop matching groups expanded | IMPLEMENTED in PR #413; source/browser tests added; updated HEAD CI **NOT RUN/PENDING** |
+| Multi-context collapsed-rail switcher; role/center search reset; mobile dialog keyboard search | IMPLEMENTED; updated HEAD CI **NOT RUN/PENDING**; revoked-context end-to-end human acceptance NOT RUN |
+| WorkspaceTabs active-only ARIA controls; visible focus styles; Jest assertions | IMPLEMENTED; updated HEAD Jest/CI **NOT RUN/PENDING** |
+| Original head `20707161b0`: SBOM, secret scan, Smart CI plan | **PASS**, previous HEAD only |
+| Original head `20707161b0`: focused Web coverage workflow 44107832991 | **PASS**, previous HEAD only |
+| Original head `20707161b0`: remaining six exact-head CI jobs | **IN PROGRESS** at inspection; no PASS claim |
+| Original head independent Codex review | **FAIL/P1**: mandatory Rule 7 records not updated; all four corrected on successor HEAD, rereview PENDING |
+| Updated HEAD full six CI, Web coverage, SBOM, Smart CI, final Codex | **NOT RUN/PENDING** at documentation commit |
+| Five-width private screenshot review, screen readers, low bandwidth, family dark mode, revoked context, owner UX | **NOT RUN/NOT OBTAINED** |
+| Clinical G2/G2b signing/release, real AI/STT, clinical approval | **NO-GO**; synthetic-only preserved |
+
+Source and acceptance ledger: `docs/roadmap/M5-WU1-SHELL-DESIGN-CONSOLIDATION.md`. Do not close #186/#187 or merge PR #413 merely on document updates.
+
 ## 2026-11-17 — M5-05 scoped route/key + 3-task decision checks (NEW PR)
 | Verification | Result |
 |---|---|
@@ -1421,3 +1438,7 @@ Run 44016599836 failed at shell exit 127 when a mistakenly placed `/tmp/therabri
 ## 2026-11-17 — COM-02 #402 real tokenizer npm/Git manifest drift result
 CI 44016933031: offline field-drift classifier adversarial tests **PASS**, live original locked npm package archive vs immutable Git source classification **PASS**, receipt inspected. Exact published package.json SHA256 a677763aaed22462b4f9df2526b1038cef3a90bc6cf80be27b4e65d0f14472a9 != source SHA256 17a56b5bea3a89c3fc67b4b75769414c6c4910e483cd47da1d2a2b02c3ffaa69, **JSON leaf changes 0**, status RAW_BYTES_DIFFER_BUT_JSON_LEAVES_EQUAL_UNATTESTED. Original npm tarball SHA256 911758ceca239c8e5372700eedfbbd514f16d3c117b5af0a648f6e720487c209 and Yarn SRI verified. No independent publisher build attribution, no legal approval or G2/G2b; actual editions unknown. **Final Rule7-updated HEAD full CI/Codex PENDING**, previous CI does not qualify changed head.
 
+
+
+## 2026-11-17 — WU-LIC-01 consolidated provenance qualification (branch, NOT APPROVED)
+Single main-based licensing branch adds @tokenizer/token@0.3.0 strict exact npm/source semantic classifier, independent immutable npm archive and Git manifest rechecks, 44 exact-version/91 asset fail-closed same-run receipt reconciliation, adversarial tests and CI artifact. Historical 10 root candidates = 9 raw manifest byte matches + 1 tokenizer difference, **not publisher-build attestation**. 21 DefinitelyTyped + 23 non-DT remain externally unverified for authenticated publisher-to-source lineage; all 91 asset rights and genuine signed SaaS/Enterprise OCI distribution remain unresolved. See docs/commercial/WU-LIC-01-CONSOLIDATED-PROVENANCE.md. This commit is unqualified until exact-head full CI, Smart CI/SBOM and independent Codex review; do not merge with red checks or unresolved P1/P2. Commercial/IP/counsel grants and G2/G2b remain false; no real patient or production operations.
