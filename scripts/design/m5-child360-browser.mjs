@@ -169,11 +169,18 @@ export async function runChild360BrowserAcceptance({ passwords }) {
         for (const width of widths) {
           await page.setViewportSize({width,height:850});
           let intercepted = 0;
+          // Synchronize with the actual network interception rather than a
+          // wall-clock timeout; slow CI runners cannot race this pending GET.
+          let notifyIntercept;
+          let releaseResponse;
+          const requestCaptured = new Promise(resolve => { notifyIntercept = resolve; });
+          const responseGate = new Promise(resolve => { releaseResponse = resolve; });
           await page.route('**/api/centers/**', async route => {
             if (!workspaceRequest(route.request())) return route.continue();
             intercepted++;
             if (intercepted === 1) {
-              await new Promise(resolve => setTimeout(resolve,600));
+              notifyIntercept();
+              await responseGate;
               return route.continue();
             }
             if (intercepted === 2) {
@@ -184,10 +191,15 @@ export async function runChild360BrowserAcceptance({ passwords }) {
           });
           // First load is deliberately held to prove loading remains visible
           // and clinical content does not appear before authorization arrives.
-          await page.goto(clinical,{waitUntil:'domcontentloaded'});
-          await page.getByTestId('clinical-loading').waitFor({state:'visible'});
-          assert.equal(await page.getByRole('tablist',{name:'Child 360 sections'}).count(),0,
-            'No sensitive tab panel while scoped workspace GET is pending');
+          try {
+            await page.goto(clinical,{waitUntil:'domcontentloaded'});
+            await requestCaptured;
+            await page.getByTestId('clinical-loading').waitFor({state:'visible'});
+            assert.equal(await page.getByRole('tablist',{name:'Child 360 sections'}).count(),0,
+              'No sensitive tab panel while scoped workspace GET is pending');
+          } finally {
+            releaseResponse();
+          }
           await page.getByTestId('clinical-tab-overview').waitFor({state:'visible'});
           slowLoads++;
           // A fresh route mount forces the next scoped workspace request to
