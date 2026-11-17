@@ -41,3 +41,26 @@ describe('WU4-C real API helper optimistic revision', () => {
     } finally { send.mockRestore(); }
   });
 });
+
+describe('WU4-C media pagination and rights-history navigation', () => {
+  it('passes a bounded, encoded cursor through the shared authenticated GET helper', async () => {
+    const { rest } = require('../src/lib/auth');
+    const { activityMediaDrafts } = require('../src/lib/activity-media');
+    const get = jest.spyOn(rest, 'get').mockResolvedValueOnce({
+      items: [{ id: 'older-draft', state: 'DRAFT' }], nextCursor: null, hasMore: false,
+      publishEnabled: false, clinicalReleaseEnabled: false,
+    });
+    try {
+      const result = await activityMediaDrafts.list('tenant', 'template', '00000000-0000-4000-8000-000000000001', 25);
+      expect(result.items[0].id).toBe('older-draft');
+      expect(get).toHaveBeenCalledWith('/api/centers/tenant/activities/template/media-drafts?limit=25&cursor=00000000-0000-4000-8000-000000000001');
+    } finally { get.mockRestore(); }
+  });
+  it('offers paged history and does not discard new proposals when adding older pages', () => {
+    expect(comp).toContain('Load older proposals');
+    expect(comp).toContain('if (loading || loadingMore || busy || !nextCursor || !hasMore) return;');
+    expect(comp).toContain('const seen = new Set(previous.map(item => item.id));');
+    expect(comp).toContain('setNextCursor(result.nextCursor)');
+    expect(comp).toContain('disabled={busy || loading || loadingMore');
+  });
+});
