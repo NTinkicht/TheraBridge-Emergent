@@ -75,7 +75,7 @@ export async function runWU2BrowserQualification({ passwords, output }) {
         await page.getByTestId('login-email-input').fill(persona.email);
         await page.getByTestId('login-password-input').fill(passwords[persona.email]);
         await page.getByTestId('login-submit-button').click();
-        await page.waitForURL(/\/app(?:\/|$)/, { timeout: 20000 });
+        await page.waitForURL(/\/app(?:\/|$)/, { waitUntil: 'domcontentloaded', timeout: 20000 });
         const actual = await page.evaluate(async () => {
           const response = await fetch('/api/auth/session', { credentials: 'include' });
           if (!response.ok) throw Error('Session not authorized');
