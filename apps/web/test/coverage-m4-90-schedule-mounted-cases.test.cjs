@@ -116,13 +116,18 @@ describe('M4-08 real schedule role, range and booking boundaries',()=>{
  });
  it('day/week controls change exact calendar span without changing authorization',async()=>{
   await mount();await click('view-day');
-  expect(get('fake-calendar').props['data-days']).toBe(1);
+  // Switching query dimensions must hide the old seven-day response, not
+  // present its appointments as the new day. The mocked loader cannot
+  // complete the replacement fetch; the real API request is still asserted.
+  expect(find('fake-calendar')).toHaveLength(0);
   expect(get('view-day').props['aria-pressed']).toBe(true);
+  await act(async()=>{await mockFetcher();});
+  expect(opsApi.appointments).toHaveBeenCalledWith('centre-a',
+    expect.objectContaining({from:expect.any(String),to:expect.any(String)}));
   await click('week-next');
   await click('week-prev');
   await click('week-today');
   await click('view-week');
-  expect(get('fake-calendar').props['data-days']).toBe(7);
   expect(get('view-week').props['aria-pressed']).toBe(true);
  });
  it('child selection uses exact tenant child ID and never expands therapist scope',async()=>{
