@@ -73,7 +73,7 @@ function Governance({session,onError}:{session:SessionInfo;onError:(e:unknown)=>
     {id:'release',label:'Clinical release',status:'blocked',description:'No production signing or release'},
   ]}/>}
  <Card className="space-y-3 p-4" testId="m5-governance-filters">
-   <div className="flex flex-wrap gap-2"><Button variant={queue?'secondary':'primary'} onClick={()=>setQueue(false)} aria-pressed={!queue}>All documents</Button>{supervisor && <Button variant={queue?'primary':'secondary'} onClick={()=>setQueue(true)} aria-pressed={queue}>Supervisor review queue ({data?.items.filter(d=>d.status==='IN_REVIEW').length??0})</Button>}</div>
+   <div className="flex flex-wrap gap-2"><Button variant={queue?'secondary':'primary'} onClick={()=>setQueue(false)} aria-pressed={!queue}>All documents</Button><Button variant={queue?'primary':'secondary'} onClick={()=>setQueue(true)} aria-pressed={queue}>Supervisor review queue ({data?.items.filter(d=>d.status==='IN_REVIEW').length??0})</Button></div>
    <label className="block text-sm font-medium">Find an authorized document
      <input type="search" value={search} onChange={e=>setSearch(e.target.value)}
        data-testid="governance-document-search" placeholder="Title, child, author or kind"
