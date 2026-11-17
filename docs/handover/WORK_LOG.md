@@ -1074,4 +1074,7 @@ Created standalone verify-com02-root-405.mjs with exact immutable source URL, in
 
 ## 2026-11-17 — COM-02 #405 first real CI failure and exact locked registry correction
 CI run 44013997014: new adversarial offline tests PASS, but live immutable source/npm archive step failed with COM02_405_NOT_ALLOWLISTED because frozen yarn.lock resolves the exact package through registry.yarnpkg.com rather than registry.npmjs.org. The existing approved verify-published-tarballs.mjs allowlist permits both registry hosts. Added registry.yarnpkg.com to the new downloader while retaining HTTPS/no redirect, SHA-512 SRI and exact frozen archive SHA256; **new head CI PENDING**, no successful live archive/source receipt yet. No legal, commercial or G2/G2b approval.
- 
+
+## 2026-11-17 — COM-02 #405 real source/archive observation
+Inspected GitHub run 44014352663 installed-license ZIP, `therabridge-com02-root-405-evidence.json`: exact immutable Git source manifest and original npm published manifest hashes equal (242f5577f26c3fff547508911718348993d5ef04ff72a44c71115ce002521301), Git blob SHA1 independently checked, Yarn SHA512 and original archive SHA256 verified; strict offline adversarial tests PASS. First run failed source-host allowlist because frozen yarn.lock used registry.yarnpkg.com; corrected to same allowlist as existing verifier, with no relaxation of SHA limits. Historical 15-row observations unchanged; additive current tenth source root observed, no publisher/build/license attestation. Issued #405 comment; final Rule7-updated HEAD CI/Codex PENDING.
+
