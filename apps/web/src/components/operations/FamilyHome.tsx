@@ -34,7 +34,7 @@ function Visit({ a, past }: { a: FamilyVisit; past?: boolean }) {
   );
 }
 
-function Reminders({ centerId, kid, onError }: { centerId: string; kid: Kid; onError: (e: unknown) => void }) {
+function Reminders({ centerId, kid, onError, onSaved }: { centerId: string; kid: Kid; onError: (e: unknown) => void; onSaved: (id: string, enabled: boolean) => void }) {
   const [on, setOn] = useState(kid.remindersEnabled);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(false);
@@ -42,7 +42,8 @@ function Reminders({ centerId, kid, onError }: { centerId: string; kid: Kid; onE
     setBusy(true);
     setErr(false);
     try {
-      setOn((await opsApi.setReminders(centerId, kid.id, !on)).remindersEnabled);
+      const saved = (await opsApi.setReminders(centerId, kid.id, !on)).remindersEnabled;
+      setOn(saved); onSaved(kid.id, saved);
     } catch (e) {
       setErr(true);
       try { onError(e); } catch { /* shown inline */ }
@@ -63,7 +64,7 @@ function Reminders({ centerId, kid, onError }: { centerId: string; kid: Kid; onE
   );
 }
 
-function ChildCard({ centerId, centerName, kid, onError }: { centerId: string; centerName: string; kid: Kid; onError: (e: unknown) => void }) {
+function ChildCard({ centerId, centerName, kid, onError, onReminderSaved }: { centerId: string; centerName: string; kid: Kid; onError: (e: unknown) => void; onReminderSaved: (id: string, enabled: boolean) => void }) {
   const [showAll, setShowAll] = useState(false);
   const [allUp, setAllUp] = useState(false);
   const history = showAll ? kid.history : kid.history.slice(0, 4);
@@ -110,7 +111,7 @@ function ChildCard({ centerId, centerName, kid, onError }: { centerId: string; c
             </ul>
           ) : <p className="mt-2 text-[14px] text-fam-muted">Your care team will appear here once assigned.</p>}
         </section>
-        <section className="space-y-3 self-start"><Reminders centerId={centerId} kid={kid} onError={onError} /></section>
+        <section className="space-y-3 self-start"><Reminders centerId={centerId} kid={kid} onError={onError} onSaved={onReminderSaved} /></section>
       </div>
       </DisclosureSection>
     </Card>
@@ -127,6 +128,7 @@ function ScopedFamilyHome({ centerId, onError, permissions }: { centerId: string
   const { data, failed, reload } = useLoad(fetcher, onError);
   const [unread, setUnread] = useState(0);
   const [chosen, setChosen] = useState('');
+  const [reminderValues, setReminderValues] = useState<Record<string, boolean>>({});
   const can = (permission: string) => permissions === undefined || permissions.includes(permission);
   const selected = data?.children.find(child => child.id === chosen) ?? data?.children[0];
   useEffect(() => {
@@ -176,7 +178,9 @@ function ScopedFamilyHome({ centerId, onError, permissions }: { centerId: string
         </span>
         {unread > 0 ? <Pill tone="info" testId="family-unread">{unread} new</Pill> : <CalendarCheck2 size={18} className="text-fam-muted" aria-hidden="true" />}
       </Link>}
-      {selected && <ChildCard key={selected.id} centerId={centerId} centerName={data.center.name} kid={selected} onError={onError} />}
+      {selected && <ChildCard key={selected.id} centerId={centerId} centerName={data.center.name}
+        kid={{ ...selected, remindersEnabled: reminderValues[selected.id] ?? selected.remindersEnabled }}
+        onReminderSaved={(id, enabled) => setReminderValues(prev => ({ ...prev, [id]: enabled }))} onError={onError} />}
     </div>
   );
 }
