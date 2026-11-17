@@ -38,7 +38,11 @@ export function summarizeObservations(
   const periods = new Map<string, Observation[]>();
   for (const o of filtered) {
     const key = periodStart(o.observedOn, interval);
-    periods.set(key, [...(periods.get(key) ?? []), o]);
+    // Mutate only the newly created local bucket; preserve sorted exact-version
+    // observations while avoiding quadratic array copies for dense histories.
+    const bucket = periods.get(key);
+    if (bucket) bucket.push(o);
+    else periods.set(key, [o]);
   }
   return Array.from(periods, ([start, items]) => {
     const first = new Date(start + 'T00:00:00.000Z');
