@@ -5,6 +5,9 @@ import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 
 const REQUIRED_STATES=['TRIAL','ACTIVE','PAST_DUE','GRACE','EXPIRED','SUSPENDED','TERMINATED'];
+const REQUIRED_TRANSITIONS={TRIAL:['ACTIVE','EXPIRED','TERMINATED'],ACTIVE:['PAST_DUE','SUSPENDED','TERMINATED'],PAST_DUE:['ACTIVE','GRACE','SUSPENDED','TERMINATED'],GRACE:['ACTIVE','EXPIRED','SUSPENDED','TERMINATED'],EXPIRED:['ACTIVE','TERMINATED'],SUSPENDED:['ACTIVE','TERMINATED'],TERMINATED:[]};
+const REQUIRED_AUTH={editionRead:'CENTER_ADMIN_OR_PLATFORM_ADMIN_TENANT_SCOPED',editionUpdate:'PLATFORM_COMMERCIAL_ADMIN_EXPLICIT_NON_CLINICAL_AUTHORITY',billingWebhook:'PROVIDER_SIGNATURE_REPLAY_PROTECTION',enterpriseActivation:'PLATFORM_COMMERCIAL_ADMIN_PLUS_SIGNED_INSTALLATION_PROOF'};
+const REQUIRED_LICENSE_BINDINGS=['verifiedCustomerEntity','signedAgreementId','maxCenters','maxSeats','allowedEnvironments','installationDigest','validity','supportTerm'];
 const EDITIONS=['SAAS','ENTERPRISE'],PLANS=['STARTER','PROFESSIONAL','ENTERPRISE'];
 const SAFETY=['authenticated_read_previously_authorized_records','legally_required_data_export','audit_record_access','security_incident_response','privacy_request_handling','necessary_safety_handover'];
 const FORBIDDEN=['clinical_report_signing','therapist_report_release','real_patient_ai_processing','clinical_consent_grant','clinical_g2_or_g2b_override'];
@@ -41,10 +44,8 @@ export function validateCommercialSpec(x){
   fail('SAFETY_ACCESS');
  const sub=x.subscription;
  if(!sub||!eq(sub.states,REQUIRED_STATES)||
-  !onlyKeys(sub.transitions,REQUIRED_STATES)||REQUIRED_STATES.some(s=>
-    !unique(sub.transitions[s])||sub.transitions[s].some(t=>!REQUIRED_STATES.includes(t)||t===s))||
-  sub.transitions.TERMINATED.length!==0||!sub.transitions.ACTIVE.includes('SUSPENDED')||
-  !sub.transitions.GRACE.includes('EXPIRED')||!sub.transitions.TRIAL.includes('EXPIRED')||
+  !onlyKeys(sub.transitions,REQUIRED_STATES)||REQUIRED_STATES.some(state=>
+    !unique(sub.transitions[state])||!eq(sub.transitions[state],REQUIRED_TRANSITIONS[state]))||
   sub.graceDays!=='TBD_OWNER_POLICY'||sub.activation!=='REQUIRES_FINANCE_AND_LEGAL_EVIDENCE'||
   sub.billingProviderUnavailable!=='NO_UNVERIFIED_GRANT_AND_PRESERVE_SAFETY_ACCESS'||
   sub.expiry!=='RESTRICT_ONLY_PAID_NONCLINICAL_NEW_MUTATIONS'||
@@ -58,8 +59,8 @@ export function validateCommercialSpec(x){
   x.billing.webhook!=='REQUIRES_VERIFIED_SIGNATURE_AND_IDEMPOTENCY')
   fail('PAYMENT_OR_TAX_FALSE_APPROVAL');
  if(!onlyKeys(x.apiContracts,['editionRead','editionUpdate','billingWebhook','enterpriseActivation'])||
-  Object.values(x.apiContracts).some(api=>api?.status!=='POST_FREEZE'||!/^\/api\/commercial\//.test(api.path)||!['GET','POST'].includes(api.method)||
-   !String(api.auth).includes('ADMIN')&&!String(api.auth).includes('SIGNATURE'))||
+  Object.entries(x.apiContracts).some(([name,api])=>api?.status!=='POST_FREEZE'||!/^\\/api\\/commercial\\//.test(api.path)||!['GET','POST'].includes(api.method)||
+   api.auth!==REQUIRED_AUTH[name])||
   !x.apiContracts.editionUpdate.headers.includes('Idempotency-Key')||
   !x.apiContracts.editionUpdate.headers.includes('If-Match')||
   !x.apiContracts.billingWebhook.headers.includes('provider-signature'))
@@ -68,6 +69,7 @@ export function validateCommercialSpec(x){
   !x.onboarding[e].includes('separate_edition_launch_authorization'))||
   !x.onboarding.ENTERPRISE.includes('signed_immutable_delivery_digest')||
   !x.onboarding.SAAS.includes('contract_and_dpa_executed')||
+  !eq(x.enterprise?.licenseBinding,REQUIRED_LICENSE_BINDINGS)||
   !unique(x.enterprise?.requiredInfrastructure)||
   !x.enterprise.requiredInfrastructure.includes('signed_oci_and_runtime_sbom')||
   !x.enterprise.requiredInfrastructure.includes('third_party_notices_and_source_offers')||
