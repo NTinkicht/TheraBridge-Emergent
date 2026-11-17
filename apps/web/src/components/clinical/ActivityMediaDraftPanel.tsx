@@ -3,23 +3,13 @@
 import { useEffect, useState } from 'react';
 import { FileImage, ShieldAlert } from 'lucide-react';
 import { Button, Card, Pill } from '@/components/design/ui';
-import { rest } from '@/lib/auth';
+import { activityMediaDrafts, type ActivityMediaDraft as Draft, type ActivityMediaSource as SourceType } from '@/lib/activity-media';
 
-type SourceType = 'ORIGINAL' | 'GENERATED' | 'LICENSED';
-type Draft = {
-  id: string; state: 'DRAFT' | 'REJECTED'; version: number;
-  templateVersion: number; styleVersion: string; sourceType: SourceType;
-  sceneType: string; altText: string; license: string; sourceReference: string;
-  rejectionReason: string | null; createdAt: string;
-};
-type DraftList = { items: Draft[]; hasMore: boolean; publishEnabled: false; clinicalReleaseEnabled: false };
 const initial = {
   sourceType: 'ORIGINAL' as SourceType, styleVersion: 'm5-b-v1',
   sceneType: '', altText: '', license: '', sourceReference: '', providerTerms: '',
 };
 const cls = 'min-h-[44px] w-full rounded-control border border-border-strong bg-surface-white px-3 py-2 text-sm';
-const uri = (centerId: string, templateId: string) =>
-  `/api/centers/${encodeURIComponent(centerId)}/activities/${encodeURIComponent(templateId)}/media-drafts`;
 
 // Metadata-only workflow. No image upload/preview or approval exists until the
 // separate private-byte verifier, rights sign-off and clinical gates are ready.
@@ -35,14 +25,14 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
   const [notice, setNotice] = useState('');
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [reason, setReason] = useState('');
-  const base = uri(centerId, templateId);
+  const base = activityMediaDrafts.endpoint(centerId, templateId);
 
   useEffect(() => {
     if (!open) return;
     let active = true;
     setLoading(true);
     setError('');
-    rest.get<DraftList>(base).then(result => {
+    activityMediaDrafts.list(centerId, templateId).then(result => {
       if (active) setItems(result.items);
     }).catch(() => {
       if (active) setError('Could not load illustration proposals. Try reopening this panel.');
@@ -54,7 +44,7 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
     if (!templateVersion || busy) return;
     setBusy(true); setError(''); setNotice('');
     try {
-      const saved = await rest.send<Draft>('POST', base, { ...form, templateVersion,
+      const saved = await activityMediaDrafts.propose(centerId, templateId, { ...form, templateVersion,
         providerTerms: form.sourceType === 'GENERATED' ? form.providerTerms : undefined });
       setItems(prev => [saved, ...prev.filter(item => item.id !== saved.id)]);
       setNotice('Metadata proposal saved as a private draft. No image was uploaded, approved or shared.');
@@ -68,8 +58,7 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
     if (busy || reason.trim().length < 8) return;
     setBusy(true); setError(''); setNotice('');
     try {
-      const result = await rest.send<{ id: string; state: 'REJECTED'; version: number }>('POST',
-        base + '/' + encodeURIComponent(draft.id) + '/reject', { version: draft.version, reason: reason.trim() });
+      const result = await activityMediaDrafts.reject(centerId, templateId, draft.id, draft.version, reason.trim());
       setItems(prev => prev.map(item => item.id === result.id ? { ...item, ...result, rejectionReason: reason.trim() } : item));
       setRejecting(null); setReason('');
       setNotice('Draft rejected. This decision was recorded for audit.');
