@@ -18,7 +18,7 @@ function Demo({ session, onError }: { session: SessionInfo; onError: (e: unknown
   return (
     <div className="theme-family-auto space-y-4 rounded-card bg-fam-canvas p-3 text-fam-ink sm:p-5">
       <h1 className="flex items-center gap-2 font-display text-[26px] font-bold"><HeartHandshake size={24} className="text-fam-accent" aria-hidden="true" />Progress updates</h1>
-      <FamilyProgress data={data} testId="family-progress-demo" banner={
+      <FamilyProgress theme="auto" data={data} testId="family-progress-demo" banner={
         <p className="flex items-start gap-2 rounded-control border-2 border-dashed border-fam-caution bg-fam-surface p-3 text-[14px]" data-testid="family-progress-sample-banner">
           <FlaskConical size={18} className="mt-0.5 shrink-0 text-fam-caution" aria-hidden="true" />
           <span><strong>Sample only.</strong> This shows how a progress update could look one day. It uses a made-up child and made-up numbers. Your child’s therapy records are not shared here, because sharing reports is switched off in this version.</span>
