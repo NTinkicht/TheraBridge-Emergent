@@ -567,7 +567,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: apps/web/.next/cache
-          key: tb-next-v2-${{ runner.os }}-${{ runner.arch }}-test-${{ hashFiles('yarn.lock', 'apps/web/src/**', 'apps/web/package.json', 'apps/web/next.config.*') }}
+          key: tb-next-v2-${{ runner.os }}-${{ runner.arch }}-test-${{ hashFiles('yarn.lock') }}-${{ hashFiles('apps/web/src/**', 'apps/web/package.json', 'apps/web/next.config.*') }}
           restore-keys: |
             tb-next-v2-${{ runner.os }}-${{ runner.arch }}-test-${{ hashFiles('yarn.lock') }}-
       - run: yarn workspace @therabridge/web build
@@ -642,7 +642,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: apps/web/.next/cache
-          key: tb-next-v2-${{ runner.os }}-${{ runner.arch }}-live-session-${{ hashFiles('yarn.lock', 'apps/web/src/**', 'apps/web/package.json', 'apps/web/next.config.*') }}
+          key: tb-next-v2-${{ runner.os }}-${{ runner.arch }}-live-session-${{ hashFiles('yarn.lock') }}-${{ hashFiles('apps/web/src/**', 'apps/web/package.json', 'apps/web/next.config.*') }}
           restore-keys: |
             tb-next-v2-${{ runner.os }}-${{ runner.arch }}-live-session-${{ hashFiles('yarn.lock') }}-
       - run: yarn workspace @therabridge/web build
@@ -702,7 +702,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: apps/web/.next/cache
-          key: tb-next-v2-${{ runner.os }}-${{ runner.arch }}-demo-journey-${{ hashFiles('yarn.lock', 'apps/web/src/**', 'apps/web/package.json', 'apps/web/next.config.*') }}
+          key: tb-next-v2-${{ runner.os }}-${{ runner.arch }}-demo-journey-${{ hashFiles('yarn.lock') }}-${{ hashFiles('apps/web/src/**', 'apps/web/package.json', 'apps/web/next.config.*') }}
           restore-keys: |
             tb-next-v2-${{ runner.os }}-${{ runner.arch }}-demo-journey-${{ hashFiles('yarn.lock') }}-
       - run: yarn workspace @therabridge/web build
@@ -773,7 +773,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: apps/web/.next/cache
-          key: tb-next-v2-${{ runner.os }}-${{ runner.arch }}-m5-child360-browser-${{ hashFiles('yarn.lock', 'apps/web/src/**', 'apps/web/package.json', 'apps/web/next.config.*') }}
+          key: tb-next-v2-${{ runner.os }}-${{ runner.arch }}-m5-child360-browser-${{ hashFiles('yarn.lock') }}-${{ hashFiles('apps/web/src/**', 'apps/web/package.json', 'apps/web/next.config.*') }}
           restore-keys: |
             tb-next-v2-${{ runner.os }}-${{ runner.arch }}-m5-child360-browser-${{ hashFiles('yarn.lock') }}-
       - run: yarn workspace @therabridge/web build
