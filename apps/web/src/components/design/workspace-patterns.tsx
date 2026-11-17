@@ -20,8 +20,9 @@ export function WorkspaceTabs({
   const handleKey = (event: KeyboardEvent<HTMLButtonElement>, id: string) => {
     const index = available.findIndex((t) => t.id === id);
     if (index < 0) return;
-    const next = event.key === 'ArrowRight' ? (index + 1) % available.length
-      : event.key === 'ArrowLeft' ? (index - 1 + available.length) % available.length
+    const direction = typeof document !== 'undefined' && document.documentElement?.dir === 'rtl' ? -1 : 1;
+    const next = event.key === 'ArrowRight' ? (index + direction + available.length) % available.length
+      : event.key === 'ArrowLeft' ? (index - direction + available.length) % available.length
       : event.key === 'Home' ? 0
       : event.key === 'End' ? available.length - 1 : -1;
     if (next < 0) return;
@@ -34,7 +35,7 @@ export function WorkspaceTabs({
   };
   return (
     <div className={family ? 'text-fam-ink' : 'text-brand-ink'}>
-      <div role="tablist" aria-label={label}
+      <div role="tablist" aria-orientation="horizontal" aria-label={label}
         className={`flex max-w-full gap-1 overflow-x-auto border-b pb-1 [scrollbar-width:thin] ${family ? 'border-fam-border' : 'border-border-light'}`}>
         {tabs.map((tab) => (
           <button key={tab.id} id={`${uid}-tab-${tab.id}`} type="button" role="tab"
@@ -106,12 +107,22 @@ export function TaskStepper({ steps, label = 'Task progress', tone = 'clinical' 
 
 // A dense, horizontally scrollable data region; callers supply authorized,
 // escaped React content rather than raw markup or potentially stale cached rows.
-export function CompactTable({ columns, rows, caption, tone = 'clinical', emptyMessage = 'No records available.' }: {
+export function CompactTable({ columns, rows, caption, tone = 'clinical', emptyMessage = 'No records available.', mobileCards = false }: {
   columns: { id: string; label: string }[]; rows: { id: string; cells: Record<string, ReactNode> }[];
-  caption: string; tone?: Tone; emptyMessage?: string;
+  caption: string; tone?: Tone; emptyMessage?: string; mobileCards?: boolean;
 }) {
   const family = tone === 'family';
-  return <div role="region" aria-label={`${caption} (scroll horizontally for all columns)`} tabIndex={0} className={`max-w-full overflow-x-auto rounded-card border ${family ? 'border-fam-border bg-fam-surface text-fam-ink' : 'border-border-light bg-surface-white text-brand-ink'}`}>
+  return <div role="region" aria-label={mobileCards ? caption : `${caption} (scroll horizontally for all columns)`} tabIndex={0} className={`max-w-full rounded-card border ${mobileCards ? '' : 'overflow-x-auto'} ${family ? 'border-fam-border bg-fam-surface text-fam-ink' : 'border-border-light bg-surface-white text-brand-ink'}`}>
+    {mobileCards && <ul aria-label={`${caption}: compact view`} className="divide-y divide-border-light sm:hidden"
+      data-testid="compact-mobile-cards">
+      {rows.length ? rows.map(row => <li key={row.id} className="space-y-2 p-3">
+        <dl className="space-y-2">{columns.map(col => <div key={col.id} className="min-w-0">
+          <dt className={`text-xs font-semibold ${family ? 'text-fam-muted' : 'text-brand-inkMuted'}`}>{col.label}</dt>
+          <dd className="break-words text-sm">{row.cells[col.id] ?? '—'}</dd>
+        </div>)}</dl>
+      </li>) : <li className="p-4 text-center text-sm">{emptyMessage}</li>}
+    </ul>}
+    <div tabIndex={mobileCards ? 0 : undefined} aria-label={mobileCards ? `${caption} (scroll horizontally)` : undefined} className={mobileCards ? 'hidden max-w-full overflow-x-auto sm:block' : ''}>
     <table className="w-full min-w-[480px] border-collapse text-left text-sm">
       <caption className="sr-only">{caption}</caption>
       <thead className={family ? 'bg-fam-tile' : 'bg-surface-subtle'}>
@@ -121,5 +132,6 @@ export function CompactTable({ columns, rows, caption, tone = 'clinical', emptyM
         {columns.map((col) => <td key={col.id} className="px-3 py-2.5 align-top">{row.cells[col.id] ?? '—'}</td>)}
       </tr>) : <tr><td colSpan={Math.max(1, columns.length)} className="px-3 py-6 text-center">{emptyMessage}</td></tr>}</tbody>
     </table>
+    </div>
   </div>;
 }
