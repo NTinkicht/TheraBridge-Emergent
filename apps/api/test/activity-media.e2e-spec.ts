@@ -25,7 +25,7 @@ function setup(override: Record<string, unknown> = {}) {
     $queryRaw: jest.fn(async () => [{ id: templateId }]),
     activityTemplate: { findFirst },
     membership: { findFirst: jest.fn(async () => ({ id: actor.membershipId })) },
-    activityMediaDraft: { create, updateMany, findMany: jest.fn(async () => []) },
+    activityMediaDraft: { create, updateMany, findMany: jest.fn(async (_args?: unknown): Promise<{ id: string }[]> => []), findFirst: jest.fn(async () => ({ id: draftId })) },
     centerEvent: { create: jest.fn(async () => ({})) },
   };
   const prisma = {
@@ -99,5 +99,49 @@ describe('M5-14 activity illustration draft boundary', () => {
     const { service, updateMany } = setup();
     updateMany.mockResolvedValueOnce({ count: 0 });
     await expect(service.reject(centerId, actor, templateId, draftId, { version: 1, reason: 'Invalid reference licensing' })).rejects.toBeInstanceOf(ConflictException);
+  });
+});
+
+describe('M5-14 keyset pagination: rights history is never truncated', () => {
+  const ids = Array.from({ length: 102 }, (_, index) => '00000000-0000-4000-8000-' + String(index + 1).padStart(12, '0'));
+  it('returns a stable next cursor for older pending and rejected metadata', async () => {
+    const { service, tx } = setup();
+    const first = ids.slice(0, 51).map(id => ({ id }));
+    const second = ids.slice(50, 102).map(id => ({ id }));
+    tx.activityMediaDraft.findMany.mockResolvedValueOnce(first).mockResolvedValueOnce(second);
+    const page1 = await service.list(centerId, actor, templateId);
+    expect(page1.items).toHaveLength(50);
+    expect(page1.hasMore).toBe(true);
+    expect(page1.nextCursor).toBe(ids[49]);
+    expect(page1.publishEnabled).toBe(false);
+    const page2 = await service.list(centerId, actor, templateId, page1.nextCursor!);
+    expect(page2.items).toHaveLength(50);
+    expect(page2.nextCursor).toBe(ids[99]);
+    expect(tx.activityMediaDraft.findFirst).toHaveBeenCalledWith({
+      where: { id: ids[49], centerId, templateId }, select: { id: true },
+    });
+    expect(tx.activityMediaDraft.findMany).toHaveBeenLastCalledWith(expect.objectContaining({
+      where: { centerId, templateId }, cursor: { id: ids[49] }, skip: 1, take: 51,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    }));
+  });
+  it('returns a terminal page without a cursor when history is exhausted', async () => {
+    const { service, tx } = setup();
+    tx.activityMediaDraft.findMany.mockResolvedValueOnce([{ id: ids[100] }, { id: ids[101] }]);
+    const result = await service.list(centerId, actor, templateId, ids[99]);
+    expect(result).toEqual(expect.objectContaining({ hasMore: false, nextCursor: null, publishEnabled: false }));
+    expect(result.items).toHaveLength(2);
+  });
+  it('refuses cross-tenant or deleted cursors rather than leaking history', async () => {
+    const { service, tx } = setup();
+    tx.activityMediaDraft.findFirst.mockResolvedValueOnce(null as never);
+    await expect(service.list(centerId, actor, templateId, ids[50])).rejects.toBeInstanceOf(NotFoundException);
+    expect(tx.activityMediaDraft.findMany).not.toHaveBeenCalled();
+  });
+  it('refuses unbounded page sizes on the server', async () => {
+    const { service, tx } = setup();
+    await expect(service.list(centerId, actor, templateId, undefined, 101)).rejects.toBeInstanceOf(UnprocessableEntityException);
+    await expect(service.list(centerId, actor, templateId, undefined, -1)).rejects.toBeInstanceOf(UnprocessableEntityException);
+    expect(tx.activityMediaDraft.findMany).not.toHaveBeenCalled();
   });
 });
