@@ -1,3 +1,7 @@
+## 2026-11-17 — CI Phase 2B — isolated Next.js compiler-cache reuse — QA results
+Introduced only apps/web/.next/cache persistence through actions/cache@v4 for full test, live-session, demo-journey and flagged m5-child360-browser jobs. Cache keys are per job, OS/arch and lock/source hash; exact-head yarn web build remains in every job with independent build-time flags. No cached runtime bundle, clinical data or browser test outcome. Cross-environment compiled artifact reuse intentionally NOT ENABLED until equivalence is proven; CI, new-head review and timing verification PENDING. All original required gates remain, G2/G2b NO-GO.
+Implementation/source assertions written; new branch exact-head execution NOT RUN/PENDING. No PASS claimed on new SHA. Prior base PR #415 full-CI outcome does not qualify this branch.
+
 ## 2026-11-17 — CI parallel critical-path implementation (NEW HEAD NOT YET QUALIFIED)
 | Check | Status |
 | --- | --- |
