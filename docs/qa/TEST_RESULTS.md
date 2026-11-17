@@ -1389,3 +1389,7 @@ New offline adversarial cases for path escaping, arrays, fields added/removed/ch
 
 ## 2026-11-17 — COM-02 #402 first full CI negative and repair
 Run 44016599836 failed at shell exit 127 when a mistakenly placed `/tmp/therabridge-com02-tokenizer-manifest-diff-402.json` line was executed as a shell command in earlier #405 verifier step, before new tests. Its preceding exact npm/source verification result was PASS. Fixed workflow artifact path placement at aa26fabc; **revised exact head CI NOT YET VERIFIED**, true field-drift outcome UNKNOWN. No publisher, commercial, release or clinical approval.
+
+## 2026-11-17 — COM-02 #402 real tokenizer npm/Git manifest drift result
+CI 44016933031: offline field-drift classifier adversarial tests **PASS**, live original locked npm package archive vs immutable Git source classification **PASS**, receipt inspected. Exact published package.json SHA256 a677763aaed22462b4f9df2526b1038cef3a90bc6cf80be27b4e65d0f14472a9 != source SHA256 17a56b5bea3a89c3fc67b4b75769414c6c4910e483cd47da1d2a2b02c3ffaa69, **JSON leaf changes 0**, status RAW_BYTES_DIFFER_BUT_JSON_LEAVES_EQUAL_UNATTESTED. Original npm tarball SHA256 911758ceca239c8e5372700eedfbbd514f16d3c117b5af0a648f6e720487c209 and Yarn SRI verified. No independent publisher build attribution, no legal approval or G2/G2b; actual editions unknown. **Final Rule7-updated HEAD full CI/Codex PENDING**, previous CI does not qualify changed head.
+
