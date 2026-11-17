@@ -133,6 +133,9 @@ export async function runChild360BrowserAcceptance({ passwords }) {
               assert.equal(await page.getByTestId('clinical-secondary-assessments').getAttribute('aria-current'),'page');
               assert.equal(await page.getByTestId('clinical-tab-care').getAttribute('aria-selected'),'true');
               await page.getByTestId('assessments-panel').waitFor({state:'visible'});
+              const assessmentRows = await page.getByTestId('assessments-panel').getByRole('heading', {name:/assessment ·/i}).count();
+              const assessmentEmpty = await page.getByTestId('assessments-empty').count();
+              assert(assessmentRows>0 || assessmentEmpty===1,'Assessments must display loaded records or an empty state');
               // Workspace data was already authorized and loaded; an explicit
               // empty assessment state is usable, never count a missing panel.
               assert.equal(await page.getByTestId('assessments-load-error').count(),0,
