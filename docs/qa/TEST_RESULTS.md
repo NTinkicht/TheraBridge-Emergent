@@ -4,6 +4,9 @@ Paged UI helper and history-append tests committed, exact-head CI NOT YET VERIFI
 ## 2026-11-18 — WU4-C illustration proposal UI
 Initial Web focused coverage failed on stale source-string expectation; test replaced with executed API helper assertion. New exact-head CI and manual screen-reader/visual acceptance pending. No claim of accepted illustration assets.
 
+## 2026-11-18 — WU4-B P2 media history pagination
+Cursor paging (>100 records), cross-centre cursor refusal, terminal page, and bounded page sizes: regression tests committed; exact-head CI pending, NOT YET VERIFIED. Prior head full CI passed.
+
 ## 2026-11-18 — WU4-B / M5-14 activity media drafts
 Initial CI test + demo-journey FAILED on test-only TS tuple assertion; fixed in later commit. P1 role/specialty reviewer findings corrected with added negative tests. Exact-head follow-up CI and five-width/manual tests PENDING; no PASS claimed.
 

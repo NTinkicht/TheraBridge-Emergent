@@ -4,6 +4,9 @@ Codex P2 pagination follow-through: staff UI now loads older proposals on demand
 ## 2026-11-18 — WU4-C illustration proposal UI
 Built typed REST helper and accessible loading/empty/error/rejection panel. Prevented stale GET vs POST race by blocking write until initial list resolves. Added regression against optimistic revision request.
 
+## 2026-11-18 — WU4-B P2 media history pagination
+Codex P2 pagination disposition FIX_NOW: new validated UUID cursor and 1–100 bounded limit, scoped cursor lookup, createdAt/id ordering, nextCursor and hasMore; no hidden historical rights metadata. Added >100-item and negative cursor tests.
+
 ## 2026-11-18 — WU4-B / M5-14 activity media drafts
 WU4-B implemented Prisma migration, typed NestJS endpoints and service with active role/tenant/specialty checks (including revocation and supervisor parity), immutable proposal metadata and optimistic rejection. Added negative unit regression tests.
 

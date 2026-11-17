@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Req, BadRequestException } from '@nestjs/common';
 import { RequirePermission, TbRequest } from '../auth/access';
 import type { Viewer } from '../operations/children.service';
 import { ActivityMediaDraftDto, ActivityMediaRejectDto } from './activity-media.dto';
@@ -16,8 +16,17 @@ export class ActivityMediaController {
   constructor(private readonly media: ActivityMediaService) {}
   @Get()
   @RequirePermission('center.activities.manage')
-  list(@Param('centerId', uuid()) centerId: string, @Param('templateId', uuid()) templateId: string, @Req() req: TbRequest) {
-    return this.media.list(centerId, viewer(req), templateId);
+  list(@Param('centerId', uuid()) centerId: string, @Param('templateId', uuid()) templateId: string,
+    @Req() req: TbRequest, @Query('cursor') cursor?: string, @Query('limit') rawLimit?: string) {
+    if (cursor !== undefined && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(cursor)) {
+      throw new BadRequestException('Invalid media cursor.');
+    }
+    if (rawLimit !== undefined && !/^[1-9]\d{0,2}$/.test(rawLimit)) {
+      throw new BadRequestException('Invalid media page size.');
+    }
+    const limit = rawLimit === undefined ? 50 : Number(rawLimit);
+    if (limit > 100) throw new BadRequestException('Invalid media page size.');
+    return this.media.list(centerId, viewer(req), templateId, cursor, limit);
   }
   @Post()
   @RequirePermission('center.activities.manage')

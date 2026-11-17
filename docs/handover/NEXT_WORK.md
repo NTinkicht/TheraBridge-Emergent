@@ -4,6 +4,9 @@ WU4-C requires new exact-head CI, final reviewer and five viewport/screen-reader
 ## 2026-11-18 — WU4-C illustration proposal UI
 PR #435 stacked on #434; integrate once #434 has green exact-head CI. Verify responsive five-width screen readers, role revocation and private storage/rights adapter before any publishing.
 
+## 2026-11-18 — WU4-B P2 media history pagination
+Complete real private byte-ingestion, malware/format/dimension/hash validation, derivatives, rights attestation and immutable approved snapshots; page history now available via cursor. Final-head CI and independent Codex review required.
+
 ## 2026-11-18 — WU4-B / M5-14 activity media drafts
 WU4-B requires private binary ingestion/validation, checksum/derivatives, human approval and immutable assets before M5-14 can close. Independent exact-head reviews and manual acceptance pending.
 

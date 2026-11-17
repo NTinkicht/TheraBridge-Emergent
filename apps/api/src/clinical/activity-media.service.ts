@@ -29,13 +29,32 @@ export class ActivityMediaService {
     return t;
   }
 
-  async list(centerId: string, v: Viewer, templateId: string) {
+  async list(centerId: string, v: Viewer, templateId: string, cursor?: string, limit = 50) {
+    // The opaque page boundary is an immutable draft UUID. Every cursor must
+    // belong to this same centre/activity; foreign and stale cursors fail closed.
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) {
+      throw new UnprocessableEntityException('Media page size must be between 1 and 100.');
+    }
     return this.prisma.$transaction(async tx => {
       await this.authorizedTemplate(tx, centerId, v, templateId);
+      if (cursor) {
+        const boundary = await tx.activityMediaDraft.findFirst({
+          where: { id: cursor, centerId, templateId }, select: { id: true },
+        });
+        if (!boundary) throw new NotFoundException('Media page cursor not found.');
+      }
       const rows = await tx.activityMediaDraft.findMany({
-        where: { centerId, templateId }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 101,
+        where: { centerId, templateId },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+        take: limit + 1,
       });
-      return { items: rows.slice(0, 100), hasMore: rows.length > 100, publishEnabled: false, clinicalReleaseEnabled: false };
+      const items = rows.slice(0, limit);
+      const hasMore = rows.length > limit;
+      return {
+        items, hasMore, nextCursor: hasMore ? items[items.length - 1].id : null,
+        publishEnabled: false, clinicalReleaseEnabled: false,
+      };
     });
   }
 
