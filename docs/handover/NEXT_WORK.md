@@ -1,3 +1,8 @@
+## 2026-11-17 — M5-05 route isolation and decision-count verification
+1. Qualify the current route-boundary PR with dedicated synthetic browser job: 45 real task-flow observations (assessments ≤2 decisions, sessions ≤1, documents ≤1), existing 15 five-width navigation, 15 slow loading, 15 failed-and-retried, one denied coordinator; complete exact-head CI, security, SBOM, Compose/container, review.
+2. Independently validate asynchronous cross-child route transitions with overlapping server GETs and no prior-child data visible; remount key is implemented but **true overlapping in-flight cross-child browser case NOT RUN**.
+3. Maintain M5-05 #188 OPEN for human screen-reader, before/after redacted five-width visual evidence, low-bandwidth field experience, empty/error/blocked workflows and owner acceptance. Compact flag OFF and G2/G2b NO-GO remain unchanged.
+
 ## 2026-11-17 — M5-05 R2 browser resilience qualification
 1. Qualify draft PR #406 on exact HEAD: browser slow→error→retry 15/15 observations, original five-tab/keyboard/coordinator tests, six full CI jobs, security/SBOM, Web coverage, Compose and Smart CI gate. Fix any flakes or real defects without disabling controls.
 2. Obtain Codex review of final-head implementation, disposition P0/P1/P2 and suggestions under Rules 13–16, and merge only after green CI, clean mergeability, and review receipt.

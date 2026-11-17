@@ -139,6 +139,11 @@ describe('Stage 2 clinical workspace pagination maintains exact child and versio
    child:{id:'different-child',name:'Different Fictional Child',services:['speech']},
    plans:[plan('different-plan')],observations:[],hasMorePlans:false});
    tree.update(h(Page));});
+  // The keyed child/center boundary remounts to the Overview, rather
+  // than carrying the prior child's Plan tab and paginated read model.
+  expect(get('clinical-tab-overview').props['aria-selected']).toBe(true);
+  expect(html()).not.toContain('another-child-private-plan');
+  await selectTab('plan');
   expect(get('visible-plan-count').props.children).toBe('1');
   expect(html()).not.toContain('another-child-private-plan');
  });

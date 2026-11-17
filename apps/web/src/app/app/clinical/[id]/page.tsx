@@ -174,5 +174,13 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
 }
 
 export default function ClinicalChildPage() {
-  return <Workspace active="clinical" permission="center.clinical.read" deniedText="The clinical workspace is available to therapists and clinical supervisors.">{(s, onError) => <ClinicalChild session={s} onError={onError} />}</Workspace>;
+  const { id } = useParams<{ id: string }>();
+  return <Workspace active="clinical" permission="center.clinical.read" deniedText="The clinical workspace is available to therapists and clinical supervisors.">{(s, onError) => {
+    // A client-side child or tenant transition must discard the entire prior
+    // workspace tree (read models, paginated history, unsaved draft UI, tab
+    // state and in-flight responses). Never reuse a prior child's data while
+    // the next authorized scoped GET is loading or has failed.
+    const scope = s.activeContext?.type === 'center' ? s.activeContext.centerId : 'no-center';
+    return <ClinicalChild key={JSON.stringify([scope, id])} session={s} onError={onError} />;
+  }}</Workspace>;
 }
