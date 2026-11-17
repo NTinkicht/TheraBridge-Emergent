@@ -2,13 +2,14 @@
 // identity and booking boundaries. Network/UI chrome isolated; route is real.
 const React=require('react'),Renderer=require('react-test-renderer');
 const {act,create}=Renderer,h=React.createElement;
-let mockSession,mockLoaded,mockFetcher,mockWide=true,mockListeners=[];
+let mockSession,mockLoaded,mockFetcher,mockAcceptedQuery=null,mockWide=true,mockListeners=[];
 jest.mock('@/components/centers/kit',()=>({
  Workspace:({children})=>children(mockSession,jest.fn()),
  useLoad:fetcher=>{
   mockFetcher=fetcher;
+  if(mockAcceptedQuery === null) mockAcceptedQuery = fetcher.queryKey;
   return {...mockLoaded, data: mockLoaded.data
-    ? {queryKey:fetcher.queryKey,result:mockLoaded.data} : null};
+    ? {queryKey:mockAcceptedQuery,result:mockLoaded.data} : null};
  },
  PageTitle:({title,action,testId})=>h('header',{'data-testid':testId},title,action),
  SelectField:({value,onChange,options,testId})=>h('select',{'data-testid':testId,value,onChange:e=>onChange(e.target.value)},
@@ -74,7 +75,7 @@ beforeAll(()=>{
 });
 afterAll(()=>{global.window=oldWindow;setCenterTz(undefined);});
 beforeEach(()=>{
- jest.clearAllMocks();mockWide=true;mockListeners=[];
+ jest.clearAllMocks();mockAcceptedQuery=null;mockWide=true;mockListeners=[];
  mockSession=session();
  mockLoaded={data:data(),failed:false,reload:jest.fn()};
  opsApi.children.mockResolvedValue({items:[{id:'child-a',firstName:'Fictional',lastName:'Child',preferredName:'Alex'}]});
