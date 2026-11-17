@@ -1472,7 +1472,17 @@ try {
       assert(widths.queue && widths.queue.width > 0 && widths.queue.right <= width + 3,
         'Supervisor queue must remain visible inside ' + width + 'px');
     }
+    // M5-08: users explicitly expand optional review filters; Context is a
+    // native disclosure focus stop before the source-bound report link.
+    await page.getByTestId('supervisor-review-queue').locator('details').first().locator('summary').click();
     await page.getByTestId('review-queue-search').focus();
+    await page.keyboard.press('Tab');
+    const contextFocus = await page.evaluate(() => ({
+      tag: document.activeElement?.tagName,
+      scope: document.activeElement?.closest('[data-testid^="review-queue-preview-"]')?.getAttribute('data-testid'),
+    }));
+    assert.equal(contextFocus.tag, 'SUMMARY');
+    assert.equal(contextFocus.scope, 'review-queue-preview-' + queuedDraft.id);
     await page.keyboard.press('Tab');
     const focused = await page.evaluate(() => ({
       testId: document.activeElement?.getAttribute('data-testid'),
@@ -1516,6 +1526,7 @@ try {
       updatedAt: new Date('2026-10-01T09:00:00Z'),
     } });
     await page.reload();
+    await page.getByTestId('supervisor-review-queue').locator('details').first().locator('summary').click();
     const secondRow = page.getByTestId('review-queue-row-' + secondReport.id);
     await secondRow.waitFor();
     await reviewRow.waitFor();

@@ -1,3 +1,8 @@
+## 2026-11-17 — WU2 M5-08 supervisor: CURRENT_STATE.md
+**Issue:** #191 · **Branch:** `feat/m5-wu2-supervisor-workspace` · **Implementation:** Scoped review queue, review-step hierarchy, source-only metadata disclosure, filtered document selection and role-limited internal governance actions.
+**Verification:** code and new synthetic Jest regression coverage committed; exact-HEAD CI, independent Codex review, five-width visual screenshots, real keyboard/screen-reader, performance/low-bandwidth, owner UX qualification and manual acceptance **NOT RUN/PENDING** at this checkpoint. Existing authorization and backend clinical state machines remain unchanged; no cross-tenant/family-message visibility or clinical release. Production G2/G2b clinical signing/release remains **NO-GO**. Issue stays **OPEN** pending full acceptance.
+
+
 ## 2026-11-17 — WU2 M5-07 coordinator/admin: CURRENT_STATE.md
 **Issue:** #190 · **Branch:** `feat/m5-wu2-coordinator-admin-workspace` · **Implementation:** Center appointment summary, selected-view exception table, time-zone context and clearable staff/child filters without changing booking/recurrence APIs.
 **Verification:** code and new synthetic Jest regression coverage committed; exact-HEAD CI, independent Codex review, five-width visual screenshots, real keyboard/screen-reader, performance/low-bandwidth, owner UX qualification and manual acceptance **NOT RUN/PENDING** at this checkpoint. Existing authorization and backend clinical state machines remain unchanged; no cross-tenant/family-message visibility or clinical release. Production G2/G2b clinical signing/release remains **NO-GO**. Issue stays **OPEN** pending full acceptance.

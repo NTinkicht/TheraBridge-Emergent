@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, ClipboardCheck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ClipboardCheck, Eye } from 'lucide-react';
 import { Field } from '@/components/auth/Field';
 import { useLoad } from '@/components/centers/kit';
 import { serviceLabel } from '@/components/operations/BookDialog';
 import { Button, Card, Pill } from '@/components/design/ui';
+import { DisclosureSection, TaskStepper } from '@/components/design/workspace-patterns';
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
 import { reportsApi } from '@/lib/reports';
 
@@ -31,6 +32,7 @@ export function SupervisorReviewQueue({ centerId, childId, service, onError }: {
   );
   const { data, failed, reload } = useLoad(fetcher, onError);
   const items = data?.items ?? [];
+  const filterActive = !!(search.trim() || childId || service);
   return (
     <Card className="space-y-4 p-5" testId="supervisor-review-queue">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -45,8 +47,19 @@ export function SupervisorReviewQueue({ centerId, childId, service, onError }: {
           {data.total} awaiting review across centre
         </Pill>}
       </div>
-      <Field label="Search reports" value={search} onChange={(e) => setSearch(e.target.value)}
-        placeholder="Report, child, therapist or specialty" testId="review-queue-search" />
+      <TaskStepper label="Internal supervisor review process" steps={[
+        { id:'queue', label:'Review queue', status:'current', description:'Filtered server worklist' },
+        { id:'evidence', label:'Inspect evidence', status:'pending', description:'Open source-bound report draft' },
+        { id:'decision', label:'Comment or return', status:'pending', description:'Only actions granted by the server' },
+        { id:'release', label:'Clinical release', status:'blocked', description:'Signing and family release disabled' },
+      ]} />
+      <DisclosureSection title="Review filters" summary={filterActive ? 'Filters active — scope is current child and specialty' : 'Search report, child, author or specialty'}>
+        <Field label="Search reports" value={search} onChange={(e) => setSearch(e.target.value)}
+          placeholder="Report, child, therapist or specialty" testId="review-queue-search" />
+        {search && <Button size="sm" variant="ghost" onClick={() => setSearch('')}
+          data-testid="review-queue-clear-search">Clear search</Button>}
+        <p className="mt-2 text-xs text-brand-inkMuted">Child and specialty scope is supplied by the authorized parent workspace. Search only narrows the server-side review queue; it never broadens permissions.</p>
+      </DisclosureSection>
       {failed && <ErrorState onRetry={() => void reload()} testId="review-queue-error" />}
       {!failed && !data && <SkeletonRows rows={2} testId="review-queue-loading" />}
       {data && !items.length && <EmptyState icon={ClipboardCheck}
@@ -60,7 +73,16 @@ export function SupervisorReviewQueue({ centerId, childId, service, onError }: {
             <p className="text-[13px] text-brand-inkMuted">{r.childName} · {serviceLabel(r.service)} · {r.author}</p>
             <p className="text-[12px] text-brand-inkMuted">{r.periodStart} to {r.periodEnd}</p>
           </div>
-          <Link href={`/app/reports/${r.id}`} className="inline-flex min-h-[44px] items-center rounded-control px-3 text-[14px] font-semibold text-brand-action hover:bg-surface-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" data-testid={`review-queue-open-${r.id}`} aria-label={`Open draft: ${r.title} for ${r.childName}`}>Open draft</Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <details className="rounded-control border border-border-light px-3 py-2" data-testid={`review-queue-preview-${r.id}`}>
+              <summary className="flex min-h-9 cursor-pointer list-none items-center gap-1 text-sm font-semibold text-brand-action focus-visible:outline-2 focus-visible:outline-brand-action">
+                <Eye size={16} aria-hidden="true"/> Context
+              </summary>
+              <p className="mt-2 max-w-xs text-xs text-brand-inkMuted">Draft by {r.author}, {serviceLabel(r.service)} for {r.childName}. Period {r.periodStart} to {r.periodEnd}. Open the report to inspect exact source evidence and permitted internal decisions.</p>
+              <p className="mt-1 text-xs font-medium">No clinical approval or family release is implied.</p>
+            </details>
+            <Link href={`/app/reports/${r.id}`} className="inline-flex min-h-[44px] items-center rounded-control px-3 text-[14px] font-semibold text-brand-action hover:bg-surface-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" data-testid={`review-queue-open-${r.id}`} aria-label={`Open draft: ${r.title} for ${r.childName}`}>Open draft</Link>
+          </div>
         </div>)}
       </div>}
       {data && <div className="flex flex-wrap items-center justify-between gap-2" data-testid="review-queue-pagination">
