@@ -87,7 +87,7 @@ function Home({ session, onError }: { session: SessionInfo; onError: (e: unknown
       </div>
       {ctx.type === 'center' && can('center.setup.manage') && <SetupBanner centerId={ctx.centerId} />}
       {ctx.type === 'center' && can('center.summary.read') ? <CenterDashboard centerId={ctx.centerId} isTherapist={ctx.role === 'THERAPIST'} onError={onError} />
-        : ctx.type === 'center' && can('family.portal.read') ? <FamilyHome centerId={ctx.centerId} onError={onError} />
+        : ctx.type === 'center' && can('family.portal.read') ? <FamilyHome centerId={ctx.centerId} onError={onError} permissions={session.permissions} />
         : hasSummary ? (
         summary ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="home-summary">
