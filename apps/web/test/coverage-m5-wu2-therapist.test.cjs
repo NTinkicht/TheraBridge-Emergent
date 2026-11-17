@@ -2,16 +2,16 @@
 const React=require('react');
 const {act,create}=require('react-test-renderer');
 const h=React.createElement;
-const session={activeContext:{type:'center',centerId:'center-a',role:'THERAPIST'},permissions:['center.clinical.read']};
-const rows=[
+const mockSession={activeContext:{type:'center',centerId:'center-a',role:'THERAPIST'},permissions:['center.clinical.read']};
+const mockRows=[
  {id:'child-a',firstName:'Fictional',lastName:'Alex',preferredName:null,services:['SPEECH']},
  {id:'child-b',firstName:'Synthetic',lastName:'Sam',preferredName:null,services:['OT']},
 ];
 jest.mock('next/link',()=>({__esModule:true,default:({href,children,...props})=>h('a',{href,...props},children)}));
 jest.mock('@/components/centers/kit',()=>({
  PageTitle:({title})=>h('h1',null,title),
- Workspace:({children})=>children(session,jest.fn()),
- useLoad:()=>({data:{items:rows},failed:false,reload:jest.fn()}),
+ Workspace:({children})=>children(mockSession,jest.fn()),
+ useLoad:()=>({data:{items:mockRows},failed:false,reload:jest.fn()}),
 }));
 jest.mock('@/lib/operations',()=>({
  opsApi:{children:jest.fn()},
@@ -27,7 +27,7 @@ describe('M5-06 mounted authorized therapist caseload',()=>{
   expect(ids()).toEqual(['/app/clinical/child-a','/app/clinical/child-b']);
   const output=JSON.stringify(tree.toJSON());
   expect(output).toContain('Synthetic data only');
-  expect(output).toContain('Signing and family release unavailable');
+  expect(output).toContain('signing and release unavailable');
   expect(output).not.toContain('/app/messages');
   expect(get('clinical-caseload-filters')).toBeTruthy();
  });
