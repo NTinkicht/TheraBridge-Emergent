@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const yaml=readFileSync('.github/workflows/ci.yml','utf8');
 
-test('old six CI names are preserved and verifier is always scheduled',()=>{
+test('all original six checks plus required commercial job are preserved and verifier is always scheduled',()=>{
  for(const name of ['secret-scan','commercial-provenance','test','live-session','demo-journey','compose','preview-container'])
   assert.match(yaml,new RegExp('^  '+name+':','m'),name);
  assert.match(yaml,/^  smart-plan:/m);
@@ -41,7 +41,15 @@ test('parallel commercial provenance is required and never silently skipped in f
  assert.match(commercial,/Archive installed license evidence for full CI/);
  assert.doesNotMatch(app,/Collect installed package license-file hashes/);
  assert.doesNotMatch(app,/Archive installed license evidence for full CI/);
- assert.match(app,/Run yarn workspace @therabridge\/api build/);
+ assert.match(app,/run: yarn workspace @therabridge\/api build/);
  assert.match(app,/Generate genuine full-scope Web Istanbul coverage/);
  assert.match(yaml,/^  smart-ci-gate:[\s\S]*^      - commercial-provenance$/m);
+});
+
+test('all four browser consumers may reuse only lockfile-scoped public Chromium binaries',()=>{
+ const caches=[...yaml.matchAll(/name: Cache Playwright Chromium downloads/g)];
+ assert.equal(caches.length,4);
+ assert.equal([...yaml.matchAll(/key: tb-playwright-/g)].length,4);
+ assert.equal([...yaml.matchAll(/yarn playwright install --with-deps chromium/g)].length,4,
+   'Cached browsers must not bypass Playwright runtime/dependency validation');
 });
