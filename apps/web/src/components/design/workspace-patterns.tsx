@@ -20,8 +20,9 @@ export function WorkspaceTabs({
   const handleKey = (event: KeyboardEvent<HTMLButtonElement>, id: string) => {
     const index = available.findIndex((t) => t.id === id);
     if (index < 0) return;
-    const next = event.key === 'ArrowRight' ? (index + 1) % available.length
-      : event.key === 'ArrowLeft' ? (index - 1 + available.length) % available.length
+    const direction = typeof document !== 'undefined' && document.documentElement?.dir === 'rtl' ? -1 : 1;
+    const next = event.key === 'ArrowRight' ? (index + direction + available.length) % available.length
+      : event.key === 'ArrowLeft' ? (index - direction + available.length) % available.length
       : event.key === 'Home' ? 0
       : event.key === 'End' ? available.length - 1 : -1;
     if (next < 0) return;
@@ -34,7 +35,7 @@ export function WorkspaceTabs({
   };
   return (
     <div className={family ? 'text-fam-ink' : 'text-brand-ink'}>
-      <div role="tablist" aria-label={label}
+      <div role="tablist" aria-orientation="horizontal" aria-label={label}
         className={`flex max-w-full gap-1 overflow-x-auto border-b pb-1 [scrollbar-width:thin] ${family ? 'border-fam-border' : 'border-border-light'}`}>
         {tabs.map((tab) => (
           <button key={tab.id} id={`${uid}-tab-${tab.id}`} type="button" role="tab"
