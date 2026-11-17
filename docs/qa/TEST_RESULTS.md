@@ -1,3 +1,15 @@
+## 2026-11-17 — M5-05 scoped route/key + 3-task decision checks (NEW PR)
+| Verification | Result |
+|---|---|
+| Client clinical route remount keyed to active center and child ID | IMPLEMENTED; mounted cross-child SPA test **NOT RUN** |
+| Real button task flows: assessments in 2 decisions, sessions/documents in 1 each × three roles × five widths (45) | IMPLEMENTED; exact-head Chromium CI **PENDING** |
+| Fail-closed receipt rejects fewer/more than 45 observations | IMPLEMENTED; CI **PENDING** |
+| Prior PR #406 slow/503/retry 15+15 and scoped denied-role | PREVIOUS HEAD PASS; new PR head **PENDING** |
+| Full CI, Web coverage, container/Compose, final Codex review | **PENDING** |
+| Human screen-reader, UX owner acceptance, before/after visuals, actual cross-child race test | **NOT RUN/NOT OBTAINED** |
+| Clinical G2/G2b signing, release, consent and AI/STT | **NO-GO**; feature flag OFF by default |
+Synthetic CI only; no patient data, passwords, tokens or screenshots saved.
+
 ## 2026-11-17 — M5-05 R2 synthetic resilience browser evidence (PR #406)
 | Check | Status at implementation checkpoint |
 |---|---|
