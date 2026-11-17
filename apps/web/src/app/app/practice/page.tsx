@@ -46,7 +46,7 @@ function Practice({ session, onError }: { session: SessionInfo; onError: (e: unk
   const canRecord = data.gates.practiceDemo;
   const day = data.week.days.includes(data.today) ? data.today : data.week.days[0];
   return (
-    <div className="theme-family-light space-y-4 rounded-card bg-fam-canvas p-4 text-fam-ink md:p-6" data-testid="practice-page">
+    <div className="theme-family-auto space-y-4 rounded-card bg-fam-canvas p-4 text-fam-ink md:p-6" data-testid="practice-page">
       <div>
         <h1 className="flex items-center gap-2 font-display text-[26px] font-bold">Home practice</h1>
         {child && <p className="text-[15px] text-fam-muted" data-testid="practice-child-name">For {child.name}</p>}
