@@ -34,19 +34,18 @@ function Visit({ a, past }: { a: FamilyVisit; past?: boolean }) {
   );
 }
 
-function Reminders({ centerId, kid, onError, onSaved, busy, onBusy }: { centerId: string; kid: Kid; onError: (e: unknown) => void; onSaved: (id: string, enabled: boolean) => void; busy: boolean; onBusy: (id: string, busy: boolean) => void }) {
+function Reminders({ centerId, kid, onError, onSaved, busy, onBusy, error, onFailure, onClearError }: { centerId: string; kid: Kid; onError: (e: unknown) => void; onSaved: (id: string, enabled: boolean) => void; busy: boolean; onBusy: (id: string, busy: boolean) => void; error: boolean; onFailure: (id: string) => void; onClearError: (id: string) => void }) {
   // The parent owns server-confirmed state and pending operations across sibling switches.
   const on = kid.remindersEnabled;
-  const [err, setErr] = useState(false);
   const toggle = async () => {
     if (busy) return;
     onBusy(kid.id, true);
-    setErr(false);
+    onClearError(kid.id);
     try {
       const saved = (await opsApi.setReminders(centerId, kid.id, !on)).remindersEnabled;
       onSaved(kid.id, saved);
     } catch (e) {
-      setErr(true);
+      onFailure(kid.id);
       try { onError(e); } catch { /* shown inline */ }
     } finally {
       onBusy(kid.id, false);
@@ -55,7 +54,7 @@ function Reminders({ centerId, kid, onError, onSaved, busy, onBusy }: { centerId
   return (
     <div className="flex items-center justify-between gap-3 rounded-control bg-fam-tile p-3" data-testid={`family-reminders-${kid.id}`}>
       <span className="flex min-w-0 items-start gap-2 text-[14px]"><BellRing size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
-        <span><span className="block font-semibold">Appointment emails</span><span className="text-fam-muted">{err ? 'That didn’t save. Try again.' : 'A reminder the day before, and a note if a visit in the next two weeks moves or is cancelled.'}</span></span>
+        <span><span className="block font-semibold">Appointment emails</span><span className="text-fam-muted">{error ? 'That didn’t save. Try again.' : 'A reminder the day before, and a note if a visit in the next two weeks moves or is cancelled.'}</span></span>
       </span>
       <button type="button" role="switch" aria-checked={on} aria-label={`Appointment emails for ${kid.name}`} disabled={busy} onClick={() => void toggle()} data-testid={`family-reminders-toggle-${kid.id}`}
         className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${on ? 'bg-fam-accent' : 'bg-fam-border'}`}>
@@ -65,7 +64,7 @@ function Reminders({ centerId, kid, onError, onSaved, busy, onBusy }: { centerId
   );
 }
 
-function ChildCard({ centerId, centerName, kid, onError, onReminderSaved, reminderBusy, onReminderBusy }: { centerId: string; centerName: string; kid: Kid; onError: (e: unknown) => void; onReminderSaved: (id: string, enabled: boolean) => void; reminderBusy: boolean; onReminderBusy: (id: string, busy: boolean) => void }) {
+function ChildCard({ centerId, centerName, kid, onError, onReminderSaved, reminderBusy, onReminderBusy, reminderError, onReminderFailure, onReminderClearError }: { centerId: string; centerName: string; kid: Kid; onError: (e: unknown) => void; onReminderSaved: (id: string, enabled: boolean) => void; reminderBusy: boolean; onReminderBusy: (id: string, busy: boolean) => void; reminderError: boolean; onReminderFailure: (id: string) => void; onReminderClearError: (id: string) => void }) {
   const [showAll, setShowAll] = useState(false);
   const [allUp, setAllUp] = useState(false);
   const history = showAll ? kid.history : kid.history.slice(0, 4);
@@ -112,7 +111,7 @@ function ChildCard({ centerId, centerName, kid, onError, onReminderSaved, remind
             </ul>
           ) : <p className="mt-2 text-[14px] text-fam-muted">Your care team will appear here once assigned.</p>}
         </section>
-        <section className="space-y-3 self-start"><Reminders centerId={centerId} kid={kid} onError={onError} onSaved={onReminderSaved} busy={reminderBusy} onBusy={onReminderBusy} /></section>
+        <section className="space-y-3 self-start"><Reminders centerId={centerId} kid={kid} onError={onError} onSaved={onReminderSaved} busy={reminderBusy} onBusy={onReminderBusy} error={reminderError} onFailure={onReminderFailure} onClearError={onReminderClearError} /></section>
       </div>
       </DisclosureSection>
     </Card>
@@ -130,6 +129,12 @@ function ScopedFamilyHome({ centerId, onError, permissions }: { centerId: string
   const [unread, setUnread] = useState(0);
   const [chosen, setChosen] = useState('');
   const [reminderValues, setReminderValues] = useState<Record<string, boolean>>({});
+  const [reminderErrors, setReminderErrors] = useState<ReadonlySet<string>>(() => new Set());
+  const setReminderError = (id: string, failed: boolean) => setReminderErrors(previous => {
+    const next = new Set(previous);
+    if (failed) next.add(id); else next.delete(id);
+    return next;
+  });
   const [pendingReminders, setPendingReminders] = useState<ReadonlySet<string>>(() => new Set());
   const markPending = (id: string, busy: boolean) => setPendingReminders(previous => {
     const next = new Set(previous);
@@ -188,7 +193,9 @@ function ScopedFamilyHome({ centerId, onError, permissions }: { centerId: string
       {selected && <ChildCard key={selected.id} centerId={centerId} centerName={data.center.name}
         kid={{ ...selected, remindersEnabled: reminderValues[selected.id] ?? selected.remindersEnabled }}
         onReminderSaved={(id, enabled) => setReminderValues(prev => ({ ...prev, [id]: enabled }))}
-        reminderBusy={pendingReminders.has(selected.id)} onReminderBusy={markPending} onError={onError} />}
+        reminderBusy={pendingReminders.has(selected.id)} onReminderBusy={markPending}
+        reminderError={reminderErrors.has(selected.id)} onReminderFailure={id => setReminderError(id, true)}
+        onReminderClearError={id => setReminderError(id, false)} onError={onError} />}
     </div>
   );
 }
