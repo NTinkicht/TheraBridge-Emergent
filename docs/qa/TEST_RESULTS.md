@@ -1,3 +1,19 @@
+## 2026-11-17 — CI parallel critical-path implementation (NEW HEAD NOT YET QUALIFIED)
+| Check | Status |
+| --- | --- |
+| Commercial exact 59-step original verification sequence extracted into independent full-mode required job | IMPLEMENTED; full CI **PENDING** |
+| Original commercial archive inputs/retention unchanged, no approval inferred | Source-preserved; **new-run artifact inspection PENDING** |
+| Former test coverage/build/migrations preserved, original six required checks named | IMPLEMENTED; **new-run full CI PENDING** |
+| Smart CI expected job list and final always-running gate include commercial-provenance | IMPLEMENTED; adversarial source tests added; execution **PENDING** |
+| Compose no longer waits on main test, remains required success | IMPLEMENTED; execution **PENDING** |
+| Four Chromium consumers cache public lockfile-keyed browser download only; `playwright install --with-deps` kept | IMPLEMENTED; execution **PENDING** |
+| Existing sustained 10-min 512MiB preview and SBOM, clinical/secret checks | UNCHANGED, new-run **PENDING** |
+| Baseline PR #413 pre-change `test`, live-session, demo-journey, Child360, SBOM, secret scan and Compose | Previously OBSERVED PASS on previous CI; NOT evidence for current head |
+| Before/after timing and runner cost | **NOT MEASURED** |
+| Final-head independent Codex/merge | **PENDING / NOT MERGED** |
+| Clinical G2/G2b and commercial rights approvals | **NO-GO**, unchanged |
+Details: `docs/qa/CI-PARALLEL-CRITICAL-PATH-2026-11-17.md`.
+
 ## 2026-11-17 — M5-05 scoped route/key + 3-task decision checks (NEW PR)
 | Verification | Result |
 |---|---|
