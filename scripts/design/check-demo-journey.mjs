@@ -304,7 +304,7 @@ try {
     await journey.waitFor();
     assert((await journey.innerText()).includes('Report status loaded only when the authorized Reports tab opens'));
     for (const [step,destination] of [
-      ['goals','plan'],['evidence','progress'],['reports','reports'],['home','plan'],
+      ['sessions','sessions'],['goals','plan'],['evidence','progress'],['reports','reports'],['home','plan'],
     ]) {
       await page.getByTestId('clinician-journey-'+step).click();
       assert.equal(await page.getByTestId('clinical-tab-'+destination).getAttribute('aria-selected'),'true',
@@ -327,7 +327,7 @@ try {
             width: button.getBoundingClientRect().width,
             focusable: button.getAttribute('disabled') === null })),
       }));
-      assert.equal(navGeometry.links.length,4,'All four clinician journey stages must exist at '+width+'px');
+      assert.equal(navGeometry.links.length,5,'All five clinician journey stages must exist at '+width+'px');
       assert(navGeometry.panelRight <= width + 6 && navGeometry.panelOverflow <= 2,
         'Care journey clipped at '+width+'px: '+JSON.stringify(navGeometry));
       assert(navGeometry.links.every(link => link.right <= width + 6 &&
@@ -336,7 +336,7 @@ try {
       // Size/focusability alone do not prove operability: exercise real
       // keyboard navigation and Enter activation for EACH stage at EACH width.
       for (const [step, destination] of [
-        ['goals','plan'],['evidence','progress'],['reports','reports'],['home','plan'],
+        ['sessions','sessions'],['goals','plan'],['evidence','progress'],['reports','reports'],['home','plan'],
       ]) {
         const stage = page.getByTestId('clinician-journey-'+step);
         await stage.focus();

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, CalendarPlus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarDays, CalendarPlus, ChevronLeft, ChevronRight, CircleAlert, Clock3 } from 'lucide-react';
 import { FormAlert } from '@/components/auth/Field';
 import { PageTitle, SelectField, Workspace, useLoad } from '@/components/centers/kit';
 import { AppointmentPanel } from '@/components/operations/AppointmentPanel';
@@ -9,6 +9,7 @@ import { BookDialog, serviceLabel } from '@/components/operations/BookDialog';
 import { CalendarGrid, dayTitle, weekOf } from '@/components/operations/Calendar';
 import { ApptPill } from '@/components/operations/Dashboards';
 import { Button, Card } from '@/components/design/ui';
+import { CompactTable, DisclosureSection } from '@/components/design/workspace-patterns';
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
 import type { SessionInfo } from '@/lib/auth';
 import { addDays, dayKey, getCenterTz, opsApi, timeRange, zonedToUtc, type Appointment, type ChildRow, type Therapist } from '@/lib/operations';
@@ -82,8 +83,22 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
   const days = useMemo(() => (view === 'day' ? [anchor] : weekOf(anchor)), [view, anchor]);
   const from = useMemo(() => zonedToUtc(days[0], '00:00'), [days, tz]); // eslint-disable-line react-hooks/exhaustive-deps
   const to = useMemo(() => zonedToUtc(addDays(days[days.length - 1], 1), '00:00'), [days, tz]); // eslint-disable-line react-hooks/exhaustive-deps
-  const fetcher = useCallback(() => opsApi.appointments(centerId, { from: from.toISOString(), to: to.toISOString(), membershipId: therapist || undefined, childId: child || undefined }), [centerId, from, to, therapist, child]);
-  const { data, failed, reload } = useLoad(fetcher, onError);
+  const queryKey = JSON.stringify([centerId, from.toISOString(), to.toISOString(), therapist, child]);
+  const fetcher = useMemo(() => Object.assign(
+    async () => ({
+      queryKey,
+      result: await opsApi.appointments(centerId, {
+        from: from.toISOString(), to: to.toISOString(),
+        membershipId: therapist || undefined, childId: child || undefined,
+      }),
+    }),
+    { queryKey },
+  ), [queryKey, centerId, from, to, therapist, child]);
+  const { data: scopedResponse, failed, reload } = useLoad(fetcher, onError);
+  // useLoad's request generation decides which response is accepted. Comparing
+  // the accepted payload's key with today's filters prevents A→B→A races and
+  // stale results during loading, failure or a rapid change of center.
+  const data = !failed && scopedResponse?.queryKey === queryKey ? scopedResponse.result : null;
   useEffect(() => {
     if (data && getCenterTz() !== tz) {
       setTz(getCenterTz());
@@ -122,11 +137,26 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
   const done = (m: string) => { setBooking(false); setEditing(null); setSelected(null); setNotice(m); void reload(); };
   const mine = (a: Appointment) => manage || a.membershipId === ctx?.membershipId;
   const grid = view === 'day' || wide;
+  const exceptions = useMemo(() => shown.filter(a =>
+    a.status === 'NO_SHOW' || a.status === 'CANCELLED'), [shown]);
+  const scheduled = shown.filter(a => a.status === 'SCHEDULED').length;
+  const completed = shown.filter(a => a.status === 'COMPLETED').length;
   return (
     <div className="space-y-5">
       <PageTitle title="Schedule" body={isTherapist ? 'Your visits, in the center’s time zone.' : 'Every visit across the center, in the center’s time zone.'} testId="schedule-title"
         action={manage ? <Button onClick={() => setBooking(null)} data-testid="book-appointment-button"><CalendarPlus size={17} aria-hidden="true" /> Book appointment</Button> : undefined} />
       {notice && <FormAlert tone="success" testId="schedule-notice-success">{notice}</FormAlert>}
+      {!isTherapist && data && <section aria-label="Center operations overview" data-testid="m5-operations-summary"
+        className="grid gap-3 sm:grid-cols-3">
+        <Card className="p-4"><p className="text-xs text-brand-inkMuted">Scheduled in view</p><p className="text-2xl font-semibold tabular-nums">{scheduled}</p></Card>
+        <Card className="p-4"><p className="text-xs text-brand-inkMuted">Attended in view</p><p className="text-2xl font-semibold tabular-nums">{completed}</p></Card>
+        <Card className="p-4"><p className="flex items-center gap-1 text-xs text-brand-inkMuted"><CircleAlert size={15} aria-hidden="true" /> Exceptions in view</p><p className="text-2xl font-semibold tabular-nums">{exceptions.length}</p></Card>
+      </section>}
+      <p className="flex flex-wrap items-center gap-2 text-xs text-brand-inkMuted"
+        data-testid="schedule-timezone-notice"><Clock3 size={15} aria-hidden="true" />
+        Displayed in center time zone: <strong>{tz?.replaceAll('_', ' ') ?? 'Unavailable — check center settings'}</strong>.
+        Recurring series edits and exceptions must be confirmed in the existing appointment details.
+      </p>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <div role="group" aria-label="Calendar view" className="inline-flex rounded-control border border-border-light p-0.5">
@@ -157,12 +187,31 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
           <SelectField label="Child" value={child} onChange={setChild} testId="schedule-child-filter" options={[{ value: '', label: 'All children' }, ...children.map((c) => ({ value: c.id, label: `${c.preferredName ?? c.firstName} ${c.lastName}` }))]} />
         </div>
       </div>
+      {(therapist || child) && <div className="flex flex-wrap items-center gap-2 text-xs text-brand-inkMuted" data-testid="schedule-filter-summary">
+        Filters are applied to the current center and selected calendar dates.
+        <Button variant="ghost" size="sm" onClick={() => { setTherapist(''); setChild(''); setTherapistSearch(''); setChosenTherapistName(''); }}
+          data-testid="schedule-clear-filters">Clear all filters</Button>
+      </div>}
       {failed && <ErrorState onRetry={() => void reload()} testId="schedule-error" />}
       {!failed && !data && <Card className="p-5"><SkeletonRows rows={6} testId="schedule-loading" /></Card>}
       {data && !shown.length && !grid && <EmptyState icon={CalendarDays} title="Nothing booked this week" body={manage ? 'Book a visit for a child with an assigned therapist.' : 'Visits booked for you will appear here.'} testId="schedule-empty" />}
       {data && !shown.length && grid && <p className="text-[14px] text-brand-inkMuted" data-testid="schedule-empty">Nothing booked {view === 'day' ? 'on this day' : 'this week'}{therapist || child ? ' for this filter' : ''}.{manage ? ' Choose an empty slot to book.' : ''}</p>}
       {data && grid && <div data-testid="schedule-week"><CalendarGrid days={days} items={shown} onOpen={setSelected} onSlot={manage ? (date, start) => setBooking({ date, start }) : undefined} /></div>}
       {data && !grid && shown.length > 0 && <Agenda days={days} items={shown} onOpen={setSelected} />}
+      {!isTherapist && data && <DisclosureSection title="Operational exceptions and follow-up"
+        summary={`${exceptions.length} cancelled or no-show visits in the selected view. Internal scheduling records only.`}>
+        <div data-testid="m5-operations-exceptions">
+          <CompactTable caption="Appointment exceptions for the selected center and dates"
+            columns={[{id:'when',label:'When'},{id:'child',label:'Child'},{id:'resource',label:'Therapist / room'},{id:'status',label:'Status'}]}
+            rows={exceptions.map(a => ({ id:a.id, cells:{
+              when:`${dayKey(a.startsAt)} · ${timeRange(a.startsAt,a.endsAt)}`, child:a.childFull,
+              resource:`${a.therapist}${a.room ? ' · '+a.room : ''}`,
+              status:<ApptPill a={a}/>,
+            }}))}
+            emptyMessage="No cancelled or no-show appointments in this view." />
+          <p className="mt-3 text-xs text-brand-inkMuted">Select an appointment in the calendar to inspect its authoritative record. This overview does not change status or reserve capacity.</p>
+        </div>
+      </DisclosureSection>}
       <div className="flex flex-wrap gap-3 text-[12px] text-brand-inkMuted" data-testid="schedule-legend">
         {[['bg-brand-action', 'Scheduled'], ['bg-status-success', 'Attended'], ['bg-status-caution', 'No-show'], ['bg-border-strong', 'Cancelled']].map(([c, l]) => <span key={l} className="flex items-center gap-1.5"><span className={`h-2.5 w-2.5 rounded-full ${c}`} aria-hidden="true" />{l}</span>)}
         <span>↻ repeating</span>
