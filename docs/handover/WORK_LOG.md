@@ -1,3 +1,7 @@
+## 2026-11-17 — CI Phase 2A — independent commercial contracts — Implementation log
+Extracted 32 standalone commercial offline/adversarial test steps (node --test and one Python unittest) from sequential commercial-provenance into an independent required commercial-contracts job. Retained producer order, all exact-version npm/Sigstore/rights steps and archived evidence. Updated fail-closed smart-ci expectedJobs and smart-ci-gate needs plus frozen suite inventory, with negative-path source tests. Full CI, exact-head Codex, runtime comparison and merge NOT RUN/PENDING. Rule 16 targeted mode locked; no approval for clinical G2/G2b or commercial licensing.
+
+
 ## 2026-11-17 — CI performance without reductions in required checks
 Inspected real PR #413 CI 44109821144: main `test` job serially executes commercial evidence before database/API/Web coverage, Compose previously waits for it, and separate preview runs full 10-minute non-root 512MiB workload. Committed parallel `commercial-provenance` job with 59 original named verification steps and same evidence archive; modified `smart-ci.mjs` expected full jobs and `smart-ci-gate` needs to require it; run Compose concurrently once smart-plan completes; cache four Chromium downloads by Yarn lock/OS/arch while still running installer. Added adversarial Smart CI workflow checks and qualification ledger. **New-head CI and Codex PENDING**, no timing benefit claimed yet, no skipped gate authorized. G2/G2b NO-GO.
 

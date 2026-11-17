@@ -13,7 +13,7 @@ const DOC=/(^|\/)[^/]+\.mdx?$/i;
 const WEB_STYLE=/^apps\/web\/(?:src\/.*\.css|public\/(?:[^/]+\/)*[^/]+\.(?:png|jpe?g|webp|gif|ico|avif|woff2?|ttf|otf))$/i;
 const HARD_BLOCK=/(^|\/)(?:AGENTS\.md|SECURITY\.md|CODEOWNERS|Dockerfile(?:\.[^/]*)?|render\.yaml)$/i;
 const VALID_STATUS=new Set(['A','M','D','T','U']);
-const jobs=['secret-scan','sbom','commercial-provenance','test','live-session','demo-journey','m5-child360-browser','compose','preview-container','smart-targeted'];
+const jobs=['secret-scan','sbom','commercial-provenance','commercial-contracts','test','live-session','demo-journey','m5-child360-browser','compose','preview-container','smart-targeted'];
 
 export function classifyPaths(changes) {
  if(!Array.isArray(changes)||!changes.length||changes.length>300)

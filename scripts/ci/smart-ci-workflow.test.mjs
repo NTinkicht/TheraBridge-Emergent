@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 const yaml=readFileSync('.github/workflows/ci.yml','utf8');
 
 test('all original six checks plus required commercial job are preserved and verifier is always scheduled',()=>{
- for(const name of ['secret-scan','commercial-provenance','test','live-session','demo-journey','compose','preview-container'])
+ for(const name of ['secret-scan','commercial-provenance','commercial-contracts','test','live-session','demo-journey','compose','preview-container'])
   assert.match(yaml,new RegExp('^  '+name+':','m'),name);
  assert.match(yaml,/^  smart-plan:/m);
  assert.match(yaml,/^  smart-targeted:/m);
@@ -25,7 +25,7 @@ test('secret scan remains unconditional and full workloads are conditional',()=>
 });
 test('always-running gate accounts for all possible worker jobs',()=>{
  const gate=yaml.slice(yaml.indexOf('\n  smart-ci-gate:'));
- for(const name of ['smart-plan','secret-scan','commercial-provenance','test','live-session','demo-journey',
+ for(const name of ['smart-plan','secret-scan','commercial-provenance','commercial-contracts','test','live-session','demo-journey',
    'compose','preview-container','smart-targeted','sbom','m5-child360-browser'])
   assert.match(gate,new RegExp('^      - '+name+'$','m'));
  assert.match(gate,/run: node scripts\/ci\/smart-ci-gate\.mjs/);
@@ -52,4 +52,16 @@ test('all four browser consumers may reuse only lockfile-scoped public Chromium 
  assert.equal([...yaml.matchAll(/key: tb-playwright-/g)].length,4);
  assert.equal([...yaml.matchAll(/yarn playwright install --with-deps chromium/g)].length,4,
    'Cached browsers must not bypass Playwright runtime/dependency validation');
+});
+
+test('independent commercial contract shard is required and all offline checks are preserved',()=>{
+ const producer=yaml.slice(yaml.indexOf('\n  commercial-provenance:'),yaml.indexOf('\n  commercial-contracts:'));
+ const checks=yaml.slice(yaml.indexOf('\n  commercial-contracts:'),yaml.indexOf('\n  test:'));
+ const steps=[...checks.matchAll(/^      - name: (.+)$/gm)].map(m=>m[1]);
+ assert(steps.length>=33,'missing contract steps');
+ assert.equal((checks.match(/run: node --test scripts\/commercial\//g)||[]).length>=31,true);
+ assert.match(producer,/Archive installed license evidence for full CI/);
+ assert.match(producer,/Batch reconcile WU-LIC-01/);
+ assert.match(checks,/if: needs\.smart-plan\.outputs\.mode == 'full'/);
+ assert.match(yaml,/^      - commercial-contracts$/m);
 });
