@@ -74,7 +74,7 @@ describe('M5-14 activity illustration draft boundary', () => {
     const { service, tx, updateMany } = setup();
     const result = await service.reject(centerId, actor, templateId, draftId, { version: 1, reason: 'Inaccurate child hand position' });
     expect(result).toEqual({ id: draftId, state: 'REJECTED', version: 2, publishEnabled: false });
-    expect(updateMany.mock.calls[0][0].where).toEqual({ id: draftId, centerId, templateId, version: 1, state: 'DRAFT' });
+    expect(updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: { id: draftId, centerId, templateId, version: 1, state: 'DRAFT' } }));
     expect(tx.centerEvent.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ type: 'media.draft_rejected' }),
     }));
