@@ -1,3 +1,15 @@
+## 2026-11-17 — M5-05 R2 synthetic resilience browser evidence (PR #406)
+| Check | Status at implementation checkpoint |
+|---|---|
+| 3 synthetic clinician roles × 5 widths: delayed authorized GET shows loading without clinical tab panels | IMPLEMENTED; exact-head CI **PENDING** |
+| 3 × 5 simulated HTTP 503: visible safe error state and no stale clinical tabs | IMPLEMENTED; exact-head CI **PENDING** |
+| 3 × 5 explicit retry after error returns authorized five-tab workspace | IMPLEMENTED; exact-head CI **PENDING** |
+| Receipt validator rejects missing/forged slow-load and recovered-response counts | IMPLEMENTED; CI **PENDING** |
+| Existing base #403 five-width keyboard, scoped history, denied coordinator | Previously PASS on #403; new HEAD **PENDING** |
+| Human screen-reader, accessibility owner approval, full low-bandwidth field trials and task durations | **NOT RUN / NOT OBTAINED** |
+| Signing/release/clinical G2/G2b | **NO-GO**, unchanged |
+Synthetic CI uses loopback `*_demo_test`, build-time feature flag ON only in the isolated job. Production/default compact flag OFF. No clinical rights or release approvals inferred.
+
 ## 2026-11-16 — M5-05 PR #403 disclosure qualification evidence (CURRENT HEAD PENDING)
 | Check | Result / evidence |
 |---|---|
