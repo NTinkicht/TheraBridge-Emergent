@@ -3,9 +3,10 @@ const React=require('react');
 const {act,create}=require('react-test-renderer');
 const h=React.createElement;
 const {useLoad}=require('../src/components/centers/kit');
+const onError=()=>{throw Error('synthetic failure');};
 function BoundProjection({query,request}){
  const fetcher=React.useCallback(async()=>({query,result:await request(query)}),[query,request]);
- const {data,failed}=useLoad(fetcher,()=>{throw Error('synthetic failure');});
+ const {data,failed}=useLoad(fetcher,onError);
  return h('output',{'data-testid':'projection'},!failed&&data?.query===query?data.result:'NOT_CURRENT');
 }
 const deferred=()=>{let resolve;const promise=new Promise(r=>{resolve=r;});return {promise,resolve};};
