@@ -362,7 +362,6 @@ jobs:
             /tmp/therabridge-com02-nondt-workqueue.json \
             yarn.lock \
             /tmp/therabridge-com02-root-405-evidence.json
-            /tmp/therabridge-com02-tokenizer-manifest-diff-402.json
       - name: Test fail-closed tokenizer source/npm manifest field-drift classifier
         run: node --test scripts/commercial/classify-com02-tokenizer-manifest-drift.test.mjs
       - name: Reproduce exact tokenizer npm manifest field differences without publisher attribution
@@ -401,6 +400,7 @@ jobs:
             /tmp/therabridge-com02-nondt-workqueue.json
             /tmp/therabridge-com02-nondt-published-manifest-comparison.json
             /tmp/therabridge-com02-root-405-evidence.json
+            /tmp/therabridge-com02-tokenizer-manifest-diff-402.json
             /tmp/therabridge-com02-root-observation-reconciliation.json
             /tmp/therabridge-com02-bulk-rights-evidence.json
             /tmp/therabridge-com02-release-scope-review.json
