@@ -157,98 +157,48 @@ jobs:
           cache: yarn
       - name: Install exact locked dependency tree for license and publisher evidence
         run: yarn install --frozen-lockfile
-      - name: Verify exact-installed package license file inventory tooling
-        run: node --test scripts/commercial/collect-installed-licenses.test.mjs
       - name: Collect installed package license-file hashes (review evidence only)
         run: node scripts/commercial/collect-installed-licenses.mjs . /tmp/therabridge-installed-licenses.json
-      - name: Validate installed license review triage and fail-closed safeguards
-        run: node --test scripts/commercial/build-installed-license-review.test.mjs
       - name: Produce version-specific installed LICENSE/NOTICE triage (not legal approval)
         run: node scripts/commercial/build-installed-license-review.mjs /tmp/therabridge-installed-licenses.json /tmp/therabridge-installed-license-review.json
-      - name: Validate Yarn lockfile installed-provenance review and adversarial fixtures
-        run: node --test scripts/commercial/reconcile-installed-lock.test.mjs
       - name: Reconcile exact installed versions to frozen Yarn lock metadata (not tarball verification)
         run: node scripts/commercial/reconcile-installed-lock.mjs /tmp/therabridge-installed-license-review.json yarn.lock /tmp/therabridge-installed-lock-provenance.json
-      - name: Validate published tarball verification tooling (offline adversarial tests)
-        run: node --test scripts/commercial/verify-published-tarballs.test.mjs
       - name: Verify all installed direct npm tarballs and compare on-disk LICENSE/NOTICE hashes
         run: node scripts/commercial/verify-published-tarballs.mjs /tmp/therabridge-installed-lock-provenance.json yarn.lock docs/commercial/direct-license-evidence.json /tmp/therabridge-installed-licenses.json /tmp/therabridge-publisher-tarball-evidence.json
-      - name: Verify digest-pinned candidate Docker release capture parser (offline, fail-closed)
-        run: python3 -m unittest discover -s scripts/commercial -p test_capture_docker_release.py -v
-      - name: Validate consolidated transitive and asset obligations queue
-        run: node --test scripts/commercial/build-com02-obligations-queue.test.mjs
       - name: Collect transitive dependencies and tracked assets for legal-review matrix
         run: node scripts/commercial/build-com02-obligations-queue.mjs docs/commercial/direct-license-evidence.json /tmp/therabridge-installed-licenses.json /tmp/therabridge-publisher-tarball-evidence.json /tmp/therabridge-com02-obligations-queue.json
-      - name: Validate bounded transitive publisher tarball audit safeguards
-        run: node --test scripts/commercial/verify-transitive-tarballs.test.mjs
       - name: Classify every installed non-direct npm version and verify tarball hashes (not license clearance)
         run: node scripts/commercial/verify-transitive-tarballs.mjs /tmp/therabridge-installed-lock-provenance.json yarn.lock docs/commercial/direct-license-evidence.json /tmp/therabridge-installed-licenses.json /tmp/therabridge-transitive-tarball-evidence.json
-      - name: Validate exact-version license exception register fail-closed semantics
-        run: node --test scripts/commercial/build-license-exception-register.test.mjs
       - name: Generate per-version unresolved license and SaaS/enterprise obligations register
         run: node scripts/commercial/build-license-exception-register.mjs /tmp/therabridge-publisher-tarball-evidence.json /tmp/therabridge-transitive-tarball-evidence.json /tmp/therabridge-installed-licenses.json yarn.lock /tmp/therabridge-com02-obligations-queue.json /tmp/therabridge-com02-exact-version-rights-queue.json
-      - name: Validate exact npm registry manifest metadata candidates fail-closed
-        run: node --test scripts/commercial/collect-upstream-license-candidates.test.mjs
       - name: Collect immutable exact-version registry metadata candidates (never legal clearance)
         run: node scripts/commercial/collect-upstream-license-candidates.mjs /tmp/therabridge-com02-exact-version-rights-queue.json /tmp/therabridge-com02-upstream-candidates.json
-      - name: Validate npm attestation discovery and fail-closed signature audit receipts
-        run: node --test scripts/commercial/verify-npm-provenance-observation.test.mjs
       - name: Independently query npm CLI signatures for advertised exact-version candidates (not source or legal approval)
         run: node scripts/commercial/verify-npm-provenance-observation.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-npm-provenance-observation.json /tmp/therabridge-com02-npm-signature-audit.json
-      - name: Validate pinned npm Sigstore bundle subject and digest verifier (adversarial offline)
-        run: node --test scripts/commercial/verify-npm-sigstore-bundles.test.mjs
       - name: Obtain and verify exact npm package Sigstore bundles using pinned npm 11.19.1 (never legal approval)
         run: node scripts/commercial/verify-npm-sigstore-bundles.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-verified-npm-bundle-candidates.json /tmp/therabridge-com02-raw-verified-npm-bundles.json
-      - name: Validate signed Next.js source-to-exact-commit evidence boundaries
-        run: node --test scripts/commercial/corroborate-signed-nextjs-source.test.mjs
       - name: Corroborate pinned signed Next.js release claims with immutable source manifests (not reproducibility)
         run: node scripts/commercial/corroborate-signed-nextjs-source.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-verified-npm-bundle-candidates.json /tmp/therabridge-com02-raw-verified-npm-bundles.json /tmp/therabridge-com02-nextjs-immutable-source-review.json
-      - name: Validate exact npm published tarball inventory and source build-recipe boundaries
-        run: node --test scripts/commercial/inventory-nextjs-published-builds.test.mjs
-      - name: Verify independently SRI-authenticated published npm archive comparator
-        run: node --test scripts/commercial/compare-nextjs-rebuild.test.mjs
       - name: Record real npm release archive files, SRI and immutable source build recipes (not reproduced builds)
         run: node scripts/commercial/inventory-nextjs-published-builds.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-verified-npm-bundle-candidates.json /tmp/therabridge-com02-raw-verified-npm-bundles.json /tmp/therabridge-com02-nextjs-immutable-source-review.json /tmp/therabridge-com02-nextjs-published-build-readiness.json
-      - name: Validate candidate Git commit and immutable source package identity without false attestation
-        run: node --test scripts/commercial/corroborate-source-revisions.test.mjs
       - name: Collect version-pinned source root manifest corroboration candidates (not legal authority)
         run: node scripts/commercial/corroborate-source-revisions.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-source-correspondence-candidates.json
-      - name: Validate exact pinned DefinitelyTyped (21) unresolved source lineage and rights targets
-        run: node --test scripts/commercial/build-definitelytyped-triage.test.mjs
       - name: Build exact DefinitelyTyped version-specific third-party rights followup receipt
         run: node scripts/commercial/build-definitelytyped-triage.mjs /tmp/therabridge-com02-upstream-candidates.json /tmp/therabridge-com02-source-correspondence-candidates.json /tmp/therabridge-com02-exact-version-rights-queue.json /tmp/therabridge-com02-definitelytyped-26-triage.json
-      - name: Validate exact-Git DefinitelyTyped hash reconstruction boundaries
-        run: node --test scripts/commercial/verify-dt-immutable-source.test.mjs
       - name: Observe two real immutable DefinitelyTyped snapshots (NEVER publisher proof)
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/commercial/probe-dt-source-snapshots.mjs /tmp/therabridge-com02-definitelytyped-26-triage.json /tmp/therabridge-com02-dt-snapshot-probes.json
-      - name: Validate 2023 prepublication immutable source comparison safety
-        run: node --test scripts/commercial/probe-dt-prepublication-snapshots.test.mjs
       - name: Observe two exact 2023 DefinitelyTyped source snapshots without publication authority
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/commercial/probe-dt-prepublication-snapshots.mjs /tmp/therabridge-com02-definitelytyped-26-triage.json /tmp/therabridge-com02-dt-prepublication-probes.json
-      - name: Validate immutable-source root observations, aliases, and false-approval boundaries
-        run: node --test scripts/commercial/reconcile-independent-root-observations.test.mjs
       - name: Corroborate 15 frozen source-root observations (9 current, 6 retired) against exact 44 npm candidate report without authorizing lineage
         run: node scripts/commercial/reconcile-independent-root-observations.mjs /tmp/therabridge-com02-source-correspondence-candidates.json docs/commercial/com02-independent-root-observations.json /tmp/therabridge-com02-root-observation-reconciliation.json
-      - name: Validate fail-closed exact-commit LICENSE/NOTICE text hashing
-        run: node --test scripts/commercial/verify-immutable-license-texts.test.mjs
       - name: Reconcile immutable upstream text evidence without approving source correspondence
         run: node scripts/commercial/verify-immutable-license-texts.mjs /tmp/therabridge-com02-upstream-candidates.json docs/commercial/immutable-upstream-source-mappings.json /tmp/therabridge-com02-immutable-text-evidence.json
-      - name: Validate bulk provenance and immutable LICENSE/NOTICE candidate rights queue fail-closed
-        run: node --test scripts/commercial/build-bulk-rights-evidence.test.mjs
       - name: Build consolidated per-version and source-asset evidence (NEVER legal approval)
         run: node scripts/commercial/build-bulk-rights-evidence.mjs /tmp/therabridge-com02-exact-version-rights-queue.json /tmp/therabridge-com02-source-correspondence-candidates.json docs/commercial/upstream-license-path-candidates.json /tmp/therabridge-com02-bulk-rights-evidence.json
-      - name: Validate dual-edition Docker release evidence merge (offline, fail-closed)
-        run: node --test scripts/commercial/merge-release-captures.test.mjs
-      - name: Validate pinned-key DSSE OCI candidate signature and adversarial forgery cases
-        run: node --test scripts/commercial/verify-oci-dsse.test.mjs
-      - name: Verify signed OCI candidate-to-rights reconciliation never grants commercial or clinical rights
-        run: node --test scripts/commercial/reconcile-signed-release-rights.test.mjs
-      - name: Validate strict release-image and publication-scope rights reconciliation
-        run: node --test scripts/commercial/review-release-scope.test.mjs
       - name: Assert commercial launch decision records remain non-authorizing
         run: |
           node --test scripts/commercial/verify-launch-decision.test.mjs
@@ -268,8 +218,6 @@ jobs:
             /tmp/therabridge-com01-counsel-intake.json
       - name: Build conservative actual-image candidate comparison (unattested means unresolved)
         run: node scripts/commercial/review-release-scope.mjs /tmp/therabridge-com02-bulk-rights-evidence.json docs/commercial/release-file-evidence.json /tmp/therabridge-com02-release-scope-review.json
-      - name: Test exhaustive exact-version (44 since Node 24 / NestJS 12) 91-asset dual-edition COM-02 closure ledger
-        run: node --test scripts/commercial/build-com02-closure-ledger.test.mjs
       - name: Generate fail-closed COM-02 per-component commercial rights and release blocker ledger
         run: |
           node scripts/commercial/build-com02-closure-ledger.mjs \
@@ -279,12 +227,8 @@ jobs:
             /tmp/therabridge-com02-definitelytyped-26-triage.json \
             docs/commercial/release-file-evidence.json \
             /tmp/therabridge-com02-closure-ledger.json
-      - name: Test non-DefinitelyTyped exact-version evidence workqueue
-        run: node --test scripts/commercial/build-com02-nondt-workqueue.test.mjs
       - name: Derive non-DefinitelyTyped workqueue from same-run COM-02 ledger (never approval)
         run: node scripts/commercial/build-com02-nondt-workqueue.mjs /tmp/therabridge-com02-closure-ledger.json /tmp/therabridge-com02-nondt-workqueue.json
-      - name: Test SRI-qualified non-DT archive vs immutable source manifest comparison
-        run: node --test scripts/commercial/compare-nondt-published-manifests.test.mjs
       - name: Compare 9 observed npm source roots and flag tenth unobserved candidate (no attestation)
         run: |
           node scripts/commercial/compare-nondt-published-manifests.mjs \
@@ -293,16 +237,12 @@ jobs:
             /tmp/therabridge-com02-root-observation-reconciliation.json \
             yarn.lock \
             /tmp/therabridge-com02-nondt-published-manifest-comparison.json
-      - name: Test independent Git blob and npm archive exact-version follow-up 405
-        run: node --test scripts/commercial/verify-com02-root-405.test.mjs
       - name: Verify immutable unicode-emoji-modifier-base source vs exact original npm archive (not publisher approval)
         run: |
           node scripts/commercial/verify-com02-root-405.mjs \
             /tmp/therabridge-com02-nondt-workqueue.json \
             yarn.lock \
             /tmp/therabridge-com02-root-405-evidence.json
-      - name: Test fail-closed tokenizer source/npm manifest field-drift classifier
-        run: node --test scripts/commercial/classify-com02-tokenizer-manifest-drift.test.mjs
       - name: Reproduce exact tokenizer npm manifest field differences without publisher attribution
         run: |
           node scripts/commercial/classify-com02-tokenizer-manifest-drift.mjs \
@@ -311,16 +251,12 @@ jobs:
             /tmp/therabridge-com02-nondt-published-manifest-comparison.json \
             yarn.lock \
             /tmp/therabridge-com02-tokenizer-manifest-diff-402.json
-      - name: Test exact tokenizer original Git/npm manifest semantic differences
-        run: node --test scripts/commercial/explain-com02-tokenizer-402.test.mjs
       - name: Independently compare immutable tokenizer Git source and original locked npm manifest (not publisher attestation)
         run: |
           node scripts/commercial/explain-com02-tokenizer-402.mjs \
             /tmp/therabridge-com02-nondt-workqueue.json \
             yarn.lock \
             /tmp/therabridge-com02-tokenizer-exact-semantic-402.json
-      - name: Test WU-LIC-01 exact 44-package 91-asset three-receipt fail-closed qualification
-        run: node --test scripts/commercial/build-wu-lic-01-qualification.test.mjs
       - name: Batch reconcile WU-LIC-01 provenance qualifications without granting commercial or clinical rights
         run: |
           node scripts/commercial/build-wu-lic-01-qualification.mjs \
@@ -366,6 +302,89 @@ jobs:
             /tmp/therabridge-com02-immutable-text-evidence.json
           if-no-files-found: error
           retention-days: 30
+
+  commercial-contracts:
+    name: commercial-contracts
+    needs: smart-plan
+    if: needs.smart-plan.outputs.mode == 'full'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - name: Install exact locked dependency tree for independent offline commercial contracts
+        run: yarn install --frozen-lockfile
+      - name: Verify exact-installed package license file inventory tooling
+        run: node --test scripts/commercial/collect-installed-licenses.test.mjs
+      - name: Validate installed license review triage and fail-closed safeguards
+        run: node --test scripts/commercial/build-installed-license-review.test.mjs
+      - name: Validate Yarn lockfile installed-provenance review and adversarial fixtures
+        run: node --test scripts/commercial/reconcile-installed-lock.test.mjs
+      - name: Validate published tarball verification tooling (offline adversarial tests)
+        run: node --test scripts/commercial/verify-published-tarballs.test.mjs
+      - name: Verify digest-pinned candidate Docker release capture parser (offline, fail-closed)
+        run: python3 -m unittest discover -s scripts/commercial -p test_capture_docker_release.py -v
+      - name: Validate consolidated transitive and asset obligations queue
+        run: node --test scripts/commercial/build-com02-obligations-queue.test.mjs
+      - name: Validate bounded transitive publisher tarball audit safeguards
+        run: node --test scripts/commercial/verify-transitive-tarballs.test.mjs
+      - name: Validate exact-version license exception register fail-closed semantics
+        run: node --test scripts/commercial/build-license-exception-register.test.mjs
+      - name: Validate exact npm registry manifest metadata candidates fail-closed
+        run: node --test scripts/commercial/collect-upstream-license-candidates.test.mjs
+      - name: Validate npm attestation discovery and fail-closed signature audit receipts
+        run: node --test scripts/commercial/verify-npm-provenance-observation.test.mjs
+      - name: Validate pinned npm Sigstore bundle subject and digest verifier (adversarial offline)
+        run: node --test scripts/commercial/verify-npm-sigstore-bundles.test.mjs
+      - name: Validate signed Next.js source-to-exact-commit evidence boundaries
+        run: node --test scripts/commercial/corroborate-signed-nextjs-source.test.mjs
+      - name: Validate exact npm published tarball inventory and source build-recipe boundaries
+        run: node --test scripts/commercial/inventory-nextjs-published-builds.test.mjs
+      - name: Verify independently SRI-authenticated published npm archive comparator
+        run: node --test scripts/commercial/compare-nextjs-rebuild.test.mjs
+      - name: Validate candidate Git commit and immutable source package identity without false attestation
+        run: node --test scripts/commercial/corroborate-source-revisions.test.mjs
+      - name: Validate exact pinned DefinitelyTyped (21) unresolved source lineage and rights targets
+        run: node --test scripts/commercial/build-definitelytyped-triage.test.mjs
+      - name: Validate exact-Git DefinitelyTyped hash reconstruction boundaries
+        run: node --test scripts/commercial/verify-dt-immutable-source.test.mjs
+      - name: Validate 2023 prepublication immutable source comparison safety
+        run: node --test scripts/commercial/probe-dt-prepublication-snapshots.test.mjs
+      - name: Validate immutable-source root observations, aliases, and false-approval boundaries
+        run: node --test scripts/commercial/reconcile-independent-root-observations.test.mjs
+      - name: Validate fail-closed exact-commit LICENSE/NOTICE text hashing
+        run: node --test scripts/commercial/verify-immutable-license-texts.test.mjs
+      - name: Validate bulk provenance and immutable LICENSE/NOTICE candidate rights queue fail-closed
+        run: node --test scripts/commercial/build-bulk-rights-evidence.test.mjs
+      - name: Validate dual-edition Docker release evidence merge (offline, fail-closed)
+        run: node --test scripts/commercial/merge-release-captures.test.mjs
+      - name: Validate pinned-key DSSE OCI candidate signature and adversarial forgery cases
+        run: node --test scripts/commercial/verify-oci-dsse.test.mjs
+      - name: Verify signed OCI candidate-to-rights reconciliation never grants commercial or clinical rights
+        run: node --test scripts/commercial/reconcile-signed-release-rights.test.mjs
+      - name: Validate strict release-image and publication-scope rights reconciliation
+        run: node --test scripts/commercial/review-release-scope.test.mjs
+      - name: Test exhaustive exact-version (44 since Node 24 / NestJS 12) 91-asset dual-edition COM-02 closure ledger
+        run: node --test scripts/commercial/build-com02-closure-ledger.test.mjs
+      - name: Test non-DefinitelyTyped exact-version evidence workqueue
+        run: node --test scripts/commercial/build-com02-nondt-workqueue.test.mjs
+      - name: Test SRI-qualified non-DT archive vs immutable source manifest comparison
+        run: node --test scripts/commercial/compare-nondt-published-manifests.test.mjs
+      - name: Test independent Git blob and npm archive exact-version follow-up 405
+        run: node --test scripts/commercial/verify-com02-root-405.test.mjs
+      - name: Test fail-closed tokenizer source/npm manifest field-drift classifier
+        run: node --test scripts/commercial/classify-com02-tokenizer-manifest-drift.test.mjs
+      - name: Test exact tokenizer original Git/npm manifest semantic differences
+        run: node --test scripts/commercial/explain-com02-tokenizer-402.test.mjs
+      - name: Test WU-LIC-01 exact 44-package 91-asset three-receipt fail-closed qualification
+        run: node --test scripts/commercial/build-wu-lic-01-qualification.test.mjs
 
   test:
     needs: smart-plan
@@ -923,6 +942,7 @@ jobs:
       - secret-scan
       - sbom
       - commercial-provenance
+      - commercial-contracts
       - test
       - live-session
       - demo-journey
