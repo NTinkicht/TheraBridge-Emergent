@@ -93,6 +93,7 @@ model User {
   snapshotAuthors GovernanceSnapshot[] @relation("SnapshotAuthor")
   snapshotGenerators GovernanceSnapshot[] @relation("SnapshotGenerator")
   createdConsentDrafts ConsentRecordDraft[]
+  createdMediaDrafts ActivityMediaDraft[]
   createdTransferDrafts CaseloadTransferDraft[]
 
   @@map("app_user")
@@ -196,6 +197,7 @@ model Center {
   trialEndsAt   DateTime?          @map("trial_ends_at") @db.Timestamptz(3)
   children      Child[]
   guardianLinks GuardianLink[]
+  mediaDrafts ActivityMediaDraft[]
   homePlanRequests HomePlanRequest[]
   appointments  Appointment[]
   createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -734,6 +736,7 @@ model ActivityTemplate {
   createdAt   DateTime @map("created_at") @db.Timestamptz(3)
   version     Int      @default(1)
   practiceOutcomes PracticeOutcome[]
+  mediaDrafts ActivityMediaDraft[]
 
   @@index([centerId])
   @@map("activity_template")
@@ -1061,4 +1064,33 @@ model CaseloadTransferDraft {
   @@index([centerId, status, createdAt], map: "caseload_transfer_draft_center_status_created_idx")
   @@index([centerId, toMembershipId, status, createdAt], map: "caseload_transfer_draft_center_target_status_created_idx")
   @@map("caseload_transfer_draft")
+}
+
+
+// M5-14: proposal registry, NOT uploaded media, verified rights or released assets.
+model ActivityMediaDraft {
+  id              String   @id @default(uuid()) @db.Uuid
+  centerId        String   @map("center_id") @db.Uuid
+  templateId      String   @map("template_id") @db.Uuid
+  templateVersion Int      @map("template_version")
+  service         String   @db.VarChar(32)
+  state           String   @default("DRAFT") @db.VarChar(16)
+  sourceType      String   @map("source_type") @db.VarChar(16)
+  styleVersion    String   @map("style_version") @db.VarChar(120)
+  sceneType       String   @map("scene_type") @db.VarChar(80)
+  altText         String   @map("alt_text") @db.VarChar(600)
+  license         String   @db.VarChar(160)
+  sourceReference String   @map("source_reference") @db.VarChar(500)
+  providerTerms   String?  @map("provider_terms") @db.VarChar(500)
+  rejectionReason String?  @map("rejection_reason") @db.VarChar(500)
+  version         Int      @default(1)
+  createdById     String   @map("created_by_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  center          Center   @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  template        ActivityTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  createdBy       User @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([centerId, templateId, createdAt(sort: Desc)])
+  @@map("activity_media_draft")
 }
