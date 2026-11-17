@@ -1,0 +1,313 @@
+{
+  "schema": "therabridge-wu-lic-04-commercial-spec-v1",
+  "stage": "SPECIFICATION_ONLY_PRE_V1_FEATURE_FREEZE",
+  "featureFreeze": {
+    "verified": false,
+    "approvalArtifactSha256": null,
+    "ownerApproval": false,
+    "featureFreezeCommit": null
+  },
+  "runtime": {
+    "billingEnabled": false,
+    "entitlementEnforcementEnabled": false,
+    "checkoutEnabled": false,
+    "enterpriseActivationEnabled": false,
+    "realCustomerOnboardingEnabled": false,
+    "clinicalReleaseEnabled": false,
+    "automaticProductionMigrationEnabled": false
+  },
+  "editions": {
+    "SAAS": {
+      "delivery": "OWNER_HOSTED",
+      "plans": [
+        "STARTER",
+        "PROFESSIONAL"
+      ],
+      "actualDeploymentScope": "NOT_AUTHENTICATED",
+      "licensed": false
+    },
+    "ENTERPRISE": {
+      "delivery": "CUSTOMER_MANAGED_SIGNED_BUNDLE",
+      "plans": [
+        "ENTERPRISE"
+      ],
+      "actualDeploymentScope": "NOT_AUTHENTICATED",
+      "licensed": false
+    }
+  },
+  "plans": {
+    "STARTER": {
+      "edition": "SAAS",
+      "audience": "Single-center evaluation or smaller operation",
+      "metrics": {
+        "centers": "TBD_FINANCE",
+        "staffSeats": "TBD_FINANCE",
+        "storageGb": "TBD_FINANCE",
+        "aiCredits": "TBD_FINANCE",
+        "monthlyPriceMinor": "TBD_FINANCE"
+      },
+      "features": [
+        "nonclinical_center_admin",
+        "nonclinical_scheduling",
+        "synthetic_demo"
+      ],
+      "overages": "BLOCKED_UNTIL_CONTRACTED"
+    },
+    "PROFESSIONAL": {
+      "edition": "SAAS",
+      "audience": "Multi-team owner-hosted centers",
+      "metrics": {
+        "centers": "TBD_FINANCE",
+        "staffSeats": "TBD_FINANCE",
+        "storageGb": "TBD_FINANCE",
+        "aiCredits": "TBD_FINANCE",
+        "monthlyPriceMinor": "TBD_FINANCE"
+      },
+      "features": [
+        "nonclinical_center_admin",
+        "nonclinical_scheduling",
+        "synthetic_demo",
+        "nonclinical_reporting"
+      ],
+      "overages": "BLOCKED_UNTIL_CONTRACTED"
+    },
+    "ENTERPRISE": {
+      "edition": "ENTERPRISE",
+      "audience": "Separately licensed customer-managed installation",
+      "metrics": {
+        "sites": "TBD_CONTRACT",
+        "staffSeats": "TBD_CONTRACT",
+        "storageGb": "TBD_CONTRACT",
+        "aiCredits": "TBD_CONTRACT",
+        "annualPriceMinor": "TBD_CONTRACT"
+      },
+      "features": [
+        "nonclinical_center_admin",
+        "nonclinical_scheduling",
+        "synthetic_demo",
+        "nonclinical_reporting",
+        "customer_managed_deployment"
+      ],
+      "overages": "BLOCKED_UNTIL_CONTRACTED"
+    }
+  },
+  "safety": {
+    "alwaysAvailableOperations": [
+      "authenticated_read_previously_authorized_records",
+      "legally_required_data_export",
+      "audit_record_access",
+      "security_incident_response",
+      "privacy_request_handling",
+      "necessary_safety_handover"
+    ],
+    "neverLicensedBySubscription": [
+      "clinical_report_signing",
+      "therapist_report_release",
+      "real_patient_ai_processing",
+      "clinical_consent_grant",
+      "clinical_g2_or_g2b_override"
+    ],
+    "billingNeverChangesRoleOrTenantAuthorization": true,
+    "billingNeverOverridesG2G2b": true,
+    "publicRepoNotLicense": true
+  },
+  "subscription": {
+    "states": [
+      "TRIAL",
+      "ACTIVE",
+      "PAST_DUE",
+      "GRACE",
+      "EXPIRED",
+      "SUSPENDED",
+      "TERMINATED"
+    ],
+    "transitions": {
+      "TRIAL": [
+        "ACTIVE",
+        "EXPIRED",
+        "TERMINATED"
+      ],
+      "ACTIVE": [
+        "PAST_DUE",
+        "SUSPENDED",
+        "TERMINATED"
+      ],
+      "PAST_DUE": [
+        "ACTIVE",
+        "GRACE",
+        "SUSPENDED",
+        "TERMINATED"
+      ],
+      "GRACE": [
+        "ACTIVE",
+        "EXPIRED",
+        "SUSPENDED",
+        "TERMINATED"
+      ],
+      "EXPIRED": [
+        "ACTIVE",
+        "TERMINATED"
+      ],
+      "SUSPENDED": [
+        "ACTIVE",
+        "TERMINATED"
+      ],
+      "TERMINATED": []
+    },
+    "activation": "REQUIRES_FINANCE_AND_LEGAL_EVIDENCE",
+    "graceDays": "TBD_OWNER_POLICY",
+    "billingProviderUnavailable": "NO_UNVERIFIED_GRANT_AND_PRESERVE_SAFETY_ACCESS",
+    "expiry": "RESTRICT_ONLY_PAID_NONCLINICAL_NEW_MUTATIONS",
+    "failureResponse": "403_ENTITLEMENT_REQUIRED_ONLY_AFTER_RELEASE_APPROVAL",
+    "termination": "NEVER_AUTOMATICALLY_DELETE_PATIENT_OR_REGULATED_RECORDS"
+  },
+  "billing": {
+    "provider": "UNSELECTED",
+    "currency": "TBD_FINANCE",
+    "vatJurisdiction": "TBD_TAX_COUNSEL",
+    "taxRate": "TBD_TAX_COUNSEL",
+    "invoiceNumber": "UNASSIGNED",
+    "refundPolicy": "DRAFT_COUNSEL_REVIEW",
+    "webhook": "REQUIRES_VERIFIED_SIGNATURE_AND_IDEMPOTENCY",
+    "paymentData": "PROVIDER_HOSTED_NEVER_STORE_CARD_PAN",
+    "ledger": "APPEND_ONLY_RECONCILED",
+    "chargeAuthorization": "BLOCKED",
+    "customerEmails": "BLOCKED"
+  },
+  "apiContracts": {
+    "editionRead": {
+      "method": "GET",
+      "path": "/api/commercial/tenants/:tenantId/entitlement",
+      "auth": "CENTER_ADMIN_OR_PLATFORM_ADMIN_TENANT_SCOPED",
+      "response": [
+        "edition",
+        "plan",
+        "state",
+        "quotas",
+        "version",
+        "graceUntil",
+        "rightsGate"
+      ],
+      "status": "POST_FREEZE"
+    },
+    "editionUpdate": {
+      "method": "POST",
+      "path": "/api/commercial/tenants/:tenantId/entitlement-transitions",
+      "auth": "PLATFORM_COMMERCIAL_ADMIN_EXPLICIT_NON_CLINICAL_AUTHORITY",
+      "headers": [
+        "Idempotency-Key",
+        "If-Match"
+      ],
+      "response": [
+        "transitionId",
+        "newVersion",
+        "auditEventId"
+      ],
+      "status": "POST_FREEZE"
+    },
+    "billingWebhook": {
+      "method": "POST",
+      "path": "/api/commercial/webhooks/provider",
+      "auth": "PROVIDER_SIGNATURE_REPLAY_PROTECTION",
+      "headers": [
+        "provider-signature"
+      ],
+      "response": [
+        "eventReceiptId"
+      ],
+      "status": "POST_FREEZE"
+    },
+    "enterpriseActivation": {
+      "method": "POST",
+      "path": "/api/commercial/enterprise/activations",
+      "auth": "PLATFORM_COMMERCIAL_ADMIN_PLUS_SIGNED_INSTALLATION_PROOF",
+      "headers": [
+        "Idempotency-Key"
+      ],
+      "response": [
+        "licenseScope",
+        "installDigest",
+        "auditEventId"
+      ],
+      "status": "POST_FREEZE"
+    }
+  },
+  "onboarding": {
+    "SAAS": [
+      "legal_entity_and_signer",
+      "contract_and_dpa_executed",
+      "privacy_security_residency_review",
+      "tenant_provisioning",
+      "nonclinical_admin_invitation",
+      "demo_validation",
+      "payment_provider_invoice_validation",
+      "separate_edition_launch_authorization"
+    ],
+    "ENTERPRISE": [
+      "rights_holder_and_customer_eula",
+      "third_party_redistribution_notices",
+      "signed_immutable_delivery_digest",
+      "runtime_sbom_match",
+      "infrastructure_and_residency_assessment",
+      "backup_restore_drill",
+      "named_installation_license",
+      "handover_and_support_sla",
+      "separate_edition_launch_authorization"
+    ]
+  },
+  "enterprise": {
+    "distribution": "MUST_BE_SIGNED_REAL_BUNDLE_AND_DELIVERY_RECEIPT",
+    "licenseBinding": [
+      "verifiedCustomerEntity",
+      "signedAgreementId",
+      "maxCenters",
+      "maxSeats",
+      "allowedEnvironments",
+      "installationDigest",
+      "validity",
+      "supportTerm"
+    ],
+    "requiredInfrastructure": [
+      "postgreSQL_version_and_backup_policy",
+      "redis_version_and_security",
+      "private_s3_storage",
+      "oidc_identity_provider",
+      "queue_workers",
+      "tls_and_secrets_management",
+      "audit_log_integrity",
+      "monitoring_backup_restore_dr",
+      "network_and_data_residency",
+      "signed_oci_and_runtime_sbom",
+      "third_party_notices_and_source_offers"
+    ],
+    "offlineBehavior": "SIGNED_CACHED_AUTHORIZATION_ONLY_NONCLINICAL_FEATURES_NEVER_BLOCK_SAFETY_EXPORT",
+    "renewal": "SIGNED_ENTITLEMENT_ROTATION_WITH_AUDIT",
+    "revoke": "MANUAL_REVIEW_WITH_PRESERVED_DATA_EXPORT_AND_EMERGENCY_ACCESS"
+  },
+  "postFreezeReleaseGates": [
+    "documented_v1_freeze_owner_signoff",
+    "m5_through_m11_scope_qualified",
+    "commercial_owner_entity_and_ip_verified",
+    "counsel_separate_edition_approval",
+    "signed_exact_release_oci_and_sbom",
+    "package_asset_rights_resolved",
+    "billing_finance_tax_approval",
+    "privacy_security_data_residency_signoff",
+    "clinical_g2_g2b_separate_authorization_for_real_patient_processing",
+    "tenant_isolation_and_adversarial_migration_tests",
+    "backup_restore_and_rollback_drill",
+    "independent_codex_review_and_full_ci"
+  ],
+  "approvals": {
+    "productPricing": false,
+    "finance": false,
+    "legal": false,
+    "security": false,
+    "privacy": false,
+    "release": false,
+    "saas": false,
+    "enterprise": false,
+    "clinicalG2": false,
+    "clinicalG2b": false
+  }
+}
