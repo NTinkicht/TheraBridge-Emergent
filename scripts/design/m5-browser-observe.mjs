@@ -121,7 +121,10 @@ export async function runBrowserAudit({ passwords, output }) {
         await page.getByTestId('login-email-input').fill(ACCOUNT[persona.id]);
         await page.getByTestId('login-password-input').fill(passwords[ACCOUNT[persona.id]]);
         await page.getByTestId('login-submit-button').click();
-        await page.waitForURL(/\/app(?:\/|$)/, { timeout: 20000 });
+        // A client-side authenticated route may never emit a fresh full-window load.
+        // Require the actual /app URL and the session-role assertion below;
+        // do not block on unrelated subresources after document readiness.
+        await page.waitForURL(/\/app(?:\/|$)/, { waitUntil: 'domcontentloaded', timeout: 20000 });
         const role = await page.evaluate(async () => {
           const r = await fetch('/api/auth/session', { credentials: 'include' });
           const session = await r.json();
