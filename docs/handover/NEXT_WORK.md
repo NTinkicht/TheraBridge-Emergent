@@ -4,6 +4,12 @@
 3. Build artifacts must not be shared between ordinary and feature-flagged child workspace until build-time equivalence is proven; do not skip full jobs or activate targeted mode without a separately authorized AGENTS.md Rule 16 policy review.
 4. Preserve M5 feature PR #413 scope, legal/asset rights NO-GO and clinical G2/G2b NO-GO.
 
+## 2026-11-17 — M5 WU1 (#413) remaining qualification, M5-03/04
+1. Run **new exact-HEAD** six required CI checks, SBOM, Smart CI and Web coverage after the four Rule 7 documentation corrections. Inspect actual run artifacts; do not transfer old-head PASS to changed HEAD. Fix any CI failures without disabling safeguards.
+2. Obtain new independent Codex review of updated PR #413 HEAD, ensure prior P1 Rule 7 omission is resolved and fix all new P1/P2. Merge only after CI green, review complete, conflict-free and required Rule 16 gates satisfied.
+3. Before closing #186 and #187, gather redacted/private five-width before/after visual inspections; human native screen-reader and keyboard review; family dark-mode and low-bandwidth observations; authorized center/child/specialty switch with revoked-grant/race cases; eliminate duplicate mobile picker only after proven parity; owner navigation/task-usability signoff. All **NOT RUN** at this checkpoint; track M5-10/11 if separately gated.
+4. Preserve eight-area permission mapping, original 20 distinct navigation identities, unchanged role/tenant API authorization, no clinical publication or activation. G2/G2b NO-GO; production flags unchanged.
+
 ## 2026-11-17 — M5-05 route isolation and decision-count verification
 1. Qualify the current route-boundary PR with dedicated synthetic browser job: 45 real task-flow observations (assessments ≤2 decisions, sessions ≤1, documents ≤1), existing 15 five-width navigation, 15 slow loading, 15 failed-and-retried, one denied coordinator; complete exact-head CI, security, SBOM, Compose/container, review.
 2. Independently validate asynchronous cross-child route transitions with overlapping server GETs and no prior-child data visible; remount key is implemented but **true overlapping in-flight cross-child browser case NOT RUN**.
@@ -1241,3 +1247,7 @@ Run offline tests and same-run original npm archive/Git source comparison for @t
 ## 2026-11-17 — COM-02 #402 qualification after tokenizer field-level evidence
 Re-run full CI and exact-head independent Codex after the four Rule7 measured-result updates. Prior CI 44016933031 demonstrated original npm source SHA256 differs from immutable Git source raw bytes but **0 JSON leaf changes**; preserve status RAW_BYTES_DIFFER_BUT_JSON_LEAVES_EQUAL_UNATTESTED, do not incorrectly label raw bytes identical or source-publisher attested. Verify all six CI jobs, SBOM/Smart CI, commercial inventory, no review P1/P2 before merge. Next work beyond #402: determine exact serialization delta if necessary and independently attest npm publisher/build from the complete immutable source/file tree with trusted build recipe; 44 unresolved npm versions, 91 asset rights and actual SaaS/Enterprise shipping, counsel and clinical G2/G2b still blocked.
 
+
+
+## 2026-11-17 — WU-LIC-01 consolidated provenance qualification (branch, NOT APPROVED)
+Single main-based licensing branch adds @tokenizer/token@0.3.0 strict exact npm/source semantic classifier, independent immutable npm archive and Git manifest rechecks, 44 exact-version/91 asset fail-closed same-run receipt reconciliation, adversarial tests and CI artifact. Historical 10 root candidates = 9 raw manifest byte matches + 1 tokenizer difference, **not publisher-build attestation**. 21 DefinitelyTyped + 23 non-DT remain externally unverified for authenticated publisher-to-source lineage; all 91 asset rights and genuine signed SaaS/Enterprise OCI distribution remain unresolved. See docs/commercial/WU-LIC-01-CONSOLIDATED-PROVENANCE.md. This commit is unqualified until exact-head full CI, Smart CI/SBOM and independent Codex review; do not merge with red checks or unresolved P1/P2. Commercial/IP/counsel grants and G2/G2b remain false; no real patient or production operations.
