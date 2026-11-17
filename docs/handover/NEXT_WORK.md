@@ -1,3 +1,7 @@
+## 2026-11-17 — CI Phase 2B — isolated Next.js compiler-cache reuse — Required next gates
+Introduced only apps/web/.next/cache persistence through actions/cache@v4 for full test, live-session, demo-journey and flagged m5-child360-browser jobs. Cache keys are per job, OS/arch and lock/source hash; exact-head yarn web build remains in every job with independent build-time flags. No cached runtime bundle, clinical data or browser test outcome. Cross-environment compiled artifact reuse intentionally NOT ENABLED until equivalence is proven; CI, new-head review and timing verification PENDING. All original required gates remain, G2/G2b NO-GO.
+Run exact-head full CI including original six checks plus commercial-provenance and (when applicable) commercial-contracts. Confirm all evidence outputs and focused tests, inspect time/cost measurements and resolve Codex P1/P2 before any merge.
+
 ## 2026-11-17 — CI parallel critical-path verification
 1. Qualify the exact updated workflow head with full test, commercial-provenance, secret scan, SBOM, live session, demo journey, Child 360 browser, Compose, preview sustained 10-minute 512MiB workload and Smart CI final fail-closed gate. Verify `commercial-provenance` emits its former exact-run 27-ish evidence files and no original validations were dropped. Run independent Codex and resolve P1/P2.
 2. Compare observed wall-clock to PR #413 pre-change run and report both total latency and runner-minutes; keep any claims bounded to measured runs. Cache safety/eviction negative path should not change runtime validity.
