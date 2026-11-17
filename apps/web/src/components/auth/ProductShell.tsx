@@ -152,7 +152,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
   return (
     <div className={`flex min-h-screen ${family ? 'theme-family-auto bg-fam-canvas text-fam-ink' : 'bg-canvas-clinical text-brand-ink'}`} data-testid="product-shell">
       <a href="#main" data-testid="skip-to-main"
-        className="sr-only focus:not-sr-only fixed left-3 top-3 z-[100] rounded-control bg-brand-action px-4 py-3 text-sm font-semibold text-white shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-action">
+        className="sr-only focus:not-sr-only fixed focus:fixed left-3 top-3 z-[100] rounded-control bg-brand-action px-4 py-3 text-sm font-semibold text-white shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-action">
         Skip to main content
       </a>
       <aside className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-border-light bg-surface-white transition-[width] md:flex ${railCollapsed ? 'w-[76px]' : 'w-sidebar'}`} data-testid="product-sidebar" data-collapsed={railCollapsed}>
