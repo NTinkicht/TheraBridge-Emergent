@@ -1,3 +1,6 @@
+## 2026-11-18 — WU4-C paginated proposal history
+WU4-C requires new exact-head CI, final reviewer and five viewport/screen-reader qualification. Real private image upload and release remain disabled.
+
 ## 2026-11-18 — WU4-C illustration proposal UI
 PR #435 stacked on #434; integrate once #434 has green exact-head CI. Verify responsive five-width screen readers, role revocation and private storage/rights adapter before any publishing.
 

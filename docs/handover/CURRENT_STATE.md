@@ -1,3 +1,6 @@
+## 2026-11-18 — WU4-C paginated proposal history
+WU4-C displays all paged activity media proposal history through authenticated tenant-scoped API. No actual image, rights approval, clinical signoff, guardian publication or release supported.
+
 ## 2026-11-18 — WU4-C illustration proposal UI
 PR #435 adds an authenticated staff-only metadata proposal/rejection panel on the existing activity library; no guardian image preview, unapproved upload or publication; G2/G2b NO-GO.
 

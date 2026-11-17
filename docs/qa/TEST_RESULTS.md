@@ -1,3 +1,6 @@
+## 2026-11-18 — WU4-C paginated proposal history
+Paged UI helper and history-append tests committed, exact-head CI NOT YET VERIFIED. Existing head 1d4a2a1 CI PASS; do not transfer this pass to new SHA.
+
 ## 2026-11-18 — WU4-C illustration proposal UI
 Initial Web focused coverage failed on stale source-string expectation; test replaced with executed API helper assertion. New exact-head CI and manual screen-reader/visual acceptance pending. No claim of accepted illustration assets.
 

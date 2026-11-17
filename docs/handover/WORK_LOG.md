@@ -1,3 +1,6 @@
+## 2026-11-18 — WU4-C paginated proposal history
+Codex P2 pagination follow-through: staff UI now loads older proposals on demand, preserves newer local save/rejection state, disables mutation during page load, tests HTTP cursor/limit and non-destructive append.
+
 ## 2026-11-18 — WU4-C illustration proposal UI
 Built typed REST helper and accessible loading/empty/error/rejection panel. Prevented stale GET vs POST race by blocking write until initial list resolves. Added regression against optimistic revision request.
 
