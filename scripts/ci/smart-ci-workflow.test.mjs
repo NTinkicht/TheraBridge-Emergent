@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 const yaml=readFileSync('.github/workflows/ci.yml','utf8');
 
 test('old six CI names are preserved and verifier is always scheduled',()=>{
- for(const name of ['secret-scan','test','live-session','demo-journey','compose','preview-container'])
+ for(const name of ['secret-scan','commercial-provenance','test','live-session','demo-journey','compose','preview-container'])
   assert.match(yaml,new RegExp('^  '+name+':','m'),name);
  assert.match(yaml,/^  smart-plan:/m);
  assert.match(yaml,/^  smart-targeted:/m);
@@ -18,15 +18,30 @@ test('never turn targeted selection on without an explicit protected gate opt-in
  assert.match(yaml,/TB_SMART_BASE_SHA: \$\{\{ github\.event\.pull_request\.base\.sha \}\}/);
 });
 test('secret scan remains unconditional and full workloads are conditional',()=>{
- const scan=yaml.slice(yaml.indexOf('\n  secret-scan:'),yaml.indexOf('\n  test:'));
+ const scan=yaml.slice(yaml.indexOf('\n  secret-scan:'),yaml.indexOf('\n  commercial-provenance:'));
  assert.doesNotMatch(scan,/^\s+if:/m);
  assert.match(yaml,/test:\n    needs: smart-plan\n    if: needs\.smart-plan\.outputs\.mode == 'full'/);
- assert.match(yaml,/compose:\n    timeout-minutes: 25\n    runs-on: ubuntu-24\.04\n    needs: \[smart-plan, test\]\n    if: needs\.smart-plan\.outputs\.mode == 'full'/);
+ assert.match(yaml,/compose:\n    timeout-minutes: 25\n    runs-on: ubuntu-24\.04\n    # Compose is independently required by smart-ci-gate; do not serialize on test\.\n    needs: smart-plan\n    if: needs\.smart-plan\.outputs\.mode == 'full'/);
 });
 test('always-running gate accounts for all possible worker jobs',()=>{
  const gate=yaml.slice(yaml.indexOf('\n  smart-ci-gate:'));
- for(const name of ['smart-plan','secret-scan','test','live-session','demo-journey',
+ for(const name of ['smart-plan','secret-scan','commercial-provenance','test','live-session','demo-journey',
    'compose','preview-container','smart-targeted','sbom','m5-child360-browser'])
   assert.match(gate,new RegExp('^      - '+name+'$','m'));
  assert.match(gate,/run: node scripts\/ci\/smart-ci-gate\.mjs/);
+});
+
+test('parallel commercial provenance is required and never silently skipped in full mode',()=>{
+ const commercial=yaml.slice(yaml.indexOf('\n  commercial-provenance:'),yaml.indexOf('\n  test:'));
+ const app=yaml.slice(yaml.indexOf('\n  test:'),yaml.indexOf('\n  live-session:'));
+ assert.match(commercial,/if: needs\.smart-plan\.outputs\.mode == 'full'/);
+ assert.match(commercial,/yarn install --frozen-lockfile/);
+ assert.match(commercial,/Collect installed package license-file hashes/);
+ assert.match(commercial,/Generate fail-closed COM-02 per-component commercial rights and release blocker ledger/);
+ assert.match(commercial,/Archive installed license evidence for full CI/);
+ assert.doesNotMatch(app,/Collect installed package license-file hashes/);
+ assert.doesNotMatch(app,/Archive installed license evidence for full CI/);
+ assert.match(app,/Run yarn workspace @therabridge\/api build/);
+ assert.match(app,/Generate genuine full-scope Web Istanbul coverage/);
+ assert.match(yaml,/^  smart-ci-gate:[\s\S]*^      - commercial-provenance$/m);
 });
