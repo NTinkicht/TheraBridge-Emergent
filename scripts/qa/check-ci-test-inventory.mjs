@@ -118,7 +118,7 @@ export function baseline(){
   secretScanContract(ci);
   validateGitleaksToml(fs.readFileSync(path.join(root,'.gitleaks.toml'),'utf8'));
   const jobs=workflowJobNames(ci);
-  for(const j of [...JOBS,'commercial-provenance','source-contracts']){
+  for(const j of [...JOBS,'commercial-provenance','commercial-contracts','source-contracts']){
     if(!jobs.has(j))throw Error('Missing required CI job '+j);
   }
   return {
@@ -135,7 +135,7 @@ export function baseline(){
     application_wide_95_percent_gate:false,
     secret_scan_contract_validated:true,
     six_required_jobs:JOBS,
-    additional_required_jobs:['commercial-provenance','source-contracts']
+    additional_required_jobs:['commercial-provenance','commercial-contracts','source-contracts']
   };
 }
 if(process.argv[1]?.endsWith('/check-ci-test-inventory.mjs')){

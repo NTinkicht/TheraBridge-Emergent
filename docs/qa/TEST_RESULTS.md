@@ -5,6 +5,10 @@ Additional Phase 2B implementation: moved 12 original source-only M5 IA/route, h
 Introduced only apps/web/.next/cache persistence through actions/cache@v4 for full test, live-session, demo-journey and flagged m5-child360-browser jobs. Cache keys are per job, OS/arch and lock/source hash; exact-head yarn web build remains in every job with independent build-time flags. No cached runtime bundle, clinical data or browser test outcome. Cross-environment compiled artifact reuse intentionally NOT ENABLED until equivalence is proven; CI, new-head review and timing verification PENDING. All original required gates remain, G2/G2b NO-GO.
 Implementation/source assertions written; new branch exact-head execution NOT RUN/PENDING. No PASS claimed on new SHA. Prior base PR #415 full-CI outcome does not qualify this branch.
 
+## 2026-11-17 — CI Phase 2A — independent commercial contracts — QA results
+Extracted 32 standalone commercial offline/adversarial test steps (node --test and one Python unittest) from sequential commercial-provenance into an independent required commercial-contracts job. Retained producer order, all exact-version npm/Sigstore/rights steps and archived evidence. Updated fail-closed smart-ci expectedJobs and smart-ci-gate needs plus frozen suite inventory, with negative-path source tests. Full CI, exact-head Codex, runtime comparison and merge NOT RUN/PENDING. Rule 16 targeted mode locked; no approval for clinical G2/G2b or commercial licensing.
+Implementation/source assertions written; new branch exact-head execution NOT RUN/PENDING. No PASS claimed on new SHA. Prior base PR #415 full-CI outcome does not qualify this branch.
+
 ## 2026-11-17 — CI parallel critical-path implementation (NEW HEAD NOT YET QUALIFIED)
 | Check | Status |
 | --- | --- |

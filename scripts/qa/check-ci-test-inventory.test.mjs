@@ -9,7 +9,7 @@ test('all six exact-head CI jobs remain named and both API/web test runners exis
  assert(x.api_suite_count>=30);
  assert(x.web_suite_count>=2);
  assert.deepEqual(x.six_required_jobs,JOBS);
- assert.deepEqual(x.additional_required_jobs,['commercial-provenance','source-contracts']);
+ assert.deepEqual(x.additional_required_jobs,['commercial-provenance','commercial-contracts','source-contracts']);
 });
 test('never claim measured 95% application coverage from suite presence',()=>{
  const x=baseline();
