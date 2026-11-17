@@ -20,6 +20,7 @@ export function validateChild360Receipt(receipt) {
       receipt?.observations !== 15 || receipt?.personas !== 3 ||
       receipt?.deniedRoles !== 1 || receipt?.navigationFailures !== 0 ||
       receipt?.slowLoads !== 15 || receipt?.failuresRecovered !== 15 ||
+      receipt?.taskFlowObservations !== 45 ||
       Object.keys(receipt).some(k => /password|cookie|token|email|childId|content|text|html/i.test(k)))
     throw new Error('M5-05 evidence missing, sensitive, or falsely approved');
   return true;
@@ -36,7 +37,7 @@ export async function runChild360BrowserAcceptance({ passwords }) {
   }
   const prisma = new PrismaClient();
   const browser = await chromium.launch({ args: ['--disable-dev-shm-usage'] });
-  let observations = 0;
+  let observations = 0, taskFlowObservations = 0;
   try {
     const center = await prisma.center.findUniqueOrThrow({ where: { slug: 'childrens-home-demo' } });
     const child = await prisma.child.findFirstOrThrow({ where: { centerId: center.id, firstName: 'Yusuf', lastName: 'Ahmed' } });
@@ -113,6 +114,28 @@ export async function runChild360BrowserAcceptance({ passwords }) {
               await page.getByTestId('clinical-secondary-plan').click();
               assert.equal(await page.getByTestId('clinical-secondary-plan').getAttribute('aria-current'),'page');
             }
+          }
+          // Representative M5-05 task decisions: from Overview, access
+          // assessment evidence in two decisions, and sessions/documents in one.
+          // This checks actual working tabs, not a static diagram or mock link.
+          for (const [destination, actions] of [
+            ['assessments', ['care', 'assessments']],
+            ['sessions', ['sessions']],
+            ['documents', ['documents']],
+          ]) {
+            await page.getByTestId('clinical-tab-overview').click();
+            assert(actions.length <= 3, 'Representative task exceeds three navigation decisions');
+            for (const action of actions) {
+              await page.getByTestId(action === 'assessments'
+                ? 'clinical-secondary-assessments' : 'clinical-tab-' + action).click();
+            }
+            if (destination === 'assessments') {
+              assert.equal(await page.getByTestId('clinical-secondary-assessments').getAttribute('aria-current'),'page');
+              assert.equal(await page.getByTestId('clinical-tab-care').getAttribute('aria-selected'),'true');
+            } else {
+              assert.equal(await page.getByTestId('clinical-tab-' + destination).getAttribute('aria-selected'),'true');
+            }
+            taskFlowObservations++;
           }
           // Explicit keyboard and roving-tabindex check with non-destructive navigation.
           const overview=page.getByTestId('clinical-tab-overview');
@@ -236,7 +259,7 @@ export async function runChild360BrowserAcceptance({ passwords }) {
       featureFlag:'ENABLED_CI_ONLY',clinicalGate:'NO_GO_G2_G2b',
       humanUsabilityApproval:'NOT_OBTAINED',accessibilityApproval:'NOT_OBTAINED',
       personas:personas.length,observations,deniedRoles:1,navigationFailures:0,
-      slowLoads,failuresRecovered,
+      slowLoads,failuresRecovered,taskFlowObservations,
     });
     validateChild360Receipt(receipt);
     console.log('M5-05 flagged synthetic-browser receipt:', JSON.stringify(receipt));
