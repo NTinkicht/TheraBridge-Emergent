@@ -38,6 +38,15 @@ function fixture(){
  const decision=JSON.parse(readFileSync(new URL('../../docs/commercial/launch-decision-register.json',import.meta.url)));
  return [rights,decision];
 }
+test('unattested local candidate is preserved but never becomes an approved release',()=>{
+ const x=fixture();
+ x[0].editions[0].candidateOCIImageDigest='sha256:'+H;
+ const r=buildLaunchPackage(...x);
+ assert.equal(r.editions.SAAS.unattestedCandidateOCIImageDigest,'sha256:'+H);
+ assert.equal(r.editions.SAAS.releaseDigest,null);
+ assert.equal(r.editions.SAAS.status,'BLOCKED');
+ assert.equal(r.commercialLicenseGranted,false);
+});
 test('all 44 packages and 91 assets remain separate SaaS/Enterprise BLOCKED decisions',()=>{
  const r=buildLaunchPackage(...fixture());
  assert.equal(r.counts.npmExceptions,44);assert.equal(r.counts.assets,91);
