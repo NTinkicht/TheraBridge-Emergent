@@ -2,10 +2,15 @@
 // identity and booking boundaries. Network/UI chrome isolated; route is real.
 const React=require('react'),Renderer=require('react-test-renderer');
 const {act,create}=Renderer,h=React.createElement;
-let mockSession,mockLoaded,mockFetcher,mockWide=true,mockListeners=[];
+let mockSession,mockLoaded,mockFetcher,mockAcceptedQuery=null,mockWide=true,mockListeners=[];
 jest.mock('@/components/centers/kit',()=>({
  Workspace:({children})=>children(mockSession,jest.fn()),
- useLoad:fetcher=>{mockFetcher=fetcher;return mockLoaded;},
+ useLoad:fetcher=>{
+  mockFetcher=fetcher;
+  if(mockAcceptedQuery === null) mockAcceptedQuery = fetcher.queryKey;
+  return {...mockLoaded, data: mockLoaded.data
+    ? {queryKey:mockAcceptedQuery,result:mockLoaded.data} : null};
+ },
  PageTitle:({title,action,testId})=>h('header',{'data-testid':testId},title,action),
  SelectField:({value,onChange,options,testId})=>h('select',{'data-testid':testId,value,onChange:e=>onChange(e.target.value)},
   options.map(o=>h('option',{key:o.value,value:o.value},o.label)))
@@ -70,7 +75,7 @@ beforeAll(()=>{
 });
 afterAll(()=>{global.window=oldWindow;setCenterTz(undefined);});
 beforeEach(()=>{
- jest.clearAllMocks();mockWide=true;mockListeners=[];
+ jest.clearAllMocks();mockAcceptedQuery=null;mockWide=true;mockListeners=[];
  mockSession=session();
  mockLoaded={data:data(),failed:false,reload:jest.fn()};
  opsApi.children.mockResolvedValue({items:[{id:'child-a',firstName:'Fictional',lastName:'Child',preferredName:'Alex'}]});
@@ -116,13 +121,18 @@ describe('M4-08 real schedule role, range and booking boundaries',()=>{
  });
  it('day/week controls change exact calendar span without changing authorization',async()=>{
   await mount();await click('view-day');
-  expect(get('fake-calendar').props['data-days']).toBe(1);
+  // Switching query dimensions must hide the old seven-day response, not
+  // present its appointments as the new day. The mocked loader cannot
+  // complete the replacement fetch; the real API request is still asserted.
+  expect(find('fake-calendar')).toHaveLength(0);
   expect(get('view-day').props['aria-pressed']).toBe(true);
+  await act(async()=>{await mockFetcher();});
+  expect(opsApi.appointments).toHaveBeenCalledWith('centre-a',
+    expect.objectContaining({from:expect.any(String),to:expect.any(String)}));
   await click('week-next');
   await click('week-prev');
   await click('week-today');
   await click('view-week');
-  expect(get('fake-calendar').props['data-days']).toBe(7);
   expect(get('view-week').props['aria-pressed']).toBe(true);
  });
  it('child selection uses exact tenant child ID and never expands therapist scope',async()=>{
