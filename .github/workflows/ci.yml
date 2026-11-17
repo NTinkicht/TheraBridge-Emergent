@@ -372,6 +372,24 @@ jobs:
             /tmp/therabridge-com02-nondt-published-manifest-comparison.json \
             yarn.lock \
             /tmp/therabridge-com02-tokenizer-manifest-diff-402.json
+      - name: Test exact tokenizer original Git/npm manifest semantic differences
+        run: node --test scripts/commercial/explain-com02-tokenizer-402.test.mjs
+      - name: Independently compare immutable tokenizer Git source and original locked npm manifest (not publisher attestation)
+        run: |
+          node scripts/commercial/explain-com02-tokenizer-402.mjs \
+            /tmp/therabridge-com02-nondt-workqueue.json \
+            yarn.lock \
+            /tmp/therabridge-com02-tokenizer-exact-semantic-402.json
+      - name: Test WU-LIC-01 exact 44-package 91-asset three-receipt fail-closed qualification
+        run: node --test scripts/commercial/build-wu-lic-01-qualification.test.mjs
+      - name: Batch reconcile WU-LIC-01 provenance qualifications without granting commercial or clinical rights
+        run: |
+          node scripts/commercial/build-wu-lic-01-qualification.mjs \
+            /tmp/therabridge-com02-closure-ledger.json \
+            /tmp/therabridge-com02-root-405-evidence.json \
+            /tmp/therabridge-com02-tokenizer-exact-semantic-402.json \
+            /tmp/therabridge-com02-nondt-published-manifest-comparison.json \
+            /tmp/therabridge-wu-lic-01-provenance-qualification.json
       - name: Archive installed license evidence for full CI
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -400,6 +418,8 @@ jobs:
             /tmp/therabridge-com02-nondt-workqueue.json
             /tmp/therabridge-com02-nondt-published-manifest-comparison.json
             /tmp/therabridge-com02-root-405-evidence.json
+            /tmp/therabridge-com02-tokenizer-exact-semantic-402.json
+            /tmp/therabridge-wu-lic-01-provenance-qualification.json
             /tmp/therabridge-com02-tokenizer-manifest-diff-402.json
             /tmp/therabridge-com02-root-observation-reconciliation.json
             /tmp/therabridge-com02-bulk-rights-evidence.json

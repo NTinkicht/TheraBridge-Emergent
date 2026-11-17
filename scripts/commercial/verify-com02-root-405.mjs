@@ -101,4 +101,4 @@ if(process.argv[1]&&import.meta.url===new URL('file://'+process.argv[1]).href){
     publisherBuildLineageIndependentlyAttested:false}));
  }catch(e){console.error('COM02_405_NOT_CLEARED',e.message);process.exitCode=1}
 }
-export {verifyCurrentRoot,blobSha,pinned};
+export {verifyCurrentRoot,blobSha,pinned,getBytes};
