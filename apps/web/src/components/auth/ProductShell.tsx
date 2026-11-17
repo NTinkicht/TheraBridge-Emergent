@@ -151,6 +151,10 @@ export function ProductShell({ session, active, planned, children }: { session: 
 
   return (
     <div className={`flex min-h-screen ${family ? 'theme-family-auto bg-fam-canvas text-fam-ink' : 'bg-canvas-clinical text-brand-ink'}`} data-testid="product-shell">
+      <a href="#main" data-testid="skip-to-main"
+        className="sr-only focus:not-sr-only fixed left-3 top-3 z-[100] rounded-control bg-brand-action px-4 py-3 text-sm font-semibold text-white shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-action">
+        Skip to main content
+      </a>
       <aside className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-border-light bg-surface-white transition-[width] md:flex ${railCollapsed ? 'w-[76px]' : 'w-sidebar'}`} data-testid="product-sidebar" data-collapsed={railCollapsed}>
         <SignatureBand />
         <div className={`flex h-16 items-center ${railCollapsed ? 'justify-center px-2' : 'gap-2 px-5'}`}>
@@ -246,7 +250,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
             {session.contexts.length > 1 && <option value="/select-context">Switch workspace</option>}
           </select>
         </nav>
-        <main id="main" className="mx-auto w-full max-w-[1160px] flex-1 px-4 pb-32 pt-6 md:px-8 md:pb-14 md:pt-8">{children}</main>
+        <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1160px] flex-1 px-4 pb-32 pt-6 md:px-8 md:pb-14 md:pt-8">{children}</main>
         <nav aria-label="Quick navigation" data-testid="mobile-bottom-nav"
           className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 gap-1 border-t border-border-light bg-surface-white px-2 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 shadow-[0_-4px_18px_rgba(20,33,61,0.08)] md:hidden">
           {mobileQuick.map(n => <Link key={n.key + ':' + (n.permission ?? '')} href={n.href}
