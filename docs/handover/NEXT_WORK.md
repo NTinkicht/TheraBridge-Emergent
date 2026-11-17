@@ -1,3 +1,8 @@
+## 2026-11-17 — M5-05 R2 browser resilience qualification
+1. Qualify draft PR #406 on exact HEAD: browser slow→error→retry 15/15 observations, original five-tab/keyboard/coordinator tests, six full CI jobs, security/SBOM, Web coverage, Compose and Smart CI gate. Fix any flakes or real defects without disabling controls.
+2. Obtain Codex review of final-head implementation, disposition P0/P1/P2 and suggestions under Rules 13–16, and merge only after green CI, clean mergeability, and review receipt.
+3. Continue issue #188 without closing: human screen-reader/visual signoff, network-offline and true cross-child stale-request tests, broader empty/pagination/blocked flows, task timing and clinical owner approval remain NOT RUN/NOT OBTAINED. Production compact flag OFF and G2/G2b NO-GO.
+
 ## 2026-11-16 — M5-05 PR #403 exact-head qualification and remaining UX acceptance
 1. Qualify the documentation-updated HEAD of #403: dedicated flagged synthetic Chromium disclosure keyboard checks for three clinical roles × five widths, default legacy seven-role demo, full test/coverage, live-session, preview-container, compose, SBOM, secret scan and Smart CI. Review new Codex findings and record FIX_NOW/DEFER_ISSUE/DECLINE_WITH_REASON for every comment; do not reuse the prior `fc2c3ff40e` test receipt as approval for a later HEAD.
 2. Merge only after current-head required checks green, no actionable P1/P2, final independent review and clean GitHub mergeability. Keep `NEXT_PUBLIC_M5_CHILD_COMPACT` OFF by default; never change G2/G2b NO-GO or specialty permissions.
