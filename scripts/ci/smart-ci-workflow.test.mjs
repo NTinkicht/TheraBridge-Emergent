@@ -53,3 +53,20 @@ test('all four browser consumers may reuse only lockfile-scoped public Chromium 
  assert.equal([...yaml.matchAll(/yarn playwright install --with-deps chromium/g)].length,4,
    'Cached browsers must not bypass Playwright runtime/dependency validation');
 });
+
+test('Next.js cache never substitutes for exact-head builds or crosses CI job environments',()=>{
+ const jobs=['test','live-session','demo-journey','m5-child360-browser'];
+ for(let i=0;i<jobs.length;i++){
+  const begin=yaml.indexOf('\n  '+jobs[i]+':');
+  const next= i+1<jobs.length ? yaml.indexOf('\n  '+jobs[i+1]+':',begin+1) :
+   yaml.indexOf('\n  compose:',begin+1);
+  assert(begin>=0&&next>begin);
+  const section=yaml.slice(begin,next);
+  assert.match(section,/path: apps\/web\/\.next\/cache/);
+  assert.match(section,/tb-next-v2-/);
+  assert.match(section,new RegExp('tb-next-v2-\\$\\{\\{ runner\\.os \\}\\}-\\$\\{\\{ runner\\.arch \\}\\}-'+jobs[i].replace(/[-]/g,'\\$&')));
+  assert.match(section,/run: yarn workspace @therabridge\/web build/);
+  assert.doesNotMatch(section,/path: apps\/web\/\.next(?:\/standalone|\/server)?\s*$/m);
+ }
+ assert.equal((yaml.match(/name: Cache untrusted Next\\.js compiler intermediates/g)||[]).length,4);
+});
