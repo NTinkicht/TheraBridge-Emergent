@@ -33,7 +33,7 @@ function List({ session, onError }: { session: SessionInfo; onError: (e: unknown
   return (
     <div className="space-y-5" data-testid="m5-therapist-workspace">
       <PageTitle title={isSupervisor ? 'Clinical oversight' : 'My clinical workspace'}
-        body="Start with the child, then move through session evidence, plans and report drafts. Synthetic data only; no signing or release."
+        body="Assessments, therapy plans, session drafts and progress. Start with the child, then move through evidence and reports. Synthetic data only; nothing can be signed or released."
         testId="clinical-title" />
       <TaskStepper label="Internal clinical drafting workflow" steps={[
         { id: 'child', label: 'Choose a child', status: 'current', description: 'Authorized caseload only' },
