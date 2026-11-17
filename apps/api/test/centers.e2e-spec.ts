@@ -1,4 +1,5 @@
 import { DevMailboxService } from '../src/dev-mailbox/dev-mailbox.service';
+import { passwordPolicyError } from '../src/auth/password';
 import { Harness, ORIGIN, PASSWORD, Signed, cookieFrom, createUser, freshPassword, makeApp, post, preAuth, resetDb, signIn } from './helpers';
 
 const LOCAL = { DEPLOYMENT_ENV: 'local', DEV_MAILBOX_ENABLED: 'true' };
@@ -61,6 +62,28 @@ describe('TB-EM-003/004 center provisioning and staff onboarding (real PostgreSQ
     opsId = u.id;
     await h.prisma.platformRoleAssignment.create({ data: { userId: u.id, source: 'synthetic_seed', reason: 'test' } });
     ops = await signIn(h, u.email);
+  });
+
+  it('generates high-entropy synthetic staff passwords without local-part policy collisions', () => {
+    const fixtureAccounts = [
+      'tom@lakeside.therabridge.test',
+      'lead@lakeside.therabridge.test',
+      'ops@centers.therabridge.test',
+      'new.lead@lakeside.therabridge.test',
+      'final@lakeside.therabridge.test',
+    ];
+    const passwords = new Set<string>();
+    for (let i = 0; i < 128; i++) {
+      const candidate = freshPassword();
+      expect(candidate).toMatch(/^T7-(?:[a-f0-9]{2}-){11}[a-f0-9]{2}$/);
+      expect(candidate.length).toBeGreaterThanOrEqual(12);
+      expect(candidate.length).toBeLessThanOrEqual(128);
+      for (const email of fixtureAccounts) {
+        expect(passwordPolicyError(candidate, email)).toBeNull();
+      }
+      passwords.add(candidate);
+    }
+    expect(passwords.size).toBe(128);
   });
 
   describe('provisioning', () => {
