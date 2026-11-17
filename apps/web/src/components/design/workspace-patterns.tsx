@@ -38,7 +38,7 @@ export function WorkspaceTabs({
         className={`flex max-w-full gap-1 overflow-x-auto border-b pb-1 [scrollbar-width:thin] ${family ? 'border-fam-border' : 'border-border-light'}`}>
         {tabs.map((tab) => (
           <button key={tab.id} id={`${uid}-tab-${tab.id}`} type="button" role="tab"
-            aria-selected={active?.id === tab.id} aria-controls={`${uid}-panel-${tab.id}`}
+            aria-selected={active?.id === tab.id} aria-controls={active?.id === tab.id ? `${uid}-panel-${tab.id}` : undefined}
             disabled={tab.disabled} data-testid={tab.testId}
             tabIndex={active?.id === tab.id || (!active && available[0]?.id === tab.id) ? 0 : -1}
             onKeyDown={(event) => handleKey(event, tab.id)}
@@ -47,7 +47,7 @@ export function WorkspaceTabs({
               ${active?.id === tab.id
                 ? family ? 'border-fam-accent bg-fam-accentTint text-fam-ink' : 'border-brand-action bg-brand-actionTint text-brand-ink'
                 : family ? 'border-transparent text-fam-muted hover:bg-fam-tile' : 'border-transparent text-brand-inkMuted hover:bg-surface-subtle'}
-              disabled:cursor-not-allowed disabled:opacity-50`}>
+              focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-action disabled:cursor-not-allowed disabled:opacity-50`}>
             {tab.label}
           </button>
         ))}
@@ -69,8 +69,8 @@ export function DisclosureSection({
   const [isOpen, setIsOpen] = useState(openByDefault);
   return (
     <details open={isOpen} onToggle={(event) => setIsOpen(event.currentTarget.open)}
-      className={`group rounded-card border ${family ? 'border-fam-border bg-fam-surface text-fam-ink' : 'border-border-light bg-surface-white text-brand-ink'}`}>
-      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-card px-4 py-3 font-semibold [&::-webkit-details-marker]:hidden">
+      className={`group rounded-card border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-action ${family ? 'border-fam-border bg-fam-surface text-fam-ink' : 'border-border-light bg-surface-white text-brand-ink'}`}>
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-card px-4 py-3 font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-action [&::-webkit-details-marker]:hidden">
         <span className="min-w-0">{title}{summary && <span className={`mt-1 block text-xs font-normal ${family ? 'text-fam-muted' : 'text-brand-inkMuted'}`}>{summary}</span>}</span>
         <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" />
       </summary>

@@ -117,6 +117,17 @@ export async function observeKeyboardJourney(page, persona, { base, settle }) {
     links.map(el => ({ href: el.getAttribute('href'), label: el.textContent?.trim() ?? '' })));
   const actual = rendered.sort((a,b) => (a.href+'|'+a.label).localeCompare(b.href+'|'+b.label));
   assert.deepEqual(actual, expected, 'More panel must contain exactly authorized current-session destinations');
+  // The menu search must filter only existing session-authorized destinations;
+  // clearing it must restore the exact permission-bound set.
+  const search = page.getByTestId('mobile-destination-search');
+  await search.fill('not-a-real-authorized-destination-000');
+  assert.equal(await dialog.locator('a[data-testid^="mobile-more-"]').count(), 0,
+    'No destination is created by a failing query');
+  await dialog.getByText('No authorized destinations match your search.').waitFor({ state: 'visible' });
+  await search.fill('');
+  assert.equal(await dialog.locator('a[data-testid^="mobile-more-"]').count(), expected.length,
+    'Cleared search restores exact authorized destinations');
+  await closeButton.focus();
   for (const candidate of quickLinks) {
     assert(expected.some(item => item.href === candidate.href),
       'Mobile shortcut cannot expose a destination absent from the authorized menu');

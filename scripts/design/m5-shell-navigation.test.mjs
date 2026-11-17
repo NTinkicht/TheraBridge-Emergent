@@ -51,6 +51,11 @@ test('family and center activity links remain permission distinct and responsive
   assert.match(shell,/document\.body\.style\.overflow = bodyOverflow/);
   assert.match(shell,/overscroll-y-contain/);
   assert.match(shell,/sidebar-collapse-toggle/);
+  assert.match(shell,/collapsed-workspace-switcher/);
+  assert.match(shell,/desktop-destination-search/);
+  assert.match(shell,/mobile-destination-search/);
+  assert.match(shell,/visibleGroups = searchTerm \? groups\.map/);
+  assert.match(shell,/setNavQuery\(''\)/);
   assert.match(shell,/shell-breadcrumb/);
   assert.match(source,/return candidates\.slice\(0, 3\)/);
   assert(!shell.includes('sessionStorage') && !shell.includes('localStorage'),
