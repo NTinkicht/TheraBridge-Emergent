@@ -1,3 +1,6 @@
+## 2026-11-17 — M5-05 mounted-route regression FIX_NOW
+Focused Web coverage CI on previous PR #410 head failed 1/1574 Jest tests: Stage 2 pagination test expected the old Plan tab to remain mounted after a child-ID change. That conflicts with the newly intentional scoped remount boundary. Updated `coverage-stage2-mounted-clinical-routing.test.cjs` to assert the new child starts at clean Overview, no prior-child plan data appears before navigation, and the new child's Plan tab has only its own authorized plan. Fix preserves data separation rather than relaxing the test. New exact-head CI and Codex review PENDING.
+
 ## 2026-11-17 — M5-05 PR #410 Codex P2 FIX_NOW
 Initial Codex reviewed PR #410 at `0a58a52fbd` and raised a P2: a selected tab was incorrectly counted as a completed task if destination data had not loaded. FIX_NOW: the browser acceptance now waits for an actual Assessments panel and draft/authorized empty state, an actual Sessions panel, and independently fetched Documents rows or an explicit authorized empty state (with no reports error/loading) before incrementing the 45-flow receipt. These checks are awaiting fresh exact-head CI and review. No user data or clinical authorization changes.
 
