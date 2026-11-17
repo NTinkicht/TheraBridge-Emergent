@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { FileClock, LockKeyhole } from 'lucide-react';
 import { PageTitle, ReasonField, Workspace, errorText, useLoad } from '@/components/centers/kit';
 import { Button, Card, Pill } from '@/components/design/ui';
+import { DisclosureSection, TaskStepper } from '@/components/design/workspace-patterns';
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
 import { governanceApi, type DocumentItem, type Snapshot } from '@/lib/governance';
 import type { SessionInfo } from '@/lib/auth';
@@ -47,7 +48,7 @@ function DocumentReview({ c, d, supervisor, reload, onError }: {c:string; d:Docu
       <p className="flex items-start gap-2 text-[13px] text-brand-inkMuted"><LockKeyhole className="shrink-0" size={16}/>Production clinical signing and release are disabled. Synthetic family-release testing is separate and requires server-controlled flags.</p>
       {err&&<p role="alert" className="text-status-danger">{err}</p>}
     </Card>
-    <Card className="space-y-3 p-5"><h2 className="text-[18px] font-semibold">Version and status history</h2>{failed?<ErrorState onRetry={()=>void reloadHistory()}/>:!data?<SkeletonRows rows={2}/>:!data.items.length?<p className="text-[14px] text-brand-inkMuted">No governance transitions yet. Earlier history remains in the clinical workspace.</p>:data.items.map(h=><div key={h.id} className="space-y-2 border-t border-border-light pt-3 text-[14px]"><p className="font-semibold">{h.fromStatus} → {h.toStatus} · revision {h.sourceVersion}</p><p className="break-words">{h.reason}</p><p className="break-words text-[12px] text-brand-inkMuted">{new Date(h.createdAt).toLocaleString()} · {h.actorName}</p><Button variant="ghost" size="sm" onClick={()=>void governanceApi.preview(c,h.snapshotId).then(setPreview).catch(e=>setErr(errorText(e,onError)||'The request could not be completed.'))} data-testid="view-frozen-preview">View immutable preview</Button></div>)}</Card>
+    <DisclosureSection title="Version and status history" summary="Immutable review trail and frozen evidence, available on demand" openByDefault={false}><div className="space-y-3">{failed?<ErrorState onRetry={()=>void reloadHistory()}/>:!data?<SkeletonRows rows={2}/>:!data.items.length?<p className="text-[14px] text-brand-inkMuted">No governance transitions yet. Earlier history remains in the clinical workspace.</p>:data.items.map(h=><div key={h.id} className="space-y-2 border-t border-border-light pt-3 text-[14px]"><p className="font-semibold">{h.fromStatus} → {h.toStatus} · revision {h.sourceVersion}</p><p className="break-words">{h.reason}</p><p className="break-words text-[12px] text-brand-inkMuted">{new Date(h.createdAt).toLocaleString()} · {h.actorName}</p><Button variant="ghost" size="sm" onClick={()=>void governanceApi.preview(c,h.snapshotId).then(setPreview).catch(e=>setErr(errorText(e,onError)||'The request could not be completed.'))} data-testid="view-frozen-preview">View immutable preview</Button></div>)}</div></DisclosureSection>
     {data&&<SyntheticReleaseActions centerId={c} document={d} history={data.items}/>}
     {preview&&<FrozenPreview snapshot={preview}/>}
   </div>;
@@ -56,9 +57,30 @@ function Governance({session,onError}:{session:SessionInfo;onError:(e:unknown)=>
  const c=session.activeContext?.type==='center'?session.activeContext.centerId:'';
  const fetcher=useCallback(()=>governanceApi.documents(c),[c]); const {data,failed,reload}=useLoad(fetcher,onError);
  const [selected,setSelected]=useState('');const [queue,setQueue]=useState(false);
- const items=(data?.items??[]).filter(d=>!queue||d.status==='IN_REVIEW');const d=data?.items.find(d=>d.id===selected);
+ const [search,setSearch]=useState('');
+ const supervisor=session.activeContext?.role==='CLINICAL_SUPERVISOR';
+ const items=(data?.items??[]).filter(d=>
+   (!queue || d.status==='IN_REVIEW') &&
+   (!search.trim() || `${d.title} ${d.childName} ${d.authorName} ${d.kind}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())));
+ // Selection is scoped to the *visible* authorized list, so a filtered-out
+ // document cannot remain in the details panel after queue/search changes.
+ const d=items.find(item=>item.id===selected);
  return <div className="space-y-5"><PageTitle testId="governance-title" eyebrow="Clinical governance" title="Documents & review" body="Synthetic records only. Review and internal freezing prepare an audit trail; they confer no clinical authorization."/>
- <Card className="flex flex-wrap gap-2 p-3"><Button variant={queue?'secondary':'primary'} onClick={()=>setQueue(false)}>All documents</Button><Button variant={queue?'primary':'secondary'} onClick={()=>setQueue(true)}>Supervisor review queue ({data?.items.filter(d=>d.status==='IN_REVIEW').length??0})</Button></Card>
+ {supervisor && <TaskStepper label="Supervisor oversight" steps={[
+    {id:'queue',label:'Choose review',status:'current',description:'Current centre documents'},
+    {id:'evidence',label:'Inspect version and evidence',status:'pending',description:'Read immutable sources'},
+    {id:'decision',label:'Comment or return',status:'pending',description:'Available only in review status'},
+    {id:'release',label:'Clinical release',status:'blocked',description:'No production signing or release'},
+  ]}/>}
+ <Card className="space-y-3 p-4" testId="m5-governance-filters">
+   <div className="flex flex-wrap gap-2"><Button variant={queue?'secondary':'primary'} onClick={()=>setQueue(false)} aria-pressed={!queue}>All documents</Button>{supervisor && <Button variant={queue?'primary':'secondary'} onClick={()=>setQueue(true)} aria-pressed={queue}>Supervisor review queue ({data?.items.filter(d=>d.status==='IN_REVIEW').length??0})</Button>}</div>
+   <label className="block text-sm font-medium">Find an authorized document
+     <input type="search" value={search} onChange={e=>setSearch(e.target.value)}
+       data-testid="governance-document-search" placeholder="Title, child, author or kind"
+       className="mt-1 min-h-11 w-full rounded-control border border-border-light bg-surface-white px-3 text-sm focus-visible:outline-2 focus-visible:outline-brand-action"/>
+   </label>
+   <p className="text-xs text-brand-inkMuted">Search and queue controls narrow the existing server-authorized documents. They do not grant review, signing or family messaging access.</p>
+ </Card>
  {failed?<ErrorState testId="governance-error" onRetry={()=>void reload()}/>:!data?<SkeletonRows rows={3} testId="governance-loading"/>:!items.length?<EmptyState testId="governance-empty" icon={FileClock} title="No documents in this view" body="Create a synthetic plan or report in the clinical workspace, or switch to all documents."/>:<div data-testid="governance-list" className="grid min-w-0 gap-4 lg:grid-cols-[260px_minmax(0,1fr)]"><div className="space-y-2">{items.map(item=><button key={item.id} onClick={()=>setSelected(item.id)} className={`w-full break-words rounded-control border p-4 text-left ${selected===item.id?'border-brand-action bg-brand-actionTint':'border-border-light bg-surface-white'}`}><span className="block font-semibold">{item.title}</span><span className="text-[12px] text-brand-inkMuted">{item.kind} · {item.status.replaceAll('_',' ')}</span></button>)}</div>{d?<DocumentReview key={d.id} c={c} d={d} supervisor={session.activeContext?.role==='CLINICAL_SUPERVISOR'} reload={reload} onError={onError}/>:<Card className="p-5"><p>Select a document to inspect its history and available actions.</p></Card>}</div>}<SyntheticGrantRecovery centerId={c}/></div>;
 }
 export default function Page(){return <Workspace active="governance" permission="center.clinical.read" deniedText="Clinical governance is restricted to assigned therapists and clinical supervisors.">{(session,onError)=><Governance session={session} onError={onError}/>}</Workspace>;}
