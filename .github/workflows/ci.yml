@@ -277,6 +277,12 @@ jobs:
             /tmp/therabridge-wu-lic-01-provenance-qualification.json \
             docs/commercial/release-file-evidence.json \
             /tmp/therabridge-wu-lic-02-edition-rights-queue.json
+      - name: Build non-authorizing WU-LIC-03 counsel-ready SaaS and Enterprise launch gate matrix
+        run: |
+          node scripts/commercial/build-wu-lic-03-counsel-gates.mjs \
+            /tmp/therabridge-wu-lic-02-edition-rights-queue.json \
+            docs/commercial/launch-decision-register.json \
+            /tmp/therabridge-wu-lic-03-counsel-launch-readiness.json
       - name: Archive installed license evidence for full CI
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -308,6 +314,7 @@ jobs:
             /tmp/therabridge-com02-tokenizer-exact-semantic-402.json
             /tmp/therabridge-wu-lic-01-provenance-qualification.json
             /tmp/therabridge-wu-lic-02-edition-rights-queue.json
+            /tmp/therabridge-wu-lic-03-counsel-launch-readiness.json
             /tmp/therabridge-com02-tokenizer-manifest-diff-402.json
             /tmp/therabridge-com02-root-observation-reconciliation.json
             /tmp/therabridge-com02-bulk-rights-evidence.json
@@ -344,6 +351,8 @@ jobs:
         run: node --test scripts/commercial/verify-published-tarballs.test.mjs
       - name: Verify digest-pinned candidate Docker release capture parser (offline, fail-closed)
         run: python3 -m unittest discover -s scripts/commercial -p test_capture_docker_release.py -v
+      - name: Test independent WU-LIC-03 per-edition legal, IP and clinical launch approval gates
+        run: node --test scripts/commercial/build-wu-lic-03-counsel-gates.test.mjs
       - name: Validate consolidated transitive and asset obligations queue
         run: node --test scripts/commercial/build-com02-obligations-queue.test.mjs
       - name: Validate bounded transitive publisher tarball audit safeguards

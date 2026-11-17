@@ -1,21 +1,24 @@
 'use client';
 
-import { ArrowRight, ClipboardList, FileText, House, TrendingUp } from 'lucide-react';
+import { ArrowRight, CalendarClock, ClipboardList, FileText, House, TrendingUp } from 'lucide-react';
 import type { Workspace } from '@/lib/clinical';
 import { clinicianJourneySummary } from '@/lib/clinician-journey';
 
-type Destination = 'plan' | 'progress' | 'reports';
+type Destination = 'sessions' | 'plan' | 'progress' | 'reports';
 const destinations = [
-  { key: 'goals', number: '01', title: 'Plan goals',
+  { key: 'sessions', number: '01', title: 'Session drafts',
+    description: 'Open a scheduled visit, save observations and reconcile unsaved work.',
+    destination: 'sessions' as const, icon: CalendarClock },
+  { key: 'goals', number: '02', title: 'Plan goals',
     description: 'Review saved objectives, version boundaries and review dates.',
     destination: 'plan' as const, icon: ClipboardList },
-  { key: 'evidence', number: '02', title: 'Measured evidence',
+  { key: 'evidence', number: '03', title: 'Measured evidence',
     description: 'Inspect recorded observations tied to the exact goal version.',
     destination: 'progress' as const, icon: TrendingUp },
-  { key: 'reports', number: '03', title: 'Draft reports',
+  { key: 'reports', number: '04', title: 'Draft reports',
     description: 'Review authored text, source references and saved report history.',
     destination: 'reports' as const, icon: FileText },
-  { key: 'home', number: '04', title: 'Home-plan drafts',
+  { key: 'home', number: '05', title: 'Home-plan drafts',
     description: 'Inspect goal-linked activities and internal practice schedules.',
     destination: 'plan' as const, icon: House },
 ];
@@ -25,6 +28,7 @@ export function ClinicianJourneyPanel({ ws, onNavigate }: {
 }) {
   const count = clinicianJourneySummary(ws);
   const extra: Record<string, string> = {
+    sessions: 'Only server-saved session drafts are shown in the Sessions tab',
     goals: `${count.currentGoals} goal(s) in ${count.currentPlanVersions} current plan version(s)`,
     evidence: `${count.currentGoalObservations} recorded observation(s) for current version goals`,
     reports: 'Report status loaded only when the authorized Reports tab opens',
@@ -40,7 +44,7 @@ export function ClinicianJourneyPanel({ ws, onNavigate }: {
         diagnosis, family release or treatment outcome is inferred from these record counts.
       </p>
     </div>
-    <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {destinations.map(({key,number,title,description,destination,icon:Icon}) =>
         <li key={key} className="min-w-0">
           <button type="button" onClick={() => onNavigate(destination)}
