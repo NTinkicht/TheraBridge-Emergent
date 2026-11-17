@@ -189,6 +189,34 @@ describe('M4-08 real family-home branch qualification honors private child/visit
   expect(opsApi.setReminders).toHaveBeenCalledWith('fictional-center','child-a',true);
 
  });
+ it('in-flight reminder save remains pending and updates the visible sibling after a round trip',async()=>{
+  let complete;
+  const deferred=new Promise(resolve=>{ complete=resolve; });
+  opsApi.setReminders.mockReturnValueOnce(deferred);
+  mockData=family([kid(),kid({id:'child-b',name:'Second fictional child'})]);
+  await mount();
+  await click('family-reminders-toggle-child-a');
+  expect(get('family-reminders-toggle-child-a').props.disabled).toBe(true);
+  await click('family-switch-child-b');
+  await click('family-switch-child-a');
+  expect(get('family-reminders-toggle-child-a').props.disabled).toBe(true);
+  expect(get('family-reminders-toggle-child-a').props['aria-checked']).toBe(false);
+  await act(async()=>{complete({remindersEnabled:true});await Promise.resolve();await Promise.resolve();});
+  expect(get('family-reminders-toggle-child-a').props.disabled).toBe(false);
+  expect(get('family-reminders-toggle-child-a').props['aria-checked']).toBe(true);
+  expect(opsApi.setReminders).toHaveBeenCalledTimes(1);
+ });
+ it('failed in-flight sibling save preserves last confirmed state when child is reselected',async()=>{
+  let rejectSave;
+  opsApi.setReminders.mockReturnValueOnce(new Promise((_,reject)=>{rejectSave=reject;}));
+  mockData=family([kid(),kid({id:'child-b'})]);
+  await mount();await click('family-reminders-toggle-child-a');
+  await click('family-switch-child-b');await click('family-switch-child-a');
+  await act(async()=>{rejectSave(new Error('Synthetic network refusal'));await Promise.resolve();await Promise.resolve();});
+  expect(get('family-reminders-toggle-child-a').props['aria-checked']).toBe(false);
+  expect(get('family-reminders-toggle-child-a').props.disabled).toBe(false);
+  expect(opsApi.setReminders).toHaveBeenCalledTimes(1);
+ });
  it('permission-scoped family quick tasks never surface ungranted navigation or fetch messages',async()=>{
   await mount(['family.portal.read']);
   expect(find('family-quick-practice')).toHaveLength(0);
