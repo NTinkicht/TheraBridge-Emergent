@@ -215,7 +215,12 @@ describe('M4-08 real family-home branch qualification honors private child/visit
   await act(async()=>{rejectSave(new Error('Synthetic network refusal'));await Promise.resolve();await Promise.resolve();});
   expect(get('family-reminders-toggle-child-a').props['aria-checked']).toBe(false);
   expect(get('family-reminders-toggle-child-a').props.disabled).toBe(false);
+  expect(html()).toContain('That didn');
+  expect(onError).toHaveBeenCalledTimes(1);
   expect(opsApi.setReminders).toHaveBeenCalledTimes(1);
+  await click('family-reminders-toggle-child-a');
+  expect(html()).not.toContain('That didn');
+  expect(get('family-reminders-toggle-child-a').props['aria-checked']).toBe(true);
  });
  it('permission-scoped family quick tasks never surface ungranted navigation or fetch messages',async()=>{
   await mount(['family.portal.read']);
