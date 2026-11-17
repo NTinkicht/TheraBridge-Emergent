@@ -560,6 +560,16 @@ jobs:
           node scripts/qa/check-ci-test-inventory.mjs
           node --test scripts/qa/check-ci-test-inventory.test.mjs
       - run: yarn workspace @therabridge/api build
+      # Only Next.js compiler cache is reusable. The release build still runs
+      # from source on every exact-head job, with its own environment and flags.
+      # Job-specific key prevents cross-role build-time configuration contamination.
+      - name: Cache untrusted Next.js compiler intermediates (test)
+        uses: actions/cache@v4
+        with:
+          path: apps/web/.next/cache
+          key: tb-next-v2-${{ runner.os }}-${{ runner.arch }}-test-${{ hashFiles('yarn.lock', 'apps/web/src/**', 'apps/web/package.json', 'apps/web/next.config.*') }}
+          restore-keys: |
+            tb-next-v2-${{ runner.os }}-${{ runner.arch }}-test-${{ hashFiles('yarn.lock') }}-
       - run: yarn workspace @therabridge/web build
       - name: M2-H06 frontend timezone, CSRF, shared session and response-header regression
         run: node --test scripts/qa/m2-h06-frontend.test.mjs
@@ -625,6 +635,16 @@ jobs:
       - run: yarn workspace @therabridge/api prisma generate
       - run: yarn workspace @therabridge/api prisma migrate deploy
       - run: yarn workspace @therabridge/api build
+      # Only Next.js compiler cache is reusable. The release build still runs
+      # from source on every exact-head job, with its own environment and flags.
+      # Job-specific key prevents cross-role build-time configuration contamination.
+      - name: Cache untrusted Next.js compiler intermediates (live-session)
+        uses: actions/cache@v4
+        with:
+          path: apps/web/.next/cache
+          key: tb-next-v2-${{ runner.os }}-${{ runner.arch }}-live-session-${{ hashFiles('yarn.lock', 'apps/web/src/**', 'apps/web/package.json', 'apps/web/next.config.*') }}
+          restore-keys: |
+            tb-next-v2-${{ runner.os }}-${{ runner.arch }}-live-session-${{ hashFiles('yarn.lock') }}-
       - run: yarn workspace @therabridge/web build
       # Cache only downloaded public Chromium binaries. Playwright still checks
       # the lockfile-pinned revision and installs system dependencies every run.
@@ -675,6 +695,16 @@ jobs:
       - run: yarn workspace @therabridge/api prisma migrate deploy
       - run: yarn workspace @therabridge/api typecheck
       - run: yarn workspace @therabridge/api build
+      # Only Next.js compiler cache is reusable. The release build still runs
+      # from source on every exact-head job, with its own environment and flags.
+      # Job-specific key prevents cross-role build-time configuration contamination.
+      - name: Cache untrusted Next.js compiler intermediates (demo-journey)
+        uses: actions/cache@v4
+        with:
+          path: apps/web/.next/cache
+          key: tb-next-v2-${{ runner.os }}-${{ runner.arch }}-demo-journey-${{ hashFiles('yarn.lock', 'apps/web/src/**', 'apps/web/package.json', 'apps/web/next.config.*') }}
+          restore-keys: |
+            tb-next-v2-${{ runner.os }}-${{ runner.arch }}-demo-journey-${{ hashFiles('yarn.lock') }}-
       - run: yarn workspace @therabridge/web build
       # Cache only downloaded public Chromium binaries. Playwright still checks
       # the lockfile-pinned revision and installs system dependencies every run.
@@ -736,6 +766,16 @@ jobs:
       - name: M5-05 synthetic receipt adversarial regression
         run: node --test scripts/design/m5-child360-browser.test.mjs
       - run: yarn workspace @therabridge/api build
+      # Only Next.js compiler cache is reusable. The release build still runs
+      # from source on every exact-head job, with its own environment and flags.
+      # Job-specific key prevents cross-role build-time configuration contamination.
+      - name: Cache untrusted Next.js compiler intermediates (m5-child360-browser)
+        uses: actions/cache@v4
+        with:
+          path: apps/web/.next/cache
+          key: tb-next-v2-${{ runner.os }}-${{ runner.arch }}-m5-child360-browser-${{ hashFiles('yarn.lock', 'apps/web/src/**', 'apps/web/package.json', 'apps/web/next.config.*') }}
+          restore-keys: |
+            tb-next-v2-${{ runner.os }}-${{ runner.arch }}-m5-child360-browser-${{ hashFiles('yarn.lock') }}-
       - run: yarn workspace @therabridge/web build
       # Cache only downloaded public Chromium binaries. Playwright still checks
       # the lockfile-pinned revision and installs system dependencies every run.
