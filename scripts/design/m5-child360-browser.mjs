@@ -132,8 +132,27 @@ export async function runChild360BrowserAcceptance({ passwords }) {
             if (destination === 'assessments') {
               assert.equal(await page.getByTestId('clinical-secondary-assessments').getAttribute('aria-current'),'page');
               assert.equal(await page.getByTestId('clinical-tab-care').getAttribute('aria-selected'),'true');
+              await page.getByTestId('assessments-panel').waitFor({state:'visible'});
+              // Workspace data was already authorized and loaded; an explicit
+              // empty assessment state is usable, never count a missing panel.
+              assert.equal(await page.getByTestId('assessments-load-error').count(),0,
+                'Assessment history must not have a pagination error');
             } else {
               assert.equal(await page.getByTestId('clinical-tab-' + destination).getAttribute('aria-selected'),'true');
+              if (destination === 'sessions') {
+                await page.getByTestId('sessions-panel').waitFor({state:'visible'});
+              } else {
+                // Reports are fetched independently by ScopedReportsPanel.
+                // Selecting Documents alone must not count as task success.
+                await page.getByTestId('reports-panel').waitFor({state:'visible'});
+                await page.getByTestId('reports-panel').locator(
+                  '[data-testid="reports-empty"], [data-testid^="report-row-"]'
+                ).first().waitFor({state:'visible',timeout:20000});
+                assert.equal(await page.getByTestId('reports-error').count(),0,
+                  'Documents data must load successfully before counting a task');
+                assert.equal(await page.getByTestId('reports-loading').count(),0,
+                  'Document task cannot succeed while reports still loading');
+              }
             }
             taskFlowObservations++;
           }
