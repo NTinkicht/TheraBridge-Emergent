@@ -265,6 +265,18 @@ jobs:
             /tmp/therabridge-com02-tokenizer-exact-semantic-402.json \
             /tmp/therabridge-com02-nondt-published-manifest-comparison.json \
             /tmp/therabridge-wu-lic-01-provenance-qualification.json
+      - name: Test WU-LIC-02 44 npm and 91 asset dual-edition rights/provenance
+        run: node --test scripts/commercial/build-wu-lic-02-edition-rights-queue.test.mjs
+      - name: Build WU-LIC-02 per-edition fail-closed source, asset and release counsel queue
+        run: |
+          node scripts/commercial/build-wu-lic-02-edition-rights-queue.mjs \
+            /tmp/therabridge-com02-closure-ledger.json \
+            /tmp/therabridge-com02-root-405-evidence.json \
+            /tmp/therabridge-com02-tokenizer-exact-semantic-402.json \
+            /tmp/therabridge-com02-nondt-published-manifest-comparison.json \
+            /tmp/therabridge-wu-lic-01-provenance-qualification.json \
+            docs/commercial/release-file-evidence.json \
+            /tmp/therabridge-wu-lic-02-edition-rights-queue.json
       - name: Archive installed license evidence for full CI
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -295,6 +307,7 @@ jobs:
             /tmp/therabridge-com02-root-405-evidence.json
             /tmp/therabridge-com02-tokenizer-exact-semantic-402.json
             /tmp/therabridge-wu-lic-01-provenance-qualification.json
+            /tmp/therabridge-wu-lic-02-edition-rights-queue.json
             /tmp/therabridge-com02-tokenizer-manifest-diff-402.json
             /tmp/therabridge-com02-root-observation-reconciliation.json
             /tmp/therabridge-com02-bulk-rights-evidence.json
