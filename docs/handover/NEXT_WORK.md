@@ -1226,4 +1226,7 @@ Qualify final Rule7-updated PR #408 head with six full CI jobs, SBOM/Smart CI, c
 
 ## 2026-11-17 — COM-02 #402 new manifest-difference verification gates
 Run same-run exact-head CI of redacted tokenizer manifest semantic comparator; inspect output for byte-level formatting difference or actual changed field paths and any untrusted npm build transformations. Resolve test/CI findings, complete all six jobs, SBOM/Smart CI, independent Codex exact-head review and merge cleanly before claiming technical qualification. Even field-level explanation does not prove publisher-to-source build lineage; continue rights/legal, 44 exact npm exceptions, 91 assets, independently signed SaaS and Enterprise image receipts, G2/G2b NO-GO.
- 
+
+## 2026-11-17 — COM-02 #402 final qualification and publisher build lineage
+Exact npm tokenizer raw manifest mismatch explained semantically: 0 field-level changes despite 667 vs 700-byte originals (verified run 44017403354). Qualify final updated Rule7 head: six CI jobs, full-history secret scan, Smart CI, SBOM, independent Codex on exact head; merge only after green checks and no conflicts. #402 remains open for authentic npm publisher/build subject and full archive-to-immutable-source mapping; semantic JSON equality alone does not establish official provenance or legal rights. Finish 44 locked exception version-specific publisher histories, 91 asset-rights obligations, real production SaaS/delivered Enterprise OCI receipts, counsel signoff and G2/G2b NO-GO separately.
+
