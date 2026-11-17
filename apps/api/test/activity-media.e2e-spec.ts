@@ -24,7 +24,8 @@ function setup(override: Record<string, unknown> = {}) {
   const tx = {
     $queryRaw: jest.fn(async () => [{ id: templateId }]),
     activityTemplate: { findFirst },
-    activityMediaDraft: { create, updateMany },
+    membership: { findFirst: jest.fn(async () => ({ id: actor.membershipId })) },
+    activityMediaDraft: { create, updateMany, findMany: jest.fn(async () => []) },
     centerEvent: { create: jest.fn(async () => ({})) },
   };
   const prisma = {
@@ -62,6 +63,20 @@ describe('M5-14 activity illustration draft boundary', () => {
     await expect(absent.service.propose(centerId, actor, templateId, dto)).rejects.toBeInstanceOf(NotFoundException);
     const forbidden = setup({ createdById: 'other' });
     await expect(forbidden.service.propose(centerId, actor, templateId, dto)).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('revokes media access when the therapist loses their specialty', async () => {
+    const { service, tx, create } = setup();
+    tx.membership.findFirst.mockResolvedValueOnce({ id: actor.membershipId }).mockResolvedValueOnce(null as never);
+    await expect(service.propose(centerId, actor, templateId, dto)).rejects.toBeInstanceOf(ForbiddenException);
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('lets a currently active clinical supervisor manage centre-owned proposal metadata', async () => {
+    const { service } = setup({ createdById: 'other' });
+    const supervisor = { ...actor, role: 'CLINICAL_SUPERVISOR' as const };
+    const result = await service.propose(centerId, supervisor, templateId, dto);
+    expect(result.state).toBe('DRAFT');
   });
 
   it('requires generation-provider terms before storing a proposed AI asset', async () => {

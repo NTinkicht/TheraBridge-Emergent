@@ -1,7 +1,8 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TrialService } from '../operations/trial.service';
-import { logCenterEvent } from '../centers/history';
+import { logCenterEvent, type Tx } from '../centers/history';
+import { assertActor } from './governance-core';
 import type { Viewer } from '../operations/children.service';
 import type { ActivityMediaDraftDto, ActivityMediaRejectDto } from './activity-media.dto';
 
@@ -9,25 +10,33 @@ import type { ActivityMediaDraftDto, ActivityMediaRejectDto } from './activity-m
 export class ActivityMediaService {
   constructor(private readonly prisma: PrismaService, private readonly trial: TrialService) {}
 
-  private async authorizedTemplate(centerId: string, v: Viewer, templateId: string) {
-    // Centre-owned activity only. Globally shared synthetic samples cannot be modified.
-    const t = await this.prisma.activityTemplate.findFirst({ where: { id: templateId, centerId } });
+  // Match ClinicalService.templateWriter: active user/role, live specialty
+  // membership and activity ownership are checked in the same DB transaction.
+  private async authorizedTemplate(tx: Tx, centerId: string, v: Viewer, templateId: string) {
+    await assertActor(tx, centerId, v, ['THERAPIST', 'CLINICAL_SUPERVISOR']);
+    const t = await tx.activityTemplate.findFirst({ where: { id: templateId, centerId } });
     if (!t) throw new NotFoundException('Activity not found.');
-    if (v.role === 'THERAPIST' && t.createdById !== v.userId) {
-      throw new ForbiddenException('Duplicate this activity before preparing your own artwork.');
-    }
-    if (!['THERAPIST', 'CENTER_ADMIN', 'COORDINATOR'].includes(v.role)) {
-      throw new ForbiddenException('Only authorized activity editors can prepare media.');
+    if (v.role === 'THERAPIST') {
+      const allowed = await tx.membership.findFirst({
+        where: {
+          id: v.membershipId, userId: v.userId, centerId, status: 'ACTIVE',
+          specialties: { has: t.service },
+        }, select: { id: true },
+      });
+      if (!allowed) throw new ForbiddenException('This specialty is no longer assigned.');
+      if (t.createdById !== v.userId) throw new ForbiddenException('Duplicate this activity before preparing your own artwork.');
     }
     return t;
   }
 
   async list(centerId: string, v: Viewer, templateId: string) {
-    await this.authorizedTemplate(centerId, v, templateId);
-    const rows = await this.prisma.activityMediaDraft.findMany({
-      where: { centerId, templateId }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 100,
+    return this.prisma.$transaction(async tx => {
+      await this.authorizedTemplate(tx, centerId, v, templateId);
+      const rows = await tx.activityMediaDraft.findMany({
+        where: { centerId, templateId }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 101,
+      });
+      return { items: rows.slice(0, 100), hasMore: rows.length > 100, publishEnabled: false, clinicalReleaseEnabled: false };
     });
-    return { items: rows, hasMore: rows.length === 100, publishEnabled: false, clinicalReleaseEnabled: false };
   }
 
   async propose(centerId: string, v: Viewer, templateId: string, dto: ActivityMediaDraftDto) {
@@ -37,14 +46,7 @@ export class ActivityMediaService {
       // Lock activity row and recheck assignment within the transaction so that
       // a moved/edited activity cannot attach a stale or foreign illustration.
       await tx.$queryRaw`SELECT id FROM activity_template WHERE id=${templateId}::uuid AND center_id=${centerId}::uuid FOR SHARE`;
-      const t = await tx.activityTemplate.findFirst({ where: { id: templateId, centerId } });
-      if (!t) throw new NotFoundException('Activity not found.');
-      if (v.role === 'THERAPIST' && t.createdById !== v.userId) {
-        throw new ForbiddenException('Duplicate this activity before preparing your own artwork.');
-      }
-      if (!['THERAPIST', 'CENTER_ADMIN', 'COORDINATOR'].includes(v.role)) {
-        throw new ForbiddenException('Only authorized activity editors can prepare media.');
-      }
+      const t = await this.authorizedTemplate(tx, centerId, v, templateId);
       if (t.version !== dto.templateVersion) {
         throw new ConflictException('Activity changed. Reload before preparing artwork.');
       }
@@ -73,14 +75,7 @@ export class ActivityMediaService {
     const now = this.trial.now();
     return this.prisma.$transaction(async tx => {
       await this.trial.assertWritable(tx, centerId, now);
-      const t = await tx.activityTemplate.findFirst({ where: { id: templateId, centerId } });
-      if (!t) throw new NotFoundException('Activity not found.');
-      if (v.role === 'THERAPIST' && t.createdById !== v.userId) {
-        throw new ForbiddenException('Only the activity author can reject its draft.');
-      }
-      if (!['THERAPIST', 'CENTER_ADMIN', 'COORDINATOR'].includes(v.role)) {
-        throw new ForbiddenException('Only authorized activity editors can reject media.');
-      }
+      await this.authorizedTemplate(tx, centerId, v, templateId);
       const changed = await tx.activityMediaDraft.updateMany({
         where: { id: draftId, centerId, templateId, version: dto.version, state: 'DRAFT' },
         data: { state: 'REJECTED', rejectionReason: dto.reason, version: { increment: 1 }, updatedAt: now },
