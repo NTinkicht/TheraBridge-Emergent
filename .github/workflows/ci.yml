@@ -722,7 +722,7 @@ jobs:
     needs: smart-plan
     if: needs.smart-plan.outputs.mode == 'full' || needs.smart-plan.outputs.mode == 'web-style'
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:16-bookworm
@@ -773,6 +773,15 @@ jobs:
         run: node scripts/design/run-demo-live.mjs
       - name: M5-01 browser and keyboard receipt schema adversarial tests
         run: node --test scripts/design/m5-browser-observe.test.mjs scripts/design/m5-keyboard-journey.test.mjs
+      - name: M5 WU2 five-width role acceptance receipt adversarial tests
+        run: node --test scripts/design/m5-wu2-browser-qualification.test.mjs
+      - name: Archive WU2 numeric-only synthetic role/viewport qualification (not screenshots)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-wu2-role-viewport-observations-${{ github.sha }}
+          path: /tmp/therabridge-m5-wu2-browser-qualification.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Archive numeric-only synthetic viewport observations, never screenshots
         uses: actions/upload-artifact@v4
         with:
