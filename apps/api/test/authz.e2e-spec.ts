@@ -194,7 +194,10 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
         'POST /auth/context', 'POST /auth/login', 'POST /auth/logout', 'POST /auth/logout-all',
         'POST /auth/password/change', 'POST /auth/password/forgot', 'POST /auth/password/reset',
         'POST /center-applications',
-        'POST /centers/:centerId/activities', 'POST /centers/:centerId/activities/:templateId/duplicate', 'POST /centers/:centerId/appointments', 'POST /centers/:centerId/appointments/:appointmentId/status',
+        'POST /centers/:centerId/activities', 'POST /centers/:centerId/activities/:templateId/duplicate',
+        // M5-14: explicit metadata proposal/rejection only; no media approval or publishing.
+        'POST /centers/:centerId/activities/:templateId/media-drafts', 'POST /centers/:centerId/activities/:templateId/media-drafts/:draftId/reject',
+        'POST /centers/:centerId/appointments', 'POST /centers/:centerId/appointments/:appointmentId/status',
         'POST /centers/:centerId/children', 'POST /centers/:centerId/children/:childId/archive', 'POST /centers/:centerId/children/:childId/assignments',
         'POST /centers/:centerId/children/:childId/assignments/:assignmentId/end', 'POST /centers/:centerId/children/:childId/guardians',
         'POST /centers/:centerId/children/:childId/guardians/:linkId/invite', 'POST /centers/:centerId/children/:childId/guardians/:linkId/remove',
