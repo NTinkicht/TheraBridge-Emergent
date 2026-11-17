@@ -5,6 +5,7 @@ import { HeartHandshake, Plus, Search, Sparkles } from 'lucide-react';
 import { Field, FormAlert } from '@/components/auth/Field';
 import { PageTitle, SelectField, Workspace, errorText, useLoad } from '@/components/centers/kit';
 import { ActivityCard } from '@/components/clinical/ActivityCard';
+import { ActivityMediaDraftPanel } from '@/components/clinical/ActivityMediaDraftPanel';
 import { TemplateActions } from '@/components/clinical/TemplateActions';
 import { Button, Card } from '@/components/design/ui';
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
@@ -143,6 +144,8 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
             <TemplateActions centerId={centerId} template={t} onError={onError}
               onChanged={message => { setNotice(message); setAdditional(null); void reload(); }} />
           )}
+          {session.permissions.includes('center.activities.manage') && t.library === 'center' &&
+            <ActivityMediaDraftPanel key={centerId + ':' + t.id} centerId={centerId} templateId={t.id} templateVersion={t.version} />}
         </div>
       ))}</div>}
       {first && hasMore && <Button variant="secondary" disabled={loadingMore} onClick={() => void loadMore()} data-testid="activities-load-more">
