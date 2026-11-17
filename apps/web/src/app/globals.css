@@ -47,3 +47,21 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* M5-10: focus and 200% zoom remain visible, including under sticky headers.
+   Logical inline positioning preserves keyboard navigation in future RTL locales. */
+html { scroll-padding-block-start: 5rem; }
+main:focus { outline: none; }
+:where(button, a, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--focus-ring, var(--tb-brand-action));
+  outline-offset: 2px;
+}
+[dir="rtl"] [data-testid="product-sidebar"] [aria-current="page"] > span[aria-hidden="true"] {
+  left: auto;
+  right: 0;
+  border-radius: 0 4px 4px 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  .tb-rise { animation: none !important; }
+}

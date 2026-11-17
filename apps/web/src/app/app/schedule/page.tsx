@@ -201,7 +201,7 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
       {!isTherapist && data && <DisclosureSection title="Operational exceptions and follow-up"
         summary={`${exceptions.length} cancelled or no-show visits in the selected view. Internal scheduling records only.`}>
         <div data-testid="m5-operations-exceptions">
-          <CompactTable caption="Appointment exceptions for the selected center and dates"
+          <CompactTable mobileCards caption="Appointment exceptions for the selected center and dates"
             columns={[{id:'when',label:'When'},{id:'child',label:'Child'},{id:'resource',label:'Therapist / room'},{id:'status',label:'Status'}]}
             rows={exceptions.map(a => ({ id:a.id, cells:{
               when:`${dayKey(a.startsAt)} · ${timeRange(a.startsAt,a.endsAt)}`, child:a.childFull,
