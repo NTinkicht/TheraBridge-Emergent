@@ -1368,4 +1368,7 @@ New tests cover exact Git blob SHA1 and raw manifest SHA256, byte-equal and npm-
 
 ## 2026-11-17 — COM-02 #405 first CI test result / repair
 Run 44013997014: offline strict source/Git blob/SRI/identity adversarial tests PASS; live original npm archive read FAIL COM02_405_NOT_ALLOWLISTED. Root cause: Yarn v1 exact archive URL uses registry.yarnpkg.com (allowed by existing production tariff checker), but new script recognized only npmjs.org. Expanded exact host allowlist to include Yarn registry. Corrected code and final-head CI NOT YET RUN; source-to-published npm raw manifest byte match remains UNKNOWN; source SHA256/Git blob SHA1 independently corroborated. No publication-build or rights approval.
- 
+
+## 2026-11-17 — COM-02 #405 verified additive tenth Git/npm source-root evidence
+**Run 44014352663:** Offline adversarial tests PASS; original locked npm archive vs exact immutable Git source source-root comparison PASS. Current unicode-emoji-modifier-base@1.0.0 raw source SHA256 **242f5577f26c3fff547508911718348993d5ef04ff72a44c71115ce002521301** == original npm package.json SHA256; Git blob SHA1 independently verified; locked npm archive SHA256 b753860ffa1f54f2b415de82e23d2ce79a89bfdc5fff1a4361a32cc8215ff4e5 and Yarn SRI verified. Receipt status EXACT_RAW_MANIFEST_MATCH_NOT_PUBLISHER_ATTESTATION; publisherBuildLineageIndependentlyAttested false, sourceCopyrightRightsApproved false, commercial/SaaS/Enterprise/G2/G2b false. Combined with merged #407: 9/10 exact source-root manifest byte matches, 1 tokenizer mismatch, none missing source observation at this checkpoint. This is not full tarball/build proof or legal clearance. **Updated Rule7 HEAD CI/Codex PENDING**; historical earlier run does not qualify changed head.
+
