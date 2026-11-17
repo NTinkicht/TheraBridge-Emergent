@@ -3,6 +3,7 @@
 // independently re-fetched npm/source byte receipts. NEVER authorizes commercial use.
 import {createHash} from 'node:crypto';
 import {readFileSync,statSync,writeFileSync} from 'node:fs';
+import {buildNonDtWorkqueue} from './build-com02-nondt-workqueue.mjs';
 const SHA=/^[a-f0-9]{64}$/;
 const digest=x=>createHash('sha256').update(JSON.stringify(x)).digest('hex');
 const GROUPS=Object.freeze({
@@ -40,6 +41,24 @@ function qualify(ledger,emoji,tokenizer,comparison){
  }
  for(const [group,count] of Object.entries(GROUPS))
   if(groupCounts[group]!==count)fail('GROUP_MEMBERSHIP_DRIFT_'+group);
+ // Reconstruct the original same-run non-DT workqueue from the exact ledger.
+ // All receipts must cite this byte-equivalent queue and a single locked dependency graph.
+ const queue=buildNonDtWorkqueue(ledger);
+ const queueSha=digest(queue);
+ const lockSha=emoji?.lockSha256;
+ if(!SHA.test(lockSha||'')||
+    emoji.queueSha256!==queueSha||
+    tokenizer.sourceEvidenceQueueSha256!==queueSha||
+    tokenizer.lockedDependencySha256!==lockSha)
+    fail('MIXED_SOURCE_QUEUE_OR_LOCK');
+ for(const [receipt,packageName,version,commit] of [
+  [emoji,'unicode-emoji-modifier-base','1.0.0','16333bdecc0e399f18bedd00b36995f3399ac5ec'],
+  [tokenizer,'@tokenizer/token','0.3.0','e068a455370090f44c757946b8571bb3fb1f117e']]){
+   const row=queue.records.filter(x=>x.name===packageName&&x.version===version);
+   if(row.length!==1||row[0].sourceCommitCandidate!==commit||
+      receipt.sourceCommit!==commit)
+      fail('SOURCE_COMMIT_OR_VERSION_DRIFT');
+ }
  const assets=new Set();
  for(const a of ledger.assets){
   if(!a?.path||assets.has(a.path)||!SHA.test(a.sha256||'')||
@@ -81,7 +100,8 @@ function qualify(ledger,emoji,tokenizer,comparison){
     comparison.counts?.sourceRootCandidates!==10||
     comparison.counts?.sourceRootsWithFrozenObservations!==9||
     comparison.counts?.allNonDT!==23||comparison.counts?.publisherToSourceAttested!==0||
-    comparison.counts?.legallyApproved!==0||comparison.records?.length!==10)
+    comparison.counts?.legallyApproved!==0||comparison.records?.length!==10||
+    comparison.inputSha256?.queue!==queueSha||comparison.inputSha256?.lock!==lockSha)
     fail('UNTRUSTED_SAME_RUN_ROOT_COMPARISON');
  const comparisonIds=new Set(),statuses={};
  for(const r of comparison.records){
@@ -123,7 +143,7 @@ function qualify(ledger,emoji,tokenizer,comparison){
  return {
   schema:'therabridge-wu-lic-01-technical-provenance-reconciliation-v1',
   status:'TECHNICAL_TRIAGE_COMPLETE_EXTERNAL_ATTESTATION_AND_RIGHTS_OPEN',
-  evidenceSha256:{closureLedger:digest(ledger),emoji405:digest(emoji),tokenizer402:digest(tokenizer),sameRunRootComparison:digest(comparison)},
+  evidenceSha256:{closureLedger:digest(ledger),emoji405:digest(emoji),tokenizer402:digest(tokenizer),sameRunRootComparison:digest(comparison),reconstructedQueue:queueSha,lockedDependency:lockSha},
   counts:{npmExceptions:44,definitelyTyped:21,nonDefinitelyTyped:23,
    ...groupCounts,sourceRootManifestsExact:matched+1,sourceRootManifestByteDifferences:differed,
    independentlyAttestedPublisherBuildLineages:0,assetRightsPending:91,
