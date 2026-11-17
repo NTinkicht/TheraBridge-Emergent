@@ -1,3 +1,9 @@
+## 2026-11-17 — CI parallel critical-path verification
+1. Qualify the exact updated workflow head with full test, commercial-provenance, secret scan, SBOM, live session, demo journey, Child 360 browser, Compose, preview sustained 10-minute 512MiB workload and Smart CI final fail-closed gate. Verify `commercial-provenance` emits its former exact-run 27-ish evidence files and no original validations were dropped. Run independent Codex and resolve P1/P2.
+2. Compare observed wall-clock to PR #413 pre-change run and report both total latency and runner-minutes; keep any claims bounded to measured runs. Cache safety/eviction negative path should not change runtime validity.
+3. Build artifacts must not be shared between ordinary and feature-flagged child workspace until build-time equivalence is proven; do not skip full jobs or activate targeted mode without a separately authorized AGENTS.md Rule 16 policy review.
+4. Preserve M5 feature PR #413 scope, legal/asset rights NO-GO and clinical G2/G2b NO-GO.
+
 ## 2026-11-17 — M5 WU1 (#413) remaining qualification, M5-03/04
 1. Run **new exact-HEAD** six required CI checks, SBOM, Smart CI and Web coverage after the four Rule 7 documentation corrections. Inspect actual run artifacts; do not transfer old-head PASS to changed HEAD. Fix any CI failures without disabling safeguards.
 2. Obtain new independent Codex review of updated PR #413 HEAD, ensure prior P1 Rule 7 omission is resolved and fix all new P1/P2. Merge only after CI green, review complete, conflict-free and required Rule 16 gates satisfied.
