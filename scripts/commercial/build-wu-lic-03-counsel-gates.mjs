@@ -119,10 +119,11 @@ function buildLaunchPackage(rights,decision) {
   const d=decision.editions[edition],source=srcEditions.get(edition);
   if(!d||d.status!=='BLOCKED'||d.releaseDigest!==null||
      !eq(d.required,required[edition])||
-     !d.evidence||Object.keys(d.evidence).length!==0||
-     source.candidateOCIImageDigest!==null)
+     !d.evidence||Object.keys(d.evidence).length!==0)
     fail('FORGED_COUNSEL_OR_IMAGE_AUTHORIZATION');
   approvals[edition]={status:'BLOCKED',releaseDigest:null,
+   unattestedCandidateOCIImageDigest:source.candidateOCIImageDigest,
+   candidateCannotAuthorizeRelease:true,
    requirements:required[edition].map(name=>({name,status:'UNVERIFIED',evidence:null})),
    publisherLineagesAttested:0,assetRightsApproved:0,
    releaseRegistryAndDeliveryAuthenticated:false,
