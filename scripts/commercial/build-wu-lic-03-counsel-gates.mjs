@@ -52,6 +52,7 @@ function buildLaunchPackage(rights,decision) {
  }
  if(srcEditions.size!==2)fail('MISSING_RELEASE_EDITION');
  const packageKeys=new Set();
+ const groups=new Map();
  const packages=rights.packages.map(p=>{
   const key=JSON.stringify([p?.name,p?.version]);
   if(packageKeys.has(key)||!p?.name||!p?.version||
@@ -59,6 +60,7 @@ function buildLaunchPackage(rights,decision) {
      p.exactPublisherBuildAttested!==false||p.legalDecision!=='UNRESOLVED'||
      p.commercialApproval!==false)fail('INVALID_OR_DUPLICATE_PACKAGE');
   packageKeys.add(key);
+  groups.set(p.group,(groups.get(p.group)||0)+1);
   const scope={};
   for(const edition of editions){
    const e=p.editions?.[edition];
@@ -75,12 +77,18 @@ function buildLaunchPackage(rights,decision) {
     immutableSourceCandidate:p.immutableGitCommitCandidate??null,
     sourceEvidence:p.sourceEvidence,editions:scope};
  });
+ if(groups.get('DEFINITELYTYPED_HISTORICAL_RELEASE')!==21||
+    [...groups].filter(([key])=>key!=='DEFINITELYTYPED_HISTORICAL_RELEASE')
+      .reduce((n,[,count])=>n+count,0)!==23||
+    [...packageKeys].length!==44)fail('PACKAGE_MEMBERSHIP_DRIFT');
  const assetPaths=new Set();
+ const assetGroups=new Map();
  const assets=rights.assets.map(a=>{
   if(!a?.path||assetPaths.has(a.path)||!HEX.test(a.sha256||'')||
      a.legalDecision!=='UNRESOLVED'||a.commercialApproval!==false)
     fail('INVALID_OR_DUPLICATE_ASSET');
   assetPaths.add(a.path);
+  assetGroups.set(a.category,(assetGroups.get(a.category)||0)+1);
   const scope={};
   for(const edition of editions){
    const e=a.editions?.[edition];
@@ -94,6 +102,9 @@ function buildLaunchPackage(rights,decision) {
   }
   return {path:a.path,sha256:a.sha256,category:a.category,editions:scope};
  });
+ if(assetGroups.get('IMAGE_OR_ICON')!==73||assetGroups.get('BRAND')!==15||
+    assetGroups.get('CONTAINER_BUILD')!==3||assetGroups.size!==3)
+    fail('ASSET_CATEGORY_DRIFT');
  const extra=new Set();
  for(const s of rights.supplementalDistributionObligations) {
   if(!s?.category||extra.has(s.category)||s.saas?.status!=='UNRESOLVED'||
@@ -101,6 +112,8 @@ function buildLaunchPackage(rights,decision) {
     fail('UNSAFE_SUPPLEMENTAL_SCOPE');
   extra.add(s.category);
  }
+ if(!['OS_RUNTIME_CONTAINER','POSTGRES_REDIS','MODELS_DATASETS_EXTERNAL_SERVICES','FONTS_BRAND_MEDIA'].every(x=>extra.has(x))||extra.size!==4)
+    fail('MISSING_SUPPLEMENTAL_CATEGORY');
  const approvals={};
  for(const edition of editions) {
   const d=decision.editions[edition],source=srcEditions.get(edition);
