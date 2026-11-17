@@ -83,8 +83,16 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
   const days = useMemo(() => (view === 'day' ? [anchor] : weekOf(anchor)), [view, anchor]);
   const from = useMemo(() => zonedToUtc(days[0], '00:00'), [days, tz]); // eslint-disable-line react-hooks/exhaustive-deps
   const to = useMemo(() => zonedToUtc(addDays(days[days.length - 1], 1), '00:00'), [days, tz]); // eslint-disable-line react-hooks/exhaustive-deps
-  const fetcher = useCallback(() => opsApi.appointments(centerId, { from: from.toISOString(), to: to.toISOString(), membershipId: therapist || undefined, childId: child || undefined }), [centerId, from, to, therapist, child]);
-  const { data, failed, reload } = useLoad(fetcher, onError);
+  const queryKey = JSON.stringify([centerId, from.toISOString(), to.toISOString(), therapist, child]);
+  const fetcher = useCallback(async () => ({
+    queryKey,
+    result: await opsApi.appointments(centerId, { from: from.toISOString(), to: to.toISOString(), membershipId: therapist || undefined, childId: child || undefined }),
+  }), [queryKey, centerId, from, to, therapist, child]);
+  const { data: response, failed, reload } = useLoad(fetcher, onError);
+  // useLoad retains previous results during a request. Only render a response
+  // for the exact authorized center, date and filter tuple; never label a
+  // previous therapist's appointments as the newly selected therapist's.
+  const data = !failed && response?.queryKey === queryKey ? response.result : null;
   useEffect(() => {
     if (data && getCenterTz() !== tz) {
       setTz(getCenterTz());
@@ -132,7 +140,7 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
       <PageTitle title="Schedule" body={isTherapist ? 'Your visits, in the center’s time zone.' : 'Every visit across the center, in the center’s time zone.'} testId="schedule-title"
         action={manage ? <Button onClick={() => setBooking(null)} data-testid="book-appointment-button"><CalendarPlus size={17} aria-hidden="true" /> Book appointment</Button> : undefined} />
       {notice && <FormAlert tone="success" testId="schedule-notice-success">{notice}</FormAlert>}
-      {!isTherapist && <section aria-label="Center operations overview" data-testid="m5-operations-summary"
+      {!isTherapist && data && <section aria-label="Center operations overview" data-testid="m5-operations-summary"
         className="grid gap-3 sm:grid-cols-3">
         <Card className="p-4"><p className="text-xs text-brand-inkMuted">Scheduled in view</p><p className="text-2xl font-semibold tabular-nums">{scheduled}</p></Card>
         <Card className="p-4"><p className="text-xs text-brand-inkMuted">Attended in view</p><p className="text-2xl font-semibold tabular-nums">{completed}</p></Card>
@@ -140,7 +148,7 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
       </section>}
       <p className="flex flex-wrap items-center gap-2 text-xs text-brand-inkMuted"
         data-testid="schedule-timezone-notice"><Clock3 size={15} aria-hidden="true" />
-        Displayed in center time zone: <strong>{tz.replaceAll('_', ' ')}</strong>.
+        Displayed in center time zone: <strong>{tz?.replaceAll('_', ' ') ?? 'Unavailable — check center settings'}</strong>.
         Recurring series edits and exceptions must be confirmed in the existing appointment details.
       </p>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -190,7 +198,7 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
           <CompactTable caption="Appointment exceptions for the selected center and dates"
             columns={[{id:'when',label:'When'},{id:'child',label:'Child'},{id:'resource',label:'Therapist / room'},{id:'status',label:'Status'}]}
             rows={exceptions.map(a => ({ id:a.id, cells:{
-              when:timeRange(a.startsAt,a.endsAt), child:a.childFull,
+              when:`${dayKey(a.startsAt)} · ${timeRange(a.startsAt,a.endsAt)}`, child:a.childFull,
               resource:`${a.therapist}${a.room ? ' · '+a.room : ''}`,
               status:<ApptPill a={a}/>,
             }}))}
