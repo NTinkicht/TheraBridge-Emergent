@@ -10,6 +10,9 @@ Codex P2 pagination disposition FIX_NOW: new validated UUID cursor and 1–100 b
 ## 2026-11-18 — WU4-B / M5-14 activity media drafts
 WU4-B implemented Prisma migration, typed NestJS endpoints and service with active role/tenant/specialty checks (including revocation and supervisor parity), immutable proposal metadata and optimistic rejection. Added negative unit regression tests.
 
+## 2026-11-18 — WU4-A M5-B / M5-13 presentation & illustration standard
+PR #433: committed mapped presentation-only specialty identities, shared activity-card display, draft illustration style guide, and Jest source + runtime regression tests. No stored service IDs or permissions changed.
+
 ## 2026-11-17 — WU3 M5-10 / M5-04 shared accessibility and performance · WORK_LOG.md
 Implemented WAI-ARIA horizontal tabs with RTL Arrow/Home/End and disabled navigation, focusable skip-to-main link and named main, explicit focus/reduced-motion/RTL CSS, accessible focusable calendar hours with date-inclusive appointment names and bounded layout, linear source-bound goal history bucketing, and optional shared compact mobile cards preserving desktop semantic table. Coordinator exception view opts into cards at narrow widths. Jest includes mounted RTL, dense exact-version history and mobile/table contracts. No changes to role, tenant, clinical release, consent or server mutation rules; G2/G2b NO-GO unchanged. Exact-HEAD CI, Codex, redacted five-width screenshots, real NVDA/VoiceOver, WCAG contrast, low-bandwidth and measured task performance **PENDING/NOT RUN**; no issue closure claim for #187/#193.
 
