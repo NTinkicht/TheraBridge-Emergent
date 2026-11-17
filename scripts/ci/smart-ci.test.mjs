@@ -10,6 +10,7 @@ test('documentation changes require only security scan and targeted validation',
  assert.equal(x.execution,'docs');assert.equal(x.required['test'],'skipped');
  assert.equal(x.required['commercial-provenance'],'skipped');
  assert.equal(x.required['commercial-contracts'],'skipped');
+ assert.equal(x.required['source-contracts'],'skipped');
  assert.equal(x.required['secret-scan'],'success');
  assert.equal(x.required['sbom'],'success');
  assert.equal(x.required['smart-targeted'],'success');
@@ -38,6 +39,7 @@ test('security, DB, clinical, dependencies, workflows, scripts, missing and mixe
  assert.equal(eligible([]).execution,'full');
  assert.equal(eligible(paths('scripts/commercial/reconcile-sbom.mjs')).required['commercial-provenance'],'success');
  assert.equal(eligible(paths('scripts/commercial/reconcile-sbom.mjs')).required['commercial-contracts'],'success');
+ assert.equal(eligible(paths('apps/web/src/components/auth/ProductShell.tsx')).required['source-contracts'],'success');
  assert.equal(eligible(Array.from({length:301},(_,i)=>({path:'docs/a'+i+'.md',status:'A'}))).execution,'full');
 });
 test('current Rule 16 hard-lock prevents targeted execution even with both CI variables enabled',()=>{

@@ -399,31 +399,19 @@ jobs:
       - name: Test WU-LIC-01 exact 44-package 91-asset three-receipt fail-closed qualification
         run: node --test scripts/commercial/build-wu-lic-01-qualification.test.mjs
 
-  test:
+  source-contracts:
+    name: source-contracts
     needs: smart-plan
     if: needs.smart-plan.outputs.mode == 'full'
-    timeout-minutes: 30
     runs-on: ubuntu-24.04
-    services:
-      postgres:
-        image: postgres:16-bookworm
-        env:
-          POSTGRES_USER: therabridge
-          POSTGRES_PASSWORD: ci_only_password
-          POSTGRES_DB: therabridge_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U therabridge -d therabridge_test"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
-    env:
-      DATABASE_URL: postgresql://therabridge:ci_only_password@localhost:5432/therabridge_test?schema=public
+    timeout-minutes: 14
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Verify Smart CI classifier, policy gate and workflow wiring
         run: node --test scripts/ci/smart-ci.test.mjs scripts/ci/smart-ci-workflow.test.mjs
       - name: M5-01 source-only route, role and viewport audit with adversarial tests
@@ -478,6 +466,36 @@ jobs:
         run: node --test scripts/preview/generate-secrets.test.mjs
       - name: M4-02 private hosted scope and workflow safety regressions
         run: node --test scripts/qa/hosted-extra-contracts.test.mjs scripts/qa/hosted-role-guards.test.mjs scripts/qa/hosted-session-guards.test.mjs scripts/qa/hosted-private-workflow.test.mjs scripts/qa/prepare-hosted-run.test.mjs scripts/qa/hosted-render-attestation.test.mjs
+
+  test:
+    needs: smart-plan
+    if: needs.smart-plan.outputs.mode == 'full'
+    timeout-minutes: 30
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16-bookworm
+        env:
+          POSTGRES_USER: therabridge
+          POSTGRES_PASSWORD: ci_only_password
+          POSTGRES_DB: therabridge_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U therabridge -d therabridge_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://therabridge:ci_only_password@localhost:5432/therabridge_test?schema=public
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
       - run: yarn install --frozen-lockfile
       - name: M4-02 private QA runtime redaction and fail-closed tests
         run: node --test scripts/qa/hosted-extra-runtime.test.mjs
@@ -592,6 +610,13 @@ jobs:
           node scripts/qa/check-ci-test-inventory.mjs
           node --test scripts/qa/check-ci-test-inventory.test.mjs
       - run: yarn workspace @therabridge/api build
+      - name: Cache untrusted Next.js compiler intermediates (test)
+        uses: actions/cache@v4
+        with:
+          path: apps/web/.next/cache
+          key: tb-next-v2-${{ runner.os }}-${{ runner.arch }}-test-${{ hashFiles('yarn.lock') }}-${{ hashFiles('apps/web/src/**', 'apps/web/package.json', 'apps/web/next.config.*') }}
+          restore-keys: |
+            tb-next-v2-${{ runner.os }}-${{ runner.arch }}-test-${{ hashFiles('yarn.lock') }}-
       - run: yarn workspace @therabridge/web build
       - name: M2-H06 frontend timezone, CSRF, shared session and response-header regression
         run: node --test scripts/qa/m2-h06-frontend.test.mjs
@@ -657,6 +682,13 @@ jobs:
       - run: yarn workspace @therabridge/api prisma generate
       - run: yarn workspace @therabridge/api prisma migrate deploy
       - run: yarn workspace @therabridge/api build
+      - name: Cache untrusted Next.js compiler intermediates (live-session)
+        uses: actions/cache@v4
+        with:
+          path: apps/web/.next/cache
+          key: tb-next-v2-${{ runner.os }}-${{ runner.arch }}-live-session-${{ hashFiles('yarn.lock') }}-${{ hashFiles('apps/web/src/**', 'apps/web/package.json', 'apps/web/next.config.*') }}
+          restore-keys: |
+            tb-next-v2-${{ runner.os }}-${{ runner.arch }}-live-session-${{ hashFiles('yarn.lock') }}-
       - run: yarn workspace @therabridge/web build
       # Cache only downloaded public Chromium binaries. Playwright still checks
       # the lockfile-pinned revision and installs system dependencies every run.
@@ -707,6 +739,13 @@ jobs:
       - run: yarn workspace @therabridge/api prisma migrate deploy
       - run: yarn workspace @therabridge/api typecheck
       - run: yarn workspace @therabridge/api build
+      - name: Cache untrusted Next.js compiler intermediates (demo-journey)
+        uses: actions/cache@v4
+        with:
+          path: apps/web/.next/cache
+          key: tb-next-v2-${{ runner.os }}-${{ runner.arch }}-demo-journey-${{ hashFiles('yarn.lock') }}-${{ hashFiles('apps/web/src/**', 'apps/web/package.json', 'apps/web/next.config.*') }}
+          restore-keys: |
+            tb-next-v2-${{ runner.os }}-${{ runner.arch }}-demo-journey-${{ hashFiles('yarn.lock') }}-
       - run: yarn workspace @therabridge/web build
       # Cache only downloaded public Chromium binaries. Playwright still checks
       # the lockfile-pinned revision and installs system dependencies every run.
@@ -768,6 +807,13 @@ jobs:
       - name: M5-05 synthetic receipt adversarial regression
         run: node --test scripts/design/m5-child360-browser.test.mjs
       - run: yarn workspace @therabridge/api build
+      - name: Cache untrusted Next.js compiler intermediates (m5-child360-browser)
+        uses: actions/cache@v4
+        with:
+          path: apps/web/.next/cache
+          key: tb-next-v2-${{ runner.os }}-${{ runner.arch }}-m5-child360-browser-${{ hashFiles('yarn.lock') }}-${{ hashFiles('apps/web/src/**', 'apps/web/package.json', 'apps/web/next.config.*') }}
+          restore-keys: |
+            tb-next-v2-${{ runner.os }}-${{ runner.arch }}-m5-child360-browser-${{ hashFiles('yarn.lock') }}-
       - run: yarn workspace @therabridge/web build
       # Cache only downloaded public Chromium binaries. Playwright still checks
       # the lockfile-pinned revision and installs system dependencies every run.
@@ -956,6 +1002,7 @@ jobs:
       - sbom
       - commercial-provenance
       - commercial-contracts
+      - source-contracts
       - test
       - live-session
       - demo-journey

@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 const yaml=readFileSync('.github/workflows/ci.yml','utf8');
 
 test('all original six checks plus required commercial job are preserved and verifier is always scheduled',()=>{
- for(const name of ['secret-scan','commercial-provenance','commercial-contracts','test','live-session','demo-journey','compose','preview-container'])
+ for(const name of ['secret-scan','commercial-provenance','commercial-contracts','source-contracts','test','live-session','demo-journey','compose','preview-container'])
   assert.match(yaml,new RegExp('^  '+name+':','m'),name);
  assert.match(yaml,/^  smart-plan:/m);
  assert.match(yaml,/^  smart-targeted:/m);
@@ -25,7 +25,7 @@ test('secret scan remains unconditional and full workloads are conditional',()=>
 });
 test('always-running gate accounts for all possible worker jobs',()=>{
  const gate=yaml.slice(yaml.indexOf('\n  smart-ci-gate:'));
- for(const name of ['smart-plan','secret-scan','commercial-provenance','commercial-contracts','test','live-session','demo-journey',
+ for(const name of ['smart-plan','secret-scan','commercial-provenance','commercial-contracts','source-contracts','test','live-session','demo-journey',
    'compose','preview-container','smart-targeted','sbom','m5-child360-browser'])
   assert.match(gate,new RegExp('^      - '+name+'$','m'));
  assert.match(gate,/run: node scripts\/ci\/smart-ci-gate\.mjs/);
@@ -64,4 +64,48 @@ test('independent commercial contract shard is required and all offline checks a
  assert.match(producer,/Batch reconcile WU-LIC-01/);
  assert.match(checks,/if: needs\.smart-plan\.outputs\.mode == 'full'/);
  assert.match(yaml,/^      - commercial-contracts$/m);
+});
+
+test('Next.js cache never substitutes for exact-head builds or crosses CI job environments',()=>{
+ const jobs=['test','live-session','demo-journey','m5-child360-browser'];
+ for(let i=0;i<jobs.length;i++){
+  const begin=yaml.indexOf('\n  '+jobs[i]+':');
+  const next= i+1<jobs.length ? yaml.indexOf('\n  '+jobs[i+1]+':',begin+1) :
+   yaml.indexOf('\n  compose:',begin+1);
+  assert(begin>=0&&next>begin);
+  const section=yaml.slice(begin,next);
+  assert.match(section,/path: apps\/web\/\.next\/cache/);
+  assert.match(section,/tb-next-v2-/);
+  assert.match(section,/hashFiles\('yarn\.lock'\) \}\}-\$\{\{ hashFiles\('apps\/web\/src\/\*\*'/);
+  assert.match(section,/restore-keys: \|/);
+  assert.doesNotMatch(section,/path: apps\/web\/\.next\/(?:standalone|server|static)/);
+  assert.match(section,new RegExp('tb-next-v2-\\$\\{\\{ runner\\.os \\}\\}-\\$\\{\\{ runner\\.arch \\}\\}-'+jobs[i].replace(/[-]/g,'\\$&')));
+  assert.match(section,/run: yarn workspace @therabridge\/web build/);
+  assert.doesNotMatch(section,/path: apps\/web\/\.next(?:\/standalone|\/server)?\s*$/m);
+ }
+ assert.equal((yaml.match(/name: Cache untrusted Next\.js compiler intermediates/g)||[]).length,4);
+});
+
+test('source-only architecture and governance validation runs as independently required full job',()=>{
+ const source=yaml.slice(yaml.indexOf('\n  source-contracts:'),yaml.indexOf('\n  test:'));
+ const runtime=yaml.slice(yaml.indexOf('\n  test:'),yaml.indexOf('\n  live-session:'));
+ assert.match(source,/needs: smart-plan/);
+ assert.match(source,/if: needs\.smart-plan\.outputs\.mode == 'full'/);
+ for(const anchor of [
+  'Verify Smart CI classifier, policy gate and workflow wiring',
+  'M5-01 source-only route',
+  'M5-02 canonical 66/91',
+  'Archive M5-01 source-only audit receipt',
+  'M4-09 historical issue evidence register',
+  'M4-03 independent credential generator and recovery tests',
+  'M4-02 private hosted scope and workflow safety regressions'
+ ]) {
+   assert(source.includes(anchor),'original source validation lost: '+anchor);
+   assert(!runtime.includes(anchor),'source validation unexpectedly serial in test: '+anchor);
+ }
+ assert.match(runtime,/yarn install --frozen-lockfile/);
+ assert.match(runtime,/run: yarn workspace @therabridge\/api typecheck/);
+ assert.match(runtime,/Generate genuine full-scope Web Istanbul coverage/);
+ assert.match(runtime,/run: yarn workspace @therabridge\/web build/);
+ assert.match(yaml,/^      - source-contracts$/m);
 });
