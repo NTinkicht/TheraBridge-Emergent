@@ -21,6 +21,9 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
   const [form, setForm] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [rejecting, setRejecting] = useState<string | null>(null);
@@ -33,15 +36,33 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
     setLoading(true);
     setError('');
     activityMediaDrafts.list(centerId, templateId).then(result => {
-      if (active) setItems(result.items);
+      if (active) { setItems(result.items); setNextCursor(result.nextCursor); setHasMore(result.hasMore); }
     }).catch(() => {
       if (active) setError('Could not load illustration proposals. Try reopening this panel.');
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [open, base]);
 
+  const loadMore = async () => {
+    if (loading || loadingMore || busy || !nextCursor || !hasMore) return;
+    const cursor = nextCursor;
+    setLoadingMore(true); setError('');
+    try {
+      const result = await activityMediaDrafts.list(centerId, templateId, cursor);
+      // Older pages never overwrite newer saved proposals or rejection states.
+      setItems(previous => {
+        const seen = new Set(previous.map(item => item.id));
+        return [...previous, ...result.items.filter(item => !seen.has(item.id))];
+      });
+      setNextCursor(result.nextCursor);
+      setHasMore(result.hasMore);
+    } catch {
+      setError('Older proposals could not be loaded. Retry without losing the visible history.');
+    } finally { setLoadingMore(false); }
+  };
+
   const submit = async () => {
-    if (!templateVersion || busy || loading) return;
+    if (!templateVersion || busy || loading || loadingMore) return;
     setBusy(true); setError(''); setNotice('');
     try {
       const saved = await activityMediaDrafts.propose(centerId, templateId, { ...form, templateVersion,
@@ -55,7 +76,7 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
   };
 
   const reject = async (draft: Draft) => {
-    if (busy || reason.trim().length < 8) return;
+    if (busy || loading || loadingMore || reason.trim().length < 8) return;
     setBusy(true); setError(''); setNotice('');
     try {
       const result = await activityMediaDrafts.reject(centerId, templateId, draft.id, draft.version, reason.trim());
@@ -102,7 +123,7 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
         <div className="sm:col-span-2">{field('altText', 'Proposed accessible description', 'Describe the action and relevant materials')}</div>
         {form.sourceType === 'GENERATED' && <div className="sm:col-span-2">{field('providerTerms', 'Provider commercial terms evidence', 'Required for AI-generated proposals')}</div>}
       </div>
-      <Button onClick={() => void submit()} disabled={busy || loading || !templateVersion || form.styleVersion.trim().length < 4 ||
+      <Button onClick={() => void submit()} disabled={busy || loading || loadingMore || !templateVersion || form.styleVersion.trim().length < 4 ||
         form.sceneType.trim().length < 3 || form.license.trim().length < 4 ||
         form.sourceReference.trim().length < 8 || form.altText.trim().length < 10 ||
         (form.sourceType === 'GENERATED' && form.providerTerms.trim().length === 0)}>
@@ -123,12 +144,16 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
               <label className="block font-medium">Reason for rejection
                 <textarea className={cls + ' mt-1'} rows={2} maxLength={500} value={reason} onChange={e => setReason(e.target.value)} />
               </label>
-              <div className="flex flex-wrap gap-2"><Button variant="danger" size="sm" disabled={busy || reason.trim().length < 8} onClick={() => void reject(draft)}>Record rejection</Button>
+              <div className="flex flex-wrap gap-2"><Button variant="danger" size="sm" disabled={busy || loading || loadingMore || reason.trim().length < 8} onClick={() => void reject(draft)}>Record rejection</Button>
                 <Button variant="secondary" size="sm" onClick={() => { setRejecting(null); setReason(''); }}>Cancel</Button></div>
             </div> : <Button variant="secondary" size="sm" onClick={() => { setRejecting(draft.id); setReason(''); }}>Reject draft</Button>}
           </div>}
         </li>)}</ul>}
-      <p className="text-xs text-brand-inkMuted">Latest 100 drafts only. Never treat a proposal as an approved, uploaded or released asset.</p>
+      {hasMore && <Button variant="secondary" size="sm" disabled={busy || loading || loadingMore}
+        onClick={() => void loadMore()} data-testid={`media-drafts-more-${templateId}`}>
+        {loadingMore ? 'Loading older proposals…' : 'Load older proposals'}
+      </Button>}
+      <p className="text-xs text-brand-inkMuted">Showing {items.length}{hasMore ? '+' : ''} proposals. Every historical draft remains accessible by loading older pages. Proposals are never approved, uploaded or released assets.</p>
     </Card>}
   </section>;
 }
