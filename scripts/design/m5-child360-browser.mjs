@@ -19,6 +19,7 @@ export function validateChild360Receipt(receipt) {
       receipt?.accessibilityApproval !== 'NOT_OBTAINED' ||
       receipt?.observations !== 15 || receipt?.personas !== 3 ||
       receipt?.deniedRoles !== 1 || receipt?.navigationFailures !== 0 ||
+      receipt?.slowLoads !== 15 || receipt?.failuresRecovered !== 15 ||
       Object.keys(receipt).some(k => /password|cookie|token|email|childId|content|text|html/i.test(k)))
     throw new Error('M5-05 evidence missing, sensitive, or falsely approved');
   return true;
@@ -140,6 +141,86 @@ export async function runChild360BrowserAcceptance({ passwords }) {
         }
       } finally {await context.close();}
     }
+    // M5-05 R2: isolate slow loading and failure/recovery in the same
+    // in-memory synthetic server. Browser interception changes GET responses
+    // only; no clinical write is attempted, and no payload enters evidence.
+    const workspaceRequest = request => {
+      const url = new URL(request.url());
+      return request.method() === 'GET' &&
+        url.pathname.split('/').length === 7 &&
+        url.pathname.split('/')[1] === 'api' &&
+        url.pathname.split('/')[2] === 'centers' &&
+        url.pathname.split('/')[3].length > 0 &&
+        url.pathname.split('/')[4] === 'clinical' &&
+        url.pathname.split('/')[5] === 'children' &&
+        url.pathname.split('/')[6].length > 0 &&
+        url.searchParams.get('planOffset') === '0' &&
+        url.searchParams.get('assessmentOffset') === '0';
+    };
+    let slowLoads = 0, failuresRecovered = 0;
+    for (const [email, role] of personas) {
+      const context = await browser.newContext({viewport:{width:390,height:850},reducedMotion:'reduce'});
+      try {
+        const page = await context.newPage();
+        await login(page,email);
+        // A new route invocation is needed for each width. Running the
+        // sequence for every clinical persona exercises responsive skeleton,
+        // blocked error and explicit retry without relying on setTimeout(200).
+        for (const width of widths) {
+          await page.setViewportSize({width,height:850});
+          let intercepted = 0;
+          // Synchronize with the actual network interception rather than a
+          // wall-clock timeout; slow CI runners cannot race this pending GET.
+          let notifyIntercept;
+          let releaseResponse;
+          const requestCaptured = new Promise(resolve => { notifyIntercept = resolve; });
+          const responseGate = new Promise(resolve => { releaseResponse = resolve; });
+          await page.route('**/api/centers/**', async route => {
+            if (!workspaceRequest(route.request())) return route.continue();
+            intercepted++;
+            if (intercepted === 1) {
+              notifyIntercept();
+              await responseGate;
+              return route.continue();
+            }
+            if (intercepted === 2) {
+              return route.fulfill({status:503, contentType:'application/json',
+                body:JSON.stringify({message:'Synthetic temporary outage'})});
+            }
+            return route.continue();
+          });
+          // First load is deliberately held to prove loading remains visible
+          // and clinical content does not appear before authorization arrives.
+          try {
+            await page.goto(clinical,{waitUntil:'domcontentloaded'});
+            await requestCaptured;
+            await page.getByTestId('clinical-loading').waitFor({state:'visible'});
+            assert.equal(await page.getByRole('tablist',{name:'Child 360 sections'}).count(),0,
+              'No sensitive tab panel while scoped workspace GET is pending');
+          } finally {
+            releaseResponse();
+          }
+          await page.getByTestId('clinical-tab-overview').waitFor({state:'visible'});
+          slowLoads++;
+          // A fresh route mount forces the next scoped workspace request to
+          // return 503, ensuring an actual failed-fetch ErrorState is rendered.
+          await page.reload({waitUntil:'domcontentloaded'});
+          await page.getByTestId('clinical-error').waitFor({state:'visible'});
+          assert.equal(await page.getByRole('tablist',{name:'Child 360 sections'}).count(),0,
+            'Failed workspace must not reveal stale clinical panels');
+          const retry = page.getByTestId('clinical-error-retry');
+          await retry.click();
+          await page.getByTestId('clinical-tab-overview').waitFor({state:'visible'});
+          assert.equal(await page.getByTestId('clinical-error').count(),0,
+            'Successful retry must clear the error state');
+          assert.equal(await page.getByTestId('clinical-synthetic-banner').count(),1);
+          assert.equal(await page.getByRole('tablist',{name:'Child 360 sections'}).getByRole('tab').count(),5);
+          assert.equal(intercepted,3,'Slow, failed, and retried requests must all occur');
+          failuresRecovered++;
+          await page.unroute('**/api/centers/**');
+        }
+      } finally { await context.close(); }
+    }
     // Nonclinical coordinator must not see a clinical workspace or any five-tab shell.
     const denyContext=await browser.newContext();
     try {
@@ -155,6 +236,7 @@ export async function runChild360BrowserAcceptance({ passwords }) {
       featureFlag:'ENABLED_CI_ONLY',clinicalGate:'NO_GO_G2_G2b',
       humanUsabilityApproval:'NOT_OBTAINED',accessibilityApproval:'NOT_OBTAINED',
       personas:personas.length,observations,deniedRoles:1,navigationFailures:0,
+      slowLoads,failuresRecovered,
     });
     validateChild360Receipt(receipt);
     console.log('M5-05 flagged synthetic-browser receipt:', JSON.stringify(receipt));
