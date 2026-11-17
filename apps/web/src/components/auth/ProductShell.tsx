@@ -190,7 +190,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
               active={active === n.key} family={family} compact testId={`nav-${n.key}`} />
           )) : visibleGroups.map((group) => (
             <details key={contextId + ':' + (ctx?.role ?? '') + ':' + group.key}
-              open={expandedGroups[group.key] ?? (group.key === 'workspace' || group.items.some(n => n.key === active))}
+              open={searchTerm ? true : (expandedGroups[group.key] ?? (group.key === 'workspace' || group.items.some(n => n.key === active)))}
               onToggle={(event) => {
                 const expanded = event.currentTarget.open;
                 setExpandedGroups(previous => previous[group.key] === expanded ? previous : { ...previous, [group.key]: expanded });
