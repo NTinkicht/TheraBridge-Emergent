@@ -122,7 +122,7 @@ export function CompactTable({ columns, rows, caption, tone = 'clinical', emptyM
         </div>)}</dl>
       </li>) : <li className="p-4 text-center text-sm">{emptyMessage}</li>}
     </ul>}
-    <div tabIndex={mobileCards ? 0 : undefined} aria-label={mobileCards ? `${caption} (scroll horizontally)` : undefined} className={`max-w-full overflow-x-auto ${mobileCards ? 'hidden sm:block' : ''}`}>
+    <div tabIndex={mobileCards ? 0 : undefined} aria-label={mobileCards ? `${caption} (scroll horizontally)` : undefined} className={mobileCards ? 'hidden max-w-full overflow-x-auto sm:block' : ''}>
     <table className="w-full min-w-[480px] border-collapse text-left text-sm">
       <caption className="sr-only">{caption}</caption>
       <thead className={family ? 'bg-fam-tile' : 'bg-surface-subtle'}>
