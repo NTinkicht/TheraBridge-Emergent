@@ -367,31 +367,19 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  test:
+  source-contracts:
+    name: source-contracts
     needs: smart-plan
     if: needs.smart-plan.outputs.mode == 'full'
-    timeout-minutes: 30
     runs-on: ubuntu-24.04
-    services:
-      postgres:
-        image: postgres:16-bookworm
-        env:
-          POSTGRES_USER: therabridge
-          POSTGRES_PASSWORD: ci_only_password
-          POSTGRES_DB: therabridge_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U therabridge -d therabridge_test"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
-    env:
-      DATABASE_URL: postgresql://therabridge:ci_only_password@localhost:5432/therabridge_test?schema=public
+    timeout-minutes: 14
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Verify Smart CI classifier, policy gate and workflow wiring
         run: node --test scripts/ci/smart-ci.test.mjs scripts/ci/smart-ci-workflow.test.mjs
       - name: M5-01 source-only route, role and viewport audit with adversarial tests
@@ -446,6 +434,36 @@ jobs:
         run: node --test scripts/preview/generate-secrets.test.mjs
       - name: M4-02 private hosted scope and workflow safety regressions
         run: node --test scripts/qa/hosted-extra-contracts.test.mjs scripts/qa/hosted-role-guards.test.mjs scripts/qa/hosted-session-guards.test.mjs scripts/qa/hosted-private-workflow.test.mjs scripts/qa/prepare-hosted-run.test.mjs scripts/qa/hosted-render-attestation.test.mjs
+
+  test:
+    needs: smart-plan
+    if: needs.smart-plan.outputs.mode == 'full'
+    timeout-minutes: 30
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16-bookworm
+        env:
+          POSTGRES_USER: therabridge
+          POSTGRES_PASSWORD: ci_only_password
+          POSTGRES_DB: therabridge_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U therabridge -d therabridge_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://therabridge:ci_only_password@localhost:5432/therabridge_test?schema=public
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
       - run: yarn install --frozen-lockfile
       - name: M4-02 private QA runtime redaction and fail-closed tests
         run: node --test scripts/qa/hosted-extra-runtime.test.mjs
@@ -963,6 +981,7 @@ jobs:
       - secret-scan
       - sbom
       - commercial-provenance
+      - source-contracts
       - test
       - live-session
       - demo-journey
