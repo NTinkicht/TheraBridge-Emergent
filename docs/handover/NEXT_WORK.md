@@ -1,3 +1,6 @@
+## 2026-11-18 — WU4-B P2 media history pagination
+Complete real private byte-ingestion, malware/format/dimension/hash validation, derivatives, rights attestation and immutable approved snapshots; page history now available via cursor. Final-head CI and independent Codex review required.
+
 ## 2026-11-18 — WU4-B / M5-14 activity media drafts
 WU4-B requires private binary ingestion/validation, checksum/derivatives, human approval and immutable assets before M5-14 can close. Independent exact-head reviews and manual acceptance pending.
 

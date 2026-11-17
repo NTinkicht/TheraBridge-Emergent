@@ -1,3 +1,6 @@
+## 2026-11-18 — WU4-B P2 media history pagination
+M5-14 metadata draft registry now supports bounded cursor paging for all historical proposals and rights records; no real storage, asset approval or publication. G2/G2b fail-closed.
+
 ## 2026-11-18 — WU4-B / M5-14 activity media drafts
 PR #434 adds a metadata-only media proposal registry, tenant-scoped rights metadata, revision checks and audit log. No storage adapter, approved bytes, clinical/guardian publishing or governance activation. P1 reviewer specialty and role alignment corrected; requalification pending.
 

@@ -1,3 +1,6 @@
+## 2026-11-18 — WU4-B P2 media history pagination
+Codex P2 pagination disposition FIX_NOW: new validated UUID cursor and 1–100 bounded limit, scoped cursor lookup, createdAt/id ordering, nextCursor and hasMore; no hidden historical rights metadata. Added >100-item and negative cursor tests.
+
 ## 2026-11-18 — WU4-B / M5-14 activity media drafts
 WU4-B implemented Prisma migration, typed NestJS endpoints and service with active role/tenant/specialty checks (including revocation and supervisor parity), immutable proposal metadata and optimistic rejection. Added negative unit regression tests.
 
