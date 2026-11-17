@@ -34,7 +34,7 @@ const kid=(more={})=>({
 });
 const family=(children=[kid()])=>({center:{name:'Fictional Center',timezone:'Asia/Dubai'},children});
 let tree=null,onError;
-const mount=async()=>act(async()=>{tree=create(h(FamilyHome,{centerId:'fictional-center',onError}));
+const mount=async(permissions)=>act(async()=>{tree=create(h(FamilyHome,{centerId:'fictional-center',onError,permissions}));
  await Promise.resolve();await Promise.resolve();});
 const find=id=>tree.root.findAllByProps({'data-testid':id});
 const get=id=>tree.root.findByProps({'data-testid':id});
@@ -189,4 +189,28 @@ describe('M4-08 real family-home branch qualification honors private child/visit
   expect(opsApi.setReminders).toHaveBeenCalledWith('fictional-center','child-a',true);
 
  });
+ it('permission-scoped family quick tasks never surface ungranted navigation or fetch messages',async()=>{
+  await mount(['family.portal.read']);
+  expect(find('family-quick-practice')).toHaveLength(0);
+  expect(find('family-quick-documents')).toHaveLength(0);
+  expect(find('family-messages-link')).toHaveLength(0);
+  expect(messagesApi.list).not.toHaveBeenCalled();
+ });
+ it('family light/dark selection uses the prepaint auto theme instead of forcing light',async()=>{
+  await mount(['family.portal.read','center.messages.use']);
+  expect(get('family-home').props.className).toContain('theme-family-auto');
+  expect(get('family-home').props.className).not.toContain('theme-family-light');
+  expect(get('family-quick-tasks')).toBeTruthy();
+ });
+ it('revoked family projection removes formerly visible child and sibling switcher',async()=>{
+  mockData=family([kid(),kid({id:'child-b'})]);await mount();
+  await click('family-switch-child-b');
+  expect(get('family-child-child-b')).toBeTruthy();
+  mockData=family([]);
+  await act(async()=>tree.update(h(FamilyHome,{centerId:'fictional-center',onError})));
+  expect(find('family-child-child-b')).toHaveLength(0);
+  expect(find('family-sibling-switcher')).toHaveLength(0);
+  expect(get('family-empty')).toBeTruthy();
+ });
+
 });
