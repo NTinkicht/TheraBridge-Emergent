@@ -70,7 +70,7 @@ function verifyCurrentRoot(queue,lockText,source,archive,{pins=pinned}={}){
   g2ClinicalApproved:false,g2bClinicalApproved:false};
 }
 async function getBytes(url,max=16*1024*1024){
- if(!['raw.githubusercontent.com','registry.npmjs.org'].includes(url.hostname)||
+ if(!['raw.githubusercontent.com','registry.npmjs.org','registry.yarnpkg.com'].includes(url.hostname)||
     url.protocol!=='https:'||url.username||url.password||url.port)fail('NOT_ALLOWLISTED');
  return new Promise((resolve,reject)=>{
   const req=https.get(url,{timeout:12000,headers:{'user-agent':'TheraBridge-COM02-405/1.0'}},res=>{
