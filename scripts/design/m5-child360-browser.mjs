@@ -147,7 +147,13 @@ export async function runChild360BrowserAcceptance({ passwords }) {
     const workspaceRequest = request => {
       const url = new URL(request.url());
       return request.method() === 'GET' &&
-        /^\\/api\\/centers\\/[^/]+\\/clinical\\/children\\/[^/]+$/.test(url.pathname) &&
+        url.pathname.split('/').length === 7 &&
+        url.pathname.split('/')[1] === 'api' &&
+        url.pathname.split('/')[2] === 'centers' &&
+        url.pathname.split('/')[3].length > 0 &&
+        url.pathname.split('/')[4] === 'clinical' &&
+        url.pathname.split('/')[5] === 'children' &&
+        url.pathname.split('/')[6].length > 0 &&
         url.searchParams.get('planOffset') === '0' &&
         url.searchParams.get('assessmentOffset') === '0';
     };
