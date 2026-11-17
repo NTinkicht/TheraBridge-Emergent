@@ -11,7 +11,7 @@ const root=(name,version,sha)=>({name,version,group:'SOURCE_ROOT_MANIFEST_ONLY',
  enterpriseRedistributionRights:'PENDING_COUNSEL_REVIEW'});
 function fixtures(){
  const a='a'.repeat(64),names=Object.entries(GROUPS).flatMap(([g,n])=>
-  Array.from({length:n},(_,i)=>({...root('sample-'+g+'-'+i,'1.0.0',a),group:g})));
+  Array.from({length:n},(_,i)=>({...root((g==='DEFINITELYTYPED_HISTORICAL_RELEASE'?'@types/':'sample-')+g+'-'+i,'1.0.0',a),group:g})));
  names.find(x=>x.group==='SOURCE_ROOT_MANIFEST_ONLY'&&x.name.includes('-0')).name='unicode-emoji-modifier-base';
  names.find(x=>x.group==='SOURCE_ROOT_MANIFEST_ONLY'&&x.name.includes('-1')).name='@tokenizer/token';
  const e=names.find(x=>x.name==='unicode-emoji-modifier-base');
