@@ -34,21 +34,22 @@ function Visit({ a, past }: { a: FamilyVisit; past?: boolean }) {
   );
 }
 
-function Reminders({ centerId, kid, onError, onSaved }: { centerId: string; kid: Kid; onError: (e: unknown) => void; onSaved: (id: string, enabled: boolean) => void }) {
-  const [on, setOn] = useState(kid.remindersEnabled);
-  const [busy, setBusy] = useState(false);
+function Reminders({ centerId, kid, onError, onSaved, busy, onBusy }: { centerId: string; kid: Kid; onError: (e: unknown) => void; onSaved: (id: string, enabled: boolean) => void; busy: boolean; onBusy: (id: string, busy: boolean) => void }) {
+  // The parent owns server-confirmed state and pending operations across sibling switches.
+  const on = kid.remindersEnabled;
   const [err, setErr] = useState(false);
   const toggle = async () => {
-    setBusy(true);
+    if (busy) return;
+    onBusy(kid.id, true);
     setErr(false);
     try {
       const saved = (await opsApi.setReminders(centerId, kid.id, !on)).remindersEnabled;
-      setOn(saved); onSaved(kid.id, saved);
+      onSaved(kid.id, saved);
     } catch (e) {
       setErr(true);
       try { onError(e); } catch { /* shown inline */ }
     } finally {
-      setBusy(false);
+      onBusy(kid.id, false);
     }
   };
   return (
@@ -64,7 +65,7 @@ function Reminders({ centerId, kid, onError, onSaved }: { centerId: string; kid:
   );
 }
 
-function ChildCard({ centerId, centerName, kid, onError, onReminderSaved }: { centerId: string; centerName: string; kid: Kid; onError: (e: unknown) => void; onReminderSaved: (id: string, enabled: boolean) => void }) {
+function ChildCard({ centerId, centerName, kid, onError, onReminderSaved, reminderBusy, onReminderBusy }: { centerId: string; centerName: string; kid: Kid; onError: (e: unknown) => void; onReminderSaved: (id: string, enabled: boolean) => void; reminderBusy: boolean; onReminderBusy: (id: string, busy: boolean) => void }) {
   const [showAll, setShowAll] = useState(false);
   const [allUp, setAllUp] = useState(false);
   const history = showAll ? kid.history : kid.history.slice(0, 4);
@@ -111,7 +112,7 @@ function ChildCard({ centerId, centerName, kid, onError, onReminderSaved }: { ce
             </ul>
           ) : <p className="mt-2 text-[14px] text-fam-muted">Your care team will appear here once assigned.</p>}
         </section>
-        <section className="space-y-3 self-start"><Reminders centerId={centerId} kid={kid} onError={onError} onSaved={onReminderSaved} /></section>
+        <section className="space-y-3 self-start"><Reminders centerId={centerId} kid={kid} onError={onError} onSaved={onReminderSaved} busy={reminderBusy} onBusy={onReminderBusy} /></section>
       </div>
       </DisclosureSection>
     </Card>
@@ -129,6 +130,12 @@ function ScopedFamilyHome({ centerId, onError, permissions }: { centerId: string
   const [unread, setUnread] = useState(0);
   const [chosen, setChosen] = useState('');
   const [reminderValues, setReminderValues] = useState<Record<string, boolean>>({});
+  const [pendingReminders, setPendingReminders] = useState<ReadonlySet<string>>(() => new Set());
+  const markPending = (id: string, busy: boolean) => setPendingReminders(previous => {
+    const next = new Set(previous);
+    if (busy) next.add(id); else next.delete(id);
+    return next;
+  });
   const can = (permission: string) => permissions === undefined || permissions.includes(permission);
   const selected = data?.children.find(child => child.id === chosen) ?? data?.children[0];
   useEffect(() => {
@@ -180,7 +187,8 @@ function ScopedFamilyHome({ centerId, onError, permissions }: { centerId: string
       </Link>}
       {selected && <ChildCard key={selected.id} centerId={centerId} centerName={data.center.name}
         kid={{ ...selected, remindersEnabled: reminderValues[selected.id] ?? selected.remindersEnabled }}
-        onReminderSaved={(id, enabled) => setReminderValues(prev => ({ ...prev, [id]: enabled }))} onError={onError} />}
+        onReminderSaved={(id, enabled) => setReminderValues(prev => ({ ...prev, [id]: enabled }))}
+        reminderBusy={pendingReminders.has(selected.id)} onReminderBusy={markPending} onError={onError} />}
     </div>
   );
 }
