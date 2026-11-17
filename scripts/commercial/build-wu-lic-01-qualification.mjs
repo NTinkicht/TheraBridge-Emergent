@@ -13,7 +13,7 @@ const GROUPS=Object.freeze({
  LEGACY_REPO_ORIGIN_UNTRUSTED:3
 });
 const fail=s=>{throw Error('WU_LIC_01_'+s)};
-function qualify(ledger,emoji,tokenizer){
+function qualify(ledger,emoji,tokenizer,comparison){
  if(ledger?.schema!=='therabridge-com02-exhaustive-closure-evidence-v1'||
     ledger.status!=='NOT_LEGALLY_OR_TECHNICALLY_CLEARED_FOR_COMMERCIAL_RELEASE'||
     ledger.counts?.npmExceptionVersions!==44||
@@ -72,6 +72,46 @@ function qualify(ledger,emoji,tokenizer){
   if(row.length!==1||row[0].group!=='SOURCE_ROOT_MANIFEST_ONLY'||
      row[0].publisherTarballSha256!==sha)fail('RECEIPT_NOT_IN_EXACT_LOCK');
  }
+ // Bind every historical-root claim to the same-run exact archived comparison.
+ // The 10th emoji observation is additive and independently revalidated above.
+ if(comparison?.schema!=='therabridge-com02-nondt-published-manifest-byte-comparison-v1'||
+    comparison.status!=='CANDIDATE_SOURCE_MANIFEST_COMPARISON_NOT_PUBLISHER_ATTESTATION'||
+    comparison.commercialApproval!==false||comparison.g2ClinicalApproved!==false||
+    comparison.g2bClinicalApproved!==false||
+    comparison.counts?.sourceRootCandidates!==10||
+    comparison.counts?.sourceRootsWithFrozenObservations!==9||
+    comparison.counts?.allNonDT!==23||comparison.counts?.publisherToSourceAttested!==0||
+    comparison.counts?.legallyApproved!==0||comparison.records?.length!==10)
+    fail('UNTRUSTED_SAME_RUN_ROOT_COMPARISON');
+ const comparisonIds=new Set(),statuses={};
+ for(const r of comparison.records){
+  const id=JSON.stringify([r?.name,r?.version]);
+  if(comparisonIds.has(id)||!packageIds.has(id)||
+     ledger.packages.filter(p=>p.name===r.name&&p.version===r.version&&p.group==='SOURCE_ROOT_MANIFEST_ONLY').length!==1||
+     r.publicationToSourceIndependentlyAttested!==false||
+     r.legalApproval!==false||r.commercialApproval!==false)fail('UNTRUSTED_SAME_RUN_ROOT_ROW');
+  comparisonIds.add(id);
+  statuses[r.status]=(statuses[r.status]||0)+1;
+  const ledgerRow=ledger.packages.find(p=>p.name===r.name&&p.version===r.version);
+  if(r.lockedArchiveSha256!==ledgerRow.publisherTarballSha256)fail('SAME_RUN_ARCHIVE_DRIFT');
+ }
+ const matched=statuses.PUBLISHED_MANIFEST_BYTES_MATCH_IMMUTABLE_SOURCE_UNATTESTED||0;
+ const differed=statuses.PUBLISHED_MANIFEST_BYTES_DIFFER_FROM_IMMUTABLE_SOURCE||0;
+ const pending=statuses.SOURCE_OBSERVATION_PENDING_CURRENT_LOCKED_PACKAGE||0;
+ const unavailable=comparison.records.filter(r=>r.status.startsWith('UNAVAILABLE')||r.status==='SOURCE_NOT_CORROBORATED_SAME_RUN'||r.status==='SOURCE_OBSERVATION_PENDING_CURRENT_LOCKED_PACKAGE').length;
+ if(matched!==comparison.counts.manifestByteMatches||differed!==comparison.counts.manifestByteDifferences||
+    pending!==comparison.counts.missingSourceObservations||unavailable!==comparison.counts.unavailable||
+    matched!==8||differed!==1||pending!==1||unavailable!==1)
+    fail('INCOMPLETE_OR_DRIFTED_SAME_RUN_ROOT_EVIDENCE');
+ const tokenRow=comparison.records.find(r=>r.name==='@tokenizer/token'&&r.version==='0.3.0');
+ const emojiRow=comparison.records.find(r=>r.name==='unicode-emoji-modifier-base'&&r.version==='1.0.0');
+ if(tokenRow?.status!=='PUBLISHED_MANIFEST_BYTES_DIFFER_FROM_IMMUTABLE_SOURCE'||
+    tokenRow.publishedManifestSha256!==tokenizer.publishedManifestSha256||
+    tokenRow.sourceManifestSha256!==tokenizer.sourceManifestSha256||
+    tokenRow.archiveIntegrityVerified!==true||
+    emojiRow?.status!=='SOURCE_OBSERVATION_PENDING_CURRENT_LOCKED_PACKAGE'||
+    emojiRow.lockedArchiveSha256!==emoji.registryArchiveSha256)
+    fail('ROOT_COMPARISON_RECEIPT_CROSSCHECK_DRIFT');
  if(ledger.editions.some(x=>!['SAAS','ENTERPRISE'].includes(x.edition)||
      x.commercialLicenseGranted!==false||x.signedRegistryPublicationIndependentlyVerified!==false)||
     new Set(ledger.editions.map(x=>x.edition)).size!==2||
@@ -83,9 +123,9 @@ function qualify(ledger,emoji,tokenizer){
  return {
   schema:'therabridge-wu-lic-01-technical-provenance-reconciliation-v1',
   status:'TECHNICAL_TRIAGE_COMPLETE_EXTERNAL_ATTESTATION_AND_RIGHTS_OPEN',
-  evidenceSha256:{closureLedger:digest(ledger),emoji405:digest(emoji),tokenizer402:digest(tokenizer)},
+  evidenceSha256:{closureLedger:digest(ledger),emoji405:digest(emoji),tokenizer402:digest(tokenizer),sameRunRootComparison:digest(comparison)},
   counts:{npmExceptions:44,definitelyTyped:21,nonDefinitelyTyped:23,
-   ...groupCounts,sourceRootManifestsExact:9,sourceRootManifestByteDifferences:1,
+   ...groupCounts,sourceRootManifestsExact:matched+1,sourceRootManifestByteDifferences:differed,
    independentlyAttestedPublisherBuildLineages:0,assetRightsPending:91,
    verifiedCommercialReleaseImages:0},
   remaining:{npmPublisherBuildLineages:'UNVERIFIED_FOR_ALL_44',
@@ -98,13 +138,13 @@ function qualify(ledger,emoji,tokenizer){
 if(process.argv[1]&&import.meta.url===new URL('file://'+process.argv[1]).href){
  try{
   const paths=process.argv.slice(2);
-  if(paths.length!==4||new Set(paths).size!==4)fail('USAGE');
-  const values=paths.slice(0,3).map(p=>{
+  if(paths.length!==5||new Set(paths).size!==5)fail('USAGE');
+  const values=paths.slice(0,4).map(p=>{
    if(statSync(p).size>32*1024*1024)fail('INPUT_LIMIT');
    return JSON.parse(readFileSync(p,'utf8'));
   });
   const result=qualify(...values);
-  writeFileSync(paths[3],JSON.stringify(result,null,2)+'\n',{flag:'wx'});
+  writeFileSync(paths[4],JSON.stringify(result,null,2)+'\n',{flag:'wx'});
   console.log(JSON.stringify(result.counts));
  }catch(e){console.error('WU_LIC_01_BLOCKED',e.message);process.exitCode=1;}
 }
