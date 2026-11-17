@@ -9,7 +9,7 @@ const mockRows=[
 ];
 jest.mock('next/link',()=>({__esModule:true,default:({href,children,...props})=>h('a',{href,...props},children)}));
 jest.mock('@/components/centers/kit',()=>({
- PageTitle:({title})=>h('h1',null,title),
+ PageTitle:({title,body})=>h('div',null,h('h1',null,title),h('p',null,body)),
  Workspace:({children})=>children(mockSession,jest.fn()),
  useLoad:()=>({data:{items:mockRows},failed:false,reload:jest.fn()}),
 }));
