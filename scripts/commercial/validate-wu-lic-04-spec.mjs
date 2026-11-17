@@ -59,7 +59,7 @@ export function validateCommercialSpec(x){
   x.billing.webhook!=='REQUIRES_VERIFIED_SIGNATURE_AND_IDEMPOTENCY')
   fail('PAYMENT_OR_TAX_FALSE_APPROVAL');
  if(!onlyKeys(x.apiContracts,['editionRead','editionUpdate','billingWebhook','enterpriseActivation'])||
-  Object.entries(x.apiContracts).some(([name,api])=>api?.status!=='POST_FREEZE'||!/^\\/api\\/commercial\\//.test(api.path)||!['GET','POST'].includes(api.method)||
+  Object.entries(x.apiContracts).some(([name,api])=>api?.status!=='POST_FREEZE'||!/^\/api\/commercial\//.test(api.path)||!['GET','POST'].includes(api.method)||
    api.auth!==REQUIRED_AUTH[name])||
   !x.apiContracts.editionUpdate.headers.includes('Idempotency-Key')||
   !x.apiContracts.editionUpdate.headers.includes('If-Match')||
