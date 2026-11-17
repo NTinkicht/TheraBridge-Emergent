@@ -1,3 +1,6 @@
+## 2026-11-17 — Phase 2B source-contracts follow-up
+Additional Phase 2B implementation: moved 12 original source-only M5 IA/route, historic integrity, credential/hosted guard and artifact checks out of the serial application test job into independently **required** `source-contracts` full-mode job, with its own full-history checkout. Its Smart CI required-job map, fail-closed gate and frozen suite inventory were updated. Exact original source check commands and their archived evidence were retained. The main application test keeps locked dependency install, Prisma, migration, coverage and production build. Updated-head CI and Codex **PENDING**, no measured speed claim. 
+
 ## 2026-11-17 — CI Phase 2B — isolated Next.js compiler-cache reuse — Implementation checkpoint
 Introduced only apps/web/.next/cache persistence through actions/cache@v4 for full test, live-session, demo-journey and flagged m5-child360-browser jobs. Cache keys are per job, OS/arch and lock/source hash; exact-head yarn web build remains in every job with independent build-time flags. No cached runtime bundle, clinical data or browser test outcome. Cross-environment compiled artifact reuse intentionally NOT ENABLED until equivalence is proven; CI, new-head review and timing verification PENDING. All original required gates remain, G2/G2b NO-GO.
 
