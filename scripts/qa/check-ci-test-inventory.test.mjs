@@ -9,6 +9,7 @@ test('all six exact-head CI jobs remain named and both API/web test runners exis
  assert(x.api_suite_count>=30);
  assert(x.web_suite_count>=2);
  assert.deepEqual(x.six_required_jobs,JOBS);
+ assert.deepEqual(x.additional_required_jobs,['commercial-provenance']);
 });
 test('never claim measured 95% application coverage from suite presence',()=>{
  const x=baseline();
@@ -70,7 +71,7 @@ test('secret scan retains version/checksum/full-history/checkout guard and fail-
  ]) {
   // A preceding job may also checkout full history. Mutate only the scanner.
   const start=workflow.indexOf('\n  secret-scan:\n');
-  const end=workflow.indexOf('\n  test:\n',start);
+  const end=workflow.indexOf('\n  commercial-provenance:\n',start);
   assert(start>=0&&end>start,'scanner job block absent');
   const original=workflow.slice(start,end);
   assert(original.includes(before),'scanner fixture is out of date: '+before);
