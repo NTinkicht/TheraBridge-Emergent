@@ -1,20 +1,22 @@
 'use client';
 
-import { Clock, ShieldCheck } from 'lucide-react';
+import { Activity, Brain, Clock, Hand, MessageCircle, ShieldCheck, Users } from 'lucide-react';
 import { Card, type Tone } from '@/components/design/ui';
-import { serviceLabel } from '@/components/operations/BookDialog';
+import { isRecognizedSpecialty, specialtyDisplayName, specialtyIdentity } from '@/styles/specialty-identity';
 import type { Template } from '@/lib/clinical';
 
 // Step-by-step activity with materials and safety guidance; shared by the staff library, plan preview and family screens.
 export function ActivityCard({ t, tone = 'clinical', extra }: { t: Template; tone?: Tone; extra?: string }) {
   const fam = tone === 'family';
+  const identity = isRecognizedSpecialty(t.service) ? specialtyIdentity(t.service) : null;
+  const Icon = identity ? { 'message-circle': MessageCircle, hand: Hand, brain: Brain, activity: Activity, users: Users }[identity.icon] : null;
   return (
     <Card tone={tone} className="p-5" testId={`activity-${t.id}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className={`${fam ? 'font-display text-[19px]' : 'text-[16px]'} font-semibold`}>{t.title}</h3>
         <span className={`flex items-center gap-1 text-[13px] ${fam ? 'text-fam-muted' : 'text-brand-inkMuted'}`}><Clock size={13} aria-hidden="true" />{t.minutes} min · {t.ageBand}</span>
       </div>
-      <p className={`text-[13px] ${fam ? 'text-fam-muted' : 'text-brand-inkMuted'}`}>{serviceLabel(t.service)}{t.library === 'synthetic' ? ' · synthetic sample library' : ''}{extra ? ` · ${extra}` : ''}</p>
+      <p className={`text-[13px] ${fam ? 'text-fam-muted' : 'text-brand-inkMuted'}`}>{Icon && <Icon size={14} aria-hidden="true" className="inline-block align-[-2px]" />}<span className={Icon ? 'ml-1' : ''}>{specialtyDisplayName(t.service)}</span>{t.library === 'synthetic' ? ' · synthetic sample library' : ''}{extra ? ` · ${extra}` : ''}</p>
       {t.materials.length > 0 && <p className="mt-3 text-[14px]"><span className="font-semibold">You’ll need: </span>{t.materials.join(', ')}</p>}
       <ol className="mt-3 space-y-2" aria-label="Steps">
         {t.steps.map((s, i) => (
