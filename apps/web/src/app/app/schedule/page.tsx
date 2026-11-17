@@ -84,15 +84,27 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
   const from = useMemo(() => zonedToUtc(days[0], '00:00'), [days, tz]); // eslint-disable-line react-hooks/exhaustive-deps
   const to = useMemo(() => zonedToUtc(addDays(days[days.length - 1], 1), '00:00'), [days, tz]); // eslint-disable-line react-hooks/exhaustive-deps
   const queryKey = JSON.stringify([centerId, from.toISOString(), to.toISOString(), therapist, child]);
-  const fetcher = useCallback(async () => ({
-    queryKey,
-    result: await opsApi.appointments(centerId, { from: from.toISOString(), to: to.toISOString(), membershipId: therapist || undefined, childId: child || undefined }),
-  }), [queryKey, centerId, from, to, therapist, child]);
-  const { data: response, failed, reload } = useLoad(fetcher, onError);
-  // useLoad retains previous results during a request. Only render a response
-  // for the exact authorized center, date and filter tuple; never label a
-  // previous therapist's appointments as the newly selected therapist's.
-  const data = !failed && response?.queryKey === queryKey ? response.result : null;
+  const latestQuery = useRef(queryKey);
+  const previousRenderQuery = useRef(queryKey);
+  const queryChanged = previousRenderQuery.current !== queryKey;
+  previousRenderQuery.current = queryKey;
+  latestQuery.current = queryKey;
+  const [successfulQuery, setSuccessfulQuery] = useState<string | null>(queryKey);
+  const fetcher = useCallback(async () => {
+    // Hide previously loaded cards during a retry, even when the query is the same.
+    if (latestQuery.current === queryKey) setSuccessfulQuery(null);
+    const result = await opsApi.appointments(centerId, {
+      from: from.toISOString(), to: to.toISOString(),
+      membershipId: therapist || undefined, childId: child || undefined,
+    });
+    if (latestQuery.current === queryKey) setSuccessfulQuery(queryKey);
+    return result;
+  }, [queryKey, centerId, from, to, therapist, child]);
+  const { data: loaded, failed, reload } = useLoad(fetcher, onError);
+  // useLoad retains data across query changes and failures. Never project a
+  // previous therapist/child/date/center response into the newly selected view.
+  // queryChanged also suppresses a one-render flash on A→B→A filter toggles.
+  const data = !failed && !queryChanged && successfulQuery === queryKey ? loaded : null;
   useEffect(() => {
     if (data && getCenterTz() !== tz) {
       setTz(getCenterTz());
