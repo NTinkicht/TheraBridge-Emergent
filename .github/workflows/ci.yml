@@ -354,6 +354,14 @@ jobs:
             /tmp/therabridge-com02-root-observation-reconciliation.json \
             yarn.lock \
             /tmp/therabridge-com02-nondt-published-manifest-comparison.json
+      - name: Test independent Git blob and npm archive exact-version follow-up 405
+        run: node --test scripts/commercial/verify-com02-root-405.test.mjs
+      - name: Verify immutable unicode-emoji-modifier-base source vs exact original npm archive (not publisher approval)
+        run: |
+          node scripts/commercial/verify-com02-root-405.mjs \
+            /tmp/therabridge-com02-nondt-workqueue.json \
+            yarn.lock \
+            /tmp/therabridge-com02-root-405-evidence.json
       - name: Archive installed license evidence for full CI
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -381,6 +389,7 @@ jobs:
             /tmp/therabridge-com02-closure-ledger.json
             /tmp/therabridge-com02-nondt-workqueue.json
             /tmp/therabridge-com02-nondt-published-manifest-comparison.json
+            /tmp/therabridge-com02-root-405-evidence.json
             /tmp/therabridge-com02-root-observation-reconciliation.json
             /tmp/therabridge-com02-bulk-rights-evidence.json
             /tmp/therabridge-com02-release-scope-review.json
