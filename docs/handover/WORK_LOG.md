@@ -1,3 +1,6 @@
+## 2026-11-17 — M5-05 PR #410 Codex P2 FIX_NOW
+Initial Codex reviewed PR #410 at `0a58a52fbd` and raised a P2: a selected tab was incorrectly counted as a completed task if destination data had not loaded. FIX_NOW: the browser acceptance now waits for an actual Assessments panel and draft/authorized empty state, an actual Sessions panel, and independently fetched Documents rows or an explicit authorized empty state (with no reports error/loading) before incrementing the 45-flow receipt. These checks are awaiting fresh exact-head CI and review. No user data or clinical authorization changes.
+
 ## 2026-11-17 — M5-05 scope and task-flow follow-up
 After PR #406 merged, started `feat/m5-05-cross-child-route-isolation`. The clinical child route now keys its entire workspace component by `JSON.stringify([activeCenterId, childId])` to force a fresh read-model mount on SPA child/center change, avoiding previous-child state while the next workspace is pending. Added Playwright real button-navigation for three care task flows across 3 personas × 5 widths (45 route decisions) plus fail-closed receipt validation. No clinical schema, API write, permission expansion or release activation. Qualification **NOT RUN/PENDING** at this checkpoint.
 
