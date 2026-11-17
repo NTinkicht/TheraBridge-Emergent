@@ -170,12 +170,23 @@ describe('M4-08 real family-home branch qualification honors private child/visit
   await mount();expect(find('family-unread')).toHaveLength(0);
   expect(get('family-messages-link')).toBeTruthy();
  });
- it('multiple authorized child links each get independent reminder state',async()=>{
-  mockData=family([kid(),kid({id:'child-b',name:'Another fictional child',
-   fullName:'Another Fictional Child',remindersEnabled:true})]);await mount();
+ it('three authorized siblings show one focused child at a time and retain server-confirmed reminder preferences',async()=>{
+  mockData=family([
+    kid(),kid({id:'child-b',name:'Second fictional child',fullName:'Second Fictional Child',remindersEnabled:true}),
+    kid({id:'child-c',name:'Third fictional child',fullName:'Third Fictional Child',remindersEnabled:false})
+  ]);await mount();
+  expect(get('family-sibling-switcher')).toBeTruthy();
   expect(get('family-reminders-toggle-child-a').props['aria-checked']).toBe(false);
-  expect(get('family-reminders-toggle-child-b').props['aria-checked']).toBe(true);
+  expect(find('family-child-child-b')).toHaveLength(0);
   await click('family-reminders-toggle-child-a');
+  await click('family-switch-child-b');
+  expect(find('family-child-child-a')).toHaveLength(0);
   expect(get('family-reminders-toggle-child-b').props['aria-checked']).toBe(true);
+  await click('family-switch-child-c');
+  expect(get('family-reminders-toggle-child-c').props['aria-checked']).toBe(false);
+  await click('family-switch-child-a');
+  expect(get('family-reminders-toggle-child-a').props['aria-checked']).toBe(true);
+  expect(opsApi.setReminders).toHaveBeenCalledWith('fictional-center','child-a',true);
+
  });
 });
