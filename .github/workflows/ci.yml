@@ -138,86 +138,25 @@ jobs:
       - name: Scan tracked files in this checkout, values redacted
         run: /tmp/gitleaks dir . --config .gitleaks.toml --redact=100 --no-banner --exit-code 1
 
-  test:
+  commercial-provenance:
+    name: commercial-provenance
     needs: smart-plan
     if: needs.smart-plan.outputs.mode == 'full'
-    timeout-minutes: 30
+    timeout-minutes: 35
     runs-on: ubuntu-24.04
-    services:
-      postgres:
-        image: postgres:16-bookworm
-        env:
-          POSTGRES_USER: therabridge
-          POSTGRES_PASSWORD: ci_only_password
-          POSTGRES_DB: therabridge_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U therabridge -d therabridge_test"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
-    env:
-      DATABASE_URL: postgresql://therabridge:ci_only_password@localhost:5432/therabridge_test?schema=public
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Verify Smart CI classifier, policy gate and workflow wiring
-        run: node --test scripts/ci/smart-ci.test.mjs scripts/ci/smart-ci-workflow.test.mjs
-      - name: M5-01 source-only route, role and viewport audit with adversarial tests
-        run: |
-          node --test scripts/qa/m5-route-audit.test.mjs
-          node scripts/qa/m5-route-audit.mjs /tmp/therabridge-m5-ui-source-baseline.json
-      - name: M5-02 canonical 66/91 requirement-to-task IA proposal (no authorization)
-        run: |
-          node --test scripts/design/m5-ia-crosswalk.test.mjs
-          node --test scripts/design/m5-shell-navigation.test.mjs
-          node scripts/design/m5-ia-crosswalk.mjs /tmp/therabridge-m5-ia-proposal.json
-      - name: Archive source-only M5-02 navigation grouping proposal
-        uses: actions/upload-artifact@v4
-        with:
-          name: m5-02-source-ia-proposal-${{ github.sha }}
-          path: /tmp/therabridge-m5-ia-proposal.json
-          if-no-files-found: error
-          retention-days: 30
-      - name: Archive M5-01 source-only audit receipt (NOT screenshots or UX clearance)
-        uses: actions/upload-artifact@v4
-        with:
-          name: m5-01-ui-source-baseline-${{ github.sha }}
-          path: /tmp/therabridge-m5-ui-source-baseline.json
-          if-no-files-found: error
-          retention-days: 30
-      - name: Required portability files are present
-        run: |
-          for f in yarn.lock .env.example apps/api/.env.example apps/web/.env.example .nvmrc; do
-            test -f "$f" || { echo "::error::missing $f"; exit 1; }
-          done
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: yarn
-      - name: Verify canonical roadmap register integrity and negative-path regressions
-        run: |
-          node scripts/qa/check-roadmap-registers.mjs
-          node --test scripts/qa/check-roadmap-registers.test.mjs
-      - name: M4-09 historical issue evidence register and negative regression tests
-        run: |
-          node scripts/qa/check-historic-issues.mjs
-          node --test scripts/qa/check-historic-issues.test.mjs
-      - name: M4-09 reconcile all frozen issue IDs against GitHub-state snapshot without auto closure
-        run: |
-          node --test scripts/qa/m4-historic-state-reconcile.test.mjs
-          node scripts/qa/m4-historic-state-reconcile.mjs
-      - name: M4-09 verify historical merge ancestry and reject force-ref false assurance
-        run: |
-          node --test scripts/qa/m4-nonforce-ancestry.test.mjs
-          node scripts/qa/m4-nonforce-ancestry.mjs
-      - name: M4-03 independent credential generator and recovery tests
-        run: node --test scripts/preview/generate-secrets.test.mjs
-      - name: M4-02 private hosted scope and workflow safety regressions
-        run: node --test scripts/qa/hosted-extra-contracts.test.mjs scripts/qa/hosted-role-guards.test.mjs scripts/qa/hosted-session-guards.test.mjs scripts/qa/hosted-private-workflow.test.mjs scripts/qa/prepare-hosted-run.test.mjs scripts/qa/hosted-render-attestation.test.mjs
-      - run: yarn install --frozen-lockfile
+      - name: Install exact locked dependency tree for license and publisher evidence
+        run: yarn install --frozen-lockfile
       - name: Verify exact-installed package license file inventory tooling
         run: node --test scripts/commercial/collect-installed-licenses.test.mjs
       - name: Collect installed package license-file hashes (review evidence only)
@@ -407,6 +346,86 @@ jobs:
             /tmp/therabridge-com02-immutable-text-evidence.json
           if-no-files-found: error
           retention-days: 30
+  test:
+    needs: smart-plan
+    if: needs.smart-plan.outputs.mode == 'full'
+    timeout-minutes: 30
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16-bookworm
+        env:
+          POSTGRES_USER: therabridge
+          POSTGRES_PASSWORD: ci_only_password
+          POSTGRES_DB: therabridge_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U therabridge -d therabridge_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://therabridge:ci_only_password@localhost:5432/therabridge_test?schema=public
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify Smart CI classifier, policy gate and workflow wiring
+        run: node --test scripts/ci/smart-ci.test.mjs scripts/ci/smart-ci-workflow.test.mjs
+      - name: M5-01 source-only route, role and viewport audit with adversarial tests
+        run: |
+          node --test scripts/qa/m5-route-audit.test.mjs
+          node scripts/qa/m5-route-audit.mjs /tmp/therabridge-m5-ui-source-baseline.json
+      - name: M5-02 canonical 66/91 requirement-to-task IA proposal (no authorization)
+        run: |
+          node --test scripts/design/m5-ia-crosswalk.test.mjs
+          node --test scripts/design/m5-shell-navigation.test.mjs
+          node scripts/design/m5-ia-crosswalk.mjs /tmp/therabridge-m5-ia-proposal.json
+      - name: Archive source-only M5-02 navigation grouping proposal
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-02-source-ia-proposal-${{ github.sha }}
+          path: /tmp/therabridge-m5-ia-proposal.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Archive M5-01 source-only audit receipt (NOT screenshots or UX clearance)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-01-ui-source-baseline-${{ github.sha }}
+          path: /tmp/therabridge-m5-ui-source-baseline.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Required portability files are present
+        run: |
+          for f in yarn.lock .env.example apps/api/.env.example apps/web/.env.example .nvmrc; do
+            test -f "$f" || { echo "::error::missing $f"; exit 1; }
+          done
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - name: Verify canonical roadmap register integrity and negative-path regressions
+        run: |
+          node scripts/qa/check-roadmap-registers.mjs
+          node --test scripts/qa/check-roadmap-registers.test.mjs
+      - name: M4-09 historical issue evidence register and negative regression tests
+        run: |
+          node scripts/qa/check-historic-issues.mjs
+          node --test scripts/qa/check-historic-issues.test.mjs
+      - name: M4-09 reconcile all frozen issue IDs against GitHub-state snapshot without auto closure
+        run: |
+          node --test scripts/qa/m4-historic-state-reconcile.test.mjs
+          node scripts/qa/m4-historic-state-reconcile.mjs
+      - name: M4-09 verify historical merge ancestry and reject force-ref false assurance
+        run: |
+          node --test scripts/qa/m4-nonforce-ancestry.test.mjs
+          node scripts/qa/m4-nonforce-ancestry.mjs
+      - name: M4-03 independent credential generator and recovery tests
+        run: node --test scripts/preview/generate-secrets.test.mjs
+      - name: M4-02 private hosted scope and workflow safety regressions
+        run: node --test scripts/qa/hosted-extra-contracts.test.mjs scripts/qa/hosted-role-guards.test.mjs scripts/qa/hosted-session-guards.test.mjs scripts/qa/hosted-private-workflow.test.mjs scripts/qa/prepare-hosted-run.test.mjs scripts/qa/hosted-render-attestation.test.mjs
+      - run: yarn install --frozen-lockfile
       - name: M4-02 private QA runtime redaction and fail-closed tests
         run: node --test scripts/qa/hosted-extra-runtime.test.mjs
       - name: Verify migration guard negative-path tests
@@ -682,7 +701,8 @@ jobs:
   compose:
     timeout-minutes: 25
     runs-on: ubuntu-24.04
-    needs: [smart-plan, test]
+    # Compose is independently required by smart-ci-gate; do not serialize on test.
+    needs: smart-plan
     if: needs.smart-plan.outputs.mode == 'full'
     steps:
       - uses: actions/checkout@v4
@@ -849,6 +869,7 @@ jobs:
       - smart-plan
       - secret-scan
       - sbom
+      - commercial-provenance
       - test
       - live-session
       - demo-journey
