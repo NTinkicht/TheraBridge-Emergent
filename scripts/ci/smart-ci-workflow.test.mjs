@@ -68,5 +68,5 @@ test('Next.js cache never substitutes for exact-head builds or crosses CI job en
   assert.match(section,/run: yarn workspace @therabridge\/web build/);
   assert.doesNotMatch(section,/path: apps\/web\/\.next(?:\/standalone|\/server)?\s*$/m);
  }
- assert.equal((yaml.match(/name: Cache untrusted Next\\.js compiler intermediates/g)||[]).length,4);
+ assert.equal((yaml.match(/name: Cache untrusted Next\.js compiler intermediates/g)||[]).length,4);
 });
