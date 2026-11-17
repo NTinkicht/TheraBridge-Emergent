@@ -9,8 +9,14 @@ export type ActivityMediaDraft = {
 export const activityMediaDrafts = {
   endpoint: (centerId: string, templateId: string) =>
     `/api/centers/${encodeURIComponent(centerId)}/activities/${encodeURIComponent(templateId)}/media-drafts`,
-  list: (centerId: string, templateId: string) => rest.get<{ items: ActivityMediaDraft[]; hasMore: boolean; publishEnabled: false }>(
-    activityMediaDrafts.endpoint(centerId, templateId)),
+  list: (centerId: string, templateId: string, cursor?: string, limit = 50) => {
+    const query = new URLSearchParams({ limit: String(limit) });
+    if (cursor) query.set('cursor', cursor);
+    return rest.get<{
+      items: ActivityMediaDraft[]; hasMore: boolean; nextCursor: string | null;
+      publishEnabled: false; clinicalReleaseEnabled: false;
+    }>(activityMediaDrafts.endpoint(centerId, templateId) + '?' + query.toString());
+  },
   propose: (centerId: string, templateId: string, body: {
     templateVersion: number; sourceType: ActivityMediaSource; styleVersion: string;
     sceneType: string; altText: string; license: string; sourceReference: string; providerTerms?: string;
