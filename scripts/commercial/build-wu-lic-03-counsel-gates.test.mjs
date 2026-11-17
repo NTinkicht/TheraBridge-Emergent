@@ -62,7 +62,7 @@ for(const [name,change] of [
  ['reject forged license grant',a=>a[1].commercialLicenseGranted=true],
  ['reject counterfeit lawyer evidence',a=>a[1].editions.SAAS.evidence.counselApproval='fake'],
  ['reject SaaS approval only',a=>a[1].editions.SAAS.status='APPROVED'],
- ['reject enterprise image without signed publication',a=>a[0].editions[1].candidateOCIImageDigest='sha256:'+H],
+ ['reject forged independently signed enterprise publication',a=>a[0].editions[1].independentlySignedRegistryPublication=true],
  ['reject shuffled mandatory approvals',a=>a[1].editions.SAAS.required.reverse()],
  ['reject false patient release',a=>a[1].clinical.realPatientProcessingAllowed=true],
  ['reject false third party notices',a=>a[1].finalThirdPartyNoticesIssued=true],
