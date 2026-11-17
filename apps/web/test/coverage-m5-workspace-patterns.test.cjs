@@ -24,6 +24,9 @@ describe('M5-04 shared workspace patterns', () => {
     const nodes = tree.root.findAllByProps({ role: 'tab' });
     expect(nodes.map(x => x.props['aria-selected'])).toEqual([true, false, false]);
     expect(nodes[2].props.disabled).toBe(true);
+    expect(nodes[0].props['aria-controls']).toBeTruthy();
+    expect(nodes[1].props['aria-controls']).toBeUndefined();
+    expect(nodes[2].props['aria-controls']).toBeUndefined();
     expect(tree.root.findAllByProps({role:'tabpanel'})).toHaveLength(1);
   });
   it('does not reveal a stale or unauthorized panel when selection becomes inaccessible', async () => {
@@ -33,6 +36,7 @@ describe('M5-04 shared workspace patterns', () => {
     expect(output()).not.toContain('Synthetic overview');
     expect(output()).not.toContain('Must not appear');
     expect(tree.root.findAllByProps({role:'tabpanel'})).toHaveLength(0);
+    expect(tree.root.findAllByProps({role:'tab'}).every(node => node.props['aria-controls'] === undefined)).toBe(true);
   });
   it('supports click and Home / End / arrows without invoking a disabled tab', async () => {
     const select = jest.fn();

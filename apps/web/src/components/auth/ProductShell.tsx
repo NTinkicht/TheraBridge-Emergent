@@ -58,6 +58,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
   const [railCollapsed, setRailCollapsed] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const [moreOpen, setMoreOpen] = useState(false);
+  const [navQuery, setNavQuery] = useState('');
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const moreCloseRef = useRef<HTMLButtonElement>(null);
   const morePanelRef = useRef<HTMLDivElement>(null);
@@ -66,6 +67,11 @@ export function ProductShell({ session, active, planned, children }: { session: 
   // Client-side grouping is display-only; server session permissions still control every route.
   const groups = groupAuthorizedNav(NAV, session.permissions);
   const nav = groups.flatMap((group) => group.items);
+  // Search only authorized, session-scoped destinations; no route/grant inference.
+  const searchTerm = navQuery.trim().toLocaleLowerCase();
+  const visibleGroups = searchTerm ? groups.map(group => ({
+    ...group, items: group.items.filter(item => `${item.label} ${group.label}`.toLocaleLowerCase().includes(searchTerm)),
+  })).filter(group => group.items.length > 0) : groups;
   const mobileQuick = quickMobileNav(groups);
   const activeNav = nav.find((n) => n.key === active);
   const activeGroup = groups.find((group) => group.items.some((n) => n.key === active));
@@ -74,7 +80,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
   const contextId = ctx?.type === 'center' ? ctx.centerId : 'platform';
 
   // Never persist a menu or drawer state across a role/tenant context switch.
-  useEffect(() => { setMoreOpen(false); setExpandedGroups({}); }, [ctx?.role, contextId]);
+  useEffect(() => { setMoreOpen(false); setNavQuery(''); setExpandedGroups({}); }, [ctx?.role, contextId]);
   useEffect(() => {
     if (activeGroupKey) setExpandedGroups(previous => previous[activeGroupKey] ? previous : { ...previous, [activeGroupKey]: true });
   }, [activeGroupKey]);
@@ -107,6 +113,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
   }, [moreOpen]);
 
   function closeMore() {
+    setNavQuery('');
     setMoreOpen(false);
     moreButtonRef.current?.focus();
   }
@@ -118,7 +125,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
       return;
     }
     if (event.key !== 'Tab') return;
-    const focusables = [...(morePanelRef.current?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), select:not([disabled])') ?? [])]
+    const focusables = [...(morePanelRef.current?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled])') ?? [])]
       .filter((el) => el.getClientRects().length > 0);
     if (!focusables.length) { event.preventDefault(); return; }
     const first = focusables[0], last = focusables[focusables.length - 1];
@@ -156,6 +163,12 @@ export function ProductShell({ session, active, planned, children }: { session: 
           {railCollapsed ? <PanelLeftOpen size={18} aria-hidden="true" /> : <PanelLeftClose size={18} aria-hidden="true" />}
           {!railCollapsed && 'Collapse menu'}
         </button>
+        {session.contexts.length > 1 && railCollapsed && (
+          <Link href="/select-context" data-testid="collapsed-workspace-switcher" aria-label="Switch workspace"
+            title="Switch workspace" className="mx-2 mb-3 flex min-h-[44px] items-center justify-center rounded-control border border-border-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action">
+            <ArrowLeftRight size={18} aria-hidden="true" />
+          </Link>
+        )}
         {session.contexts.length > 1 && !railCollapsed && (
           <Link href="/select-context" className="mx-3 mb-3 flex items-center gap-2 rounded-control border border-border-light px-3 py-2 transition-colors hover:bg-surface-subtle" data-testid="workspace-switcher">
             <span className="min-w-0 flex-1">
@@ -165,13 +178,19 @@ export function ProductShell({ session, active, planned, children }: { session: 
             <ArrowLeftRight size={15} className="text-brand-inkMuted" aria-hidden="true" />
           </Link>
         )}
+        {!railCollapsed && <div className="px-3 pb-2">
+          <label htmlFor="desktop-destination-search" className="sr-only">Find a destination</label>
+          <input id="desktop-destination-search" type="search" autoComplete="off" value={navQuery}
+            onChange={event => setNavQuery(event.target.value)} data-testid="desktop-destination-search" placeholder="Find a destination"
+            className="min-h-[44px] w-full rounded-control border border-border-strong bg-surface-white px-3 text-sm text-brand-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action" />
+        </div>}
         <nav aria-label="Primary" className={`flex-1 space-y-1 overflow-y-auto ${railCollapsed ? 'px-2' : 'px-3'}`} data-testid="desktop-grouped-navigation">
           {railCollapsed ? nav.map((n) => (
             <NavLink key={n.key + ':' + (n.permission ?? '')} href={n.href} icon={n.icon} label={n.label}
               active={active === n.key} family={family} compact testId={`nav-${n.key}`} />
-          )) : groups.map((group) => (
+          )) : visibleGroups.map((group) => (
             <details key={contextId + ':' + (ctx?.role ?? '') + ':' + group.key}
-              open={expandedGroups[group.key] ?? (group.key === 'workspace' || group.items.some(n => n.key === active))}
+              open={searchTerm ? true : (expandedGroups[group.key] ?? (group.key === 'workspace' || group.items.some(n => n.key === active)))}
               onToggle={(event) => {
                 const expanded = event.currentTarget.open;
                 setExpandedGroups(previous => previous[group.key] === expanded ? previous : { ...previous, [group.key]: expanded });
@@ -188,6 +207,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
               </div>
             </details>
           ))}
+          {visibleGroups.length === 0 && !railCollapsed && <p role="status" className="px-3 py-3 text-sm text-brand-inkMuted">No authorized destinations match your search.</p>}
           {planned.length > 0 && !railCollapsed && <p className="px-3 pb-1 pt-5 text-[12px] font-semibold uppercase tracking-[0.06em] text-brand-inkMuted">Coming next</p>}
           {!railCollapsed && planned.map((m) => (
             <span key={m.label} aria-disabled="true" title={`Arrives in ${m.unit}`} data-testid={`nav-planned-${m.label.toLowerCase().replace(/\W+/g, '-')}`}
@@ -252,11 +272,16 @@ export function ProductShell({ session, active, planned, children }: { session: 
                 <X size={20} aria-hidden="true" />
               </button>
             </div>
-            {groups.map(group => <section key={group.key} className="mb-4" data-testid={`mobile-group-${group.key}`}>
+            <label htmlFor="mobile-destination-search" className="sr-only">Find a destination</label>
+            <input id="mobile-destination-search" type="search" autoComplete="off" value={navQuery}
+              onChange={event => setNavQuery(event.target.value)} data-testid="mobile-destination-search"
+              placeholder="Find a destination" className="mb-3 min-h-[44px] w-full rounded-control border border-border-strong bg-surface-white px-3 text-sm text-brand-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action" />
+            {visibleGroups.length === 0 && <p role="status" className="mb-3 text-sm text-brand-inkMuted">No authorized destinations match your search.</p>}
+            {visibleGroups.map(group => <section key={group.key} className="mb-4" data-testid={`mobile-group-${group.key}`}>
               <h3 className="mb-1 px-2 text-[12px] font-semibold uppercase tracking-wide text-brand-inkMuted">{group.label}</h3>
               <div className="space-y-1">{group.items.map(n => <Link
                 key={n.key + ':' + (n.permission ?? '')} href={n.href}
-                onClick={() => setMoreOpen(false)} data-testid={`mobile-more-${n.key}`}
+                onClick={() => { setNavQuery(''); setMoreOpen(false); }} data-testid={`mobile-more-${n.key}`}
                 aria-current={active === n.key ? 'page' : undefined}
                 className={`flex min-h-[44px] items-center gap-3 rounded-control px-3 text-[14px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action ${active === n.key ? (family ? 'bg-fam-accentTint text-fam-accent' : 'bg-brand-actionTint text-brand-action') : 'text-brand-ink'}`}>
                 <n.icon size={18} aria-hidden="true" />{n.label}

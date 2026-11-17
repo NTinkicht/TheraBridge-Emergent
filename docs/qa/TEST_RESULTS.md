@@ -1,3 +1,20 @@
+## 2026-11-17 — M5 WU1 #413 Rule 7 correction / qualification matrix
+| Verification | Evidence / accurate status |
+| --- | --- |
+| Permission-filtered eight-area shell and shared workspace patterns | Previously merged #393 / #395; preserved |
+| Desktop/mobile authorized destination search; no-match status; desktop matching groups expanded | IMPLEMENTED in PR #413; source/browser tests added; updated HEAD CI **NOT RUN/PENDING** |
+| Multi-context collapsed-rail switcher; role/center search reset; mobile dialog keyboard search | IMPLEMENTED; updated HEAD CI **NOT RUN/PENDING**; revoked-context end-to-end human acceptance NOT RUN |
+| WorkspaceTabs active-only ARIA controls; visible focus styles; Jest assertions | IMPLEMENTED; updated HEAD Jest/CI **NOT RUN/PENDING** |
+| Original head `20707161b0`: SBOM, secret scan, Smart CI plan | **PASS**, previous HEAD only |
+| Original head `20707161b0`: focused Web coverage workflow 44107832991 | **PASS**, previous HEAD only |
+| Original head `20707161b0`: remaining six exact-head CI jobs | **IN PROGRESS** at inspection; no PASS claim |
+| Original head independent Codex review | **FAIL/P1**: mandatory Rule 7 records not updated; all four corrected on successor HEAD, rereview PENDING |
+| Updated HEAD full six CI, Web coverage, SBOM, Smart CI, final Codex | **NOT RUN/PENDING** at documentation commit |
+| Five-width private screenshot review, screen readers, low bandwidth, family dark mode, revoked context, owner UX | **NOT RUN/NOT OBTAINED** |
+| Clinical G2/G2b signing/release, real AI/STT, clinical approval | **NO-GO**; synthetic-only preserved |
+
+Source and acceptance ledger: `docs/roadmap/M5-WU1-SHELL-DESIGN-CONSOLIDATION.md`. Do not close #186/#187 or merge PR #413 merely on document updates.
+
 ## 2026-11-17 — M5-05 scoped route/key + 3-task decision checks (NEW PR)
 | Verification | Result |
 |---|---|
