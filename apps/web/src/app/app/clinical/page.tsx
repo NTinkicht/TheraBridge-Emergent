@@ -39,7 +39,7 @@ function List({ session, onError }: { session: SessionInfo; onError: (e: unknown
         { id: 'child', label: 'Choose a child', status: 'current', description: 'Authorized caseload only' },
         { id: 'session', label: 'Session evidence', status: 'pending', description: 'Record and save drafts' },
         { id: 'plan', label: 'Goals and progress', status: 'pending', description: 'Review versioned goals' },
-        { id: 'report', label: 'Report draft', status: 'blocked', description: 'Signing and family release unavailable' },
+        { id: 'release', label: 'Clinical sign / release', status: 'blocked', description: 'Report drafts remain available; signing and release unavailable' },
       ]} />
       <DisclosureSection title="How clinical drafting works" summary="Sessions → goals and evidence → report draft; safety gates remain closed">
         <p className="text-sm text-brand-inkMuted">Select an authorized child to open their existing session, therapy-plan, progress and report sections. Editing, submitting for internal review and draft saving retain the current permission and version checks. Never interpret a saved draft as a signed or family-released clinical record.</p>
