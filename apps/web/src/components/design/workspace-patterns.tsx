@@ -112,7 +112,7 @@ export function CompactTable({ columns, rows, caption, tone = 'clinical', emptyM
   caption: string; tone?: Tone; emptyMessage?: string; mobileCards?: boolean;
 }) {
   const family = tone === 'family';
-  return <div role="region" aria-label={mobileCards ? caption : `${caption} (scroll horizontally for all columns)`} tabIndex={0} className={`max-w-full rounded-card border ${family ? 'border-fam-border bg-fam-surface text-fam-ink' : 'border-border-light bg-surface-white text-brand-ink'}`}>
+  return <div role="region" aria-label={mobileCards ? caption : `${caption} (scroll horizontally for all columns)`} tabIndex={0} className={`max-w-full rounded-card border ${mobileCards ? '' : 'overflow-x-auto'} ${family ? 'border-fam-border bg-fam-surface text-fam-ink' : 'border-border-light bg-surface-white text-brand-ink'}`}>
     {mobileCards && <ul aria-label={`${caption}: compact view`} className="divide-y divide-border-light sm:hidden"
       data-testid="compact-mobile-cards">
       {rows.length ? rows.map(row => <li key={row.id} className="space-y-2 p-3">
@@ -122,7 +122,7 @@ export function CompactTable({ columns, rows, caption, tone = 'clinical', emptyM
         </div>)}</dl>
       </li>) : <li className="p-4 text-center text-sm">{emptyMessage}</li>}
     </ul>}
-    <div className={`max-w-full overflow-x-auto ${mobileCards ? 'hidden sm:block' : ''}`}>
+    <div tabIndex={mobileCards ? 0 : undefined} aria-label={mobileCards ? `${caption} (scroll horizontally)` : undefined} className={`max-w-full overflow-x-auto ${mobileCards ? 'hidden sm:block' : ''}`}>
     <table className="w-full min-w-[480px] border-collapse text-left text-sm">
       <caption className="sr-only">{caption}</caption>
       <thead className={family ? 'bg-fam-tile' : 'bg-surface-subtle'}>
