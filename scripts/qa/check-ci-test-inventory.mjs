@@ -47,7 +47,7 @@ export function workflowJobNames(yaml) {
 // Keep these checks tied to the actual checked-in workflow, not handover prose.
 export function secretScanContract(yaml) {
   const start=yaml.indexOf('\n  secret-scan:\n');
-  const end=start<0?-1:yaml.indexOf('\n  test:\n',start);
+  const end=start<0?-1:yaml.indexOf('\n  commercial-provenance:\n',start);
   if(start<0||end<0)throw Error('Required secret-scan job layout missing');
   const block=yaml.slice(start,end);
   const requirements=[
@@ -118,7 +118,7 @@ export function baseline(){
   secretScanContract(ci);
   validateGitleaksToml(fs.readFileSync(path.join(root,'.gitleaks.toml'),'utf8'));
   const jobs=workflowJobNames(ci);
-  for(const j of JOBS){
+  for(const j of [...JOBS,'commercial-provenance']){
     if(!jobs.has(j))throw Error('Missing required CI job '+j);
   }
   return {
@@ -134,7 +134,8 @@ export function baseline(){
     application_wide_coverage_percent:null,
     application_wide_95_percent_gate:false,
     secret_scan_contract_validated:true,
-    six_required_jobs:JOBS
+    six_required_jobs:JOBS,
+    additional_required_jobs:['commercial-provenance']
   };
 }
 if(process.argv[1]?.endsWith('/check-ci-test-inventory.mjs')){
