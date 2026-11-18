@@ -1,3 +1,18 @@
+## 2026-11-18 — PR #435 two Codex P2 async UI fixes
+Addressed two P2 findings: stale page (100→reopen→older page 101–150) corrupting cursor and editable metadata during save dropping user corrections. Increment generation across toggles and cleanup; ignore stale response/success/errors/finally; reset pending older loading safely. Disabled full metadata fieldset while busy. Added source-regression checks.
+
+## 2026-11-18 — PR #435 push-event browser CI remediation
+Diagnosed screenshot-proven push failures (m5-child360-browser + cascading smart-ci-gate). Root: Playwright login waitForURL default `load` exceeded 20s in push-run, even though page navigated to login. Updated only waitUntil to domcontentloaded and added test preserving route/role/child-access checks. No CI bypass, no raised timeout, no governance change.
+
+## 2026-11-18 — WU4-C Codex P2 activity ownership gate
+FIX_NOW Codex P2: media proposal panel now gated on centre context, THERAPIST with t.mine === true or CLINICAL_SUPERVISOR, matching live server authorization. Tests assert role/ownership condition and existing Duplicate flow.
+
+## 2026-11-18 — WU4-C paginated proposal history
+Codex P2 pagination follow-through: staff UI now loads older proposals on demand, preserves newer local save/rejection state, disables mutation during page load, tests HTTP cursor/limit and non-destructive append.
+
+## 2026-11-18 — WU4-C illustration proposal UI
+Built typed REST helper and accessible loading/empty/error/rejection panel. Prevented stale GET vs POST race by blocking write until initial list resolves. Added regression against optimistic revision request.
+
 ## 2026-11-18 — WU4-B P2 media history pagination
 Codex P2 pagination disposition FIX_NOW: new validated UUID cursor and 1–100 bounded limit, scoped cursor lookup, createdAt/id ordering, nextCursor and hasMore; no hidden historical rights metadata. Added >100-item and negative cursor tests.
 

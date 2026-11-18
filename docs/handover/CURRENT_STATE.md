@@ -1,3 +1,18 @@
+## 2026-11-18 — PR #435 two Codex P2 async UI fixes
+Codex P2 #435 corrections: close/reopen invalidates pending first-page and cursor-page replies via generation guard. Save locks all metadata inputs via disabled fieldset until POST settles, preventing unsaved post-click edits being wiped. No clinical/guardian publication; G2/G2b NO-GO.
+
+## 2026-11-18 — PR #435 push-event browser CI remediation
+Push-run verification exposed Child360 SPA login navigation timeout on `load`; updated waitForURL to `domcontentloaded` without removing browser assertions. Smart CI gate remains strict. New exact-head CI NOT VERIFIED.
+
+## 2026-11-18 — WU4-C Codex P2 activity ownership gate
+WU4-C PR #435 P2 correction: only owning therapists and clinical supervisors can see a centre activity's private media proposal editor. Server authorization unchanged; non-owner therapists retain Duplicate to customize. No clinical publication.
+
+## 2026-11-18 — WU4-C paginated proposal history
+WU4-C displays all paged activity media proposal history through authenticated tenant-scoped API. No actual image, rights approval, clinical signoff, guardian publication or release supported.
+
+## 2026-11-18 — WU4-C illustration proposal UI
+PR #435 adds an authenticated staff-only metadata proposal/rejection panel on the existing activity library; no guardian image preview, unapproved upload or publication; G2/G2b NO-GO.
+
 ## 2026-11-18 — WU4-B P2 media history pagination
 M5-14 metadata draft registry now supports bounded cursor paging for all historical proposals and rights records; no real storage, asset approval or publication. G2/G2b fail-closed.
 

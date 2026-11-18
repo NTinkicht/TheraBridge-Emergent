@@ -47,7 +47,7 @@ export async function runChild360BrowserAcceptance({ passwords }) {
       await page.getByTestId('login-email-input').fill(email);
       await page.getByTestId('login-password-input').fill(passwords[email]);
       await page.getByTestId('login-submit-button').click();
-      await page.waitForURL(/\/app(?:\/|$)/, { timeout: 20000 });
+      await page.waitForURL(/\/app(?:\/|$)/, { timeout: 20000, waitUntil: 'domcontentloaded' });
     }
     for (const [email, role] of personas) {
       const context = await browser.newContext({ viewport: { width: 1440, height: 850 }, reducedMotion: 'reduce' });
