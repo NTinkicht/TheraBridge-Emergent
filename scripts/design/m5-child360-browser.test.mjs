@@ -43,3 +43,13 @@ test('flagged browser runner refuses non-isolated or default-off execution',asyn
     }
   }
 });
+
+test('login waits for hydrated SPA route without requiring late load resources', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL('./m5-child360-browser.mjs', import.meta.url), 'utf8');
+  assert.match(source, /page\.waitForURL\(\/\\\/app\(\?:\\\/\|\$\)\/, \{ timeout: 20000, waitUntil: 'domcontentloaded' \} \)/);
+  assert.match(source, /login-submit-button/);
+  assert.match(source, /sessionRole, role/);
+  assert.match(source, /Authorized synthetic child page must load/);
+  assert.match(source, /clinical-tab-overview/);
+});
