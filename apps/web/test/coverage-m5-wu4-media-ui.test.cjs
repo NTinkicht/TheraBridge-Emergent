@@ -70,3 +70,26 @@ describe('WU4-C media pagination and rights-history navigation', () => {
     expect(comp).toContain('disabled={busy || loading || loadingMore');
   });
 });
+
+describe('WU4-C Codex P2: asynchronous panel lifetime and form snapshot safety', () => {
+  it('invalidates in-flight older-page results on every close/reopen transition', () => {
+    expect(comp).toContain('const listGeneration = useRef(0)');
+    expect(comp).toContain('listGeneration.current += 1;');
+    expect(comp).toContain('const generation = listGeneration.current;');
+    expect(comp).toContain('if (listGeneration.current !== generation) return;');
+    expect(comp).toContain('if (listGeneration.current === generation) setLoadingMore(false)');
+    expect(comp).toContain('active && listGeneration.current === generation');
+    expect(comp).toContain('setLoadingMore(false);');
+    expect(comp).toContain('setItems(result.items); setNextCursor(result.nextCursor); setHasMore(result.hasMore);');
+  });
+  it('makes every editable metadata input read-only through a disabled fieldset during save', () => {
+    expect(comp).toContain('<fieldset disabled={busy} aria-label="Illustration proposal metadata"');
+    expect(comp).toContain('</fieldset>');
+    const editable = comp.slice(comp.indexOf('<fieldset disabled={busy}'), comp.indexOf('</fieldset>'));
+    for (const input of ['Artwork source type', 'Proposed style version', 'sceneType', 'altText', 'license', 'sourceReference', 'providerTerms']) {
+      expect(editable).toContain(input);
+    }
+    expect(comp).toContain('setBusy(true)');
+    expect(comp).toContain('setForm(initial)');
+  });
+});
