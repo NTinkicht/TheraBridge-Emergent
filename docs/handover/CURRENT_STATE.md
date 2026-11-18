@@ -1,3 +1,6 @@
+## 2026-11-18 — PR #435 push-event browser CI remediation
+Push-run verification exposed Child360 SPA login navigation timeout on `load`; updated waitForURL to `domcontentloaded` without removing browser assertions. Smart CI gate remains strict. New exact-head CI NOT VERIFIED.
+
 ## 2026-11-18 — WU4-C Codex P2 activity ownership gate
 WU4-C PR #435 P2 correction: only owning therapists and clinical supervisors can see a centre activity's private media proposal editor. Server authorization unchanged; non-owner therapists retain Duplicate to customize. No clinical publication.
 

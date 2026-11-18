@@ -1,3 +1,6 @@
+## 2026-11-18 — PR #435 push-event browser CI remediation
+Verify both push and pull_request exact-head CI, especially M5 Child360, smart-ci-gate, login role and access checks. Confirm latest Codex review and no unresolved threads before merge. PR #432 WU2 qualification still needs separate integration into main.
+
 ## 2026-11-18 — WU4-C Codex P2 activity ownership gate
 Re-run exact-head CI and independent review for #435. Non-owner therapists must duplicate the activity rather than access media proposals; manual keyboard/screen-reader check remains pending.
 

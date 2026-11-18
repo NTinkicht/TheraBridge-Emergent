@@ -1,3 +1,6 @@
+## 2026-11-18 — PR #435 push-event browser CI remediation
+Push-run 44310665716: m5-child360-browser FAILED at waitForURL with `waiting for navigation until load` after login, while pull_request CI was green. Smart-CI-gate FAILED consequentially because browser job failed. Corrected login wait to domcontentloaded with authenticated route and role checks intact; regression assertion added. New exact-head push and PR CI are PENDING. Do not claim PASS.
+
 ## 2026-11-18 — WU4-C Codex P2 activity ownership gate
 New exact-head CI NOT RUN at this checkpoint. Author-only therapist / supervisor UI gate source-contract tests committed; browser acceptance remains NOT RUN.
 

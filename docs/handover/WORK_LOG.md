@@ -1,3 +1,6 @@
+## 2026-11-18 — PR #435 push-event browser CI remediation
+Diagnosed screenshot-proven push failures (m5-child360-browser + cascading smart-ci-gate). Root: Playwright login waitForURL default `load` exceeded 20s in push-run, even though page navigated to login. Updated only waitUntil to domcontentloaded and added test preserving route/role/child-access checks. No CI bypass, no raised timeout, no governance change.
+
 ## 2026-11-18 — WU4-C Codex P2 activity ownership gate
 FIX_NOW Codex P2: media proposal panel now gated on centre context, THERAPIST with t.mine === true or CLINICAL_SUPERVISOR, matching live server authorization. Tests assert role/ownership condition and existing Duplicate flow.
 
