@@ -1,3 +1,6 @@
+## 2026-11-18 — PR #436 main advancement reconciliation
+Current main advanced after PR opened. This integration replays only #432's missing WU2 qualification/CI acceptance changes, retains new WU4 code and complete handover records verbatim, and preserves the more recent main Child360 domcontentloaded correction. Exact-head CI and independent review must be repeated after this reconciliation; G2/G2b NO-GO.
+
 ## 2026-11-18 — PR #436 Codex P2 remediation checkpoint
 Codex identified (1) nested/private screenshot data and string-width admission in WU2 evidence and (2) a missing Child360 domcontentloaded wait, previously incorrectly described as preserved. This integration now enforces an exact root/governance/summary/observation schema, JSON primitive types and numeric widths; adversarial cases reject nested metadata, Buffer-style screenshots, unknown root keys and string widths. Restored Child360 waitUntil domcontentloaded with existing role/route/child checks unchanged. Exact-head push+PR CI and independent re-review PENDING; commercial provenance push run previously failed an unexpected Sigstore attestation and is NOT considered cleared. G2/G2b NO-GO unchanged.
 
@@ -9,6 +12,30 @@ Initial unstacked WU2 browser run 44147014875 failed because it lacked prerequis
 
 ## 2026-11-17 — WU3 WU2 role-browser qualification / M5-04 crosswalk · CURRENT_STATE.md
 Implemented an isolated *_demo_test Playwright 3-role × 5-viewport (=15) technical qualification of therapist/caseload, coordinator/schedule, supervisor/governance with settled authorized markers, overflow and skip link; screenshot bytes hashed in memory and never archived. Added fail-closed adversarial schema tests (roles, widths, duplicates, sensitive fields, missing checks, approval spoofing), numeric-only evidence artifact, and execution under existing seven-role synthetic demo CI (not a new production runner). Full original CI gates preserved. Technical browser receipt is **not human accessibility or usability approval**; redacted visual review, participant task success/time and real screen readers PENDING. Exact-head CI, Codex and WU2 issue-close decision PENDING; all G2/G2b clinical gates NO-GO. See docs/roadmap/M5-WU3-ACCEPTANCE-AND-RELEASE-LEDGER.md.
+
+## 2026-11-18 — WU4-A M5-B / M5-13 presentation & illustration standard
+PR #433 implements visual-family presentation mapping and adds a draft version-controlled style guide. Original six clinical service IDs remain unchanged. Independent illustration/clinical approval is NOT OBTAINED; G2/G2b remains NO-GO.
+
+## 2026-11-18 — PR #435 two Codex P2 async UI fixes
+Codex P2 #435 corrections: close/reopen invalidates pending first-page and cursor-page replies via generation guard. Save locks all metadata inputs via disabled fieldset until POST settles, preventing unsaved post-click edits being wiped. No clinical/guardian publication; G2/G2b NO-GO.
+
+## 2026-11-18 — PR #435 push-event browser CI remediation
+Push-run verification exposed Child360 SPA login navigation timeout on `load`; updated waitForURL to `domcontentloaded` without removing browser assertions. Smart CI gate remains strict. New exact-head CI NOT VERIFIED.
+
+## 2026-11-18 — WU4-C Codex P2 activity ownership gate
+WU4-C PR #435 P2 correction: only owning therapists and clinical supervisors can see a centre activity's private media proposal editor. Server authorization unchanged; non-owner therapists retain Duplicate to customize. No clinical publication.
+
+## 2026-11-18 — WU4-C paginated proposal history
+WU4-C displays all paged activity media proposal history through authenticated tenant-scoped API. No actual image, rights approval, clinical signoff, guardian publication or release supported.
+
+## 2026-11-18 — WU4-C illustration proposal UI
+PR #435 adds an authenticated staff-only metadata proposal/rejection panel on the existing activity library; no guardian image preview, unapproved upload or publication; G2/G2b NO-GO.
+
+## 2026-11-18 — WU4-B P2 media history pagination
+M5-14 metadata draft registry now supports bounded cursor paging for all historical proposals and rights records; no real storage, asset approval or publication. G2/G2b fail-closed.
+
+## 2026-11-18 — WU4-B / M5-14 activity media drafts
+PR #434 adds a metadata-only media proposal registry, tenant-scoped rights metadata, revision checks and audit log. No storage adapter, approved bytes, clinical/guardian publishing or governance activation. P1 reviewer specialty and role alignment corrected; requalification pending.
 
 ## 2026-11-18 — WU4-A M5-B / M5-13 presentation & illustration standard
 PR #433 implements visual-family presentation mapping and adds a draft version-controlled style guide. Original six clinical service IDs remain unchanged. Independent illustration/clinical approval is NOT OBTAINED; G2/G2b remains NO-GO.

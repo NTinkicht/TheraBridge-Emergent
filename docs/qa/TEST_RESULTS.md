@@ -1,3 +1,6 @@
+## 2026-11-18 — PR #436 main advancement reconciliation
+Current main advanced after PR opened. This integration replays only #432's missing WU2 qualification/CI acceptance changes, retains new WU4 code and complete handover records verbatim, and preserves the more recent main Child360 domcontentloaded correction. Exact-head CI and independent review must be repeated after this reconciliation; G2/G2b NO-GO.
+
 ## 2026-11-18 — PR #436 Codex P2 remediation checkpoint
 Codex identified (1) nested/private screenshot data and string-width admission in WU2 evidence and (2) a missing Child360 domcontentloaded wait, previously incorrectly described as preserved. This integration now enforces an exact root/governance/summary/observation schema, JSON primitive types and numeric widths; adversarial cases reject nested metadata, Buffer-style screenshots, unknown root keys and string widths. Restored Child360 waitUntil domcontentloaded with existing role/route/child checks unchanged. Exact-head push+PR CI and independent re-review PENDING; commercial provenance push run previously failed an unexpected Sigstore attestation and is NOT considered cleared. G2/G2b NO-GO unchanged.
 
@@ -9,6 +12,30 @@ Initial unstacked WU2 browser run 44147014875 failed because it lacked prerequis
 
 ## 2026-11-17 — WU3 WU2 role-browser qualification / M5-04 crosswalk · TEST_RESULTS.md
 Implemented an isolated *_demo_test Playwright 3-role × 5-viewport (=15) technical qualification of therapist/caseload, coordinator/schedule, supervisor/governance with settled authorized markers, overflow and skip link; screenshot bytes hashed in memory and never archived. Added fail-closed adversarial schema tests (roles, widths, duplicates, sensitive fields, missing checks, approval spoofing), numeric-only evidence artifact, and execution under existing seven-role synthetic demo CI (not a new production runner). Full original CI gates preserved. Technical browser receipt is **not human accessibility or usability approval**; redacted visual review, participant task success/time and real screen readers PENDING. Exact-head CI, Codex and WU2 issue-close decision PENDING; all G2/G2b clinical gates NO-GO. See docs/roadmap/M5-WU3-ACCEPTANCE-AND-RELEASE-LEDGER.md.
+
+## 2026-11-18 — WU4-A M5-B / M5-13 presentation & illustration standard
+CI on initial head: web focused coverage PASS; other full CI checks were running. New runtime tests added; exact-head rerun pending. Manual artwork/reference review and WCAG/visual acceptance NOT RUN.
+
+## 2026-11-18 — PR #435 two Codex P2 async UI fixes
+Source contract tests added for generation guard, page lifecycle, and all metadata input coverage under disabled fieldset. Actual mounted deferred-page/slow-save visual verification NOT RUN; exact-head push/PR CI pending. Previous workflow status cannot qualify new HEAD.
+
+## 2026-11-18 — PR #435 push-event browser CI remediation
+Push-run 44310665716: m5-child360-browser FAILED at waitForURL with `waiting for navigation until load` after login, while pull_request CI was green. Smart-CI-gate FAILED consequentially because browser job failed. Corrected login wait to domcontentloaded with authenticated route and role checks intact; regression assertion added. New exact-head push and PR CI are PENDING. Do not claim PASS.
+
+## 2026-11-18 — WU4-C Codex P2 activity ownership gate
+New exact-head CI NOT RUN at this checkpoint. Author-only therapist / supervisor UI gate source-contract tests committed; browser acceptance remains NOT RUN.
+
+## 2026-11-18 — WU4-C paginated proposal history
+Paged UI helper and history-append tests committed, exact-head CI NOT YET VERIFIED. Existing head 1d4a2a1 CI PASS; do not transfer this pass to new SHA.
+
+## 2026-11-18 — WU4-C illustration proposal UI
+Initial Web focused coverage failed on stale source-string expectation; test replaced with executed API helper assertion. New exact-head CI and manual screen-reader/visual acceptance pending. No claim of accepted illustration assets.
+
+## 2026-11-18 — WU4-B P2 media history pagination
+Cursor paging (>100 records), cross-centre cursor refusal, terminal page, and bounded page sizes: regression tests committed; exact-head CI pending, NOT YET VERIFIED. Prior head full CI passed.
+
+## 2026-11-18 — WU4-B / M5-14 activity media drafts
+Initial CI test + demo-journey FAILED on test-only TS tuple assertion; fixed in later commit. P1 role/specialty reviewer findings corrected with added negative tests. Exact-head follow-up CI and five-width/manual tests PENDING; no PASS claimed.
 
 ## 2026-11-18 — WU4-A M5-B / M5-13 presentation & illustration standard
 CI on initial head: web focused coverage PASS; other full CI checks were running. New runtime tests added; exact-head rerun pending. Manual artwork/reference review and WCAG/visual acceptance NOT RUN.

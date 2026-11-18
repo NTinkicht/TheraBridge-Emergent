@@ -1,3 +1,6 @@
+## 2026-11-18 — PR #436 main advancement reconciliation
+Current main advanced after PR opened. This integration replays only #432's missing WU2 qualification/CI acceptance changes, retains new WU4 code and complete handover records verbatim, and preserves the more recent main Child360 domcontentloaded correction. Exact-head CI and independent review must be repeated after this reconciliation; G2/G2b NO-GO.
+
 ## 2026-11-18 — PR #436 Codex P2 remediation checkpoint
 Codex identified (1) nested/private screenshot data and string-width admission in WU2 evidence and (2) a missing Child360 domcontentloaded wait, previously incorrectly described as preserved. This integration now enforces an exact root/governance/summary/observation schema, JSON primitive types and numeric widths; adversarial cases reject nested metadata, Buffer-style screenshots, unknown root keys and string widths. Restored Child360 waitUntil domcontentloaded with existing role/route/child checks unchanged. Exact-head push+PR CI and independent re-review PENDING; commercial provenance push run previously failed an unexpected Sigstore attestation and is NOT considered cleared. G2/G2b NO-GO unchanged.
 
@@ -9,6 +12,30 @@ Initial unstacked WU2 browser run 44147014875 failed because it lacked prerequis
 
 ## 2026-11-17 — WU3 WU2 role-browser qualification / M5-04 crosswalk · WORK_LOG.md
 Implemented an isolated *_demo_test Playwright 3-role × 5-viewport (=15) technical qualification of therapist/caseload, coordinator/schedule, supervisor/governance with settled authorized markers, overflow and skip link; screenshot bytes hashed in memory and never archived. Added fail-closed adversarial schema tests (roles, widths, duplicates, sensitive fields, missing checks, approval spoofing), numeric-only evidence artifact, and execution under existing seven-role synthetic demo CI (not a new production runner). Full original CI gates preserved. Technical browser receipt is **not human accessibility or usability approval**; redacted visual review, participant task success/time and real screen readers PENDING. Exact-head CI, Codex and WU2 issue-close decision PENDING; all G2/G2b clinical gates NO-GO. See docs/roadmap/M5-WU3-ACCEPTANCE-AND-RELEASE-LEDGER.md.
+
+## 2026-11-18 — WU4-A M5-B / M5-13 presentation & illustration standard
+PR #433: committed mapped presentation-only specialty identities, shared activity-card display, draft illustration style guide, and Jest source + runtime regression tests. No stored service IDs or permissions changed.
+
+## 2026-11-18 — PR #435 two Codex P2 async UI fixes
+Addressed two P2 findings: stale page (100→reopen→older page 101–150) corrupting cursor and editable metadata during save dropping user corrections. Increment generation across toggles and cleanup; ignore stale response/success/errors/finally; reset pending older loading safely. Disabled full metadata fieldset while busy. Added source-regression checks.
+
+## 2026-11-18 — PR #435 push-event browser CI remediation
+Diagnosed screenshot-proven push failures (m5-child360-browser + cascading smart-ci-gate). Root: Playwright login waitForURL default `load` exceeded 20s in push-run, even though page navigated to login. Updated only waitUntil to domcontentloaded and added test preserving route/role/child-access checks. No CI bypass, no raised timeout, no governance change.
+
+## 2026-11-18 — WU4-C Codex P2 activity ownership gate
+FIX_NOW Codex P2: media proposal panel now gated on centre context, THERAPIST with t.mine === true or CLINICAL_SUPERVISOR, matching live server authorization. Tests assert role/ownership condition and existing Duplicate flow.
+
+## 2026-11-18 — WU4-C paginated proposal history
+Codex P2 pagination follow-through: staff UI now loads older proposals on demand, preserves newer local save/rejection state, disables mutation during page load, tests HTTP cursor/limit and non-destructive append.
+
+## 2026-11-18 — WU4-C illustration proposal UI
+Built typed REST helper and accessible loading/empty/error/rejection panel. Prevented stale GET vs POST race by blocking write until initial list resolves. Added regression against optimistic revision request.
+
+## 2026-11-18 — WU4-B P2 media history pagination
+Codex P2 pagination disposition FIX_NOW: new validated UUID cursor and 1–100 bounded limit, scoped cursor lookup, createdAt/id ordering, nextCursor and hasMore; no hidden historical rights metadata. Added >100-item and negative cursor tests.
+
+## 2026-11-18 — WU4-B / M5-14 activity media drafts
+WU4-B implemented Prisma migration, typed NestJS endpoints and service with active role/tenant/specialty checks (including revocation and supervisor parity), immutable proposal metadata and optimistic rejection. Added negative unit regression tests.
 
 ## 2026-11-18 — WU4-A M5-B / M5-13 presentation & illustration standard
 PR #433: committed mapped presentation-only specialty identities, shared activity-card display, draft illustration style guide, and Jest source + runtime regression tests. No stored service IDs or permissions changed.
