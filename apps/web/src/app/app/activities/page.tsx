@@ -145,6 +145,8 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
               onChanged={message => { setNotice(message); setAdditional(null); void reload(); }} />
           )}
           {session.permissions.includes('center.activities.manage') && t.library === 'center' &&
+            (session.activeContext?.type === 'center' && (session.activeContext.role === 'CLINICAL_SUPERVISOR' ||
+              (session.activeContext.role === 'THERAPIST' && t.mine === true))) &&
             <ActivityMediaDraftPanel key={centerId + ':' + t.id} centerId={centerId} templateId={t.id} templateVersion={t.version} />}
         </div>
       ))}</div>}
