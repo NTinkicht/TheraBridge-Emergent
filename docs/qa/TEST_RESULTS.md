@@ -1,3 +1,24 @@
+## 2026-11-18 — PR #435 two Codex P2 async UI fixes
+Source contract tests added for generation guard, page lifecycle, and all metadata input coverage under disabled fieldset. Actual mounted deferred-page/slow-save visual verification NOT RUN; exact-head push/PR CI pending. Previous workflow status cannot qualify new HEAD.
+
+## 2026-11-18 — PR #435 push-event browser CI remediation
+Push-run 44310665716: m5-child360-browser FAILED at waitForURL with `waiting for navigation until load` after login, while pull_request CI was green. Smart-CI-gate FAILED consequentially because browser job failed. Corrected login wait to domcontentloaded with authenticated route and role checks intact; regression assertion added. New exact-head push and PR CI are PENDING. Do not claim PASS.
+
+## 2026-11-18 — WU4-C Codex P2 activity ownership gate
+New exact-head CI NOT RUN at this checkpoint. Author-only therapist / supervisor UI gate source-contract tests committed; browser acceptance remains NOT RUN.
+
+## 2026-11-18 — WU4-C paginated proposal history
+Paged UI helper and history-append tests committed, exact-head CI NOT YET VERIFIED. Existing head 1d4a2a1 CI PASS; do not transfer this pass to new SHA.
+
+## 2026-11-18 — WU4-C illustration proposal UI
+Initial Web focused coverage failed on stale source-string expectation; test replaced with executed API helper assertion. New exact-head CI and manual screen-reader/visual acceptance pending. No claim of accepted illustration assets.
+
+## 2026-11-18 — WU4-B P2 media history pagination
+Cursor paging (>100 records), cross-centre cursor refusal, terminal page, and bounded page sizes: regression tests committed; exact-head CI pending, NOT YET VERIFIED. Prior head full CI passed.
+
+## 2026-11-18 — WU4-B / M5-14 activity media drafts
+Initial CI test + demo-journey FAILED on test-only TS tuple assertion; fixed in later commit. P1 role/specialty reviewer findings corrected with added negative tests. Exact-head follow-up CI and five-width/manual tests PENDING; no PASS claimed.
+
 ## 2026-11-18 — WU4-A M5-B / M5-13 presentation & illustration standard
 CI on initial head: web focused coverage PASS; other full CI checks were running. New runtime tests added; exact-head rerun pending. Manual artwork/reference review and WCAG/visual acceptance NOT RUN.
 

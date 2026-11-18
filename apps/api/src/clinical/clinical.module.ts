@@ -1,3 +1,5 @@
+import { ActivityMediaController } from './activity-media.controller';
+import { ActivityMediaService } from './activity-media.service';
 import { SessionExecutionService } from './session.service';
 import { GovernanceController } from './governance.controller';
 import { GovernanceService } from './governance.service';
@@ -15,5 +17,5 @@ import { ReportDecisionsService } from './report-decisions.service';
 import { FamilyReleaseService } from './family-release.service';
 import { FamilyReleaseController } from './family-release.controller';
 
-@Module({ imports: [CentersModule], controllers: [GovernanceController, ClinicalController, ReportsController, PracticeController, FamilyReleaseController], providers: [SessionExecutionService, GovernanceService, ClinicalService, ReportsService, ReportDecisionsService, PracticeService, HomePlanRequestsService, FamilyReleaseService, { provide: CLINICAL_AI_PROVIDER, useClass: DisabledClinicalAiProvider }] })
+@Module({ imports: [CentersModule], controllers: [ActivityMediaController, GovernanceController, ClinicalController, ReportsController, PracticeController, FamilyReleaseController], providers: [ActivityMediaService, SessionExecutionService, GovernanceService, ClinicalService, ReportsService, ReportDecisionsService, PracticeService, HomePlanRequestsService, FamilyReleaseService, { provide: CLINICAL_AI_PROVIDER, useClass: DisabledClinicalAiProvider }] })
 export class ClinicalModule {}

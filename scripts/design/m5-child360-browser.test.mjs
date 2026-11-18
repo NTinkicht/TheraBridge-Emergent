@@ -43,3 +43,14 @@ test('flagged browser runner refuses non-isolated or default-off execution',asyn
     }
   }
 });
+
+test('login waits for SPA DOM readiness without disabling authenticated navigation checks', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL('./m5-child360-browser.mjs', import.meta.url), 'utf8');
+  assert(source.includes("timeout: 20000, waitUntil: 'domcontentloaded'"));
+  assert(source.includes("page.waitForURL("));
+  assert(source.includes("login-submit-button"));
+  assert(source.includes("assert.equal(sessionRole, role"));
+  assert(source.includes("Authorized synthetic child page must load"));
+  assert(source.includes("clinical-tab-overview"));
+});

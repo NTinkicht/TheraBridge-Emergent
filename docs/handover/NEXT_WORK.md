@@ -1,3 +1,24 @@
+## 2026-11-18 — PR #435 two Codex P2 async UI fixes
+Run exact-head push and PR CI, then fresh Codex review. Validate 100+ page close/reopen under deferred response and slow save in UI, and confirm no reintroduced reviewer issues. Do not merge without full gate results.
+
+## 2026-11-18 — PR #435 push-event browser CI remediation
+Verify both push and pull_request exact-head CI, especially M5 Child360, smart-ci-gate, login role and access checks. Confirm latest Codex review and no unresolved threads before merge. PR #432 WU2 qualification still needs separate integration into main.
+
+## 2026-11-18 — WU4-C Codex P2 activity ownership gate
+Re-run exact-head CI and independent review for #435. Non-owner therapists must duplicate the activity rather than access media proposals; manual keyboard/screen-reader check remains pending.
+
+## 2026-11-18 — WU4-C paginated proposal history
+WU4-C requires new exact-head CI, final reviewer and five viewport/screen-reader qualification. Real private image upload and release remain disabled.
+
+## 2026-11-18 — WU4-C illustration proposal UI
+PR #435 stacked on #434; integrate once #434 has green exact-head CI. Verify responsive five-width screen readers, role revocation and private storage/rights adapter before any publishing.
+
+## 2026-11-18 — WU4-B P2 media history pagination
+Complete real private byte-ingestion, malware/format/dimension/hash validation, derivatives, rights attestation and immutable approved snapshots; page history now available via cursor. Final-head CI and independent Codex review required.
+
+## 2026-11-18 — WU4-B / M5-14 activity media drafts
+WU4-B requires private binary ingestion/validation, checksum/derivatives, human approval and immutable assets before M5-14 can close. Independent exact-head reviews and manual acceptance pending.
+
 ## 2026-11-18 — WU4-A M5-B / M5-13 presentation & illustration standard
 Complete five-specialty reference board and owner/clinical/design style approval; verify exact-head CI, final reviewer and five-width UI inspection. Do not publish illustrations.
 
