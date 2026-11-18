@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FileImage, ShieldAlert } from 'lucide-react';
 import { Button, Card, Pill } from '@/components/design/ui';
 import { activityMediaDrafts, type ActivityMediaDraft as Draft, type ActivityMediaSource as SourceType } from '@/lib/activity-media';
@@ -17,6 +17,8 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
   centerId: string; templateId: string; templateVersion?: number;
 }) {
   const [open, setOpen] = useState(false);
+  // Invalidate previous-page and initial-list responses whenever panel lifetime changes.
+  const listGeneration = useRef(0);
   const [items, setItems] = useState<Draft[]>([]);
   const [form, setForm] = useState(initial);
   const [busy, setBusy] = useState(false);
@@ -33,22 +35,28 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
   useEffect(() => {
     if (!open) return;
     let active = true;
+    const generation = listGeneration.current;
     setLoading(true);
     setError('');
     activityMediaDrafts.list(centerId, templateId).then(result => {
-      if (active) { setItems(result.items); setNextCursor(result.nextCursor); setHasMore(result.hasMore); }
+      if (active && listGeneration.current === generation) {
+        setItems(result.items); setNextCursor(result.nextCursor); setHasMore(result.hasMore);
+      }
     }).catch(() => {
-      if (active) setError('Could not load illustration proposals. Try reopening this panel.');
-    }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [open, base]);
+      if (active && listGeneration.current === generation) setError('Could not load illustration proposals. Try reopening this panel.');
+    }).finally(() => { if (active && listGeneration.current === generation) setLoading(false); });
+    return () => { active = false; listGeneration.current += 1; };
+  }, [open, base, centerId, templateId]);
 
   const loadMore = async () => {
     if (loading || loadingMore || busy || !nextCursor || !hasMore) return;
     const cursor = nextCursor;
+    const generation = listGeneration.current;
     setLoadingMore(true); setError('');
     try {
       const result = await activityMediaDrafts.list(centerId, templateId, cursor);
+      // A closed/reopened panel must never append an earlier generation's page.
+      if (listGeneration.current !== generation) return;
       // Older pages never overwrite newer saved proposals or rejection states.
       setItems(previous => {
         const seen = new Set(previous.map(item => item.id));
@@ -57,8 +65,10 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
       setNextCursor(result.nextCursor);
       setHasMore(result.hasMore);
     } catch {
-      setError('Older proposals could not be loaded. Retry without losing the visible history.');
-    } finally { setLoadingMore(false); }
+      if (listGeneration.current === generation) setError('Older proposals could not be loaded. Retry without losing the visible history.');
+    } finally {
+      if (listGeneration.current === generation) setLoadingMore(false);
+    }
   };
 
   const submit = async () => {
@@ -95,7 +105,12 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
     </label>;
 
   return <section className="space-y-3" data-testid={`media-drafts-${templateId}`}>
-    <Button variant="secondary" size="sm" aria-expanded={open} onClick={() => { if (!open) setLoading(true); setOpen(!open); }}>
+    <Button variant="secondary" size="sm" aria-expanded={open} onClick={() => {
+      listGeneration.current += 1;
+      setLoadingMore(false);
+      if (!open) setLoading(true);
+      setOpen(!open);
+    }}>
       <FileImage size={16} aria-hidden="true" />{open ? 'Close illustration proposals' : 'Illustration proposals'}
     </Button>
     {open && <Card className="space-y-4 p-4">
@@ -107,7 +122,7 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
       </p>
       {error && <p role="alert" className="text-sm text-status-danger">{error}</p>}
       {notice && <p role="status" className="text-sm text-status-success">{notice}</p>}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <fieldset disabled={busy} aria-label="Illustration proposal metadata" className="grid grid-cols-1 gap-3 sm:grid-cols-2 disabled:opacity-60">
         <label className="block text-sm font-medium">Artwork source type
           <select className={cls + ' mt-1'} value={form.sourceType} onChange={e => setForm(v => ({ ...v, sourceType: e.target.value as SourceType }))}>
             <option value="ORIGINAL">Original</option><option value="GENERATED">AI-generated</option><option value="LICENSED">Licensed</option>
@@ -122,7 +137,7 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
         <div className="sm:col-span-2">{field('sourceReference', 'Provenance / source evidence reference', 'Internal record ID; never a public asset URL')}</div>
         <div className="sm:col-span-2">{field('altText', 'Proposed accessible description', 'Describe the action and relevant materials')}</div>
         {form.sourceType === 'GENERATED' && <div className="sm:col-span-2">{field('providerTerms', 'Provider commercial terms evidence', 'Required for AI-generated proposals')}</div>}
-      </div>
+      </fieldset>
       <Button onClick={() => void submit()} disabled={busy || loading || loadingMore || !templateVersion || form.styleVersion.trim().length < 4 ||
         form.sceneType.trim().length < 3 || form.license.trim().length < 4 ||
         form.sourceReference.trim().length < 8 || form.altText.trim().length < 10 ||
