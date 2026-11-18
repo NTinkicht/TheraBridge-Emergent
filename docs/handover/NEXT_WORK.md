@@ -1,3 +1,21 @@
+## 2026-11-18 — PR #436 main advancement reconciliation
+Current main advanced after PR opened. This integration replays only #432's missing WU2 qualification/CI acceptance changes, retains new WU4 code and complete handover records verbatim, and preserves the more recent main Child360 domcontentloaded correction. Exact-head CI and independent review must be repeated after this reconciliation; G2/G2b NO-GO.
+
+## 2026-11-18 — PR #436 Codex P2 remediation checkpoint
+Codex identified (1) nested/private screenshot data and string-width admission in WU2 evidence and (2) a missing Child360 domcontentloaded wait, previously incorrectly described as preserved. This integration now enforces an exact root/governance/summary/observation schema, JSON primitive types and numeric widths; adversarial cases reject nested metadata, Buffer-style screenshots, unknown root keys and string widths. Restored Child360 waitUntil domcontentloaded with existing role/route/child checks unchanged. Exact-head push+PR CI and independent re-review PENDING; commercial provenance push run previously failed an unexpected Sigstore attestation and is NOT considered cleared. G2/G2b NO-GO unchanged.
+
+## 2026-11-18 — PR #432 integration into main (WU3-C acceptance qualification)
+Restored original #432 WU2 browser qualification, 3 roles × 5 viewport sizes, fail-closed receipt validator, private synthetic browser runner and numeric-only CI artifact. Preserved all later main implementation and previous handover records. The original main still used a full-load Child360 wait, so this reconciliation restores the missing domcontentloaded correction; WU2 and seven-role login navigation now wait for actual authenticated pathname and still require role authorization verification. CI and Codex on integration HEAD PENDING. No human accessibility/usability approval or G2/G2b GO.
+
+## 2026-11-17 — WU3 qualification exact-head CI retry
+Initial unstacked WU2 browser run 44147014875 failed because it lacked prerequisite M5-10 skip link; resolved by stacking on M5-10. Subsequent combined CI run 44148140688 passed the standard seven-role browser observation (175 routes, zero overflow/errors), but flagged Child360 browser hit a Playwright `waitForURL` timeout waiting for full browser `load` after login. Changed only login navigation wait to `domcontentloaded`; the existing role, authorised child, 5-width, denial, loading/retry and other substantive browser assertions remain unchanged. **Corrected current-HEAD CI pending; previous failed run not accepted**. No clinical G2/G2b or human accessibility approval.
+
+## 2026-11-17 — WU3 WU2 role-browser qualification / M5-04 crosswalk · NEXT_WORK.md
+Implemented an isolated *_demo_test Playwright 3-role × 5-viewport (=15) technical qualification of therapist/caseload, coordinator/schedule, supervisor/governance with settled authorized markers, overflow and skip link; screenshot bytes hashed in memory and never archived. Added fail-closed adversarial schema tests (roles, widths, duplicates, sensitive fields, missing checks, approval spoofing), numeric-only evidence artifact, and execution under existing seven-role synthetic demo CI (not a new production runner). Full original CI gates preserved. Technical browser receipt is **not human accessibility or usability approval**; redacted visual review, participant task success/time and real screen readers PENDING. Exact-head CI, Codex and WU2 issue-close decision PENDING; all G2/G2b clinical gates NO-GO. See docs/roadmap/M5-WU3-ACCEPTANCE-AND-RELEASE-LEDGER.md.
+
+## 2026-11-18 — WU4-A M5-B / M5-13 presentation & illustration standard
+Complete five-specialty reference board and owner/clinical/design style approval; verify exact-head CI, final reviewer and five-width UI inspection. Do not publish illustrations.
+
 ## 2026-11-18 — PR #435 two Codex P2 async UI fixes
 Run exact-head push and PR CI, then fresh Codex review. Validate 100+ page close/reopen under deferred response and slow save in UI, and confirm no reintroduced reviewer issues. Do not merge without full gate results.
 
