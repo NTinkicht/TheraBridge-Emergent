@@ -1,3 +1,6 @@
+## 2026-11-18 — PR #435 two Codex P2 async UI fixes
+Source contract tests added for generation guard, page lifecycle, and all metadata input coverage under disabled fieldset. Actual mounted deferred-page/slow-save visual verification NOT RUN; exact-head push/PR CI pending. Previous workflow status cannot qualify new HEAD.
+
 ## 2026-11-18 — PR #435 push-event browser CI remediation
 Push-run 44310665716: m5-child360-browser FAILED at waitForURL with `waiting for navigation until load` after login, while pull_request CI was green. Smart-CI-gate FAILED consequentially because browser job failed. Corrected login wait to domcontentloaded with authenticated route and role checks intact; regression assertion added. New exact-head push and PR CI are PENDING. Do not claim PASS.
 

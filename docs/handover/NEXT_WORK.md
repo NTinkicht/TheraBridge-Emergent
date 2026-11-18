@@ -1,3 +1,6 @@
+## 2026-11-18 — PR #435 two Codex P2 async UI fixes
+Run exact-head push and PR CI, then fresh Codex review. Validate 100+ page close/reopen under deferred response and slow save in UI, and confirm no reintroduced reviewer issues. Do not merge without full gate results.
+
 ## 2026-11-18 — PR #435 push-event browser CI remediation
 Verify both push and pull_request exact-head CI, especially M5 Child360, smart-ci-gate, login role and access checks. Confirm latest Codex review and no unresolved threads before merge. PR #432 WU2 qualification still needs separate integration into main.
 

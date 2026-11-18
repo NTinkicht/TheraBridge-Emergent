@@ -1,3 +1,6 @@
+## 2026-11-18 — PR #435 two Codex P2 async UI fixes
+Codex P2 #435 corrections: close/reopen invalidates pending first-page and cursor-page replies via generation guard. Save locks all metadata inputs via disabled fieldset until POST settles, preventing unsaved post-click edits being wiped. No clinical/guardian publication; G2/G2b NO-GO.
+
 ## 2026-11-18 — PR #435 push-event browser CI remediation
 Push-run verification exposed Child360 SPA login navigation timeout on `load`; updated waitForURL to `domcontentloaded` without removing browser assertions. Smart CI gate remains strict. New exact-head CI NOT VERIFIED.
 

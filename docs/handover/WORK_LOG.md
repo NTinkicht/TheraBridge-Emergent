@@ -1,3 +1,6 @@
+## 2026-11-18 — PR #435 two Codex P2 async UI fixes
+Addressed two P2 findings: stale page (100→reopen→older page 101–150) corrupting cursor and editable metadata during save dropping user corrections. Increment generation across toggles and cleanup; ignore stale response/success/errors/finally; reset pending older loading safely. Disabled full metadata fieldset while busy. Added source-regression checks.
+
 ## 2026-11-18 — PR #435 push-event browser CI remediation
 Diagnosed screenshot-proven push failures (m5-child360-browser + cascading smart-ci-gate). Root: Playwright login waitForURL default `load` exceeded 20s in push-run, even though page navigated to login. Updated only waitUntil to domcontentloaded and added test preserving route/role/child-access checks. No CI bypass, no raised timeout, no governance change.
 
