@@ -22,29 +22,53 @@ const WORKSPACES = Object.freeze([
     markers: ['governance-title', 'm5-governance-filters', 'governance-document-search'] },
 ]);
 
+// Only explicitly approved primitive evidence keys may be serialized to CI.
+// Reject unknown keys at every level, including nested objects and Buffer-like
+// screenshot payloads. This is an allowlist, never a sensitive-word blacklist.
+function exactRecord(value, names) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) ||
+      Object.getPrototypeOf(value) !== Object.prototype) return false;
+  const actual = Reflect.ownKeys(value);
+  return actual.length === names.length &&
+    names.every(name => Object.prototype.hasOwnProperty.call(value, name));
+}
+
 export function validateWU2Receipt(receipt) {
   const expected = new Set(WORKSPACES.flatMap(r =>
     WU2_WIDTHS.map(width => `${r.persona}|${width}|${r.path}`)));
-  if (receipt?.schemaVersion !== 1 || receipt?.environment !== 'ISOLATED_SYNTHETIC_CI' ||
-      receipt?.evidenceType !== 'AUTOMATED_BROWSER_NOT_HUMAN_USABILITY' ||
-      receipt?.governance?.clinicalGate !== 'NO_GO_G2_G2b' ||
-      receipt?.governance?.humanApproval !== 'NOT_OBTAINED' ||
-      receipt?.governance?.accessibilityApproval !== 'NOT_OBTAINED' ||
-      receipt?.governance?.realTaskTiming !== 'NOT_RUN' ||
+  if (!exactRecord(receipt, ['schemaVersion', 'environment', 'evidenceType',
+        'governance', 'summary', 'observations']) ||
+      !exactRecord(receipt.governance, ['clinicalGate', 'humanApproval',
+        'accessibilityApproval', 'realTaskTiming']) ||
+      !exactRecord(receipt.summary, ['observations', 'failed', 'screenshotsArchived']) ||
+      receipt.schemaVersion !== 1 || receipt.environment !== 'ISOLATED_SYNTHETIC_CI' ||
+      receipt.evidenceType !== 'AUTOMATED_BROWSER_NOT_HUMAN_USABILITY' ||
+      receipt.governance.clinicalGate !== 'NO_GO_G2_G2b' ||
+      receipt.governance.humanApproval !== 'NOT_OBTAINED' ||
+      receipt.governance.accessibilityApproval !== 'NOT_OBTAINED' ||
+      receipt.governance.realTaskTiming !== 'NOT_RUN' ||
       !Array.isArray(receipt.observations) || receipt.observations.length !== expected.size ||
-      receipt.summary?.observations !== expected.size ||
-      receipt.summary?.failed !== 0 ||
-      receipt.summary?.screenshotsArchived !== 0) {
+      receipt.summary.observations !== expected.size ||
+      receipt.summary.failed !== 0 ||
+      receipt.summary.screenshotsArchived !== 0) {
     throw new Error('WU2 synthetic browser evidence missing, incomplete or falsely approved');
   }
   const seen = new Set();
   for (const item of receipt.observations) {
+    if (!exactRecord(item, ['persona', 'width', 'route', 'outcome', 'overflow',
+          'keyboardSkip', 'roleVerified', 'screenshotSha256']) ||
+        typeof item.persona !== 'string' ||
+        typeof item.route !== 'string' ||
+        typeof item.width !== 'number' || !Number.isInteger(item.width) ||
+        !WU2_WIDTHS.includes(item.width) ||
+        typeof item.screenshotSha256 !== 'string' ||
+        !/^[a-f0-9]{64}$/.test(item.screenshotSha256)) {
+      throw new Error('Unknown, sensitive or failed WU2 browser observation');
+    }
     const key = `${item.persona}|${item.width}|${item.route}`;
     if (!expected.has(key) || seen.has(key) ||
         item.outcome !== 'ROUTE_RENDERED' || item.overflow !== 'NONE' ||
-        item.keyboardSkip !== 'PASS' || item.roleVerified !== 'PASS' ||
-        !/^[a-f0-9]{64}$/.test(item.screenshotSha256) ||
-        Object.keys(item).some(k => /password|cookie|token|email|user|child|content|text|html|name/i.test(k))) {
+        item.keyboardSkip !== 'PASS' || item.roleVerified !== 'PASS') {
       throw new Error('Unknown, sensitive or failed WU2 browser observation');
     }
     seen.add(key);

@@ -48,3 +48,45 @@ test('WU2 rejects sensitive evidence fields and screenshot-archive claims',()=>{
   const c=fixture();c.summary.screenshotsArchived=1;
   assert.throws(()=>validateWU2Receipt(c));
 });
+
+test('WU2 rejects every extra root, governance, summary or observation field', () => {
+  for (const change of [
+    r => { r.patientName = 'must never be exported'; },
+    r => { r.screenshot = { type: 'Buffer', data: [137, 80, 78, 71] }; },
+    r => { r.governance.licenseApproval = 'approved'; },
+    r => { r.summary.metadata = { childName: 'secret' }; },
+    r => { r.observations[0].metadata = { childName: 'secret' }; },
+    r => { r.observations[0].screenshot = { type: 'Buffer', data: [137, 80, 78, 71] }; },
+    r => { r.observations[0].sourceImageBytes = [137, 80, 78, 71]; },
+    r => { r.observations[0].extra = null; },
+  ]) {
+    const r = fixture(); change(r);
+    assert.throws(() => validateWU2Receipt(r), /sensitive|incomplete|unknown/i);
+  }
+});
+
+test('WU2 enforces actual JSON primitives and numeric viewport types', () => {
+  for (const change of [
+    r => { r.observations[0].width = '320'; },
+    r => { r.observations[0].width = new Number(320); },
+    r => { r.observations[0].persona = { value: 'speech-therapist' }; },
+    r => { r.observations[0].route = new String('/app/clinical'); },
+    r => { r.observations[0].screenshotSha256 = { value: 'a'.repeat(64) }; },
+    r => { r.summary.failed = '0'; },
+    r => { r.governance = ['NO_GO_G2_G2b']; },
+    r => { r.observations[0] = ['speech-therapist', 320]; },
+    r => { r.observations[0].screenshotSha256 = 'Z'.repeat(64); },
+  ]) {
+    const r = fixture(); change(r);
+    assert.throws(() => validateWU2Receipt(r));
+  }
+});
+
+test('WU2 disallows symbol-keyed data and inherited schema objects', () => {
+  const withSymbol = fixture();
+  withSymbol.observations[0][Symbol('private')] = 'secret';
+  assert.throws(() => validateWU2Receipt(withSymbol));
+  const inherited = fixture();
+  inherited.summary = Object.create({ observations: 15, failed: 0, screenshotsArchived: 0 });
+  assert.throws(() => validateWU2Receipt(inherited));
+});
