@@ -6,6 +6,12 @@ describe('WU4-C private, draft-only illustration UX boundary', () => {
   it('renders only for authorized center activity managers; never on family cards', () => {
     expect(page).toContain("session.permissions.includes('center.activities.manage') && t.library === 'center'");
     expect(page).not.toContain('<ActivityMediaDraftPanel key={c.id}');
+    expect(page).toContain("session.activeContext.role === 'CLINICAL_SUPERVISOR'");
+    expect(page).toContain("session.activeContext.role === 'THERAPIST' && t.mine === true");
+    expect(page).toContain("session.activeContext?.type === 'center'");
+    // A non-owner therapist must use the existing Duplicate action instead of a forbidden editor.
+    const templateActions = fs.readFileSync(path.join(__dirname, '../src/components/clinical/TemplateActions.tsx'), 'utf8');
+    expect(templateActions).toContain('Duplicate to customize another author');
   });
   it('never exposes an image URL, upload control, publish action or generated preview', () => {
     expect(comp).not.toMatch(/<img|<Image\s|type="file"|approve\(|publish\(/);
