@@ -1,3 +1,6 @@
+## 2026-11-18 — WU4-C Codex P2 activity ownership gate
+New exact-head CI NOT RUN at this checkpoint. Author-only therapist / supervisor UI gate source-contract tests committed; browser acceptance remains NOT RUN.
+
 ## 2026-11-18 — WU4-C paginated proposal history
 Paged UI helper and history-append tests committed, exact-head CI NOT YET VERIFIED. Existing head 1d4a2a1 CI PASS; do not transfer this pass to new SHA.
 

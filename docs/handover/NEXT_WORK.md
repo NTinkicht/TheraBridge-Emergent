@@ -1,3 +1,6 @@
+## 2026-11-18 — WU4-C Codex P2 activity ownership gate
+Re-run exact-head CI and independent review for #435. Non-owner therapists must duplicate the activity rather than access media proposals; manual keyboard/screen-reader check remains pending.
+
 ## 2026-11-18 — WU4-C paginated proposal history
 WU4-C requires new exact-head CI, final reviewer and five viewport/screen-reader qualification. Real private image upload and release remain disabled.
 

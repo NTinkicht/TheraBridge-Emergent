@@ -1,3 +1,6 @@
+## 2026-11-18 — WU4-C Codex P2 activity ownership gate
+WU4-C PR #435 P2 correction: only owning therapists and clinical supervisors can see a centre activity's private media proposal editor. Server authorization unchanged; non-owner therapists retain Duplicate to customize. No clinical publication.
+
 ## 2026-11-18 — WU4-C paginated proposal history
 WU4-C displays all paged activity media proposal history through authenticated tenant-scoped API. No actual image, rights approval, clinical signoff, guardian publication or release supported.
 

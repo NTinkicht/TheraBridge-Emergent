@@ -1,3 +1,6 @@
+## 2026-11-18 — WU4-C Codex P2 activity ownership gate
+FIX_NOW Codex P2: media proposal panel now gated on centre context, THERAPIST with t.mine === true or CLINICAL_SUPERVISOR, matching live server authorization. Tests assert role/ownership condition and existing Duplicate flow.
+
 ## 2026-11-18 — WU4-C paginated proposal history
 Codex P2 pagination follow-through: staff UI now loads older proposals on demand, preserves newer local save/rejection state, disables mutation during page load, tests HTTP cursor/limit and non-destructive append.
 
