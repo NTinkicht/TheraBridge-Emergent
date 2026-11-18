@@ -1,3 +1,12 @@
+## 2026-11-18 — #432 WU3-C integration into current main
+Restored original acceptance qualification and audit receipt under existing full synthetic CI; retained all later main WU4 records, prior Child360 correction and protections. Added SPA pathname navigation wait while verifying server session role. Fresh exact-head CI, independent Codex and human acceptance pending; G2/G2b NO-GO.
+
+## 2026-11-17 — WU3 qualification exact-head CI retry
+Initial unstacked WU2 browser run 44147014875 failed because it lacked prerequisite M5-10 skip link; resolved by stacking on M5-10. Subsequent combined CI run 44148140688 passed the standard seven-role browser observation (175 routes, zero overflow/errors), but flagged Child360 browser hit a Playwright `waitForURL` timeout waiting for full browser `load` after login. Changed only login navigation wait to `domcontentloaded`; the existing role, authorised child, 5-width, denial, loading/retry and other substantive browser assertions remain unchanged. **Corrected current-HEAD CI pending; previous failed run not accepted**. No clinical G2/G2b or human accessibility approval.
+
+## 2026-11-17 — WU3 WU2 role-browser qualification / M5-04 crosswalk · WORK_LOG.md
+Implemented an isolated *_demo_test Playwright 3-role × 5-viewport (=15) technical qualification of therapist/caseload, coordinator/schedule, supervisor/governance with settled authorized markers, overflow and skip link; screenshot bytes hashed in memory and never archived. Added fail-closed adversarial schema tests (roles, widths, duplicates, sensitive fields, missing checks, approval spoofing), numeric-only evidence artifact, and execution under existing seven-role synthetic demo CI (not a new production runner). Full original CI gates preserved. Technical browser receipt is **not human accessibility or usability approval**; redacted visual review, participant task success/time and real screen readers PENDING. Exact-head CI, Codex and WU2 issue-close decision PENDING; all G2/G2b clinical gates NO-GO. See docs/roadmap/M5-WU3-ACCEPTANCE-AND-RELEASE-LEDGER.md.
+
 ## 2026-11-18 — WU4-A M5-B / M5-13 presentation & illustration standard
 PR #433: committed mapped presentation-only specialty identities, shared activity-card display, draft illustration style guide, and Jest source + runtime regression tests. No stored service IDs or permissions changed.
 

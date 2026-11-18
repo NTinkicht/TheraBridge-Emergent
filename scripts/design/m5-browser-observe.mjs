@@ -124,7 +124,9 @@ export async function runBrowserAudit({ passwords, output }) {
         // A client-side authenticated route may never emit a fresh full-window load.
         // Require the actual /app URL and the session-role assertion below;
         // do not block on unrelated subresources after document readiness.
-        await page.waitForURL(/\/app(?:\/|$)/, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await page.waitForFunction(() =>
+          window.location.pathname === '/app' || window.location.pathname.startsWith('/app/'),
+          null, { timeout: 20000, polling: 100 });
         const role = await page.evaluate(async () => {
           const r = await fetch('/api/auth/session', { credentials: 'include' });
           const session = await r.json();
