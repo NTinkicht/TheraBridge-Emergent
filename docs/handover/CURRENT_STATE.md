@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 WU4-K immutable custody state contract
+Versioned QUARANTINED→REJECTED/REVOKED→PURGE_PENDING→PURGED transitions with expected-revision compare, legal-hold purge denial, immutable fail-closed flags, and identity/digest validation; no file mutation is performed. Clinical approvals, public images, real media processing and G2/G2b GO are NOT enabled; issue #197 OPEN.
+
 ## 2026-11-20 — M5 WU4-J pre-merge checkpoint
 Partial internal rights/provenance evidence helper: strict tenant/draft/template/version/digest matching and independent reviewer identity, source/license/attribution/provider evidence verification; nonpublication receipts. Not connected to an API, real media scanning, rights approval or publication. M5-14 #197 remains open; G2/G2b NO-GO.
 
