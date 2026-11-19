@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 WU4-I pre-merge checkpoint
+Partial internal scanner attestation helper: bounded byte snapshot, required trusted scanner, matching digest and byte length, CLEAN verdict and constrained engine/signature version; reject forged, offline and inconsistent scanner results. Not connected to an API, real media scanning, rights approval or publication. M5-14 #197 remains open; G2/G2b NO-GO.
+
 ## 2026-11-20 — M5 WU4-H PR #445 review remediation
 bounded PNG integrity verifier implemented (partial): full PNG chunk ordering, exact CRCs, IDAT inflation and row/filter framing for constrained RGB/RGBA subset, rejecting malformed/unknown chunks and unconsumed compressed bytes; NO independent sandbox pixel decoder, AV, upload, storage or approval. Codex P2: check zlib engine consumed-byte count equals entire concatenated IDAT input; adversarial tests for CRC-correct opaque suffix and concatenated streams. Codex P1: required continuity evidence updated. Original first-head PR CI is not exact-head acceptance for revised branch. All eight >=90% API/Web metrics and full CI required on latest commit. G2/G2b NO-GO, #197 open; human rights/clinical/WCAG approvals NOT OBTAINED.
 
