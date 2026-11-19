@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { HeartHandshake, Plus, Search, Sparkles } from 'lucide-react';
+import { HeartHandshake, LayoutGrid, List, Plus, Search, Sparkles } from 'lucide-react';
 import { Field, FormAlert } from '@/components/auth/Field';
 import { PageTitle, SelectField, Workspace, errorText, useLoad } from '@/components/centers/kit';
 import { ActivityCard } from '@/components/clinical/ActivityCard';
@@ -51,6 +51,7 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
   const [search, setSearch] = useState('');
   const [specialty, setSpecialty] = useState('all');
   const [ownership, setOwnership] = useState('all');
+  const [view, setView] = useState<'grid' | 'list'>('grid');
   const queryKey = JSON.stringify([centerId, search.trim(), specialty, ownership]);
   const fetcher = useCallback(async () => ({ ...await clinicalApi.templates(centerId, {
     search: search.trim(), service: specialty === 'all' ? undefined : specialty,
@@ -127,19 +128,25 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
           <p className="text-[13px] text-brand-inkMuted" role="status" data-testid="activities-result-count">
             {first ? `Showing ${templates.length}${hasMore ? '+' : ''} matching activities` : 'Searching activities…'}
           </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <div role="group" aria-label="Activity layout" className="flex items-center gap-1" data-testid="activities-layout-toggle">
+              <Button size="sm" variant={view === 'grid' ? 'primary' : 'secondary'} onClick={() => setView('grid')} aria-pressed={view === 'grid'} data-testid="activities-grid-view"><LayoutGrid size={15} aria-hidden="true" />Grid</Button>
+              <Button size="sm" variant={view === 'list' ? 'primary' : 'secondary'} onClick={() => setView('list')} aria-pressed={view === 'list'} data-testid="activities-list-view"><List size={15} aria-hidden="true" />List</Button>
+            </div>
           {filtering && <Button size="sm" variant="ghost"
             onClick={() => { setSearch(''); setSpecialty('all'); setOwnership('all'); }} data-testid="activities-clear-filters">
             Clear filters
           </Button>}
+          </div>
         </div>
       </Card>}
       {first && !templates.length && !filtering && <EmptyState icon={Sparkles} title="No activities yet" body="Add the first template above." testId="activities-empty" />}
       {first && !templates.length && filtering &&
         <div data-testid="activities-no-results"><EmptyState icon={Search} title="No matching activities"
           body="Try another keyword or clear your filters. Your saved activities are unchanged." /></div>}
-      {first && templates.length > 0 && <div className="grid grid-cols-1 gap-4 lg:grid-cols-2" data-testid="activities-list">{templates.map(t => (
+      {first && templates.length > 0 && <div className={view === 'grid' ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3' : 'grid grid-cols-1 gap-4'} data-testid="activities-list" data-layout={view}>{templates.map(t => (
         <div key={t.id} className="min-w-0 space-y-2">
-          <ActivityCard t={t} />
+          <ActivityCard t={t} visual />
           {session.permissions.includes('center.activities.manage') && (
             <TemplateActions centerId={centerId} template={t} onError={onError}
               onChanged={message => { setNotice(message); setAdditional(null); void reload(); }} />

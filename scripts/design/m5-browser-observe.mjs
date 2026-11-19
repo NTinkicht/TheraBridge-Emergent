@@ -117,16 +117,32 @@ export async function runBrowserAudit({ passwords, output }) {
       const context = await browser.newContext({ viewport: { width: 390, height: 850 }, reducedMotion: 'reduce' });
       try {
         const page = await context.newPage();
-        await page.goto(BASE + '/login', { waitUntil: 'domcontentloaded' });
-        await page.getByTestId('login-email-input').fill(ACCOUNT[persona.id]);
-        await page.getByTestId('login-password-input').fill(passwords[ACCOUNT[persona.id]]);
-        await page.getByTestId('login-submit-button').click();
-        // A client-side authenticated route may never emit a fresh full-window load.
-        // Require the actual /app URL and the session-role assertion below;
-        // do not block on unrelated subresources after document readiness.
-        await page.waitForFunction(() =>
-          window.location.pathname === '/app' || window.location.pathname.startsWith('/app/'),
-          null, { timeout: 20000, polling: 100 });
+        // A busy CI runner can stall the first Next.js login/hydration transition.
+        // Retry the *real* sign-in once on timeout; never treat the retry itself as
+        // acceptance. Both paths must reach /app and pass server session-role validation.
+        let signedIn = false;
+        for (let attempt = 1; attempt <= 2 && !signedIn; attempt++) {
+          await page.goto(BASE + '/login', { waitUntil: 'domcontentloaded', timeout: 30000 });
+          if (!new URL(page.url()).pathname.startsWith('/app')) {
+            await page.getByTestId('login-email-input').fill(ACCOUNT[persona.id]);
+            await page.getByTestId('login-password-input').fill(passwords[ACCOUNT[persona.id]]);
+            await page.getByTestId('login-submit-button').click();
+          }
+          try {
+            // Client-side navigation need not emit another full document load.
+            await page.waitForFunction(() =>
+              window.location.pathname === '/app' || window.location.pathname.startsWith('/app/'),
+              null, { timeout: 20000, polling: 100 });
+            signedIn = true;
+          } catch (error) {
+            if (error?.name !== 'TimeoutError' || attempt === 2) {
+              throw new Error('Synthetic login route did not reach /app for ' +
+                persona.id + ' after ' + attempt + ' attempt(s)', { cause: error });
+            }
+            // Do not log credentials, cookies, page content or clinical details.
+            console.warn('Synthetic login navigation retry for ' + persona.id);
+          }
+        }
         const role = await page.evaluate(async () => {
           const r = await fetch('/api/auth/session', { credentials: 'include' });
           const session = await r.json();
