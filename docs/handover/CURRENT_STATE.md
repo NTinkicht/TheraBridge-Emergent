@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 WU4-J pre-merge checkpoint
+Partial internal rights/provenance evidence helper: strict tenant/draft/template/version/digest matching and independent reviewer identity, source/license/attribution/provider evidence verification; nonpublication receipts. Not connected to an API, real media scanning, rights approval or publication. M5-14 #197 remains open; G2/G2b NO-GO.
+
 ## 2026-11-20 — M5 WU4-I pre-merge checkpoint
 Partial internal scanner attestation helper: bounded byte snapshot, required trusted scanner, matching digest and byte length, CLEAN verdict and constrained engine/signature version; reject forged, offline and inconsistent scanner results. Not connected to an API, real media scanning, rights approval or publication. M5-14 #197 remains open; G2/G2b NO-GO.
 

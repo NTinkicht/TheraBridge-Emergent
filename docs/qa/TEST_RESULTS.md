@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 WU4-J pre-merge checkpoint
+Synthetic regression tests committed for rights/provenance evidence helper (strict tenant/draft/template/version/digest matching and independent reviewer identity, source/license/attribution/provider evidence verification; nonpublication receipts). Execution status on new exact PR HEAD: PENDING, NOT YET VERIFIED; secret scan, SBOM, provenance, demo/browser/Compose/preview and Smart CI also PENDING. Production AV/rights/clinical image safety and 5-width manual acceptance NOT RUN. This documentation does not claim successful CI or media clearance.
+
 ## 2026-11-20 — M5 WU4-I pre-merge checkpoint
 Synthetic regression tests committed for scanner attestation helper (bounded byte snapshot, required trusted scanner, matching digest and byte length, CLEAN verdict and constrained engine/signature version; reject forged, offline and inconsistent scanner results). Execution status on new exact PR HEAD: PENDING, NOT YET VERIFIED; secret scan, SBOM, provenance, demo/browser/Compose/preview and Smart CI also PENDING. Production AV/rights/clinical image safety and 5-width manual acceptance NOT RUN. This documentation does not claim successful CI or media clearance.
 
