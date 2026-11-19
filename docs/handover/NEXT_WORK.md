@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 WU4-H PR #445 review remediation
+Review and qualify exact revised HEAD with complete 90% lines/branches/functions/statements (API and Web), original security/SBOM/provenance/Compose/browser/preview/Smart CI, and new independent Codex disposition. After merging, remaining engineering: Independent sandboxed pixel decoder and AV scanning, safe derivative generation, audited private storage and immutable rights/clinical review, image version binding and revocation. Explicitly retain no public images, no real patient data, no G2/G2b GO; #197 remains OPEN.
+
 ## 2026-11-20 — M5 WU4-G PR #444 review remediation
 Review and qualify exact revised HEAD with complete 90% lines/branches/functions/statements (API and Web), original security/SBOM/provenance/Compose/browser/preview/Smart CI, and new independent Codex disposition. After merging, remaining engineering: Build authenticated transactional tenant/role/specialty/draft/version/quota binding; private encrypted cloud object store and write-only policy; sandbox image decoding, AV scanner, derivatives, retention and rights/human review. Explicitly retain no public images, no real patient data, no G2/G2b GO; #197 remains OPEN.
 
