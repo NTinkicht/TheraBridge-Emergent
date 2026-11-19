@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 WU4-I pre-merge checkpoint
+Introduced scanner attestation helper and synthetic adversarial Jest regression suite. Implemented: bounded byte snapshot, required trusted scanner, matching digest and byte length, CLEAN verdict and constrained engine/signature version; reject forged, offline and inconsistent scanner results. Not implemented: production sandboxed AV scanner, authenticated quarantine read/write, engine and signature freshness attestation, malware resilience tests, image decoding, human rights and clinical approval. No user-data or external-media activation.
+
 ## 2026-11-20 — M5 WU4-H PR #445 review remediation
 Implemented bounded PNG integrity verifier with synthetic Jest adversarial tests; Codex P2: check zlib engine consumed-byte count equals entire concatenated IDAT input; adversarial tests for CRC-correct opaque suffix and concatenated streams. Codex P1: required continuity evidence updated. Separate PR #445 targets main; code remains fail-closed and unconnected to real media/publication. Earlier CI results are historical: do not attribute them to remediated HEAD. Independent sandboxed pixel decoder and AV scanning, safe derivative generation, audited private storage and immutable rights/clinical review, image version binding and revocation. No clinical G2/G2b activation.
 
