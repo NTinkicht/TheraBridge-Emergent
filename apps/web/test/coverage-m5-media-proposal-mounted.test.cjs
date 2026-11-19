@@ -22,11 +22,13 @@ const draft = (overrides={}) => ({
 let tree;
 const output=()=>JSON.stringify(tree.toJSON());
 const buttons=()=>tree.root.findAllByType('button');
-const label=b=>JSON.stringify(b.props.children);
+const textOf=c=>typeof c==='string'?c:Array.isArray(c)?c.map(textOf).join(''):
+  React.isValidElement(c)?textOf(c.props.children):'';
+const label=b=>textOf(b.props.children);
 const button=phrase=>{const b=buttons().find(x=>label(x).includes(phrase));if(!b)throw Error('Missing button: '+phrase);return b;};
 const click=async phrase=>act(async()=>{button(phrase).props.onClick();await Promise.resolve();});
 const change=async(labelText,value)=>{
-  const control=tree.root.findAllByType('label').find(x=>JSON.stringify(x.props.children).includes(labelText));
+  const control=tree.root.findAllByType('label').find(x=>textOf(x.props.children).includes(labelText));
   if(!control)throw Error('Missing label: '+labelText);
   const input=control.findAll(x=>typeof x.type==='string'&&['input','select','textarea'].includes(x.type))[0];
   if(!input)throw Error('Missing input: '+labelText);
