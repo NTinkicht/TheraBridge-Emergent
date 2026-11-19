@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 WU4-L bound candidate inspection
+Synthetic Jest tests COMMITTED for bound candidate inspection, but exact-head CI execution NOT YET VERIFIED at PR creation; eight coverage metrics, build, browser, Compose, security/SBOM/provenance, Smart CI and reviewer qualification PENDING. Manual rights/image/clinical testing NOT RUN, no approval claimed.
+
 ## 2026-11-20 — M5 WU4-J pre-merge checkpoint
 Synthetic regression tests committed for rights/provenance evidence helper (strict tenant/draft/template/version/digest matching and independent reviewer identity, source/license/attribution/provider evidence verification; nonpublication receipts). Execution status on new exact PR HEAD: PENDING, NOT YET VERIFIED; secret scan, SBOM, provenance, demo/browser/Compose/preview and Smart CI also PENDING. Production AV/rights/clinical image safety and 5-width manual acceptance NOT RUN. This documentation does not claim successful CI or media clearance.
 
