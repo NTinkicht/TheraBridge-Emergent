@@ -165,3 +165,63 @@ describe('real plan-version-specific clinician goal checkpoint safeguards',()=>{
   expect(clinicalApi.goalCheckpoint).not.toHaveBeenCalled();
  });
 });
+
+
+describe('M5 checkpoint non-inference and observation selection limits',()=>{
+ it('allows an explicit clinician narrative without observational source IDs',async()=>{
+  await mountCheckpoint({ws:{timezone:'Asia/Dubai',observations:[]}});
+  await change('goal-checkpoint-goal','goal-a');
+  expect(JSON.stringify(tree.toJSON())).toContain('No observations for this exact goal');
+  await change('goal-checkpoint-summary','Fictional manual review with insufficient observations');
+  await click('goal-checkpoint-save');
+  expect(clinicalApi.goalCheckpoint).toHaveBeenCalledWith('center-a','version-a',
+    expect.objectContaining({goalKey:'goal-a',observationIds:[]}));
+ });
+ it('clears selected observation references when the clinician switches goal',async()=>{
+  await mountCheckpoint({version:version({goals:[goal(),goal({key:'second',title:'Fictional second goal'})]})});
+  await change('goal-checkpoint-goal','goal-a');
+  const input=get('goal-checkpoint-sources').findAllByType('input')[0];
+  await act(async()=>input.props.onChange({target:{checked:true}}));
+  await change('goal-checkpoint-goal','second');
+  expect(get('goal-checkpoint-sources').findAllByType('input')).toHaveLength(0);
+  await change('goal-checkpoint-summary','Fictional manual second review');
+  await click('goal-checkpoint-save');
+  expect(clinicalApi.goalCheckpoint).toHaveBeenCalledWith('center-a','version-a',
+    expect.objectContaining({goalKey:'second',observationIds:[]}));
+ });
+ it('does not erase an unsent review note when server rejects a checkpoint',async()=>{
+  run.mockImplementationOnce(async()=>false);
+  await mountCheckpoint();
+  await change('goal-checkpoint-goal','goal-a');
+  await change('goal-checkpoint-summary','Fictional review retained on rejection');
+  await click('goal-checkpoint-save');
+  expect(get('goal-checkpoint-summary').props.value).toContain('retained');
+  expect(get('goal-checkpoint-save').props.disabled).toBe(false);
+ });
+ it('history shows no observation attribution for checkpoint with zero references',async()=>{
+  await mountCheckpoint({editable:false,version:version({goalCheckpoints:[{
+    at:'2026-11-11T09:00:00Z',reviewedOn:'2026-11-11',
+    goalKey:'historical-goal',summary:'Fictional internal review without evidence',
+    observationIds:[]
+  }]})});
+  expect(get('goal-checkpoint-history')).toBeTruthy();
+  expect(JSON.stringify(tree.toJSON())).toContain('No observation references selected');
+  expect(JSON.stringify(tree.toJSON())).toContain('historical-goal');
+  expect(find('goal-checkpoint-save')).toHaveLength(0);
+ });
+ it('stops selecting a 21st source instead of silently overflowing evidence limit',async()=>{
+  const many=Array.from({length:21},(_,i)=>({
+    id:'fictional-observation-'+i,goalKey:'goal-a',
+    planVersionId:'version-a',observedOn:'2026-11-09',value:i
+  }));
+  await mountCheckpoint({ws:{timezone:'Asia/Dubai',observations:many}});
+  await change('goal-checkpoint-goal','goal-a');
+  for(let i=0;i<20;i++){
+    const input=get('goal-checkpoint-sources').findAllByType('input')[i];
+    await act(async()=>input.props.onChange({target:{checked:true}}));
+  }
+  const last=get('goal-checkpoint-sources').findAllByType('input')[20];
+  expect(last.props.disabled).toBe(true);
+  expect(get('goal-checkpoint-sources').findAllByType('input')[0].props.disabled).toBe(false);
+ });
+});
