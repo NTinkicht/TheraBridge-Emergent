@@ -1,17 +1,23 @@
 'use client';
 
-import { Activity, Brain, Clock, Hand, MessageCircle, ShieldCheck, Users } from 'lucide-react';
+import { Activity, Brain, Clock, Hand, ImageOff, MessageCircle, ShieldCheck, Users } from 'lucide-react';
 import { Card, type Tone } from '@/components/design/ui';
 import { isRecognizedSpecialty, specialtyDisplayName, specialtyIdentity } from '@/styles/specialty-identity';
 import type { Template } from '@/lib/clinical';
 
 // Step-by-step activity with materials and safety guidance; shared by the staff library, plan preview and family screens.
-export function ActivityCard({ t, tone = 'clinical', extra }: { t: Template; tone?: Tone; extra?: string }) {
+export function ActivityCard({ t, tone = 'clinical', extra, visual = false }: { t: Template; tone?: Tone; extra?: string; visual?: boolean }) {
   const fam = tone === 'family';
   const identity = isRecognizedSpecialty(t.service) ? specialtyIdentity(t.service) : null;
   const Icon = identity ? { 'message-circle': MessageCircle, hand: Hand, brain: Brain, activity: Activity, users: Users }[identity.icon] : null;
   return (
     <Card tone={tone} className="p-5" testId={`activity-${t.id}`}>
+      {visual && <div className="mb-4 flex aspect-[4/3] max-h-48 w-full items-center justify-center rounded-control border border-border-light bg-surface-muted" data-testid={`activity-media-placeholder-${t.id}`}>
+        <div className="flex flex-col items-center gap-2 px-3 text-center text-[13px] text-brand-inkMuted">
+          <ImageOff size={24} aria-hidden="true" />
+          <span>No approved illustration available</span>
+        </div>
+      </div>}
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className={`${fam ? 'font-display text-[19px]' : 'text-[16px]'} font-semibold`}>{t.title}</h3>
         <span className={`flex items-center gap-1 text-[13px] ${fam ? 'text-fam-muted' : 'text-brand-inkMuted'}`}><Clock size={13} aria-hidden="true" />{t.minutes} min · {t.ageBand}</span>
