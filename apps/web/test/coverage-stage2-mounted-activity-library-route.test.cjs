@@ -138,3 +138,38 @@ describe('real activity library source scoping and synthetic family safety',()=>
   expect(find('activities-list')).toHaveLength(0);
  });
 });
+
+
+describe('M5 WU4-D accessible presentation toggles and invariant permissions',()=>{
+ it('switches source-backed staff activities between responsive grid and list',async()=>{
+  await mount();
+  expect(get('activities-list').props['data-layout']).toBe('grid');
+  expect(get('activities-grid-view').props['aria-pressed']).toBe(true);
+  expect(get('activities-list-view').props['aria-pressed']).toBe(false);
+  await click('activities-list-view');
+  expect(get('activities-list').props['data-layout']).toBe('list');
+  expect(get('activities-list-view').props['aria-pressed']).toBe(true);
+  await click('activities-grid-view');
+  expect(get('activities-list').props['data-layout']).toBe('grid');
+  expect(get('activities-grid-view').props['aria-pressed']).toBe(true);
+  expect(clinicalApi.templates).toHaveBeenCalledWith('center-a',
+   expect.objectContaining({ownership:'all',limit:100}));
+ });
+ it('keeps layout preference while searching within authorized server scope',async()=>{
+  await mount();await click('activities-list-view');
+  await change('activities-search','Fictional title');
+  expect(get('activities-list').props['data-layout']).toBe('list');
+  expect(clinicalApi.templates).toHaveBeenLastCalledWith('center-a',
+   expect.objectContaining({search:'Fictional title'}));
+ });
+ it('does not offer staff grid/list controls to families with only sample access',async()=>{
+  mockSession.permissions=['family.activities.read'];
+  clinicalApi.family.mockResolvedValue({children:[{
+   id:'child-synthetic',name:'Fictional Child',activities:[template('sample')]}]});
+  await mount();
+  expect(get('family-activities-child-child-synthetic')).toBeTruthy();
+  expect(find('activities-grid-view')).toHaveLength(0);
+  expect(find('activities-list-view')).toHaveLength(0);
+  expect(find('template-form-toggle')).toHaveLength(0);
+ });
+});
