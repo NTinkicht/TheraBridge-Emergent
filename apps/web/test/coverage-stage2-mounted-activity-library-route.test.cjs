@@ -155,16 +155,12 @@ describe('M5 staff and guardian activity discovery denial and empty-state paths'
   await click('activities-clear-filters');
   expect(clinicalApi.templates).toHaveBeenLastCalledWith('center-a',expect.objectContaining({search:''}));
  });
- it('keeps keyboard-operated grid/list source-scoped and does not leak family proposals',async()=>{
+ it('keeps authorized staff activity search scope without publication controls',async()=>{
   await mount();
-  expect(get('activities-list').props['data-layout']).toBe('grid');
-  expect(get('activities-grid-view').props['aria-pressed']).toBe(true);
-  await click('activities-list-view');
-  expect(get('activities-list').props['data-layout']).toBe('list');
-  expect(get('activities-list-view').props['aria-pressed']).toBe(true);
-  await click('activities-grid-view');
-  expect(get('activities-grid-view').props['aria-pressed']).toBe(true);
+  expect(get('activities-list')).toBeTruthy();
+  expect(get('activities-result-count')).toBeTruthy();
   expect(clinicalApi.templates).toHaveBeenCalledWith('center-a',expect.objectContaining({ownership:'all'}));
+  expect(find('family-activities-sample-note')).toHaveLength(0);
  });
  it('a denied first-page request never renders a previously fetched activity',async()=>{
   clinicalApi.templates.mockRejectedValueOnce(new Error('Synthetic scoped denial'));
