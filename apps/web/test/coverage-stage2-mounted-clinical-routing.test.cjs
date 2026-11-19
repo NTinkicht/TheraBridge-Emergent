@@ -173,3 +173,79 @@ describe('Stage 2 clinical navigation protects unsaved notes',()=>{
   expect(get('clinical-error')).toBeTruthy();
  });
 });
+
+describe('source-scoped clinical navigation and audit denial edges',()=>{
+ it('records earlier assessment transport error without erasing the first page',async()=>{
+  clinicalApi.workspace.mockRejectedValueOnce(Error('Synthetic retryable network'));
+  await mount();await selectTab('assessments');await click('load-older-assessments');
+  expect(get('assessment-page-error').props.children).toContain('Earlier assessments could not be loaded');
+  expect(get('visible-assessment-count').props.children).toBe('1');
+ });
+ it('clears an earlier-plan paging error after a successful retry',async()=>{
+  clinicalApi.workspace.mockRejectedValueOnce(Error('Fictional timeout'))
+   .mockResolvedValueOnce(workspace({plans:[plan('p2')],observations:[],hasMorePlans:false}));
+  await mount();await selectTab('plan');
+  await click('load-older-plans');
+  expect(get('plan-page-error').props.children).toContain('Older plans could not be loaded');
+  await click('load-older-plans');
+  expect(get('plan-page-error').props.children).toBe('');
+  expect(get('visible-plan-count').props.children).toBe('2');
+ });
+ it('does not treat the current tab as a new unsaved-navigation event',async()=>{
+  await mount();await selectTab('sessions');await click('mark-session-unsaved');
+  global.window.confirm.mockClear();
+  await selectTab('sessions');
+  expect(global.window.confirm).not.toHaveBeenCalled();
+  expect(get('clinical-tab-sessions').props['aria-selected']).toBe(true);
+ });
+ it('blocks beforeunload while notes are dirty and permits it once saved',async()=>{
+  await mount();await selectTab('sessions');await click('mark-session-unsaved');
+  const callback=global.window.addEventListener.mock.calls.find(x=>x[0]==='beforeunload')[1];
+  const e={preventDefault:jest.fn(),returnValue:null};
+  callback(e);expect(e.preventDefault).toHaveBeenCalledTimes(1);
+  expect(e.returnValue).toBe('');
+  await click('mark-session-saved');
+  const clean={preventDefault:jest.fn(),returnValue:null};
+  callback(clean);expect(clean.preventDefault).not.toHaveBeenCalled();
+ });
+ it('prevents leaving through an HTML anchor when unsaved notes exist',async()=>{
+  await mount();await selectTab('sessions');await click('mark-session-unsaved');
+  const callback=global.document.addEventListener.mock.calls.find(x=>x[0]==='click')[1];
+  const event={target:{closest:jest.fn(()=>({href:'/app/clinical'}))},
+   preventDefault:jest.fn(),stopPropagation:jest.fn()};
+  global.window.confirm.mockReturnValueOnce(false);
+  callback(event);
+  expect(event.preventDefault).toHaveBeenCalledTimes(1);
+  expect(event.stopPropagation).toHaveBeenCalledTimes(1);
+  await click('mark-session-saved');
+  callback(event);
+  expect(event.preventDefault).toHaveBeenCalledTimes(1);
+ });
+ it('guards browser history when navigation would discard synthetic draft text',async()=>{
+  await mount();await selectTab('sessions');await click('mark-session-unsaved');
+  const callback=global.window.addEventListener.mock.calls.find(x=>x[0]==='popstate')[1];
+  global.window.confirm.mockReturnValueOnce(false);
+  callback();expect(global.history.go).toHaveBeenCalledWith(1);
+  await click('mark-session-saved');
+  global.history.go.mockClear();callback();
+  expect(global.history.go).not.toHaveBeenCalled();
+ });
+ it('restores overview after a center change without prior scoped pagination',async()=>{
+  clinicalApi.workspace.mockResolvedValueOnce(workspace({plans:[plan('older')],observations:[],hasMorePlans:false}));
+  await mount();await selectTab('plan');await click('load-older-plans');
+  mockSession={...initialSession(),activeContext:{type:'center',centerId:'different-center',role:'THERAPIST'}};
+  mockWorkspace=workspace({plans:[plan('new-center')],hasMorePlans:false});
+  await act(async()=>tree.update(h(Page)));
+  expect(get('clinical-tab-overview').props['aria-selected']).toBe(true);
+  await selectTab('plan');
+  expect(get('visible-plan-count').props.children).toBe('1');
+  expect(html()).not.toContain('older');
+ });
+ it('allows explicit confirmed tab change after unsaved draft warning',async()=>{
+  await mount();await selectTab('sessions');await click('mark-session-unsaved');
+  global.window.confirm.mockReturnValueOnce(true);
+  await selectTab('reports');
+  expect(get('clinical-tab-reports').props['aria-selected']).toBe(true);
+  expect(get('reports-boundary')).toBeTruthy();
+ });
+});
