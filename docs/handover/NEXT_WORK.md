@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 WU4-L bound candidate inspection
+Require exact final-head full CI, all 8 genuine >=90% API/Web metrics, completed independent Codex and disposition of every review finding before merging. Integration remaining: production authenticated scan adapter, full sandboxed pixel decoder, private encrypted object store write, malicious-content analysis, quota/CSRF/ownership transaction, legal and clinical approval. All clinical/guardian release restrictions preserved.
+
 ## 2026-11-20 — M5 WU4-J pre-merge checkpoint
 Complete exact-HEAD CI, all eight API/Web >=90% metrics and independent P0–P2 review before merge. Subsequent integration still required: trusted persisted signoffs with independent reviewer authentication, lawyer/licensing validation, reviewer integrity, revocation, clinical/design signoff, actual storage and immutable audit log. No relaxing clinical NO-GO or image publication restrictions; #197 remains open.
 
