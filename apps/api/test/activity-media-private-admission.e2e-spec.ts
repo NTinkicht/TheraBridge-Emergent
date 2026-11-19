@@ -52,4 +52,10 @@ describe('WU4-L private integrity+scan composite (never storage admission)',()=>
      await expect(inspectPrivateAdmission({...scope,...patch},bytes,clean)).rejects.toThrow(PrivateAdmissionError);
    }
  });
+ it('rejects oversized input before making a private snapshot or invoking scanner',async()=>{
+   const scanner=jest.fn(clean);
+   await expect(inspectPrivateAdmission(scope,Buffer.alloc(8*1024*1024+1),scanner)).rejects.toThrow(PrivateAdmissionError);
+   expect(scanner).not.toHaveBeenCalled();
+ });
+
 });
