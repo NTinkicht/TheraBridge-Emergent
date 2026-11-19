@@ -5,6 +5,20 @@ const record=(): CustodyRecord=>({
  draftId:'33333333-3333-4333-8333-333333333333',
  templateVersion:1,candidateSha256:'a'.repeat(64),candidateBytes:100,
  revision:1,status:'QUARANTINED',legalHold:false,approved:false,publishEnabled:false,readEnabled:false,
+ it('rejects object-valued tenant, template, draft and actor identities without coercion',()=>{
+   const valid=record().centerId;
+   const deceptive={toString:()=>valid,toLowerCase:()=> 'not-a-uuid'};
+   const mutable={toString:()=>valid,toLowerCase:()=>({mutable:true})};
+   for(const field of ['centerId','templateId','draftId'] as const){
+     for(const value of [deceptive,mutable,new String(valid)]){
+       expect(()=>transitionCustody({...record(),[field]:value} as never,event())).toThrow(CustodyTransitionError);
+     }
+   }
+   for(const value of [deceptive,mutable,new String(valid)]){
+     expect(()=>transitionCustody(record(),{...event(),actorId:value} as never)).toThrow(CustodyTransitionError);
+   }
+ });
+
 });
 const event=()=>({expectedRevision:1,next:'REJECTED' as const,actorId:'44444444-4444-4444-8444-444444444444',reason:'Synthetic reviewer rejected candidate'});
 describe('WU4-K immutable custody transitions (no file deletion or publication)',()=>{
