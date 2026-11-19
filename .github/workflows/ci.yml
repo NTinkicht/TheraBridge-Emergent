@@ -620,6 +620,7 @@ jobs:
           retention-days: 3
       - name: Enforce 90 percent application coverage for API and Web (all four metrics)
         run: |
+          node --test scripts/qa/mandatory-coverage-policy.test.mjs scripts/qa/m4-measured-coverage.test.mjs
           # Full API and Web Istanbul summaries were measured and scope-verified above.
           # Never allow a green PR if ANY of the eight metrics is below 90%.
           node scripts/qa/m4-measured-coverage.mjs \
