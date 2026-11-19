@@ -17,15 +17,17 @@ const s=(overrides={})=>({
   permissions:['center.children.read','center.schedule.read','center.activities.read','center.clinical.read'],
   ...overrides
 });
-let tree,oldDocument,oldWindow,media,focusLog;
+let tree,oldDocument,oldWindow,media,focusLog,panelFocusables;
 const get=id=>tree.root.findByProps({'data-testid':id});
 const all=id=>tree.root.findAllByProps({'data-testid':id});
-const mount=async(session=s(),active='children',planned=[])=>act(async()=>{tree=create(h(ProductShell,{session,active,planned,children:'Synthetic workspace'}));});
+const mount=async(session=s(),active='children',planned=[])=>act(async()=>{tree=create(h(ProductShell,{session,active,planned,children:'Synthetic workspace'}),{
+  createNodeMock:element=>element.props?.id==='mobile-more-panel'?{querySelectorAll:()=>panelFocusables}:null
+});});
 const click=async id=>act(async()=>get(id).props.onClick());
 const change=async(id,value)=>act(async()=>get(id).props.onChange({target:{value}}));
 const output=()=>JSON.stringify(tree.toJSON());
 beforeEach(()=>{
-  jest.clearAllMocks();tree=null;focusLog=[];oldDocument=global.document;oldWindow=global.window;
+  jest.clearAllMocks();tree=null;focusLog=[];panelFocusables=[];oldDocument=global.document;oldWindow=global.window;
   media={matches:false,addEventListener:jest.fn(),removeEventListener:jest.fn()};
   global.window={matchMedia:jest.fn(()=>media)};
   global.document={body:{style:{overflow:'scroll'}},documentElement:{style:{overflow:'auto'}},
@@ -121,5 +123,57 @@ describe('real staff navigation and keyboard interaction branches',()=>{
     expect(get('mobile-more-children')).toBeTruthy();
     await act(async()=>get('mobile-more-children').props.onClick());
     expect(all('mobile-more-sheet')).toHaveLength(0);
+  });
+});
+
+
+describe('real mobile dialog accessible focus-loop and expanded-only navigation',()=>{
+  const focusable=()=>({getClientRects:()=>[{}],focus:jest.fn()});
+  it('loops shift-Tab from first to last focusable control',async()=>{
+    const first=focusable(),last=focusable();panelFocusables=[first,last];
+    await mount();await click('mobile-more-button');
+    global.document.activeElement=first;
+    const e={key:'Tab',shiftKey:true,preventDefault:jest.fn()};
+    await act(async()=>tree.root.findByProps({id:'mobile-more-panel'}).props.onKeyDown(e));
+    expect(e.preventDefault).toHaveBeenCalledTimes(1);
+    expect(last.focus).toHaveBeenCalledTimes(1);
+  });
+  it('loops forward Tab from last to first and does not trap intermediate controls',async()=>{
+    const first=focusable(),middle=focusable(),last=focusable();
+    panelFocusables=[first,middle,last];
+    await mount();await click('mobile-more-button');
+    global.document.activeElement=last;
+    const e={key:'Tab',shiftKey:false,preventDefault:jest.fn()};
+    await act(async()=>tree.root.findByProps({id:'mobile-more-panel'}).props.onKeyDown(e));
+    expect(e.preventDefault).toHaveBeenCalledTimes(1);
+    expect(first.focus).toHaveBeenCalledTimes(1);
+    global.document.activeElement=middle;
+    const other={key:'Tab',shiftKey:false,preventDefault:jest.fn()};
+    await act(async()=>tree.root.findByProps({id:'mobile-more-panel'}).props.onKeyDown(other));
+    expect(other.preventDefault).not.toHaveBeenCalled();
+  });
+  it('ignores controls hidden from the tab order and never leaks focus',async()=>{
+    const hidden={getClientRects:()=>[],focus:jest.fn()};
+    const visible=focusable();panelFocusables=[hidden,visible];
+    await mount();await click('mobile-more-button');
+    global.document.activeElement=visible;
+    const e={key:'Tab',shiftKey:false,preventDefault:jest.fn()};
+    await act(async()=>tree.root.findByProps({id:'mobile-more-panel'}).props.onKeyDown(e));
+    expect(e.preventDefault).toHaveBeenCalled();
+    expect(visible.focus).toHaveBeenCalled();
+    expect(hidden.focus).not.toHaveBeenCalled();
+  });
+  it('supports a platform-only account with no center-bound clinical routes',async()=>{
+    const platform={type:'platform',role:'PLATFORM_ADMIN'};
+    await mount(s({activeContext:platform,contexts:[platform],permissions:['platform.applications.read']}),'applications');
+    expect(get('nav-applications')).toBeTruthy();
+    expect(all('nav-children')).toHaveLength(0);
+    expect(get('product-shell').props.className).not.toContain('theme-family-auto');
+  });
+  it('displays no workspace selected without exposing role-dependent endpoints',async()=>{
+    await mount(s({activeContext:null,contexts:[center,guardian],permissions:[]}));
+    expect(get('active-context-label').props.children).toBe('No workspace selected');
+    expect(all('nav-clinical')).toHaveLength(0);
+    expect(get('mobile-nav-select')).toBeTruthy();
   });
 });
