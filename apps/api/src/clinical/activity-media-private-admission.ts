@@ -1,5 +1,5 @@
 import {createHash} from 'node:crypto';
-import {preflightActivityMedia} from './activity-media-intake-preflight';
+import {MAX_ACTIVITY_MEDIA_BYTES,preflightActivityMedia} from './activity-media-intake-preflight';
 import {verifyPngCandidate} from './activity-media-png-integrity';
 import {planQuarantineObject,type QuarantineScope} from './activity-media-quarantine-intent';
 import {scanPrivateCandidate,type PrivateScanner} from './activity-media-scanner-boundary';
@@ -20,7 +20,7 @@ export type PrivateAdmissionEvidence = Readonly<{
 export async function inspectPrivateAdmission(
  scope:QuarantineScope,bytes:unknown,scanner?:PrivateScanner,
 ):Promise<PrivateAdmissionEvidence> {
- if(!Buffer.isBuffer(bytes) || typeof scanner!=='function') throw new PrivateAdmissionError();
+ if(!Buffer.isBuffer(bytes) || bytes.length<33 || bytes.length>MAX_ACTIVITY_MEDIA_BYTES || typeof scanner!=='function') throw new PrivateAdmissionError();
  // Never allow mutation of the caller's bytes to race asynchronous scanner work.
  const snapshot=Buffer.from(bytes);
  try {
