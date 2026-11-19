@@ -19,7 +19,20 @@ export class CustodyTransitionError extends Error {
 }
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SHA=/^[0-9a-f]{64}$/;
-export function transitionCustody(record: CustodyRecord, event: CustodyEvent): CustodyRecord {
+function snapshotPlain<T extends object>(value: T, keys: readonly string[]): T {
+  if (!value || typeof value !== 'object' ||
+      Object.getPrototypeOf(value) !== Object.prototype) throw new CustodyTransitionError();
+  const descriptors = Object.getOwnPropertyDescriptors(value);
+  if (Object.keys(descriptors).length !== keys.length ||
+      keys.some(key => !Object.prototype.hasOwnProperty.call(descriptors,key) ||
+        !Object.prototype.hasOwnProperty.call(descriptors[key],'value'))) {
+    throw new CustodyTransitionError();
+  }
+  return Object.fromEntries(keys.map(key=>[key,descriptors[key].value])) as T;
+}
+export function transitionCustody(inputRecord: CustodyRecord, inputEvent: CustodyEvent): CustodyRecord {
+  const record = snapshotPlain(inputRecord, ['centerId','templateId','draftId','templateVersion','candidateSha256','candidateBytes','revision','status','legalHold','approved','publishEnabled','readEnabled']);
+  const event = snapshotPlain(inputEvent, ['reason','expectedRevision','next','actorId']);
   if(!record || !event || typeof record!=='object' || typeof event!=='object' ||
      !UUID.test(record.centerId) || !UUID.test(record.templateId) ||
      !UUID.test(record.draftId) || !UUID.test(event.actorId) ||
