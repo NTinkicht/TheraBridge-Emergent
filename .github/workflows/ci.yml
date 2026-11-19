@@ -618,6 +618,13 @@ jobs:
           path: .workspace/m4-coverage/m4-coverage-baseline.json
           if-no-files-found: error
           retention-days: 3
+      - name: Enforce 90 percent application coverage for API and Web (all four metrics)
+        run: |
+          # Full API and Web Istanbul summaries were measured and scope-verified above.
+          # Never allow a green PR if ANY of the eight metrics is below 90%.
+          node scripts/qa/m4-measured-coverage.mjs \
+            .workspace/m4-coverage/api/coverage-summary.json \
+            .workspace/m4-coverage/web-istanbul/coverage-summary.json
       - name: Verify M4-08 suite inventory and truthfully scoped coverage baseline
         run: |
           node scripts/qa/check-ci-test-inventory.mjs
