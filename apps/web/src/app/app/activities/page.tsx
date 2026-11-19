@@ -146,7 +146,7 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
           body="Try another keyword or clear your filters. Your saved activities are unchanged." /></div>}
       {first && templates.length > 0 && <div className={view === 'grid' ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3' : 'grid grid-cols-1 gap-4'} data-testid="activities-list" data-layout={view}>{templates.map(t => (
         <div key={t.id} className="min-w-0 space-y-2">
-          <ActivityCard t={t} visual />
+          <ActivityCard t={t} visual compact />
           {session.permissions.includes('center.activities.manage') && (
             <TemplateActions centerId={centerId} template={t} onError={onError}
               onChanged={message => { setNotice(message); setAdditional(null); void reload(); }} />

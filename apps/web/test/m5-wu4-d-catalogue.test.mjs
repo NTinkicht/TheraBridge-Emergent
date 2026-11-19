@@ -12,7 +12,10 @@ test('M5-12 image-first staff preview fails closed until approved assets exist',
   assert.match(activity, /No approved illustration available/);
   assert.match(activity, /activity-media-placeholder-/);
   assert.doesNotMatch(activity, /<img\b|<Image\b|mediaDraft\.url|draft\.url|approve\(/);
-  assert.match(library, /<ActivityCard t=\{t\} visual \/>/);
+  assert.match(library, /<ActivityCard t=\{t\} visual compact \/>/);
+  assert.match(activity, /compact = false/);
+  assert.match(activity, /<details className=/);
+  assert.match(activity, /activity-details-/);
   assert.match(library, /<ActivityCard key=\{t.id\} t=\{t\} tone="family" \/>/);
   assert.match(library, /session\.permissions\.includes\('center\.activities\.manage'\) && t\.library === 'center'/);
 });
