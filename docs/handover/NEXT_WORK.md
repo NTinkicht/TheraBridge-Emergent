@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 WU4-I pre-merge checkpoint
+Complete exact-HEAD CI, all eight API/Web >=90% metrics and independent P0–P2 review before merge. Subsequent integration still required: production sandboxed AV scanner, authenticated quarantine read/write, engine and signature freshness attestation, malware resilience tests, image decoding, human rights and clinical approval. No relaxing clinical NO-GO or image publication restrictions; #197 remains open.
+
 ## 2026-11-20 — M5 WU4-H PR #445 review remediation
 Review and qualify exact revised HEAD with complete 90% lines/branches/functions/statements (API and Web), original security/SBOM/provenance/Compose/browser/preview/Smart CI, and new independent Codex disposition. After merging, remaining engineering: Independent sandboxed pixel decoder and AV scanning, safe derivative generation, audited private storage and immutable rights/clinical review, image version binding and revocation. Explicitly retain no public images, no real patient data, no G2/G2b GO; #197 remains OPEN.
 

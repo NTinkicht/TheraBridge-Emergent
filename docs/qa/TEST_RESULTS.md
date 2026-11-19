@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 WU4-I pre-merge checkpoint
+Synthetic regression tests committed for scanner attestation helper (bounded byte snapshot, required trusted scanner, matching digest and byte length, CLEAN verdict and constrained engine/signature version; reject forged, offline and inconsistent scanner results). Execution status on new exact PR HEAD: PENDING, NOT YET VERIFIED; secret scan, SBOM, provenance, demo/browser/Compose/preview and Smart CI also PENDING. Production AV/rights/clinical image safety and 5-width manual acceptance NOT RUN. This documentation does not claim successful CI or media clearance.
+
 ## 2026-11-20 — M5 WU4-H PR #445 review remediation
 Synthetic Jest tests added for bounded PNG integrity verifier; remediation: Codex P2: check zlib engine consumed-byte count equals entire concatenated IDAT input; adversarial tests for CRC-correct opaque suffix and concatenated streams. Codex P1: required continuity evidence updated. Original pre-remediation run status must not be transferred to revised HEAD; revised exact-HEAD full CI/coverage and Codex review PENDING. Browser/preview/CI on revised HEAD NOT YET VERIFIED. Manual five-width accessibility, real image decoding/security acceptance, antivirus, rights, license, design/clinical review NOT RUN/NOT OBTAINED. G2/G2b NO-GO; M5-14 #197 OPEN.
 
