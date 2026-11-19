@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 WU4-K immutable custody state contract
+Committed immutable custody state contract implementation and synthetic Jest adversarial tests. Scope: Versioned QUARANTINED→REJECTED/REVOKED→PURGE_PENDING→PURGED transitions with expected-revision compare, legal-hold purge denial, immutable fail-closed flags, and identity/digest validation; no file mutation is performed. Deferred without approval: actual transactional storage state, audit provenance, retention policy, legal-hold ownership, orphan removal, durable deletion evidence and authenticated access. All historical checks from other PRs remain separate evidence.
+
 ## 2026-11-20 — M5 WU4-J pre-merge checkpoint
 Introduced rights/provenance evidence helper and synthetic adversarial Jest regression suite. Implemented: strict tenant/draft/template/version/digest matching and independent reviewer identity, source/license/attribution/provider evidence verification; nonpublication receipts. Not implemented: trusted persisted signoffs with independent reviewer authentication, lawyer/licensing validation, reviewer integrity, revocation, clinical/design signoff, actual storage and immutable audit log. No user-data or external-media activation.
 
