@@ -26,6 +26,13 @@ export function ActivityCard({ t, tone = 'clinical', extra, visual = false, comp
       {t.materials.length > 0 && <p className="mt-3 text-[14px]"><span className="font-semibold">You’ll need: </span>{t.materials.join(', ')}</p>}
       {compact && t.steps.length > 0 && <details className="mt-3 rounded-control border border-border-light p-3" data-testid={`activity-details-${t.id}`}>
         <summary className="cursor-pointer text-[14px] font-semibold">Instructions ({t.steps.length} steps)</summary>
+        <ol className="mt-3 space-y-2" aria-label="Steps">
+          {t.steps.map((step, i) => (
+            <li key={i} className="flex gap-3 text-[14px]">
+              <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[12px] font-bold ${fam ? 'bg-fam-accentTint text-fam-accent' : 'bg-brand-actionTint text-brand-action'}`}>{i + 1}</span><span>{step}</span>
+            </li>
+          ))}
+        </ol>
       </details>}
       {(!compact || t.steps.length === 0) && <ol className="mt-3 space-y-2" aria-label="Steps">
         {t.steps.map((s, i) => (
