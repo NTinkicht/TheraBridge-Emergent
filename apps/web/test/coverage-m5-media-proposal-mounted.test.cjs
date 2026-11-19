@@ -74,7 +74,7 @@ describe('actual mounted private media proposal workflow',()=>{
       license:'INTERNAL_REVIEW_ONLY'
     }));
     expect(output()).toContain('No image was uploaded');
-    expect(output()).toContain('draft-a');
+    expect(output()).toContain('Fictional child sorting colored blocks');
   });
   it('blocks generated artwork until provider terms are entered',async()=>{
     await mount();await open();
@@ -103,7 +103,7 @@ describe('actual mounted private media proposal workflow',()=>{
     expect(inputs.some(x=>x.props.value==='Fictional motor')).toBe(true);
   });
   it('refuses draft submission when activity version is absent',async()=>{
-    await mount(undefined);await open();
+    await mount(null);await open();
     expect(output()).toContain('Activity version unavailable');
     expect(button('Save private metadata draft').props.disabled).toBeTruthy();
     expect(api.propose).not.toHaveBeenCalled();
@@ -143,7 +143,7 @@ describe('actual mounted private media proposal workflow',()=>{
     await mount();await open();
     await click('Load older proposals');
     expect(api.list).toHaveBeenLastCalledWith('center-a','activity-a','page-2');
-    expect(output()).toContain('draft-older');
+    expect(output()).toContain('Fictional child sorting colored blocks');
     expect(tree.root.findAllByType('li')).toHaveLength(2);
   });
   it('retains visible history after a failed older page and retries',async()=>{
