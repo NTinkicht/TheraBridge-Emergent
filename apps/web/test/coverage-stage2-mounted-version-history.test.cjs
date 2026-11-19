@@ -280,3 +280,69 @@ describe('M4-08 final 90% exact saved version provenance branches',()=>{
   expect(html()).toContain('Internal, read-only drafts');
  });
 });
+
+
+describe('historical plan comparison fallback and missing evidence branches',()=>{
+ it('uses Not recorded for a historical version without an update timestamp',async()=>{
+  await render(plan([version(2),version(1,{updatedAt:undefined})]));
+  expect(html()).toContain('Not recorded');
+ });
+ it('retains both saved title and plan-specific duration on an immutable comparison',async()=>{
+  await render(plan([version(2,{homeActivities:[activity({
+    snapshot:{...snapshot,title:'Changed fictional scene',minutes:12}
+  })]}),version(1)]));
+  expect(html()).toContain('Changed fictional scene');
+  expect(html()).toContain('Frozen activity from saved plan');
+  expect(html()).toContain('Plan-specific duration');
+ });
+ it('uses a source-only prior snapshot title when the newer activity has no snapshot',async()=>{
+  await render(plan([version(2,{homeActivities:[activity({snapshot:undefined})]}),
+    version(1,{homeActivities:[activity()]})]));
+  expect(html()).toContain('Frozen activity from saved plan');
+  expect(html()).toContain('Legacy draft: title from current library');
+ });
+ it('labels legacy present-day catalog title only as legacy in a comparison',async()=>{
+  const t1=activity({snapshot:undefined,frequency:'Weekly'});
+  const t2=activity({snapshot:undefined,frequency:'Monthly'});
+  await render(plan([version(2,{homeActivities:[t2]}),
+   version(1,{homeActivities:[t1]})]));
+  expect(html()).toContain('Legacy activity — current-library title');
+  expect(html()).toContain('Changed mutable library title');
+ });
+ it('uses empty note and missing goal link rather than invented historical evidence',async()=>{
+  await render(plan([version(2),version(1,{homeActivities:[
+   activity({goalKey:'',note:undefined,durationMinutes:undefined,
+    snapshot:{...snapshot,materials:[],steps:[],safety:[]}})
+  ]})]));
+  expect(html()).toContain('linked goal: Not recorded');
+  expect(html()).toContain('No plan-specific duration');
+  expect(html()).toContain('None recorded');
+  expect(find('plan-history-activity-instructions')).toHaveLength(0);
+ });
+ it('only targets an actual version with its original goal identity',async()=>{
+  const target={versionId:'version-1',goalKey:'g1'};
+  await render(plan([version(2),version(1)]),target);
+  expect(get('plan-history-inspection')).toBeTruthy();
+  expect(html()).toContain('Saved synthetic summary 1');
+  expect(get('plan-history-goal-g1')).toBeTruthy();
+ });
+ it('refuses a historical deep link to a goal absent in that exact version',async()=>{
+  await render(plan([version(2),version(1)]),
+    {versionId:'version-1',goalKey:'fictional-foreign-goal'});
+  expect(html()).toContain('Saved synthetic summary 1');
+  expect(html()).not.toContain('fictional-foreign-goal');
+ });
+ it('displays a change from baseline to a newly added goal without claiming improvement',async()=>{
+  await render(plan([version(2,{goals:[goal(),goal({key:'new-goal',title:'Fictional new goal'})]}),
+    version(1,{goals:[goal()]})]));
+  expect(html()).toContain('Fictional new goal');
+  expect(html()).toContain('Added');
+  expect(html()).toContain('not an outcome or improvement score');
+ });
+ it('compares a removed goal without reassigning old measurements',async()=>{
+  await render(plan([version(2,{goals:[]}),version(1,{goals:[goal()]})]));
+  expect(html()).toContain('Removed');
+  expect(html()).toContain('Previous:');
+  expect(html()).toContain('not an outcome or improvement score');
+ });
+});
