@@ -154,7 +154,18 @@ try {
   assert.equal(requests.length, duringSave, 'Duplicate/conflicting clicks while saving issue no request');
   assert(await page.getByRole('button', { name: 'Save draft', exact: true }).isDisabled());
   assert(await page.getByLabel('Overall session note', { exact: true }).isDisabled());
-  await page.waitForTimeout(900);
+  // Wait for the actual delayed server acknowledgement and unlocked form,
+  // rather than assuming the concurrent CI runner finishes within 900ms.
+  // Keep both assertions: a stuck save or lost persisted text must still fail.
+  await page.getByRole('button', { name: 'Save draft', exact: true })
+    .waitFor({ state: 'visible', timeout: 15000 });
+  await page.waitForFunction(() => {
+    const button = [...document.querySelectorAll('button')]
+      .find(el => el.textContent?.trim() === 'Save draft');
+    return button && !button.disabled &&
+      [...document.querySelectorAll('[role="status"]')]
+        .some(el => el.textContent?.includes('Saved on server ·'));
+  }, null, { timeout: 15000, polling: 100 });
   assert(await page.getByRole('button', { name: 'Save draft', exact: true }).isEnabled());
   assert(saved.sections.response.includes('Corrected reviewed synthetic transcript'));
   const uninserted = '  Uninserted العربية café 😀\nsecond line  ';
