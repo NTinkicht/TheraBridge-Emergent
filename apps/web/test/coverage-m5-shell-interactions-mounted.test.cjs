@@ -47,14 +47,14 @@ describe('real staff navigation and keyboard interaction branches',()=>{
   it('collapses the rail while preserving current route and safe context switching',async()=>{
     await mount(s({contexts:[center,guardian]}),'children');
     expect(get('product-sidebar').props['data-collapsed']).toBe(false);
-    expect(all('workspace-switcher')).toHaveLength(1);
+    expect(all('workspace-switcher').filter(x=>x.type==='a')).toHaveLength(1);
     await click('sidebar-collapse-toggle');
     expect(get('product-sidebar').props['data-collapsed']).toBe(true);
-    expect(all('collapsed-workspace-switcher')).toHaveLength(1);
-    expect(all('workspace-switcher')).toHaveLength(0);
+    expect(all('collapsed-workspace-switcher').filter(x=>x.type==='a')).toHaveLength(1);
+    expect(all('workspace-switcher').filter(x=>x.type==='a')).toHaveLength(0);
     expect(get('nav-children').props['aria-current']).toBe('page');
     await click('sidebar-collapse-toggle');
-    expect(all('workspace-switcher')).toHaveLength(1);
+    expect(all('workspace-switcher').filter(x=>x.type==='a')).toHaveLength(1);
   });
   it('exposes planned items as unavailable, not navigable permitted routes',async()=>{
     await mount(s(),'children',[{label:'Future consent workflow',unit:'M9',icon:Baby}]);
