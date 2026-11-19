@@ -1,3 +1,6 @@
+## 2026-11-20 — WU4-F #443 implementation and CI recovery log
+After WU4-E #442 was merged, retargeted stacked #443 to main without changing the quarantined-intent code. Added `apps/api/src/clinical/activity-media-quarantine-intent.ts`, synthetic adversarial regression suite `apps/api/test/activity-media-quarantine-intent.e2e-spec.ts`, and dependency ledger `docs/roadmap/M5-WU4-F-QUARANTINE-BOUNDARY.md`. Browser test first failed at login page.waitForURL timeout; reran only failed workflow jobs without weakening any assertion, and retry of `m5-child360-browser` passed. Codex exact-head P2 requested all four prescribed handover/QA records; this entry addresses it. No real private storage adapter or clinical/media release activation. Final new-head CI and review still required, no claim of release approval.
+
 ## 2026-11-18 — PR #436 main advancement reconciliation
 Current main advanced after PR opened. This integration replays only #432's missing WU2 qualification/CI acceptance changes, retains new WU4 code and complete handover records verbatim, and preserves the more recent main Child360 domcontentloaded correction. Exact-head CI and independent review must be repeated after this reconciliation; G2/G2b NO-GO.
 

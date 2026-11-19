@@ -1,3 +1,6 @@
+## 2026-11-20 — WU4-F #443 remaining work
+Verify new exact-head CI, Smart CI final gate, full API/Web >=90% line/branch/function/statement, independent Codex P0–P2 findings and review-thread resolution before merging #443. WU4-F currently defines only an internal quarantine object-intent contract, NOT a secure storage adapter or approved image pipeline. Subsequent WU: private encrypted object storage with authenticated write-only admission, transactional tenant/specialty/ownership/CSRF/quota/version binding, sandbox full PNG structural validation + CRC/IDAT + decompression limits, malware scanning, derivative/revision integrity, immutable rights/clinical/design approvals, revocation/retention/orphan cleanup and adversarial browser integration tests. G2/G2b NO-GO, no real media, no guardian publishing. Manual screen-reader, five-width and human visual/rights acceptance NOT RUN/NOT OBTAINED.
+
 ## 2026-11-18 — PR #436 main advancement reconciliation
 Current main advanced after PR opened. This integration replays only #432's missing WU2 qualification/CI acceptance changes, retains new WU4 code and complete handover records verbatim, and preserves the more recent main Child360 domcontentloaded correction. Exact-head CI and independent review must be repeated after this reconciliation; G2/G2b NO-GO.
 
