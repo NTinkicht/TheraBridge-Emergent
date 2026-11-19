@@ -47,4 +47,14 @@ describe('WU4-K immutable custody transitions (no file deletion or publication)'
      expect(()=>transitionCustody(record(),{...event(),...patch})).toThrow(CustodyTransitionError);
    }
  });
+ it('rejects accessor-backed tenant/version and transition mutation',()=>{
+   const r=record();const e=event();
+   const changing=Object.defineProperty({...r},'centerId',{enumerable:true,get(){return r.centerId;}});
+   expect(()=>transitionCustody(changing,e)).toThrow(CustodyTransitionError);
+   const malicious=Object.defineProperty({...e},'next',{enumerable:true,get(){return 'REJECTED' as const;}});
+   expect(()=>transitionCustody(r,malicious)).toThrow(CustodyTransitionError);
+   const reason=Object.defineProperty({...e},'reason',{enumerable:true,get(){return 'Synthetic malicious reason';}});
+   expect(()=>transitionCustody(r,reason)).toThrow(CustodyTransitionError);
+ });
+
 });
