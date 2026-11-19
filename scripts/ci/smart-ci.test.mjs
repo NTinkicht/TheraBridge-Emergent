@@ -48,9 +48,9 @@ test('the path classifier remains conservative for future risk diagnostics',()=>
 });
 
 test('malformed Git changes fail closed',()=>{
- assert.throws(()=>decodeNameStatusNul('M\\0docs/a.md\\0A\\0'),/invalid_git_diff/);
- assert.throws(()=>decodeNameStatusNul('R100\\0a\\0b\\0'),/invalid_git/);
- assert.deepEqual(decodeNameStatusNul('A\\0docs/new.md\\0D\\0docs/old.md\\0'),[
+ assert.throws(()=>decodeNameStatusNul('M\0docs/a.md\0A\0'),/invalid_git_diff/);
+ assert.throws(()=>decodeNameStatusNul('R100\0a\0b\0'),/invalid_git/);
+ assert.deepEqual(decodeNameStatusNul('A\0docs/new.md\0D\0docs/old.md\0'),[
   {status:'A',path:'docs/new.md'},{status:'D',path:'docs/old.md'}]);
 });
 
