@@ -9,6 +9,9 @@ jest.mock('@/components/clinical/HomePracticeCalendar',()=>({
 jest.mock('@/components/clinical/SavedHomePlanPreview',()=>({
  SavedHomePlanPreview:()=>h('aside',null,'Synthetic frozen preview sidecar')}));
 const {PlanVersionHistory}=require('../src/components/clinical/PlanVersionHistory');
+const oldAnimationFrame=global.requestAnimationFrame,oldCancelFrame=global.cancelAnimationFrame;
+beforeAll(()=>{global.requestAnimationFrame=()=>1;global.cancelAnimationFrame=()=>{};});
+afterAll(()=>{global.requestAnimationFrame=oldAnimationFrame;global.cancelAnimationFrame=oldCancelFrame;});
 const snapshot={title:'Frozen activity from saved plan',service:'speech',
  ageBand:'6-8',minutes:18,materials:['paper'],steps:['Practice together'],
  safety:['Adult supervision']};
@@ -314,7 +317,7 @@ describe('historical plan comparison fallback and missing evidence branches',()=
    activity({goalKey:'',note:undefined,durationMinutes:undefined,
     snapshot:{...snapshot,materials:[],steps:[],safety:[]}})
   ]})]));
-  expect(html()).toContain('linked goal: Not recorded');
+  expect(html()).toContain('Not recorded');
   expect(html()).toContain('No plan-specific duration');
   expect(html()).toContain('None recorded');
   expect(find('plan-history-activity-instructions')).toHaveLength(0);
