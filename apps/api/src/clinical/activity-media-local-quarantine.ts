@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { constants } from 'node:fs';
 import { lstat, mkdir, open, rm } from 'node:fs/promises';
-import { isAbsolute, join, resolve, sep } from 'node:path';
+import { isAbsolute, join, resolve, sep, dirname, parse } from 'node:path';
 import { preflightActivityMedia, MAX_ACTIVITY_MEDIA_BYTES } from './activity-media-intake-preflight';
 import type { QuarantineObjectIntent } from './activity-media-quarantine-intent';
 
@@ -27,6 +27,28 @@ async function ensurePrivateDirectory(p: string): Promise<void> {
     throw new QuarantineWriteError();
   }
 }
+async function assertSafeAncestry(root: string): Promise<void> {
+  // lstat every existing ancestor, not just root/candidate. The final path
+  // must never be redirected via an inherited symlink such as alias -> public.
+  const names: string[] = [];
+  let cursor = root;
+  const anchor = parse(root).root;
+  while (cursor !== anchor) {
+    names.push(cursor);
+    cursor = dirname(cursor);
+  }
+  names.push(anchor);
+  for (const component of names.reverse()) {
+    let info;
+    try { info = await lstat(component); }
+    catch (e) {
+      if ((e as NodeJS.ErrnoException).code === 'ENOENT' && component === root) continue;
+      throw new QuarantineWriteError();
+    }
+    if (!info.isDirectory() || info.isSymbolicLink()) throw new QuarantineWriteError();
+  }
+}
+
 export class LocalQuarantineWriter {
   constructor(private readonly root: string) {
     // A dedicated absolute path outside static site roots must be supplied
@@ -45,14 +67,18 @@ export class LocalQuarantineWriter {
       bytes.length !== intent.candidateBytes) throw new QuarantineWriteError();
     // Candidate identity and the actual bytes must agree. This does not make
     // them safe to decode or permit reading.
-    const preflight = preflightActivityMedia(bytes);
-    const sha256 = createHash('sha256').update(bytes).digest('hex');
+    // Snapshot BEFORE preflight and before any await: callers own their input
+    // Buffer and may mutate it while filesystem calls are pending.
+    const snapshot = Buffer.from(bytes);
+    const preflight = preflightActivityMedia(snapshot);
+    const sha256 = createHash('sha256').update(snapshot).digest('hex');
     if (sha256 !== intent.candidateSha256 || sha256 !== preflight.sha256) {
       throw new QuarantineWriteError();
     }
     const root = resolve(this.root);
     const parts = intent.objectKey.split('/');
     let dir = root;
+    await assertSafeAncestry(root);
     // No recursive mkdir: reject pre-existing symlinked directories.
     try {
       await ensurePrivateDirectory(root);
@@ -75,7 +101,7 @@ export class LocalQuarantineWriter {
     // O_EXCL forbids overwrites and O_NOFOLLOW rejects final symlinks.
     const handle = await open(target, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600);
     try {
-      await handle.writeFile(bytes);
+      await handle.writeFile(snapshot);
       await handle.sync();
     } catch {
       await handle.close();
@@ -84,7 +110,7 @@ export class LocalQuarantineWriter {
     }
     await handle.close();
     return Object.freeze({
-      sha256, byteLength: bytes.length, quarantined: true as const,
+      sha256, byteLength: snapshot.length, quarantined: true as const,
       approved: false as const, publishEnabled: false as const, readEnabled: false as const,
     });
   }
