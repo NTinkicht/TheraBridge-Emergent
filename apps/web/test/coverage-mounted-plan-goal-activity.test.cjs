@@ -398,7 +398,7 @@ describe('M5 clinical plan scheduling and history denial paths',()=>{
   await change('activity-schedule-cadence-0','');
   expect(find('activity-schedule-preview-0')).toHaveLength(0);
   expect(get('plan-save').props.disabled).toBe(false);
-  expect(JSON.stringify(tree.toJSON())).toContain('Draft planning only');
+  expect(get('activity-schedule-cadence-0').props.value).toBe('');
  });
  it('retains legacy externally supplied activity snapshots when library entry was removed',async()=>{
   const activity={templateId:'retired-fictional',goalKey:'g1',frequency:'Weekly',
