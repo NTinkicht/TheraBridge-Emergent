@@ -27,5 +27,5 @@ test('M5-12 supports accessible staff grid/list without weakening server discove
   assert.match(library, /ownership, limit: 100/);
   assert.match(library, /data-testid="activities-load-more"/);
   assert.match(library, /data-testid="activities-no-results"/);
-  assert.match(library, /data-testid="activities-error"/);
+  assert.match(library, /<ErrorState onRetry=\{\(\) => void reload\(\)\} testId="activities-error"/);
 });
