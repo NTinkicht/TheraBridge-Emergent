@@ -93,3 +93,41 @@ describe('mounted center-local clinician review reminders',()=>{
   expect(focus).toHaveBeenCalledWith({preventScroll:true});
  });
 });
+
+
+describe('goal review timing and accessible-focus defensive branches',()=>{
+ it('does nothing when the exact goal anchor is absent from this workspace DOM',async()=>{
+  global.document.getElementById.mockReturnValueOnce(null);
+  await render(workspace([goal(1)]));
+  await click('goal-review-open-g1');
+  expect(global.document.getElementById).toHaveBeenCalledWith('goal-review-plan-a-g1');
+ });
+ it('refreshes from center-local clock when browser regains focus',async()=>{
+  await render(workspace([goal(1)]));
+  const callback=global.window.addEventListener.mock.calls.find(c=>c[0]==='focus')?.[1];
+  expect(callback).toEqual(expect.any(Function));
+  await act(async()=>callback());
+  expect(get('goal-review-row-g1')).toBeTruthy();
+ });
+ it('refreshes only when tab becomes visible, never infers approval',async()=>{
+  await render(workspace([goal(1)]));
+  const callback=global.document.addEventListener.mock.calls.find(c=>c[0]==='visibilitychange')?.[1];
+  expect(callback).toEqual(expect.any(Function));
+  global.document.visibilityState='hidden';
+  await act(async()=>callback());
+  global.document.visibilityState='visible';
+  await act(async()=>callback());
+  expect(JSON.stringify(tree.toJSON())).toContain('does not mean a goal was achieved');
+ });
+ it('cleans up registered focus and visibility listeners when navigating away',async()=>{
+  await render(workspace([goal(1)]));
+  await act(async()=>tree.unmount());tree=null;
+  expect(global.window.removeEventListener.mock.calls.some(x=>x[0]==='focus')).toBe(true);
+  expect(global.document.removeEventListener.mock.calls.some(x=>x[0]==='visibilitychange')).toBe(true);
+ });
+ it('does not offer expand for exactly twelve goals',async()=>{
+  await render(workspace(Array.from({length:12},(_,i)=>goal(i+1))));
+  expect(find('goal-review-show-all')).toHaveLength(0);
+  expect(find('goal-review-row-g12')).toHaveLength(1);
+ });
+});
