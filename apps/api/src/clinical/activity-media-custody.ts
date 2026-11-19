@@ -34,6 +34,8 @@ export function transitionCustody(inputRecord: CustodyRecord, inputEvent: Custod
   const record = snapshotPlain(inputRecord, ['centerId','templateId','draftId','templateVersion','candidateSha256','candidateBytes','revision','status','legalHold','approved','publishEnabled','readEnabled']);
   const event = snapshotPlain(inputEvent, ['reason','expectedRevision','next','actorId']);
   if(!record || !event || typeof record!=='object' || typeof event!=='object' ||
+     typeof record.centerId!=='string' || typeof record.templateId!=='string' ||
+     typeof record.draftId!=='string' || typeof event.actorId!=='string' ||
      !UUID.test(record.centerId) || !UUID.test(record.templateId) ||
      !UUID.test(record.draftId) || !UUID.test(event.actorId) ||
      typeof record.candidateSha256!=='string' || !SHA.test(record.candidateSha256) ||
