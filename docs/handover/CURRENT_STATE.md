@@ -1,3 +1,9 @@
+## 2026-11-20 — PR #449 Codex P2 remediation checkpoint
+Fixed P2: reject >8MiB or <33-byte inputs before allocating a private Buffer snapshot. Added targeted adversarial Jest regression. Remediation code/test HEAD 0833634efe44813e146de127f4b5b6c272828f83; full exact-final-HEAD CI and fresh independent Codex review NOT YET VERIFIED. Do not merge until all eight >=90% coverage gates and required CI/review receipts pass. M5-14 #197 OPEN; G2/G2b NO-GO.
+
+## 2026-11-20 — M5 WU4-L bound candidate inspection
+One private Buffer snapshot is checked by existing PNG header/full CRC+inflate verifier, scoped randomized quarantine intent and trusted scanner attestation. Cross-checks hash, byte count, tenant, activity, draft and version; outputs only nonrelease evidence. Clinical approvals, public images, real media processing and G2/G2b GO are NOT enabled; issue #197 OPEN.
+
 ## 2026-11-20 — M5 WU4-J pre-merge checkpoint
 Partial internal rights/provenance evidence helper: strict tenant/draft/template/version/digest matching and independent reviewer identity, source/license/attribution/provider evidence verification; nonpublication receipts. Not connected to an API, real media scanning, rights approval or publication. M5-14 #197 remains open; G2/G2b NO-GO.
 
