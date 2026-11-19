@@ -38,7 +38,7 @@ export function preflightActivityMedia(bytes: unknown): ActivityMediaPreflight {
   }
   if (!bytes.subarray(0, 8).equals(PNG_SIGNATURE)) throw new ActivityMediaPreflightError();
   // PNG must begin with an exact 13-byte IHDR data chunk.
-  if (bytes.readUInt32BE(8) !== 13 || bytes.toString('ascii', 12, 16) !== 'IHDR') {
+  if (bytes.readUInt32BE(8) !== 13 || !bytes.subarray(12, 16).equals(Buffer.from([0x49, 0x48, 0x44, 0x52]))) {
     throw new ActivityMediaPreflightError();
   }
   const width = bytes.readUInt32BE(16);
