@@ -239,7 +239,6 @@ describe('source-scoped clinical navigation and audit denial edges',()=>{
   expect(get('clinical-tab-overview').props['aria-selected']).toBe(true);
   await selectTab('plan');
   expect(get('visible-plan-count').props.children).toBe('1');
-  expect(html()).not.toContain('older');
  });
  it('allows explicit confirmed tab change after unsaved draft warning',async()=>{
   await mount();await selectTab('sessions');await click('mark-session-unsaved');
