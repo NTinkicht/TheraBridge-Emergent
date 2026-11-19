@@ -320,7 +320,7 @@ describe('historical plan comparison fallback and missing evidence branches',()=
   expect(html()).toContain('Not recorded');
   expect(html()).toContain('No plan-specific duration');
   expect(html()).toContain('None recorded');
-  expect(find('plan-history-activity-instructions')).toHaveLength(0);
+  expect(get('plan-history-inspection').findAllByProps({'data-testid':'plan-history-activity-instructions'})).toHaveLength(0);
  });
  it('only targets an actual version with its original goal identity',async()=>{
   const target={versionId:'version-1',goalKey:'g1'};
