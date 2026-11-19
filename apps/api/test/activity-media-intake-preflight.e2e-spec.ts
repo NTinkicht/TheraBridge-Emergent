@@ -40,7 +40,8 @@ describe('WU4-E activity image candidate preflight (not ingest approval)', () =>
     const badSignature = candidate(); badSignature[0] = 0;
     const wrongChunk = candidate(); wrongChunk.write('tEXt', 12);
     const wrongLength = candidate(); wrongLength.writeUInt32BE(12, 8);
-    for (const bytes of [badSignature, wrongChunk, wrongLength]) {
+    const highBitChunk = candidate(); for (let i = 12; i < 16; i++) highBitChunk[i] |= 0x80;
+    for (const bytes of [badSignature, wrongChunk, wrongLength, highBitChunk]) {
       expect(() => preflightActivityMedia(bytes)).toThrow(ActivityMediaPreflightError);
     }
   });
