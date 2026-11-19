@@ -77,13 +77,13 @@ describe('real staff navigation and keyboard interaction branches',()=>{
   it('dismisses mobile dialog on Escape and prevents its default',async()=>{
     await mount();await click('mobile-more-button');
     const event={key:'Escape',preventDefault:jest.fn()};
-    await act(async()=>get('mobile-more-panel').props.onKeyDown(event));
+    await act(async()=>tree.root.findByProps({id:'mobile-more-panel'}).props.onKeyDown(event));
     expect(event.preventDefault).toHaveBeenCalled();
     expect(all('mobile-more-sheet')).toHaveLength(0);
   });
   it('ignores non-Tab keys and prevents Tab escaping an empty modal',async()=>{
     await mount();await click('mobile-more-button');
-    const panel=get('mobile-more-panel');
+    const panel=tree.root.findByProps({id:'mobile-more-panel'});
     const handler=panel.props.onKeyDown;
     const irrelevant={key:'ArrowDown',preventDefault:jest.fn()};
     await act(async()=>handler(irrelevant));
