@@ -306,3 +306,91 @@ describe('mounted child access and operational audit safety',()=>{
  });
 
 });
+
+
+describe('additional child access denial and concurrency edges',()=>{
+ it('registration return notice never implies guardian or appointment authorization',async()=>{
+  global.window.location.search='?registered=1';
+  session.permissions=['center.children.read'];
+  await mount();
+  expect(get('child-notice-success')).toBeTruthy();
+  expect(find('add-guardian-button')).toHaveLength(0);
+  expect(find('child-book-button')).toHaveLength(0);
+ });
+ it('first guardian starts as primary but can remain uninvited',async()=>{
+  opsApi.child.mockResolvedValue(child({guardians:[]}));
+  await mount();await click('add-guardian-button');
+  expect(get('guardian-primary-checkbox').props.checked).toBe(true);
+  await change('guardian-name-input','Fictional First Guardian');
+  await change('guardian-email-input','guardian@example.invalid');
+  await check('guardian-invite-checkbox',false);
+  await click('guardian-save');
+  expect(opsApi.addGuardian).toHaveBeenCalledWith('center-a','child-a',
+   expect.objectContaining({isPrimary:true,invite:false,relationship:'mother'}));
+  expect(get('child-notice-success')).toBeTruthy();
+ });
+ it('retains new guardian form when backend refuses ownership/permission',async()=>{
+  opsApi.addGuardian.mockRejectedValueOnce({status:403,message:'Synthetic access revoked'});
+  await mount();await click('add-guardian-button');
+  await change('guardian-name-input','Fictional Additional');
+  await change('guardian-email-input','additional@example.invalid');
+  await click('guardian-save');
+  expect(get('child-notice-danger')).toBeTruthy();
+  expect(get('guardian-dialog')).toBeTruthy();
+  expect(get('guardian-name-input').props.value).toBe('Fictional Additional');
+ });
+ it('closes a guardian-removal dialog only after server acknowledgement',async()=>{
+  await mount();await click('guardian-remove-guardian-a');
+  await change('guardian-remove-reason','Fictional documented withdrawal');
+  await click('guardian-remove-confirm');
+  expect(opsApi.removeGuardian).toHaveBeenCalledTimes(1);
+  expect(find('guardian-remove-dialog')).toHaveLength(0);
+  expect(get('child-notice-success')).toBeTruthy();
+ });
+ it('cannot designate a referent from an unrelated directory member',async()=>{
+  opsApi.therapists.mockResolvedValue({items:[{
+   membershipId:'foreign-therapist',displayName:'Fictional Foreign',
+   specialties:['speech']
+  }],nextOffset:null});
+  await mount();await click('referent-change');
+  const options=get('referent-therapist-select').findAllByType('option').map(x=>x.props.value);
+  expect(options).not.toContain('foreign-therapist');
+  expect(options).toContain('');
+  expect(get('referent-save').props.disabled).toBe(true);
+  expect(opsApi.designateReferent).not.toHaveBeenCalled();
+ });
+ it('rejected referent designation keeps dialog open with unchanged source role',async()=>{
+  opsApi.designateReferent.mockRejectedValueOnce({status:409,message:'Synthetic stale version'});
+  await mount();await click('referent-change');
+  await change('referent-therapist-select','therapist-a');
+  await change('referent-reason','Fictional revision conflict');
+  await click('referent-save');
+  expect(get('referent-dialog')).toBeTruthy();
+  expect(get('child-notice-danger')).toBeTruthy();
+ });
+ it('directory continuation error preserves currently eligible therapists and allows retry',async()=>{
+  opsApi.therapists.mockResolvedValueOnce({items:[{
+   membershipId:'therapist-a',displayName:'Fictional Leila',specialties:['speech']
+  }],nextOffset:100}).mockRejectedValueOnce(new Error('Synthetic paginated timeout'))
+    .mockResolvedValueOnce({items:[{
+     membershipId:'therapist-b',displayName:'Fictional Noor',specialties:['speech']
+    }],nextOffset:null});
+  await mount();await click('assign-therapist-button');
+  await click('assign-therapist-load-more');
+  expect(JSON.stringify(tree.toJSON())).toContain('Unable to load more eligible therapists');
+  expect(get('assign-therapist-select').findAllByType('option').map(x=>x.props.value))
+    .toContain('therapist-a');
+  await click('assign-therapist-load-more');
+  expect(get('assign-therapist-select').findAllByType('option').map(x=>x.props.value))
+    .toContain('therapist-b');
+ });
+ it('ended assignment is not a valid active candidate for referent designation',async()=>{
+  opsApi.child.mockResolvedValue(child({assignments:[
+   assignment({id:'ended-a',endedAt:'2026-11-01T12:00:00Z'})
+  ]}));
+  await mount();await click('referent-change');
+  expect(find('assignment-ended-a')).toHaveLength(0);
+  expect(get('referent-therapist-select').findAllByType('option').map(x=>x.props.value))
+   .not.toContain('therapist-a');
+ });
+});

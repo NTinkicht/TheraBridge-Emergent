@@ -52,17 +52,16 @@ export function expectedJobs(mode){
  if(!selected)throw Error('invalid_mode');
  return Object.fromEntries(jobs.map(name=>[name,selected.includes(name)?'success':'skipped']));
 }
-export function decide({changes,eventName,baseRef,mode,requiredGateReady,fromFork,ownerPolicyApproved=false}){
+export function decide({changes,eventName,baseRef,mode,requiredGateReady,fromFork,ownerPolicyApproved=false}) {
+ // Owner mandate 2026-11-19: EVERY PR must prove >=90% across API + Web
+ // lines, branches, functions and statements. Consequently docs-only and
+ // web-style PRs also run the complete measured test job and all other
+ // required checks. Neither configuration variables nor ownerPolicyApproved
+ // can downgrade to targeted mode.
  const classified=classifyPaths(changes);
- let execution='full',reason='shadow_or_nonpr';
- if(mode==='targeted'&&!ownerPolicyApproved)reason='rule16_owner_approval_required';
- if(eventName==='pull_request'&&baseRef==='main'&&!fromFork &&
-    mode==='targeted'&&requiredGateReady===true &&ownerPolicyApproved===true &&
-    classified.candidate!=='full'){
-   execution=classified.candidate;
-   reason=classified.reason;
- }
- return {execution,candidate:classified.candidate,reason,required:expectedJobs(execution)};
+ return {execution:'full',candidate:classified.candidate,
+   reason:'mandatory_full_90_percent_api_web_coverage',
+   required:expectedJobs('full')};
 }
 function readChanges(base,head){
  if(!SHA.test(base)||!SHA.test(head))throw Error('invalid_sha');

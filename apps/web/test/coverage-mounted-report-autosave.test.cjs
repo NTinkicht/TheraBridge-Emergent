@@ -276,3 +276,57 @@ describe('M4-08 ≥90% real report editor state/concurrency branch qualification
   expect(reportsApi.autosave).toHaveBeenCalledTimes(1);
  });
 });
+
+
+describe('report editing transport and guarded transition failures',()=>{
+ it('a denied save-version transition shows failure without false success',async()=>{
+  reportsApi.saveVersion.mockRejectedValueOnce({status:403,message:'Fictional role revoked'});
+  const p=await mount();
+  await click('report-save-version');
+  expect(p.onSuccess).not.toHaveBeenCalled();
+  expect(p.onReload).not.toHaveBeenCalled();
+  expect(find('report-transition-edit-lock')).toHaveLength(0);
+ });
+ it('a rejected submit leaves the editor unlocked and never claims a reviewer received it',async()=>{
+  reportsApi.submit.mockRejectedValueOnce({status:409,message:'Fictional revision changed'});
+  const p=await mount();
+  await click('report-submit');
+  expect(p.onSuccess).not.toHaveBeenCalled();
+  expect(find('report-transition-edit-lock')).toHaveLength(0);
+  expect(get('report-section-summary').props.disabled).toBe(false);
+ });
+ it('a report reloader failure does not leave transitionBusy permanently active',async()=>{
+  reportsApi.saveVersion.mockResolvedValue({number:5});
+  const p=rootProps();
+  p.onReload.mockRejectedValueOnce(new Error('Synthetic reload denied'));
+  await mount(p);
+  await click('report-save-version');
+  expect(p.onSuccess).toHaveBeenCalledWith('Saved as version 5.');
+  expect(find('report-transition-edit-lock')).toHaveLength(0);
+ });
+ it('removing an editor also removes its shared handoff closure',async()=>{
+  const ref={current:null};
+  await mount({...rootProps(),handoffGateRef:ref});
+  expect(ref.current).toEqual(expect.any(Function));
+  await act(async()=>tree.unmount());tree=null;
+  expect(ref.current).toBeNull();
+ });
+ it('a second transition cannot overtake an active rejected first transition',async()=>{
+  let reject;
+  reportsApi.saveVersion.mockImplementation(()=>new Promise((_,bad)=>{reject=bad;}));
+  const p=await mount();
+  await act(async()=>{get('report-save-version').props.onClick();await Promise.resolve();});
+  expect(get('report-submit').props.disabled).toBe(true);
+  expect(get('report-preview-toggle').props.disabled).toBe(true);
+  await act(async()=>reject(new Error('Synthetic revoked operation')));
+  expect(find('report-transition-edit-lock')).toHaveLength(0);
+  expect(p.onSuccess).not.toHaveBeenCalled();
+ });
+ it('read-only in-review header is explicit and cannot offer synthetic proposal insertion',async()=>{
+  const p=rootProps();p.d.canEdit=false;p.d.report.status='IN_REVIEW';
+  await mount(p);
+  expect(JSON.stringify(tree.toJSON())).toContain('With the supervisor for review');
+  expect(find('synthetic-report-generate')).toHaveLength(0);
+  expect(find('report-save-retry')).toHaveLength(0);
+ });
+});
