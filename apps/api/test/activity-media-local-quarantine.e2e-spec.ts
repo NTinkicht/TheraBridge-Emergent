@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdtemp, readFile, readdir, chmod, symlink, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, chmod, symlink, rm, stat, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { LocalQuarantineWriter, QuarantineWriteError } from '../src/clinical/activity-media-local-quarantine';
@@ -40,6 +40,32 @@ describe('WU4-G private quarantine adapter (NOT upload authorization)', () => {
     expect((await stat(file)).mode & 0o077).toBe(0);
     expect(await readdir(join(root,'candidate','v1',scope.centerId))).toHaveLength(1);
     await expect(writer.write(intent,bytes)).rejects.toMatchObject({code:'EEXIST'});
+  });
+  it('snapshots caller-owned mutable bytes before any filesystem await',async()=>{
+    const bytes=syntheticHeader();
+    const expected=Buffer.from(bytes);
+    const intent=planQuarantineObject(scope,preflightActivityMedia(bytes));
+    const task=new LocalQuarantineWriter(root).write(intent,bytes);
+    bytes.fill(0);
+    const receipt=await task;
+    expect(receipt.sha256).toBe(createHash('sha256').update(expected).digest('hex'));
+    expect(await readFile(join(root,...intent.objectKey.split('/')))).toEqual(expected);
+  });
+  it('rejects a symlink hidden in an ancestor of the configured root', async()=>{
+    const outside=await mkdtemp(join(tmpdir(),'tb-symlink-outside-'));
+    const alias=join(root,'alias');
+    const nested=join(outside,'quarantine');
+    try {
+      await symlink(outside,alias);
+      await mkdir(nested,{mode:0o700});
+      const bytes=syntheticHeader();
+      const intent=planQuarantineObject(scope,preflightActivityMedia(bytes));
+      await expect(new LocalQuarantineWriter(join(alias,'quarantine')).write(intent,bytes))
+        .rejects.toThrow(QuarantineWriteError);
+      expect(await readdir(nested)).toEqual([]);
+    } finally {
+      await rm(outside,{recursive:true,force:true});
+    }
   });
   it('rejects changed bytes, altered candidate claims and malformed keys',async()=>{
     const bytes=syntheticHeader(), intent=planQuarantineObject(scope,preflightActivityMedia(bytes));
