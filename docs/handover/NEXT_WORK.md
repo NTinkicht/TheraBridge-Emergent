@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 WU4-J pre-merge checkpoint
+Complete exact-HEAD CI, all eight API/Web >=90% metrics and independent P0–P2 review before merge. Subsequent integration still required: trusted persisted signoffs with independent reviewer authentication, lawyer/licensing validation, reviewer integrity, revocation, clinical/design signoff, actual storage and immutable audit log. No relaxing clinical NO-GO or image publication restrictions; #197 remains open.
+
 ## 2026-11-20 — M5 WU4-I pre-merge checkpoint
 Complete exact-HEAD CI, all eight API/Web >=90% metrics and independent P0–P2 review before merge. Subsequent integration still required: production sandboxed AV scanner, authenticated quarantine read/write, engine and signature freshness attestation, malware resilience tests, image decoding, human rights and clinical approval. No relaxing clinical NO-GO or image publication restrictions; #197 remains open.
 
