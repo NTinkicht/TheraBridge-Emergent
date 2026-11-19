@@ -3,87 +3,81 @@ import assert from 'node:assert/strict';
 import {classifyPaths,decide,decodeNameStatusNul,expectedJobs} from './smart-ci.mjs';
 import {verifySmartGate} from './smart-ci-gate.mjs';
 const paths=(...items)=>items.map(path=>({path,status:'M'}));
-const eligible=(changes,overrides={})=>decide({changes,eventName:'pull_request',
- baseRef:'main',mode:'targeted',requiredGateReady:true,fromFork:false,ownerPolicyApproved:true,...overrides});
-test('documentation changes require only security scan and targeted validation',()=>{
- const x=eligible(paths('docs/roadmap/README.md','docs/handover/NEXT_WORK.md'));
- assert.equal(x.execution,'docs');assert.equal(x.required['test'],'skipped');
- assert.equal(x.required['commercial-provenance'],'skipped');
- assert.equal(x.required['commercial-contracts'],'skipped');
- assert.equal(x.required['source-contracts'],'skipped');
- assert.equal(x.required['secret-scan'],'success');
- assert.equal(x.required['sbom'],'success');
- assert.equal(x.required['smart-targeted'],'success');
- assert.equal(x.required['m5-child360-browser'],'skipped');
+const selected=(changes,overrides={})=>decide({changes,eventName:'pull_request',
+ baseRef:'main',mode:'targeted',requiredGateReady:true,fromFork:false,
+ ownerPolicyApproved:true,...overrides});
+
+test('EVERY PR, including docs-only and CSS-only, executes the full eight-metric coverage CI job',()=>{
+ for(const changes of [
+  paths('docs/roadmap/README.md','docs/handover/NEXT_WORK.md'),
+  paths('apps/web/src/app/globals.css','apps/web/public/logo.png'),
+  paths('apps/api/src/auth/auth.service.ts'),
+  paths('apps/web/src/app/guardian/page.tsx'),
+  paths('.github/workflows/ci.yml'),
+  [],
+ ]) {
+  const x=selected(changes);
+  assert.equal(x.execution,'full');
+  assert.equal(x.reason,'mandatory_full_90_percent_api_web_coverage');
+  assert.equal(x.required.test,'success');
+  for(const job of ['secret-scan','sbom','commercial-provenance','commercial-contracts',
+     'source-contracts','live-session','demo-journey','m5-child360-browser',
+     'compose','preview-container'])assert.equal(x.required[job],'success',job);
+  assert.equal(x.required['smart-targeted'],'skipped');
+ }
 });
-test('CSS and public assets change selects Web + browser, not database or Docker',()=>{
- const x=eligible(paths('apps/web/src/app/globals.css','apps/web/public/logo.png'));
- assert.equal(x.execution,'web-style');
- assert.equal(x.required['sbom'],'success');
- assert.equal(x.required['live-session'],'success');
- assert.equal(x.required['demo-journey'],'success');
- assert.equal(x.required['m5-child360-browser'],'success');
- assert.equal(x.required['compose'],'skipped');
- assert.equal(x.required['commercial-provenance'],'skipped');
-});
-test('security, DB, clinical, dependencies, workflows, scripts, missing and mixed paths force full CI',()=>{
- const samples=[
- 'apps/api/src/auth/auth.service.ts','apps/api/prisma/schema.prisma',
- 'apps/web/src/app/api/session/route.ts','apps/web/src/app/guardian/page.tsx',
- '.github/workflows/ci.yml','scripts/ci/smart-ci.mjs','package.json','yarn.lock',
- 'docs/roadmap/M4-01-66-FEATURE-CROSSWALK.csv','AGENTS.md','docs/qa/SECURITY.md',
- '.github/CODEOWNERS','Dockerfile.preview','render.yaml','apps/web/public/../bad.png','apps/web/public/tracker.js','apps/web/public/promo.html','apps/web/public/logo.svg','apps/web/public/manifest.json'
+
+test('CI settings, fork, event, base and owner approval cannot bypass full 90% coverage',()=>{
+ const cases=[
+  {mode:'shadow'},{mode:''},{mode:'targeted',requiredGateReady:false},
+  {eventName:'push'},{baseRef:'release'},{fromFork:true},
+  {ownerPolicyApproved:false},
  ];
- for(const path of samples)assert.equal(eligible(paths(path)).execution,'full',path);
- assert.equal(eligible(paths('README.md','apps/api/src/auth/auth.service.ts')).execution,'full');
- assert.equal(eligible([]).execution,'full');
- assert.equal(eligible(paths('scripts/commercial/reconcile-sbom.mjs')).required['commercial-provenance'],'success');
- assert.equal(eligible(paths('scripts/commercial/reconcile-sbom.mjs')).required['commercial-contracts'],'success');
- assert.equal(eligible(paths('apps/web/src/components/auth/ProductShell.tsx')).required['source-contracts'],'success');
- assert.equal(eligible(Array.from({length:301},(_,i)=>({path:'docs/a'+i+'.md',status:'A'}))).execution,'full');
+ for(const option of cases) assert.equal(selected(paths('README.md'),option).execution,'full');
 });
-test('current Rule 16 hard-lock prevents targeted execution even with both CI variables enabled',()=>{
- const x=eligible(paths('docs/a.md'),{ownerPolicyApproved:false});
- assert.equal(x.execution,'full');
- assert.equal(x.reason,'rule16_owner_approval_required');
+
+test('the path classifier remains conservative for future risk diagnostics',()=>{
+ assert.equal(classifyPaths(paths('docs/a.md')).candidate,'docs');
+ assert.equal(classifyPaths(paths('apps/web/src/globals.css')).candidate,'web-style');
+ for(const x of ['AGENTS.md','apps/web/public/logo.svg','scripts/ci/smart-ci.mjs',
+   'apps/api/prisma/schema.prisma','../bad.md']){
+  assert.equal(classifyPaths(paths(x)).candidate,'full',x);
+ }
+ assert.equal(classifyPaths([]).candidate,'full');
+ assert.equal(classifyPaths(Array.from({length:301},(_,i)=>({path:'docs/a'+i+'.md',status:'A'}))).candidate,'full');
 });
-test('shadow is default; pushes, forked PRs and non-main target remain full',()=>{
- const changes=paths('README.md');
- for(const override of [{mode:'shadow'},{mode:''},{mode:'targeted',requiredGateReady:false},
-  {eventName:'push'},{baseRef:'release'},{fromFork:true}])
-  assert.equal(eligible(changes,override).execution,'full');
-});
-test('unrecognized status, incomplete diff, malformed paths and deleted web styles fail closed',()=>{
- assert.equal(eligible([{path:'docs/foo.md',status:'R'}]).execution,'full');
- assert.equal(eligible([{path:'docs/foo.md',status:'A'},{path:'../secret.md',status:'A'}]).execution,'full');
- assert.equal(eligible([{path:'apps/web/public/logo.svg',status:'D'}]).execution,'full');
+
+test('malformed Git changes fail closed',()=>{
  assert.throws(()=>decodeNameStatusNul('M\0docs/a.md\0A\0'),/invalid_git_diff/);
  assert.throws(()=>decodeNameStatusNul('R100\0a\0b\0'),/invalid_git/);
  assert.deepEqual(decodeNameStatusNul('A\0docs/new.md\0D\0docs/old.md\0'),[
   {status:'A',path:'docs/new.md'},{status:'D',path:'docs/old.md'}]);
 });
-test('required gate accepts only genuine success and expected skips',()=>{
- for(const mode of ['docs','web-style','full']){
-  const results=expectedJobs(mode);
-  const jobs=Object.fromEntries(Object.entries(results).map(([k,v])=>[k,{result:v}]));
-  jobs['smart-plan']={result:'success',outputs:{mode}};
-  assert.equal(verifySmartGate(jobs).status,'SMART_CI_POLICY_PASS');
-  const required=Object.keys(results).find(k=>results[k]==='success');
-  jobs[required]={result:'skipped'};
-  assert.throws(()=>verifySmartGate(jobs),/required_checks_not_satisfied/);
- }
-});
-test('gate rejects a skipped test when full mode selected or skipped extra check run',()=>{
+
+test('final Smart CI gate accepts only all genuinely successful full checks',()=>{
  const expected=expectedJobs('full');
  const jobs=Object.fromEntries(Object.entries(expected).map(([k,v])=>[k,{result:v}]));
  jobs['smart-plan']={result:'success',outputs:{mode:'full'}};
- jobs.test={result:'skipped'};
- assert.throws(()=>verifySmartGate(jobs),/required_checks_not_satisfied:test/);
- jobs.test={result:'success'};jobs['smart-targeted']={result:'success'};
- assert.throws(()=>verifySmartGate(jobs),/required_checks_not_satisfied:smart-targeted/);
+ assert.equal(verifySmartGate(jobs).status,'SMART_CI_POLICY_PASS');
+ for(const name of Object.keys(expected).filter(k=>expected[k]==='success')){
+  const bad={...jobs,[name]:{result:'skipped'}};
+  assert.throws(()=>verifySmartGate(bad),/required_checks_not_satisfied/);
+ }
+ const bad={...jobs,'smart-targeted':{result:'success'}};
+ assert.throws(()=>verifySmartGate(bad),/required_checks_not_satisfied/);
 });
-test('gate refuses absent plan, missing jobs, misnamed modes and failures',()=>{
+
+test('final gate rejects formerly optional docs/web-style plans regardless of green subset',()=>{
+ for(const mode of ['docs','web-style']){
+  const expected=expectedJobs(mode);
+  const jobs=Object.fromEntries(Object.entries(expected).map(([k,v])=>[k,{result:v}]));
+  jobs['smart-plan']={result:'success',outputs:{mode}};
+  assert.throws(()=>verifySmartGate(jobs),/mandatory_full_coverage_required/);
+ }
+});
+
+test('final gate rejects absent plan or invalid modes',()=>{
  assert.throws(()=>verifySmartGate({}),/plan_not_successful/);
- assert.throws(()=>verifySmartGate({'smart-plan':{result:'success',outputs:{mode:'invalid'}}}),/invalid_mode/);
+ assert.throws(()=>verifySmartGate({'smart-plan':{result:'success',outputs:{mode:'invalid'}}}),/mandatory_full_coverage_required/);
  assert.throws(()=>verifySmartGate({'smart-plan':{result:'failure'}}),/plan_not_successful/);
 });

@@ -7,6 +7,8 @@ export function verifySmartGate(needs){
  const plan=needs['smart-plan'];
  if(plan?.result!=='success')throw Error('plan_not_successful');
  const mode=plan.outputs?.mode;
+ // A targeted mode may never attest a PR's eight mandatory measured metrics.
+ if(mode!=='full')throw Error('mandatory_full_coverage_required');
  const expected=expectedJobs(mode);
  const mismatches=[];
  for(const [name,outcome] of Object.entries(expected)){

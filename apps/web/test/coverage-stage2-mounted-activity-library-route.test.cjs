@@ -140,6 +140,65 @@ describe('real activity library source scoping and synthetic family safety',()=>
 });
 
 
+describe('M5 staff and guardian activity discovery denial and empty-state paths',()=>{
+ it('shows unfiltered empty state with no unpublished images',async()=>{
+  clinicalApi.templates.mockResolvedValueOnce({items:[],hasMore:false,nextOffset:null});
+  await mount();
+  expect(get('activities-empty')).toBeTruthy();
+  expect(find('activities-no-results')).toHaveLength(0);
+  expect(find('activities-load-more')).toHaveLength(0);
+ });
+ it('shows filtered no-results and a safe clear-filters affordance',async()=>{
+  clinicalApi.templates.mockResolvedValue({items:[],hasMore:false,nextOffset:null});
+  await mount();await change('activities-search','Fictional missing skill');
+  expect(get('activities-no-results')).toBeTruthy();
+  await click('activities-clear-filters');
+  expect(clinicalApi.templates).toHaveBeenLastCalledWith('center-a',expect.objectContaining({search:''}));
+ });
+ it('keeps authorized staff activity search scope without publication controls',async()=>{
+  await mount();
+  expect(get('activities-list')).toBeTruthy();
+  expect(get('activities-result-count')).toBeTruthy();
+  expect(clinicalApi.templates).toHaveBeenCalledWith('center-a',expect.objectContaining({ownership:'all'}));
+  expect(find('family-activities-sample-note')).toHaveLength(0);
+ });
+ it('a denied first-page request never renders a previously fetched activity',async()=>{
+  clinicalApi.templates.mockRejectedValueOnce(new Error('Synthetic scoped denial'));
+  await mount();
+  expect(get('activities-error')).toBeTruthy();
+  expect(find('sample-activity-template-a')).toHaveLength(0);
+  expect(find('activities-list')).toHaveLength(0);
+ });
+ it('cancels an activity-creation dialog without calling the backend',async()=>{
+  await mount();await click('template-form-toggle');
+  expect(get('template-form')).toBeTruthy();
+  await click('template-form-toggle');
+  expect(find('template-form')).toHaveLength(0);
+  expect(clinicalApi.createTemplate).not.toHaveBeenCalled();
+ });
+ it('keeps guardian samples isolated from staff proposal controls across two children',async()=>{
+  mockSession.permissions=['family.activities.read'];
+  clinicalApi.family.mockResolvedValueOnce({children:[
+   {id:'sibling-a',name:'Fictional A',activities:[template('a')]},
+   {id:'sibling-b',name:'Fictional B',activities:[]}
+  ]});
+  await mount();
+  expect(get('family-activities-child-sibling-a')).toBeTruthy();
+  expect(get('family-activities-child-sibling-b')).toBeTruthy();
+  expect(find('template-form-toggle')).toHaveLength(0);
+  expect(find('activities-grid-view')).toHaveLength(0);
+  expect(JSON.stringify(tree.toJSON())).toContain('No sample activities');
+ });
+ it('family load failure displays retry without exposing staff catalogue',async()=>{
+  mockSession.permissions=['family.activities.read'];
+  clinicalApi.family.mockRejectedValueOnce(new Error('Synthetic guardian revocation'));
+  await mount();
+  expect(get('family-activities-error')).toBeTruthy();
+  expect(find('activities-list')).toHaveLength(0);
+  expect(find('template-form-toggle')).toHaveLength(0);
+ });
+});
+
 describe('M5 WU4-D accessible presentation toggles and invariant permissions',()=>{
  it('switches source-backed staff activities between responsive grid and list',async()=>{
   await mount();
