@@ -352,3 +352,109 @@ describe('M4-08 real clinician plan version draft controls',()=>{
  });
 
 });
+
+
+describe('M5 clinical plan scheduling and history denial paths',()=>{
+ it('rejects a weekly date plan until a real weekday and bounded range are selected',async()=>{
+  clinicalApi.saveVersion.mockResolvedValueOnce({version:4});
+  await mount(version({homeActivities:[{templateId:'t1',goalKey:'g1',frequency:'Weekly'}]}));
+  await change('activity-schedule-cadence-0','WEEKLY');
+  expect(get('activity-schedule-error-0')).toBeTruthy();
+  expect(get('plan-save').props.disabled).toBe(true);
+  await change('activity-schedule-start-0','2026-11-01');
+  await change('activity-schedule-end-0','2026-11-30');
+  const weekdays=get('activity-schedule-weekdays-0').findAllByType('input');
+  await act(async()=>weekdays[1].props.onChange({target:{checked:true}}));
+  expect(find('activity-schedule-error-0')).toHaveLength(0);
+  expect(get('activity-schedule-preview-0')).toBeTruthy();
+  await click('plan-save');
+  expect(clinicalApi.saveVersion).toHaveBeenCalledWith('c1','v1',
+   expect.objectContaining({homeActivities:[expect.objectContaining({
+    schedule:expect.objectContaining({cadence:'WEEKLY',weekdays:[1]}),
+    frequency:'Weekly calendar draft'
+   })]}));
+ });
+ it('monthly calendar requires a valid day and preserves original evidence on correction',async()=>{
+  clinicalApi.saveVersion.mockResolvedValueOnce({version:4});
+  await mount(version({homeActivities:[{templateId:'t1',goalKey:'g1',frequency:'As directed'}]}));
+  await change('activity-schedule-cadence-0','MONTHLY');
+  await change('activity-schedule-start-0','2026-11-01');
+  await change('activity-schedule-end-0','2026-12-31');
+  await change('activity-schedule-monthday-0','0');
+  expect(get('plan-save').props.disabled).toBe(true);
+  await change('activity-schedule-monthday-0','15');
+  expect(find('activity-schedule-error-0')).toHaveLength(0);
+  await click('plan-save');
+  expect(clinicalApi.saveVersion).toHaveBeenCalledWith('c1','v1',
+   expect.objectContaining({homeActivities:[expect.objectContaining({
+    schedule:expect.objectContaining({cadence:'MONTHLY',monthDay:15}),
+    frequency:'Monthly calendar draft'
+   })]}));
+ });
+ it('removing a dated schedule returns the clinician to an undated draft without booking',async()=>{
+  await mount(version({homeActivities:[{templateId:'t1',goalKey:'g1',frequency:'As directed',
+   schedule:{cadence:'MONTHLY',monthDay:2,startsOn:'2026-11-01',endsOn:'2026-12-01'}}]}));
+  expect(get('activity-schedule-preview-0')).toBeTruthy();
+  await change('activity-schedule-cadence-0','');
+  expect(find('activity-schedule-preview-0')).toHaveLength(0);
+  expect(get('plan-save').props.disabled).toBe(false);
+  expect(JSON.stringify(tree.toJSON())).toContain('Draft planning only');
+ });
+ it('retains legacy externally supplied activity snapshots when library entry was removed',async()=>{
+  const activity={templateId:'retired-fictional',goalKey:'g1',frequency:'Weekly',
+   snapshot:{title:'Frozen fictional activity',materials:[],steps:[],safety:[],minutes:10}};
+  await mount(version({homeActivities:[activity]}),ws({templates:[]}));
+  expect(JSON.stringify(tree.toJSON())).toContain('Frozen fictional activity');
+  expect(find('home-activity-unlinked')).toHaveLength(0);
+ });
+ it('a missing template renders explicit unavailable text, not guessed clinical steps',async()=>{
+  await mount(version({homeActivities:[{templateId:'removed',goalKey:'g1',frequency:'Once'}]}),ws({templates:[]}));
+  expect(JSON.stringify(tree.toJSON())).toContain('Activity (library entry unavailable)');
+ });
+ it('only an owned mutable draft can edit; a different author cannot edit its draft',async()=>{
+  await mount(version({mine:false,status:'DRAFT'}));
+  expect(get('plan-summary').props.disabled).toBe(true);
+  expect(find('plan-save')).toHaveLength(0);
+  expect(find('goal-remove-0')).toHaveLength(0);
+ });
+ it('superseded version remains read-only and cannot start a new version without explicit gate',async()=>{
+  await mount(version({status:'SUPERSEDED',mine:true,
+   reviewNotes:[{comment:'Fictional reviewer historical note'}]}));
+  expect(get('plan-summary').props.disabled).toBe(true);
+  expect(find('plan-new-version')).toHaveLength(0);
+  expect(JSON.stringify(tree.toJSON())).toContain('Fictional reviewer historical note');
+ });
+ it('can remove historical optional planning date values without creating fake review dates',async()=>{
+  clinicalApi.saveVersion.mockResolvedValueOnce({version:4});
+  await mount(version({goals:[{key:'g1',title:'Fictional goal',measure:'percent',
+   baseline:10,target:40,horizon:'SHORT_TERM',targetOn:'2027-01-01',reviewOn:'2026-12-01'}]}));
+  await change('goal-horizon-0','');
+  await change('goal-target-date-0','');
+  await change('goal-review-date-0','');
+  await click('plan-save');
+  const goal=clinicalApi.saveVersion.mock.calls[0][2].goals[0];
+  expect(goal.horizon).toBeUndefined();
+  expect(goal.targetOn).toBeUndefined();
+  expect(goal.reviewOn).toBeUndefined();
+ });
+ it('handles empty template-search results without offering a wrong-service activity',async()=>{
+  clinicalApi.templates.mockResolvedValueOnce({items:[],nextOffset:null});
+  await mount();await change('plan-template-search','nonexistent fictional');
+  await click('plan-template-find');
+  expect(JSON.stringify(tree.toJSON())).toContain('No matching activities for this plan specialty');
+  expect(get('home-activity-add').findAllByType('option').map(x=>x.props.value)).toEqual(['']);
+ });
+ it('a retry after a search failure does not retain stale pagination cursor',async()=>{
+  clinicalApi.templates.mockResolvedValueOnce({items:[{...template,id:'s1'}],nextOffset:50})
+   .mockRejectedValueOnce(new Error('Synthetic service timeout'))
+   .mockResolvedValueOnce({items:[{...template,id:'s2'}],nextOffset:null});
+  await mount();await click('plan-template-find');
+  await click('plan-template-more');
+  expect(JSON.stringify(tree.toJSON())).toContain('Could not search the activity library');
+  await change('plan-template-search','fictional new');
+  await click('plan-template-find');
+  expect(clinicalApi.templates).toHaveBeenLastCalledWith('c1',
+   expect.objectContaining({search:'fictional new',offset:0}));
+  expect(find('plan-template-more')).toHaveLength(0);
+ });
+});
