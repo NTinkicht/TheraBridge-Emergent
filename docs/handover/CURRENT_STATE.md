@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 WU4-L bound candidate inspection
+One private Buffer snapshot is checked by existing PNG header/full CRC+inflate verifier, scoped randomized quarantine intent and trusted scanner attestation. Cross-checks hash, byte count, tenant, activity, draft and version; outputs only nonrelease evidence. Clinical approvals, public images, real media processing and G2/G2b GO are NOT enabled; issue #197 OPEN.
+
 ## 2026-11-20 — M5 WU4-J pre-merge checkpoint
 Partial internal rights/provenance evidence helper: strict tenant/draft/template/version/digest matching and independent reviewer identity, source/license/attribution/provider evidence verification; nonpublication receipts. Not connected to an API, real media scanning, rights approval or publication. M5-14 #197 remains open; G2/G2b NO-GO.
 
