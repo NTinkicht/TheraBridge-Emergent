@@ -1,3 +1,6 @@
+## 2026-11-20 — PR #448 Codex P2 remediation checkpoint
+Fixed P2: reject accessor-backed or mutated custody records and transition events using a single own-data-property snapshot. Added targeted adversarial Jest regression. Remediation code/test HEAD c9a6257e57fe5de4c9f311b9723bd5806fe1934a; full exact-final-HEAD CI and fresh independent Codex review NOT YET VERIFIED. Do not merge until all eight >=90% coverage gates and required CI/review receipts pass. M5-14 #197 OPEN; G2/G2b NO-GO.
+
 ## 2026-11-20 — M5 WU4-K immutable custody state contract
 Committed immutable custody state contract implementation and synthetic Jest adversarial tests. Scope: Versioned QUARANTINED→REJECTED/REVOKED→PURGE_PENDING→PURGED transitions with expected-revision compare, legal-hold purge denial, immutable fail-closed flags, and identity/digest validation; no file mutation is performed. Deferred without approval: actual transactional storage state, audit provenance, retention policy, legal-hold ownership, orphan removal, durable deletion evidence and authenticated access. All historical checks from other PRs remain separate evidence.
 
