@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 PR 2 secure-media consolidation begins
+Owner-approved consolidated M5-14 #197 PR. Implemented one-shot safe plain-data snapshot for quarantine intent to prevent changing tenant/candidate fields between validation and emitted private key; added getter and forged-identity regressions. Subsequent authenticated database/object-store lifecycle and rights qualification remain unimplemented. Tests and exact-head CI not run; preserve no read/publish rights.
+
 ## 2026-11-20 — M5-10 keyboard disabled-tab regression (qualification pending)
 Synthetic-only WU: WAI-ARIA keyboard navigation now excludes aria-disabled tabs as well as native disabled tabs, preserving focus/click guards. Regression checks the filtered selector and avoids activating the disabled tab. Local tests NOT RUN; exact-HEAD full CI, all eight >=90% measured coverage gates, browser checks and independent Codex review PENDING. This is a narrow accessibility slice, not closure of #193 or manual WCAG/screen-reader acceptance. G2/G2b NO-GO unchanged; no clinical release or real data.
 
