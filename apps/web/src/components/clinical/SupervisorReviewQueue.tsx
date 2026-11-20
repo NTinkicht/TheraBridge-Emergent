@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, ClipboardCheck, Eye } from 'lucide-react';
 import { Field } from '@/components/auth/Field';
@@ -22,6 +22,16 @@ export function SupervisorReviewQueue(props: {
 function ScopedSupervisorReviewQueue({ centerId, childId, service, onError }: {
   centerId: string; childId: string; service: string; onError: (e: unknown) => void;
 }) {
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+  // A pending request from an unmounted scope must never dispatch its late
+  // 401/403/404 into the shared session handler for the newly selected scope.
+  const scopedOnError = useCallback((error: unknown) => {
+    if (mounted.current) onError(error);
+  }, [onError]);
   const [search, setSearch] = useState('');
   const [debounced, setDebounced] = useState('');
   const [page, setPage] = useState(1);
@@ -44,7 +54,7 @@ function ScopedSupervisorReviewQueue({ centerId, childId, service, onError }: {
     }),
     [centerId, childId, service, debounced, page, requestKey],
   );
-  const { data: loaded, failed, reload } = useLoad(fetcher, onError);
+  const { data: loaded, failed, reload } = useLoad(fetcher, scopedOnError);
   const data = loaded?.requestKey === requestKey ? loaded.result : null;
   const items = data?.items ?? [];
   const filterActive = !!(search.trim() || childId || service);
