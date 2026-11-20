@@ -1,3 +1,15 @@
+## 2026-11-20 — M5 PR1 stale supervisor authorization error remediation (NOT QUALIFIED)
+Codex P2 on PR #456 identified late 403/404 from an unmounted scoped supervisor queue reaching the shared session handler. Scoped onError now checks mounted state; a deferred 403 after switching centre/child/specialty is regression-tested and must not redirect the new scope. Code commits 6814d48 and 49d9f82. Full exact-HEAD CI and new independent Codex review PENDING; no PASS or issue closure claimed. Remaining full role journeys and five-width acceptance incomplete. G2/G2b NO-GO and synthetic-only remain.
+
+## 2026-11-20 — M5 PR1 updated qualification after CI failure
+Re-run focused and full web source tests at latest HEAD; confirm one rendered report anchor on first page, no stale links while fetching, and correct second page; verify all eight genuine >=90% metrics, full Smart CI and independent Codex on exact HEAD. Continue remaining role journeys and manual evidence before review-ready/merge.
+
+## 2026-11-20 — M5 PR 1 next after supervisor stale-worklist fix
+Run source-mounted supervisor deferred tests and full required CI on current exact head, all eight >=90% API/Web metrics, Smart CI and independent Codex review. Continue material implementation across therapist/coordinator/supervisor/guardian and manual five-width, screen-reader and task-time acceptance; keep #187/#189/#190/#191/#192 open until complete. Do not merge this draft prematurely.
+
+## 2026-11-20 — M5 PR 1 remaining scope (DRAFT)
+Continue complete therapist/coordinator/supervisor/guardian journeys on existing APIs and shared Direction B system; add role/tenant/specialty, async, denied-state, keyboard and five-width browser regressions. Run complete exact-HEAD required CI, eight >=90% API/Web metrics, independent Codex, review disposition, manual screen-reader and measured task checks. Keep #187/#189/#190/#191/#192 open until accepted. G2/G2b clinical NO-GO and synthetic-only remain enforced.
+
 ## 2026-11-20 — M5-10 keyboard disabled-tab regression (qualification pending)
 Synthetic-only WU: WAI-ARIA keyboard navigation now excludes aria-disabled tabs as well as native disabled tabs, preserving focus/click guards. Regression checks the filtered selector and avoids activating the disabled tab. Local tests NOT RUN; exact-HEAD full CI, all eight >=90% measured coverage gates, browser checks and independent Codex review PENDING. This is a narrow accessibility slice, not closure of #193 or manual WCAG/screen-reader acceptance. G2/G2b NO-GO unchanged; no clinical release or real data.
 
@@ -1395,3 +1407,7 @@ Isolated deterministic deny receipt for every custody state; validates exact cen
 
 ## 2026-11-20 — M5-14 WU4-P private cache denial (draft, qualification pending)
 Implemented generic immutable no-store 404 response contract; no HTTP integration or media access. Synthetic-only; G2/G2b NO-GO remains fail-closed, no real images, storage, clinical data, media publication, licensing approval, or permission grant. Adversarial Jest tests committed; local tests NOT RUN. Full exact-HEAD CI, all eight >=90% measured coverage gates, and independent Codex review PENDING. Issue #197 stays OPEN; production integration, rights sign-off and real authorization remain blocked. Handover record only, not a qualification receipt.
+
+
+### M5 PR1 CI follow-up — 2026-11-20
+On PR #456, exact-head CI for `8905ffb` failed the `demo-journey` job (run 44724232146): Playwright timed out filling the hidden `review-queue-search` input after specialty selection remounted and collapsed the optional queue disclosure. Commit `fb5e4c3` explicitly reopens the disclosure before testing search, preserving the filter assertions. Fresh exact-head CI and Codex re-review are required; this is **not** a PASS or merge qualification. Synthetic-only and G2/G2b NO-GO remain unchanged.

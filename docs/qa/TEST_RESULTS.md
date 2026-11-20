@@ -1,3 +1,35 @@
+## 2026-11-20 — M5 PR1 stale supervisor authorization error remediation (NOT QUALIFIED)
+Codex P2 on PR #456 identified late 403/404 from an unmounted scoped supervisor queue reaching the shared session handler. Scoped onError now checks mounted state; a deferred 403 after switching centre/child/specialty is regression-tested and must not redirect the new scope. Code commits 6814d48 and 49d9f82. Full exact-HEAD CI and new independent Codex review PENDING; no PASS or issue closure claimed. Remaining full role journeys and five-width acceptance incomplete. G2/G2b NO-GO and synthetic-only remain.
+
+## 2026-11-20 — M5 PR1 failed focused coverage follow-up
+| Run | Result | Remediation |
+|---|---|---|
+| Focused Web 44722525253 · 1737/1738 tests | FAIL | Actual anchor counting fixes React wrapper double-match in new pagination test |
+| Latest HEAD focused/Web/API and all eight >=90% | PENDING | New CI evidence required |
+| Codex on latest HEAD | PENDING | Prior review stale after test corrections |
+
+No CI bypass/exclusions, no clinical activation; G2/G2b NO-GO.
+
+## 2026-11-20 — M5 major PR 1 supervisor request isolation checkpoint
+| Check | Status | Evidence |
+|---|---|---|
+| Scope changes immediately hide previous authorized review queue | IMPLEMENTED / NOT RUN | Keyed supervisor component; deferred mounted synthetic test |
+| Search/page response identity guard | IMPLEMENTED / NOT RUN | Scoped request key; deferred pagination test |
+| Exact current-head CI, eight >=90% metrics, final Codex review | PENDING | New HEAD must be verified independently |
+| Manual usability, WCAG and five viewport acceptance | NOT RUN | External evidence required |
+
+G2/G2b NO-GO and synthetic-only unchanged.
+
+## 2026-11-20 — M5 consolidated PR 1 initial checkpoint
+| Scope | Result | Evidence |
+|---|---|---|
+| WorkspaceTabs fail-closed duplicate/unsafe ID guard | IMPLEMENTED / NOT RUN | Source change and mounted adversarial test in this draft branch |
+| Full exact-head CI and 8 API/Web >=90% gates | PENDING | No job receipts for this draft HEAD |
+| Independent exact-head Codex review | PENDING | Request after draft opens |
+| Manual WCAG, screen-reader, five-width and role usability | NOT RUN | M5-04/06/07/08/09 remain OPEN |
+
+Clinical G2/G2b release remains NO-GO; no real data/media publication.
+
 ## 2026-11-20 — M5-10 keyboard disabled-tab regression (qualification pending)
 Synthetic-only WU: WAI-ARIA keyboard navigation now excludes aria-disabled tabs as well as native disabled tabs, preserving focus/click guards. Regression checks the filtered selector and avoids activating the disabled tab. Local tests NOT RUN; exact-HEAD full CI, all eight >=90% measured coverage gates, browser checks and independent Codex review PENDING. This is a narrow accessibility slice, not closure of #193 or manual WCAG/screen-reader acceptance. G2/G2b NO-GO unchanged; no clinical release or real data.
 
@@ -1586,3 +1618,7 @@ Isolated deterministic deny receipt for every custody state; validates exact cen
 
 ## 2026-11-20 — M5-14 WU4-P private cache denial (draft, qualification pending)
 Implemented generic immutable no-store 404 response contract; no HTTP integration or media access. Synthetic-only; G2/G2b NO-GO remains fail-closed, no real images, storage, clinical data, media publication, licensing approval, or permission grant. Adversarial Jest tests committed; local tests NOT RUN. Full exact-HEAD CI, all eight >=90% measured coverage gates, and independent Codex review PENDING. Issue #197 stays OPEN; production integration, rights sign-off and real authorization remain blocked. Handover record only, not a qualification receipt.
+
+
+### M5 PR1 CI follow-up — 2026-11-20
+On PR #456, exact-head CI for `8905ffb` failed the `demo-journey` job (run 44724232146): Playwright timed out filling the hidden `review-queue-search` input after specialty selection remounted and collapsed the optional queue disclosure. Commit `fb5e4c3` explicitly reopens the disclosure before testing search, preserving the filter assertions. Fresh exact-head CI and Codex re-review are required; this is **not** a PASS or merge qualification. Synthetic-only and G2/G2b NO-GO remain unchanged.
