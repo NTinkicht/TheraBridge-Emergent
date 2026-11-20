@@ -59,12 +59,12 @@ describe('M5-08 internal supervisor review workspaces',()=>{
   let release;
   reportsApi.reviewQueue.mockResolvedValueOnce(initial).mockImplementationOnce(()=>new Promise(resolve=>{release=resolve;}));
   await act(async()=>{tree=create(h(SupervisorReviewQueue,{centerId:'centre-a',childId:'child-a',service:'OT',onError:jest.fn()}));});
-  expect(find('review-queue-open-page-one')).toHaveLength(1);
+  expect(tree.root.findAllByType('a').filter(node=>node.props.href==='/app/reports/page-one')).toHaveLength(1);
   await act(async()=>{tree.root.findByProps({'data-testid':'review-queue-next'}).props.onClick();});
-  expect(find('review-queue-open-page-one')).toHaveLength(0);
+  expect(tree.root.findAllByType('a').filter(node=>node.props.href==='/app/reports/page-one')).toHaveLength(0);
   expect(find('review-queue-loading')).toHaveLength(1);
   await act(async()=>{release(second);});
-  expect(find('review-queue-open-page-two')).toHaveLength(1);
+  expect(tree.root.findAllByType('a').filter(node=>node.props.href==='/app/reports/page-two')).toHaveLength(1);
   expect(find('review-queue-open-page-one')).toHaveLength(0);
  });
  it('keeps supervisor-only queue button and filtered-out details fail-closed in governance',()=>{
