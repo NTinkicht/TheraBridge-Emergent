@@ -1383,3 +1383,7 @@ Separate commercial edition plans STARTER/PROFESSIONAL (owner-hosted SaaS) and E
 
 ## 2026-11-20 — M5-14 WU4-N private media read-denial proof (#197)
 Isolated deterministic deny receipt for every custody state; validates exact center, version, revision, SHA and closed publication/read flags; rejects accessor-backed records, cross-center requests and forged rights. No URL, cache grant, token, object access or actual revocation is implemented. Future authorized storage/cache revocation and permissioned retrieval require separate approvals and integration. Regression tests added; local tests NOT RUN; exact-HEAD CI, all eight >=90% measured coverage gates and independent Codex review PENDING. #197 remains OPEN, clinical G2/G2b NO-GO, synthetic-only, no rights or publication approval.
+
+
+## 2026-11-20 — M5-14 WU4-P private cache denial (draft, qualification pending)
+Implemented generic immutable no-store 404 response contract; no HTTP integration or media access. Synthetic-only; G2/G2b NO-GO remains fail-closed, no real images, storage, clinical data, media publication, licensing approval, or permission grant. Adversarial Jest tests committed; local tests NOT RUN. Full exact-HEAD CI, all eight >=90% measured coverage gates, and independent Codex review PENDING. Issue #197 stays OPEN; production integration, rights sign-off and real authorization remain blocked. Handover record only, not a qualification receipt.
