@@ -22,6 +22,7 @@ export function verifyCustodyChain(input:readonly CustodyChainEntry[], expected:
   if (!Array.isArray(input) || input.length<1 || input.length>10000) throw new CustodyChainError();
   const r=data(expected,['centerId','templateId','draftId','templateVersion','candidateSha256','candidateBytes','revision','status','legalHold','approved','publishEnabled','readEnabled']);
   if(typeof r.centerId!=='string'||!uuid.test(r.centerId)||typeof r.templateId!=='string'||!uuid.test(r.templateId)||typeof r.draftId!=='string'||!uuid.test(r.draftId)||typeof r.templateVersion!=='number'||!Number.isSafeInteger(r.templateVersion)||r.templateVersion<1||typeof r.candidateSha256!=='string'||!sha.test(r.candidateSha256)||
+     typeof r.candidateBytes!=='number'||!Number.isSafeInteger(r.candidateBytes)||r.candidateBytes<33||r.candidateBytes>8*1024*1024||
      typeof r.revision!=='number'||!Number.isSafeInteger(r.revision)||r.revision<1||typeof r.legalHold!=='boolean'||r.approved!==false||r.publishEnabled!==false||r.readEnabled!==false) throw new CustodyChainError();
   let previous='0'.repeat(64), revision=0, finalStatus='';
   for(const raw of input) {
