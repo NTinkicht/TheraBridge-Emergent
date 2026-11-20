@@ -53,6 +53,19 @@ describe('M5-08 internal supervisor review workspaces',()=>{
   expect(JSON.stringify(tree.toJSON())).toContain('New scoped draft');
   expect(JSON.stringify(tree.toJSON())).not.toContain('Former scoped draft');
  });
+ it('ignores a late forbidden response from an unmounted child scope without redirecting the new scope',async()=>{
+  const fresh={items:[],page:1,total:0,filteredTotal:0,hasMore:false};
+  let rejectOld;
+  reportsApi.reviewQueue.mockImplementationOnce(()=>new Promise((resolve,reject)=>{rejectOld=reject;})).mockResolvedValueOnce(fresh);
+  const onError=jest.fn();
+  await act(async()=>{tree=create(h(SupervisorReviewQueue,{centerId:'centre-a',childId:'child-a',service:'SPEECH',onError}));});
+  await act(async()=>{tree.update(h(SupervisorReviewQueue,{centerId:'centre-b',childId:'child-b',service:'OT',onError}));});
+  expect(find('review-queue-empty')).toHaveLength(1);
+  await act(async()=>{rejectOld(Object.assign(new Error('Former child access revoked'),{status:403}));});
+  expect(onError).not.toHaveBeenCalled();
+  expect(find('review-queue-empty')).toHaveLength(1);
+  expect(reportsApi.reviewQueue).toHaveBeenLastCalledWith('centre-b',{childId:'child-b',service:'OT',search:undefined,page:1});
+ });
  it('hides prior-page report links until current server page arrives',async()=>{
   const initial={items:[{id:'page-one',title:'Page one draft',childName:'Demo child',service:'OT',author:'Demo author',periodStart:'2099-01-01',periodEnd:'2099-01-02'}],page:1,total:2,filteredTotal:2,hasMore:true};
   const second={...initial,items:[{...initial.items[0],id:'page-two',title:'Page two draft'}],page:2,hasMore:false};
