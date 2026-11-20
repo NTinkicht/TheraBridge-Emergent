@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 PR1 stale supervisor authorization error remediation (NOT QUALIFIED)
+Codex P2 on PR #456 identified late 403/404 from an unmounted scoped supervisor queue reaching the shared session handler. Scoped onError now checks mounted state; a deferred 403 after switching centre/child/specialty is regression-tested and must not redirect the new scope. Code commits 6814d48 and 49d9f82. Full exact-HEAD CI and new independent Codex review PENDING; no PASS or issue closure claimed. Remaining full role journeys and five-width acceptance incomplete. G2/G2b NO-GO and synthetic-only remain.
+
 ## 2026-11-20 — M5 PR1 failed focused coverage follow-up
 | Run | Result | Remediation |
 |---|---|---|
