@@ -20,7 +20,7 @@ export function verifyCustodyChain(input:readonly CustodyChainEntry[], expected:
   if (!Array.isArray(input) || input.length<1 || input.length>10000) throw new CustodyChainError();
   const r=data(expected,['centerId','templateId','draftId','templateVersion','candidateSha256','candidateBytes','revision','status','legalHold','approved','publishEnabled','readEnabled']);
   if(typeof r.centerId!=='string'||typeof r.candidateSha256!=='string'||!sha.test(r.candidateSha256)||
-     !Number.isSafeInteger(r.revision)||r.revision<1||r.approved!==false||r.publishEnabled!==false||r.readEnabled!==false) throw new CustodyChainError();
+     typeof r.revision!=='number'||!Number.isSafeInteger(r.revision)||r.revision<1||r.approved!==false||r.publishEnabled!==false||r.readEnabled!==false) throw new CustodyChainError();
   let previous='0'.repeat(64), revision=0, finalStatus='';
   for(const raw of input) {
     const e=data(raw,['previousDigest','digest','revision','centerId','candidateSha256','status']);
@@ -28,7 +28,7 @@ export function verifyCustodyChain(input:readonly CustodyChainEntry[], expected:
        typeof e.digest!=='string'||!sha.test(e.digest)||
        typeof e.centerId!=='string'||e.centerId!==r.centerId||
        typeof e.candidateSha256!=='string'||e.candidateSha256!==r.candidateSha256||
-       !Number.isSafeInteger(e.revision)||e.revision!==revision+1||
+       typeof e.revision!=='number'||!Number.isSafeInteger(e.revision)||e.revision!==revision+1||
        typeof e.status!=='string'||!['QUARANTINED','REJECTED','REVOKED','PURGE_PENDING','PURGED'].includes(e.status)) throw new CustodyChainError();
     const digest=createHash('sha256').update(JSON.stringify([e.previousDigest,e.revision,e.centerId,e.candidateSha256,e.status])).digest('hex');
     if(digest!==e.digest) throw new CustodyChainError();
