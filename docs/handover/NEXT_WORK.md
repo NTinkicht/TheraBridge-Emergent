@@ -1,3 +1,7 @@
+## 2026-11-20 — M5 major PR2 rights/hold denial slice (unqualified)
+M5 PR2: Integrate this pure policy into authenticated tenant-scoped transactional custody, durable audit, quarantine private storage, independent scanner/decoder, derivative and rights receipts; ensure purge requires real DB CAS/authorization. No release.
+G2/G2b NO-GO; synthetic-only; #197 remains OPEN.
+
 ## 2026-11-20 — M5 PR2 pending gates after scope mutation patch
 Run full exact-head CI, full unchanged eight >=90% API/Web source metrics and immediate new Codex review of changed HEAD. Continue transactional custody storage/audit, robust decoder/AV adapter, tenant-scoped authorization, rights and revocation in this same PR. Do not enable actual upload/guardian publication or close M5-14 before separate approvals and end-to-end evidence.
 
