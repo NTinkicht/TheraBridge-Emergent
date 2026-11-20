@@ -86,3 +86,33 @@ export function filterCatalogueActivities(activities, filters = {}) {
     return Object.freeze([]);
   }
 }
+
+/**
+ * M5-16: print-safe, text-only instruction snapshot for clinician preview.
+ * No image bytes/URLs, publication permissions, patient identifiers or mutable
+ * activity source objects cross this presentation boundary.
+ */
+export function projectPrintableActivity(activity) {
+  const item = projectCatalogueActivity(activity);
+  if (!item || item.steps.length === 0) return null;
+  const section = (heading, items) => Object.freeze({
+    heading, items: Object.freeze(items),
+  });
+  const steps = item.steps.map(step => Object.freeze({
+    number: step.number, instruction: step.instruction,
+    accessibleLabel: `Step ${step.number}: ${step.instruction}`,
+  }));
+  return Object.freeze({
+    title: item.title,
+    specialty: item.specialty,
+    category: item.category,
+    skill: item.skill,
+    styleVersion: ILLUSTRATION_STYLE_VERSION,
+    status: 'SYNTHETIC_PREVIEW_NOT_APPROVED_FOR_RELEASE',
+    materials: section('Materials', [...item.materials]),
+    equipment: section('Equipment', [...item.equipment]),
+    instructions: section('Instructions', steps),
+    safety: section('Safety', [...item.safety]),
+    illustration: Object.freeze({ state: CATALOGUE_MEDIA_STATE, src: null }),
+  });
+}
