@@ -27,6 +27,11 @@ export function proposeCustodyAudit(record:CustodyRecord,event:CustodyEvent): Re
   const rd=Object.getOwnPropertyDescriptors(record);
   if(Object.keys(rd).length!==recordKeys.length || recordKeys.some(k=>!Object.prototype.hasOwnProperty.call(rd[k]??{},'value'))) throw new CustodyTransitionError();
   const r=Object.fromEntries(recordKeys.map(k=>[k,rd[k].value])) as CustodyRecord;
+  // Runtime callers can violate TypeScript's status union. Reject coercible objects
+  // before transition lookup or immutable audit construction (Codex P2).
+  if (typeof r.status !== 'string' || !(['QUARANTINED','REJECTED','REVOKED','PURGE_PENDING','PURGED'] as string[]).includes(r.status)) {
+    throw new CustodyTransitionError();
+  }
   const next=transitionCustody(r,e);
   // Only use fields from the validated, immutable result. Never retain raw reason/PII.
   const reasonSha256=createHash('sha256').update(e.reason,'utf8').digest('hex');
