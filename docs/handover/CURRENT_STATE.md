@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 major PR 2 async media scope binding regression (NOT QUALIFIED)
+Private admission no longer reads caller-owned tenant/template/draft/version metadata after asynchronous scanner execution. The private intent, created from strict validated snapshots before scan, remains the only output identity. A deferred-scanner Jest regression mutates all caller-owned scope identifiers/version while scan is pending and asserts the original validated scope and fail-closed output. Code/test committed, local execution NOT RUN; exact-HEAD CI, 8 >=90% gates and new Codex review PENDING. Does not enable storage or publication; M5-14 #197 OPEN, G2/G2b NO-GO.
+
 ## 2026-11-20 — M5 major PR 2 media-lifecycle consolidation (DRAFT / NOT QUALIFIED)
 First real safety slice snapshots and validates untrusted quarantine-scope and candidate metadata before any identifier/key is generated, rejecting accessor-backed, coercible UUID, and extra-field inputs. Adversarial Jest cases added. This does NOT implement authenticated storage, real scanner, derivative generation, legal approval, durable custody audit or publication. Local tests, exact-head CI, eight >=90% coverage metrics and Codex review NOT RUN/PENDING. M5-14 #197 OPEN, G2/G2b NO-GO, synthetic-only.
 
