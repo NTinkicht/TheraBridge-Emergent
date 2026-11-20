@@ -7,7 +7,7 @@ import type { KeyboardEvent } from 'react';
  * other application state transitions stay authoritative.
  */
 export function navigateTabs(event: KeyboardEvent<HTMLElement>) {
-  const tabs = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]:not([disabled])'));
+  const tabs = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]:not([disabled]):not([aria-disabled="true"])'));
   const current = tabs.indexOf(event.target as HTMLButtonElement);
   if (current < 0 || !tabs.length) return;
   const next = event.key === 'ArrowRight' ? (current + 1) % tabs.length
