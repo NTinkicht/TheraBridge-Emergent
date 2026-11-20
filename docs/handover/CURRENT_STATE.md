@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 major PR 2 media-lifecycle consolidation (DRAFT / NOT QUALIFIED)
+First real safety slice snapshots and validates untrusted quarantine-scope and candidate metadata before any identifier/key is generated, rejecting accessor-backed, coercible UUID, and extra-field inputs. Adversarial Jest cases added. This does NOT implement authenticated storage, real scanner, derivative generation, legal approval, durable custody audit or publication. Local tests, exact-head CI, eight >=90% coverage metrics and Codex review NOT RUN/PENDING. M5-14 #197 OPEN, G2/G2b NO-GO, synthetic-only.
+
 ## 2026-11-20 — M5-10 keyboard disabled-tab regression (qualification pending)
 Synthetic-only WU: WAI-ARIA keyboard navigation now excludes aria-disabled tabs as well as native disabled tabs, preserving focus/click guards. Regression checks the filtered selector and avoids activating the disabled tab. Local tests NOT RUN; exact-HEAD full CI, all eight >=90% measured coverage gates, browser checks and independent Codex review PENDING. This is a narrow accessibility slice, not closure of #193 or manual WCAG/screen-reader acceptance. G2/G2b NO-GO unchanged; no clinical release or real data.
 
