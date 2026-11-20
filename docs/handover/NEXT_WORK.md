@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 PR1 updated qualification after CI failure
+Re-run focused and full web source tests at latest HEAD; confirm one rendered report anchor on first page, no stale links while fetching, and correct second page; verify all eight genuine >=90% metrics, full Smart CI and independent Codex on exact HEAD. Continue remaining role journeys and manual evidence before review-ready/merge.
+
 ## 2026-11-20 — M5 PR 1 next after supervisor stale-worklist fix
 Run source-mounted supervisor deferred tests and full required CI on current exact head, all eight >=90% API/Web metrics, Smart CI and independent Codex review. Continue material implementation across therapist/coordinator/supervisor/guardian and manual five-width, screen-reader and task-time acceptance; keep #187/#189/#190/#191/#192 open until complete. Do not merge this draft prematurely.
 
