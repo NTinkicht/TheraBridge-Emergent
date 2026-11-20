@@ -1586,3 +1586,7 @@ Isolated deterministic deny receipt for every custody state; validates exact cen
 
 ## 2026-11-20 — M5-14 WU4-P private cache denial (draft, qualification pending)
 Implemented generic immutable no-store 404 response contract; no HTTP integration or media access. Synthetic-only; G2/G2b NO-GO remains fail-closed, no real images, storage, clinical data, media publication, licensing approval, or permission grant. Adversarial Jest tests committed; local tests NOT RUN. Full exact-HEAD CI, all eight >=90% measured coverage gates, and independent Codex review PENDING. Issue #197 stays OPEN; production integration, rights sign-off and real authorization remain blocked. Handover record only, not a qualification receipt.
+
+
+### 2026-11-20 — M5 major PR 3 initial synthetic catalogue contract
+Owner-approved four-package grouping: isolated illustrated-catalogue projection and source-bound Node regression tests added to `apps/web/src/lib/illustrated-catalogue.mjs` and `apps/web/test/illustrated-catalogue.test.mjs`. Presentation-only filter and numbered instruction projection deliberately emit NO image URL, even when an input claims publication. This is NOT integrated into staff catalogue yet; no asset inventory, human approvals, image generation, pilot, or five-width acceptance is completed. Tests/CI/Codex NOT RUN at authoring. Dependency on major PR 2 private media remains OPEN. M5-12/13/15/16/17 remain OPEN; G2/G2b NO-GO and synthetic-only enforced.
