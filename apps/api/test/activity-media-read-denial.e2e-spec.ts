@@ -20,4 +20,11 @@ describe('WU4-N private media read denial evidence',()=>{
    expect(()=>denyPrivateMediaRead(malicious,r.centerId)).toThrow(CustodyTransitionError);
    expect(invoked).toBe(false);
  });
+ it('rejects object-valued UUIDs without coercion or tenant substitution',()=>{
+   const fake={toString:()=>r.centerId,toLowerCase:()=>r.centerId};
+   for(const field of ['centerId','templateId','draftId'] as const){
+     expect(()=>denyPrivateMediaRead({...r,[field]:fake} as never,r.centerId)).toThrow(CustodyTransitionError);
+     expect(()=>denyPrivateMediaRead({...r,[field]:[r.centerId]} as never,r.centerId)).toThrow(CustodyTransitionError);
+   }
+ });
 });
