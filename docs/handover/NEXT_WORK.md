@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 PR 1 next after supervisor stale-worklist fix
+Run source-mounted supervisor deferred tests and full required CI on current exact head, all eight >=90% API/Web metrics, Smart CI and independent Codex review. Continue material implementation across therapist/coordinator/supervisor/guardian and manual five-width, screen-reader and task-time acceptance; keep #187/#189/#190/#191/#192 open until complete. Do not merge this draft prematurely.
+
 ## 2026-11-20 — M5 PR 1 remaining scope (DRAFT)
 Continue complete therapist/coordinator/supervisor/guardian journeys on existing APIs and shared Direction B system; add role/tenant/specialty, async, denied-state, keyboard and five-width browser regressions. Run complete exact-HEAD required CI, eight >=90% API/Web metrics, independent Codex, review disposition, manual screen-reader and measured task checks. Keep #187/#189/#190/#191/#192 open until accepted. G2/G2b clinical NO-GO and synthetic-only remain enforced.
 
