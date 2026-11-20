@@ -22,4 +22,12 @@ describe('WU4-M immutable audit proposal (not persistence)',()=>{
    expect(()=>proposeCustodyAudit(r,malicious)).toThrow(CustodyTransitionError);
    expect(invoked).toBe(false);
  });
+ it('uses descriptor snapshot for malicious Proxy record without invoking get traps',()=>{
+   let gets=0;
+   const proxied=new Proxy({...r},{get(target,key,receiver){gets++;if(key==='status')return gets%2?'PURGED':'REVOKED';return Reflect.get(target,key,receiver);}});
+   const {next,audit}=proposeCustodyAudit(proxied,e());
+   expect(audit.fromStatus).toBe('QUARANTINED');
+   expect(audit.toStatus).toBe(next.status);
+   expect(gets).toBe(0);
+ });
 });
