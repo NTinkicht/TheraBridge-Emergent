@@ -1,3 +1,7 @@
+## 2026-11-20 — M5 major PR2 rights/hold denial slice (unqualified)
+M5 PR2 rights-denial regression suite added; NOT RUN locally. Full exact-head CI, eight >=90% coverage metrics, browser/security/preview/SBOM and independent Codex review PENDING. No governance qualification.
+G2/G2b NO-GO; synthetic-only; #197 remains OPEN.
+
 ## 2026-11-20 — M5 PR2 async scanner identity invariant
 | Check | Status | Evidence |
 |---|---|---|
