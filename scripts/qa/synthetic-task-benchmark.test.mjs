@@ -32,3 +32,14 @@ test('never excludes unsuccessful timings from median', () => {
   assert.equal(result.results[0].count, 20);
   assert.equal(result.results[0].successes, 19);
 });
+
+test('rejects accessor-backed observations without invoking a getter', () => {
+  let calls = 0;
+  const rows = make(20);
+  Object.defineProperty(rows[0], 'baselineMs', {
+    enumerable: true,
+    get() { calls++; throw Error('must not execute'); }
+  });
+  assert.throws(() => evaluateSyntheticTaskBenchmark(rows), /accessor-backed/);
+  assert.equal(calls, 0);
+});
