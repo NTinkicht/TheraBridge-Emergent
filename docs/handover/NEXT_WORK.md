@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 major PR 2 remaining integration
+Continue authenticated transactional tenant+role+activity ownership+version+quota/CSRF binding, durable custody audit/CAS, actual private object-store quarantine and independent sandbox AV/decoder/derivatives, revocation, retention/legal hold, rights and clinician/design review receipts. No real media upload, storage publication or clinical release without genuine owner gates. Run complete exact-head CI, all 8 >=90% API/Web metrics, independent Codex and adversarial browser/security tests. Keep #197 open until fully evidenced.
+
 ## 2026-11-20 — M5-10 keyboard disabled-tab regression (qualification pending)
 Synthetic-only WU: WAI-ARIA keyboard navigation now excludes aria-disabled tabs as well as native disabled tabs, preserving focus/click guards. Regression checks the filtered selector and avoids activating the disabled tab. Local tests NOT RUN; exact-HEAD full CI, all eight >=90% measured coverage gates, browser checks and independent Codex review PENDING. This is a narrow accessibility slice, not closure of #193 or manual WCAG/screen-reader acceptance. G2/G2b NO-GO unchanged; no clinical release or real data.
 
