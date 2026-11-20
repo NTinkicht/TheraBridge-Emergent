@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 PR 1 supervisor stale-response regression
+Committed SupervisorReviewQueue scoped remount plus filter/page request identity guard, with synthetic mounted deferred-promise tests. Preserves original server authorization and no family-message surface. No local test execution; do not claim reviewed/qualified before new exact-head CI and Codex.
+
 ## 2026-11-20 — M5 PR 1 role-workspace consolidation starts
 Owner-approved four-major-PR strategy after #455 merge; this PR owns M5-04/06/07/08/09. Implemented fail-closed WorkspaceTabs identity guard and synthetic mounted regression for duplicated/unsafe identities. No test execution receipt yet; PR remains draft until broader implementation and all exact-HEAD gates qualify. No clinical governance activation.
 
