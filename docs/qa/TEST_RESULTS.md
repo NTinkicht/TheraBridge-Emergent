@@ -1,3 +1,11 @@
+## 2026-11-20 — M5 PR2 async scanner identity invariant
+| Check | Status | Evidence |
+|---|---|---|
+| Mutable post-start center/template/draft/version cannot redirect admission evidence | IMPLEMENTED / NOT RUN | PrivateAdmission intent binding; deferred scanner Jest test |
+| Exact HEAD full CI and 8 >=90% thresholds | PENDING | New CI must run and be inspected |
+| Independent updated-HEAD Codex | PENDING | Request immediately after push |
+| Secure persistent storage, rights and clinical release approvals | NOT QUALIFIED | M5-14 #197 OPEN; G2/G2b NO-GO |
+
 ## 2026-11-20 — M5 consolidated PR 2 initial checkpoint
 | Scope | Result | Evidence |
 |---|---|---|
