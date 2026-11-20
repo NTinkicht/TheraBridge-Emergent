@@ -10,6 +10,16 @@ Added keyed supervisor queue remount on center/child/specialty changes and exact
 ## 2026-11-20 — M5 major PR 1 consolidation checkpoint (DRAFT / NOT QUALIFIED)
 Initial scoped workspace UI hardening rejects duplicate, empty or unsafe tab identities and renders no tab panel rather than risking stale cross-role/cross-child content association. Mounted adversarial regressions added. This is only the first implemented slice of the owner's consolidated M5-04/06/07/08/09 package; role journey completion, exact-HEAD CI, eight >=90% coverage metrics, screen-reader/manual accessibility evidence and Codex review are NOT RUN/PENDING. No clinical release or real patient information; G2/G2b NO-GO.
 
+## 2026-11-20 — M5 major PR2 rights/hold denial slice (unqualified)
+M5 PR2: Added standalone fail-closed custody rights/hold validator. It is NOT wired to DB, storage or endpoints; no authority to read, release or publish.
+G2/G2b NO-GO; synthetic-only; #197 remains OPEN.
+
+## 2026-11-20 — M5 major PR 2 async media scope binding regression (NOT QUALIFIED)
+Private admission no longer reads caller-owned tenant/template/draft/version metadata after asynchronous scanner execution. The private intent, created from strict validated snapshots before scan, remains the only output identity. A deferred-scanner Jest regression mutates all caller-owned scope identifiers/version while scan is pending and asserts the original validated scope and fail-closed output. Code/test committed, local execution NOT RUN; exact-HEAD CI, 8 >=90% gates and new Codex review PENDING. Does not enable storage or publication; M5-14 #197 OPEN, G2/G2b NO-GO.
+
+## 2026-11-20 — M5 major PR 2 media-lifecycle consolidation (DRAFT / NOT QUALIFIED)
+First real safety slice snapshots and validates untrusted quarantine-scope and candidate metadata before any identifier/key is generated, rejecting accessor-backed, coercible UUID, and extra-field inputs. Adversarial Jest cases added. This does NOT implement authenticated storage, real scanner, derivative generation, legal approval, durable custody audit or publication. Local tests, exact-head CI, eight >=90% coverage metrics and Codex review NOT RUN/PENDING. M5-14 #197 OPEN, G2/G2b NO-GO, synthetic-only.
+
 ## 2026-11-20 — PR #458 M5-16 print-safe instruction projection (qualification pending)
 Implemented an immutable, text-only clinician-preview projection with numbered accessible step labels, safely copied materials/equipment/safety and explicit synthetic-not-approved status. No user-supplied image URL, real media, approval or release permissions are exposed. Regression tests cover snapshot immutability, step numbering, malicious indexed getters and missing instructions. Local tests NOT RUN. New exact-HEAD full CI, eight unrounded >=90% API/Web gates, independent Codex review, five-width and manual keyboard/screen-reader acceptance PENDING. M5-16 #199 and M5 parent remain OPEN; G2/G2b NO-GO, synthetic-only restrictions preserved.
 

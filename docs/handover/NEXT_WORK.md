@@ -10,6 +10,16 @@ Run source-mounted supervisor deferred tests and full required CI on current exa
 ## 2026-11-20 — M5 PR 1 remaining scope (DRAFT)
 Continue complete therapist/coordinator/supervisor/guardian journeys on existing APIs and shared Direction B system; add role/tenant/specialty, async, denied-state, keyboard and five-width browser regressions. Run complete exact-HEAD required CI, eight >=90% API/Web metrics, independent Codex, review disposition, manual screen-reader and measured task checks. Keep #187/#189/#190/#191/#192 open until accepted. G2/G2b clinical NO-GO and synthetic-only remain enforced.
 
+## 2026-11-20 — M5 major PR2 rights/hold denial slice (unqualified)
+M5 PR2: Integrate this pure policy into authenticated tenant-scoped transactional custody, durable audit, quarantine private storage, independent scanner/decoder, derivative and rights receipts; ensure purge requires real DB CAS/authorization. No release.
+G2/G2b NO-GO; synthetic-only; #197 remains OPEN.
+
+## 2026-11-20 — M5 PR2 pending gates after scope mutation patch
+Run full exact-head CI, full unchanged eight >=90% API/Web source metrics and immediate new Codex review of changed HEAD. Continue transactional custody storage/audit, robust decoder/AV adapter, tenant-scoped authorization, rights and revocation in this same PR. Do not enable actual upload/guardian publication or close M5-14 before separate approvals and end-to-end evidence.
+
+## 2026-11-20 — M5 major PR 2 remaining integration
+Continue authenticated transactional tenant+role+activity ownership+version+quota/CSRF binding, durable custody audit/CAS, actual private object-store quarantine and independent sandbox AV/decoder/derivatives, revocation, retention/legal hold, rights and clinician/design review receipts. No real media upload, storage publication or clinical release without genuine owner gates. Run complete exact-head CI, all 8 >=90% API/Web metrics, independent Codex and adversarial browser/security tests. Keep #197 open until fully evidenced.
+
 ## 2026-11-20 — PR #458 M5-16 print-safe instruction projection (qualification pending)
 Implemented an immutable, text-only clinician-preview projection with numbered accessible step labels, safely copied materials/equipment/safety and explicit synthetic-not-approved status. No user-supplied image URL, real media, approval or release permissions are exposed. Regression tests cover snapshot immutability, step numbering, malicious indexed getters and missing instructions. Local tests NOT RUN. New exact-HEAD full CI, eight unrounded >=90% API/Web gates, independent Codex review, five-width and manual keyboard/screen-reader acceptance PENDING. M5-16 #199 and M5 parent remain OPEN; G2/G2b NO-GO, synthetic-only restrictions preserved.
 

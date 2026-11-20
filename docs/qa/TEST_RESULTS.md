@@ -30,6 +30,27 @@ G2/G2b NO-GO and synthetic-only unchanged.
 
 Clinical G2/G2b release remains NO-GO; no real data/media publication.
 
+## 2026-11-20 — M5 major PR2 rights/hold denial slice (unqualified)
+M5 PR2 rights-denial regression suite added; NOT RUN locally. Full exact-head CI, eight >=90% coverage metrics, browser/security/preview/SBOM and independent Codex review PENDING. No governance qualification.
+G2/G2b NO-GO; synthetic-only; #197 remains OPEN.
+
+## 2026-11-20 — M5 PR2 async scanner identity invariant
+| Check | Status | Evidence |
+|---|---|---|
+| Mutable post-start center/template/draft/version cannot redirect admission evidence | IMPLEMENTED / NOT RUN | PrivateAdmission intent binding; deferred scanner Jest test |
+| Exact HEAD full CI and 8 >=90% thresholds | PENDING | New CI must run and be inspected |
+| Independent updated-HEAD Codex | PENDING | Request immediately after push |
+| Secure persistent storage, rights and clinical release approvals | NOT QUALIFIED | M5-14 #197 OPEN; G2/G2b NO-GO |
+
+## 2026-11-20 — M5 consolidated PR 2 initial checkpoint
+| Scope | Result | Evidence |
+|---|---|---|
+| Quarantine scope/candidate one-shot snapshots, getters/UUID-forgery denial | IMPLEMENTED / NOT RUN | Source change and Jest adversarial tests in draft branch |
+| Authenticated persistent media lifecycle | NOT IMPLEMENTED | Requires separate integrated work inside this major PR |
+| Full exact-head CI and 8 API/Web >=90% gates | PENDING | No final job receipts |
+| Independent exact-head Codex review | PENDING | Request after draft creation |
+| Rights, design, clinical and media production approval | NOT OBTAINED | G2/G2b NO-GO; #197 OPEN |
+
 ## 2026-11-20 — PR #458 M5-16 print-safe instruction projection (qualification pending)
 Implemented an immutable, text-only clinician-preview projection with numbered accessible step labels, safely copied materials/equipment/safety and explicit synthetic-not-approved status. No user-supplied image URL, real media, approval or release permissions are exposed. Regression tests cover snapshot immutability, step numbering, malicious indexed getters and missing instructions. Local tests NOT RUN. New exact-HEAD full CI, eight unrounded >=90% API/Web gates, independent Codex review, five-width and manual keyboard/screen-reader acceptance PENDING. M5-16 #199 and M5 parent remain OPEN; G2/G2b NO-GO, synthetic-only restrictions preserved.
 

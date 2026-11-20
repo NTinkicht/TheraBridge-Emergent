@@ -10,6 +10,16 @@ Committed SupervisorReviewQueue scoped remount plus filter/page request identity
 ## 2026-11-20 — M5 PR 1 role-workspace consolidation starts
 Owner-approved four-major-PR strategy after #455 merge; this PR owns M5-04/06/07/08/09. Implemented fail-closed WorkspaceTabs identity guard and synthetic mounted regression for duplicated/unsafe identities. No test execution receipt yet; PR remains draft until broader implementation and all exact-HEAD gates qualify. No clinical governance activation.
 
+## 2026-11-20 — M5 major PR2 rights/hold denial slice (unqualified)
+M5 PR2: Committed activity-media-rights-denial.ts and adversarial Jest suite for forged grants, legal holds, revoked purge and accessor rejection. No local test execution.
+G2/G2b NO-GO; synthetic-only; #197 remains OPEN.
+
+## 2026-11-20 — M5 PR2 async scope protection
+Updated private candidate inspection to use the previously validated quarantine intent across the async scanner boundary, rather than consulting potentially mutated scope fields after await. Added deferred mutation regression for center/template/draft/version. This is one verified-in-source protective step, not production lifecycle completion or signed security approval; tests NOT RUN at commit.
+
+## 2026-11-20 — M5 PR 2 secure-media consolidation begins
+Owner-approved consolidated M5-14 #197 PR. Implemented one-shot safe plain-data snapshot for quarantine intent to prevent changing tenant/candidate fields between validation and emitted private key; added getter and forged-identity regressions. Subsequent authenticated database/object-store lifecycle and rights qualification remain unimplemented. Tests and exact-head CI not run; preserve no read/publish rights.
+
 ## 2026-11-20 — PR #458 M5-16 print-safe instruction projection (qualification pending)
 Implemented an immutable, text-only clinician-preview projection with numbered accessible step labels, safely copied materials/equipment/safety and explicit synthetic-not-approved status. No user-supplied image URL, real media, approval or release permissions are exposed. Regression tests cover snapshot immutability, step numbering, malicious indexed getters and missing instructions. Local tests NOT RUN. New exact-HEAD full CI, eight unrounded >=90% API/Web gates, independent Codex review, five-width and manual keyboard/screen-reader acceptance PENDING. M5-16 #199 and M5 parent remain OPEN; G2/G2b NO-GO, synthetic-only restrictions preserved.
 
