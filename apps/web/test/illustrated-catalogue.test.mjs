@@ -23,7 +23,7 @@ test('never projects unapproved media even when caller forges approval or URL', 
 });
 
 test('search is accent-insensitive and AND-combines controlled filters', () => {
-  const activities = [fixture(), {...fixture(), id: 'other', specialty: 'SLT', title: 'Language'}];
+  const activities = [fixture(), {...fixture(), id: 'other', specialty: 'SLT', title: 'Language', steps: ['Name objects']}];
   assert.deepEqual(filterCatalogueActivities(activities, {query: 'equilibre', specialty: 'OT', equipment: 'blocks'}).map(x => x.id), ['synthetic-1']);
   assert.equal(filterCatalogueActivities(activities, {query: 'equilibre', specialty: 'SLT'}).length, 0);
   assert.equal(filterCatalogueActivities(activities, {query: 'place blocks'}).length, 1);
@@ -44,4 +44,40 @@ test('caller mutation cannot modify frozen projected instructions', () => {
   source.steps[0] = 'Tampered';
   assert.equal(result.steps[0].instruction, 'Place blocks');
   assert.throws(() => { result.steps[0].instruction = 'Tampered'; }, TypeError);
+});
+
+test('inherited accessors, throwing and revoked proxies are denied without disrupting siblings', () => {
+  let invoked = 0;
+  const inherited = Object.assign(Object.create({get title() {invoked++; throw Error('inherited');}}), {id:'x'});
+  const throwing = new Proxy(fixture(), {getOwnPropertyDescriptor() {throw Error('trap');}});
+  const revocable = Proxy.revocable(fixture(), {});
+  revocable.revoke();
+  for (const entry of [inherited, throwing, revocable.proxy]) {
+    assert.equal(projectCatalogueActivity(entry), null);
+  }
+  assert.equal(invoked, 0);
+  assert.deepEqual(filterCatalogueActivities([fixture(), inherited, throwing, revocable.proxy]).map(x => x.id), ['synthetic-1']);
+});
+
+test('nested indexed accessors and overridden array methods never execute', () => {
+  let invoked = 0;
+  for (const key of ['steps','materials','equipment','safety']) {
+    const input = fixture();
+    const array = ['safe'];
+    Object.defineProperty(array, '0', {get() {invoked++; throw Error('nested getter');}});
+    array.filter = () => {invoked++; throw Error('override');};
+    input[key] = array;
+    assert.equal(projectCatalogueActivity(input), null);
+  }
+  assert.equal(invoked, 0);
+});
+
+test('poisoned filters and array entries fail closed without executing getters', () => {
+  let invoked = 0;
+  const activities = [fixture(), fixture()];
+  Object.defineProperty(activities, '1', {get() {invoked++; throw Error('index');}});
+  assert.deepEqual(filterCatalogueActivities(activities).map(x => x.id), ['synthetic-1']);
+  const filters = {get query() {invoked++; throw Error('filter');}};
+  assert.deepEqual(filterCatalogueActivities([fixture()], filters), []);
+  assert.equal(invoked, 0);
 });
