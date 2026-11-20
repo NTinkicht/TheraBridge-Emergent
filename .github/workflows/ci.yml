@@ -479,6 +479,8 @@ jobs:
         run: node --test scripts/preview/generate-secrets.test.mjs
       - name: M4-02 private hosted scope and workflow safety regressions
         run: node --test scripts/qa/hosted-extra-contracts.test.mjs scripts/qa/hosted-role-guards.test.mjs scripts/qa/hosted-session-guards.test.mjs scripts/qa/hosted-private-workflow.test.mjs scripts/qa/prepare-hosted-run.test.mjs scripts/qa/hosted-render-attestation.test.mjs
+      - name: M5 major 4 — synthetic acceptance evidence and adversarial qualification contracts
+        run: node --test scripts/qa/synthetic-evidence-matrix.test.mjs scripts/qa/synthetic-task-benchmark.test.mjs scripts/qa/synthetic-viewport-evidence.test.mjs
 
   test:
     needs: smart-plan
@@ -730,7 +732,7 @@ jobs:
     needs: smart-plan
     if: needs.smart-plan.outputs.mode == 'full' || needs.smart-plan.outputs.mode == 'web-style'
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 25
     services:
       postgres:
         image: postgres:16-bookworm
@@ -783,6 +785,15 @@ jobs:
         run: node --test scripts/design/m5-browser-observe.test.mjs scripts/design/m5-keyboard-journey.test.mjs
       - name: M5 WU2 five-width role acceptance receipt adversarial tests
         run: node --test scripts/design/m5-wu2-browser-qualification.test.mjs
+      - name: M5 major PR4 integrated real-browser receipt and false-approval adversarial tests
+        run: node --test scripts/design/m5-integrated-browser-receipt.test.mjs
+      - name: Archive M5 real-browser technical evidence plus pending manual matrix (NOT approval)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-integrated-technical-only-${{ github.sha }}
+          path: /tmp/therabridge-m5-integrated-technical-receipt.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Archive WU2 numeric-only synthetic role/viewport qualification (not screenshots)
         uses: actions/upload-artifact@v4
         with:
