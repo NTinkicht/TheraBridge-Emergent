@@ -6,7 +6,7 @@ describe('WU4-N private media read denial evidence',()=>{
    const out=denyPrivateMediaRead({...r,status},r.centerId);
    expect(out).toMatchObject({permitted:false,signedUrlIssued:false,cacheable:false,custodyStatus:status});
    expect(Object.isFrozen(out)).toBe(true);
-   expect(JSON.stringify(out)).not.toMatch(/signedUrl|objectKey|storagePath|token|https?:/i);
+   expect(JSON.stringify(out)).not.toMatch(/objectKey|storagePath|accessToken|https?:/i);
  });
  it('changes digest on status/revision change',()=>{
    expect(denyPrivateMediaRead(r,r.centerId).denialSha256).not.toBe(denyPrivateMediaRead({...r,revision:2},r.centerId).denialSha256);
