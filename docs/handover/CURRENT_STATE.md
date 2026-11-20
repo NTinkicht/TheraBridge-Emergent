@@ -1,3 +1,6 @@
+## 2026-11-20 — M5-14 custody audit candidate-byte boundary fix (qualification pending)
+Code now rejects invalid, noninteger and out-of-range candidateBytes in the synthetic immutable custody chain verifier; adversarial tests include 33-byte and 8 MiB boundaries. Local tests NOT RUN. Exact-HEAD CI, eight >=90% API/Web measured coverage gates, and independent Codex review PENDING. No real storage, media read, rights approval or publication; G2/G2b NO-GO. M5-14 #197 remains OPEN.
+
 ## 2026-11-20 — M5-14 WU4-O immutable custody chain verifier (draft, qualification pending)
 Implemented pure hash-chain verifier with strict tenant, revision and final-state binding; no storage or approval. Synthetic-only; G2/G2b NO-GO remains fail-closed, no real images, storage, clinical data, media publication, licensing approval, or permission grant. Adversarial Jest tests committed; local tests NOT RUN. Full exact-HEAD CI, all eight >=90% measured coverage gates, and independent Codex review PENDING. Issue #197 stays OPEN; production integration, rights sign-off and real authorization remain blocked. Handover record only, not a qualification receipt.
 ## 2026-11-20 — PR #450 Codex P2 remediation
