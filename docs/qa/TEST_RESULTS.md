@@ -4,6 +4,12 @@ Fixed P2: reject accessor-backed or mutated custody records and transition event
 ## 2026-11-20 — M5 WU4-K immutable custody state contract
 Synthetic Jest tests COMMITTED for immutable custody state contract, but exact-head CI execution NOT YET VERIFIED at PR creation; eight coverage metrics, build, browser, Compose, security/SBOM/provenance, Smart CI and reviewer qualification PENDING. Manual rights/image/clinical testing NOT RUN, no approval claimed.
 
+## 2026-11-20 — PR #449 Codex P2 remediation checkpoint
+Fixed P2: reject >8MiB or <33-byte inputs before allocating a private Buffer snapshot. Added targeted adversarial Jest regression. Remediation code/test HEAD 0833634efe44813e146de127f4b5b6c272828f83; full exact-final-HEAD CI and fresh independent Codex review NOT YET VERIFIED. Do not merge until all eight >=90% coverage gates and required CI/review receipts pass. M5-14 #197 OPEN; G2/G2b NO-GO.
+
+## 2026-11-20 — M5 WU4-L bound candidate inspection
+Synthetic Jest tests COMMITTED for bound candidate inspection, but exact-head CI execution NOT YET VERIFIED at PR creation; eight coverage metrics, build, browser, Compose, security/SBOM/provenance, Smart CI and reviewer qualification PENDING. Manual rights/image/clinical testing NOT RUN, no approval claimed.
+
 ## 2026-11-20 — M5 WU4-J pre-merge checkpoint
 Synthetic regression tests committed for rights/provenance evidence helper (strict tenant/draft/template/version/digest matching and independent reviewer identity, source/license/attribution/provider evidence verification; nonpublication receipts). Execution status on new exact PR HEAD: PENDING, NOT YET VERIFIED; secret scan, SBOM, provenance, demo/browser/Compose/preview and Smart CI also PENDING. Production AV/rights/clinical image safety and 5-width manual acceptance NOT RUN. This documentation does not claim successful CI or media clearance.
 
