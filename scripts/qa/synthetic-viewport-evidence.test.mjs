@@ -24,7 +24,7 @@ test('duplicate, unexpected and sensitive fields are rejected', () => {
   const sensitive = make(); sensitive[0].childId = 'synthetic';
   assert.throws(() => qualify(sensitive), /sensitive/);
   const extra = make(); extra[0].width = 375;
-  assert.throws(() => qualify(extra), /unexpected/);
+  assert.throws(() => qualify(extra), /invalid evidence primitive type or value/);
 });
 test('accessor-backed checks cannot execute', () => {
   const rows = make(); let invoked = false;
