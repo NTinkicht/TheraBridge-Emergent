@@ -1,3 +1,6 @@
+## 2026-11-20 — PR #450 Codex P2 remediation
+Corrected audit evidence to derive from a single own-data-property custody record snapshot (not Proxy getters). Added adversarial regression tests. Exact-head CI and new independent Codex review are PENDING; no merge or coverage qualification claimed. M5-14 #197 remains OPEN, G2/G2b NO-GO, synthetic-only and no image publication or real media access.
+
 ## 2026-11-20 — PR #448 Codex P2 remediation checkpoint
 Fixed P2: reject accessor-backed or mutated custody records and transition events using a single own-data-property snapshot. Added targeted adversarial Jest regression. Remediation code/test HEAD c9a6257e57fe5de4c9f311b9723bd5806fe1934a; full exact-final-HEAD CI and fresh independent Codex review NOT YET VERIFIED. Do not merge until all eight >=90% coverage gates and required CI/review receipts pass. M5-14 #197 OPEN; G2/G2b NO-GO.
 
