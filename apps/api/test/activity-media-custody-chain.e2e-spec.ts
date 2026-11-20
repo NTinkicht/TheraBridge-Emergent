@@ -3,7 +3,7 @@ import {verifyCustodyChain,CustodyChainError} from '../src/clinical/activity-med
 import type {CustodyRecord} from '../src/clinical/activity-media-custody';
 const centerId='11111111-1111-4111-8111-111111111111', candidateSha256='a'.repeat(64);
 const record:CustodyRecord={centerId,templateId:'22222222-2222-4222-8222-222222222222',draftId:'33333333-3333-4333-8333-333333333333',templateVersion:1,candidateSha256,candidateBytes:100,revision:2,status:'REJECTED',legalHold:false,approved:false,publishEnabled:false,readEnabled:false};
-const entry=(previousDigest:string,revision:number,status:string,identity:Pick<CustodyRecord,'centerId'|'templateId'|'draftId'|'templateVersion'|'candidateSha256'>=record)=>({previousDigest,revision,...identity,status,digest:createHash('sha256').update(JSON.stringify([previousDigest,revision,identity.centerId,identity.templateId,identity.draftId,identity.templateVersion,identity.candidateSha256,status])).digest('hex')});
+const entry=(previousDigest:string,revision:number,status:string,identity:Pick<CustodyRecord,'centerId'|'templateId'|'draftId'|'templateVersion'|'candidateSha256'>=record)=>({previousDigest,revision,centerId:identity.centerId,templateId:identity.templateId,draftId:identity.draftId,templateVersion:identity.templateVersion,candidateSha256:identity.candidateSha256,status,digest:createHash('sha256').update(JSON.stringify([previousDigest,revision,identity.centerId,identity.templateId,identity.draftId,identity.templateVersion,identity.candidateSha256,status])).digest('hex')});
 describe('WU4-O synthetic immutable custody audit chain',()=>{
  const first=entry('0'.repeat(64),1,'QUARANTINED'),second=entry(first.digest,2,'REJECTED');
  it('accepts only a complete, matching sequence',()=>expect(verifyCustodyChain([first,second],record)).toBe(second.digest));
@@ -27,6 +27,14 @@ describe('WU4-O synthetic immutable custody audit chain',()=>{
      const chain=sequence.map((status,i)=>{const e=entry(prev,i+1,status);prev=e.digest;return e;});
      expect(()=>verifyCustodyChain(chain,{...record,revision:chain.length,status:sequence[sequence.length-1]} as CustodyRecord)).toThrow(CustodyChainError);
    }
+ });
+ it('rejects correctly hashed purge evidence while legal hold is active',()=>{
+   const a=entry('0'.repeat(64),1,'QUARANTINED');
+   const b=entry(a.digest,2,'REJECTED');
+   const c=entry(b.digest,3,'PURGE_PENDING');
+   const d=entry(c.digest,4,'PURGED');
+   expect(()=>verifyCustodyChain([a,b,c,d],{...record,revision:4,status:'PURGED',legalHold:true})).toThrow(CustodyChainError);
+   expect(verifyCustodyChain([a,b,c,d],{...record,revision:4,status:'PURGED',legalHold:false})).toBe(d.digest);
  });
  it('rejects accessor-backed and forged rights',()=>{
   expect(()=>verifyCustodyChain([first,second],{...record,approved:true} as never)).toThrow(CustodyChainError);
