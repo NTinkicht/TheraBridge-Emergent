@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 PR1 focused CI failure corrected (new qualification pending)
+Focused `measured-web` run 44722525253 failed one of 1738 tests: the new deferred-pagination test counted both a Next Link React wrapper and rendered anchor for the same `data-testid`. Corrected assertions to count actual rendered `<a href>` nodes, without changing production behavior or weakening tests. Also adjusted loading assertion for wrapper nesting. New exact-head CI, 8 >=90% metrics and Codex re-review PENDING; no PASS claimed. M5 role/UX acceptance remains incomplete, G2/G2b NO-GO.
+
 ## 2026-11-20 — M5 major PR 1 supervisor scope isolation (unqualified code checkpoint)
 Added keyed supervisor queue remount on center/child/specialty changes and exact request-key response binding for search and pagination. Prevents old authorized report links from remaining visible under newly selected scopes while next API request is pending. Deferred-response mounted tests added for changed centre and page. This is not proof of complete supervisor acceptance; local tests NOT RUN; new exact-HEAD CI and independent Codex re-review PENDING. Clinical signing and family releases remain G2/G2b NO-GO.
 
