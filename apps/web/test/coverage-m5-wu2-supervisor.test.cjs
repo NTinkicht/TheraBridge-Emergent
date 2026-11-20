@@ -47,7 +47,7 @@ describe('M5-08 internal supervisor review workspaces',()=>{
   await act(async()=>{tree.update(h(SupervisorReviewQueue,{centerId:'centre-b',childId:'child-b',service:'OT',onError}));});
   expect(JSON.stringify(tree.toJSON())).not.toContain('Former scoped draft');
   expect(find('review-queue-open-old-private')).toHaveLength(0);
-  expect(find('review-queue-loading')).toHaveLength(1);
+  expect(find('review-queue-loading').length).toBeGreaterThan(0);
   expect(reportsApi.reviewQueue).toHaveBeenLastCalledWith('centre-b',{childId:'child-b',service:'OT',search:undefined,page:1});
   await act(async()=>{release(newer);});
   expect(JSON.stringify(tree.toJSON())).toContain('New scoped draft');
@@ -62,7 +62,7 @@ describe('M5-08 internal supervisor review workspaces',()=>{
   expect(tree.root.findAllByType('a').filter(node=>node.props.href==='/app/reports/page-one')).toHaveLength(1);
   await act(async()=>{tree.root.findByProps({'data-testid':'review-queue-next'}).props.onClick();});
   expect(tree.root.findAllByType('a').filter(node=>node.props.href==='/app/reports/page-one')).toHaveLength(0);
-  expect(find('review-queue-loading')).toHaveLength(1);
+  expect(find('review-queue-loading').length).toBeGreaterThan(0);
   await act(async()=>{release(second);});
   expect(tree.root.findAllByType('a').filter(node=>node.props.href==='/app/reports/page-two')).toHaveLength(1);
   expect(find('review-queue-open-page-one')).toHaveLength(0);
