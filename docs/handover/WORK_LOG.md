@@ -1,3 +1,15 @@
+## 2026-11-20 — M5 PR1 stale supervisor authorization error remediation (NOT QUALIFIED)
+Codex P2 on PR #456 identified late 403/404 from an unmounted scoped supervisor queue reaching the shared session handler. Scoped onError now checks mounted state; a deferred 403 after switching centre/child/specialty is regression-tested and must not redirect the new scope. Code commits 6814d48 and 49d9f82. Full exact-HEAD CI and new independent Codex review PENDING; no PASS or issue closure claimed. Remaining full role journeys and five-width acceptance incomplete. G2/G2b NO-GO and synthetic-only remain.
+
+## 2026-11-20 — M5 PR1 real CI investigation
+Read failed focused-web job 136241637672: `coverage-m5-wu2-supervisor.test.cjs` assertion at line 62 received 2 nodes rather than 1 because wrapper + host test-id duplication. Changed test to verify the actual report anchor `href` (the security-relevant rendered link), plus wrapper-safe loading assertions. Did not remove assertions or reduce coverage. Fresh exact-head qualification required.
+
+## 2026-11-20 — M5 PR 1 supervisor stale-response regression
+Committed SupervisorReviewQueue scoped remount plus filter/page request identity guard, with synthetic mounted deferred-promise tests. Preserves original server authorization and no family-message surface. No local test execution; do not claim reviewed/qualified before new exact-head CI and Codex.
+
+## 2026-11-20 — M5 PR 1 role-workspace consolidation starts
+Owner-approved four-major-PR strategy after #455 merge; this PR owns M5-04/06/07/08/09. Implemented fail-closed WorkspaceTabs identity guard and synthetic mounted regression for duplicated/unsafe identities. No test execution receipt yet; PR remains draft until broader implementation and all exact-HEAD gates qualify. No clinical governance activation.
+
 ## 2026-11-20 — M5 major PR2 rights/hold denial slice (unqualified)
 M5 PR2: Committed activity-media-rights-denial.ts and adversarial Jest suite for forged grants, legal holds, revoked purge and accessor rejection. No local test execution.
 G2/G2b NO-GO; synthetic-only; #197 remains OPEN.
@@ -1268,3 +1280,7 @@ Isolated deterministic deny receipt for every custody state; validates exact cen
 
 ## 2026-11-20 — M5-14 WU4-P private cache denial (draft, qualification pending)
 Implemented generic immutable no-store 404 response contract; no HTTP integration or media access. Synthetic-only; G2/G2b NO-GO remains fail-closed, no real images, storage, clinical data, media publication, licensing approval, or permission grant. Adversarial Jest tests committed; local tests NOT RUN. Full exact-HEAD CI, all eight >=90% measured coverage gates, and independent Codex review PENDING. Issue #197 stays OPEN; production integration, rights sign-off and real authorization remain blocked. Handover record only, not a qualification receipt.
+
+
+### M5 PR1 CI follow-up — 2026-11-20
+On PR #456, exact-head CI for `8905ffb` failed the `demo-journey` job (run 44724232146): Playwright timed out filling the hidden `review-queue-search` input after specialty selection remounted and collapsed the optional queue disclosure. Commit `fb5e4c3` explicitly reopens the disclosure before testing search, preserving the filter assertions. Fresh exact-head CI and Codex re-review are required; this is **not** a PASS or merge qualification. Synthetic-only and G2/G2b NO-GO remain unchanged.

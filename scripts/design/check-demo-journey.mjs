@@ -1547,6 +1547,12 @@ try {
     await page.getByTestId('filter-service').selectOption('');
     await secondRow.waitFor();
     await reviewRow.waitFor();
+    // Specialty changes remount the scoped queue and intentionally collapse
+    // optional filters. Reopen the disclosure before testing text search.
+    const queueDisclosure = page.getByTestId('supervisor-review-queue').locator('details').first();
+    if (!(await queueDisclosure.evaluate(node => node.open))) {
+      await queueDisclosure.locator('summary').click();
+    }
     await page.getByTestId('review-queue-search').fill('no-matching-synthetic-review');
     await page.getByTestId('review-queue-empty').waitFor();
     assert.equal(await reviewRow.count(), 0);

@@ -38,6 +38,24 @@ describe('M5-04 shared workspace patterns', () => {
     expect(tree.root.findAllByProps({role:'tabpanel'})).toHaveLength(0);
     expect(tree.root.findAllByProps({role:'tab'}).every(node => node.props['aria-controls'] === undefined)).toBe(true);
   });
+  it('fails closed for duplicated or unsafe tab identities after a scoped role switch', async () => {
+    const select = jest.fn();
+    await mount(WorkspaceTabs, { tabs, selected: 'summary', onSelect: select, label: 'Child areas' });
+    for (const malformed of [
+      [tabs[0], { ...tabs[1], id: 'summary' }],
+      [{ ...tabs[0], id: 'private panel' }, tabs[1]],
+      [{ ...tabs[0], id: '../cross-scope' }, tabs[1]],
+      [{ ...tabs[0], id: '' }, tabs[1]],
+    ]) {
+      await act(async () => tree.update(h(WorkspaceTabs, { tabs: malformed, selected: malformed[0].id, onSelect: select, label: 'Child areas' })));
+      expect(output()).toContain('No accessible section is available');
+      expect(output()).not.toContain('Synthetic overview');
+      expect(output()).not.toContain('Synthetic care');
+      expect(tree.root.findAllByProps({ role: 'tabpanel' })).toHaveLength(0);
+      expect(tree.root.findAllByProps({ role: 'tab' })).toHaveLength(0);
+    }
+    expect(select).not.toHaveBeenCalled();
+  });
   it('supports click and Home / End / arrows without invoking a disabled tab', async () => {
     const select = jest.fn();
     await mount(WorkspaceTabs, { tabs, selected: 'summary', onSelect: select, label: 'Child areas' });

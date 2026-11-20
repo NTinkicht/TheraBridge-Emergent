@@ -14,6 +14,11 @@ export function WorkspaceTabs({
   label: string; tone?: Tone;
 }) {
   const uid = useId();
+  // A malformed or duplicated tab identity can make an authorized panel point
+  // to a different tab's DOM ID during a role/child switch. Fail closed instead
+  // of rendering ambiguous controls or retaining the former scoped content.
+  const uniqueIds = new Set(tabs.map((tab) => tab.id));
+  const validIdentity = tabs.every((tab) => typeof tab.id === 'string' && /^[a-zA-Z0-9_-]+$/.test(tab.id)) && uniqueIds.size === tabs.length;
   const available = tabs.filter((t) => !t.disabled);
   const active = available.find((t) => t.id === selected);
   const family = tone === 'family';
@@ -33,6 +38,7 @@ export function WorkspaceTabs({
     // selected tab using its stable, generated DOM ID.
     document.getElementById(`${uid}-tab-${target.id}`)?.focus();
   };
+  if (!validIdentity) return <p role="status" className="py-4 text-sm">No accessible section is available.</p>;
   return (
     <div className={family ? 'text-fam-ink' : 'text-brand-ink'}>
       <div role="tablist" aria-orientation="horizontal" aria-label={label}
