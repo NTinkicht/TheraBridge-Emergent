@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 PR1 stale supervisor authorization error remediation (NOT QUALIFIED)
+Codex P2 on PR #456 identified late 403/404 from an unmounted scoped supervisor queue reaching the shared session handler. Scoped onError now checks mounted state; a deferred 403 after switching centre/child/specialty is regression-tested and must not redirect the new scope. Code commits 6814d48 and 49d9f82. Full exact-HEAD CI and new independent Codex review PENDING; no PASS or issue closure claimed. Remaining full role journeys and five-width acceptance incomplete. G2/G2b NO-GO and synthetic-only remain.
+
 ## 2026-11-20 — M5 PR1 real CI investigation
 Read failed focused-web job 136241637672: `coverage-m5-wu2-supervisor.test.cjs` assertion at line 62 received 2 nodes rather than 1 because wrapper + host test-id duplication. Changed test to verify the actual report anchor `href` (the security-relevant rendered link), plus wrapper-safe loading assertions. Did not remove assertions or reduce coverage. Fresh exact-head qualification required.
 
