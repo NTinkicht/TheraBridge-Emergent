@@ -41,4 +41,12 @@ describe('WU4-O synthetic immutable custody audit chain',()=>{
   const malicious=Object.defineProperty({...second},'status',{enumerable:true,get(){return 'REJECTED';}});
   expect(()=>verifyCustodyChain([first,malicious],record)).toThrow(CustodyChainError);
  });
+ it('rejects forged candidate-byte boundaries despite a valid signed chain',()=>{
+  for(const candidateBytes of [undefined,null,0,32,8*1024*1024+1,NaN,Infinity,-1,33.5,'100',{},[]]) {
+   expect(()=>verifyCustodyChain([first,second],{...record,candidateBytes} as never)).toThrow(CustodyChainError);
+  }
+  expect(verifyCustodyChain([first,second],{...record,candidateBytes:33})).toBe(second.digest);
+  expect(verifyCustodyChain([first,second],{...record,candidateBytes:8*1024*1024})).toBe(second.digest);
+ });
+
 });
