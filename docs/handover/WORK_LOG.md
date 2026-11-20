@@ -1,3 +1,7 @@
+## 2026-11-20 — PR #450 Codex P2 remediation
+Corrected audit evidence to derive from a single own-data-property custody record snapshot (not Proxy getters). Added adversarial regression tests. Exact-head CI and new independent Codex review are PENDING; no merge or coverage qualification claimed. M5-14 #197 remains OPEN, G2/G2b NO-GO, synthetic-only and no image publication or real media access.
+
+
 ## 2026-11-20 — PR #451 Codex P2 remediation
 Corrected private read denial to reject non-primitive UUID identities before coercion or normalization. Added adversarial regression tests. Exact-head CI and new independent Codex review are PENDING; no merge or coverage qualification claimed. M5-14 #197 remains OPEN, G2/G2b NO-GO, synthetic-only and no image publication or real media access.
 
