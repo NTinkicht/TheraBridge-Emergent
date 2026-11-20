@@ -30,6 +30,27 @@ G2/G2b NO-GO and synthetic-only unchanged.
 
 Clinical G2/G2b release remains NO-GO; no real data/media publication.
 
+## 2026-11-20 — M5 major PR2 rights/hold denial slice (unqualified)
+M5 PR2 rights-denial regression suite added; NOT RUN locally. Full exact-head CI, eight >=90% coverage metrics, browser/security/preview/SBOM and independent Codex review PENDING. No governance qualification.
+G2/G2b NO-GO; synthetic-only; #197 remains OPEN.
+
+## 2026-11-20 — M5 PR2 async scanner identity invariant
+| Check | Status | Evidence |
+|---|---|---|
+| Mutable post-start center/template/draft/version cannot redirect admission evidence | IMPLEMENTED / NOT RUN | PrivateAdmission intent binding; deferred scanner Jest test |
+| Exact HEAD full CI and 8 >=90% thresholds | PENDING | New CI must run and be inspected |
+| Independent updated-HEAD Codex | PENDING | Request immediately after push |
+| Secure persistent storage, rights and clinical release approvals | NOT QUALIFIED | M5-14 #197 OPEN; G2/G2b NO-GO |
+
+## 2026-11-20 — M5 consolidated PR 2 initial checkpoint
+| Scope | Result | Evidence |
+|---|---|---|
+| Quarantine scope/candidate one-shot snapshots, getters/UUID-forgery denial | IMPLEMENTED / NOT RUN | Source change and Jest adversarial tests in draft branch |
+| Authenticated persistent media lifecycle | NOT IMPLEMENTED | Requires separate integrated work inside this major PR |
+| Full exact-head CI and 8 API/Web >=90% gates | PENDING | No final job receipts |
+| Independent exact-head Codex review | PENDING | Request after draft creation |
+| Rights, design, clinical and media production approval | NOT OBTAINED | G2/G2b NO-GO; #197 OPEN |
+
 ## 2026-11-20 — M5-10 keyboard disabled-tab regression (qualification pending)
 Synthetic-only WU: WAI-ARIA keyboard navigation now excludes aria-disabled tabs as well as native disabled tabs, preserving focus/click guards. Regression checks the filtered selector and avoids activating the disabled tab. Local tests NOT RUN; exact-HEAD full CI, all eight >=90% measured coverage gates, browser checks and independent Codex review PENDING. This is a narrow accessibility slice, not closure of #193 or manual WCAG/screen-reader acceptance. G2/G2b NO-GO unchanged; no clinical release or real data.
 
