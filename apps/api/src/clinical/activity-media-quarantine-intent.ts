@@ -35,6 +35,21 @@ export class QuarantineIntentError extends Error {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SHA256 = /^[a-f0-9]{64}$/;
 
+// Snapshot untrusted metadata once, without invoking accessors or coercing
+// arbitrary objects into tenant identity, filenames or candidate fingerprints.
+// The caller's later mutation cannot redirect the quarantine object key.
+function snapshotPlain<T extends object>(value: T, keys: readonly string[]): T {
+  if (!value || typeof value !== 'object' || Object.getPrototypeOf(value) !== Object.prototype) {
+    throw new QuarantineIntentError();
+  }
+  const fields = Object.getOwnPropertyDescriptors(value);
+  if (Object.keys(fields).length !== keys.length ||
+      keys.some(key => !Object.prototype.hasOwnProperty.call(fields[key] ?? {}, 'value'))) {
+    throw new QuarantineIntentError();
+  }
+  return Object.fromEntries(keys.map(key => [key, fields[key].value])) as T;
+}
+
 /**
  * Only an internal proposal for a write-only private quarantine object.
  * Callers MUST separately verify current center, membership, activity owner,
@@ -46,31 +61,35 @@ export function planQuarantineObject(
   candidate: ActivityMediaPreflight,
   objectId: string = randomUUID(),
 ): QuarantineObjectIntent {
-  if (!scope || typeof scope !== 'object' ||
-    !UUID.test(scope.centerId) || !UUID.test(scope.templateId) || !UUID.test(scope.draftId) ||
-    !Number.isSafeInteger(scope.templateVersion) || scope.templateVersion < 1 ||
-    !candidate || typeof candidate !== 'object' ||
-    candidate.approved !== false || candidate.publishEnabled !== false ||
-    candidate.safeForStorage !== false ||
-    candidate.format !== 'png' || !Number.isSafeInteger(candidate.width) ||
-    !Number.isSafeInteger(candidate.height) || candidate.width < 1 || candidate.height < 1 ||
-    !Number.isSafeInteger(candidate.byteLength) || candidate.byteLength < 33 ||
-    candidate.byteLength > 8 * 1024 * 1024 ||
-    typeof candidate.sha256 !== 'string' || !SHA256.test(candidate.sha256) ||
-    !UUID.test(objectId)) {
+  const scoped = snapshotPlain(scope, ['centerId', 'templateId', 'draftId', 'templateVersion']);
+  const inspected = snapshotPlain(candidate, [
+    'format', 'width', 'height', 'byteLength', 'sha256', 'approved', 'publishEnabled', 'safeForStorage',
+  ]);
+  if (typeof scoped.centerId !== 'string' || typeof scoped.templateId !== 'string' ||
+    typeof scoped.draftId !== 'string' ||
+    !UUID.test(scoped.centerId) || !UUID.test(scoped.templateId) || !UUID.test(scoped.draftId) ||
+    !Number.isSafeInteger(scoped.templateVersion) || scoped.templateVersion < 1 ||
+    inspected.approved !== false || inspected.publishEnabled !== false ||
+    inspected.safeForStorage !== false ||
+    inspected.format !== 'png' || !Number.isSafeInteger(inspected.width) ||
+    !Number.isSafeInteger(inspected.height) || inspected.width < 1 || inspected.height < 1 ||
+    !Number.isSafeInteger(inspected.byteLength) || inspected.byteLength < 33 ||
+    inspected.byteLength > 8 * 1024 * 1024 ||
+    typeof inspected.sha256 !== 'string' || !SHA256.test(inspected.sha256) ||
+    typeof objectId !== 'string' || !UUID.test(objectId)) {
     throw new QuarantineIntentError();
   }
   // No user-controlled filename, no external URL, no static/deterministic
   // object name. Independent random key per attempt prevents replacements.
   return Object.freeze({
     bucketClass: 'private-quarantine' as const,
-    objectKey: `candidate/v1/${scope.centerId.toLowerCase()}/${randomUUID()}/${objectId.toLowerCase()}.png`,
-    centerId: scope.centerId.toLowerCase(),
-    templateId: scope.templateId.toLowerCase(),
-    draftId: scope.draftId.toLowerCase(),
-    templateVersion: scope.templateVersion,
-    candidateSha256: candidate.sha256,
-    candidateBytes: candidate.byteLength,
+    objectKey: `candidate/v1/${scoped.centerId.toLowerCase()}/${randomUUID()}/${objectId.toLowerCase()}.png`,
+    centerId: scoped.centerId.toLowerCase(),
+    templateId: scoped.templateId.toLowerCase(),
+    draftId: scoped.draftId.toLowerCase(),
+    templateVersion: scoped.templateVersion,
+    candidateSha256: inspected.sha256,
+    candidateBytes: inspected.byteLength,
     quarantineOnly: true as const,
     publishEnabled: false as const,
     readEnabled: false as const,
