@@ -35,7 +35,8 @@ export function verifyCustodyChain(input:readonly CustodyChainEntry[], expected:
        typeof e.candidateSha256!=='string'||e.candidateSha256!==r.candidateSha256||
        typeof e.revision!=='number'||!Number.isSafeInteger(e.revision)||e.revision!==revision+1||
        typeof e.status!=='string'||!['QUARANTINED','REJECTED','REVOKED','PURGE_PENDING','PURGED'].includes(e.status)||
-       (revision===0 ? e.status!=='QUARANTINED' : !allowed[finalStatus]?.includes(e.status))) throw new CustodyChainError();
+       (revision===0 ? e.status!=='QUARANTINED' : !allowed[finalStatus]?.includes(e.status)) ||
+       (r.legalHold===true && (e.status==='PURGE_PENDING' || e.status==='PURGED'))) throw new CustodyChainError();
     const digest=createHash('sha256').update(JSON.stringify([e.previousDigest,e.revision,e.centerId,e.templateId,e.draftId,e.templateVersion,e.candidateSha256,e.status])).digest('hex');
     if(digest!==e.digest) throw new CustodyChainError();
     previous=digest;revision=e.revision;finalStatus=e.status;
