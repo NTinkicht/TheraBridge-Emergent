@@ -1,3 +1,12 @@
+## 2026-11-20 — M5 consolidated PR 2 initial checkpoint
+| Scope | Result | Evidence |
+|---|---|---|
+| Quarantine scope/candidate one-shot snapshots, getters/UUID-forgery denial | IMPLEMENTED / NOT RUN | Source change and Jest adversarial tests in draft branch |
+| Authenticated persistent media lifecycle | NOT IMPLEMENTED | Requires separate integrated work inside this major PR |
+| Full exact-head CI and 8 API/Web >=90% gates | PENDING | No final job receipts |
+| Independent exact-head Codex review | PENDING | Request after draft creation |
+| Rights, design, clinical and media production approval | NOT OBTAINED | G2/G2b NO-GO; #197 OPEN |
+
 ## 2026-11-20 — M5-10 keyboard disabled-tab regression (qualification pending)
 Synthetic-only WU: WAI-ARIA keyboard navigation now excludes aria-disabled tabs as well as native disabled tabs, preserving focus/click guards. Regression checks the filtered selector and avoids activating the disabled tab. Local tests NOT RUN; exact-HEAD full CI, all eight >=90% measured coverage gates, browser checks and independent Codex review PENDING. This is a narrow accessibility slice, not closure of #193 or manual WCAG/screen-reader acceptance. G2/G2b NO-GO unchanged; no clinical release or real data.
 
