@@ -32,10 +32,13 @@ export async function inspectPrivateAdmission(
    const hash=createHash('sha256').update(snapshot).digest('hex');
    if(scan.sha256!==hash || png.sha256!==hash ||
       scan.byteLength!==snapshot.length || intent.candidateBytes!==snapshot.length ||
-      intent.candidateSha256!==hash || intent.centerId!==scope.centerId.toLowerCase() ||
-      intent.templateId!==scope.templateId.toLowerCase() ||
-      intent.draftId!==scope.draftId.toLowerCase() ||
-      intent.templateVersion!==scope.templateVersion) throw new PrivateAdmissionError();
+      intent.candidateSha256!==hash ||
+      // Scope was validated and snapshotted by planQuarantineObject before
+      // the asynchronous scanner ran. Never read caller-owned metadata again:
+      // a mutable scope or accessor must not change the identity after scanning.
+      !intent.quarantineOnly || intent.approved!==false ||
+      intent.readEnabled!==false || intent.publishEnabled!==false ||
+      intent.bucketClass!=='private-quarantine') throw new PrivateAdmissionError();
    return Object.freeze({
      centerId:intent.centerId,templateId:intent.templateId,
      draftId:intent.draftId,templateVersion:intent.templateVersion,

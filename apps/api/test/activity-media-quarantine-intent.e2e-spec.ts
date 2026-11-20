@@ -46,6 +46,27 @@ describe('WU4-F quarantine-only media object boundary', () => {
       expect(()=>planQuarantineObject(scope,{...candidate(),...changed} as never)).toThrow(QuarantineIntentError);
     }
   });
+  it('rejects metadata accessors before invoking any tenant or candidate getters', () => {
+    let called = false;
+    const hostileScope = Object.defineProperty({...scope}, 'centerId', {
+      enumerable:true, get() { called = true; return scope.centerId; },
+    });
+    expect(() => planQuarantineObject(hostileScope, candidate())).toThrow(QuarantineIntentError);
+    const hostileCandidate = Object.defineProperty({...candidate()}, 'sha256', {
+      enumerable:true, get() { called = true; return candidate().sha256; },
+    });
+    expect(() => planQuarantineObject(scope, hostileCandidate)).toThrow(QuarantineIntentError);
+    expect(called).toBe(false);
+  });
+  it('rejects coercible UUID impostors and unexpected hidden metadata', () => {
+    const fakeUuid = { toString: () => scope.centerId, toLowerCase: () => scope.centerId };
+    for (const key of ['centerId', 'templateId', 'draftId'] as const) {
+      expect(() => planQuarantineObject({...scope, [key]: fakeUuid} as never, candidate())).toThrow(QuarantineIntentError);
+    }
+    expect(() => planQuarantineObject({...scope, extra:'untrusted'} as never, candidate())).toThrow(QuarantineIntentError);
+    expect(() => planQuarantineObject(scope, {...candidate(), extra:'untrusted'} as never)).toThrow(QuarantineIntentError);
+    expect(() => planQuarantineObject(scope, candidate(), { toString: () => scope.draftId } as never)).toThrow(QuarantineIntentError);
+  });
   it('rejects attacker-selected invalid object keys',()=>{
     expect(()=>planQuarantineObject(scope,candidate(),'../../other-tenant')).toThrow(QuarantineIntentError);
   });

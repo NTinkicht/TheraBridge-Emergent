@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, ClipboardCheck, Eye } from 'lucide-react';
 import { Field } from '@/components/auth/Field';
@@ -11,10 +11,27 @@ import { DisclosureSection, TaskStepper } from '@/components/design/workspace-pa
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
 import { reportsApi } from '@/lib/reports';
 
-// Independent of chart dates. The API enforces supervisor and tenant access.
-export function SupervisorReviewQueue({ centerId, childId, service, onError }: {
+// A change of tenant, child or specialty must destroy the old queue's
+// filters, selected page and API results immediately — not merely re-fetch.
+// The API remains authoritative for every report and document permission.
+export function SupervisorReviewQueue(props: {
   centerId: string; childId: string; service: string; onError: (e: unknown) => void;
 }) {
+  return <ScopedSupervisorReviewQueue key={JSON.stringify([props.centerId, props.childId, props.service])} {...props} />;
+}
+function ScopedSupervisorReviewQueue({ centerId, childId, service, onError }: {
+  centerId: string; childId: string; service: string; onError: (e: unknown) => void;
+}) {
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+  // A pending request from an unmounted scope must never dispatch its late
+  // 401/403/404 into the shared session handler for the newly selected scope.
+  const scopedOnError = useCallback((error: unknown) => {
+    if (mounted.current) onError(error);
+  }, [onError]);
   const [search, setSearch] = useState('');
   const [debounced, setDebounced] = useState('');
   const [page, setPage] = useState(1);
@@ -23,14 +40,22 @@ export function SupervisorReviewQueue({ centerId, childId, service, onError }: {
     return () => clearTimeout(timer);
   }, [search]);
   useEffect(() => { setPage(1); }, [childId, service, debounced]);
+  // useLoad deliberately retains its previous successful data while a request
+  // is in flight. Bind results to their exact filters and page so neither the
+  // former search nor a previous page can be displayed as the new worklist.
+  const requestKey = JSON.stringify([centerId, childId, service, debounced, page]);
   const fetcher = useCallback(
-    () => reportsApi.reviewQueue(centerId, {
-      childId: childId || undefined, service: service || undefined,
-      search: debounced || undefined, page,
+    async () => ({
+      requestKey,
+      result: await reportsApi.reviewQueue(centerId, {
+        childId: childId || undefined, service: service || undefined,
+        search: debounced || undefined, page,
+      }),
     }),
-    [centerId, childId, service, debounced, page],
+    [centerId, childId, service, debounced, page, requestKey],
   );
-  const { data, failed, reload } = useLoad(fetcher, onError);
+  const { data: loaded, failed, reload } = useLoad(fetcher, scopedOnError);
+  const data = loaded?.requestKey === requestKey ? loaded.result : null;
   const items = data?.items ?? [];
   const filterActive = !!(search.trim() || childId || service);
   return (

@@ -479,6 +479,8 @@ jobs:
         run: node --test scripts/preview/generate-secrets.test.mjs
       - name: M4-02 private hosted scope and workflow safety regressions
         run: node --test scripts/qa/hosted-extra-contracts.test.mjs scripts/qa/hosted-role-guards.test.mjs scripts/qa/hosted-session-guards.test.mjs scripts/qa/hosted-private-workflow.test.mjs scripts/qa/prepare-hosted-run.test.mjs scripts/qa/hosted-render-attestation.test.mjs
+      - name: M5 major 4 — synthetic acceptance evidence and adversarial qualification contracts
+        run: node --test scripts/qa/synthetic-evidence-matrix.test.mjs scripts/qa/synthetic-task-benchmark.test.mjs scripts/qa/synthetic-viewport-evidence.test.mjs
 
   test:
     needs: smart-plan
@@ -573,7 +575,7 @@ jobs:
       - name: Generate genuine full-scope Web Istanbul coverage and audit denominator
         run: |
           node --test scripts/qa/m4-web-coverage-audit.test.mjs scripts/qa/m4-measured-coverage.test.mjs
-          ./node_modules/.bin/jest --config scripts/qa/m4-web-jest.config.cjs --runInBand
+          NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--experimental-vm-modules" ./node_modules/.bin/jest --config scripts/qa/m4-web-jest.config.cjs --runInBand
           node scripts/qa/m4-web-coverage-audit.mjs
       - name: M4-08 audited Web coverage hotspots for high-value tests (diagnostic only)
         run: |
