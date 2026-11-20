@@ -1,3 +1,5 @@
+## 2026-11-20 — M5-14 WU4-O immutable custody chain verifier (draft, qualification pending)
+Implemented pure hash-chain verifier with strict tenant, revision and final-state binding; no storage or approval. Synthetic-only; G2/G2b NO-GO remains fail-closed, no real images, storage, clinical data, media publication, licensing approval, or permission grant. Adversarial Jest tests committed; local tests NOT RUN. Full exact-HEAD CI, all eight >=90% measured coverage gates, and independent Codex review PENDING. Issue #197 stays OPEN; production integration, rights sign-off and real authorization remain blocked. Handover record only, not a qualification receipt.
 ## 2026-11-20 — PR #450 Codex P2 remediation
 Corrected audit evidence to derive from a single own-data-property custody record snapshot (not Proxy getters). Added adversarial regression tests. Exact-head CI and new independent Codex review are PENDING; no merge or coverage qualification claimed. M5-14 #197 remains OPEN, G2/G2b NO-GO, synthetic-only and no image publication or real media access.
 
