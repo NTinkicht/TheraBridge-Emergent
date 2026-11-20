@@ -1,3 +1,7 @@
+## 2026-11-20 — M5 major PR2 rights/hold denial slice (unqualified)
+M5 PR2: Added standalone fail-closed custody rights/hold validator. It is NOT wired to DB, storage or endpoints; no authority to read, release or publish.
+G2/G2b NO-GO; synthetic-only; #197 remains OPEN.
+
 ## 2026-11-20 — M5 major PR 2 async media scope binding regression (NOT QUALIFIED)
 Private admission no longer reads caller-owned tenant/template/draft/version metadata after asynchronous scanner execution. The private intent, created from strict validated snapshots before scan, remains the only output identity. A deferred-scanner Jest regression mutates all caller-owned scope identifiers/version while scan is pending and asserts the original validated scope and fail-closed output. Code/test committed, local execution NOT RUN; exact-HEAD CI, 8 >=90% gates and new Codex review PENDING. Does not enable storage or publication; M5-14 #197 OPEN, G2/G2b NO-GO.
 
