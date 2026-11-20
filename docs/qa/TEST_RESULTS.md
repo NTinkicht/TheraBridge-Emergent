@@ -1,3 +1,35 @@
+## 2026-11-20 — M5 PR1 stale supervisor authorization error remediation (NOT QUALIFIED)
+Codex P2 on PR #456 identified late 403/404 from an unmounted scoped supervisor queue reaching the shared session handler. Scoped onError now checks mounted state; a deferred 403 after switching centre/child/specialty is regression-tested and must not redirect the new scope. Code commits 6814d48 and 49d9f82. Full exact-HEAD CI and new independent Codex review PENDING; no PASS or issue closure claimed. Remaining full role journeys and five-width acceptance incomplete. G2/G2b NO-GO and synthetic-only remain.
+
+## 2026-11-20 — M5 PR1 failed focused coverage follow-up
+| Run | Result | Remediation |
+|---|---|---|
+| Focused Web 44722525253 · 1737/1738 tests | FAIL | Actual anchor counting fixes React wrapper double-match in new pagination test |
+| Latest HEAD focused/Web/API and all eight >=90% | PENDING | New CI evidence required |
+| Codex on latest HEAD | PENDING | Prior review stale after test corrections |
+
+No CI bypass/exclusions, no clinical activation; G2/G2b NO-GO.
+
+## 2026-11-20 — M5 major PR 1 supervisor request isolation checkpoint
+| Check | Status | Evidence |
+|---|---|---|
+| Scope changes immediately hide previous authorized review queue | IMPLEMENTED / NOT RUN | Keyed supervisor component; deferred mounted synthetic test |
+| Search/page response identity guard | IMPLEMENTED / NOT RUN | Scoped request key; deferred pagination test |
+| Exact current-head CI, eight >=90% metrics, final Codex review | PENDING | New HEAD must be verified independently |
+| Manual usability, WCAG and five viewport acceptance | NOT RUN | External evidence required |
+
+G2/G2b NO-GO and synthetic-only unchanged.
+
+## 2026-11-20 — M5 consolidated PR 1 initial checkpoint
+| Scope | Result | Evidence |
+|---|---|---|
+| WorkspaceTabs fail-closed duplicate/unsafe ID guard | IMPLEMENTED / NOT RUN | Source change and mounted adversarial test in this draft branch |
+| Full exact-head CI and 8 API/Web >=90% gates | PENDING | No job receipts for this draft HEAD |
+| Independent exact-head Codex review | PENDING | Request after draft opens |
+| Manual WCAG, screen-reader, five-width and role usability | NOT RUN | M5-04/06/07/08/09 remain OPEN |
+
+Clinical G2/G2b release remains NO-GO; no real data/media publication.
+
 ## 2026-11-20 — PR #458 M5-16 print-safe instruction projection (qualification pending)
 Implemented an immutable, text-only clinician-preview projection with numbered accessible step labels, safely copied materials/equipment/safety and explicit synthetic-not-approved status. No user-supplied image URL, real media, approval or release permissions are exposed. Regression tests cover snapshot immutability, step numbering, malicious indexed getters and missing instructions. Local tests NOT RUN. New exact-HEAD full CI, eight unrounded >=90% API/Web gates, independent Codex review, five-width and manual keyboard/screen-reader acceptance PENDING. M5-16 #199 and M5 parent remain OPEN; G2/G2b NO-GO, synthetic-only restrictions preserved.
 
@@ -1593,3 +1625,7 @@ Implemented generic immutable no-store 404 response contract; no HTTP integratio
 
 ### 2026-11-20 — M5 major PR 3 initial synthetic catalogue contract
 Owner-approved four-package grouping: isolated illustrated-catalogue projection and source-bound Node regression tests added to `apps/web/src/lib/illustrated-catalogue.mjs` and `apps/web/test/illustrated-catalogue.test.mjs`. Presentation-only filter and numbered instruction projection deliberately emit NO image URL, even when an input claims publication. This is NOT integrated into staff catalogue yet; no asset inventory, human approvals, image generation, pilot, or five-width acceptance is completed. Tests/CI/Codex NOT RUN at authoring. Dependency on major PR 2 private media remains OPEN. M5-12/13/15/16/17 remain OPEN; G2/G2b NO-GO and synthetic-only enforced.
+
+
+### M5 PR1 CI follow-up — 2026-11-20
+On PR #456, exact-head CI for `8905ffb` failed the `demo-journey` job (run 44724232146): Playwright timed out filling the hidden `review-queue-search` input after specialty selection remounted and collapsed the optional queue disclosure. Commit `fb5e4c3` explicitly reopens the disclosure before testing search, preserving the filter assertions. Fresh exact-head CI and Codex re-review are required; this is **not** a PASS or merge qualification. Synthetic-only and G2/G2b NO-GO remain unchanged.

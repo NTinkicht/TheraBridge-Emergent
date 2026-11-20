@@ -1,3 +1,15 @@
+## 2026-11-20 — M5 PR1 stale supervisor authorization error remediation (NOT QUALIFIED)
+Codex P2 on PR #456 identified late 403/404 from an unmounted scoped supervisor queue reaching the shared session handler. Scoped onError now checks mounted state; a deferred 403 after switching centre/child/specialty is regression-tested and must not redirect the new scope. Code commits 6814d48 and 49d9f82. Full exact-HEAD CI and new independent Codex review PENDING; no PASS or issue closure claimed. Remaining full role journeys and five-width acceptance incomplete. G2/G2b NO-GO and synthetic-only remain.
+
+## 2026-11-20 — M5 PR1 real CI investigation
+Read failed focused-web job 136241637672: `coverage-m5-wu2-supervisor.test.cjs` assertion at line 62 received 2 nodes rather than 1 because wrapper + host test-id duplication. Changed test to verify the actual report anchor `href` (the security-relevant rendered link), plus wrapper-safe loading assertions. Did not remove assertions or reduce coverage. Fresh exact-head qualification required.
+
+## 2026-11-20 — M5 PR 1 supervisor stale-response regression
+Committed SupervisorReviewQueue scoped remount plus filter/page request identity guard, with synthetic mounted deferred-promise tests. Preserves original server authorization and no family-message surface. No local test execution; do not claim reviewed/qualified before new exact-head CI and Codex.
+
+## 2026-11-20 — M5 PR 1 role-workspace consolidation starts
+Owner-approved four-major-PR strategy after #455 merge; this PR owns M5-04/06/07/08/09. Implemented fail-closed WorkspaceTabs identity guard and synthetic mounted regression for duplicated/unsafe identities. No test execution receipt yet; PR remains draft until broader implementation and all exact-HEAD gates qualify. No clinical governance activation.
+
 ## 2026-11-20 — PR #458 M5-16 print-safe instruction projection (qualification pending)
 Implemented an immutable, text-only clinician-preview projection with numbered accessible step labels, safely copied materials/equipment/safety and explicit synthetic-not-approved status. No user-supplied image URL, real media, approval or release permissions are exposed. Regression tests cover snapshot immutability, step numbering, malicious indexed getters and missing instructions. Local tests NOT RUN. New exact-HEAD full CI, eight unrounded >=90% API/Web gates, independent Codex review, five-width and manual keyboard/screen-reader acceptance PENDING. M5-16 #199 and M5 parent remain OPEN; G2/G2b NO-GO, synthetic-only restrictions preserved.
 
@@ -1265,3 +1277,7 @@ Implemented generic immutable no-store 404 response contract; no HTTP integratio
 
 ### 2026-11-20 — M5 major PR 3 initial synthetic catalogue contract
 Owner-approved four-package grouping: isolated illustrated-catalogue projection and source-bound Node regression tests added to `apps/web/src/lib/illustrated-catalogue.mjs` and `apps/web/test/illustrated-catalogue.test.mjs`. Presentation-only filter and numbered instruction projection deliberately emit NO image URL, even when an input claims publication. This is NOT integrated into staff catalogue yet; no asset inventory, human approvals, image generation, pilot, or five-width acceptance is completed. Tests/CI/Codex NOT RUN at authoring. Dependency on major PR 2 private media remains OPEN. M5-12/13/15/16/17 remain OPEN; G2/G2b NO-GO and synthetic-only enforced.
+
+
+### M5 PR1 CI follow-up — 2026-11-20
+On PR #456, exact-head CI for `8905ffb` failed the `demo-journey` job (run 44724232146): Playwright timed out filling the hidden `review-queue-search` input after specialty selection remounted and collapsed the optional queue disclosure. Commit `fb5e4c3` explicitly reopens the disclosure before testing search, preserving the filter assertions. Fresh exact-head CI and Codex re-review are required; this is **not** a PASS or merge qualification. Synthetic-only and G2/G2b NO-GO remain unchanged.

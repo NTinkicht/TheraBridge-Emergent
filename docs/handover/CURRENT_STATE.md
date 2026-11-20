@@ -1,3 +1,15 @@
+## 2026-11-20 — M5 PR1 stale supervisor authorization error remediation (NOT QUALIFIED)
+Codex P2 on PR #456 identified late 403/404 from an unmounted scoped supervisor queue reaching the shared session handler. Scoped onError now checks mounted state; a deferred 403 after switching centre/child/specialty is regression-tested and must not redirect the new scope. Code commits 6814d48 and 49d9f82. Full exact-HEAD CI and new independent Codex review PENDING; no PASS or issue closure claimed. Remaining full role journeys and five-width acceptance incomplete. G2/G2b NO-GO and synthetic-only remain.
+
+## 2026-11-20 — M5 PR1 focused CI failure corrected (new qualification pending)
+Focused `measured-web` run 44722525253 failed one of 1738 tests: the new deferred-pagination test counted both a Next Link React wrapper and rendered anchor for the same `data-testid`. Corrected assertions to count actual rendered `<a href>` nodes, without changing production behavior or weakening tests. Also adjusted loading assertion for wrapper nesting. New exact-head CI, 8 >=90% metrics and Codex re-review PENDING; no PASS claimed. M5 role/UX acceptance remains incomplete, G2/G2b NO-GO.
+
+## 2026-11-20 — M5 major PR 1 supervisor scope isolation (unqualified code checkpoint)
+Added keyed supervisor queue remount on center/child/specialty changes and exact request-key response binding for search and pagination. Prevents old authorized report links from remaining visible under newly selected scopes while next API request is pending. Deferred-response mounted tests added for changed centre and page. This is not proof of complete supervisor acceptance; local tests NOT RUN; new exact-HEAD CI and independent Codex re-review PENDING. Clinical signing and family releases remain G2/G2b NO-GO.
+
+## 2026-11-20 — M5 major PR 1 consolidation checkpoint (DRAFT / NOT QUALIFIED)
+Initial scoped workspace UI hardening rejects duplicate, empty or unsafe tab identities and renders no tab panel rather than risking stale cross-role/cross-child content association. Mounted adversarial regressions added. This is only the first implemented slice of the owner's consolidated M5-04/06/07/08/09 package; role journey completion, exact-HEAD CI, eight >=90% coverage metrics, screen-reader/manual accessibility evidence and Codex review are NOT RUN/PENDING. No clinical release or real patient information; G2/G2b NO-GO.
+
 ## 2026-11-20 — PR #458 M5-16 print-safe instruction projection (qualification pending)
 Implemented an immutable, text-only clinician-preview projection with numbered accessible step labels, safely copied materials/equipment/safety and explicit synthetic-not-approved status. No user-supplied image URL, real media, approval or release permissions are exposed. Regression tests cover snapshot immutability, step numbering, malicious indexed getters and missing instructions. Local tests NOT RUN. New exact-HEAD full CI, eight unrounded >=90% API/Web gates, independent Codex review, five-width and manual keyboard/screen-reader acceptance PENDING. M5-16 #199 and M5 parent remain OPEN; G2/G2b NO-GO, synthetic-only restrictions preserved.
 
@@ -1200,3 +1212,7 @@ Implemented generic immutable no-store 404 response contract; no HTTP integratio
 
 ### 2026-11-20 — M5 major PR 3 initial synthetic catalogue contract
 Owner-approved four-package grouping: isolated illustrated-catalogue projection and source-bound Node regression tests added to `apps/web/src/lib/illustrated-catalogue.mjs` and `apps/web/test/illustrated-catalogue.test.mjs`. Presentation-only filter and numbered instruction projection deliberately emit NO image URL, even when an input claims publication. This is NOT integrated into staff catalogue yet; no asset inventory, human approvals, image generation, pilot, or five-width acceptance is completed. Tests/CI/Codex NOT RUN at authoring. Dependency on major PR 2 private media remains OPEN. M5-12/13/15/16/17 remain OPEN; G2/G2b NO-GO and synthetic-only enforced.
+
+
+### M5 PR1 CI follow-up — 2026-11-20
+On PR #456, exact-head CI for `8905ffb` failed the `demo-journey` job (run 44724232146): Playwright timed out filling the hidden `review-queue-search` input after specialty selection remounted and collapsed the optional queue disclosure. Commit `fb5e4c3` explicitly reopens the disclosure before testing search, preserving the filter assertions. Fresh exact-head CI and Codex re-review are required; this is **not** a PASS or merge qualification. Synthetic-only and G2/G2b NO-GO remain unchanged.
