@@ -81,3 +81,85 @@ test('poisoned filters and array entries fail closed without executing getters',
   assert.deepEqual(filterCatalogueActivities([fixture()], filters), []);
   assert.equal(invoked, 0);
 });
+
+
+test('strict record boundaries reject ambiguous identity and prevent unsafe media projection', () => {
+  const valid = fixture();
+  for (const invalid of [
+    {...valid, id: '  '}, {...valid, title: ''},
+    {...valid, id: 'x'.repeat(129)}, {...valid, title: 'x'.repeat(251)},
+    {...valid, id: 123}, {...valid, title: false},
+    {...valid, steps: ['valid', 7]}, {...valid, materials: [null]},
+    {...valid, equipment: [false]}, {...valid, safety: [17]},
+  ]) {
+    assert.equal(projectCatalogueActivity(invalid), null);
+  }
+  const atLimits = projectCatalogueActivity({...valid, id: 'x'.repeat(128), title: 'x'.repeat(250)});
+  assert.equal(atLimits.id.length, 128);
+  assert.equal(atLimits.title.length, 250);
+  assert.equal(atLimits.illustration.src, null);
+});
+
+test('whitespace, absent fields and sparse numbered instructions stay immutable and deterministic', () => {
+  const source = {id: '  safe-1 ', title: '  Motor practice  ', steps: ['  First  ', ' ', ' Last '],
+    materials: ['  Ball ', ' '], equipment: null, safety: undefined};
+  const result = projectCatalogueActivity(source);
+  assert.equal(result.id, 'safe-1');
+  assert.equal(result.title, 'Motor practice');
+  assert.deepEqual(result.steps, [
+    {number: 1, instruction: 'First'}, {number: 2, instruction: 'Last'},
+  ]);
+  assert.deepEqual(result.materials, ['Ball']);
+  assert.deepEqual(result.equipment, []);
+  assert.deepEqual(result.safety, []);
+  assert.equal(Object.isFrozen(result.materials), true);
+  assert.equal(Object.isFrozen(result.illustration), true);
+  const sparse = {...source, steps: Array(2)};
+  sparse.steps[1] = ' Second ';
+  assert.deepEqual(projectCatalogueActivity(sparse).steps, [{number: 1, instruction: 'Second'}]);
+});
+
+test('catalogue filters AND-match exact taxonomy and search independent authorized text fields', () => {
+  const base = fixture();
+  const other = {...fixture(), id: 'synthetic-2', title: 'Language work',
+    specialty: 'SLT', category: 'Speech', skill: 'Naming',
+    equipment: ['Cards'], materials: ['Photos'], steps: ['Name objects']};
+  const records = [base, other];
+  assert.deepEqual(filterCatalogueActivities(records, {specialty: 'ot', category: 'movement', skill: 'balance'}).map(x=>x.id), ['synthetic-1']);
+  assert.deepEqual(filterCatalogueActivities(records, {specialty: 'OT', category: 'Speech'}), []);
+  assert.deepEqual(filterCatalogueActivities(records, {equipment: 'CARDS'}).map(x=>x.id), ['synthetic-2']);
+  assert.deepEqual(filterCatalogueActivities(records, {query: 'foam blocks'}).map(x=>x.id), ['synthetic-1']);
+  assert.deepEqual(filterCatalogueActivities(records, {query: 'name objects'}).map(x=>x.id), ['synthetic-2']);
+  assert.deepEqual(filterCatalogueActivities(records, {query: 'slt'}).map(x=>x.id), ['synthetic-2']);
+  assert.deepEqual(filterCatalogueActivities(records, {query: 'unmatched'}), []);
+  assert.deepEqual(filterCatalogueActivities(null), []);
+  assert.deepEqual(filterCatalogueActivities({}, {}), []);
+});
+
+test('malformed nested arrays and proxy-backed containers fail closed without denying valid siblings', () => {
+  const good = fixture();
+  const badArrays = [];
+  for (const key of ['steps', 'materials', 'equipment', 'safety']) {
+    const excessive = {...fixture(), id: 'bad-' + key, [key]: Array(101).fill('valid')};
+    badArrays.push(excessive);
+  }
+  const oversizeCatalogue = Array(10001);
+  assert.deepEqual(filterCatalogueActivities(oversizeCatalogue), []);
+  const trapped = new Proxy([good], {getOwnPropertyDescriptor() {throw Error('container trap');}});
+  assert.deepEqual(filterCatalogueActivities(trapped), []);
+  const revoked = Proxy.revocable([good], {});
+  revoked.revoke();
+  assert.deepEqual(filterCatalogueActivities(revoked.proxy), []);
+  assert.deepEqual(filterCatalogueActivities([good, ...badArrays]).map(x=>x.id), ['synthetic-1']);
+});
+
+test('a poisoned catalogue entry cannot invoke a property getter or hide subsequent valid records', () => {
+  let getterCalls = 0;
+  const poisoned = {id: 'bad', title: 'Bad', steps: ['safe']};
+  Object.defineProperty(poisoned.steps, 0, {get() {getterCalls++; throw Error('must not execute');}});
+  const normal = fixture();
+  const result = filterCatalogueActivities([poisoned, normal], {query: 'blocks'});
+  assert.deepEqual(result.map(x=>x.id), ['synthetic-1']);
+  assert.equal(getterCalls, 0);
+  assert.equal(result[0].illustration.src, null);
+});
