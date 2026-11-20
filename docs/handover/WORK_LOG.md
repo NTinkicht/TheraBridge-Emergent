@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 PR1 real CI investigation
+Read failed focused-web job 136241637672: `coverage-m5-wu2-supervisor.test.cjs` assertion at line 62 received 2 nodes rather than 1 because wrapper + host test-id duplication. Changed test to verify the actual report anchor `href` (the security-relevant rendered link), plus wrapper-safe loading assertions. Did not remove assertions or reduce coverage. Fresh exact-head qualification required.
+
 ## 2026-11-20 — M5 PR 1 supervisor stale-response regression
 Committed SupervisorReviewQueue scoped remount plus filter/page request identity guard, with synthetic mounted deferred-promise tests. Preserves original server authorization and no family-message surface. No local test execution; do not claim reviewed/qualified before new exact-head CI and Codex.
 
