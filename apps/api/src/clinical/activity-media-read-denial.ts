@@ -18,6 +18,7 @@ export function denyPrivateMediaRead(input:CustodyRecord, requestedCenterId:stri
  if(Object.keys(d).length!==keys.length || keys.some(k=>!Object.prototype.hasOwnProperty.call(d[k]??{},'value'))) throw new CustodyTransitionError();
  const r=Object.fromEntries(keys.map(k=>[k,d[k].value])) as CustodyRecord;
  if(typeof requestedCenterId!=='string' || !UUID.test(requestedCenterId) ||
+    typeof r.centerId!=='string' || typeof r.templateId!=='string' || typeof r.draftId!=='string' ||
     !UUID.test(r.centerId) || !UUID.test(r.templateId) || !UUID.test(r.draftId) ||
     requestedCenterId.toLowerCase()!==r.centerId.toLowerCase() ||
     !Number.isSafeInteger(r.templateVersion) || r.templateVersion<1 ||
