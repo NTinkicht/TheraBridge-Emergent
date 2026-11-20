@@ -785,6 +785,15 @@ jobs:
         run: node --test scripts/design/m5-browser-observe.test.mjs scripts/design/m5-keyboard-journey.test.mjs
       - name: M5 WU2 five-width role acceptance receipt adversarial tests
         run: node --test scripts/design/m5-wu2-browser-qualification.test.mjs
+      - name: M5 major PR4 integrated real-browser receipt and false-approval adversarial tests
+        run: node --test scripts/design/m5-integrated-browser-receipt.test.mjs
+      - name: Archive M5 real-browser technical evidence plus pending manual matrix (NOT approval)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-integrated-technical-only-${{ github.sha }}
+          path: /tmp/therabridge-m5-integrated-technical-receipt.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Archive WU2 numeric-only synthetic role/viewport qualification (not screenshots)
         uses: actions/upload-artifact@v4
         with:
