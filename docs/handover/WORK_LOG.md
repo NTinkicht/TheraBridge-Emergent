@@ -1,3 +1,7 @@
+## 2026-11-20 — M5 major PR2 rights/hold denial slice (unqualified)
+M5 PR2: Committed activity-media-rights-denial.ts and adversarial Jest suite for forged grants, legal holds, revoked purge and accessor rejection. No local test execution.
+G2/G2b NO-GO; synthetic-only; #197 remains OPEN.
+
 ## 2026-11-20 — M5 PR2 async scope protection
 Updated private candidate inspection to use the previously validated quarantine intent across the async scanner boundary, rather than consulting potentially mutated scope fields after await. Added deferred mutation regression for center/template/draft/version. This is one verified-in-source protective step, not production lifecycle completion or signed security approval; tests NOT RUN at commit.
 
