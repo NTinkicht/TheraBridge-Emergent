@@ -34,6 +34,29 @@ describe('WU4-L private integrity+scan composite (never storage admission)',()=>
    const result=await task;
    expect(result.candidateSha256).toBe(createHash('sha256').update(original).digest('hex'));
  });
+ it('binds the original validated scope through an asynchronous scanner despite caller mutation',async()=>{
+   const mutable={...scope},bytes=validPng();
+   let release!:()=>void;
+   const scan=jest.fn(async (snapshot:Buffer)=>{
+     await new Promise<void>(resolve=>{release=resolve;});
+     return clean(snapshot);
+   });
+   const pending=inspectPrivateAdmission(mutable,bytes,scan);
+   // The safe private object intent must already contain the original scope;
+   // post-inspection changes cannot redirect the audit identity.
+   mutable.centerId='99999999-9999-4999-8999-999999999999';
+   mutable.templateId='88888888-8888-4888-8888-888888888888';
+   mutable.draftId='77777777-7777-4777-8777-777777777777';
+   mutable.templateVersion=99;
+   release();
+   const result=await pending;
+   expect(result).toMatchObject({
+     centerId:scope.centerId,templateId:scope.templateId,
+     draftId:scope.draftId,templateVersion:scope.templateVersion,
+     approved:false,readEnabled:false,publishEnabled:false,safeForStorage:false,
+   });
+   expect(scan).toHaveBeenCalledTimes(1);
+ });
  it('rejects a scanner missing, infected, broken, stale, or dishonest',async()=>{
    const bytes=validPng();
    await expect(inspectPrivateAdmission(scope,bytes)).rejects.toThrow(PrivateAdmissionError);
