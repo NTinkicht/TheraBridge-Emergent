@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 PR 1 role-workspace consolidation starts
+Owner-approved four-major-PR strategy after #455 merge; this PR owns M5-04/06/07/08/09. Implemented fail-closed WorkspaceTabs identity guard and synthetic mounted regression for duplicated/unsafe identities. No test execution receipt yet; PR remains draft until broader implementation and all exact-HEAD gates qualify. No clinical governance activation.
+
 ## 2026-11-20 — M5-10 keyboard disabled-tab regression (qualification pending)
 Synthetic-only WU: WAI-ARIA keyboard navigation now excludes aria-disabled tabs as well as native disabled tabs, preserving focus/click guards. Regression checks the filtered selector and avoids activating the disabled tab. Local tests NOT RUN; exact-HEAD full CI, all eight >=90% measured coverage gates, browser checks and independent Codex review PENDING. This is a narrow accessibility slice, not closure of #193 or manual WCAG/screen-reader acceptance. G2/G2b NO-GO unchanged; no clinical release or real data.
 
