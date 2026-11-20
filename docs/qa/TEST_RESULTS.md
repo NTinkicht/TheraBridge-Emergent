@@ -1,3 +1,13 @@
+## 2026-11-20 — M5 major PR 1 supervisor request isolation checkpoint
+| Check | Status | Evidence |
+|---|---|---|
+| Scope changes immediately hide previous authorized review queue | IMPLEMENTED / NOT RUN | Keyed supervisor component; deferred mounted synthetic test |
+| Search/page response identity guard | IMPLEMENTED / NOT RUN | Scoped request key; deferred pagination test |
+| Exact current-head CI, eight >=90% metrics, final Codex review | PENDING | New HEAD must be verified independently |
+| Manual usability, WCAG and five viewport acceptance | NOT RUN | External evidence required |
+
+G2/G2b NO-GO and synthetic-only unchanged.
+
 ## 2026-11-20 — M5 consolidated PR 1 initial checkpoint
 | Scope | Result | Evidence |
 |---|---|---|
