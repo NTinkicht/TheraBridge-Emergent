@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 major PR 1 consolidation checkpoint (DRAFT / NOT QUALIFIED)
+Initial scoped workspace UI hardening rejects duplicate, empty or unsafe tab identities and renders no tab panel rather than risking stale cross-role/cross-child content association. Mounted adversarial regressions added. This is only the first implemented slice of the owner's consolidated M5-04/06/07/08/09 package; role journey completion, exact-HEAD CI, eight >=90% coverage metrics, screen-reader/manual accessibility evidence and Codex review are NOT RUN/PENDING. No clinical release or real patient information; G2/G2b NO-GO.
+
 ## 2026-11-20 — M5-10 keyboard disabled-tab regression (qualification pending)
 Synthetic-only WU: WAI-ARIA keyboard navigation now excludes aria-disabled tabs as well as native disabled tabs, preserving focus/click guards. Regression checks the filtered selector and avoids activating the disabled tab. Local tests NOT RUN; exact-HEAD full CI, all eight >=90% measured coverage gates, browser checks and independent Codex review PENDING. This is a narrow accessibility slice, not closure of #193 or manual WCAG/screen-reader acceptance. G2/G2b NO-GO unchanged; no clinical release or real data.
 
