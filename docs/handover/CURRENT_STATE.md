@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 PR1 stale supervisor authorization error remediation (NOT QUALIFIED)
+Codex P2 on PR #456 identified late 403/404 from an unmounted scoped supervisor queue reaching the shared session handler. Scoped onError now checks mounted state; a deferred 403 after switching centre/child/specialty is regression-tested and must not redirect the new scope. Code commits 6814d48 and 49d9f82. Full exact-HEAD CI and new independent Codex review PENDING; no PASS or issue closure claimed. Remaining full role journeys and five-width acceptance incomplete. G2/G2b NO-GO and synthetic-only remain.
+
 ## 2026-11-20 — M5 PR1 focused CI failure corrected (new qualification pending)
 Focused `measured-web` run 44722525253 failed one of 1738 tests: the new deferred-pagination test counted both a Next Link React wrapper and rendered anchor for the same `data-testid`. Corrected assertions to count actual rendered `<a href>` nodes, without changing production behavior or weakening tests. Also adjusted loading assertion for wrapper nesting. New exact-head CI, 8 >=90% metrics and Codex re-review PENDING; no PASS claimed. M5 role/UX acceptance remains incomplete, G2/G2b NO-GO.
 
