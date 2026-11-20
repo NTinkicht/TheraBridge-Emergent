@@ -45,7 +45,7 @@ test('sparse dimensions never fabricate an empty evidence PASS', () => {
 
 test('receipt identity fields reject coercion and cannot mutate evidence while deriving keys', () => {
   const poisoned = [
-    ['role', 'guardian'], ['journey', 'home'], ['width', '320'], ['state', 'loading'],
+    ['role', 'unknown-role'], ['journey', 'unknown-journey'], ['width', '320'], ['state', 'unknown-state'],
   ];
   for (const [field, value] of poisoned) {
     const rows = make(); rows[0][field] = value;
