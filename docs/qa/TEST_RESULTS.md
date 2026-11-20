@@ -1,3 +1,12 @@
+## 2026-11-20 — M5 PR1 failed focused coverage follow-up
+| Run | Result | Remediation |
+|---|---|---|
+| Focused Web 44722525253 · 1737/1738 tests | FAIL | Actual anchor counting fixes React wrapper double-match in new pagination test |
+| Latest HEAD focused/Web/API and all eight >=90% | PENDING | New CI evidence required |
+| Codex on latest HEAD | PENDING | Prior review stale after test corrections |
+
+No CI bypass/exclusions, no clinical activation; G2/G2b NO-GO.
+
 ## 2026-11-20 — M5 major PR 1 supervisor request isolation checkpoint
 | Check | Status | Evidence |
 |---|---|---|
