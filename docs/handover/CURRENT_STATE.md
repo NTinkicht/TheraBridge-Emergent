@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 major PR 1 supervisor scope isolation (unqualified code checkpoint)
+Added keyed supervisor queue remount on center/child/specialty changes and exact request-key response binding for search and pagination. Prevents old authorized report links from remaining visible under newly selected scopes while next API request is pending. Deferred-response mounted tests added for changed centre and page. This is not proof of complete supervisor acceptance; local tests NOT RUN; new exact-HEAD CI and independent Codex re-review PENDING. Clinical signing and family releases remain G2/G2b NO-GO.
+
 ## 2026-11-20 — M5 major PR 1 consolidation checkpoint (DRAFT / NOT QUALIFIED)
 Initial scoped workspace UI hardening rejects duplicate, empty or unsafe tab identities and renders no tab panel rather than risking stale cross-role/cross-child content association. Mounted adversarial regressions added. This is only the first implemented slice of the owner's consolidated M5-04/06/07/08/09 package; role journey completion, exact-HEAD CI, eight >=90% coverage metrics, screen-reader/manual accessibility evidence and Codex review are NOT RUN/PENDING. No clinical release or real patient information; G2/G2b NO-GO.
 
