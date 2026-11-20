@@ -32,3 +32,44 @@ test('accessor-backed checks cannot execute', () => {
   assert.throws(() => qualify(rows), /accessor-backed/);
   assert.equal(invoked, false);
 });
+
+
+test('sparse dimensions never fabricate an empty evidence PASS', () => {
+  for (const dims of [
+    { roles: Array(1), journeys: ['home'] },
+    { roles: ['guardian'], journeys: Array(1) },
+    { roles: [, 'guardian'], journeys: ['home'] }
+  ]) assert.throws(() => qualifySyntheticViewportEvidence([], dims), TypeError);
+  assert.throws(() => qualifySyntheticViewportEvidence([], { roles: [], journeys: [] }), TypeError);
+});
+
+test('receipt identity fields reject coercion and cannot mutate evidence while deriving keys', () => {
+  const poisoned = [
+    ['role', 'guardian'], ['journey', 'home'], ['width', '320'], ['state', 'loading'],
+  ];
+  for (const [field, value] of poisoned) {
+    const rows = make(); rows[0][field] = value;
+    if (field === 'width') assert.throws(() => qualify(rows), /primitive/);
+    else assert.throws(() => qualify(rows), /unexpected|primitive/);
+  }
+  for (const field of ['role', 'journey', 'width', 'state']) {
+    const rows = make(); let calls = 0;
+    rows[0][field] = {
+      toString() {
+        calls++;
+        Object.keys(rows[0].checks).forEach(k => { rows[0].checks[k] = 'PASS'; });
+        return field === 'width' ? '320' : field === 'role' ? 'guardian' : field === 'journey' ? 'home' : 'loading';
+      },
+      valueOf() { calls++; return 320; }
+    };
+    rows[0].checks.keyboard = 'NOT_RUN';
+    assert.throws(() => qualify(rows), /primitive/);
+    assert.equal(calls, 0);
+    assert.equal(rows[0].checks.keyboard, 'NOT_RUN');
+  }
+  const roles = ['guardian'];
+  let called = false;
+  Object.defineProperty(roles, '0', { get() { called = true; return 'guardian'; } });
+  assert.throws(() => qualifySyntheticViewportEvidence(make(), { roles, journeys }), /accessor-backed/);
+  assert.equal(called, false);
+});
