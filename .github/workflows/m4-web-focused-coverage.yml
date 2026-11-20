@@ -46,7 +46,7 @@ jobs:
       - name: Run source-executing full-Web Istanbul and fail-closed audit
         run: |
           node --test scripts/qa/m4-web-coverage-audit.test.mjs scripts/qa/m4-measured-coverage.test.mjs scripts/qa/m4-web-coverage-hotspots.test.mjs
-          ./node_modules/.bin/jest --config scripts/qa/m4-web-jest.config.cjs --runInBand
+          NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--experimental-vm-modules" ./node_modules/.bin/jest --config scripts/qa/m4-web-jest.config.cjs --runInBand
           node scripts/qa/m4-web-coverage-audit.mjs
           node scripts/qa/m4-web-coverage-hotspots.mjs
           node -e 'const r=require("./.workspace/m4-coverage/m4-web-hotspots.json"); console.log("SANITIZED WEB HOTSPOTS (source paths + uncovered line counts only)"); for(const x of r.topUncoveredLines) console.log(x.path+" | missing="+x.uncoveredLines+" | lines="+x.linePercent+"% | branches="+x.branchPercent+"%");'

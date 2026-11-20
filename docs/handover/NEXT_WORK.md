@@ -1,3 +1,9 @@
+## 2026-11-20 — PR #458 instrumented Jest ESM runtime remediation (qualification pending)
+Focused measured-Web run 44747919462 failed all 34 new genuine catalogue Jest cases before execution: dynamic import of .mjs lacks Node --experimental-vm-modules. Scoped NODE_OPTIONS only to existing Jest invocation in both full CI and focused coverage workflows; source inventory, original 90% hard gate, test collection, security/Smart CI and coverage denominators unchanged. Added real catalogue boundary tests remain intact. Exact-HEAD rerun, actual measured 8 metrics and independent Codex re-review pending; no PASS claimed. Synthetic-only, G2/G2b NO-GO.
+
+## 2026-11-20 — PR #458 measured Web branch coverage recovery (qualification pending)
+CI run 44746036294: API 1729/1729 and Web 1739/1739 tests passed, but mandatory measured Web branches 89.26% (<90%), with 62 uncovered source branches in apps/web/src/lib/illustrated-catalogue.mjs. Kept full 162-file denominator and all eight >=90% required gates unchanged. Added Jest execution-level adversarial catalogue tests for trusted projection, malicious descriptors, sparse arrays, filtering, denied image publication and immutable print snapshots; legacy Node tests remain. Local Jest NOT RUN, latest-head integrated CI and numeric coverage PENDING; no PASS or clinical approval claimed. Synthetic-only; G2/G2b NO-GO.
+
 ## 2026-11-20 — M5 PR1 stale supervisor authorization error remediation (NOT QUALIFIED)
 Codex P2 on PR #456 identified late 403/404 from an unmounted scoped supervisor queue reaching the shared session handler. Scoped onError now checks mounted state; a deferred 403 after switching centre/child/specialty is regression-tested and must not redirect the new scope. Code commits 6814d48 and 49d9f82. Full exact-HEAD CI and new independent Codex review PENDING; no PASS or issue closure claimed. Remaining full role journeys and five-width acceptance incomplete. G2/G2b NO-GO and synthetic-only remain.
 
@@ -19,6 +25,9 @@ Run full exact-head CI, full unchanged eight >=90% API/Web source metrics and im
 
 ## 2026-11-20 — M5 major PR 2 remaining integration
 Continue authenticated transactional tenant+role+activity ownership+version+quota/CSRF binding, durable custody audit/CAS, actual private object-store quarantine and independent sandbox AV/decoder/derivatives, revocation, retention/legal hold, rights and clinician/design review receipts. No real media upload, storage publication or clinical release without genuine owner gates. Run complete exact-head CI, all 8 >=90% API/Web metrics, independent Codex and adversarial browser/security tests. Keep #197 open until fully evidenced.
+
+## 2026-11-20 — PR #458 M5-16 print-safe instruction projection (qualification pending)
+Implemented an immutable, text-only clinician-preview projection with numbered accessible step labels, safely copied materials/equipment/safety and explicit synthetic-not-approved status. No user-supplied image URL, real media, approval or release permissions are exposed. Regression tests cover snapshot immutability, step numbering, malicious indexed getters and missing instructions. Local tests NOT RUN. New exact-HEAD full CI, eight unrounded >=90% API/Web gates, independent Codex review, five-width and manual keyboard/screen-reader acceptance PENDING. M5-16 #199 and M5 parent remain OPEN; G2/G2b NO-GO, synthetic-only restrictions preserved.
 
 ## 2026-11-20 — M5-10 keyboard disabled-tab regression (qualification pending)
 Synthetic-only WU: WAI-ARIA keyboard navigation now excludes aria-disabled tabs as well as native disabled tabs, preserving focus/click guards. Regression checks the filtered selector and avoids activating the disabled tab. Local tests NOT RUN; exact-HEAD full CI, all eight >=90% measured coverage gates, browser checks and independent Codex review PENDING. This is a narrow accessibility slice, not closure of #193 or manual WCAG/screen-reader acceptance. G2/G2b NO-GO unchanged; no clinical release or real data.
@@ -1417,6 +1426,10 @@ Isolated deterministic deny receipt for every custody state; validates exact cen
 
 ## 2026-11-20 — M5-14 WU4-P private cache denial (draft, qualification pending)
 Implemented generic immutable no-store 404 response contract; no HTTP integration or media access. Synthetic-only; G2/G2b NO-GO remains fail-closed, no real images, storage, clinical data, media publication, licensing approval, or permission grant. Adversarial Jest tests committed; local tests NOT RUN. Full exact-HEAD CI, all eight >=90% measured coverage gates, and independent Codex review PENDING. Issue #197 stays OPEN; production integration, rights sign-off and real authorization remain blocked. Handover record only, not a qualification receipt.
+
+
+### 2026-11-20 — M5 major PR 3 initial synthetic catalogue contract
+Owner-approved four-package grouping: isolated illustrated-catalogue projection and source-bound Node regression tests added to `apps/web/src/lib/illustrated-catalogue.mjs` and `apps/web/test/illustrated-catalogue.test.mjs`. Presentation-only filter and numbered instruction projection deliberately emit NO image URL, even when an input claims publication. This is NOT integrated into staff catalogue yet; no asset inventory, human approvals, image generation, pilot, or five-width acceptance is completed. Tests/CI/Codex NOT RUN at authoring. Dependency on major PR 2 private media remains OPEN. M5-12/13/15/16/17 remain OPEN; G2/G2b NO-GO and synthetic-only enforced.
 
 
 ### M5 PR1 CI follow-up — 2026-11-20
