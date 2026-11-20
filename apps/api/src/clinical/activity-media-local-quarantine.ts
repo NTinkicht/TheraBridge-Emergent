@@ -3,7 +3,7 @@ import { constants } from 'node:fs';
 import { lstat, mkdir, open, rm } from 'node:fs/promises';
 import { isAbsolute, join, resolve, sep, dirname, parse } from 'node:path';
 import { preflightActivityMedia, MAX_ACTIVITY_MEDIA_BYTES } from './activity-media-intake-preflight';
-import type { QuarantineObjectIntent } from './activity-media-quarantine-intent';
+import { snapshotQuarantineIntent, type QuarantineObjectIntent } from './activity-media-quarantine-intent';
 
 /**
  * WU4-G isolated local storage adapter. It is deliberately NOT connected to
@@ -11,7 +11,6 @@ import type { QuarantineObjectIntent } from './activity-media-quarantine-intent'
  * Production object storage, scanning, full decode and rights checks remain
  * separately required. A write returns NO read URL or filesystem path.
  */
-const KEY = /^candidate\/v1\/([a-f0-9]{8}-[a-f0-9-]{27,})\/([0-9a-f-]{36})\/([0-9a-f-]{36})\.png$/;
 export class QuarantineWriteError extends Error {
   constructor() { super('Private quarantine write refused.'); }
 }
@@ -58,13 +57,11 @@ export class LocalQuarantineWriter {
     }
   }
   async write(intent: QuarantineObjectIntent, bytes: unknown): Promise<QuarantineWriteReceipt> {
-    if (!intent || intent.bucketClass !== 'private-quarantine' ||
-      intent.quarantineOnly !== true || intent.approved !== false ||
-      intent.publishEnabled !== false || intent.readEnabled !== false ||
-      typeof intent.objectKey !== 'string' || !KEY.test(intent.objectKey) ||
-      intent.objectKey.split('/')[2] !== intent.centerId ||
-      !Buffer.isBuffer(bytes) || bytes.length > MAX_ACTIVITY_MEDIA_BYTES ||
-      bytes.length !== intent.candidateBytes) throw new QuarantineWriteError();
+    let claim: QuarantineObjectIntent;
+    try { claim = snapshotQuarantineIntent(intent); }
+    catch { throw new QuarantineWriteError(); }
+    if (!Buffer.isBuffer(bytes) || bytes.length > MAX_ACTIVITY_MEDIA_BYTES ||
+        bytes.length !== claim.candidateBytes) throw new QuarantineWriteError();
     // Candidate identity and the actual bytes must agree. This does not make
     // them safe to decode or permit reading.
     // Snapshot BEFORE preflight and before any await: callers own their input
@@ -72,11 +69,11 @@ export class LocalQuarantineWriter {
     const snapshot = Buffer.from(bytes);
     const preflight = preflightActivityMedia(snapshot);
     const sha256 = createHash('sha256').update(snapshot).digest('hex');
-    if (sha256 !== intent.candidateSha256 || sha256 !== preflight.sha256) {
+    if (sha256 !== claim.candidateSha256 || sha256 !== preflight.sha256) {
       throw new QuarantineWriteError();
     }
     const root = resolve(this.root);
-    const parts = intent.objectKey.split('/');
+    const parts = claim.objectKey.split('/');
     let dir = root;
     await assertSafeAncestry(root);
     // No recursive mkdir: reject pre-existing symlinked directories.
