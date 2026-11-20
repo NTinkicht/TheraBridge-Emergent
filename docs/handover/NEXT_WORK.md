@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 PR2 pending gates after scope mutation patch
+Run full exact-head CI, full unchanged eight >=90% API/Web source metrics and immediate new Codex review of changed HEAD. Continue transactional custody storage/audit, robust decoder/AV adapter, tenant-scoped authorization, rights and revocation in this same PR. Do not enable actual upload/guardian publication or close M5-14 before separate approvals and end-to-end evidence.
+
 ## 2026-11-20 — M5 major PR 2 remaining integration
 Continue authenticated transactional tenant+role+activity ownership+version+quota/CSRF binding, durable custody audit/CAS, actual private object-store quarantine and independent sandbox AV/decoder/derivatives, revocation, retention/legal hold, rights and clinician/design review receipts. No real media upload, storage publication or clinical release without genuine owner gates. Run complete exact-head CI, all 8 >=90% API/Web metrics, independent Codex and adversarial browser/security tests. Keep #197 open until fully evidenced.
 
