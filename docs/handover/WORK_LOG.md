@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 PR2 async scope protection
+Updated private candidate inspection to use the previously validated quarantine intent across the async scanner boundary, rather than consulting potentially mutated scope fields after await. Added deferred mutation regression for center/template/draft/version. This is one verified-in-source protective step, not production lifecycle completion or signed security approval; tests NOT RUN at commit.
+
 ## 2026-11-20 — M5 PR 2 secure-media consolidation begins
 Owner-approved consolidated M5-14 #197 PR. Implemented one-shot safe plain-data snapshot for quarantine intent to prevent changing tenant/candidate fields between validation and emitted private key; added getter and forged-identity regressions. Subsequent authenticated database/object-store lifecycle and rights qualification remain unimplemented. Tests and exact-head CI not run; preserve no read/publish rights.
 
