@@ -26,7 +26,7 @@ export function evaluateSyntheticTaskBenchmark(records, { minSamples = MIN_PAIRE
         Object.keys(record).sort().join(',') !== 'baselineMs,candidateMs,success,task,viewport') {
       throw new TypeError('unexpected or sensitive benchmark fields');
     }
-    const { task, viewport, baselineMs, candidateMs, success } = record;
+    // Read only own data descriptors: accessor-backed observations must never execute.\n    const descriptors = Object.getOwnPropertyDescriptors(record);\n    const fields = ['task', 'viewport', 'baselineMs', 'candidateMs', 'success'];\n    if (fields.some(field => !Object.hasOwn(descriptors[field], 'value'))) {\n      throw new TypeError('accessor-backed benchmark observation');\n    }\n    const task = descriptors.task.value;\n    const viewport = descriptors.viewport.value;\n    const baselineMs = descriptors.baselineMs.value;\n    const candidateMs = descriptors.candidateMs.value;\n    const success = descriptors.success.value;
     if (typeof task !== 'string' || !/^[a-z][a-z0-9-]{1,63}$/.test(task) ||
         !VIEWPORTS.includes(viewport) || !finiteDuration(baselineMs) ||
         !finiteDuration(candidateMs) || typeof success !== 'boolean') {
