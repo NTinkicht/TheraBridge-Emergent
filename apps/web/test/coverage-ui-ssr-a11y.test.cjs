@@ -89,4 +89,17 @@ describe('M4-08: WAI-ARIA keyboard tab navigation dispatches tab click guards',(
   expect(unrelated.preventDefault).not.toHaveBeenCalled();
   expect(tabs.every(t=>t.click.mock.calls.length===0)).toBe(true);
  });
+ it('skips aria-disabled and native-disabled tabs while preserving guarded click behavior',()=>{
+  const tabs=Array.from({length:3},(_,i)=>({focus:jest.fn(),click:jest.fn(),id:i}));
+  const parent={querySelectorAll:jest.fn(()=>[tabs[0],tabs[2]])};
+  const event={key:'ArrowRight',currentTarget:parent,target:tabs[0],preventDefault:jest.fn()};
+  navigateTabs(event);
+  expect(parent.querySelectorAll).toHaveBeenCalledWith('[role="tab"]:not([disabled]):not([aria-disabled="true"])');
+  expect(event.preventDefault).toHaveBeenCalledTimes(1);
+  expect(tabs[1].focus).not.toHaveBeenCalled();
+  expect(tabs[1].click).not.toHaveBeenCalled();
+  expect(tabs[2].focus).toHaveBeenCalledTimes(1);
+  expect(tabs[2].click).toHaveBeenCalledTimes(1);
+ });
+
 });
