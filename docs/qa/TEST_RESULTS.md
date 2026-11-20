@@ -1,3 +1,13 @@
+## 2026-11-20 — M5 consolidated PR 1 initial checkpoint
+| Scope | Result | Evidence |
+|---|---|---|
+| WorkspaceTabs fail-closed duplicate/unsafe ID guard | IMPLEMENTED / NOT RUN | Source change and mounted adversarial test in this draft branch |
+| Full exact-head CI and 8 API/Web >=90% gates | PENDING | No job receipts for this draft HEAD |
+| Independent exact-head Codex review | PENDING | Request after draft opens |
+| Manual WCAG, screen-reader, five-width and role usability | NOT RUN | M5-04/06/07/08/09 remain OPEN |
+
+Clinical G2/G2b release remains NO-GO; no real data/media publication.
+
 ## 2026-11-20 — M5-10 keyboard disabled-tab regression (qualification pending)
 Synthetic-only WU: WAI-ARIA keyboard navigation now excludes aria-disabled tabs as well as native disabled tabs, preserving focus/click guards. Regression checks the filtered selector and avoids activating the disabled tab. Local tests NOT RUN; exact-HEAD full CI, all eight >=90% measured coverage gates, browser checks and independent Codex review PENDING. This is a narrow accessibility slice, not closure of #193 or manual WCAG/screen-reader acceptance. G2/G2b NO-GO unchanged; no clinical release or real data.
 
