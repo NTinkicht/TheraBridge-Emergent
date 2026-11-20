@@ -1,3 +1,6 @@
+## 2026-11-20 — M5 PR 1 remaining scope (DRAFT)
+Continue complete therapist/coordinator/supervisor/guardian journeys on existing APIs and shared Direction B system; add role/tenant/specialty, async, denied-state, keyboard and five-width browser regressions. Run complete exact-HEAD required CI, eight >=90% API/Web metrics, independent Codex, review disposition, manual screen-reader and measured task checks. Keep #187/#189/#190/#191/#192 open until accepted. G2/G2b clinical NO-GO and synthetic-only remain enforced.
+
 ## 2026-11-20 — M5-10 keyboard disabled-tab regression (qualification pending)
 Synthetic-only WU: WAI-ARIA keyboard navigation now excludes aria-disabled tabs as well as native disabled tabs, preserving focus/click guards. Regression checks the filtered selector and avoids activating the disabled tab. Local tests NOT RUN; exact-HEAD full CI, all eight >=90% measured coverage gates, browser checks and independent Codex review PENDING. This is a narrow accessibility slice, not closure of #193 or manual WCAG/screen-reader acceptance. G2/G2b NO-GO unchanged; no clinical release or real data.
 
