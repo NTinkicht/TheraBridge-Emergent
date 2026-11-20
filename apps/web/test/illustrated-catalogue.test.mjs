@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { projectCatalogueActivity, filterCatalogueActivities, CATALOGUE_MEDIA_STATE } from '../src/lib/illustrated-catalogue.mjs';
+import { projectCatalogueActivity, filterCatalogueActivities, projectPrintableActivity, CATALOGUE_MEDIA_STATE } from '../src/lib/illustrated-catalogue.mjs';
 
 const fixture = () => ({
   id: 'synthetic-1', title: 'Équilibre with blocks', specialty: 'OT',
@@ -162,4 +162,34 @@ test('a poisoned catalogue entry cannot invoke a property getter or hide subsequ
   assert.deepEqual(result.map(x=>x.id), ['synthetic-1']);
   assert.equal(getterCalls, 0);
   assert.equal(result[0].illustration.src, null);
+});
+
+test('printable instructions are numbered, immutable and never expose unapproved media', () => {
+  const source = fixture();
+  const print = projectPrintableActivity(source);
+  assert.equal(print.status, 'SYNTHETIC_PREVIEW_NOT_APPROVED_FOR_RELEASE');
+  assert.equal(print.illustration.src, null);
+  assert.equal(print.styleVersion, 'm5-direction-b-illustration-v1');
+  assert.deepEqual(print.instructions.items.map(step => step.accessibleLabel), [
+    'Step 1: Place blocks', 'Step 2: Step carefully',
+  ]);
+  source.steps[0] = 'Forged';
+  source.imageUrl = 'https://untrusted.invalid/updated.jpg';
+  assert.equal(print.instructions.items[0].instruction, 'Place blocks');
+  assert.equal(JSON.stringify(print).includes('https://'), false);
+  assert.equal(Object.isFrozen(print.instructions.items[0]), true);
+  assert.equal(Object.isFrozen(print.instructions.items), true);
+  assert.equal(Object.isFrozen(print), true);
+  assert.throws(() => { print.instructions.items[0].instruction = 'Forged'; }, TypeError);
+});
+
+test('print preview fails closed for missing steps and malicious nested accessors', () => {
+  assert.equal(projectPrintableActivity({...fixture(), steps: []}), null);
+  assert.equal(projectPrintableActivity({...fixture(), steps: ['  ', '  ']}), null);
+  let calls = 0;
+  const poisoned = fixture();
+  Object.defineProperty(poisoned.steps, 0, { get() { calls++; throw Error('must not read'); } });
+  assert.equal(projectPrintableActivity(poisoned), null);
+  assert.equal(calls, 0);
+  assert.equal(projectPrintableActivity({...fixture(), id: ''}), null);
 });
