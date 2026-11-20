@@ -1,3 +1,9 @@
+## 2026-11-20 — PR #448 Codex P2 remediation checkpoint
+Fixed P2: reject accessor-backed or mutated custody records and transition events using a single own-data-property snapshot. Added targeted adversarial Jest regression. Remediation code/test HEAD c9a6257e57fe5de4c9f311b9723bd5806fe1934a; full exact-final-HEAD CI and fresh independent Codex review NOT YET VERIFIED. Do not merge until all eight >=90% coverage gates and required CI/review receipts pass. M5-14 #197 OPEN; G2/G2b NO-GO.
+
+## 2026-11-20 — M5 WU4-K immutable custody state contract
+Require exact final-head full CI, all 8 genuine >=90% API/Web metrics, completed independent Codex and disposition of every review finding before merging. Integration remaining: actual transactional storage state, audit provenance, retention policy, legal-hold ownership, orphan removal, durable deletion evidence and authenticated access. All clinical/guardian release restrictions preserved.
+
 ## 2026-11-20 — PR #449 Codex P2 remediation checkpoint
 Fixed P2: reject >8MiB or <33-byte inputs before allocating a private Buffer snapshot. Added targeted adversarial Jest regression. Remediation code/test HEAD 0833634efe44813e146de127f4b5b6c272828f83; full exact-final-HEAD CI and fresh independent Codex review NOT YET VERIFIED. Do not merge until all eight >=90% coverage gates and required CI/review receipts pass. M5-14 #197 OPEN; G2/G2b NO-GO.
 
