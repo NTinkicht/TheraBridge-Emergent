@@ -1,18 +1,30 @@
 'use client';
 
 import { CalendarDays, ClipboardList, FileText, Target, Activity, ArrowRight, Users, House } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { clinicalApi, type Workspace, type PracticeFeedbackReadModel } from '@/lib/clinical';
 import { currentGoals } from '@/lib/progress-analysis';
 import { serviceLabel } from '@/components/operations/BookDialog';
 import { Card, Pill } from '@/components/design/ui';
+import { DisclosureSection } from '@/components/design/workspace-patterns';
 import { Child360ClinicalTimeline } from './Child360ClinicalTimeline';
 import { ClinicianJourneyPanel } from './ClinicianJourneyPanel';
 
 type Tab = 'plan' | 'assessments' | 'sessions' | 'progress' | 'reports';
 const dateOnly = (x: string) => x.slice(0,10);
 
-export function Child360({ ws, centerId, onNavigate }: {ws: Workspace;centerId: string;onNavigate:(tab:Tab)=>void}) {
+// The compact overview exposes actionable navigation first. Details remain
+// accessible on demand and continue to use the same authorized read model.
+function OverviewDetail({ compact, title, summary, testId, children }: {
+  compact: boolean; title: string; summary: string; testId: string; children: ReactNode;
+}) {
+  if (!compact) return <>{children}</>;
+  return <section data-testid={testId}>
+    <DisclosureSection title={title} summary={summary}>{children}</DisclosureSection>
+  </section>;
+}
+
+export function Child360({ ws, centerId, onNavigate, compact = false }: {ws: Workspace;centerId: string;onNavigate:(tab:Tab)=>void;compact?:boolean}) {
   // Legacy/session-test fixtures can omit this newly additive read-model field.
   // Fail closed to an empty team rather than crash the clinical workspace.
   const careTeam = ws.careTeam ?? [];
@@ -64,6 +76,7 @@ export function Child360({ ws, centerId, onNavigate }: {ws: Workspace;centerId: 
           </button>
         ))}
       </div>
+      <OverviewDetail compact={compact} title="Care team and responsibilities" summary={`${careTeam.length} active assigned therapist(s) in your authorized scope`} testId="child360-disclosure-team">
       <section data-testid="child360-care-team" aria-labelledby="child360-care-team-heading">
         <Card className="p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -96,6 +109,8 @@ export function Child360({ ws, centerId, onNavigate }: {ws: Workspace;centerId: 
           <p className="mt-3 text-[12px] text-brand-inkMuted">Specialty leads are assigned per therapy service; they are not automatically child-wide referents.</p>
         </Card>
       </section>
+      </OverviewDetail>
+      <OverviewDetail compact={compact} title="Goals, visits and sessions" summary={`${goals.length} current goal(s) · ${upcoming.length} upcoming appointment(s) · ${ws.notes.length} session note(s)`} testId="child360-disclosure-activity">
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card className="p-5">
           <h3 className="text-[17px] font-semibold">Care goals and evidence</h3>
@@ -121,7 +136,9 @@ export function Child360({ ws, centerId, onNavigate }: {ws: Workspace;centerId: 
           <button className="mt-3 inline-flex items-center gap-2 text-[14px] font-semibold text-brand-action" type="button" onClick={()=>onNavigate('sessions')}>Open sessions <ArrowRight size={14}/></button>
         </Card>
       </div>
+      </OverviewDetail>
       {ws.canEdit && (
+        <OverviewDetail compact={compact} title="Family practice feedback" summary="Non-clinical sample outcomes · not clinical evidence" testId="child360-disclosure-practice">
         <Card className="space-y-3 p-5" testId="child360-family-practice">
           <div className="flex items-start gap-2">
             <House className="mt-0.5 shrink-0 text-brand-action" size={18} aria-hidden="true" />
@@ -149,8 +166,11 @@ export function Child360({ ws, centerId, onNavigate }: {ws: Workspace;centerId: 
             </>
           }
         </Card>
+        </OverviewDetail>
       )}
-      <Child360ClinicalTimeline ws={ws} onNavigate={onNavigate} />
+      <OverviewDetail compact={compact} title="Clinical activity history" summary="Authorized draft plan versions, reviews, observations, sessions and assessments" testId="child360-disclosure-history">
+        <Child360ClinicalTimeline ws={ws} onNavigate={onNavigate} />
+      </OverviewDetail>
     </div>
   );
 }

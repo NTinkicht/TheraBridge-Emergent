@@ -1,8 +1,12 @@
 // Dedicated CI-only synthetic demo on an isolated *_demo_test PostgreSQL database.
 import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { rm } from 'node:fs/promises';
+import { rm, writeFile } from 'node:fs/promises';
 import { PrismaClient } from '@prisma/client';
+import { runBrowserAudit } from './m5-browser-observe.mjs';
+import { runChild360BrowserAcceptance } from './m5-child360-browser.mjs';
+import { runWU2BrowserQualification } from './m5-wu2-browser-qualification.mjs';
+import { buildM5IntegratedBrowserReceipt } from './m5-integrated-browser-receipt.mjs';
 
 const dbUrl = new URL(process.env.DATABASE_URL ?? '');
 if (process.env.DEPLOYMENT_ENV !== 'ci' || !['127.0.0.1', 'localhost'].includes(dbUrl.hostname) || !dbUrl.pathname.endsWith('_demo_test')) {
@@ -69,8 +73,27 @@ try {
   start('node', ['node_modules/next/dist/bin/next', 'start', 'apps/web', '-H', '127.0.0.1', '-p', '3000']);
   await ready('http://127.0.0.1:8001/api/health');
   await ready('http://127.0.0.1:3000/login');
-  await run('node', ['scripts/design/check-demo-journey.mjs']);
-  await run('node', ['scripts/design/check-handover-sessions.mjs']);
+  if (process.env.NEXT_PUBLIC_M5_CHILD_COMPACT === 'true') {
+    // Dedicated browser acceptance job: build-time flag is ON only in this
+    // synthetic CI process. The ordinary seven-role job stays unchanged.
+    await runChild360BrowserAcceptance({ passwords: demoPasswords });
+  } else {
+    await run('node', ['scripts/design/check-demo-journey.mjs']);
+    await run('node', ['scripts/design/check-handover-sessions.mjs']);
+    const roleAudit = await runBrowserAudit({ passwords: demoPasswords,
+      output: '/tmp/therabridge-m5-01-browser-observations.json' });
+    const workspaceReceipt = await runWU2BrowserQualification({ passwords: demoPasswords,
+      output: '/tmp/therabridge-m5-wu2-browser-qualification.json' });
+    const integrated = buildM5IntegratedBrowserReceipt(roleAudit, workspaceReceipt);
+    await writeFile('/tmp/therabridge-m5-integrated-technical-receipt.json',
+      JSON.stringify(integrated, null, 2) + '\n', { mode: 0o600 });
+    console.log('M5 integrated synthetic-only acceptance evidence:', JSON.stringify({
+      baselineRouteObservations: integrated.automated.baselineRouteObservations,
+      verifiedWorkspaceObservations: integrated.automated.verifiedWorkspaceObservations,
+      pendingManualObservations: integrated.manual.observedPendingObservations,
+      manualStatus: integrated.manual.status, clinicalGate: integrated.governance.clinicalGate,
+    }));
+  }
 } finally {
   for (const p of children) if (p.exitCode === null) p.kill('SIGTERM');
   await db.$disconnect();

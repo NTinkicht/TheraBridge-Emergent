@@ -19,5 +19,15 @@ export default {
       width: { sidebar: '254px' },
     },
   },
-  plugins: [plugin(({ addBase }) => addBase({ ':root': cssVariables, ...familyThemeCss }))],
+  // CSS chooses family light/dark values before React hydration. The default
+  // auto theme follows the OS preference without a JavaScript/theme flash;
+  // explicit html[data-family-theme="light"] takes precedence when present.
+  plugins: [plugin(({ addBase }) => addBase({
+    ':root': cssVariables,
+    ...familyThemeCss,
+    '@media (prefers-color-scheme: dark)': {
+      'html:not([data-family-theme="light"]) .theme-family-auto':
+        familyThemeCss['.theme-family-dark, html[data-family-theme="dark"] .theme-family-auto'],
+    },
+  }))],
 } satisfies Config;

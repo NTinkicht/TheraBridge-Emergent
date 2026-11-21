@@ -50,3 +50,35 @@ regexes = [
   '''^ci_only_[a-z_]+$''',
   '''^\$\{?[A-Z_][A-Z0-9_]*''',
 ]
+
+# M4-08 Stage 3: one historic fictional password-mismatch input, NOT a credential.
+# This applies solely to the generic-api-key rule, the exact test source
+# path and the exact literal. Other secret rules and values still scan.
+[[allowlists]]
+targetRules = ["generic-api-key"]
+description = "Single synthetic mismatched-password fixture in full-history scan"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''^apps/web/test/coverage-stage3-mounted-recovery-and-feasibility\.test\.cjs$''']
+regexes = ['''^synthetic-strong-1$''']
+
+# M4-08 historical fictional CSRF token in one Web coverage test, scanned by --all.
+# Only suppress this rule, exact fixture path, and exact synthetic literal.
+[[allowlists]]
+targetRules = ["therabridge-credential-assignment"]
+description = "Synthetic CSRF token in M4-08 workspace permissions test"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''^apps/web/test/coverage-m4-final-workspace-permissions-and-retry\.test\.cjs$''']
+regexes = ['''^fictional$''']
+
+# Historical M4-08 bootstrap safety test on another Git ref, not in main.
+# The exact literal "fictional" is deliberately rejected as an env password.
+# Keep scope to this test path + exact synthetic value + one scanner rule.
+[[allowlists]]
+targetRules = ["therabridge-credential-assignment"]
+description = "Synthetic rejected OWNER_PASSWORD in M4 bootstrap guard fixture"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''^apps/api/test/m4-final-bootstrap-owner-guard\.e2e-spec\.ts$''']
+regexes = ['''^fictional$''']

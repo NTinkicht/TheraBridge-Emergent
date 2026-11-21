@@ -446,6 +446,43 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     expect(h.app.get(DevMailboxService).list().filter((m) => m.to === 'sweep-parent@ops.test' && m.subject.includes('Reminder:')).length).toBe(1);
   });
 
+  it('M4-07 real PostgreSQL: eight concurrent reminder sweeps reserve exactly one notification', async () => {
+    const therapist = await staff('race-therapist@ops.test', ['THERAPIST']);
+    const kid = (await post(h, c('children'), admin, child()).expect(201)).body.id as string;
+    await post(h, c(`children/${kid}/assignments`), admin,
+      { membershipId: therapist.body.activeContext.membershipId, service: 'speech' }).expect(201);
+    await post(h, c(`children/${kid}/guardians`), admin,
+      { displayName: 'Race Recipient', email: 'race-parent@ops.test', relationship: 'parent', invite: true }).expect(201);
+    await accept('race-parent@ops.test', 'Race Recipient');
+    const startsAt = new Date(h.clock.now().getTime() + 12 * 3_600_000);
+    const appointmentId = (await post(h, c('appointments'), admin, {
+      childId: kid, membershipId: therapist.body.activeContext.membershipId,
+      service: 'speech', startsAt: startsAt.toISOString(),
+      endsAt: new Date(startsAt.getTime() + 3_600_000).toISOString(),
+    }).expect(201)).body.id as string;
+    const mailbox = h.app.get(DevMailboxService);
+    const actualWorker = h.app.get(NoticesService);
+    // Two independent worker objects, but shared real Prisma pool/PostgreSQL.
+    // All eight overlapping sweeps attempt the real unique partial-index claim.
+    const independent = new NoticesService(h.prisma, mailbox, { now: () => h.clock.now() } as any);
+    const outcomes = await Promise.all(Array.from({ length: 8 }, (_, i) =>
+      (i % 2 ? independent : actualWorker).runDue(h.clock.now())));
+    expect(outcomes.reduce((sum, o) => sum + o.sent, 0)).toBe(1);
+    expect(await h.prisma.appointmentNotice.count({
+      where: { appointmentId, kind: 'reminder_24h' },
+    })).toBe(1);
+    expect(mailbox.list().filter(m =>
+      m.to === 'race-parent@ops.test' && m.subject.includes('Reminder:'))).toHaveLength(1);
+    for (let i = 0; i < 3; i++) {
+      expect((await independent.runDue(h.clock.now())).sent).toBe(0);
+    }
+    // The unique index is physically present in the disposable PostgreSQL DB.
+    const indexes = await h.prisma.$queryRaw<{ indexname: string }[]>`
+      SELECT indexname FROM pg_indexes WHERE tablename = 'appointment_notice'
+        AND indexname = 'appointment_notice_reminder_once'`;
+    expect(indexes).toHaveLength(1);
+  });
+
   it('M2-H04 review P2: transient outbox failure releases all undelivered reminder reservations for retry', async () => {
     const therapist = await staff('retry-therapist@ops.test', ['THERAPIST']);
     const kid = (await post(h, c('children'), admin, child()).expect(201)).body.id as string;

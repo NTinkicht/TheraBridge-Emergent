@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     container:
-      image: mcr.microsoft.com/playwright:v1.48.2-noble
+      image: mcr.microsoft.com/playwright:v1.55.1-noble
       options: --ipc=host
     environment: hosted-responsive-private
     defaults:
@@ -39,10 +39,20 @@ jobs:
         run: |
           corepack enable
           yarn install --frozen-lockfile
-          node -e "if(require('playwright/package.json').version!=='1.48.2') process.exit(2)"
+          node -e "if(require('playwright/package.json').version!=='1.55.1') process.exit(2)"
           node --check scripts/qa/hosted-interactive.mjs
           node --check scripts/qa/hosted-extra-therapists.mjs
-          node --test scripts/qa/hosted-extra-contracts.test.mjs scripts/qa/hosted-role-guards.test.mjs scripts/qa/hosted-session-guards.test.mjs
+          node --test scripts/qa/hosted-render-attestation.test.mjs
+          node --test scripts/qa/hosted-extra-contracts.test.mjs scripts/qa/hosted-role-guards.test.mjs scripts/qa/hosted-session-guards.test.mjs scripts/qa/prepare-hosted-run.test.mjs
+      - name: Independently verify live Render deployment SHA for current checkout
+        # This read-only API check runs before accessing private account secrets.
+        # Missing protected Render API secret or an old live deploy MUST block.
+        env:
+          TB_HOSTED_RENDER_READONLY_API_KEY: ${{ secrets.TB_HOSTED_RENDER_READONLY_API_KEY }}
+          TB_QA_DEPLOY_SHA: ${{ inputs.deployed_sha }}
+        run: |
+          umask 077
+          node scripts/qa/hosted-render-attestation.mjs
       - name: Private credential and live health preflight
         id: preflight
         env:

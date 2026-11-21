@@ -304,7 +304,7 @@ try {
     await journey.waitFor();
     assert((await journey.innerText()).includes('Report status loaded only when the authorized Reports tab opens'));
     for (const [step,destination] of [
-      ['goals','plan'],['evidence','progress'],['reports','reports'],['home','plan'],
+      ['sessions','sessions'],['goals','plan'],['evidence','progress'],['reports','reports'],['home','plan'],
     ]) {
       await page.getByTestId('clinician-journey-'+step).click();
       assert.equal(await page.getByTestId('clinical-tab-'+destination).getAttribute('aria-selected'),'true',
@@ -327,7 +327,7 @@ try {
             width: button.getBoundingClientRect().width,
             focusable: button.getAttribute('disabled') === null })),
       }));
-      assert.equal(navGeometry.links.length,4,'All four clinician journey stages must exist at '+width+'px');
+      assert.equal(navGeometry.links.length,5,'All five clinician journey stages must exist at '+width+'px');
       assert(navGeometry.panelRight <= width + 6 && navGeometry.panelOverflow <= 2,
         'Care journey clipped at '+width+'px: '+JSON.stringify(navGeometry));
       assert(navGeometry.links.every(link => link.right <= width + 6 &&
@@ -336,7 +336,7 @@ try {
       // Size/focusability alone do not prove operability: exercise real
       // keyboard navigation and Enter activation for EACH stage at EACH width.
       for (const [step, destination] of [
-        ['goals','plan'],['evidence','progress'],['reports','reports'],['home','plan'],
+        ['sessions','sessions'],['goals','plan'],['evidence','progress'],['reports','reports'],['home','plan'],
       ]) {
         const stage = page.getByTestId('clinician-journey-'+step);
         await stage.focus();
@@ -1472,7 +1472,17 @@ try {
       assert(widths.queue && widths.queue.width > 0 && widths.queue.right <= width + 3,
         'Supervisor queue must remain visible inside ' + width + 'px');
     }
+    // M5-08: users explicitly expand optional review filters; Context is a
+    // native disclosure focus stop before the source-bound report link.
+    await page.getByTestId('supervisor-review-queue').locator('details').first().locator('summary').click();
     await page.getByTestId('review-queue-search').focus();
+    await page.keyboard.press('Tab');
+    const contextFocus = await page.evaluate(() => ({
+      tag: document.activeElement?.tagName,
+      scope: document.activeElement?.closest('[data-testid^="review-queue-preview-"]')?.getAttribute('data-testid'),
+    }));
+    assert.equal(contextFocus.tag, 'SUMMARY');
+    assert.equal(contextFocus.scope, 'review-queue-preview-' + queuedDraft.id);
     await page.keyboard.press('Tab');
     const focused = await page.evaluate(() => ({
       testId: document.activeElement?.getAttribute('data-testid'),
@@ -1516,6 +1526,7 @@ try {
       updatedAt: new Date('2026-10-01T09:00:00Z'),
     } });
     await page.reload();
+    await page.getByTestId('supervisor-review-queue').locator('details').first().locator('summary').click();
     const secondRow = page.getByTestId('review-queue-row-' + secondReport.id);
     await secondRow.waitFor();
     await reviewRow.waitFor();
@@ -1536,6 +1547,12 @@ try {
     await page.getByTestId('filter-service').selectOption('');
     await secondRow.waitFor();
     await reviewRow.waitFor();
+    // Specialty changes remount the scoped queue and intentionally collapse
+    // optional filters. Reopen the disclosure before testing text search.
+    const queueDisclosure = page.getByTestId('supervisor-review-queue').locator('details').first();
+    if (!(await queueDisclosure.evaluate(node => node.open))) {
+      await queueDisclosure.locator('summary').click();
+    }
     await page.getByTestId('review-queue-search').fill('no-matching-synthetic-review');
     await page.getByTestId('review-queue-empty').waitFor();
     assert.equal(await reviewRow.count(), 0);

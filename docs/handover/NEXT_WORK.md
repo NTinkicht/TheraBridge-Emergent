@@ -1,3 +1,622 @@
+## 2026-11-20 — M5-14 post-merge offline staging integration (NOT QUALIFIED)
+Created an INTERNAL, no-HTTP, private-only candidate staging composition to connect full PNG integrity validation, independent trusted-scanner attestation and actual exclusive filesystem quarantine writes against one snapshotted byte buffer and exact immutable tenant/activity/draft intent. Hardened LocalQuarantineWriter to reject forged/accessor-backed and mutation-prone intents before any async IO. New test exercises persisted private 0600 PNG, exact SHA, no URL/key in receipt, late caller byte/scope mutation, duplicate writes, infected/stale/error scanner proofs, corrupted PNG, forged rights and malicious property getters. Tests/TS typecheck/full CI/Codex review NOT YET RUN/VERIFIED. No request endpoint, DB custody CAS, production trusted scanner, object-store adapter, promotion, images in UI, read/delivery, derivatives or signed rights/clinical approval. DO NOT mark #197 complete. Continue only with trusted transactional actor/tenant/version/quota/CSRF binding, durable custody/audit, storage and independent safety and rights approvals; G2/G2b NO-GO, synthetic-only.
+
+## 2026-11-20 — PR #459 push CI cancellation and fail-closed gate remediation (requalification PENDING)
+Push CI run 44771870835 on HEAD c32ea29fa1cf4826ffe0b81164d67b0f51c7af6b cancelled demo-journey after its 15-minute job timeout; the Playwright Chromium --with-deps step alone consumed approximately 10 minutes and the synthetic browser journey remained in progress when the timer expired. Dependent smart-ci-gate correctly FAILED on cancelled required demo-journey. The separate exact-SHA PR CI run 44771887645 completed SUCCESS, including demo-journey and smart-ci-gate. Increase only the demo-journey timeout budget to 25 minutes to tolerate variable runner browser dependency installation; leave every real test, requirement, CI dependency, hard Smart CI failure condition, security job, SBOM, provenance and all eight >=90% API/Web measured gates unchanged. New HEAD full push/PR CI, eight measured coverage metrics and independent final-head Codex review are NOT YET VERIFIED. M5 manual accessibility/UX/rights/owner acceptance remains NOT_OBTAINED; PR stays DRAFT, synthetic-only, G2/G2b clinical NO-GO.
+
+## 2026-11-20 — M5 PR4 live synthetic browser evidence integration (qualification PENDING)
+Added a source-executing integration bridge to join the *actual* M5-01 seven-role/175-route browser receipt with the WU2 3-role x five-width=15 observed screenshot-hash/role/route/keyboard/overflow receipts from the existing isolated *_demo_test runner. The bridge validates both original evidence contracts, rejects missing/duplicate/forged receipts and malicious identity coercion, retains actual baseline route failures/overflow for review, and records a 75-row five-width x five-state x three-role manual matrix as NOT_RUN. An explicit NOT_QUALIFIED manual result and no owner/asset/accessibility/clinical approval are invariant. CI demo-journey now runs adversarial bridge tests and uploads a numeric/synthetic-only receipt; no screenshot bytes, passwords or patient data are published. Existing CI/security/Smart CI/coverage denominators and all eight >=90% gates remain unchanged. New final-HEAD integrated CI and fresh Codex review NOT YET VERIFIED. Human screenshots, WCAG screen-reader/contrast, task-time >=95%/30% targets, rights/visual and owner signoffs still NOT_OBTAINED. G2/G2b NO-GO; do not close M5 from synthetic technical receipt alone.
+
+## 2026-11-20 — M5 major PR #459 exact-review P2 fixes (NOT YET QUALIFIED)
+Codex HEAD 900ef979 P2 #4643663535: pending-matrix and qualified-receipt dimensions previously accepted sparse arrays; both now share dense own-data descriptor validation, reject holes/accessors/duplicates, and cannot treat a zero-sized expected matrix as PASS. Codex P2 #4643663550: receipt role/journey/width/state are now primitive-type-and-domain-checked *before* joining the key; crafted object toString/valueOf cannot mutate manual check results or spoof PASS, and string widths are rejected. Adversarial source-executing Node tests added for one-hole role/journey matrices, inherited/accessor index, object coercion and evidence mutation. Code commits 69eadab/b70429b; tests 6cf3c7b/8be3415. Full exact-final-HEAD CI, independent Codex re-review, all eight unrounded >=90% API/Web metrics, real browser/keyboard/screen-reader and owner visual/usability signoff PENDING. No completed human test or clinical release claimed. G2/G2b NO-GO and synthetic-only restrictions remain. PR #459 remains DRAFT, M5 issue #168 OPEN.
+
+## 2026-11-20 — M5 major PR 4 integrated acceptance instrumentation (DRAFT / NOT QUALIFIED)
+Six source-level QA scripts from pre-existing isolated preparation branch reconciled into latest main after merged PRs #456/#457/#458. Added executable Node adversarial test step inside required full-mode source-contracts job; preserved all existing security, browser, coverage, SBOM, provenance, preview, Smart CI and >=90% unrounded API/Web gates. Evidence matrix requires 5 viewport widths and 5 UI states per declared synthetic role/journey, with manual checks initialized NOT_RUN (never fabricated). Synthetic task benchmarking requires >=20 paired samples per group, >=95% success and >=30% median improvement; synthetic PASS is NOT human usability approval. Exact-final-HEAD full CI, review, hosted browser runs, manual keyboard/screen reader, contrast, five-width visuals, real task observations and owner milestone signature NOT RUN/PENDING. Clinical G2/G2b NO-GO and asset/legal publication restrictions unchanged. M5 subordinate issues stay open until per-issue evidence is recorded.
+
+## 2026-11-20 — PR #458 instrumented Jest ESM runtime remediation (qualification pending)
+Focused measured-Web run 44747919462 failed all 34 new genuine catalogue Jest cases before execution: dynamic import of .mjs lacks Node --experimental-vm-modules. Scoped NODE_OPTIONS only to existing Jest invocation in both full CI and focused coverage workflows; source inventory, original 90% hard gate, test collection, security/Smart CI and coverage denominators unchanged. Added real catalogue boundary tests remain intact. Exact-HEAD rerun, actual measured 8 metrics and independent Codex re-review pending; no PASS claimed. Synthetic-only, G2/G2b NO-GO.
+
+## 2026-11-20 — PR #458 measured Web branch coverage recovery (qualification pending)
+CI run 44746036294: API 1729/1729 and Web 1739/1739 tests passed, but mandatory measured Web branches 89.26% (<90%), with 62 uncovered source branches in apps/web/src/lib/illustrated-catalogue.mjs. Kept full 162-file denominator and all eight >=90% required gates unchanged. Added Jest execution-level adversarial catalogue tests for trusted projection, malicious descriptors, sparse arrays, filtering, denied image publication and immutable print snapshots; legacy Node tests remain. Local Jest NOT RUN, latest-head integrated CI and numeric coverage PENDING; no PASS or clinical approval claimed. Synthetic-only; G2/G2b NO-GO.
+
+## 2026-11-20 — M5 PR1 stale supervisor authorization error remediation (NOT QUALIFIED)
+Codex P2 on PR #456 identified late 403/404 from an unmounted scoped supervisor queue reaching the shared session handler. Scoped onError now checks mounted state; a deferred 403 after switching centre/child/specialty is regression-tested and must not redirect the new scope. Code commits 6814d48 and 49d9f82. Full exact-HEAD CI and new independent Codex review PENDING; no PASS or issue closure claimed. Remaining full role journeys and five-width acceptance incomplete. G2/G2b NO-GO and synthetic-only remain.
+
+## 2026-11-20 — M5 PR1 updated qualification after CI failure
+Re-run focused and full web source tests at latest HEAD; confirm one rendered report anchor on first page, no stale links while fetching, and correct second page; verify all eight genuine >=90% metrics, full Smart CI and independent Codex on exact HEAD. Continue remaining role journeys and manual evidence before review-ready/merge.
+
+## 2026-11-20 — M5 PR 1 next after supervisor stale-worklist fix
+Run source-mounted supervisor deferred tests and full required CI on current exact head, all eight >=90% API/Web metrics, Smart CI and independent Codex review. Continue material implementation across therapist/coordinator/supervisor/guardian and manual five-width, screen-reader and task-time acceptance; keep #187/#189/#190/#191/#192 open until complete. Do not merge this draft prematurely.
+
+## 2026-11-20 — M5 PR 1 remaining scope (DRAFT)
+Continue complete therapist/coordinator/supervisor/guardian journeys on existing APIs and shared Direction B system; add role/tenant/specialty, async, denied-state, keyboard and five-width browser regressions. Run complete exact-HEAD required CI, eight >=90% API/Web metrics, independent Codex, review disposition, manual screen-reader and measured task checks. Keep #187/#189/#190/#191/#192 open until accepted. G2/G2b clinical NO-GO and synthetic-only remain enforced.
+
+## 2026-11-20 — M5 major PR2 rights/hold denial slice (unqualified)
+M5 PR2: Integrate this pure policy into authenticated tenant-scoped transactional custody, durable audit, quarantine private storage, independent scanner/decoder, derivative and rights receipts; ensure purge requires real DB CAS/authorization. No release.
+G2/G2b NO-GO; synthetic-only; #197 remains OPEN.
+
+## 2026-11-20 — M5 PR2 pending gates after scope mutation patch
+Run full exact-head CI, full unchanged eight >=90% API/Web source metrics and immediate new Codex review of changed HEAD. Continue transactional custody storage/audit, robust decoder/AV adapter, tenant-scoped authorization, rights and revocation in this same PR. Do not enable actual upload/guardian publication or close M5-14 before separate approvals and end-to-end evidence.
+
+## 2026-11-20 — M5 major PR 2 remaining integration
+Continue authenticated transactional tenant+role+activity ownership+version+quota/CSRF binding, durable custody audit/CAS, actual private object-store quarantine and independent sandbox AV/decoder/derivatives, revocation, retention/legal hold, rights and clinician/design review receipts. No real media upload, storage publication or clinical release without genuine owner gates. Run complete exact-head CI, all 8 >=90% API/Web metrics, independent Codex and adversarial browser/security tests. Keep #197 open until fully evidenced.
+
+## 2026-11-20 — PR #458 M5-16 print-safe instruction projection (qualification pending)
+Implemented an immutable, text-only clinician-preview projection with numbered accessible step labels, safely copied materials/equipment/safety and explicit synthetic-not-approved status. No user-supplied image URL, real media, approval or release permissions are exposed. Regression tests cover snapshot immutability, step numbering, malicious indexed getters and missing instructions. Local tests NOT RUN. New exact-HEAD full CI, eight unrounded >=90% API/Web gates, independent Codex review, five-width and manual keyboard/screen-reader acceptance PENDING. M5-16 #199 and M5 parent remain OPEN; G2/G2b NO-GO, synthetic-only restrictions preserved.
+
+## 2026-11-20 — M5-10 keyboard disabled-tab regression (qualification pending)
+Synthetic-only WU: WAI-ARIA keyboard navigation now excludes aria-disabled tabs as well as native disabled tabs, preserving focus/click guards. Regression checks the filtered selector and avoids activating the disabled tab. Local tests NOT RUN; exact-HEAD full CI, all eight >=90% measured coverage gates, browser checks and independent Codex review PENDING. This is a narrow accessibility slice, not closure of #193 or manual WCAG/screen-reader acceptance. G2/G2b NO-GO unchanged; no clinical release or real data.
+
+## 2026-11-20 — M5-14 custody audit candidate-byte boundary fix (qualification pending)
+Code now rejects invalid, noninteger and out-of-range candidateBytes in the synthetic immutable custody chain verifier; adversarial tests include 33-byte and 8 MiB boundaries. Local tests NOT RUN. Exact-HEAD CI, eight >=90% API/Web measured coverage gates, and independent Codex review PENDING. No real storage, media read, rights approval or publication; G2/G2b NO-GO. M5-14 #197 remains OPEN.
+
+## 2026-11-20 — M5-14 WU4-O immutable custody chain verifier (draft, qualification pending)
+Implemented pure hash-chain verifier with strict tenant, revision and final-state binding; no storage or approval. Synthetic-only; G2/G2b NO-GO remains fail-closed, no real images, storage, clinical data, media publication, licensing approval, or permission grant. Adversarial Jest tests committed; local tests NOT RUN. Full exact-HEAD CI, all eight >=90% measured coverage gates, and independent Codex review PENDING. Issue #197 stays OPEN; production integration, rights sign-off and real authorization remain blocked. Handover record only, not a qualification receipt.
+## 2026-11-20 — PR #450 Codex P2 remediation
+Corrected audit evidence to derive from a single own-data-property custody record snapshot (not Proxy getters). Added adversarial regression tests. Exact-head CI and new independent Codex review are PENDING; no merge or coverage qualification claimed. M5-14 #197 remains OPEN, G2/G2b NO-GO, synthetic-only and no image publication or real media access.
+
+
+## 2026-11-20 — PR #448 Codex P2 remediation checkpoint
+Fixed P2: reject accessor-backed or mutated custody records and transition events using a single own-data-property snapshot. Added targeted adversarial Jest regression. Remediation code/test HEAD c9a6257e57fe5de4c9f311b9723bd5806fe1934a; full exact-final-HEAD CI and fresh independent Codex review NOT YET VERIFIED. Do not merge until all eight >=90% coverage gates and required CI/review receipts pass. M5-14 #197 OPEN; G2/G2b NO-GO.
+
+## 2026-11-20 — M5 WU4-K immutable custody state contract
+Require exact final-head full CI, all 8 genuine >=90% API/Web metrics, completed independent Codex and disposition of every review finding before merging. Integration remaining: actual transactional storage state, audit provenance, retention policy, legal-hold ownership, orphan removal, durable deletion evidence and authenticated access. All clinical/guardian release restrictions preserved.
+
+## 2026-11-20 — PR #449 Codex P2 remediation checkpoint
+Fixed P2: reject >8MiB or <33-byte inputs before allocating a private Buffer snapshot. Added targeted adversarial Jest regression. Remediation code/test HEAD 0833634efe44813e146de127f4b5b6c272828f83; full exact-final-HEAD CI and fresh independent Codex review NOT YET VERIFIED. Do not merge until all eight >=90% coverage gates and required CI/review receipts pass. M5-14 #197 OPEN; G2/G2b NO-GO.
+
+## 2026-11-20 — M5 WU4-L bound candidate inspection
+Require exact final-head full CI, all 8 genuine >=90% API/Web metrics, completed independent Codex and disposition of every review finding before merging. Integration remaining: production authenticated scan adapter, full sandboxed pixel decoder, private encrypted object store write, malicious-content analysis, quota/CSRF/ownership transaction, legal and clinical approval. All clinical/guardian release restrictions preserved.
+
+## 2026-11-20 — M5 WU4-J pre-merge checkpoint
+Complete exact-HEAD CI, all eight API/Web >=90% metrics and independent P0–P2 review before merge. Subsequent integration still required: trusted persisted signoffs with independent reviewer authentication, lawyer/licensing validation, reviewer integrity, revocation, clinical/design signoff, actual storage and immutable audit log. No relaxing clinical NO-GO or image publication restrictions; #197 remains open.
+
+## 2026-11-20 — M5 WU4-I pre-merge checkpoint
+Complete exact-HEAD CI, all eight API/Web >=90% metrics and independent P0–P2 review before merge. Subsequent integration still required: production sandboxed AV scanner, authenticated quarantine read/write, engine and signature freshness attestation, malware resilience tests, image decoding, human rights and clinical approval. No relaxing clinical NO-GO or image publication restrictions; #197 remains open.
+
+## 2026-11-20 — M5 WU4-H PR #445 review remediation
+Review and qualify exact revised HEAD with complete 90% lines/branches/functions/statements (API and Web), original security/SBOM/provenance/Compose/browser/preview/Smart CI, and new independent Codex disposition. After merging, remaining engineering: Independent sandboxed pixel decoder and AV scanning, safe derivative generation, audited private storage and immutable rights/clinical review, image version binding and revocation. Explicitly retain no public images, no real patient data, no G2/G2b GO; #197 remains OPEN.
+
+## 2026-11-20 — M5 WU4-G PR #444 review remediation
+Review and qualify exact revised HEAD with complete 90% lines/branches/functions/statements (API and Web), original security/SBOM/provenance/Compose/browser/preview/Smart CI, and new independent Codex disposition. After merging, remaining engineering: Build authenticated transactional tenant/role/specialty/draft/version/quota binding; private encrypted cloud object store and write-only policy; sandbox image decoding, AV scanner, derivatives, retention and rights/human review. Explicitly retain no public images, no real patient data, no G2/G2b GO; #197 remains OPEN.
+
+## 2026-11-20 — WU4-F #443 remaining work
+Verify new exact-head CI, Smart CI final gate, full API/Web >=90% line/branch/function/statement, independent Codex P0–P2 findings and review-thread resolution before merging #443. WU4-F currently defines only an internal quarantine object-intent contract, NOT a secure storage adapter or approved image pipeline. Subsequent WU: private encrypted object storage with authenticated write-only admission, transactional tenant/specialty/ownership/CSRF/quota/version binding, sandbox full PNG structural validation + CRC/IDAT + decompression limits, malware scanning, derivative/revision integrity, immutable rights/clinical/design approvals, revocation/retention/orphan cleanup and adversarial browser integration tests. G2/G2b NO-GO, no real media, no guardian publishing. Manual screen-reader, five-width and human visual/rights acceptance NOT RUN/NOT OBTAINED.
+
+## 2026-11-18 — PR #436 main advancement reconciliation
+Current main advanced after PR opened. This integration replays only #432's missing WU2 qualification/CI acceptance changes, retains new WU4 code and complete handover records verbatim, and preserves the more recent main Child360 domcontentloaded correction. Exact-head CI and independent review must be repeated after this reconciliation; G2/G2b NO-GO.
+
+## 2026-11-18 — PR #436 Codex P2 remediation checkpoint
+Codex identified (1) nested/private screenshot data and string-width admission in WU2 evidence and (2) a missing Child360 domcontentloaded wait, previously incorrectly described as preserved. This integration now enforces an exact root/governance/summary/observation schema, JSON primitive types and numeric widths; adversarial cases reject nested metadata, Buffer-style screenshots, unknown root keys and string widths. Restored Child360 waitUntil domcontentloaded with existing role/route/child checks unchanged. Exact-head push+PR CI and independent re-review PENDING; commercial provenance push run previously failed an unexpected Sigstore attestation and is NOT considered cleared. G2/G2b NO-GO unchanged.
+
+## 2026-11-18 — PR #432 integration into main (WU3-C acceptance qualification)
+Restored original #432 WU2 browser qualification, 3 roles × 5 viewport sizes, fail-closed receipt validator, private synthetic browser runner and numeric-only CI artifact. Preserved all later main implementation and previous handover records. The original main still used a full-load Child360 wait, so this reconciliation restores the missing domcontentloaded correction; WU2 and seven-role login navigation now wait for actual authenticated pathname and still require role authorization verification. CI and Codex on integration HEAD PENDING. No human accessibility/usability approval or G2/G2b GO.
+
+## 2026-11-17 — WU3 qualification exact-head CI retry
+Initial unstacked WU2 browser run 44147014875 failed because it lacked prerequisite M5-10 skip link; resolved by stacking on M5-10. Subsequent combined CI run 44148140688 passed the standard seven-role browser observation (175 routes, zero overflow/errors), but flagged Child360 browser hit a Playwright `waitForURL` timeout waiting for full browser `load` after login. Changed only login navigation wait to `domcontentloaded`; the existing role, authorised child, 5-width, denial, loading/retry and other substantive browser assertions remain unchanged. **Corrected current-HEAD CI pending; previous failed run not accepted**. No clinical G2/G2b or human accessibility approval.
+
+## 2026-11-17 — WU3 WU2 role-browser qualification / M5-04 crosswalk · NEXT_WORK.md
+Implemented an isolated *_demo_test Playwright 3-role × 5-viewport (=15) technical qualification of therapist/caseload, coordinator/schedule, supervisor/governance with settled authorized markers, overflow and skip link; screenshot bytes hashed in memory and never archived. Added fail-closed adversarial schema tests (roles, widths, duplicates, sensitive fields, missing checks, approval spoofing), numeric-only evidence artifact, and execution under existing seven-role synthetic demo CI (not a new production runner). Full original CI gates preserved. Technical browser receipt is **not human accessibility or usability approval**; redacted visual review, participant task success/time and real screen readers PENDING. Exact-head CI, Codex and WU2 issue-close decision PENDING; all G2/G2b clinical gates NO-GO. See docs/roadmap/M5-WU3-ACCEPTANCE-AND-RELEASE-LEDGER.md.
+
+## 2026-11-18 — WU4-A M5-B / M5-13 presentation & illustration standard
+Complete five-specialty reference board and owner/clinical/design style approval; verify exact-head CI, final reviewer and five-width UI inspection. Do not publish illustrations.
+
+## 2026-11-18 — PR #435 two Codex P2 async UI fixes
+Run exact-head push and PR CI, then fresh Codex review. Validate 100+ page close/reopen under deferred response and slow save in UI, and confirm no reintroduced reviewer issues. Do not merge without full gate results.
+
+## 2026-11-18 — PR #435 push-event browser CI remediation
+Verify both push and pull_request exact-head CI, especially M5 Child360, smart-ci-gate, login role and access checks. Confirm latest Codex review and no unresolved threads before merge. PR #432 WU2 qualification still needs separate integration into main.
+
+## 2026-11-18 — WU4-C Codex P2 activity ownership gate
+Re-run exact-head CI and independent review for #435. Non-owner therapists must duplicate the activity rather than access media proposals; manual keyboard/screen-reader check remains pending.
+
+## 2026-11-18 — WU4-C paginated proposal history
+WU4-C requires new exact-head CI, final reviewer and five viewport/screen-reader qualification. Real private image upload and release remain disabled.
+
+## 2026-11-18 — WU4-C illustration proposal UI
+PR #435 stacked on #434; integrate once #434 has green exact-head CI. Verify responsive five-width screen readers, role revocation and private storage/rights adapter before any publishing.
+
+## 2026-11-18 — WU4-B P2 media history pagination
+Complete real private byte-ingestion, malware/format/dimension/hash validation, derivatives, rights attestation and immutable approved snapshots; page history now available via cursor. Final-head CI and independent Codex review required.
+
+## 2026-11-18 — WU4-B / M5-14 activity media drafts
+WU4-B requires private binary ingestion/validation, checksum/derivatives, human approval and immutable assets before M5-14 can close. Independent exact-head reviews and manual acceptance pending.
+
+## 2026-11-18 — WU4-A M5-B / M5-13 presentation & illustration standard
+Complete five-specialty reference board and owner/clinical/design style approval; verify exact-head CI, final reviewer and five-width UI inspection. Do not publish illustrations.
+
+## 2026-11-17 — WU3 M5-10 / M5-04 shared accessibility and performance · NEXT_WORK.md
+Implemented WAI-ARIA horizontal tabs with RTL Arrow/Home/End and disabled navigation, focusable skip-to-main link and named main, explicit focus/reduced-motion/RTL CSS, accessible focusable calendar hours with date-inclusive appointment names and bounded layout, linear source-bound goal history bucketing, and optional shared compact mobile cards preserving desktop semantic table. Coordinator exception view opts into cards at narrow widths. Jest includes mounted RTL, dense exact-version history and mobile/table contracts. No changes to role, tenant, clinical release, consent or server mutation rules; G2/G2b NO-GO unchanged. Exact-HEAD CI, Codex, redacted five-width screenshots, real NVDA/VoiceOver, WCAG contrast, low-bandwidth and measured task performance **PENDING/NOT RUN**; no issue closure claim for #187/#193.
+
+## 2026-11-17 — PR #430 CI regression: generated fixture email-name collision (NEXT_WORK.md)
+Investigated full CI `44149914183`: API integration test `centers.e2e-spec.ts` failed 1/1585 because the random base64url test password included invited local-part `tom` and the production policy correctly rejected it with HTTP 422. No application auth policy was changed. Replaced the test-only generator with 96-bit random hex bytes separated by hyphens, avoiding any contiguous three-character local-part collision; added 128-run actual-policy regression checks for staff/administrator fixture email names. Smart CI gate failure was downstream from API tests. Exact-HEAD rerun, independent review, and full WU3 acceptance remain **PENDING**; do not claim PASS or merge until verified. G2/G2b NO-GO unchanged.
+
+## 2026-11-17 — M5-09 CodeRabbit exact-head findings correction
+Independent CodeRabbit review on original PR #430 HEAD found (1) nested FamilyProgress root forcing light despite auto dark wrapper and (2) in-flight reminder save across sibling switches showing a stale toggle. Fixed route-specific `FamilyProgress theme="auto"` (internal clinician previews retain default explicit light); moved pending and server-confirmed per-child reminder state to the keyed, authorized parent; reused existing fail-closed error handling. Added real deferred-resolution and rejection mounted tests for A→B→A switch. No release/consent/role API change. **New exact-head CI and independent re-review PENDING**; initial review findings not claimed closed until results. G2/G2b NO-GO.
+
+## 2026-11-17 — WU3 M5-09 guardian focus and theme · NEXT_WORK.md
+Implemented single authorized child focus and keyboard-operable three-sibling selector, permission-scoped family shortcuts, verified-draft versus release copy, preserved appointment/attendance history/reminder actions, keyed tenant isolation and per-child confirmed reminder choices. Family home/practice/activities/progress now use semantic auto theme, with OS dark palette applied in CSS prepaint. Updated source-mounted 3-sibling/revocation/permission/contrast smoke cases. No API approval/release or family message grants changed. Clinical G2/G2b NO-GO. Exact-head CI, Codex, manually reviewed 320/390/768/1024/1440 light/dark screenshots, screen readers, low-bandwidth and human usability **PENDING/NOT RUN**; do not close #192 without evidence.
+
+## 2026-11-17 — WU2 M5-08 supervisor: NEXT_WORK.md
+**Issue:** #191. Implemented scoped supervisor review queue, evidence-context disclosure, status-aware reviewer decisions and filtered document selection. Existing API role checks remain authoritative; family messaging is not exposed and production signing/release G2/G2b remains **NO-GO**. New synthetic Jest tests committed; CI, Codex exact-head review, five-width screenshots, screen readers, low-bandwidth and manual acceptance **NOT RUN/PENDING** at documentation commit. Do not close #191 pending those results.
+
+## 2026-11-17 — WU2 M5-07 coordinator/admin: NEXT_WORK.md
+**Issue:** #190 · **Branch:** `feat/m5-wu2-coordinator-admin-workspace` · **Implementation:** Center appointment summary, selected-view exception table, time-zone context and clearable staff/child filters without changing booking/recurrence APIs.
+**Verification:** code and new synthetic Jest regression coverage committed; exact-HEAD CI, independent Codex review, five-width visual screenshots, real keyboard/screen-reader, performance/low-bandwidth, owner UX qualification and manual acceptance **NOT RUN/PENDING** at this checkpoint. Existing authorization and backend clinical state machines remain unchanged; no cross-tenant/family-message visibility or clinical release. Production G2/G2b clinical signing/release remains **NO-GO**. Issue stays **OPEN** pending full acceptance.
+Next: run full exact-head CI and Codex review; resolve all findings. Collect redacted 320/390/768/1024/1440 screenshots and real assistive-tech/task-time evidence before claiming issue closure.
+
+## 2026-11-17 — WU2 M5-06 therapist: NEXT_WORK.md
+**Issue:** #189 · **Branch:** `feat/m5-wu2-therapist-workspace` · **Implementation:** Task-focused authorized caseload, scoped name and specialty filtering, session-first child care journey, explicit draft versus signing/release distinction.
+**Verification:** code and new synthetic Jest regression coverage committed; exact-HEAD CI, independent Codex review, five-width visual screenshots, real keyboard/screen-reader, performance/low-bandwidth, owner UX qualification and manual acceptance **NOT RUN/PENDING** at this checkpoint. Existing authorization and backend clinical state machines remain unchanged; no cross-tenant/family-message visibility or clinical release. Production G2/G2b clinical signing/release remains **NO-GO**. Issue stays **OPEN** pending full acceptance.
+Next: run full exact-head CI and Codex review; resolve all findings. Collect redacted 320/390/768/1024/1440 screenshots and real assistive-tech/task-time evidence before claiming issue closure.
+
+## 2026-11-17 — PR #418 post-merge CI duplication fix — Next actions
+Combined PR #418 with merged #415/#417 while retaining `commercial-provenance`, `commercial-contracts`, `source-contracts`, original six required jobs and all fail-closed Smart CI, SBOM, secret, database, coverage, browser, Compose and sustained-preview gates. First combined-head run 44122218560 exposed **FAIL** in `source-contracts` source regression: M4-09 and other source-only steps were accidentally duplicated in serial application `test` because merge reconstruction retained setup-node plus subsequent source-only steps. Removed only redundant source-only steps from `test` and preserved the complete checks and numeric source artifacts in independently required `source-contracts`. **Revised exact-head CI and final Codex review PENDING**; no PASS attributed to the corrected commit, no merge until verification. No policy/clinical G2/G2b or rights GO.
+
+## 2026-11-17 — Phase 2B source-contracts follow-up
+Additional Phase 2B implementation: moved 12 original source-only M5 IA/route, historic integrity, credential/hosted guard and artifact checks out of the serial application test job into independently **required** `source-contracts` full-mode job, with its own full-history checkout. Its Smart CI required-job map, fail-closed gate and frozen suite inventory were updated. Exact original source check commands and their archived evidence were retained. The main application test keeps locked dependency install, Prisma, migration, coverage and production build. Updated-head CI and Codex **PENDING**, no measured speed claim. 
+
+## 2026-11-17 — CI Phase 2B — isolated Next.js compiler-cache reuse — Required next gates
+Introduced only apps/web/.next/cache persistence through actions/cache@v4 for full test, live-session, demo-journey and flagged m5-child360-browser jobs. Cache keys are per job, OS/arch and lock/source hash; exact-head yarn web build remains in every job with independent build-time flags. No cached runtime bundle, clinical data or browser test outcome. Cross-environment compiled artifact reuse intentionally NOT ENABLED until equivalence is proven; CI, new-head review and timing verification PENDING. All original required gates remain, G2/G2b NO-GO.
+Run exact-head full CI including original six checks plus commercial-provenance and (when applicable) commercial-contracts. Confirm all evidence outputs and focused tests, inspect time/cost measurements and resolve Codex P1/P2 before any merge.
+
+## 2026-11-17 — CI Phase 2A — independent commercial contracts — Required next gates
+Extracted 32 standalone commercial offline/adversarial test steps (node --test and one Python unittest) from sequential commercial-provenance into an independent required commercial-contracts job. Retained producer order, all exact-version npm/Sigstore/rights steps and archived evidence. Updated fail-closed smart-ci expectedJobs and smart-ci-gate needs plus frozen suite inventory, with negative-path source tests. Full CI, exact-head Codex, runtime comparison and merge NOT RUN/PENDING. Rule 16 targeted mode locked; no approval for clinical G2/G2b or commercial licensing.
+Run exact-head full CI including original six checks plus commercial-provenance and (when applicable) commercial-contracts. Confirm all evidence outputs and focused tests, inspect time/cost measurements and resolve Codex P1/P2 before any merge.
+
+## 2026-11-17 — CI parallel critical-path verification
+1. Qualify the exact updated workflow head with full test, commercial-provenance, secret scan, SBOM, live session, demo journey, Child 360 browser, Compose, preview sustained 10-minute 512MiB workload and Smart CI final fail-closed gate. Verify `commercial-provenance` emits its former exact-run 27-ish evidence files and no original validations were dropped. Run independent Codex and resolve P1/P2.
+2. Compare observed wall-clock to PR #413 pre-change run and report both total latency and runner-minutes; keep any claims bounded to measured runs. Cache safety/eviction negative path should not change runtime validity.
+3. Build artifacts must not be shared between ordinary and feature-flagged child workspace until build-time equivalence is proven; do not skip full jobs or activate targeted mode without a separately authorized AGENTS.md Rule 16 policy review.
+4. Preserve M5 feature PR #413 scope, legal/asset rights NO-GO and clinical G2/G2b NO-GO.
+
+## 2026-11-17 — M5 WU1 (#413) remaining qualification, M5-03/04
+1. Run **new exact-HEAD** six required CI checks, SBOM, Smart CI and Web coverage after the four Rule 7 documentation corrections. Inspect actual run artifacts; do not transfer old-head PASS to changed HEAD. Fix any CI failures without disabling safeguards.
+2. Obtain new independent Codex review of updated PR #413 HEAD, ensure prior P1 Rule 7 omission is resolved and fix all new P1/P2. Merge only after CI green, review complete, conflict-free and required Rule 16 gates satisfied.
+3. Before closing #186 and #187, gather redacted/private five-width before/after visual inspections; human native screen-reader and keyboard review; family dark-mode and low-bandwidth observations; authorized center/child/specialty switch with revoked-grant/race cases; eliminate duplicate mobile picker only after proven parity; owner navigation/task-usability signoff. All **NOT RUN** at this checkpoint; track M5-10/11 if separately gated.
+4. Preserve eight-area permission mapping, original 20 distinct navigation identities, unchanged role/tenant API authorization, no clinical publication or activation. G2/G2b NO-GO; production flags unchanged.
+
+## 2026-11-17 — M5-05 route isolation and decision-count verification
+1. Qualify the current route-boundary PR with dedicated synthetic browser job: 45 real task-flow observations (assessments ≤2 decisions, sessions ≤1, documents ≤1), existing 15 five-width navigation, 15 slow loading, 15 failed-and-retried, one denied coordinator; complete exact-head CI, security, SBOM, Compose/container, review.
+2. Independently validate asynchronous cross-child route transitions with overlapping server GETs and no prior-child data visible; remount key is implemented but **true overlapping in-flight cross-child browser case NOT RUN**.
+3. Maintain M5-05 #188 OPEN for human screen-reader, before/after redacted five-width visual evidence, low-bandwidth field experience, empty/error/blocked workflows and owner acceptance. Compact flag OFF and G2/G2b NO-GO remain unchanged.
+
+## 2026-11-17 — M5-05 R2 browser resilience qualification
+1. Qualify draft PR #406 on exact HEAD: browser slow→error→retry 15/15 observations, original five-tab/keyboard/coordinator tests, six full CI jobs, security/SBOM, Web coverage, Compose and Smart CI gate. Fix any flakes or real defects without disabling controls.
+2. Obtain Codex review of final-head implementation, disposition P0/P1/P2 and suggestions under Rules 13–16, and merge only after green CI, clean mergeability, and review receipt.
+3. Continue issue #188 without closing: human screen-reader/visual signoff, network-offline and true cross-child stale-request tests, broader empty/pagination/blocked flows, task timing and clinical owner approval remain NOT RUN/NOT OBTAINED. Production compact flag OFF and G2/G2b NO-GO.
+
+## 2026-11-16 — M5-05 PR #403 exact-head qualification and remaining UX acceptance
+1. Qualify the documentation-updated HEAD of #403: dedicated flagged synthetic Chromium disclosure keyboard checks for three clinical roles × five widths, default legacy seven-role demo, full test/coverage, live-session, preview-container, compose, SBOM, secret scan and Smart CI. Review new Codex findings and record FIX_NOW/DEFER_ISSUE/DECLINE_WITH_REASON for every comment; do not reuse the prior `fc2c3ff40e` test receipt as approval for a later HEAD.
+2. Merge only after current-head required checks green, no actionable P1/P2, final independent review and clean GitHub mergeability. Keep `NEXT_PUBLIC_M5_CHILD_COMPACT` OFF by default; never change G2/G2b NO-GO or specialty permissions.
+3. M5-05 #188 must remain OPEN for human assistive-technology and screen-reader review, redacted five-width before/after visuals with owner acceptance, low bandwidth, loading/error/blocked-state journeys and clinician task-flow validation. No human WCAG or clinical signoff is implied by automation.
+
+## 2026-11-16 — Node 24 / NestJS 12 PR qualification
+1. Exact-head six required jobs on Node 24 (API Jest + PostgreSQL e2e are the main risk: lifecycle hook ordering, HTTP adapter error mapping, `ConsoleLogger` structured params).
+2. Codex review of the final green HEAD; Rule 13 ledger for every finding.
+3. Owner sign-off of ADR-0001 Amendment 1 by merging; then consider Node 26 once Prisma/argon2 are verified on it, and Prisma 6 as a separate unit.
+
+---
+
+## 2026-11-16 — COM-02 successor qualification after Next 16 merge
+1. Qualify new main-based non-DT workqueue PR on exact head after #394: test generator and same-run archived JSON against **46=25 DT+21 non-DT**. Six full CI jobs + Smart CI + SBOM, independent final-head Codex, zero unresolved comments and clean mergeability required.
+2. Supersede #397 only after successor successfully carries all eight changed paths and qualification; do not merge stale #397 over #394 or force-push incompatible history.
+3. Obtain authentic version-specific npm publication/build-to-source proof for 21 non-DT and 25 DT, plus 91 asset rights and actual digest-pinned SaaS/Enterprise OCI delivery/production receipts. Counsel/rights-holder grant separate from technical hashes. G2/G2b NO-GO.
+
+## 2026-11-15 — Next 16 PR qualification
+1. Exact-head six required jobs + sbom/Smart CI; watch live-session/demo-journey (React 19 + Turbopack production build) and preview-container image SBOM.
+2. Independent Codex review of the final green HEAD; disposition every finding (Rule 13) before any Rule 16 merge.
+3. Then: Node 22 LTS runtime (ADR-0001 update) + NestJS 12 as one work unit, which also removes the `light-my-request` dedupe; counsel note that LGPL `@img/sharp-libvips-*` is now dev/CI-only (stripped from release images; image optimizer disabled).
+
+---
+
+## 2026-11-15 — M5-03 reviewer correction final qualification
+1. Re-run exact-HEAD PR #393 six original CI jobs, SBOM/Smart CI and dedicated Web coverage after `<details>` type and More breakpoint/scroll remediations. Inspect seven-role Chromium keyboard receipt for permission equality, focus trap/return, rail collapse, responsive closure and background scroll restoration. Obtain new Codex review for final head, resolve P2 threads only after code qualification.
+2. Merge only with green full CI, Codex zero unresolved and mergeable latest main. Keep #186 OPEN for human image/screen-reader/low bandwidth/full workflow UX and center/child/specialty navigation context. G2/G2b NO-GO.
+
+---
+
+## 2026-11-15 — M5-03 immediate next qualifications
+1. Run full CI for M5-03 eight-area shell PR; inspect failures including Chromium seven-role permission-index exact equality, desktop rail compact/expanded, mobile More focus trap/return, five viewports, family light theme; fix exact-head Codex comments before merge.
+2. After merge, M5-03 #186 remains OPEN for private before/after screenshots and owner signoff, real screen-reader/focus/contrast, responsive and low-bandwidth, safe role/center/specialty switching, explicit dynamic hierarchy, and retiring duplicate mobile select only after equivalent tested replacement.
+3. Preserve M5-02 eight-area taxonomy, M4-01 66/91/55 and #266 private 1,023 step reconciliation, G2/G2b NO-GO, no shared Render/Neon changes.
+
+---
+
+## 2026-11-15 — PR #311 qualification
+1. Verify all six required CI jobs + SBOM/Smart CI on the new #311 HEAD, especially API PostgreSQL e2e under Nest 11/Fastify 5 and the COM-02 Sigstore steps (expect 5 verified signed subjects: 3 Next.js + 2 sharp-libvips). Fix real failures without weakening fail-closed checks.
+2. Obtain independent final-head Codex review; record FIX_NOW / DEFER_ISSUE / DECLINE_WITH_REASON for every finding before any Rule 16 merge.
+3. Follow-ups to track as issues: Node 20 runtime is past upstream EOL (Apr 2026) — move approved runtime to Node 22 LTS (ADR update) and then drop the `light-my-request` 6.6.0 dedupe; counsel review of LGPL-3.0-or-later libvips binaries shipped via Next's optional `sharp` (or disable image optimisation/omit `sharp` from release images); residual pre-existing advisories (`postcss@8.4.31` inside Next 15, `glob`/`minimatch` via `@nestjs/cli`, `deepmerge`); evaluate Next 16 / Nest 12 as a separate planned work unit.
+
+---
+
+## 2026-11-15 — M5-02 canonical IA source proposal gates
+1. Qualify exact-head CI/Smart CI/SBOM and independent Codex; inspect 66/91/20 crosswalk receipt, resolve source or status mismatches. Merge only with 6 original CI jobs green and no unresolved reviews.
+2. Secure actual role mental-model workshop and approved clickable wireframes. For each canonical row reconcile real authorized destination, role/specialty permission, not-available vs policy-blocked distinction and 1,023 controlled step IDs from authorized private source, without leaking titles/metadata to unauthorized roles.
+3. Then implement M5-03 permission-filtered collapsible desktop sidebar/mobile bottom nav with bounded task hierarchy, accessibility, 5 viewports, synthetic browser/visual/usability and owner signoff. #184 and #185 stay OPEN until complete. G2/G2b NO-GO.
+
+---
+
+## 2026-11-15 — M5-01 next gate after keyboard/machine timing implementation
+1. Qualify third tranche: inspect numeric browser receipt for all 175 timed routes and seven keyboard personas; disposition `NOT_OBSERVED` focus transitions as investigation candidates. Check full CI six jobs, Smart CI/SBOM and fresh exact-head Codex review before merging.
+2. M5-01 #184 remains OPEN for private human-reviewed screenshots, real full-task duration/click/error capture, screen-reader and focus-visible review, low-bandwidth + family dark-mode evidence, and owner signoff. No fabricated UX PASS, no G2/G2b change.
+
+---
+
+## 2026-11-15 — M5-01 browser observer requalification
+Verify full latest-head CI including 175-route screenshot capture and numeric receipt, resolve any true test failures; get independent final-head Codex zero unresolved. Merge only after six required jobs, SBOM/Smart CI green. Inspect receipt for denied, redirects, load timeouts, error and horizontal-overflow candidates, without claiming visual review or #184 closure.
+
+---
+
+## 2026-11-15 — M5-01 browser evidence qualification
+1. Run full CI after adding 175 synthetic viewport observations. Examine route redirects/errors/overflow flags; fix real harness defects without weakening permissions or G2/G2b. Review final-head Codex comments and green six-job+Smart CI before merge.
+2. Because screenshots are intentionally deleted and not visually reviewed, schedule an approved private sanitized screenshot inspection for every persona/viewport; then measured full five-task journeys, accessibility keyboard/screen-reader and family dark theme on an isolated synthetic fixture. Do not close #184 on browser-route evidence alone.
+
+---
+
+## 2026-11-15 — M5-01 exact-head requalification after P2
+1. Verify strict NAV parser new regression tests, actual full source inventory and six required CI jobs + SBOM/Smart CI on final PR #380 head. Obtain a NEW independent Codex review; resolve old P2 thread only after concrete correction is qualified.
+2. Merge only after green CI and independent final-head review. Retain 175 NOT_RUN source inventory targets for isolated synthetic visual + actual task capture in subsequent M5 work. #184 OPEN, clinical G2/G2b NO-GO.
+
+---
+
+## 2026-11-15 — M5-01 UI audit next gates
+1. Qualify M5-01 source audit on exact branch HEAD: full required CI, SBOM/Smart CI and independent Codex review; fix failures before merge. Receipt is source-only and no screen/role acceptance.
+2. Use approved isolated synthetic environment to collect and inspect the seven-persona, 320/390/768/1024/1440 screenshots and full five-task-per-persona click/time/error journeys. Audit keyboard, screen reader, loading/empty/blocked/error and guardian dark-mode states. Store private, sanitized receipts tied to deployed SHA.
+3. Prioritize verified UX problems into grouped M5-02+ PRs while retaining Direction B tokens, tenant/role/specialty/guardian restrictions and G2/G2b NO-GO. No M5-01 closeout or source-only UX PASS.
+
+---
+
+## 2026-11-15 — Protected M4-02 acceptance dependency (not a current PASS)
+1. Qualify and review exact-head protected deployment attestation PR, then merge under Rules 13–16. No protected hosted run yet.
+2. Confirm separately approved disposable synthetic two-valid-tenant hosted stack and isolated database; do not mutate Render's old shared demo or create persistent paid infrastructure without approval. Obtain read-only Render control-plane API secret TB_HOSTED_RENDER_READONLY_API_KEY within protected GitHub environment (name only).
+3. After real deployment matches checkout SHA, operator dispatches protected ten-account workflow and separately runs genuine two-hosted-center, guardian withdrawal, therapist suspension and expiry probes. Keep policy cases BLOCKED, publish only sanitized receipts. #176/#268 remain OPEN until independently accepted; G2/G2b NO-GO.
+
+---
+
+## 2026-11-15 — M4-CLOSE-02 completion requirements
+1. Qualify isolated real-PostgreSQL M4-CLOSE-02 tests and eight-check hosted evidence validator on full new PR CI. Fix real failures, independently review exact final HEAD, merge under Rules 13-16.
+2. With explicit operator approval, create *disposable isolated* two-valid-tenant hosted fixture; do not mutate the live shared demo. Verify deployment SHA independently; currently demo is pinned to old 3cdd722... SHA. Request protected workflow approval for all ten synthetic accounts on main, then run actual multi-tenant auth/revocation/guardian/cookie/session probes.
+3. Retain actual sanitized per-probe receipts and any governance BLOCKED classifications; never infer hosted PASS from offline Jest success or boolean receipt inputs. Keep #176/#268 and epic #167 OPEN until accepted. G2/G2b NO-GO.
+
+---
+
+## 2026-11-15 — M4 closeout order (no reopening M4-08)
+1. Qualify M4-CLOSE-01 evidence/process PR: run full exact-head CI including new ancestry negative-path tests and reviewer disposition, then merge if Rule 16 fully satisfied. No automatic closure of #266/#279/#183.
+2. M4-CLOSE-02: prepare and run operator-authorized disposable **two valid tenant** hosted acceptance; independently attest deployed SHA and 10-role private session/revocation/guardian boundaries. Record PASS/FAIL/BLOCKED honestly; #176/#268 remain OPEN until executed. Never modify live shared demo tenants for test isolation.
+3. Map canonical 212 rows and 1,023 workflow steps only against authoritative private approved source; preserve M5–M11 routing, original excluded V2 entries and missing clinical signatures.
+4. Close #183/#279 and epic #167 only after evidence/reviewer and owner disposition; otherwise record explicit blocked dependency and keep OPEN. Clinical G2/G2b NO-GO; no 95% expansion.
+
+---
+
+## 2026-11-11 — COM-02 #361 planned evidence-to-rights completion
+Qualify exact-head CI, resolve Codex findings and preserve all clinical and legal gates. Obtain independently captured and signed real SaaS and enterprise OCI digest/file/SBOM release evidence; currently NONE exists and the per-asset release status remains UNKNOWN. Independently corroborate all 53 package publication/repository commits (including DefinitelyTyped 26, other missing Git SHA 7, Next.js monorepo 3, untrusted repo URL 2, root matches 15) before legal-source assertions. Verify 91 asset source and redistributed rights, semantic-PAX exception and OS/native dependencies. Human owner/UAE counsel must approve actual enterprise vs SaaS rights, IP ownership and terms.
+
+---
+
+## 2026-11-11 — COM-02 #359 qualification checkpoint
+Check all HTTP source read failures including 404 preserve the 53-version rights queue and never imply valid upstream licensing. Verify no source identity mismatch bypass; no source-asset production release inference. Final merged HEAD needs full required CI and Codex before merge.
+
+---
+
+## 2026-11-11 — COM-02 #359 final qualification and next independent legal wave
+Qualify entire bulk evidence, including P2 transient upstream timeout path, on final HEAD with full test/secret-scan/SBOM/demo/live-session/Compose/10-min preview/Smart CI and final Codex 0 findings. Merge only after Rule 16 conditions. After merge, one follow-up work item should corroborate source revision-to-published npm tarball for 15 source-root candidates, address 26 DefinitelyTyped + 7 other missing revision rows, 3 Next.js subpackages and 2 legacy Git URL claims, then distinguish actual redistributed release image assets from 91 source assets. Separately obtain commercial IP, upstream notices, SaaS/enterprise counsel contracts and clinical G2/G2b signoff; no automatic rights approvals.
+
+---
+
+## 2026-11-11 — COM-02 PR #359 qualification and independent legal evidence
+Run new mega-PR producer on actual 53 exception and 91 source asset inputs. Verify exact immutable source license byte hashes for eight curated source versions/nine paths and leave unavailable content unresolved. Repair all CI failures, collect full test, secret scan, SBOM, demo, live session, Compose, ten-minute preview and Smart CI on final exact HEAD, request independent Codex re-review, merge only with all findings resolved. Then independently attest package tarball-to-source linkage; prove actual SaaS vs enterprise redistributed release artifact contents; obtain IP and third-party rights-holder/UAE counsel approvals. G2/G2b clinical NO-GO unchanged.
+
+---
+
+## 2026-11-11 — COM-02 #357 final QA and substantive attestation still required
+Qualify final document-updated HEAD with full six-job CI, exact-head independent Codex and review disposition; the initial code SHA `8c645d0f` yielded 7/7 new tests and 15/53 GitHead/source-root identity candidate matches in [CI 42923019170](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42923019170). **No package has independently proven source-to-npm-artifact lineage.** After merge, prioritize independent exact-release-to-distributed-tarball corroboration for the 15 technical candidates plus monorepo/source-layout resolution for 38 others; separately verify authoritative LICENSE/NOTICE and 91 tracked assets, enterprise redistribution vs SaaS obligations and final rights-holder/UAE counsel approval. Preserve G2/G2b NO-GO.
+
+---
+
+## 2026-11-11 — COM-02 #357 qualification and independent evidence follow-up
+Run exact-head CI on source-correspondence candidate collector, examine actual 53-version GitHead/immutable-source match distribution, correct failures, and update evidence files with measured SHA/run results. Require final Codex review on stable green HEAD, resolve all findings and merge only when all six Rule 16 jobs green. Independently prove actual upstream release-to-npm tarball lineage before approving any mapping; a matching `gitHead`/root package.json is not that proof. Maintain 91 unresolved nonpackage assets, separate SaaS vs enterprise licensing obligations, PAX exception, and G2/G2b clinical NO-GO.
+
+---
+
+## 2026-11-11 — M4-08 Stage 3 PR #353 exact-head qualification and merge
+1. Verify the history-wide Gitleaks result on the narrow deterministic fictional mismatched-password test fixture exception; if any finding persists, investigate securely, do not hide/disable real findings. After documentation updates, require NEW exact-head full CI: secret-scan, SBOM, application test, seven-role demo-journey, live-session, Compose, non-root 512MiB ten-minute preview, Smart CI, source-covered focused Web audit.
+2. Preserve focused run [#42913539171](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42913539171) on code HEAD `96941265146be1803a32d96c7d1124f57e207cb4`: 88/88 Jest suites, 832/832 Web tests PASS, 154/154 instrumented production modules, 9 modules with no executed statements, 90.13% lines / 81.04% branches / 79.24% functions / 86.62% statements. Never collapse line coverage into all-four-metric M4 approval: branches 81.04%, functions 79.24%, statements 86.62%, nine wholly unexecuted modules and distinct ≥95% security-critical branch goal remain open.
+3. When final-head CI green, mark PR #353 ready for review, trigger one independent Codex review, disposition every P1/P2 and newly created head CI, then merge with exact-head SHA. Close Stage 3 issue #348 only upon qualified merge and record the merge commit.
+4. Continue M4 parent #182 all-four-metric API/Web ≥95% and security-critical ≥95% branches, hosted ten-account synthetic acceptance (#176), audit reconciliation (#183), source inventory (#266); clinical G2/G2b, real AI/STT, guardian release and commercial approvals remain closed/NO-GO.
+
+---
+
+## 2026-11-11 — COM-02 #355 qualification after P2 and all-ref synthetic finding
+Qualify HEAD including added absolute request timeout tests; validate .gitleaks global exact synthetic fixture allowlist eliminates only known false positive, not real credentials. Inspect full original `test`, `secret-scan`, `live-session`, `demo-journey`, `preview-container`, `compose` and Smart CI on exact final HEAD. Then obtain final Codex independent review after stable CI, disposition all findings, merge only if Rule 16 gates pass. The 53 exact package/version source-to-revision mappings remain fully unresolved until independently corroborated, with 91 assets, SaaS/on-prem rights, and G2/G2b legal/clinical gates still open.
+
+---
+
+## 2026-11-11 — COM-02 #355 qualify before expanding source authority
+Qualify exact HEAD with original full CI (including new immutable verifier regression tests), obtain full preview/Compose/Smart CI and commercial inventory results, then mark ready and request final Codex independent review on stable SHA; resolve all findings and update Rule 7 test evidence based on actual CI. Following merge, perform independently corroborated exact npm version-to-Git-commit proof before adding mappings; review upstream LICENSE/NOTICE text hashes, 91 non-package assets and SaaS-vs-enterprise distribution with authorized counsel. No automatic licenses, final notices or clinical G2/G2b authorization.
+
+---
+
+## 2026-11-11 — COM-02 #352 handover refresh and remaining legal obligations
+Code HEAD `e0ee645c` passed full CI [42908445420](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42908445420), with 6/6 collector tests PASS and 53/53 registry candidates obtained; Codex P1 regression resolved. The P2 Rule 7 documentation gap is being fixed; **the new docs-only HEAD requires fresh exact-head CI and Codex after the edit** before Rule 16 merge. On merge, next phase: independently verify 53 exact-version upstream LICENSE/NOTICE texts and immutable copyright evidence; 91 non-package assets; SaaS network versus on-prem customer-redistributed image obligations; OS/runtime/Redis/Postgres, models/datasets/services. These are not authorized merely by registry metadata. No final notices/proprietary license or clinical G2/G2b release.
+
+---
+
+## 2026-11-11 — COM-02 #352 immediate qualification and remaining authority
+Run exact-head full CI and inspect candidate count/status from its evidence artifact; diagnose and fix failures. Then mark implementation PR ready, request exact-head independent Codex review after stable full-CI success, disposition all P0–P3 findings and requalify if code changes. No merge with red/pending CI or stale review. Follow-up must fetch/corroborate exact-version source LICENSE/NOTICE text from immutable upstream revisions and obtain separate rights-holder/counsel review for 53 package exceptions and 91 assets, including SaaS/network-use versus customer-redistributed enterprise images. Do not treat registry `license` strings as verified legal source, or authorize clinical G2/G2b release.
+
+---
+
+## 2026-11-10 — COM-02 PR #350 immediate qualification then rights review
+First complete Rule 7 evidence synchronization for the verified exact-version register and prior CI run 42901575999 (code SHA `0cf822a`, success); resolve Codex P1 handover gap. After documentation commits, require a NEW full exact-head CI green on latest HEAD, inspect generated rights JSON and any changed dependency baseline, and request exactly one final independent Codex review once CI green; explicitly disposition all review comments before Rule 16 merge. Thereafter pursue #349 exact-version authoritative upstream published LICENSE/NOTICE text and copyright for 52 no-root-license package versions, investigation of 1 unsupported-PAX archive, rights-holder authority, 91 tracked assets plus OS/container/native/service/model/dataset evidence. Both SaaS/network-use and enterprise redistribution must be independently reviewed by authorized counsel; zero automatic legal approvals. Keep root proprietary LICENSE and customer contracts unsigned and G2/G2b clinical NO-GO; no live patient data.
+
+---
+
+## COM-02 full non-direct technical coverage and license rights
+Qualify exact-head full CI artifacts/Codex: compare all non-direct name/version statuses to installed physical copies, inspect any lock/source/size/header/file mismatches, retain unresolved items without auto approval. Then conduct manual upstream license/copyright obligations for @types and transitive packages, native runtime/container/OS layers, logos/fonts/models/datasets and SaaS vs on-prem enterprise rights. Keep COM-01/02 unresolved until qualified signoffs.
+
+---
+
+## 2026-11-10 — M4-08 Stage 2 #345 measured ≥80% Web line target MET; merge qualification PENDING
+
+- **Exact code SHA `8af17a710793ea40b5c92350ad600ffb3bf982f9`**, focused full-source instrumented Istanbul [run #42905581705](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42905581705): **PASS 67/67 suites, 604/604 tests**, full **154/154 production Web source modules**, 15 files with zero executed statements. **Lines 80.28%, branches 69.14%, functions 65.09%, statements 75.86%.** The owner-directed ≥80% genuine Web **line** Stage 2 target is MET by **0.28 percentage points**, **not** a ≥95% critical-branch qualification, clinical acceptance, legal approval, or a full CI/merge PASS.
+- Source-executing mounted regressions added across plan versions, editing, report optimistic autosave and handoff lease, supervisor review queue, scheduling/calendar, recurrence and conflicts, therapist assignment and revocation, guardian requests, actual message inbox/recipient isolation, home-practice idempotency and timeout recovery, platform trial administration, synthetic grant recovery, account-security rotation/global sign-out, application review decisions, center settings, self-profile, activity library, simulated multilingual dictation and accessible scroll-strip interactions. Transport mocked; production component logic executes. All sources including uncovered files remain in denominator. Fail-closed source audit and sanitized per-file hotspots retained; no denominator tricks.
+- Latest branch at this checkpoint remains **DRAFT** until original full exact-head CI, Smart CI, SBOM/gitleaks, seven-role synthetic acceptance, container/Compose, independent exact-head Codex, P0/P1/P2 disposition and branch/main reconciliation meet repository requirements. The separate ≥95% security-critical branch qualification and 15 zero-statement modules remain documented work; no claim of general 95% coverage. G2/G2b clinical NO-GO unchanged.
+- Stage 3 owner-required ≥90% full-Web line coverage tracked at #348; execute after Stage 2 merged. No stage merge if any required gate red or no independent review.
+
+---
+
+## 2026-11-10 — M4-08 Stage 2 #345 source-verified checkpoint: 74.95% Web lines (NOT QUALIFIED)
+- **Code SHA `dc5e54906fad12a80be6935524d18efa64880d7d`**, focused original full-Web Istanbul [run #42902267598](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42902267598): **PASS 55/55 Jest suites, 499/499 tests**, 154/154 production source modules with 15 zero-statement modules. **Lines 74.95%, branches 62.38%, functions 57.23%, statements 69.87%.** This is focused coverage, not all original CI checks or final-head Codex, and ≥80% Stage 2 is **NOT MET** (gap **5.05 percentage points**).
+- Added actual mounted production-source regressions across appointment status, cancellation and recurrence, booking assignment/series collision and timezone, therapist handover readiness fail-closed, guardian home-plan request, fixed-choice home practice exact-key uncertainty, platform trial bounds, application detail session/decision controls, team directory/invitations, schedule route and responsive ScrollStrip, synthetic existing grant withdrawal/revocation. Tests use synthetic backend I/O; no real clinical data, signing, release or permission grant.
+- Corrected failing initial test fixtures/assertions using exact CI evidence; **the PASS above is the authoritative measured run**, not prior red heads. CI additionally emits sanitized ordered uncovered file/line/branch hotspots for genuine quality-first work, without exclusions.
+- **Next**: develop one cohesive additional domain batch on #345 against ranked uncovered real source (PlanEditor, ReportEditor, SessionEditor, Messages, PlanVersionHistory, current routes); reach ≥80% genuine full-source Web lines, maintain separate ≥95% safety-critical branch goal. Then exact-final-HEAD full original CI, Smart CI, SBOM/gitleaks, seven-role synthetic browser, container/Compose and Codex review; resolve P0–P2 and reconcile current main before merge. **M4-02 hosted ten-account QA, historical audit M4-09, COM-02 legal clearance and G2/G2b clinical NO-GO are independent.** Stage 3 ≥90% owner target tracked #348 after Stage 2 merges.
+
+---
+
+## 2026-11-10 — M4-08 Stage 2 #345 high-risk PlanEditor test batch (focused VERIFIED; full CI PENDING)
+Exact commit `765ae0347a87f6ce1b0beddacd95eae96871d593`: focused Web CI [#42897868594](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42897868594) **PASS 45/45 Jest suites, 414/414 tests**. Full source audited 154/154 Web production modules (17 zero-statement modules); **69.15% lines, 57.39% branches, 50.71% functions, 63.89% statements**. Stage 2 >=80% lines remains **NOT MET**, gap **10.85 percentage points**; this measurement is NOT comprehensive final-head full CI, independent Codex review, 95% security-critical branch qualification, clinical or commercial approval. Source-verified earlier Stage 2 fix prevents stale report-history rows after child/center switch. Seven mounted PlanEditor tests added for source-scoped activity search pagination, network retry, unsaved/other-version edits, saved draft review, returned/withdrawn version state, new draft version. The first focused run failed three new test-harness expectations; repaired mock resets/async flushing/double component-node matching; the passing run is authoritative. Next: prioritize uncovered high-line-count real Web components and browser-mounted interactions; preserve full denominator, original CI, Smart CI, SBOM/gitleaks, review and Rule 7. Stage 3 >=90% target tracked in #348 only after #345 >=80% is merged. Clinical G2/G2b NO-GO unchanged.
+
+---
+
+## 2026-11-10 — Stage 2 #345 next ordered work (NOT HANDOFF COMPLETE)
+Current draft #345; latest green full-denominator focused run #42887887583 (`684565cb64c7cbcfa07266f14893a0591fcfb426`) proves **68.59% all-source Web lines over 154/154 modules**; branch 56.54%, functions 49.89%, statements 63.15%, 17 unexecuted. Stage 2 owner-approved acceptance is >=80% Web lines, gap **11.41 percentage points** (approx. 600 additional covered lines at 5257-line current denominator; remeasure on every source change). Prioritize real mounted high-risk uncovered: PlanEditor version transitions, SessionEditor negative branches, appointment/scheduling mutations, therapist and team scoping, synthetic report release and clinical routes, then other genuine source behavior. Keep per-file hotspots, all-source denominator and four metrics, 95% security-sensitive branch goal separate. Do not pad with source-string/snapshot tests. Before merge, require >=80 measured, all original exact-HEAD CI/smart gate, SBOM/gitleaks, independent Codex review and resolved comments, Rule 7 records. G2/G2b clinical NO-GO, M4-02 hosted QA and COM-02 commercial approvals remain independent.
+
+---
+
+## 2026-11-10 Stage 1 threshold MET on SHA ed3a750: Web all-source 154 files, lines 60.08% (run 42873722265 PASS), branches 48.75%, functions 40.33%, statements 54.24%. The branch remains UNMERGED. Priority: fix independent full CI failure at M4-06 database replay (do not weaken requirement); run original exact-head CI, SBOM, secret scan and Codex; adjudicate comments, update evidence. Only then merge #339, close #337, begin separate Stage 2 #338 to ≥80% Web lines. Keep explicit >95% security-sensitive branch qualification distinct, not satisfied by 60% lines. G2/G2b NO-GO and protected hosted M4-02 gates persist.
+
+---
+
+## M4-08 PR #339 immediate next action — close Web ≥60% line target
+Owner-approved Stage 1 remains open: latest completed focused source-wide Istanbul run 42867251775 on 2d3839b8 measured 51.61% Web lines, 39.18% branches, 31.28% functions, 45.34% statements over 151 modules; 25 files unexecuted. Need another **8.39 percentage points genuine lines**, no denominator reduction. Focus on remaining high-risk interactive work: ReportEditor, SessionEditor, PlanEditor, messaging, clinical/child detail, scheduling; capture real mounted or browser transitions (success, failure, stale sessions, retry/rollback, unauthorized and cross-role) rather than snapshots/helper-only tests. Preserve separate security-critical ≥95% branch goal and API safety gates.
+After 60% is verified, obtain exact final-head six original CI jobs, Smart CI, SBOM, gitleaks, Codex review, Rule7 evidence; resolve all findings, then merge Stage 1 and start separate #338 to 80%. Do not merge with red/unknown CI; G2/G2b clinical NO-GO, M4-02 hosted credentials and audit evidence remain distinct.
+
+---
+
+## M4-08 Stage 1 — PR #339 Web mega suite to ≥60% all-source lines (MUST COMPLETE BEFORE MERGE)
+1. Grow source-executing high-quality tests across actual mounted Web auth/context, onboarding, children/team, schedules, clinical notes/reports, progress, family practice/feedback, accessibility and failure/retry/permission revocation. Do not game coverage with snapshot-only/mocks of tested units or reduce denominator.
+2. Run the original full-source Istanbul Web measurement (all four metrics and zero-statement file count, exact head); **prove ≥60% lines** before Stage 1 merge. Maintain separate security-critical branches ≥95% target and complete critical E2E scenario checks.
+3. Resolve Codex P1 Rule 7 handover sync, any subsequent P1/P2 findings, and require six original CI jobs, Smart CI, SBOM, secret scan and final-head independent review. Keep #182 / #167 open until all true acceptance requirements complete.
+4. Only after #339 passes and merges, implement separate Stage 2 #338 ≥80% Web line coverage in one mega PR. No clinical/production release; G2/G2b remain NO-GO.
+## COM-02 complete transitive and rights review
+1. Qualify Next.js 14.2.35 size-exception output, initial 160 non-direct publisher tarball sample, installed per-copy license hashes and artifact retention under exact-head CI and Codex.
+2. Expand verified coverage to all remaining non-direct names/versions; resolve `@types` license provenance, missing top-level license texts and lockfile/OS/platform exceptions.
+3. Review container/OS/runtime/font/logo/model/dataset rights plus package-specific SaaS network and enterprise redistribution obligations with qualified counsel. No proprietary root LICENSE, signed contract or clinical activation without approvals.
+
+---
+
+## COM-02 comprehensive evidence qualification
+Qualify exact-head CI, Codex and artifacts; inspect any direct-version download failures and installed-license SHA256 mismatches. Then separately verify transitive/optional/platform package publisher bytes, OS/container images and external fonts/logos/models/datasets. Obtain rights-holder and qualified legal review before any SaaS/enterprise distribution notices, signed contracts, or root proprietary LICENSE. Clinical gates stay NO-GO.
+
+---
+
+## COM-02 published tarball audit acceptance and expansion
+1. Pass offline published-tarball fixture tests, exact-head CI SBOM/secrets/full preview, independent Codex, examine per-commit integrity outcomes. Confirm no integrity mismatch, no fabricated legal approvals.
+2. Expand direct dependency sampling and all transitive/optional/OS/image, icon/font/logo/illustration/model/data rights using protected provenance records and defensible reviewer ownership.
+3. Obtain publisher notices and counsel-signed SaaS versus enterprise redistribution obligations. No root proprietary LICENSE or commercial/clinical activation without legal/IP and governance approvals.
+
+---
+
+## COM-02 exact locked-package provenance verification
+1. Qualify lock metadata reconciliation script and negative tests with exact-head CI/SBOM/secret scan, sustained preview, Smart CI and Codex.
+2. Review missing, ambiguous, no-integrity and nonstandard-source rows from installed artifact; verify registry-published exact tarball integrity before claiming source authenticity.
+3. Retrieve LICENSE/NOTICE bytes and copyright for precise version; distinguish SaaS versus enterprise redistribution, OS/image, fonts, illustrations, models and datasets. Legal/IP approval remains open.
+
+---
+
+## COM-02 wave 2 final-head qualification and legal evidence
+1. Check installed license triage unit/negative tests, exact-head SBOM, six CI jobs, Smart CI and fresh Codex; inspect artifact and reconcile counts without treating metadata as clearance.
+2. Next wave: verify exact locked npm tarball LICENSE/NOTICE digests and published URLs; reconcile package aliases, platform-optional and dev/runtime differences; add tamper/unknown tests.
+3. Audit OS/container images, font binaries, artwork, logos, model and dataset terms and public code provenance; assign private legal review and prepare approved third-party notices.
+4. No automatic legal approval, final LICENSE, real-data clinical operation or billing activation.
+
+---
+
+## COM-04 contract suite qualification
+1. Run exact-head source SBOM/secret scan/full CI and Codex; resolve review findings on contract drafts and ensure no protected personal data or privileged material appears.
+2. Rights-holder and UAE counsel must verify MSA, SaaS/Enterprise grants, DPA and liability/termination clauses before any customer use.
+3. Product/privacy/security/clinical/finance owners must determine and sign blank business fields, service levels, hosting, regulatory requirements and clinical release boundaries.
+4. Store executed agreements and legal evidence privately; keep public draft NON-BINDING. V1 runtime and G2/G2b NO-GO unchanged.
+
+---
+
+## COM-02 P2 workspace license scanner correction — verification needed
+1. Confirm exact-head CI passes new non-hoisted workspace fixture, frozen-Yarn installed license evidence collector, SBOM, tests, previews and Smart CI gate.
+2. Download updated exact-run installed license artifact, recompute whole-workspace count, reconcile remaining missing-license cases and triage.
+3. Obtain new-head Codex clearance for P2 and resolve review thread, then merge only with green CI.
+4. Continue private IP ownership, third-party assets/models and SaaS vs enterprise legal clearance. No root commercial LICENSE or clinical activation.
+
+---
+
+## COM-02 exact-installed package license evidence — pending
+1. Run full PR-head CI and verify installed package evidence collector sees actual package.json versions plus LICENSE/NOTICE SHA-256 checksums; review missing-file count.
+2. Have Codex review exact green head. Resolve all comments and preserve concurrent V1 handover updates.
+3. Compare captured license file hashes/text and upstream sources with resolved package versions and SaaS vs enterprise redistribution obligations. Open individual remediation issues for unknown/restrictive cases rather than treating unknown as green.
+4. Brand, catalogue images, AI models, company/copyright ownership remain separately OPEN and need written rights evidence. Clinical activation remains NO-GO.
+
+---
+
+## COM-02 upstream license audit — immediate qualification
+1. Execute exact-head CI and new direct evidence contract tests; verify fresh source/asset/image SBOM and license review artifacts, Codex review and no unaddressed blockers.
+2. After approved merge, verify main push SBOM output when available, but do not infer absent results.
+3. Retrieve exact locked npm tarball LICENSE/NOTICE texts with checksums, compare transitive labels; audit OS/image digests, font binaries, original logo and AI/data service terms.
+4. Owner/qualified counsel to sign rights register privately for COM-01, and review SaaS and enterprise redistribution obligations separately. Keep proprietary LICENSE and clinical activation blocked.
+
+---
+
+## M4-08 big-batch execution plan — stop the helper-only PR cadence
+Stage A: qualify real role-targeted pages across 15 operational routes with multiple data states on source-wide Istanbul; fix failures and track measured delta. Stage B: one broader client-side/browser-coverage PR spanning login/context, scheduling, clinical drafts, family practice and governance, with reliable browser-to-source Istanbul provenance and no hidden denominator. Stage C: one API tenant/clinical branch coverage PR across role, cross-tenant, concurrency, scheduling and protected release negatives. Do not claim 95% until actual 4-metric gate passes. Maintain Codex, original CI jobs, SBOM, Smart CI and clinical NO-GO.
+
+---
+
+## M4-08 API coverage wave 4
+Qualify source-executing auth/security boundary regression tests and the invalid empty-cookie-name parser correction via six original exact-head CI jobs, SBOM, Smart CI and independent review. Re-measure all API lines/branches/functions/statements against 93 executable-file baseline, track unexecuted source modules, and continue real branch tests across tenant authorization and scheduling. Clinical G2/G2b remain NO-GO.
+
+
+---
+
+## M4-08 consolidated route/role coverage
+Qualify full executable route render, empty/unauthorized fallbacks and permission-limited navigation. Track full 151-module Istanbul denominator and latest four metrics. Next implement real browser-mounted client interactions (forms, session expiry, family/clinician journeys) with reproducible code coverage rather than SSR alone, and target API branch gaps. Require six original CI jobs, SBOM, Smart CI and final-head review. G2/G2b remain NO-GO.
+
+---
+
+## M4-08 Web executed code wave 3
+Qualify mocked-fetch authentication/CSRF negative paths and center-timezone/DST tests through original six-job CI, SBOM, smart-ci-gate and exact-head Codex. Record measured four-metric API/Web receipt; continue source-wide executable UI coverage without modifying denominators or approval gates.
+
+
+---
+
+## M4-08 Web UI/interaction executable test wave
+Qualify React SSR, WAI-ARIA tab and synthetic dictation regression tests with all six exact-head CI checks, SBOM and independent Codex review. Record actual updated Web denominator and four coverage percentages before selecting larger pages with dynamic state. Maintain 95% target and clinical NO-GO.
+
+
+---
+
+## COM-02 license classification — next actions (2026-11-09)
+1. Run exact-head license classifier tests and full CI; inspect generated component report and review-only notices artifact.
+2. Obtain exact-head Codex review; disposition and fix findings, requalify CI before merge.
+3. For #313, verify published license texts, copyright notices, OS/container packages, font/logo/illustration/model and external service rights; document legal reviewer approvals separately. Generate final customer THIRD_PARTY_NOTICES.md only from verified evidence.
+4. Keep #312 IP ownership OPEN and do not adopt final proprietary root LICENSE or activate clinical production.
+
+
+
+---
+
+## M4-08 executed-code Web wave 1 and measured baseline consistency
+Qualify focused source-executing coverage regressions against existing complete Web instrumenter. Confirm numbers from final-head CI and select further unexecuted source modules on evidence, not static source inspection. All six jobs and independent Codex required; preserve clinical NO-GO and 95% target.
+
+
+
+---
+
+## M4-08 integrated coverage qualification (2026-11-09)
+Run all six original CI jobs on the final PR head; inspect aggregate integrated coverage artifact for actual API/Web deficits. Resolve reviews, then add focused executed-code regression tests based on measured uncovered modules. Keep 95% thresholds and any owner-approved exceptions explicit; do not claim clinical readiness.
+
+
+---
+
+## COM-02 SBOM reconciliation — pending verification
+Run exact-head CI, verify source artifact contains complete Yarn lock entries with explicit provenance, image SBOM remains valid and the smart-ci-gate succeeds. Confirm Codex P2 resolved on new head before squash merge; verify post-merge main commit produces a new SBOM. Continue separate legal/asset/model rights reviews for #312/#313.
+
+---
+
+## COM-02 continuous SBOM — next actions 2026-11-09
+1. Execute PR-head GitHub CI; check Syft's actual lockfile discovery, CycloneDX JSON validation, artifact names, asset checksum inventory and container OS SBOM. Fix errors rather than waiving required SBOM gate.
+2. Verify Smart CI shadow/full mode and newly required `sbom` check; run integration tests; verify exact-head Codex review and resolve every finding.
+3. After green checks, merge PR and verify fresh `main`-commit source SBOM artifact and smart-ci-gate PASS. Do not assert background monitoring or unlimited artifact retention.
+4. Continue full third-party license compatibility, fonts/brand/illustration/AI providers and source ownership rights review under #312/#313. Preserve public repo for Actions; clinical production remains NO-GO.
+
+
+---
+
+## M4-02 remaining protected hosted acceptance — after this regression
+Require six exact-head CI and independent Codex for new two-valid-center child ID isolation. Next external evidence must run authenticated app connected to dedicated disposable two-tenant Neon branch, not shared Render demo; confirm live deployed SHA separately, revoke synthetic roles/guardian link only in isolated fixture, and review ten-account protected HA-01…HA-10. 14 clinical-policy checks remain intentionally BLOCKED. Do not mark those PASS, publish passwords, or close #176/#268 without explicit owner-approved acceptance. G2/G2b NO-GO.
+
+---
+
+## COM-01/02 inventory qualification — next actions 2026-11-09
+1. Review latest PR head; verify dedicated commercial-inventory workflow, full Smart CI and existing six job gates; run and record exact evidence.
+2. Request Codex exact-head review and resolve findings before merging.
+3. Record complete contributor/source/IP authorizations from restricted evidence in #312; do not publish contracts.
+4. Produce comprehensive SBOM and validate third-party software, AI/provider, fonts/logo/illustration and container rights in #313; CLI inventory cannot attest license compatibility.
+5. Keep source repository public by owner's choice and clinical/production gates closed; no authoritative root LICENSE before verified rights holder and counsel clearance.
+
+---
+
+## COM-01/02/03 — next actions after PR #318 (2026-11-09)
+1. Verify this latest PR head with required CI checks, including existing full-history gitleaks. Run `node scripts/commercial/inventory-direct-deps.mjs` and verify output contract, manifest count, deterministic ordering and zero license assertions; record command and result. Do not mark PASS without execution evidence.
+2. Obtain exact-head Codex re-review, resolve all findings, then merge the documentation/inventory foundation only after checks and standard reviewer criteria are met.
+3. Independently collect contributor/student/HCT/partner IP agreements in restricted storage; record approval evidence in #312 with no personal/privileged documents in this public repository.
+4. Produce complete lockfile/installed/container/media/model SPDX or CycloneDX SBOM, verify actual LICENSE/NOTICE terms, address public exposure/forks and report classifications in #313.
+5. Obtain UAE legal rights-holder and license wording sign-off for #314 **before** root LICENSE adoption or commercial contracting. Keep GitHub repository public for CI, and do not activate clinical use/billing in V1.
+
+
+---
+
+## M4-07 final CI and review gate
+Verify actual new real PostgreSQL 8-way reminder race in required API CI; 10-minute preview workload at concurrency 1/4/8, nonroot UID=1000, 512MiB cgroup peak/zero OOM and numeric-only artifact. Fix failures and address final-head Codex reviews, require six exact-head CI jobs and Smart CI PASS. Record measured data to #181. Keep owner business p95/p99/error budgets, actual authenticated tenant routes + SQL wire query counts, real worker crash/dead-letter recovery and production release as separate acceptance gates; do not retroactively mark them green. G2/G2b NO-GO.
+
+---
+
+## M4-06 closure qualification — next actions 2026-11-09
+Run the required real CI replay, verify full six exact-head jobs and Smart CI green; repair every failure. Trigger Codex final-head independent review, fix/disposition every finding and requalify after changes. On success attach exact run, reviewed SHA and evidence to #180. Keep parent open until owner-approved decision on external archived historic snapshot, Neon PgBouncer real concurrent migration drill, RTO/RPO and privileged retention policy; M4-07 owns production workload budgets. Clinical approval and ten-account hosted QA are independent gates.
+
+---
+
+## M4-09 PR #307 immediate next action (2026-11-09)
+1. Run exact-head six CI and Smart CI gate, repair any failing snapshot validator/negative test; obtain exact-head Codex review after stable head, disposition all findings before merge.
+2. After verified merge, leave 49 PENDING_EVIDENCE, 5 PARTIAL and safeguarding-policy-blocked #35 open for future independently sourced evidence tranches. Do not promote these from issue CLOSED or filename only; no automatic close.
+3. Refresh dated GitHub 75-issue state receipt only when doing an actual independent live reconciliation. Preserve source SHA, six-job CI and reviewer trace; no historical rewrite.
+4. M4-02 hosted 10-account acceptance, M4-06 pooled migration/restore, M4-07 sustained resource/load and M4-08 95% coverage remain OPEN. Clinical G2/G2b, consent, signing/release, safeguarding and real AI/STT NO-GO.
+
+---
+
+## M4-08 PR #306 next verification
+Check the new full-scope Web Jest Istanbul collector and source-denominator audit on actual CI; fix all runner/denominator/review findings. Record actual four-metric Web measurements and fresh API coverage deficits; do not claim 95% unless fully measured and threshold passed. Obtain six green exact-head jobs and Codex review, resolve every comment before merge. Continue targeted tests in M4-08 until owner-approved exceptions/coverage gates are genuinely qualified. M4-02/M4-06/M4-07/M4-09 remain separately OPEN, all clinical NO-GO.
+
+---
+
+## M4-07 PR #305 — immediate verification and remaining work (2026-11-09)
+1. Inspect all six exact-final-HEAD CI jobs plus Smart CI gate; repair any failing test. Confirm receipt validator, real DB health benchmarks, negative worker retries, and numeric-only artifact upload actually PASS. Record run SHA and artifact id.
+2. Obtain final exact-HEAD independent Codex review, disposition all P0–P3 findings and resolve threads, rerun checks after each code edit. Do NOT merge until AGENTS.md Rule 16 met.
+3. Owner-defined p95/p99, error budget, SQL query ceiling, 10-minute sustained load, 512MiB container resource and real P2002/dead-letter tests are **OPEN**. CI smoke is evidence only; do not close M4-07 #181 or M4 #167 on it. Continue other M4 open items only after qualified merge.
+4. Preserve hosted demo, private ten-account authorization and all G2/G2b/safeguarding/clinical NO-GO controls.
+
+---
+
+**CI regression FIX_NOW:** Existing M4-08 secret-scan negative test incorrectly modified the first `fetch-depth: 0` in the workflow after adding `smart-plan`, rather than the actual scanner job. Corrected `scripts/qa/check-ci-test-inventory.test.mjs` to mutate the scoped `secret-scan` block and continue proving scanner fail-closed behavior. No secret scanner bypass; fresh exact-head six-job CI and final review pending.
+
+**Additional static-asset safety tightening:** Smart CI now forces FULL CI for potentially executable Web public SVG/HTML/JS/JSON, as well as unknown assets. Only CSS and known non-executable image/font file types may be classified web-style in the simulation; the Rule16 owner-policy lock still prevents any actual job skipping. Regression tests updated; final-head CI/re-review pending.
+
+**Codex P1 Rule 16 disposition (FIX_NOW):** targeted execution cannot be activated by repository variables or GitHub branch protection alone. Existing AGENTS.md Rule 16 mandates six exact-head CI PASS. Production Smart CI classifier now **hard-codes `ownerPolicyApproved:false`**, always selecting FULL even if both activation variables are true; unit tests prove this. A separate, explicit owner-approved Rule 16 amendment, required gate setup, and reviewed code unlock are prerequisites. This PR changes no policy or merge authorization. 
+
+## Smart CI shadow-mode implementation — 2026-11-09 (REVIEW PENDING)
+
+Conservative risk-based Smart CI is implemented on a **review branch**: source `scripts/ci/smart-ci.mjs` selects a bounded PR plan from exact Git base/head tree diff, `smart-ci-gate.mjs` independently verifies actual required job outcomes, and `.github/workflows/ci.yml` preserves the six existing CI job names. All main pushes, forks, non-main PRs, uncertain diffs, API/clinical/auth/DB/workflow/dependency edits and unsupported paths select full CI. Only safe documentation and non-deleting Web static CSS/assets may qualify for targeted mode after a separate admin-controlled activation. **Default SHADOW**: no existing checks are skipped, and `smart-ci-gate` must be made required in GitHub branch protection before enabling targeted mode. The connected GitHub App cannot read/edit branch-protection administration. Script regressions, job-wiring tests and an operator runbook are included. **Not merged or reviewed yet, no test results claimed.** Clinical policy gates, existing protected ten-account acceptance, Render/Neon secrets and operational status are unchanged; no M4 release acceptance implied.
+
+1. Review current PR six-job exact-head CI plus `smart-ci-gate`/classifier tests and independent Codex; fix all P0–P2 and re-review before merge.
+2. Run shadow across representative PRs, collect accurate diff classification/CI runner-time receipts and inspect any false subset suggestion. Required six jobs still run.
+3. Separate authorized GitHub admin action: make `smart-ci-gate` required; verify branch rules and independent review and secret scan remain required. Do not claim this ChatGPT connection can update branch protection.
+4. Enable `TB_SMART_CI_MODE=targeted` and `TB_SMART_CI_REQUIRED_GATE_READY=true` only after admin confirmation and shadow results. Main pushes, clinical/auth/tenant/migration changes always run full; maintain private QA separately.
+5. Monitor failures and revert to shadow on any plan/runtime discrepancy; never force skipped jobs to count as a release approval.
+
+## M4-02 protected ten-account dispatch failure — 2026-11-09
+
+Operator launched [GitHub run 42525996528](https://github.com/NTinkicht/TheraBridge-Emergent/actions/runs/42525996528) from reviewed `main@b38c167831cb42ddde7206128df4f62673a0ac2a`. Its 16 preliminary static/secret-safety contract tests **PASS**, but protected `Private credential and live health preflight` **FAILED with exit code 2 after ~83 seconds**. The seven-role and three-additional-clinician tests were correctly **SKIPPED**, and no hosted-result artifact was uploaded. Runtime secrets were not printed. The 83-second pattern is consistent with three 25s health fetch timeouts plus retry delays; original script masked the failure category, so this is a **suspected network/health cause**, not a verified outage or password failure. Render continued reporting the synthetic deployment `3cdd7226236a6aa7b3f82e04f1d26b9b5bce0b93` LIVE, and returned no HTTP-latency/request time-series evidence for the window. No hosted HA-01–HA-10 PASS may be claimed.
+
+This PR narrows the blocker by logging **only an allowlisted reason code** (e.g. `hosted_public_health_network_or_timeout`, `non_200_response`, `unhealthy_json` or credential-shape error) plus a secret-free `private credential schema validated` checkpoint. No error objects, response bodies, headers, URLs, credentials or cookies are logged. Three retries, strict JSON status=ok/database=up and fail-closed test skips remain unchanged. Unit tests verify reason classification and privacy in both normal CI and manual private workflow. This is a **diagnostic PR**, not acceptance or a bypass. Require 6 final-head CI + independent review; manual workflow dispatch/approval again only after merge. All G2/G2b, D-NEW-5, clinical signing/consent/release/real STT/AI and patient-use NO-GO.
+
+After exact-HEAD CI and independent review, merge diagnostic change. Operator must rerun manual `hosted-interactive-private` on latest `main`, with `deployed_sha=3cdd7226236a6aa7b3f82e04f1d26b9b5bce0b93` (unless Render independently changes), `synthetic_only_authorized=true`, protected environment approval. Inspect **allowlisted** failing preflight category. If `network_or_timeout`, investigate connectivity/DNS/Render external access from GH runner without loosening health or exposing secret. If `invalid_private_users`, verify GitHub secret shape privately without printing values. Only after preflight PASS run 7+3, collect redacted artifact and independently attest exact Render SHA; still require separate authenticated two-centre acceptance.
+
+## M4-08 honest application-wide coverage measurement — 2026-11-09 (PR under review)
+
+A new **non-gating baseline** instruments the full `apps/api/src/**/*.ts` Jest suite rather than confusing fingerprint-only coverage with the application. Existing Web `node --test` runs under V8 observation; a sanitizer/report counts app source files and observed executed modules but **does not pretend that V8 module presence equals Istanbul line/branch/function/statement coverage**. The M4 report explicitly returns `NOT_QUALIFIED` until both API and Web have genuinely instrumented, full-scope four-metric coverage and meet the owner-reviewed ≥95% threshold. Tests fail closed for invalid/missing data and for fabricated API-only PASS. CI archives only aggregate percentages/counts—no raw files, data rows, credentials or cookies. This is **measurement infrastructure**, not an already-passing 95% application gate. New exact-head CI/independent review required; no clinical authorization changes; G2/G2b/safeguarding/consent/signing/release/real AI remain NO-GO.
+
+1. Review final-head CI run: confirm all six jobs pass, full API JSON summary is emitted, aggregate `m4-coverage-baseline.json` artifact exists, exact file counts/percentages are authentic and sanitized; address independent Codex P0–P3 findings and re-review before merge.
+2. Use measured API metrics to identify uncovered paths. For Web introduce true Istanbul-compatible TSX/Next instrumentation and executable component/browser tests; mere imported-source counting must not substitute for statements/branches/functions/lines. Only after API+Web genuine reports may the existing `scripts/qa/m4-measured-coverage.mjs` >=95 check act as required release gate.
+3. No blanket exclusions, arbitrary changed denominators, or invented 95% evidence. M4-08 #182 and epic #167 stay OPEN, and protected hosted QA/two-valid-centre acceptance remains independently blocked pending approved GitHub dispatch.
+
 ## M4-06 staged DB role cutover — actual next actions (2026-11-08)
 
 1. Qualify this review branch with six exact-head CI jobs and independent review; fix all actionable P0–P2 comments, document P3, re-review and merge only after exact final HEAD.
@@ -709,3 +1328,124 @@ Qualify roster-seed PR via six exact-head CI jobs and independent Codex review; 
 2. Provision three unique high-entropy passwords through approved secure channels as `DEMO_EXTRA_PASSWORDS_JSON` on the dedicated Render synthetic service and `TB_HOSTED_QA_EXTRA_USERS_JSON` in the protected GitHub environment. Do not alter the seven existing passwords.
 3. Merge reviewed PR, promote into the manually deployed synthetic branch, check readiness and seed count 10, then request protected ten-login QA approval.
 4. Keep clinical signing, release, consent and real AI/STT gates disabled; no baseline promotion from synthetic-only checks.
+
+
+## 2026-11-12 — COM-02 PR #362 implementation and verification
+Run offline candidate-capture tests in full exact-head CI; inspect all required jobs including SBOM, secret scan, preview/Compose and role acceptance. Obtain genuine OCI digest-pinned SaaS and Enterprise build records plus verified independently signed artifact/provenance attestations from an approved build runner. Feed captured candidate manifests into existing release-scope review, with non-regular entry/runtime volume limits visible. Independently prove all 53 npm tarball-to-source publications and compare all 91 tracked assets plus container/OS libraries to actual customer-shipped bytes. Reconcile SaaS versus enterprise rights with qualified legal counsel, keep notices draft, no automatic grants. Resolve independent Codex findings, update Rule 7 evidence and merge only after exact-head full green CI and independent review. Preserve G2/G2b clinical NO-GO.
+
+## 2026-11-12 — PR #362 exact-head qualification after image-ref fix
+Verify tagged image fixture and forged-signature tests in full CI; capture exact final head run IDs and test outcomes before reporting PASS. Do not use old-head green results for latest SHA. Obtain genuine Docker OCI image evidence and third-party source attestations for 53 versions; compare all 91 assets and obtain SaaS/enterprise counsel approval. Do not merge prior to independent exact-head Codex review, entire required CI green, and Rule 7 refresh.
+
+## 2026-11-12 — Next qualification gate for PR #362
+Verify mocked canonical RepoDigest export case in exact-head CI, inspect all full CI jobs, obtain independent Codex review after stable passing final head, and resolve review findings. Production release edition artifacts and 53 npm immutable publisher-to-source attestations require genuine signed upstream/build evidence; legal grant and clinical gates remain closed.
+
+## 2026-11-12 — Qualify combined Docker release evidence
+Verify final-head Python capture and Node dual-edition merge tests in required full CI. When real SaaS and Enterprise release images exist, capture digest-pinned candidate inventories, merge them into an exclusive new JSON, compare to the 91-asset rights register, and independently check signed immutable OCI publication/deployment evidence. Independently corroborate 53 exact-version npm lineages. No unsigned JSON is legal or production release authority. Require green CI/independent exact-head Codex before merging.
+
+## 2026-11-12 — Next COM-02 technical evidence and qualification
+Qualify DSSE verifier's offline adversarial suite on exact final HEAD with full CI, commercial inventory and independent Codex review; remedy findings without bypass. For real release capture, obtain separately authenticated publisher key fingerprint, externally signed in-toto statement proving exact SaaS/Enterprise OCI digest and inventory hash, independent registry digest/transparency log/deployment provenance, OS/native/image SBOM component comparison, then source asset rights. Independently corroborate 53 npm exact-version publication-to-source links including @types/DefinitelyTyped and Next.js monorepo cases; consult rights holders and UAE legal counsel for 91 assets and distinct SaaS/enterprise terms. No releases or final notices or clinical G2/G2b transition.
+
+## 2026-11-12 — COM-02 next work after signed rights join
+Qualify new cross-evidence rights join against full exact-head CI, commercial inventory and independent Codex review; resolve all P1/P2 before merge. Obtain genuine independently signed production SaaS and Enterprise OCI release artifacts and trusted publisher identities. Link actual registries/deployments and layer/SBOM package identities with 91 exact source assets; independently corroborate 53 exact npm package-version upstream publishing lineages; request distinct SaaS versus on-prem enterprise obligations approval from rights holders/UAE counsel. Keep approval counts zero and preserve clinical signing/consent/release NO-GO.
+
+2026-11-12 Requalify PR #364 after Codex P2 fix: confirm supplemental obligations and adversarial regression in full exact-head CI, obtain exact-head Codex review and merge only if green. Actual signer authority, OCI registry publication/deployment, 53 npm provenance lineages, 91 assets and counsel remain unresolved.
+
+## 2026-11-13 — M4-08 last qualification and closure gate (owner target 90%)
+On existing draft PR #358, finish **>=90% unrounded** lines, branches, functions, statements for both full-scope API (93 runtime TS modules) and Web (154 source modules). Web 90% is measured on earlier `ae5c3a8`, but must reverify exact final HEAD. API branches were 88.19% before the latest clinical/invitation/report suites; do not claim qualification without exact-head measured receipts. Finish Codex P1/P2/P3 disposition, verify four Rule 7 records, no outstanding security-critical 90% issues, and confirm six original CI jobs, Smart CI, SBOM, secret scan, preview/Compose, seven-role synthetic journey and independent exact-head reviewer all PASS. Then mark PR ready, merge if Rule 16 gates satisfy; close #182/#167 only on matching acceptance evidence. Never authorize real clinical signing, consent, releases or real patient processing.
+
+## 2026-11-13 — COM-02 after pinned npm Sigstore verification
+Qualify new verifier against exact-head full CI and Codex. Inspect archived npm 11.19.1 verified Sigstore bundle receipts for @next/env 14.2.35 and @next/swc-linux-x64-gnu and -musl 14.2.33. Independently compare signed source revision claims against authentic upstream GitHub commits/workflow identity and actual npm archive build provenance before approved mapping; retain all unverified as unresolved. Source-correspondence evidence for the other 50 versions and genuine SaaS/Enterprise production image and 91 asset-rights clearance remain. No legal or clinical grants.
+
+2026-11-13 Retrieve exact PR #366 raw Sigstore bundle artifact from latest CI, compare real in-toto statement versions, subject PURLs/SHA512 and source predicates, and adjust conservative parser with adversarial regressions. Keep signed claim verified counters zero until a genuine match. Recheck full CI, Codex and review thread resolution before merge. Independently corroborate source revision beyond signed claims; maintain 50 unadvertised versions and real release/right clearance unresolved.
+
+2026-11-13 Next after #366 qualification: independently compare exact Next.js source trees and published package subpath build instructions to signed commits 7b940d9c and 5a97b408; corroborate release-builder certificate/workflow identity and package tarball reproducibility before source-version rights decisions. Remaining 50 npm versions without advertised provenance require independent upstream source proof; production OCI, 91 assets and legal approvals remain unresolved. Never auto-grant G2/G2b or SaaS/enterprise licensing.
+
+2026-11-13 Requalify PR #366 after Codex P1 source-workflow consistency fix; review actual archived 3 exact npm signed package/source claims, green six-gate full CI and clean final-head Codex before merging. Independently establish build reproducibility and source-license rights for these 3 and the other 50, plus real OCI/91 asset legal clearance.
+
+## 2026-11-13 — COM-02 next after immutable manifests
+Qualify new exact-commit Next.js source corroboration in full CI with independent exact-head Codex. Inspect real evidence artifact for 1 direct source-manifest match and 2 parent SWC-source matches, distinguish any network failures, and merge only if required checks succeed. Next research actual npm tarball-to-source reproducibility (including GNU/Musl Rust native builds, build args and toolchains) and independent source lineages for the 50 packages without advertised Sigstore. No third-party redistribution/license/clinical GO without authorized rights proof and counsel.
+
+## 2026-11-13 — Next reproducibility stage
+Run new real CI archive/recipe evidence and inspect exact signed source versions' published .tgz file sets and actual native binary hashes. Fix evidence-backed parsing defects, obtain clean final-head Codex and all green CI before merge. Then set up independently pinned Next.js 14.2.x checkout, ncc/TS and N-API/Rust GNU/Musl build matrix only where toolchains and release recipe can be pinned, compare generated file hashes and archive bytes, and record mismatch rather than approving by default. Resolve other 50 npm lineages and 91 asset/release rights separately.
+
+2026-11-13 Requalify #368 corrected head with full CI and Codex; retrieve final artifact containing *individual* JS and native .node hashes. Plan pinned Next.js ncc/TypeScript and Rust/N-API GNU/Musl controlled rebuild against these per-file digests, documenting release tooling and reproducibility blockers. 50 npm packages, 91 assets, real production OCI and counsel still unresolved.
+
+2026-11-15 — Qualify #370 separately and COM-LAUNCH edition gate PR with exact-head full required CI/Codex review before merging. Next build controlled, non-public signed approval handoff without pushing privileged evidence to public repo; resolve IP #312, source rights #356, release #360 and counsel review. Enterprise readiness must not be inferred from SaaS and G2/G2b stay NO-GO.
+
+2026-11-15 — Qualify corrected COM-02 comparator branch exact-head full CI, commercial inventory and independent Codex; merge only when all green and findings resolved. Continue release binary reconciliation #360, npm source rights #356, ownership #312, and counsel release gate #371; never claim successful standalone source rebuild/rights approval. G2/G2b NO-GO.
+
+2026-11-15 — Qualify COM-05 design branch through exact-head full CI, synthetic preview and independent Codex review; merge only if clean. Later implement entitlements after V1 freeze and approved pricing/issuer/contract policy; do not change G2/G2b. COM-01 #312 rights, COM-02 #356/#360 release image and assets, COM-04 #315 counsel review, COM-LAUNCH #371 remain blocked.
+
+2026-11-15 — Qualify COM-01 crosswalk against exact-head full CI/Codex, merge if clean. Human priority remains restricted signed chain-of-title and rights-holder/contracting-entity decision (#312), source and shipped asset evidence (#356/#360), UAE counsel review (#315). Keep GitHub public and G2/G2b NO-GO. Do not treat public review packet as a legal grant.
+
+2026-11-15 — COM-01 latest Codex P2 follow-up: draft agreement's NOT SIGNABLE disclaimer and all seven approval-matrix rows (OPEN/BLOCKED/NO-GO) now strictly validated; forged APPROVED/GO changes rejected. Reused strict COM-05 parser against misleading input. Fresh exact-head CI and Codex required; no clinical/commercial approval.
+
+2026-11-15 — Qualify 15-root COM-02 observation PR with exact-head full CI including final Smart CI and independent Codex; merge only after green and resolved findings. Need provenance of historical nuxt/consola and Sebmaster/tr46.js paths vs alternate Git repositories, actual package publisher-to-source build attestations for all 53 versions, LICENSE text for additional seven candidate commits, and real SaaS/Enterprise OCI release digests and 91 source asset rights. Institutional ownership #312 and UAE counsel remain OPEN; G2/G2b NO-GO.
+
+2026-11-15 — Additional corroboration: GitHub API resolves `nuxt/consola` -> `unjs/consola` to repository ID `127546642`, and `Sebmaster/tr46.js` -> `jsdom/tr46` to repository ID `36964214`. Same exact original Git revisions contain matching name/version manifests. This verifies current GitHub repository redirects, not legal copyright transfer, npm publisher-to-source build proof, or redistribution clearance. Added frozen IDs and forgery regression; exact-head CI/Codex must requalify.
+
+2026-11-15 — Qualify the 26 DefinitelyTyped evidence receipt with exact-head full CI and independent Codex before merging. Next genuine proof is independently authenticated publisher historical revision and tarball/source correspondence for individual exact versions; avoid current-master inference. Keep remaining 27 versions and 91 assets in unresolved queue; need production SaaS/Enterprise image digests and IP/counsel decisions, G2/G2b NO-GO.
+
+2026-11-15 — Qualify COM-02 closure ledger PR through full exact-head CI, preview load, independent Codex review and merge after all gates. Next real evidence: authoritative historical publisher/build-to-source revision for all 26 DT versions; 15 source-root npm build attestations; 7 missing commits; 3 Next monorepo subpackage builds; 2 repository-origin cases; rights for 91 assets and *actual* pinned SaaS/Enterprise image/deploy/delivery SBOM with third-party redistribution review. Do not substitute synthetic Render preview.
+
+2026-11-15 — Qualify publisher-fingerprint PR with exact-head full CI, artifact inspection and Codex; merge after all gates and reconcile concurrent COM-02 closure ledger. Then obtain 26 authentic historical DT commits and reproduce exact publisher content hash at each source revision, with independent published npm tarball/build verification. Never infer source-to-publisher signature or legal license from hash alone; actual release OCI and 91 asset rights still open.
+
+2026-11-15 — Qualify immutable DT source fingerprint PR, inspect live probe receipts and resolve any Codex comments before merge. Next collect genuine dated historical upstream source commit candidates per exact @types version, reproduce 26 issuer fingerprints, then require independent npm tarball/build attestation. Remaining 27 npm versions, 91 assets and actual SaaS/Enterprise OCI image digests require separate evidence, qualified legal/clinical signoffs; don't use synthetic preview as commercial production proof.
+
+2026-11-15 — Finish qualifying and merge #389 exact-Git byte verifier first; then qualify two historical 2023 source probes on stacked successor branch, inspect actual CI observations, and merge only with exact-head green full CI and Codex. Scale individually to 24 other DefinitelyTyped packages using authentic per-version history/algorithm and npm archive provenance; do not manufacture commits. Other 27 npm, 91 assets, actual OCI editions and counsel remain unresolved.
+
+2026-11-15 — Extended COM-02 historical snapshot PR with a third exact candidate: @types/cookiejar@2.1.5 at Git commit 7aa25146316b7bafa0863d69bc5f125cde97f216 (2023-11-20 23:33:15 UTC), distinct from its mismatched 2023-11-03 commit; both source package/index Git blobs match the later 2026 verified fingerprint input blobs. CI now recomputes the whole pinned historical tree, NOT an authenticated original publication or commercial clearance. Exact-head CI and Codex qualification pending, G2/G2b NO-GO.
+
+## 2026-11-17 — COM-02 final current-main qualification
+1. Qualify fresh merged-M5 main-based licensing head: all six full CI jobs, Smart CI, SBOM, commercial inventory. Confirm nine SRI-authenticated archive manifest comparisons plus tenth pinned unobserved root, and same-run SHA-256 correspondence receipt with no false approval.
+2. Complete independent final-head Codex review, disposition all comments, clean GitHub mergeability, then merge only under Rule16. Do not merge old PR #404 after M5-05 changed main or lose its handover updates.
+3. Next COM-02 evidence: independently freeze unicode-emoji-modifier-base source #405, explain @tokenizer/token npm source-manifest difference #402; all 44 exact npm exceptions, 91 assets, authentic production SaaS and customer Enterprise OCI receipts, counsel and clinical G2/G2b stay OPEN/NO-GO.
+
+## 2026-11-17 — COM-02 #405 qualify tenth root actual source/archive comparison
+Run exact-head offline adversarial tests and network source/archive observation under GitHub CI; inspect receipt for raw byte match or difference at unicode-emoji-modifier-base@1.0.0 and independently verify published archive hash. Keep original #407 8 matches/1 tokenizer difference/1 tenth pending until actual success. Request final exact-head Codex; disposition any P1/P2, six required CI jobs plus Smart CI/SBOM and merge. Then reconcile #405's source receipt into current source-root evidence without editing historical 15-row snapshot; authenticate actual npm publisher/build lineage separately, resolve #402 and 91 asset/edition/legal/clinical gates.
+
+## 2026-11-17 — COM-02 #405 exact 10-root source-root work unit final gates
+Qualify final Rule7-updated PR #408 head with six full CI jobs, SBOM/Smart CI, commercial inventory, independent Codex review and zero unresolved findings; merge only when all green. Real CI 44014352663 additive tenth Git source vs npm published package.json **exact byte match**, original nine-root evidence eight matches/one @tokenizer/token mismatch #402; all ten root manifest comparisons now accounted for. Preserve #405 open for genuine independent npm publisher/source build lineage, full package source/build recipe and legal rights; do not mark app/SaaS/Enterprise release ready. Continue remaining 44 npm exception lineages, 91 asset rights, real OCI release receipts, counsel and G2/G2b approvals separately.
+
+## 2026-11-17 — COM-02 #402 first real field-level mismatch receipt and qualification
+Run offline tests and same-run original npm archive/Git source comparison for @tokenizer/token@0.3.0; inspect JSON pointer differences to explain whether packaging alters fields or only raw formatting. Ensure no source/npm build link is inferred without authentic publisher metadata/signature and reproducible build recipe. Qualify final-head full six CI jobs, SBOM/Smart CI, commercial inventory, independent Codex, resolve findings and merge when all gates pass. Next investigate complete tarball-to-immutable-Git tree and signed publisher history; 44 exact npm exceptions, 91 assets, SaaS/Enterprise OCI and counsel/G2/G2b remain blocked.
+
+## 2026-11-17 — COM-02 #402 qualification after tokenizer field-level evidence
+Re-run full CI and exact-head independent Codex after the four Rule7 measured-result updates. Prior CI 44016933031 demonstrated original npm source SHA256 differs from immutable Git source raw bytes but **0 JSON leaf changes**; preserve status RAW_BYTES_DIFFER_BUT_JSON_LEAVES_EQUAL_UNATTESTED, do not incorrectly label raw bytes identical or source-publisher attested. Verify all six CI jobs, SBOM/Smart CI, commercial inventory, no review P1/P2 before merge. Next work beyond #402: determine exact serialization delta if necessary and independently attest npm publisher/build from the complete immutable source/file tree with trusted build recipe; 44 unresolved npm versions, 91 asset rights and actual SaaS/Enterprise shipping, counsel and clinical G2/G2b still blocked.
+
+
+
+## 2026-11-17 — WU-LIC-01 consolidated provenance qualification (branch, NOT APPROVED)
+Single main-based licensing branch adds @tokenizer/token@0.3.0 strict exact npm/source semantic classifier, independent immutable npm archive and Git manifest rechecks, 44 exact-version/91 asset fail-closed same-run receipt reconciliation, adversarial tests and CI artifact. Historical 10 root candidates = 9 raw manifest byte matches + 1 tokenizer difference, **not publisher-build attestation**. 21 DefinitelyTyped + 23 non-DT remain externally unverified for authenticated publisher-to-source lineage; all 91 asset rights and genuine signed SaaS/Enterprise OCI distribution remain unresolved. See docs/commercial/WU-LIC-01-CONSOLIDATED-PROVENANCE.md. This commit is unqualified until exact-head full CI, Smart CI/SBOM and independent Codex review; do not merge with red checks or unresolved P1/P2. Commercial/IP/counsel grants and G2/G2b remain false; no real patient or production operations.
+
+
+## 2026-11-17 — WU-LIC-02 exact 44 npm / 91 asset dual-edition evidence integration (UNQUALIFIED BRANCH)
+One PR on latest M5-integrated main: adds scripts/commercial/build-wu-lic-02-edition-rights-queue.mjs and adversarial tests, joins exact WU-LIC-01 requalification and original npm/Git source receipts to exhaustive 44 exact npm versions, 91 tracked source assets, and docs/commercial/release-file-evidence.json, with the image digest matched to the ledger. Same-run CI archives a separate SaaS/Enterprise legal-and-release decision queue; no signed customer-distributed OCI artifacts, deployment SBOM, authenticated publisher-to-source build attestations, 91 rights-holder grants or legal signatures are provided. A missing actual image is UNKNOWN, never verified not shipped. Source counts: 21 DT, 23 non-DT, 10 source-root candidates with 9 raw manifest byte matches / one tokenizer difference, zero publisher attestations. Four supplemental obligations (OS/container, Postgres/Redis, external AI/models/data, fonts/brands/media) remain unresolved. See docs/commercial/WU-LIC-02-EDITION-RIGHTS-EVIDENCE.md. Final exact-head full CI, archived receipt and independent Codex approval PENDING; do NOT merge until qualified. G2/G2b NO-GO, no real-patient or production clinical actions; both commercial editions remain blocked.
+
+
+## 2026-11-17 — WU-LIC-02 first CI failure and reviewer P1 corrected (NEW HEAD PENDING)
+Initial PR #416 CI on a89680feba0fe22af3b0e186d89766e462c298cd failed dedicated WU-LIC-02 tests (10 failures) before the evidence archive: synthetic editionFixtures mutated the ledger after WU-LIC-01 receipt queue SHA binding, causing WU_LIC_01_MIXED_SOURCE_QUEUE_OR_LOCK. Independent Codex review confirmed P1. Corrected in 7823a10b5de424dd7c8977148a9816330500bb9c: recompute immutable queue SHA from the finalized fixture and rebind root, tokenizer and same-run comparison receipts before qualify(). Fail-closed production verifier was not relaxed. Exact new-head CI, current-head Codex qualification and archive evidence still pending; preserve SaaS/Enterprise and G2/G2b NO-GO.
+
+
+## 2026-11-17 — WU-LIC-03 consolidated counsel launch gate (BRANCH / EXACT-HEAD QUALIFICATION PENDING)
+One batched PR implements scripts/commercial/build-wu-lic-03-counsel-gates.mjs with adversarial tests, CI same-run archival and separate SaaS vs Enterprise per-component authorization matrices. Inputs: exact WU-LIC-02 44 npm exception/91 asset rights queue and docs/commercial/launch-decision-register.json; output maintains zero publisher/build attestations, zero legal approvals, unsigned OCI releases, no final LICENSE/third-party notice, blocked commercial editions and G2/G2b NO-GO. Counsel-ready draft (NOT executed agreement) and SaaS MSA/DPA/SLA, Enterprise EULA/order form, IP chain-of-title, notices, security/privacy and clinical handoff checklists: docs/commercial/WU-LIC-03-COUNSEL-LAUNCH-PACKAGE.md and WU-LIC-03-CONTRACT-REVIEW-SCHEDULE.md. Existing legal workstreams COM-01 #312, COM-02 #356/#360, COM-03 #314, COM-04 #315, COM-LAUNCH #371 remain open pending authenticated external proofs and real counsel/owner signatures. CI/Smart CI/review and merge status NOT YET VERIFIED; do not claim commercial GO or production patient access.
+
+
+## 2026-11-17 — WU-LIC-04 post-V1 commercial activation SPEC ONLY (exact-head CI pending)
+Separate commercial edition plans STARTER/PROFESSIONAL (owner-hosted SaaS) and ENTERPRISE (customer-managed signed installation), with quotas/pricing/taxes and billing provider explicitly TBD; draft tenant entitlement state machine, idempotent API and payment-webhook contracts, onboarding and Enterprise OS/DB/Redis/storage/OIDC/data residency/backup requirements. Machine-readable docs/commercial/wu-lic-04-activation-contract.json and docs/commercial/WU-LIC-04-POST-V1-ACTIVATION.md, adversarial scripts/commercial/validate-wu-lic-04-spec.mjs + tests in required commercial-contracts CI job. V1 freeze not evidenced (M5 runtime still active), per COM-05 #316 and COM-06 #317 *no* commercial API, Prisma migration, billing, payment, actual user onboarding, entitlement enforcement, clinical feature, or approval flags enabled in this PR. Implementation after signed V1 feature-freeze plus separate owner/finance/counsel/license/security and G2/G2b clearance; no real patient or production clinical use. Test and code review pending, do not label the PR merged/qualified yet.
+
+
+## 2026-11-20 — M5-14 WU4-N private media read-denial proof (#197)
+Isolated deterministic deny receipt for every custody state; validates exact center, version, revision, SHA and closed publication/read flags; rejects accessor-backed records, cross-center requests and forged rights. No URL, cache grant, token, object access or actual revocation is implemented. Future authorized storage/cache revocation and permissioned retrieval require separate approvals and integration. Regression tests added; local tests NOT RUN; exact-HEAD CI, all eight >=90% measured coverage gates and independent Codex review PENDING. #197 remains OPEN, clinical G2/G2b NO-GO, synthetic-only, no rights or publication approval.
+
+
+## 2026-11-20 — M5-14 WU4-P private cache denial (draft, qualification pending)
+Implemented generic immutable no-store 404 response contract; no HTTP integration or media access. Synthetic-only; G2/G2b NO-GO remains fail-closed, no real images, storage, clinical data, media publication, licensing approval, or permission grant. Adversarial Jest tests committed; local tests NOT RUN. Full exact-HEAD CI, all eight >=90% measured coverage gates, and independent Codex review PENDING. Issue #197 stays OPEN; production integration, rights sign-off and real authorization remain blocked. Handover record only, not a qualification receipt.
+
+
+### 2026-11-20 — M5 major PR 3 initial synthetic catalogue contract
+Owner-approved four-package grouping: isolated illustrated-catalogue projection and source-bound Node regression tests added to `apps/web/src/lib/illustrated-catalogue.mjs` and `apps/web/test/illustrated-catalogue.test.mjs`. Presentation-only filter and numbered instruction projection deliberately emit NO image URL, even when an input claims publication. This is NOT integrated into staff catalogue yet; no asset inventory, human approvals, image generation, pilot, or five-width acceptance is completed. Tests/CI/Codex NOT RUN at authoring. Dependency on major PR 2 private media remains OPEN. M5-12/13/15/16/17 remain OPEN; G2/G2b NO-GO and synthetic-only enforced.
+
+
+### M5 PR1 CI follow-up — 2026-11-20
+On PR #456, exact-head CI for `8905ffb` failed the `demo-journey` job (run 44724232146): Playwright timed out filling the hidden `review-queue-search` input after specialty selection remounted and collapsed the optional queue disclosure. Commit `fb5e4c3` explicitly reopens the disclosure before testing search, preserving the filter assertions. Fresh exact-head CI and Codex re-review are required; this is **not** a PASS or merge qualification. Synthetic-only and G2/G2b NO-GO remain unchanged.

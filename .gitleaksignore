@@ -5,3 +5,17 @@ d8ca97c2b05109776a4f3e7cf87d8080624f793c:README.md:therabridge-credential-assign
 # Replaced by runtime-generated passwords in checkpoint C. Reviewed 2026-10-21.
 fe61fe12df2d4ca4c8f9b98d9d4f273c0357417b:apps/api/test/helpers.ts:therabridge-credential-assignment:13
 fe61fe12df2d4ca4c8f9b98d9d4f273c0357417b:apps/api/test/auth.e2e-spec.ts:therabridge-credential-assignment:191
+
+# M4-08 PR #333 abandoned synthetic-only fixture commit (never credentials),
+# removed from active work in clean PR #334. Gitleaks --all retains closed PR refs.
+# Exact commit/file/rule/line fingerprints only; no rule or path suppression. 2026-11-10.
+5e3b06e1ba7572201b9985fd564e5bcdeecc0a06:apps/web/test/coverage-workspace-matrix.test.cjs:therabridge-credential-assignment:10
+5e3b06e1ba7572201b9985fd564e5bcdeecc0a06:apps/web/test/coverage-workspace-matrix.test.cjs:therabridge-credential-assignment:60
+
+# PR #339 initial synthetic-only invite test string, corrected in current source.
+# Exact historic fingerprint only: the all-ref scan still checks every other match.
+# Historical Web coverage fixture in unmerged synthetic-only test branch.
+# Earlier version assigned the literal 'nonsecret' as a mock invitation password;
+# current branch changed the test to an invalid empty password. No credential exists.
+# Exact commit/file/rule/line fingerprint; do not disable any scanning rules.
+5dcccc30b67abb1bd626df199695c2586341897a:apps/web/test/coverage-transport-permissions.test.cjs:therabridge-credential-assignment:59

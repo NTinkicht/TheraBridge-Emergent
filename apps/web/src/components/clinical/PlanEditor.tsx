@@ -66,7 +66,7 @@ function GoalRow({ g, onChange, onRemove, disabled, i, planId }: { g: Goal; onCh
   );
 }
 
-function VersionEditor({ centerId, ws, planId, planTitle, service, v, source, run, onDirtyChange, otherPlanDirty }: {
+export function VersionEditor({ centerId, ws, planId, planTitle, service, v, source, run, onDirtyChange, otherPlanDirty }: {
   centerId: string; ws: Workspace; planId: string; planTitle: string; service: string; v: PlanVersion;
   source?: Workspace['plans'][number]['source']; run: Run;
   onDirtyChange: (versionId: string, dirty: boolean) => void; otherPlanDirty: boolean;

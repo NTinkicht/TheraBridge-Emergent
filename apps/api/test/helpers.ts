@@ -12,7 +12,12 @@ import { PrismaService } from '../src/prisma/prisma.service';
 
 export const ORIGIN = 'http://localhost:3000';
 // Synthetic, generated per test run; never a literal credential in source (R2).
-export const freshPassword = () => `Synthetic-${randomBytes(12).toString('base64url')}`;
+// Use 96 bits of random entropy, but separate encoded byte pairs so a
+// synthetic invitation cannot randomly contain a >=3-character email local
+// part (e.g. "tom") and spuriously fail the *production* password policy.
+// Test-only fixture: security checks remain unchanged and are still exercised.
+export const freshPassword = () =>
+  `T7-${randomBytes(12).toString('hex').match(/../g)!.join('-')}`;
 export const PASSWORD = freshPassword();
 
 export function assertTestDatabase(): void {

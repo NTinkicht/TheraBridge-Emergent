@@ -15,17 +15,17 @@ test('missing web, empty denominator, malformed totals and forged values fail cl
  assert.throws(()=>measuredCoverage({api:fixture(110,100),web:fixture()}),/invalid_coverage/);
 });
 test('API and Web under-coverage are reported separately',()=>{
- const r=measuredCoverage({api:fixture(94),web:fixture(92)});
+ const r=measuredCoverage({api:fixture(89),web:fixture(87)});
  assert.equal(r.result,'FAIL');
  assert.equal(r.belowThreshold.length,8);
  assert(r.belowThreshold.includes('api_branches'));
  assert(r.belowThreshold.includes('web_statements'));
 });
 
-test('94.999% cannot round upward into a 95% acceptance PASS',()=>{
- const nearly=fixture(94999,100000);
+test('89.999% cannot round upward into a 90% acceptance PASS',()=>{
+ const nearly=fixture(89999,100000);
  const r=measuredCoverage({api:nearly,web:nearly});
  assert.equal(r.result,'FAIL');
- assert.equal(r.scopes.api.lines,95,'display can round, gate cannot');
+ assert.equal(r.scopes.api.lines,90,'display can round, gate cannot');
  assert.equal(r.belowThreshold.length,8);
 });

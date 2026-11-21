@@ -32,9 +32,9 @@ test('hosted public health accepts JSON 200 only, never interstitial HTML',async
  assert.equal(await publicHealth({fetchImpl:async()=>response(200,'application/json',
   {status:'ok',database:{status:'up'}}),attempts:1}),true);
  await assert.rejects(publicHealth({fetchImpl:async()=>response(200,'text/html',{}),attempts:1}),
-  /hosted_public_health_unverified/);
+  /hosted_public_health_non_json_response/);
  await assert.rejects(publicHealth({fetchImpl:async()=>response(502,'application/json',{}),attempts:1}),
-  /hosted_public_health_unverified/);
+  /hosted_public_health_non_200_response/);
 });
 test('authenticated ciphertext round-trips; wrong keys or tampering never leave plaintext',async()=>{
  const root=await mkdtemp(join(tmpdir(),'tb-qa-encryption-'));

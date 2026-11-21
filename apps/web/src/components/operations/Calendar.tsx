@@ -41,9 +41,18 @@ export function CalendarGrid({ days, items, onOpen, onSlot }: { days: string[]; 
   // Appointment grouping and overlap lanes depend on schedule data, not the
   // once-per-minute clock tick or unrelated parent UI re-renders.
   const layout = useMemo(() => {
-    const mins = items.flatMap((a) => [minutesOfDay(a.startsAt), minutesOfDay(a.startsAt) + (Date.parse(a.endsAt) - Date.parse(a.startsAt)) / 60000]);
-    const first = Math.min(7, ...mins.map((m) => Math.floor(m / 60)));
-    const last = Math.min(24, Math.max(19, ...mins.map((m) => Math.ceil(m / 60))));
+    // Constant-memory scan: even a dense synthetic centre schedule cannot hit
+    // the JavaScript argument limit of Math.min(...largeArray).
+    let first = 7;
+    let latest = 19;
+    for (const a of items) {
+      const startMinute = minutesOfDay(a.startsAt);
+      const endMinute = startMinute + (Date.parse(a.endsAt) - Date.parse(a.startsAt)) / 60000;
+      if (!Number.isFinite(startMinute) || !Number.isFinite(endMinute)) continue;
+      first = Math.min(first, Math.floor(startMinute / 60));
+      latest = Math.max(latest, Math.ceil(endMinute / 60));
+    }
+    const last = Math.min(24, latest);
     const grouped = new Map<string, Appointment[]>();
     for (const item of items) {
       const key = dayKey(item.startsAt);
@@ -67,7 +76,7 @@ export function CalendarGrid({ days, items, onOpen, onSlot }: { days: string[]; 
           </p>
         ))}
       </div>
-      <div className="max-h-[68vh] overflow-y-auto">
+      <div className="max-h-[68vh] overflow-auto" role="region" aria-label="Appointment calendar hours" tabIndex={0}>
         <div className="relative grid" style={{ gridTemplateColumns: `56px repeat(${days.length}, minmax(0, 1fr))`, height: hours.length * HOUR_PX }}>
           <div>{hours.map((h) => <p key={h} className="tnum h-14 pr-2 pt-0.5 text-right text-[11px] text-brand-inkMuted">{hourLabel(h)}</p>)}</div>
           {days.map((d) => {
@@ -85,7 +94,7 @@ export function CalendarGrid({ days, items, onOpen, onSlot }: { days: string[]; 
                   const height = Math.max(44, ((Date.parse(a.endsAt) - Date.parse(a.startsAt)) / 3_600_000) * HOUR_PX - 2);
                   return (
                     <button key={a.id} type="button" onClick={() => onOpen(a)} data-testid={`calendar-appt-${a.id}`}
-                      aria-label={`${a.childFull}, ${serviceLabel(a.service)} with ${a.therapist}, ${timeRange(a.startsAt, a.endsAt)}, ${a.status.toLowerCase().replace('_', '-')}`}
+                      aria-label={`${a.childFull}, ${dayTitle(dayKey(a.startsAt), { weekday: 'long', month: 'long', day: 'numeric' })}, ${serviceLabel(a.service)} with ${a.therapist}, ${timeRange(a.startsAt, a.endsAt)}, ${a.status.toLowerCase().replace('_', '-')}`}
                       className={`absolute z-[5] overflow-hidden rounded-[8px] border-l-[3px] px-1.5 py-1 text-left text-[12px] leading-tight shadow-sm transition-transform hover:z-20 hover:-translate-y-px focus-visible:z-20 ${TONE[a.status]}`}
                       style={{ top, height, left: `calc(${(lane / count) * 100}% + 2px)`, width: `calc(${100 / count}% - 4px)` }}>
                       <span className="tnum block font-semibold">{timeRange(a.startsAt, a.endsAt)}{a.seriesId ? ' ↻' : ''}</span>

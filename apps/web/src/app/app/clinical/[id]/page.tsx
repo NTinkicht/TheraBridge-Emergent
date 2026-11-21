@@ -9,6 +9,7 @@ import { FormAlert } from '@/components/auth/Field';
 import { Workspace, errorText, useLoad } from '@/components/centers/kit';
 import { AssessmentsPanel, ProgressPanel, SessionsPanel } from '@/components/clinical/Panels';
 import { Child360 } from '@/components/clinical/Child360';
+import { Child360Navigation } from '@/components/clinical/Child360Navigation';
 import { PlansPanel } from '@/components/clinical/PlanEditor';
 import { ReportsPanel } from '@/components/clinical/ReportsPanel';
 import { Card } from '@/components/design/ui';
@@ -17,6 +18,8 @@ import type { SessionInfo } from '@/lib/auth';
 import { clinicalApi } from '@/lib/clinical';
 import type { Workspace as ClinicalWorkspace } from '@/lib/clinical';
 
+// Staged synthetic-acceptance flag; default navigation remains unchanged until M5-10/11 evidence is complete.
+const COMPACT_CHILD_360 = process.env.NEXT_PUBLIC_M5_CHILD_COMPACT === 'true';
 const TABS = [['overview', 'Child 360°'], ['plan', 'Therapy plan'], ['assessments', 'Assessments'], ['sessions', 'Sessions'], ['progress', 'Progress'], ['reports', 'Reports']] as const;
 type OlderPages = { key: string; plans: ClinicalWorkspace['plans']; observations: ClinicalWorkspace['observations']; offset: number; hasMore: boolean };
 type AssessmentPages = { key: string; items: ClinicalWorkspace['assessments']; offset: number; hasMore: boolean };
@@ -126,8 +129,26 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
       return true;
     } catch (e) { const t = errorText(e, onError); if (t) setNotice({ tone: 'danger', text: t }); return false; }
   };
+  const changeTab = (next: (typeof TABS)[number][0]) => {
+    if (next === tab) return;
+    if (pending.current.size && !window.confirm('Unsaved session or transcript remains. Switch sections and discard it?')) return;
+    setTab(next); setNotice(null);
+  };
   if (failed) return <ErrorState onRetry={() => void reload()} testId="clinical-error" />;
   if (!data) return <Card className="p-5"><SkeletonRows rows={5} testId="clinical-loading" /></Card>;
+  const panelContent = (
+    <>
+      {tab === 'overview' && <Child360 ws={sharedData!} centerId={centerId} onNavigate={changeTab} compact={COMPACT_CHILD_360} />}
+        {tab === 'plan' && <PlansPanel centerId={centerId} ws={sharedData!} run={run}
+          pagination={{ hasMore: currentPages?.hasMore ?? data.hasMorePlans, loading: pageLoading, error: pageError, load: loadOlderPlans }} />}
+        {tab === 'assessments' && <AssessmentsPanel centerId={centerId} ws={sharedData!} run={run}
+          pagination={{ hasMore: currentAssessments?.hasMore ?? data.hasMoreAssessments,
+            loading: assessmentLoading, error: assessmentError, load: loadOlderAssessments }} />}
+        {tab === 'sessions' && <SessionsPanel centerId={centerId} ws={sharedData!} run={run} onPending={onPending} />}
+        {tab === 'progress' && <ProgressPanel centerId={centerId} ws={sharedData!} run={run} onNavigate={() => changeTab('plan')} />}
+        {tab === 'reports' && <ReportsPanel centerId={centerId} ws={sharedData!} run={run} onError={onError} />}
+    </>
+  );
   return (
     <div className="space-y-5" data-testid="clinical-workspace">
       <Link href="/app/clinical" className="inline-flex items-center gap-1 text-[14px] font-medium text-brand-action hover:underline" data-testid="clinical-back"><ArrowLeft size={15} aria-hidden="true" />All children</Link>
@@ -136,28 +157,30 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
         <p className="text-[14px] text-brand-inkMuted">{data.canReview ? 'Clinical supervisor review' : 'Therapist workspace'} · everything here is a draft</p>
       </div>
       <p className="flex items-start gap-2 rounded-control bg-status-cautionSurface p-3 text-[13px]" data-testid="clinical-synthetic-banner"><FlaskConical size={16} className="mt-0.5 shrink-0" aria-hidden="true" />Synthetic data only, not for clinical use. {data.locked} Media capture and AI processing are not available.</p>
-      <div role="tablist" onKeyDown={navigateTabs} aria-label="Clinical sections" className="flex gap-1 overflow-x-auto border-b border-border-light">
+      {!COMPACT_CHILD_360 && <div role="tablist" onKeyDown={navigateTabs} aria-label="Clinical sections" className="flex gap-1 overflow-x-auto border-b border-border-light">
         {TABS.map(([k, l]) => (
-          <button key={k} role="tab" type="button" aria-selected={tab === k} tabIndex={tab === k ? 0 : -1} id={`clinical-tab-${k}`} aria-controls="clinical-tabpanel" onClick={() => { if (pending.current.size && !window.confirm('Unsaved session or transcript remains. Switch sections and discard it?')) return; setTab(k); setNotice(null); }} data-testid={`clinical-tab-${k}`}
+          <button key={k} role="tab" type="button" aria-selected={tab === k} tabIndex={tab === k ? 0 : -1} id={`clinical-tab-${k}`} aria-controls="clinical-tabpanel" onClick={() => changeTab(k)} data-testid={`clinical-tab-${k}`}
             className={`min-h-[44px] shrink-0 border-b-2 px-4 text-[14px] font-semibold transition-colors ${tab === k ? 'border-brand-action text-brand-action' : 'border-transparent text-brand-inkMuted hover:text-brand-ink'}`}>{l}</button>
         ))}
-      </div>
+      </div>}
       {notice && <FormAlert tone={notice.tone} testId={`clinical-notice-${notice.tone}`}>{notice.text}</FormAlert>}
-      <div role="tabpanel" id="clinical-tabpanel" aria-labelledby={`clinical-tab-${tab}`}>
-        {tab === 'overview' && <Child360 ws={sharedData!} centerId={centerId} onNavigate={setTab} />}
-        {tab === 'plan' && <PlansPanel centerId={centerId} ws={sharedData!} run={run}
-          pagination={{ hasMore: currentPages?.hasMore ?? data.hasMorePlans, loading: pageLoading, error: pageError, load: loadOlderPlans }} />}
-        {tab === 'assessments' && <AssessmentsPanel centerId={centerId} ws={sharedData!} run={run}
-          pagination={{ hasMore: currentAssessments?.hasMore ?? data.hasMoreAssessments,
-            loading: assessmentLoading, error: assessmentError, load: loadOlderAssessments }} />}
-        {tab === 'sessions' && <SessionsPanel centerId={centerId} ws={sharedData!} run={run} onPending={onPending} />}
-        {tab === 'progress' && <ProgressPanel centerId={centerId} ws={sharedData!} run={run} onNavigate={() => setTab('plan')} />}
-        {tab === 'reports' && <ReportsPanel centerId={centerId} ws={sharedData!} run={run} onError={onError} />}
-      </div>
+      {COMPACT_CHILD_360 ? (
+        <Child360Navigation selected={tab} onSelect={changeTab}>{panelContent}</Child360Navigation>
+      ) : (
+        <div role="tabpanel" id="clinical-tabpanel" aria-labelledby={`clinical-tab-${tab}`}>{panelContent}</div>
+      )}
     </div>
   );
 }
 
 export default function ClinicalChildPage() {
-  return <Workspace active="clinical" permission="center.clinical.read" deniedText="The clinical workspace is available to therapists and clinical supervisors.">{(s, onError) => <ClinicalChild session={s} onError={onError} />}</Workspace>;
+  const { id } = useParams<{ id: string }>();
+  return <Workspace active="clinical" permission="center.clinical.read" deniedText="The clinical workspace is available to therapists and clinical supervisors.">{(s, onError) => {
+    // A client-side child or tenant transition must discard the entire prior
+    // workspace tree (read models, paginated history, unsaved draft UI, tab
+    // state and in-flight responses). Never reuse a prior child's data while
+    // the next authorized scoped GET is loading or has failed.
+    const scope = s.activeContext?.type === 'center' ? s.activeContext.centerId : 'no-center';
+    return <ClinicalChild key={JSON.stringify([scope, id])} session={s} onError={onError} />;
+  }}</Workspace>;
 }

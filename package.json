@@ -7,7 +7,7 @@
     "apps/*"
   ],
   "engines": {
-    "node": ">=20.11 <21"
+    "node": ">=24.9 <25"
   },
   "scripts": {
     "dev:api": "yarn workspace @therabridge/api start:dev",
@@ -17,6 +17,7 @@
     "brand:derive": "python3 scripts/brand/derive-logo.py"
   },
   "devDependencies": {
-    "playwright": "1.48.2"
+    "playwright": "1.55.1",
+    "react-test-renderer": "19.3.1"
   }
 }

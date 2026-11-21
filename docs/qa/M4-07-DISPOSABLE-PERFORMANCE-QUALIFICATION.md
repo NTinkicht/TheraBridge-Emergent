@@ -1,0 +1,52 @@
+# M4-07 — Synthetic performance, worker reliability and resource qualification
+
+**Status: synthetic CI measurement implementation committed; execution and full M4-07 acceptance pending CI evidence.**
+
+Parent: [M4-07 #181](https://github.com/NTinkicht/TheraBridge-Emergent/issues/181). Epic: [M4 #167](https://github.com/NTinkicht/TheraBridge-Emergent/issues/167).
+Predecessor: [M4-06 PR #304](https://github.com/NTinkicht/TheraBridge-Emergent/pull/304), merge `489428bae9ed636c3d9fe1cd6a6c910dd51448a7`.
+
+## Reuse existing evidence; no duplicated changes
+- PR #274 implemented O(n) notice lookup with a 5,000-row synthetic regression. Do not replace it without new measured evidence.
+- Existing CI confirms Docker non-root execution. Previous heap/container work must be checked rather than reproduced.
+- Render metric samples establish **idle** memory ~153 MiB peak within the observed current-instance window and ~512 MiB limit; idle memory is NOT loaded memory nor p95 latency.
+- M4-06 migration replay PR #304 is merged; full production-style restore, Neon pooled lock races, and remaining CAS/query benchmarking are still separate open evidence gaps.
+
+## Implementation scope
+1. Create a **strictly disposable synthetic-only** load/measurement harness against a local or separately authorized ephemeral API+PostgreSQL deployment. Reject the shared Render URL or any arbitrary externally supplied service/database by default. Do not collect account passwords, cookies, clinical content or raw bodies.
+2. Measure bounded endpoints and known hot paths under a reproducible fixed workload. Capture request totals, successes/failures, p50/p95/p99 latency, throughput, actual SQL query counts, query-plan/index evidence where useful, CPU/RSS peaks and test duration. Distinguish cold start, warm steady state and contention. Record exact commit, runtime and DB versions, concurrency, row counts and resource limits.
+3. Assert pagination and tenant-scoped row limits, identify concrete N+1 or unbounded query behavior, and only implement focused fixes after a measured regression demonstrates an issue. Record before/after using identical workloads.
+4. Exercise scheduler idempotence, duplicate dispatch/P2002 conflict handling, retry and dead-letter behavior, cleanup jobs and failure recovery. Prove no duplicate synthetic notifications, no lost work and bounded retries with positive/negative/repeat runs.
+5. Measure an isolated 512 MiB-class container with non-root UID and documented Node heap settings. Verify no OOM under qualified workload; do not assert production capacity based on one synthetic run.
+6. Add deterministic regression tests, sanitized machine-readable evidence and clearly labeled PASS/FAIL/BLOCKED. Keep optional resource-intensive benchmarks separated from required lightweight CI where appropriate; CI must not hide actual failures.
+
+## Acceptance / merge gates
+- [ ] Real reproducible disposable workload receipts, latency percentiles, query count and resource peaks
+- [ ] Query and pagination invariants with negative/positive/tenant paths
+- [ ] Scheduler retries, P2002 contention, deduplication, idempotence and error paths verified
+- [ ] Scope-aligned fixes have before/after evidence and regression coverage
+- [ ] Six required CI jobs green on exact final HEAD, complete review/disposition ledger and independent review
+- [ ] No real patient use, shared deployment changes, clinical signing/consent/release, STT/AI or safeguarding gate changes
+
+**Safety:** synthetic fixtures only. Existing clinical G2/G2b and D-NEW-5 NO-GO remain in force. Never represent idle metrics or unexecuted tests as load acceptance. Parent #181 remains OPEN pending actual receipts.
+
+## Implemented in PR #305 (not yet qualification PASS)
+- `apps/api/test/m4-performance.e2e-spec.ts`: real in-process Fastify HTTP GET /api/health against the isolated `*_test` PostgreSQL database; serial 40 and concurrency-8 80 calls, p50/p95/p99, throughput and process RSS; actual PostgreSQL `EXPLAIN (FORMAT JSON)` on bounded centre-scoped appointment query. CI measurement is not a load/SLA guarantee.
+- `apps/api/test/m4-worker-reliability.e2e-spec.ts`: 3 repeat/parallel sweeps on deterministic fake Prisma unique reservations; asserts one synthetic outbound message, five bounded modeled ORM calls per sweep, a first-send exception releases reservation and retry delivers once. **Mocked worker contract only**; not a real production dead-letter queue or real Postgres P2002 race test.
+- 5,000/10,000 synthetic notice selection timing/eligibility measured separately; outcomes asserted, wall-clock durations recorded but not gated by arbitrary environmental timing thresholds.
+- `scripts/qa/m4-performance-evidence.mjs` and negative tests require bounded numeric-only receipt structure with no credentials, cookie values or raw content; CI stores `m4-07-synthetic-api.json` as a short-retention artifact only after validation.
+- Prior idle Render memory/512MiB baseline and existing non-root Docker CI are **not** rewritten as load-resource certification. Node RSS in CI is process-level, not a container under 512MiB.
+
+## Unresolved exit evidence / scope limits
+- This iteration records **source-level** two Prisma raw queries per /api/health request, not a SQL wire trace or full API-wide SQL query counts.
+- Controlled 512 MiB container **under load**, sustained realistic tenant/child workloads, full retry/dead-letter queue, P2002 Postgres race, adaptive query optimization before/after and external p95 under synthetic load remain NOT VERIFIED.
+- Actual execution statuses require the latest exact-head CI run and independent review before merging; the parent issue must remain OPEN for broader qualification.
+
+## Frozen measurement decision contract (before qualifying results)
+| Tier | Workload / duration | Pass or fail rule | Qualification |
+| --- | --- | --- | --- |
+| API CI smoke | 40 serial requests to `GET /api/health` against real ephemeral PostgreSQL; plus 80 requests in batches of 8 concurrent calls; one completed CI run per exact commit | **PASS** only for all 120 HTTP 200, healthy DB, applied migrations, finite ordered p50/p95/p99, actual request count, throughput and RSS numbers, verified bounded appointment query plan. Any failed/missing request or artifact is **FAIL**. | Technical evidence only; never an application-wide latency/SLA or 512MiB capacity approval |
+| Notice selection | Exactly 5,000 and 10,000 synthetic changed appointments; one deterministic execution per size | **PASS** only for exactly half selected, no duplicates, recorded measured elapsed time, no exception. No timing ceiling is asserted because CI machine performance is uncontrolled. | Correctness + comparative timing only |
+| Worker fault/retry simulation | Concurrent 2 sweeps, one replay, an injected failed delivery followed by retry and replay; deterministic fake reservation store | **PASS** only for exactly one delivery, no duplicate, failed reservation released and retried once, bounded expected modeled ORM calls | Fake-worker contract; NOT PostgreSQL race or guaranteed production delivery |
+| Whole M4-07 release gate | Minimum 10-minute steady-state workload with representative tenant/child distributions, >=3 controlled concurrency levels, 512MiB-class nonroot container, repeated independent runs, direct query tracing and tested real database notification contention | **BLOCKED / NOT QUALIFIED** until owner signs allowable p95/p99 latency, error-rate, SQL-query budget, worker retry/dead-letter and resource limits **before measuring against them**. Never choose acceptance thresholds retroactively. | Separate roadmap acceptance; not silently substituted by successful CI smoke |
+
+**Owner decisions still OPEN:** business-level p95/p99 per route, sustained throughput requirement, error budget, SQL query ceilings, worker delivery/retry/dead-letter timing and acceptable RSS/CPU under a 512 MiB limit. No invented target is considered approved. The CI smoke success criterion is strictly 100% correctness of its finite 120 requests, not an arbitrary production SLA.
