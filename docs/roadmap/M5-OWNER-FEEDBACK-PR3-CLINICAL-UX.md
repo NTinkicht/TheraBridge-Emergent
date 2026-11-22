@@ -21,3 +21,11 @@ Source: `docs/roadmap/M5-OWNER-MANUAL-FEEDBACK-20261122.md`; follows merged PR #
 - Synthetic 5-width cross-role browser, manual keyboard/AT, owner acceptance and task-success evidence are **NOT YET VERIFIED**.
 - No patient release, signing, clinical approval, STT or unapproved media publication; G2/G2b remains **NO-GO**.
 - This is a partial engineering implementation, not closure of observations 16–17 or milestone M5.
+
+## Follow-on independent slice — observation 20: synthetic transcription separation
+
+- Added a native keyboard-accessible collapsed developer-testing disclosure around the existing **synthetic-only** transcription component in each owned clinician session.
+- The entire Dictation component remains **mounted even when collapsed**, retaining unsaved transcript, the parent's pending-navigation guard, remote completion safety, and explicit insertion rules. A disclosure toggle is not a discard or an insert.
+- A clear notice distinguishes fictional fixture transcription from real clinical recording; no microphone APIs, external speech services, consent, audio upload, signing, patient release or STT activation are added.
+- Updated live browser synthetic session and multi-tab tests to deliberately expand the developer disclosure; added mounted regression tests for default collapsed presentation, draft saving and completed-session access revocation.
+- Scope is **only a developer-control UX separation**; observation 20 owner acceptance, five-width per-role screenshots, manual keyboard/AT and full exact-head review/CI remain pending. Do not interpret the implementation as real STT availability or M5 closure.
