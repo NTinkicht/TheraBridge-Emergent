@@ -2,7 +2,7 @@ const {revealActiveSuggestion}=require('../src/lib/combobox-scroll');
 
 const list = (scrollTop, rowTop, rowHeight=44, clientHeight=224) => ({
  scrollTop, offsetTop:10, clientHeight,
- children:{item:(index)=>index===7?{offsetTop:rowTop+10,offsetHeight:rowHeight}:null}
+ children:{item:(index)=>index===7?{offsetTop:rowTop,offsetHeight:rowHeight}:null}
 });
 describe('M5 Codex P2: active combobox option stays visible within overflowing listbox',()=>{
  it('scrolls down to the eighth keyboard option without moving the page',()=>{
