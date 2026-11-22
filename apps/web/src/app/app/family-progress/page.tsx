@@ -8,6 +8,7 @@ import { ErrorState, SkeletonRows } from '@/components/design/states';
 import type { SessionInfo } from '@/lib/auth';
 import { reportsApi } from '@/lib/reports';
 import { opsApi } from '@/lib/operations';
+import { guardianScopeKey } from '@/lib/guardian-scope';
 import Link from 'next/link';
 
 function Demo({ session, onError }: { session: SessionInfo; onError: (e: unknown) => void }) {
@@ -52,5 +53,5 @@ function Demo({ session, onError }: { session: SessionInfo; onError: (e: unknown
 }
 
 export default function FamilyProgressPage() {
-  return <Workspace active="family-progress" permission="family.progress.demo" deniedText="Progress updates are for connected families.">{(s, onError) => <Demo session={s} onError={onError} />}</Workspace>;
+  return <Workspace active="family-progress" permission="family.progress.demo" deniedText="Progress updates are for connected families.">{(s, onError) => <Demo key={guardianScopeKey(s)} session={s} onError={onError} />}</Workspace>;
 }

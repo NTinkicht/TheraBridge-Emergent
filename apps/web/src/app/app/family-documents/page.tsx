@@ -3,6 +3,7 @@
 import { FileText, ShieldCheck } from 'lucide-react';
 import { Workspace } from '@/components/centers/kit';
 import { FamilyReleasedDocuments } from '@/components/clinical/FamilyReleasedDocuments';
+import { guardianScopeKey } from '@/lib/guardian-scope';
 
 /** Document contents and per-child authorization remain enforced by the dual-gated backend. */
 export default function FamilyDocumentsPage() {
@@ -19,7 +20,7 @@ export default function FamilyDocumentsPage() {
           <ShieldCheck size={18} aria-hidden="true" className="shrink-0"/>
           <p>Clinical reports and plans remain unavailable unless the center has explicitly enabled family release and the server verifies consent and child access. Synthetic previews do not authorize real document access.</p>
         </div>
-        {centerId && <FamilyReleasedDocuments centerId={centerId}/>}
+        {centerId && <FamilyReleasedDocuments key={guardianScopeKey(session)} centerId={centerId}/>}
       </main>;
     }}
   </Workspace>;
