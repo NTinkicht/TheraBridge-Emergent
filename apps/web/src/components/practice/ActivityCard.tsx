@@ -6,7 +6,7 @@ import { Pill } from '@/components/design/ui';
 import { CHOICE_LABEL, CHOICE_TONE, dayName, type PracticeActivity, type Slot } from '@/lib/practice';
 
 export function SlotChip({ slot, onRecord, testId }: { slot: Slot; onRecord?: () => void; testId: string }) {
-  if (slot.recordable && onRecord) return <button type="button" onClick={onRecord} className="inline-flex min-h-[44px] items-center rounded-full border-2 border-fam-accent bg-fam-accentTint px-4 py-2 text-[13px] font-semibold text-fam-accent hover:bg-fam-tile focus-visible:outline focus-visible:outline-2" aria-label={`Record ${dayName(slot.date, 'long')}`} data-testid={testId}>Record today’s answer</button>;
+  if (slot.recordable && onRecord) return <button type="button" onClick={onRecord} className="inline-flex min-h-[44px] items-center rounded-full border-2 border-fam-accent bg-fam-accentTint px-4 py-2 text-[13px] font-semibold text-fam-accent hover:bg-fam-tile focus-visible:outline focus-visible:outline-2" aria-label={`Record answer for ${dayName(slot.date, 'long')}`} data-testid={testId}>Record answer</button>;
   return <span data-testid={testId} data-status={slot.status}><Pill tone={CHOICE_TONE[slot.status]}>{CHOICE_LABEL[slot.status]}</Pill></span>;
 }
 
