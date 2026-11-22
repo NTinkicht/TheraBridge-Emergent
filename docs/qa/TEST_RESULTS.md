@@ -1,3 +1,7 @@
+## 2026-11-22 — M5 global dark shared ErrorState P2 (NOT QUALIFIED)
+
+Codex reviewed the preceding HEAD and found `ErrorState` used hardcoded dark red body text on a status-danger background now re-themed for dark staff pages. Replaced only that body foreground with shared `text-status-danger` semantic colour, respecting the existing family-specific foreground. Added light/dark 4.5:1 contrast regressions and source-integrated check. Final exact-head CI and independent review remain pending; no owner visual signoff, no clinical GO.
+
 ## 2026-11-22 — Dark specialty activity card contract checkpoint (NOT YET QUALIFIED)
 
 Introduced CSS variable-based specialty gradients and solid tints in staff ActivityCard, avoiding near-invisible text against static light backgrounds when users select dark mode. Added source-mounted tests for single and multi-service cases and 4.5:1 contrast assertions on every specialty dark-tint/light-text combination. Full exact-HEAD CI, independent Codex and human visual accessibility acceptance still NOT VERIFIED. No old CI run is claimed for this commit.
