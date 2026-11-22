@@ -3,9 +3,11 @@
 /** Non-diagnostic prompts. No values, findings or recommendations are generated. */
 const HELP: Record<string, string[]> = {
   speech: ['Describe the communication task and the setting actually observed.', 'Record the learner’s response and assistance used, without inferring a diagnosis.'],
-  ot: ['Describe the functional activity, supports and environment actually observed.', 'Record observable participation and safety considerations without making a diagnostic claim.'],
-  physio: ['Describe the observed movement task, support and environment.', 'Record directly observed participation and stop if a safety concern needs clinical review.'],
-  psychology: ['Describe observable behavior and context, not speculative causes.', 'Use neutral, factual wording and follow the center’s safeguarding process for concerns.'],
+  occupational: ['Describe the functional activity, supports and environment actually observed.', 'Record observable participation and safety considerations without making a diagnostic claim.'],
+  physical: ['Describe the observed movement task, support and environment.', 'Record directly observed participation and stop if a safety concern needs clinical review.'],
+  behavioral: ['Describe observable behavior and context, not speculative causes.', 'Use neutral, factual wording and follow the center’s safeguarding process for concerns.'],
+  feeding: ['Describe the observed feeding task and assistance without inferring swallowing safety.', 'Record factual responses and refer concerns to qualified clinical review.'],
+  developmental: ['Describe the developmental task and context observed.', 'Record what the child actually did, supports used and any limitations.'],
 };
 export function AssessmentFieldGuide({ service }: { service: string }) {
   const prompts = HELP[service] ?? [
