@@ -220,8 +220,8 @@ export function ProductShell({ session, active, planned, children }: { session: 
               </div>
             </details>
           ))}
-          {visibleGroups.length === 0 && !railCollapsed && <p role="status" className="px-3 py-3 text-sm text-brand-inkMuted">No authorized destinations match your search.</p>}
-          {planned.length > 0 && !railCollapsed && <p className="px-3 pb-1 pt-5 text-[12px] font-semibold uppercase tracking-[0.06em] text-brand-inkMuted">Coming next</p>}
+          {visibleGroups.length === 0 && !railCollapsed && <p role="status" className={`px-3 py-3 text-sm ${family ? 'text-fam-muted' : 'text-brand-inkMuted'}`}>No authorized destinations match your search.</p>}
+          {planned.length > 0 && !railCollapsed && <p className={`px-3 pb-1 pt-5 text-[12px] font-semibold uppercase tracking-[0.06em] ${family ? 'text-fam-muted' : 'text-brand-inkMuted'}`}>Coming next</p>}
           {!railCollapsed && planned.map((m) => (
             <span key={m.label} aria-disabled="true" title={`Arrives in ${m.unit}`} data-testid={`nav-planned-${m.label.toLowerCase().replace(/\W+/g, '-')}`}
               className="flex min-h-[44px] cursor-not-allowed items-center gap-3 rounded-control px-3 text-[14px] text-brand-inkMuted/70">
@@ -250,13 +250,13 @@ export function ProductShell({ session, active, planned, children }: { session: 
           </button>
         </header>
         {signOutError && <p role="alert" className="bg-status-dangerSurface px-4 py-2 text-[14px] font-medium text-status-danger md:px-8" data-testid="sign-out-error">{signOutError}</p>}
-        <nav aria-label="Breadcrumb" data-testid="shell-breadcrumb" className="flex min-h-[36px] items-center gap-2 px-4 pt-2 text-[12px] text-brand-inkMuted md:px-8">
+        <nav aria-label="Breadcrumb" data-testid="shell-breadcrumb" className={`flex min-h-[36px] items-center gap-2 px-4 pt-2 text-[12px] md:px-8 ${family ? 'text-fam-muted' : 'text-brand-inkMuted'}`}>
           {activeNav?.key !== 'home' && <><Link href="/app" className="underline-offset-2 hover:underline">Home</Link><ChevronRight size={13} aria-hidden="true" /></>}
           {activeNav?.key !== 'home' && activeGroup && <><span>{activeGroup.label}</span><ChevronRight size={13} aria-hidden="true" /></>}
-          <span aria-current="page" className="font-semibold text-brand-ink">{activeNav?.label ?? 'Workspace'}</span>
+          <span aria-current="page" className={`font-semibold ${family ? 'text-fam-ink' : 'text-brand-ink'}`}>{activeNav?.label ?? 'Workspace'}</span>
         </nav>
         <nav aria-label="Primary" className={`border-b px-4 py-3 md:hidden ${navSurface}`} data-testid="mobile-nav">
-          <label htmlFor="mobile-workspace-navigation" className="mb-1 block text-[12px] font-semibold text-brand-inkMuted">Navigate to</label>
+          <label htmlFor="mobile-workspace-navigation" className={`mb-1 block text-[12px] font-semibold ${family ? 'text-fam-muted' : 'text-brand-inkMuted'}`}>Navigate to</label>
           <select id="mobile-workspace-navigation" data-testid="mobile-nav-select"
             value={nav.find(n => n.key === active)?.href ?? '/app'}
             onChange={e => router.push(e.target.value)}
@@ -270,12 +270,12 @@ export function ProductShell({ session, active, planned, children }: { session: 
           className={`fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 gap-1 border-t px-2 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 shadow-[0_-4px_18px_rgba(20,33,61,0.08)] md:hidden ${navSurface}`}>
           {mobileQuick.map(n => <Link key={n.key + ':' + (n.permission ?? '')} href={n.href}
             data-testid={`mobile-quick-${n.key}`} aria-current={active === n.key ? 'page' : undefined}
-            className={`flex min-h-[52px] min-w-0 flex-col items-center justify-center gap-1 rounded-control px-1 text-center text-[11px] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action ${active === n.key ? (family ? 'bg-fam-accentTint text-fam-accent' : 'bg-brand-actionTint text-brand-action') : 'text-brand-inkMuted'}`}>
+            className={`flex min-h-[52px] min-w-0 flex-col items-center justify-center gap-1 rounded-control px-1 text-center text-[11px] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action ${active === n.key ? (family ? 'bg-fam-accentTint text-fam-accent' : 'bg-brand-actionTint text-brand-action') : (family ? 'text-fam-muted' : 'text-brand-inkMuted')}`}>
             <n.icon size={20} aria-hidden="true" /><span className="max-w-full truncate">{n.short}</span>
           </Link>)}
           <button type="button" ref={moreButtonRef} data-testid="mobile-more-button"
             aria-haspopup="dialog" aria-expanded={moreOpen} aria-controls="mobile-more-panel"
-            onClick={() => setMoreOpen(true)} className="flex min-h-[52px] min-w-0 flex-col items-center justify-center gap-1 rounded-control px-1 text-[11px] font-semibold text-brand-inkMuted focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action">
+            onClick={() => setMoreOpen(true)} className={`flex min-h-[52px] min-w-0 flex-col items-center justify-center gap-1 rounded-control px-1 text-[11px] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action ${family ? 'text-fam-muted' : 'text-brand-inkMuted'}`}>
             <Menu size={20} aria-hidden="true" /><span>More</span>
           </button>
         </nav>
@@ -285,7 +285,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
             ref={morePanelRef} onKeyDown={handleMoreKeyDown}
             className={`absolute inset-x-0 bottom-0 max-h-[84dvh] overflow-y-auto overscroll-y-contain rounded-t-2xl px-4 pb-[max(env(safe-area-inset-bottom),24px)] pt-4 shadow-xl ${navSurface}`}>
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-[17px] font-semibold text-brand-ink">All destinations</h2>
+              <h2 className={`text-[17px] font-semibold ${family ? 'text-fam-ink' : 'text-brand-ink'}`}>All destinations</h2>
               <button type="button" ref={moreCloseRef} onClick={closeMore} aria-label="Close navigation"
                 data-testid="mobile-more-close" className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-control border border-border-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action">
                 <X size={20} aria-hidden="true" />
@@ -295,14 +295,14 @@ export function ProductShell({ session, active, planned, children }: { session: 
             <input id="mobile-destination-search" type="search" autoComplete="off" value={navQuery}
               onChange={event => setNavQuery(event.target.value)} data-testid="mobile-destination-search"
               placeholder="Find a destination" className={`mb-3 min-h-[44px] w-full rounded-control border px-3 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action ${family ? 'border-fam-border bg-fam-surface text-fam-ink placeholder:text-fam-muted' : 'border-border-strong bg-surface-white text-brand-ink'}`} />
-            {visibleGroups.length === 0 && <p role="status" className="mb-3 text-sm text-brand-inkMuted">No authorized destinations match your search.</p>}
+            {visibleGroups.length === 0 && <p role="status" className={`mb-3 text-sm ${family ? 'text-fam-muted' : 'text-brand-inkMuted'}`}>No authorized destinations match your search.</p>}
             {visibleGroups.map(group => <section key={group.key} className="mb-4" data-testid={`mobile-group-${group.key}`}>
-              <h3 className="mb-1 px-2 text-[12px] font-semibold uppercase tracking-wide text-brand-inkMuted">{group.label}</h3>
+              <h3 className={`mb-1 px-2 text-[12px] font-semibold uppercase tracking-wide ${family ? 'text-fam-muted' : 'text-brand-inkMuted'}`}>{group.label}</h3>
               <div className="space-y-1">{group.items.map(n => <Link
                 key={n.key + ':' + (n.permission ?? '')} href={n.href}
                 onClick={() => { setNavQuery(''); setMoreOpen(false); }} data-testid={`mobile-more-${n.key}`}
                 aria-current={active === n.key ? 'page' : undefined}
-                className={`flex min-h-[44px] items-center gap-3 rounded-control px-3 text-[14px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action ${active === n.key ? (family ? 'bg-fam-accentTint text-fam-accent' : 'bg-brand-actionTint text-brand-action') : 'text-brand-ink'}`}>
+                className={`flex min-h-[44px] items-center gap-3 rounded-control px-3 text-[14px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action ${active === n.key ? (family ? 'bg-fam-accentTint text-fam-accent' : 'bg-brand-actionTint text-brand-action') : (family ? 'text-fam-ink' : 'text-brand-ink')}`}>
                 <n.icon size={18} aria-hidden="true" />{n.label}
               </Link>)}</div>
             </section>)}
