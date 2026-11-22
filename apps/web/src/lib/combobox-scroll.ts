@@ -1,3 +1,13 @@
+/** One effective index for highlight, ARIA, scrolling and Enter.
+ * Counts can shrink when status, specialty or async request scope changes;
+ * a formerly valid index must never point to a visually unselected option.
+ */
+export function effectiveSuggestionIndex(index: number, count: number): number {
+  if (!Number.isSafeInteger(count) || count <= 0) return -1;
+  if (!Number.isSafeInteger(index) || index < 0) return 0;
+  return Math.min(index, count - 1);
+}
+
 /**
  * Keep the keyboard-selected combobox option visible inside its OWN listbox.
  * The input retains DOM focus and aria-activedescendant; no page-level
