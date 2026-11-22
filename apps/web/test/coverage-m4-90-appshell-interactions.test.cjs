@@ -29,13 +29,27 @@ beforeEach(()=>{
  global.document.documentElement.dataset.familyTheme='light';
 });
 afterEach(async()=>{if(tree){await act(async()=>tree.unmount());tree=null;}});
-describe('M4-08 real AppShell interaction states and family-only theme',()=>{
- it('clinical platform shell has no guardian theme or family toggle',async()=>{
+describe('M5 shared AppShell interaction states and all-role theme',()=>{
+ it('platform gets the same theme control without inheriting guardian-only tokens',async()=>{
   await mount('platform','overview');
-  expect(get('shell-platform')).toBeTruthy();
-  expect(find('theme-toggle')).toHaveLength(0);
+  expect(get('shell-platform').props.className).toContain('theme-clinical-auto');
+  expect(get('shell-platform').props.className).not.toContain('theme-family-auto');
+  expect(get('theme-toggle')).toBeTruthy();
   expect(get('nav-overview').props['aria-current']).toBe('page');
   expect(get('shell-body')).toBeTruthy();
+ });
+ it.each(['platform','center','therapist'])('shared dark-mode toggle styles the %s shell and remains keyboard-labelled',async(workspace)=>{
+  await mount(workspace,'overview');
+  await click('theme-toggle');
+  expect(get(`shell-${workspace}`).props['data-theme']).toBe('dark');
+  expect(get(`shell-${workspace}`).props.className).toContain('theme-clinical-auto');
+  expect(get('top-bar').props.className).toContain('bg-surface-white');
+  expect(get('sidebar').props.className).toContain('bg-surface-white');
+  expect(get('bottom-nav').props.className).toContain('bg-surface-white');
+  expect(get('theme-toggle').props['aria-label']).toBe('Switch to light theme');
+  expect(global.document.documentElement.dataset.appTheme).toBe('dark');
+  await click('theme-toggle');
+  expect(global.document.documentElement.dataset.appTheme).toBe('light');
  });
  it('family theme remains scoped to family workspace, never platform administration',async()=>{
   await mount('family','home');
