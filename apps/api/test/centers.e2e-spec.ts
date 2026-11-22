@@ -240,6 +240,51 @@ describe('TB-EM-003/004 center provisioning and staff onboarding (real PostgreSQ
     });
   });
 
+  describe('M5 center contact fields (tenant-scoped, versioned)', () => {
+    it('creates null contacts by default, saves valid values and supports explicit clearing', async () => {
+      const { centerId, admin } = await activeAdmin();
+      const endpoint = `/api/centers/${centerId}/settings`;
+      const initial = (await get(admin, endpoint).expect(200)).body;
+      expect(initial).toMatchObject({ contactEmail: null, contactPhone: null });
+
+      const saved = await patch(admin, endpoint, {
+        version: initial.version, contactEmail: '  Hello@TheraBridge.Example  ', contactPhone: ' +971 6 555 1234 '
+      }).expect(200);
+      expect(saved.body).toMatchObject({
+        contactEmail: 'hello@therabridge.example', contactPhone: '+971 6 555 1234',
+        version: initial.version + 1
+      });
+      const row = await h.prisma.center.findUniqueOrThrow({where:{id:centerId}});
+      expect(row).toMatchObject({
+        contactEmail: 'hello@therabridge.example', contactPhone: '+971 6 555 1234'
+      });
+
+      await patch(admin, endpoint, { version: initial.version, contactEmail: 'stale@center.test' }).expect(409);
+      const cleared = await patch(admin, endpoint, {
+        version: saved.body.version, contactEmail: '', contactPhone: ''
+      }).expect(200);
+      expect(cleared.body).toMatchObject({contactEmail:null,contactPhone:null});
+    });
+    it('rejects bad contacts and refuses non-admin mutation', async () => {
+      const {centerId,admin}=await activeAdmin();
+      const endpoint=`/api/centers/${centerId}/settings`;
+      const start=(await get(admin, endpoint).expect(200)).body;
+      for(const contactEmail of ['not-an-email','recipient@@center.test','x@center','x@y.test\\nBcc:x@wrong.test']){
+        await patch(admin,endpoint,{version:start.version,contactEmail}).expect(400);
+      }
+      for(const contactPhone of ['123','+971!1234','bad string','x'.repeat(41)]){
+        await patch(admin,endpoint,{version:start.version,contactPhone}).expect(400);
+      }
+      const coordinator=await inviteAndJoin(centerId,admin,'coordinator@fictional-center.test',['COORDINATOR']);
+      await patch(coordinator.s,endpoint,{
+        version:start.version,contactEmail:'unauthorized@center.test'
+      }).expect(403);
+      expect((await get(admin,endpoint).expect(200)).body).toMatchObject({
+        version:start.version,contactEmail:null,contactPhone:null
+      });
+    });
+  });
+
   describe('staff invitations, directory and access management', () => {
     it('invites multi-role staff with specialties; they activate into the correct workspace', async () => {
       const { centerId, admin } = await activeAdmin();
