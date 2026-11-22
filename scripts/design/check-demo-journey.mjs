@@ -543,7 +543,7 @@ try {
     const evidenceDisclosure = page.getByTestId('plan-supporting-evidence').first();
     assert.equal(await evidenceDisclosure.getAttribute('open'), null,
       'Supporting plan evidence must be collapsed on first render');
-    await evidenceDisclosure.locator('summary').click();
+    await evidenceDisclosure.locator(':scope > summary').click();
     await page.getByTestId('goal-checkpoint-panel').first().waitFor();
     await page.getByTestId('goal-checkpoint-empty').first().waitFor();
     // TB-EM-037: response-overlay test is ONLY a fictional read-model UI
@@ -580,7 +580,7 @@ try {
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
     const comparedPlan = page.getByTestId('plan-' + comparePlanId);
-    await comparedPlan.getByTestId('plan-supporting-evidence').locator('summary').click();
+    await comparedPlan.getByTestId('plan-supporting-evidence').locator(':scope > summary').click();
     const checkpointCompare = comparedPlan
       .getByTestId('checkpoint-compare').first();
     await checkpointCompare.getByTestId('checkpoint-compare-notes').waitFor();
@@ -969,7 +969,7 @@ try {
     // TB-EM-041: history preview uses exactly the selected stored version.
     const historicPreview = page.getByTestId('plan-history-inspection')
       .getByTestId('saved-home-plan-preview');
-    await historicPreview.locator('summary').click();
+    await historicPreview.locator(':scope > summary').click();
     const historicPreviewBody = await historicPreview.getByTestId('saved-plan-preview-body').innerText();
     assert(historicPreviewBody.includes('Original saved activity'),
       'Selected historical preview must keep its own snapshot definition');
@@ -1010,7 +1010,7 @@ try {
     // TB-EM-041: the active preview must show only the persisted version,
     // not the browser's subsequently edited working copy.
     const activeSavedPreview = page.getByTestId('saved-home-plan-preview').first();
-    await activeSavedPreview.locator('summary').click();
+    await activeSavedPreview.locator(':scope > summary').click();
     const originalSavedSummary = await activeSavedPreview.getByTestId('saved-plan-preview-summary').innerText();
     assert(originalSavedSummary.trim().length > 0);
     assert((await activeSavedPreview.getByTestId('saved-plan-preview-disclaimer').innerText())
@@ -1564,7 +1564,7 @@ try {
     }
     // M5-08: users explicitly expand optional review filters; Context is a
     // native disclosure focus stop before the source-bound report link.
-    await page.getByTestId('supervisor-review-queue').locator('details').first().locator('summary').click();
+    await page.getByTestId('supervisor-review-queue').locator('details').first().locator(':scope > summary').click();
     await page.getByTestId('review-queue-search').focus();
     await page.keyboard.press('Tab');
     const contextFocus = await page.evaluate(() => ({
@@ -1616,7 +1616,7 @@ try {
       updatedAt: new Date('2026-10-01T09:00:00Z'),
     } });
     await page.reload();
-    await page.getByTestId('supervisor-review-queue').locator('details').first().locator('summary').click();
+    await page.getByTestId('supervisor-review-queue').locator('details').first().locator(':scope > summary').click();
     const secondRow = page.getByTestId('review-queue-row-' + secondReport.id);
     await secondRow.waitFor();
     await reviewRow.waitFor();
@@ -1641,7 +1641,7 @@ try {
     // optional filters. Reopen the disclosure before testing text search.
     const queueDisclosure = page.getByTestId('supervisor-review-queue').locator('details').first();
     if (!(await queueDisclosure.evaluate(node => node.open))) {
-      await queueDisclosure.locator('summary').click();
+      await queueDisclosure.locator(':scope > summary').click();
     }
     await page.getByTestId('review-queue-search').fill('no-matching-synthetic-review');
     await page.getByTestId('review-queue-empty').waitFor();
