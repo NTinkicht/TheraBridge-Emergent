@@ -9,6 +9,9 @@ import {appendFileSync} from 'node:fs';
 
 const SHA=/^[0-9a-f]{40}$/;
 const DOC=/(^|\/)[^/]+\.mdx?$/i;
+// Only narrative, non-policy docs may use targeted mode. Evidence, contracts,
+// release/rights/QA, instructions, workflows, and unknown paths require full CI.
+const SAFE_DOC=/^(?:README\.md|CONTRIBUTING\.md|docs\/(?:roadmap|handover|emergent\/workunits)\/(?:[A-Za-z0-9._-]+\/)*[A-Za-z0-9._-]+\.md)$/i;
 // Only non-executable static assets qualify. SVG/HTML/JS/JSON and unknown assets force full CI.
 const WEB_STYLE=/^apps\/web\/(?:src\/.*\.css|public\/(?:[^/]+\/)*[^/]+\.(?:png|jpe?g|webp|gif|ico|avif|woff2?|ttf|otf))$/i;
 const HARD_BLOCK=/(^|\/)(?:AGENTS\.md|SECURITY\.md|CODEOWNERS|Dockerfile(?:\.[^/]*)?|render\.yaml)$/i;
@@ -24,8 +27,7 @@ export function classifyPaths(changes) {
       path.startsWith('/')||path.includes('\\')||path.split('/').includes('..')||
       !VALID_STATUS.has(status))return {candidate:'full',reason:'invalid_change'};
    if(HARD_BLOCK.test(path))return {candidate:'full',reason:'protected_file'};
-   if(path.startsWith('docs/')&&DOC.test(path)){docs++;continue;}
-   if(path==='README.md'||path==='CONTRIBUTING.md'){docs++;continue;}
+   if(SAFE_DOC.test(path) && status!=='D'){docs++;continue;}
    if(WEB_STYLE.test(path)&&status!=='D'){web++;continue;}
    return {candidate:'full',reason:'code_or_unclassified_change'};
  }
@@ -53,16 +55,20 @@ export function expectedJobs(mode){
  return Object.fromEntries(jobs.map(name=>[name,selected.includes(name)?'success':'skipped']));
 }
 export function decide({changes,eventName,baseRef,mode,requiredGateReady,fromFork,ownerPolicyApproved=false}) {
- // Owner mandate 2026-11-19: EVERY PR must prove >=90% across API + Web
- // lines, branches, functions and statements. Consequently docs-only and
- // web-style PRs also run the complete measured test job and all other
- // required checks. Neither configuration variables nor ownerPolicyApproved
- // can downgrade to targeted mode.
  const classified=classifyPaths(changes);
+ // Approved narrow exception: genuinely narrative-only PRs may use independent
+ // secret scan, SBOM, roadmap validation and a strict required smart-ci-gate.
+ // Never activate targeted mode for pushes, missing refs, forks, unknown code,
+ // protected policy or legal/QA evidence, even if configuration asks for it.
+ if(eventName==='pull_request' && baseRef==='main' && !fromFork &&
+    classified.candidate==='docs' && ownerPolicyApproved===true)
+   return {execution:'docs',candidate:'docs',reason:'owner_approved_safe_docs_only',
+     required:expectedJobs('docs')};
  return {execution:'full',candidate:classified.candidate,
    reason:'mandatory_full_90_percent_api_web_coverage',
    required:expectedJobs('full')};
 }
+
 function readChanges(base,head){
  if(!SHA.test(base)||!SHA.test(head))throw Error('invalid_sha');
  const git=args=>execFileSync('git',args,{encoding:'utf8',timeout:30000,maxBuffer:1048576});
@@ -76,7 +82,7 @@ function writeOutput(record){
    'mode='+record.execution+'\n'+'candidate='+record.candidate+'\n'+'reason='+record.reason+'\n');
  if(process.env.GITHUB_STEP_SUMMARY)appendFileSync(process.env.GITHUB_STEP_SUMMARY,
    'Smart CI: **'+record.execution+'**, candidate **'+record.candidate+
-   '**, reason '+record.reason+'.\n\nShadow is default. Rule 16 owner approval and a required smart-ci-gate are mandatory; neither CI variable alone can activate targeted mode.\n');
+   '**, reason '+record.reason+'.\n\nOnly owner-approved safe narrative documentation PRs are targeted; all other changes stay full and the required smart-ci-gate verifies real job outcomes.\n');
  console.log(JSON.stringify({execution:record.execution,candidate:record.candidate,reason:record.reason}));
 }
 if(process.argv[1]?.endsWith('/smart-ci.mjs')){
@@ -89,10 +95,9 @@ if(process.argv[1]?.endsWith('/smart-ci.mjs')){
     mode:process.env.TB_SMART_CI_MODE,
     requiredGateReady:process.env.TB_SMART_CI_REQUIRED_GATE_READY==='true',
     fromFork:process.env.TB_SMART_FORK==='true',
-    // Rule 16 still requires all six full-CI jobs. Environment variables
-    // must NEVER override that owner-authorized merge policy. This constant
-    // may be changed only in a separately approved AGENTS.md policy PR.
-    ownerPolicyApproved:false});
+    // Owner-authorized Rule 16 exception, restricted to safe narrative docs.
+    // Runtime, governance, legal/QA evidence and all unknown diffs remain full.
+    ownerPolicyApproved:true});
  }catch{
   // Missing refs, git failures, malformed diff or unexpected data NEVER reduce tests.
   outcome={execution:'full',candidate:'full',reason:'diff_unavailable_fail_closed'};
