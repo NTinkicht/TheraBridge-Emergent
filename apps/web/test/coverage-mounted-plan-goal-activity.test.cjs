@@ -458,3 +458,42 @@ describe('M5 clinical plan scheduling and history denial paths',()=>{
   expect(find('plan-template-more')).toHaveLength(0);
  });
 });
+
+describe('M5 owner feedback 21: progressive plan disclosure preserves mounted draft safety',()=>{
+ it('keeps optional evidence and calendar in native collapsed details while editing remains available',async()=>{
+  await mount();
+  const evidence=get('plan-supporting-evidence'),calendar=get('plan-calendar-disclosure');
+  expect(evidence.type).toBe('details');
+  expect(calendar.type).toBe('details');
+  expect(evidence.props.open).toBeUndefined();
+  expect(calendar.props.open).toBeUndefined();
+  expect(evidence.findAllByType('summary')).toHaveLength(1);
+  expect(calendar.findAllByType('summary')).toHaveLength(1);
+  expect(get('plan-summary').props.disabled).toBe(false);
+  expect(get('plan-save')).toBeTruthy();
+  expect(clinicalApi.submit).not.toHaveBeenCalled();
+ });
+ it('does not unmount or reset unsaved edits when supporting sections are collapsed',async()=>{
+  clinicalApi.saveVersion.mockResolvedValue({version:4});
+  await mount();
+  const evidence=get('plan-supporting-evidence'),calendar=get('plan-calendar-disclosure');
+  await change('plan-summary','Synthetic unsaved revised plan');
+  expect(get('plan-summary').props.value).toBe('Synthetic unsaved revised plan');
+  expect(get('plan-submit').props.disabled).toBe(true);
+  expect(get('plan-supporting-evidence')).toBe(evidence);
+  expect(get('plan-calendar-disclosure')).toBe(calendar);
+  await click('plan-save');
+  expect(clinicalApi.saveVersion).toHaveBeenCalledWith('c1','v1',
+   expect.objectContaining({version:3,summary:'Synthetic unsaved revised plan'}));
+  expect(clinicalApi.submit).not.toHaveBeenCalled();
+ });
+ it('retains read-only plan and clinical release lock under collapsed support panels',async()=>{
+  await mount(version({status:'IN_REVIEW',mine:false}),ws({canEdit:false,canReview:false}));
+  expect(get('plan-supporting-evidence').type).toBe('details');
+  expect(get('plan-calendar-disclosure').type).toBe('details');
+  expect(get('plan-summary').props.disabled).toBe(true);
+  expect(find('plan-save')).toHaveLength(0);
+  expect(JSON.stringify(tree.toJSON())).toContain('Approve and release');
+  expect(clinicalApi.submit).not.toHaveBeenCalled();
+ });
+});

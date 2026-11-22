@@ -121,11 +121,19 @@ export function VersionEditor({ centerId, ws, planId, planTitle, service, v, sou
     <div className="space-y-4" data-testid={`plan-version-${v.number}`}>
       <div className="flex flex-wrap items-center gap-2"><Pill tone={STATUS[v.status][1]} testId="plan-version-status">{`Version ${v.number} · ${STATUS[v.status][0]}`}</Pill><span className="text-[13px] text-brand-inkMuted">by {v.author}</span></div>
       {v.reviewNotes.map((n, i) => <FormAlert key={i} tone="info" testId={`review-note-${i}`}>Supervisor review: {n.comment}</FormAlert>)}
-      <PlanEvidenceTrail version={v} origin={source} observations={ws.observations} />
-      <SavedHomePlanPreview key={v.id} version={v} templates={templateWs.templates}
-        title={planTitle} service={service} origin={source} unsaved={unsavedPlanEdits} />
-      <GoalCheckpointPanel centerId={centerId} version={v} ws={ws} editable={edit}
-        unsavedPlanEdits={unsavedPlanEdits || otherPlanDirty} run={run} />
+      <details className="rounded-control border border-border-light p-3" data-testid="plan-supporting-evidence">
+        <summary className="min-h-11 cursor-pointer py-2 text-[14px] font-semibold text-brand-action">
+          Supporting evidence, saved home-plan preview and goal checkpoints
+        </summary>
+        <div className="mt-3 space-y-4">
+          <p className="text-[12px] text-brand-inkMuted">Supporting records are optional to view. Opening or closing this section does not save, sign, approve or release a plan.</p>
+          <PlanEvidenceTrail version={v} origin={source} observations={ws.observations} />
+          <SavedHomePlanPreview key={v.id} version={v} templates={templateWs.templates}
+            title={planTitle} service={service} origin={source} unsaved={unsavedPlanEdits} />
+          <GoalCheckpointPanel centerId={centerId} version={v} ws={ws} editable={edit}
+            unsavedPlanEdits={unsavedPlanEdits || otherPlanDirty} run={run} />
+        </div>
+      </details>
       <label className="block text-[14px] font-medium">Plan summary<textarea className={`mt-1 ${input}`} rows={3} value={summary} disabled={!edit} onChange={(e) => setSummary(e.target.value)} data-testid="plan-summary" /></label>
       <div>
         <h3 className="text-[15px] font-semibold">Goals</h3>
@@ -169,8 +177,13 @@ export function VersionEditor({ centerId, ws, planId, planTitle, service, v, sou
           {searchedTemplates?.length === 0 && <p role="status" className="text-[12px]">No matching activities for this plan specialty.</p>}
         </div>}
       </div>
-      <HomePracticeCalendar key={v.id} activities={acts} goals={goals} templates={templateWs.templates}
-        versionNumber={v.number} timezone={ws.timezone} unsaved={unsavedPlanEdits} />
+      <details className="rounded-control border border-border-light p-3" data-testid="plan-calendar-disclosure">
+        <summary className="min-h-11 cursor-pointer py-2 text-[14px] font-semibold text-brand-action">Preview the home-practice calendar</summary>
+        <div className="mt-3">
+          <HomePracticeCalendar key={v.id} activities={acts} goals={goals} templates={templateWs.templates}
+            versionNumber={v.number} timezone={ws.timezone} unsaved={unsavedPlanEdits} />
+        </div>
+      </details>
       {edit && <HomePlanSyntheticAssist ws={ws} v={v} service={service} centerId={centerId} existing={acts} editableGoals={goals} onInsert={candidate => setActs(previous => previous.some(a => a.templateId === candidate.templateId) ? previous : [...previous, candidate])} />}
       {edit && <HomePlanHandoff result={handoff} versionNumber={v.number} />}
       <div className="flex flex-wrap items-start gap-2">
