@@ -133,6 +133,9 @@ try {
       await page.getByTestId('child-quick-guardian-'+child.id).click();
       await page.getByTestId('child-guardians-anchor').waitFor();
       assert(page.url().endsWith('#guardians'), 'Scoped shortcut must navigate to the actual guardian section');
+      await page.waitForFunction(() => document.activeElement?.getAttribute('data-testid') === 'child-guardians-anchor');
+      assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('data-testid')), 'child-guardians-anchor',
+        'Guardian shortcut must move keyboard focus to the destination, not just scroll');
     }
 
   });
