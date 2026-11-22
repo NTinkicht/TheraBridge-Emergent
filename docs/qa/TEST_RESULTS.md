@@ -1,3 +1,7 @@
+## 2026-11-22 — PR #461 shared dark theme and cross-screen P2 checkpoint (NOT QUALIFIED)
+
+**Implementation-only checkpoint:** shared theme code and tests added for staff + guardian across all authenticated route shells. New Playwright computed-style checks exercise 7 synthetic personas × 5 widths (header/sidebar/mobile-nav/page canvas and light-mode restoration), with mounted real/preview role tests, RGB alpha variable tests and WCAG AA text colour-pair unit checks. Children and Schedule share effective combobox selected index; child status changes reset index; guardian mobile foregrounds use family tokens. **No new exact-head CI pass or human visual/AT acceptance is asserted in this checkpoint.** Earlier CI receipts apply only to earlier SHAs. All clinical/rights gates remain fail-closed.
+
 ## 2026-11-22 — PR #461 final Codex P2 regression checkpoint
 
 Previous exact `c4a86dba`: full CI SUCCESS, eight coverage metrics PASS (API lines 96.81, branches 91.69, functions 95.72, statements 95.38; Web lines 96.44, branches 90.32, functions 91.49, statements 94.29), live-session, Compose, browser/Child360, preview, Smart CI all green. Final Codex review identified autocomplete keyboard overflow P2, **so that SHA was not merged**. Latest P2-fix source/helper tests are committed but **NEW exact-HEAD CI and Codex review NOT YET VERIFIED**. Manual AT/visual owner QA NOT RUN. No fabricated acceptance.
