@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {classifyPaths,decide,decodeNameStatusNul,expectedJobs} from './smart-ci.mjs';
 import {verifySmartGate} from './smart-ci-gate.mjs';
 const paths=(...items)=>items.map(path=>({path,status:'M'}));
@@ -80,4 +81,13 @@ test('final gate rejects absent plan or invalid modes',()=>{
  assert.throws(()=>verifySmartGate({}),/plan_not_successful/);
  assert.throws(()=>verifySmartGate({'smart-plan':{result:'success',outputs:{mode:'invalid'}}}),/mandatory_full_coverage_required/);
  assert.throws(()=>verifySmartGate({'smart-plan':{result:'failure'}}),/plan_not_successful/);
+});
+
+test('CI triggers once for feature PR commits but still fully qualifies main and manual dispatch',()=>{
+ const workflow=readFileSync(new URL('../../.github/workflows/ci.yml',import.meta.url),'utf8');
+ assert.match(workflow,/^on:\n  push:\n    branches: \["main"\]\n  pull_request:\n  workflow_dispatch:/m);
+ assert.doesNotMatch(workflow,/branches:\s*\["\*\*"\]/);
+ assert.match(workflow,/if: needs\.smart-plan\.outputs\.mode == 'full'/);
+ assert.equal(selected(paths('apps/web/src/components/clinical/SessionEditor.tsx')).execution,'full');
+ assert.equal(selected(paths('docs/roadmap/README.md')).execution,'full');
 });
