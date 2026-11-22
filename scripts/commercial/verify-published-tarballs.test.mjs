@@ -220,3 +220,15 @@ test('integrity mismatch and nontransient errors are never retried',async()=>{
  const unsafe=await audit(f,{fetchBuffer:async()=>{tries++;throw Error('TARBALL_TOO_LARGE');}});
  assert.equal(tries,1);assert.equal(unsafe.records[0].status,'UNRESOLVED_TARBALL_TOO_LARGE');
 });
+
+test('native transport code is retried even when message contains socket context',async()=>{
+ const f=fixture();let tries=0;
+ const result=await audit(f,{fetchBuffer:async()=>{
+  tries++;
+  if(tries===1){const err=new Error('connect ECONNREFUSED 127.0.0.1:1');err.code='ECONNREFUSED';throw err;}
+  return f.bytes;
+ }});
+ assert.equal(tries,2);
+ assert.equal(result.summary.TARBALL_INTEGRITY_VERIFIED_LICENSE_FILES_HASHED,1);
+ assert.equal(result.legallyApproved,0);
+});
