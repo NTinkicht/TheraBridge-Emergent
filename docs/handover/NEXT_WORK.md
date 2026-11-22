@@ -1,3 +1,11 @@
+## 2026-11-22 — PR #461 exact-HEAD completion gate
+
+1. Run real full CI on final HEAD: six required jobs, Smart CI, source contracts, browser/preview/Compose, security/SBOM and all eight unrounded >=90% Web/API branch/function/line/statement floors; fix genuine failures without disabling assertions.
+2. Verify interactive therapist/child autocomplete keyboard/pointer, schedule shared-scrollport alignment, all staff card grid/list widths, guardian dark-mode shell contrast, no unauthorized child/center exposure or hidden clinical guardrail.
+3. Inspect exact final HEAD and independent Codex review; explicitly dispose every P0/P1/P2/P3 comment under Rule 13, and request final exact-HEAD review after CI is green.
+4. Perform owner acceptance/real NVDA/VoiceOver, RTL, contrast and screenshot checks at 320/390/768/1024/1440; record PASS/FAIL/BLOCKED truthfully. Only then mark the 10 findings resolved. Next package is PR 2 administrative/operations, parallelizable with PR 3 therapist workspace after PR 1 merge.
+5. Preserve sample-only synthetic media and fail-closed G2/G2b. Do not deploy clinical activation or call PR #461 M5 closeout.
+
 ## 2026-11-20 — M5-14 post-merge offline staging integration (NOT QUALIFIED)
 Created an INTERNAL, no-HTTP, private-only candidate staging composition to connect full PNG integrity validation, independent trusted-scanner attestation and actual exclusive filesystem quarantine writes against one snapshotted byte buffer and exact immutable tenant/activity/draft intent. Hardened LocalQuarantineWriter to reject forged/accessor-backed and mutation-prone intents before any async IO. New test exercises persisted private 0600 PNG, exact SHA, no URL/key in receipt, late caller byte/scope mutation, duplicate writes, infected/stale/error scanner proofs, corrupted PNG, forged rights and malicious property getters. Tests/TS typecheck/full CI/Codex review NOT YET RUN/VERIFIED. No request endpoint, DB custody CAS, production trusted scanner, object-store adapter, promotion, images in UI, read/delivery, derivatives or signed rights/clinical approval. DO NOT mark #197 complete. Continue only with trusted transactional actor/tenant/version/quota/CSRF binding, durable custody/audit, storage and independent safety and rights approvals; G2/G2b NO-GO, synthetic-only.
 
