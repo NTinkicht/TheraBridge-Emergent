@@ -88,12 +88,73 @@ export const familyThemeCss: Record<string, Record<string, string>> = {
   '.theme-family-dark, html[data-family-theme="dark"] .theme-family-auto': familyVars('dark'),
 };
 
+// Semantic Tailwind colours reference RGB channels so opacity modifiers such
+// as bg-brand-action/20 remain correct. The light palette is unchanged.
+const rgb = (hex: string) => {
+  const value = hex.replace('#', '');
+  if (!/^[0-9a-fA-F]{6}$/.test(value)) throw new Error('Invalid design token');
+  return [0, 2, 4].map(i => parseInt(value.slice(i, i + 2), 16)).join(' ');
+};
+export const themeColors = Object.fromEntries(Object.entries(colors).map(([group, entries]) => [
+  group, Object.fromEntries(Object.keys(entries).map(name =>
+    [name, `rgb(var(--tb-rgb-${group}-${name}) / <alpha-value>)`]))
+])) as Record<keyof typeof colors, Record<string, string>>;
+
+// Staff and family share the same semantic *neutral* colours. Family-specific
+// --fam-* tokens retain their independent Direction B accents and palettes.
+// This deliberately does not grant access to any clinical feature.
+export const darkSemanticOverrides: Record<string, Record<string, string>> = {
+  brand: {
+    ink: '#E9ECF5', inkMuted: '#B7C2DA', action: '#7DB3E8',
+    actionHover: '#A5CEEF', actionTint: '#1C3652', deepNavy: '#A7B9DA',
+    familyTeal: '#5CCFDB', familyTint: '#13394A',
+  },
+  canvas: { clinical: '#0D1226', family: '#0D1226' },
+  surface: { white: '#151B33', subtle: '#222A43' },
+  border: { light: '#364360', strong: '#8799BB' },
+  status: {
+    success: '#83DBB8', successSurface: '#153F39',
+    caution: '#FFD18A', cautionSurface: '#44351F',
+    danger: '#FFA6AB', dangerSurface: '#482631',
+    info: '#96C8F5', infoSurface: '#1B3856',
+  },
+  specialty: {
+    speech: '#B1D5FA', speechTint: '#1C3555',
+    ot: '#A2E6EB', otTint: '#194149',
+    physio: '#C2BDFB', physioTint: '#302C55',
+    aba: '#F3CCA6', abaTint: '#423323',
+    group: '#B9DFB4', groupTint: '#263F31',
+  },
+  parent: {
+    heading: '#E9ECF5', bodyStrong: '#E9ECF5', muted: '#B7C2DA',
+    tile: '#263346', instructionTile: '#243241', link: '#96C8F5',
+  },
+};
+const darkVariables = Object.fromEntries(Object.entries(darkSemanticOverrides).flatMap(
+  ([group, entries]) => Object.entries(entries).flatMap(([name, hex]) => [
+    [`--tb-${group}-${name}`, hex],
+    [`--tb-rgb-${group}-${name}`, rgb(hex)],
+  ])
+));
+export const appThemeCss = {
+  'html[data-app-theme="dark"] .theme-clinical-auto, html[data-app-theme="dark"] .theme-family-auto':
+    darkVariables,
+};
+
+// CSS variables retain their original hex slots for direct CSS consumers and
+// expose RGB equivalents for alpha-aware Tailwind utilities.
+export const semanticRgbVariables = Object.fromEntries(Object.entries(colors).flatMap(
+  ([group, entries]) => Object.entries(entries).map(([name, hex]) =>
+    [`--tb-rgb-${group}-${name}`, rgb(hex)])
+));
+
 // Approved typography (owner decision): Plus Jakarta Sans for headings; IBM Plex Sans for body, forms, data, tables, numbers.
 export const typography = { display: 'Plus Jakarta Sans', body: 'IBM Plex Sans' } as const;
 
 export const signatureBand = [colors.brand.deepNavy, colors.brand.action, colors.brand.cyan, colors.brand.violet] as const;
 
 export const cssVariables: Record<string, string> = {
+  ...semanticRgbVariables,
   ...Object.fromEntries(
     Object.entries(colors).flatMap(([group, values]) =>
       Object.entries(values).map(([name, hex]) => [`--tb-${group}-${name}`, hex]),

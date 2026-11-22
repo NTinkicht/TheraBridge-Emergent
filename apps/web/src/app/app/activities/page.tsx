@@ -145,16 +145,27 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
         <div data-testid="activities-no-results"><EmptyState icon={Search} title="No matching activities"
           body="Try another keyword or clear your filters. Your saved activities are unchanged." /></div>}
       {first && templates.length > 0 && <div className={view === 'grid' ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3' : 'grid grid-cols-1 gap-4'} data-testid="activities-list" data-layout={view}>{templates.map(t => (
-        <div key={t.id} className="min-w-0 space-y-2">
-          <ActivityCard t={t} visual compact />
-          {session.permissions.includes('center.activities.manage') && (
-            <TemplateActions centerId={centerId} template={t} onError={onError}
-              onChanged={message => { setNotice(message); setAdditional(null); void reload(); }} />
-          )}
-          {session.permissions.includes('center.activities.manage') && t.library === 'center' &&
-            (session.activeContext?.type === 'center' && (session.activeContext.role === 'CLINICAL_SUPERVISOR' ||
-              (session.activeContext.role === 'THERAPIST' && t.mine === true))) &&
-            <ActivityMediaDraftPanel key={centerId + ':' + t.id} centerId={centerId} templateId={t.id} templateVersion={t.version} />}
+        <div key={t.id} className="flex h-full min-w-0 flex-col gap-2">
+          <ActivityCard t={t} visual compact layout={view} />
+          <div className="mt-auto flex flex-col gap-2" data-testid={`activity-actions-zone-${t.id}`}>
+            <p className="text-[12px] font-semibold text-brand-inkMuted" data-testid={`activity-ownership-${t.id}`}>
+              {t.mine === true ? 'My activity' : t.library === 'synthetic' ? 'Sample activity' : 'Shared activity'}
+            </p>
+            {session.permissions.includes('center.activities.manage') && <details className="rounded-control border border-border-light bg-surface-white"
+              data-testid={`activity-actions-menu-${t.id}`}>
+              <summary className="flex min-h-[44px] cursor-pointer items-center px-3 text-[13px] font-semibold">
+                Activity actions
+              </summary>
+              <div className="space-y-2 border-t border-border-light p-3">
+                <TemplateActions centerId={centerId} template={t} onError={onError}
+                  onChanged={message => { setNotice(message); setAdditional(null); void reload(); }} />
+                {session.permissions.includes('center.activities.manage') && t.library === 'center' &&
+                  (session.activeContext?.type === 'center' && (session.activeContext.role === 'CLINICAL_SUPERVISOR' ||
+                    (session.activeContext.role === 'THERAPIST' && t.mine === true))) &&
+                  <ActivityMediaDraftPanel key={centerId + ':' + t.id} centerId={centerId} templateId={t.id} templateVersion={t.version} />}
+              </div>
+            </details>}
+          </div>
         </div>
       ))}</div>}
       {first && hasMore && <Button variant="secondary" disabled={loadingMore} onClick={() => void loadMore()} data-testid="activities-load-more">

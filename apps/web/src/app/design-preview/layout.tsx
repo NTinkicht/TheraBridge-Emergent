@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 // Runs during HTML parsing, before first paint, so the family dark theme never flashes light.
-const THEME_SCRIPT = `try{var q=new URLSearchParams(location.search).get('theme');var t=q==='dark'||q==='light'?q:localStorage.getItem('tb-family-theme');document.documentElement.dataset.familyTheme=t==='dark'?'dark':'light'}catch(e){}`;
+const THEME_SCRIPT = `try{var q=new URLSearchParams(location.search).get('theme');var t=q==='dark'||q==='light'?q:(localStorage.getItem('tb-app-theme')||localStorage.getItem('tb-family-theme'));var v=t==='dark'?'dark':'light';document.documentElement.dataset.familyTheme=v;document.documentElement.dataset.appTheme=v}catch(e){}`;
 
 export default function DesignPreviewLayout({ children }: { children: ReactNode }) {
   return (

@@ -1,3 +1,31 @@
+## 2026-11-22 — Gemini review follow-up tests (NOT YET RUN ON LATEST HEAD)
+
+Added mounted two-consumer `useSyncExternalStore` theme synchronization and cross-tab storage tests, preference-with-storage-disabled fallback and stale-key isolation, AppShell icon state test, and a real coordinator Schedule browser assertion that choosing a therapist via dropdown retains the selected scope but clears the stale directory query. Gemini reported no critical XSS/tenant-isolation finding. **These are committed test definitions, not PASS evidence: new CI, coverage and final independent review pending at this checkpoint.** All clinical/production gates remain fail-closed.
+
+## 2026-11-22 — M5 global dark clinical-assist P2 (NOT YET QUALIFIED)
+
+Independent Codex review found that ReportDecisionAssist and HomePlanSyntheticAssist contained hardcoded white panel/field backgrounds with theme-lightened foregrounds, making explanatory and editable text unreadable in dark staff workspaces. Replaced fixed white surfaces with the existing semantic `bg-surface-white` and set explicit corresponding text where required, without changing any clinical workflow or access rule. Added shared consumer source/contrast regression. Final exact-HEAD CI and independent review and owner visual acceptance pending; G2/G2b remains NO-GO.
+
+## 2026-11-22 — M5 global dark shared ErrorState P2 (NOT QUALIFIED)
+
+Codex reviewed the preceding HEAD and found `ErrorState` used hardcoded dark red body text on a status-danger background now re-themed for dark staff pages. Replaced only that body foreground with shared `text-status-danger` semantic colour, respecting the existing family-specific foreground. Added light/dark 4.5:1 contrast regressions and source-integrated check. Final exact-head CI and independent review remain pending; no owner visual signoff, no clinical GO.
+
+## 2026-11-22 — Dark specialty activity card contract checkpoint (NOT YET QUALIFIED)
+
+Introduced CSS variable-based specialty gradients and solid tints in staff ActivityCard, avoiding near-invisible text against static light backgrounds when users select dark mode. Added source-mounted tests for single and multi-service cases and 4.5:1 contrast assertions on every specialty dark-tint/light-text combination. Full exact-HEAD CI, independent Codex and human visual accessibility acceptance still NOT VERIFIED. No old CI run is claimed for this commit.
+
+## 2026-11-22 — PR #461 shared dark theme and cross-screen P2 checkpoint (NOT QUALIFIED)
+
+**Implementation-only checkpoint:** shared theme code and tests added for staff + guardian across all authenticated route shells. New Playwright computed-style checks exercise 7 synthetic personas × 5 widths (header/sidebar/mobile-nav/page canvas and light-mode restoration), with mounted real/preview role tests, RGB alpha variable tests and WCAG AA text colour-pair unit checks. Children and Schedule share effective combobox selected index; child status changes reset index; guardian mobile foregrounds use family tokens. **No new exact-head CI pass or human visual/AT acceptance is asserted in this checkpoint.** Earlier CI receipts apply only to earlier SHAs. All clinical/rights gates remain fail-closed.
+
+## 2026-11-22 — PR #461 final Codex P2 regression checkpoint
+
+Previous exact `c4a86dba`: full CI SUCCESS, eight coverage metrics PASS (API lines 96.81, branches 91.69, functions 95.72, statements 95.38; Web lines 96.44, branches 90.32, functions 91.49, statements 94.29), live-session, Compose, browser/Child360, preview, Smart CI all green. Final Codex review identified autocomplete keyboard overflow P2, **so that SHA was not merged**. Latest P2-fix source/helper tests are committed but **NEW exact-HEAD CI and Codex review NOT YET VERIFIED**. Manual AT/visual owner QA NOT RUN. No fabricated acceptance.
+
+## 2026-11-22 — M5 owner-feedback PR #461
+
+**Execution status:** NEW CODE + TESTS COMMITTED; exact-HEAD CI, >=90% eight-metric coverage, hosted/viewport keyboard/screen-reader, final independent review and owner visual acceptance: **NOT RUN / NOT VERIFIED** at this log point. No fabricated PASS. Synthetic-only activity fixtures and fail-closed clinical/rights/media safeguards remain unchanged. Target tests: `apps/web/test/m5-ux-shared-feedback.test.mjs` and `apps/web/test/coverage-m5-ux-shared-feedback.test.cjs`; existing full suite is mandatory.
+
 ## 2026-11-20 — M5-14 post-merge offline staging integration (NOT QUALIFIED)
 Created an INTERNAL, no-HTTP, private-only candidate staging composition to connect full PNG integrity validation, independent trusted-scanner attestation and actual exclusive filesystem quarantine writes against one snapshotted byte buffer and exact immutable tenant/activity/draft intent. Hardened LocalQuarantineWriter to reject forged/accessor-backed and mutation-prone intents before any async IO. New test exercises persisted private 0600 PNG, exact SHA, no URL/key in receipt, late caller byte/scope mutation, duplicate writes, infected/stale/error scanner proofs, corrupted PNG, forged rights and malicious property getters. Tests/TS typecheck/full CI/Codex review NOT YET RUN/VERIFIED. No request endpoint, DB custody CAS, production trusted scanner, object-store adapter, promotion, images in UI, read/delivery, derivatives or signed rights/clinical approval. DO NOT mark #197 complete. Continue only with trusted transactional actor/tenant/version/quota/CSRF binding, durable custody/audit, storage and independent safety and rights approvals; G2/G2b NO-GO, synthetic-only.
 

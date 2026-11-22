@@ -128,3 +128,58 @@ describe('real tenant-scoped child directory and operational registration',()=>{
   expect(opsApi.children).toHaveBeenCalledTimes(2);
  });
 });
+
+describe('M5 owner feedback: real authorized child search suggestions', () => {
+ it('suggests only scoped child results and opens the selected returned record by keyboard', async () => {
+  jest.useFakeTimers();
+  try {
+   opsApi.children.mockResolvedValue({items:[child(),child({id:'child-b',firstName:'Fictional',lastName:'Bella',preferredName:'Bella'})]});
+   await mount();
+   await change('children-search-input','Bell');
+   await act(async()=>{get('children-search-input').props.onFocus();});
+   expect(find('children-search-suggestions')).toHaveLength(0);
+   await act(async()=>{jest.advanceTimersByTime(250);await Promise.resolve();});
+   expect(opsApi.children).toHaveBeenCalledWith('center-a',{q:'Bell',status:'ACTIVE'});
+   expect(get('children-search-suggestions')).toBeTruthy();
+   const options=get('children-search-suggestions').findAllByProps({role:'option'});
+   expect(options).toHaveLength(2);
+   expect(options[0].props['aria-selected']).toBe(true);
+   const prevent=jest.fn();
+   await act(async()=>get('children-search-input').props.onKeyDown({key:'ArrowDown',preventDefault:prevent}));
+   expect(options[1].props['aria-selected']).toBe(true);
+   await act(async()=>get('children-search-input').props.onKeyDown({key:'Enter',preventDefault:prevent}));
+   expect(prevent).toHaveBeenCalledTimes(2);
+   expect(router.push).toHaveBeenCalledWith('/app/children/child-b');
+  } finally { jest.useRealTimers(); }
+ });
+ it('supports pointer selection, Escape and blur without exposing unauthorized names',async()=>{
+  jest.useFakeTimers();
+  try {
+   await mount();
+   await change('children-search-input','Alex');
+   await act(async()=>{jest.advanceTimersByTime(250);await Promise.resolve();});
+   const results=get('children-search-suggestions');
+   const li=results.findByProps({role:'option'});
+   await act(async()=>li.findByType('button').props.onMouseDown({preventDefault:jest.fn()}));
+   await act(async()=>li.findByType('button').props.onClick());
+   expect(router.push).toHaveBeenCalledWith('/app/children/child-a');
+   await act(async()=>get('children-search-input').props.onFocus());
+   await act(async()=>get('children-search-input').props.onKeyDown({key:'Escape'}));
+   expect(find('children-search-suggestions')).toHaveLength(0);
+   await act(async()=>get('children-search-input').props.onFocus());
+   await act(async()=>get('children-search-input').props.onBlur());
+   expect(find('children-search-suggestions')).toHaveLength(0);
+  } finally { jest.useRealTimers(); }
+ });
+ it('returns no suggestions on network denial and never navigates to a guessed child', async()=>{
+  jest.useFakeTimers();
+  try {
+   opsApi.children.mockResolvedValueOnce({items:[child()]})
+     .mockRejectedValueOnce(new Error('Synthetic child lookup denied'));
+   await mount();await change('children-search-input','Private');
+   await act(async()=>{jest.advanceTimersByTime(250);await Promise.resolve();});
+   expect(find('children-search-suggestions')).toHaveLength(0);
+   expect(router.push).not.toHaveBeenCalled();
+  } finally { jest.useRealTimers(); }
+ });
+});

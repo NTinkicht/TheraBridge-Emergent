@@ -21,9 +21,14 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// Restore the explicit visual preference before hydration to avoid a light
+// header/sidebar flash. The preference is UI-only; it grants no access.
+const APP_THEME_BOOTSTRAP = `try{var t=localStorage.getItem('tb-app-theme')||localStorage.getItem('tb-family-theme');if(t==='light'||t==='dark'){document.documentElement.dataset.appTheme=t;document.documentElement.dataset.familyTheme=t}}catch(e){}`;
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head><script dangerouslySetInnerHTML={{ __html: APP_THEME_BOOTSTRAP }} /></head>
       <body className="min-h-screen antialiased">{children}</body>
     </html>
   );

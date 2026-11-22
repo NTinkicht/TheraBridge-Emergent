@@ -30,6 +30,7 @@ async function role(email, expectedRole, verify) {
     });
     assert.equal(session.status, 200, 'API session must work through same-origin Next routing');
     assert.equal(session.data.activeContext?.role, expectedRole, 'Wrong active context for ' + email);
+    await verifySharedDarkShell(page, expectedRole);
     await verify(page, session.data);
     const signedOut = await page.evaluate(async csrfToken => {
       const response = await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', headers: { 'X-CSRF-Token': csrfToken } });
@@ -40,6 +41,45 @@ async function role(email, expectedRole, verify) {
     await ctx.close();
   }
 }
+// M5-32: REAL Chromium regression for every authorised demo role, including
+// both clinician specialty accounts. Checks CSS computed colours, not merely
+// class names. Never stores screenshots, patient data or login credentials.
+async function verifySharedDarkShell(page, roleName) {
+  const shell = page.getByTestId('product-shell');
+  await shell.waitFor();
+  const toggle = page.getByTestId('app-theme-toggle');
+  await toggle.waitFor();
+  const light = await page.getByTestId('product-top-bar').evaluate(el =>
+    getComputedStyle(el).backgroundColor);
+  assert.equal(light, 'rgb(255, 255, 255)', roleName + ' light topbar baseline');
+  await toggle.click();
+  await page.waitForFunction(() =>
+    document.documentElement.dataset.appTheme === 'dark' &&
+    document.querySelector('[data-testid="product-shell"]')?.getAttribute('data-theme') === 'dark');
+  for (const width of [320, 390, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const observed = await page.evaluate(() => {
+      const c = selector => getComputedStyle(document.querySelector(selector)).backgroundColor;
+      const nav = innerWidth < 768 ? '[data-testid="mobile-nav"]' : '[data-testid="product-sidebar"]';
+      return { header: c('[data-testid="product-top-bar"]'),
+        nav: c(nav), canvas: c('[data-testid="product-shell"]'),
+        viewport: innerWidth, document: document.documentElement.scrollWidth };
+    });
+    assert.equal(observed.header, 'rgb(21, 27, 51)', roleName + ' header at ' + width);
+    assert.equal(observed.nav, observed.header, roleName + ' shared nav palette at ' + width);
+    assert.equal(observed.canvas, 'rgb(13, 18, 38)', roleName + ' dark page canvas at ' + width);
+    assert(observed.document <= width + 8, roleName + ' dark navigation overflow at ' + width);
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await toggle.click();
+  await page.waitForFunction(() =>
+    document.documentElement.dataset.appTheme === 'light' &&
+    document.querySelector('[data-testid="product-shell"]')?.getAttribute('data-theme') === 'light');
+  const restored = await page.getByTestId('product-top-bar').evaluate(el =>
+    getComputedStyle(el).backgroundColor);
+  assert.equal(restored, light, roleName + ' light mode must restore exactly');
+}
+
 const read = (page, path) => page.evaluate(async url => {
   const r = await fetch(url, { credentials: 'include' });
   return { status: r.status, body: await r.json().catch(() => null) };
@@ -211,6 +251,16 @@ try {
       'Schedule must discard a delayed page from an earlier search');
     assert.equal(await page.getByTestId('schedule-therapist-more').count(), 1,
       'Schedule must preserve the fresh search cursor after an obsolete page completes');
+
+    // Gemini follow-up: a selection through the fallback dropdown must not
+    // leave the adjacent search input displaying a stale query. Reset only
+    // the search, not the chosen permission-scoped calendar filter.
+    await scheduleFilter.selectOption(scheduleNewId);
+    assert.equal(await scheduleFilter.inputValue(), scheduleNewId,
+      'Dropdown must preserve the chosen therapist filter');
+    assert.equal(await page.getByTestId('schedule-therapist-search').inputValue(), '',
+      'Choosing from the dropdown must clear an obsolete therapist query');
+    await scheduleFilter.selectOption('');
 
   });
   await role('speech@childrens-home.therabridge.test', 'THERAPIST', async page => {

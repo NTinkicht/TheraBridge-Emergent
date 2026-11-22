@@ -90,12 +90,12 @@ export function HomePlanSyntheticAssist({ ws, v, service, centerId, existing, ed
     <p className="text-[13px] text-brand-inkMuted">Offline fictional library shortlist. No model call, treatment recommendation, consent, approval or family release. Review each candidate before insertion. Saving is separate.</p>
     <Button variant="secondary" onClick={() => { setOpen(!open); discard(); }} data-testid="home-assist-toggle">{open ? 'Hide suggestions' : 'Generate fictional suggestions'}</Button>
     {open && !candidates.length && <p role="status" className="text-[13px]" data-testid="home-ai-no-candidates">No eligible specialty-matched template and editable goal combination.</p>}
-    {open && candidates.map(c => <div key={c.templateId} className="flex flex-wrap items-center gap-2 rounded-control border border-border-light bg-white p-3">
+    {open && candidates.map(c => <div key={c.templateId} className="flex flex-wrap items-center gap-2 rounded-control border border-border-light bg-surface-white p-3">
       <div className="min-w-0 flex-1"><p className="text-[14px] font-semibold">{c.title}</p>
       <p className="break-all text-[12px] text-brand-inkMuted">{c.sourceRefs.join(' · ')} · {c.clinicalValidation}</p></div>
       <Button variant="secondary" size="sm" onClick={() => select(c)} data-testid={'home-assist-review-' + c.templateId}>Review candidate</Button>
     </div>)}
-    {open && selected && <div className="space-y-2 rounded-control border border-border-light bg-white p-3" data-testid="home-ai-review">
+    {open && selected && <div className="space-y-2 rounded-control border border-border-light bg-surface-white p-3" data-testid="home-ai-review">
       <p className="text-[13px] font-semibold">Clinician review: {selected.title}</p>
       {unsafeDraft && <p role="alert" data-testid="home-ai-safety-block" className="text-[12px] text-status-danger">{safety.reasons.join(' ')}</p>}
       {stale && <p role="alert" data-testid="home-ai-stale" className="text-[12px] text-status-danger">Sources changed or are unavailable. Discard and regenerate this candidate.</p>}
@@ -103,7 +103,7 @@ export function HomePlanSyntheticAssist({ ws, v, service, centerId, existing, ed
       <p className="break-all text-[12px] text-brand-inkMuted" data-testid="home-ai-sources">{selected.pinnedSources.map(ref => ref.kind + ':' + ref.id + ' (' + ref.revision + ')').join(' · ')}</p>
       {selected.warnings.map((w,i) => <p key={i} className="text-[12px] text-status-caution">{w}</p>)}
       <label className="block text-[13px] font-semibold">Linked goal
-        <select className="mt-1 w-full rounded-control border border-border-light p-2" value={goalKey} onChange={e => {
+        <select className="mt-1 w-full rounded-control border border-border-light bg-surface-white p-2 text-brand-ink" value={goalKey} onChange={e => {
           const next = e.target.value;
           setGoalKey(next);
           setSelected(prev => prev ? { ...prev, goalKey: next, pinnedSources: [...prev.pinnedSources.filter(ref => ref.kind === 'activity-template'), ...currentSources.filter(ref => ref.kind === 'plan-goal' && ref.id === v.id + ':' + next)] } : null);

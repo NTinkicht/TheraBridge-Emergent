@@ -68,15 +68,17 @@ export function CalendarGrid({ days, items, onOpen, onSlot }: { days: string[]; 
   const nowMin = minutesOfDay(new Date(now).toISOString());
   return (
     <div className="overflow-hidden rounded-card border border-border-light bg-surface-white" data-testid="calendar-grid">
-      <div className="grid border-b border-border-light" style={{ gridTemplateColumns: `56px repeat(${days.length}, minmax(0, 1fr))` }}>
+      {/* The header and slots must share one scrollport. A scrollbar on the
+          hours-only pane previously shifted all body columns relative to headers. */}
+      <div className="max-h-[68vh] scroll-pt-12 overflow-auto" role="region" aria-label="Appointment calendar hours" tabIndex={0}>
+        <div className="sticky top-0 z-20 grid border-b border-border-light bg-surface-white" style={{ gridTemplateColumns: `56px repeat(${days.length}, minmax(0, 1fr))` }}>
         <span />
         {days.map((d) => (
           <p key={d} className={`border-l border-border-light px-2 py-2 text-center text-[13px] font-semibold ${d === today ? 'text-brand-action' : ''}`} data-testid={`calendar-head-${d}`}>
             {dayTitle(d, days.length === 1 ? { weekday: 'long', month: 'long', day: 'numeric' } : { weekday: 'short', day: 'numeric' })}
           </p>
         ))}
-      </div>
-      <div className="max-h-[68vh] overflow-auto" role="region" aria-label="Appointment calendar hours" tabIndex={0}>
+        </div>
         <div className="relative grid" style={{ gridTemplateColumns: `56px repeat(${days.length}, minmax(0, 1fr))`, height: hours.length * HOUR_PX }}>
           <div>{hours.map((h) => <p key={h} className="tnum h-14 pr-2 pt-0.5 text-right text-[11px] text-brand-inkMuted">{hourLabel(h)}</p>)}</div>
           {days.map((d) => {

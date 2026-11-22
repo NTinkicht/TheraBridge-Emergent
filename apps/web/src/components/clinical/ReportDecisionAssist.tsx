@@ -99,7 +99,7 @@ export function ReportDecisionAssist({ centerId, reportId, getVersion, flush, be
         const omitted = history?.action === 'OMITTED';
         const applied = history?.action === 'APPLIED';
         const staleness = history?.status === 'REQUIRES_REVIEW';
-        return <section key={section} className="space-y-2 rounded-control border border-border-light bg-white p-3" data-testid={`report-suggestion-${section}`}>
+        return <section key={section} className="space-y-2 rounded-control border border-border-light bg-surface-white p-3" data-testid={`report-suggestion-${section}`}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h4 className="text-[14px] font-semibold">{TITLES[section]}</h4>
             <span className="text-[12px] font-semibold text-brand-inkMuted" data-testid={`report-assist-decision-${section}`}>
@@ -118,7 +118,7 @@ export function ReportDecisionAssist({ centerId, reportId, getVersion, flush, be
           : !applied ? <>
             <label className="block text-[13px] font-semibold">
               Supporting source (required)
-              <select className="mt-1 min-h-[44px] w-full rounded-control border border-border-strong bg-white p-2 text-[13px]"
+              <select className="mt-1 min-h-[44px] w-full rounded-control border border-border-strong bg-surface-white p-2 text-[13px] text-brand-ink"
                 aria-label={`Source for ${section} claim`} data-testid={`report-assist-source-${section}`}
                 disabled={busy} value={chosen.sourceRef} onChange={e => { setFailure(f => f === VALIDATION_MESSAGE ? null : f); setDrafts(old => ({ ...old, [section]: { ...old[section], sourceRef: e.target.value } })); }}>
                 <option value="">Select a recorded source</option>
@@ -127,7 +127,7 @@ export function ReportDecisionAssist({ centerId, reportId, getVersion, flush, be
             </label>
             <label className="block text-[13px] font-semibold">
               Your own reviewed factual statement
-              <textarea className="mt-1 w-full rounded-control border border-border-strong bg-white p-2 text-[14px]"
+              <textarea className="mt-1 w-full rounded-control border border-border-strong bg-surface-white p-2 text-[14px] text-brand-ink"
                 rows={3} maxLength={1200} aria-label={`Review factual ${section} passage`}
                 data-testid={`report-assist-edit-${section}`} disabled={busy} value={chosen.text}
                 onChange={e => { setFailure(f => f === VALIDATION_MESSAGE ? null : f); setDrafts(old => ({ ...old, [section]: { ...old[section], text: e.target.value } })); }}/>

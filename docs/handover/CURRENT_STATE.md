@@ -1,3 +1,34 @@
+## 2026-11-22 — PR #461 Gemini review follow-up (IMPLEMENTED; FINAL QUALIFICATION PENDING)
+
+Gemini review reported no critical new XSS/tenant-isolation issue, and identified independent per-hook theme-state desynchronization, AppShell dark-icon CSS coupling and stale Schedule search text following dropdown selection. Replaced per-component state with shared `useSyncExternalStore` / storage-event subscription while preserving explicit light/dark validation, the family migration key and visual-only behavior. Preview icons now render from the reactive theme; Schedule clears stale directory search when a therapist is chosen from the scope-authorized dropdown while preserving the selected filter and full directory. Added two-consumer/cross-tab/error-path tests, mounted icon test, and CI-only Playwright selection regression. **New exact-HEAD CI and independent Codex re-review NOT YET VERIFIED; owner visual/AT acceptance remains NOT_RUN.** Clinical gates G2/G2b NO-GO unchanged.
+
+## 2026-11-22 — M5 global dark clinical-assist P2 (NOT YET QUALIFIED)
+
+Independent Codex review found that ReportDecisionAssist and HomePlanSyntheticAssist contained hardcoded white panel/field backgrounds with theme-lightened foregrounds, making explanatory and editable text unreadable in dark staff workspaces. Replaced fixed white surfaces with the existing semantic `bg-surface-white` and set explicit corresponding text where required, without changing any clinical workflow or access rule. Added shared consumer source/contrast regression. Final exact-HEAD CI and independent review and owner visual acceptance pending; G2/G2b remains NO-GO.
+
+## 2026-11-22 — M5 global dark shared ErrorState P2 (NOT QUALIFIED)
+
+Codex reviewed the preceding HEAD and found `ErrorState` used hardcoded dark red body text on a status-danger background now re-themed for dark staff pages. Replaced only that body foreground with shared `text-status-danger` semantic colour, respecting the existing family-specific foreground. Added light/dark 4.5:1 contrast regressions and source-integrated check. Final exact-head CI and independent review remain pending; no owner visual signoff, no clinical GO.
+
+## 2026-11-22 — PR #461 Codex dark specialty-card P2 correction (UNQUALIFIED HEAD)
+
+Codex independently identified that staff ActivityCard surfaces still used literal light specialty tint/gradient values with light text in dark mode, breaking contrast. Updated only ActivityCard presentation to map approved specialty identities to semantic `--tb-specialty-*` CSS variables (single and multiple-service gradient). The approved literal specialty metadata, permissions and guardian card behavior are unchanged. Mounted card regressions and numerical dark-text/tint >=4.5:1 checks added. Full exact-head CI and independent review still PENDING. G2/G2b NO-GO preserved.
+
+## 2026-11-22 — PR #461 shared dark theme and cross-screen P2 checkpoint (NOT QUALIFIED)
+
+M5 observation 32 was corrected from guardian-only to all authenticated roles. Implemented shared clinical/family dark semantic RGB+hex tokens, persisted prepaint preference and theme switches in real ProductShell and preview AppShell, plus matching sidebar/header/mobile/More colours and readable raster logo chips. A seven-persona × five-viewport Playwright computed-style check, mounted role/theme regressions and WCAG colour-pair tests were added. Codex P2 child index/ARIA desynchronization was fixed via a shared effective index used in both Children and Schedule pickers; guardian mobile inactive foregrounds now use family tokens. Existing pending Codex P2s must be re-reviewed. **Latest exact-head CI, coverage, independent review and human visual/AT acceptance are NOT YET VERIFIED; do not merge or declare M5 complete.** Clinical G2/G2b remains NO-GO.
+
+## 2026-11-22 — PR #461 final Codex P2 autocomplete visibility fix (UNQUALIFIED HEAD)
+
+Codex exact-HEAD review on `c4a86dba` identified a real P2: keyboard active option could move beyond an eight-suggestion dropdown. Shared `revealActiveSuggestion` listbox-scoped scroll helper now handles forward/backward selection, viewport bounds and malformed index without page scrolling; both children and Schedule therapist lists are wired to this helper. Added mounted overflow/reverse-scroll and source integration regressions. Prior exact-head `c4a86dba` had all six core CI gates plus 8 unrounded API/Web >=90% metrics green. **The new P2 fix HEAD is not yet requalified; final CI, new independent review and human accessibility evidence remain pending.** All clinical G2/G2b NO-GO gates unchanged.
+
+## 2026-11-22 — M5 owner-feedback shared UX PR #461 (DRAFT; NOT QUALIFIED)
+
+- Owner's 32 unique manual findings mapped to 5 packages. This PR addresses #1/#2/#3/#5/#6/#7/#8/#12/#26/#32, shared across administrator, coordinator, therapists, supervisor and guardian.
+- Implemented on isolated branch: schedule scrollport-aligned header/body and therapist typeahead; authorized child-name suggestions and stable child columns; responsive staff activity cards, existing approved specialty tints with optional multi-service gradient presentation, clear activity provenance and stable action zones; family-only theme tokens on authenticated shell surfaces.
+- No change to real clinical signing, STT, guardian release, source rights, actual approved images or backend authorization. Multi-service persisted activity assignment is NOT IMPLEMENTED by this package (existing templates still have one service).
+- **CI/coverage, real hosted browser, visual 320/390/768/1024/1440, assistive technology and final independent review: NOT RUN / NOT VERIFIED at documentation checkpoint.** Do not merge or deploy without subsequent exact-HEAD qualification and owner review.
+
 ## 2026-11-20 — M5-14 post-merge offline staging integration (NOT QUALIFIED)
 Created an INTERNAL, no-HTTP, private-only candidate staging composition to connect full PNG integrity validation, independent trusted-scanner attestation and actual exclusive filesystem quarantine writes against one snapshotted byte buffer and exact immutable tenant/activity/draft intent. Hardened LocalQuarantineWriter to reject forged/accessor-backed and mutation-prone intents before any async IO. New test exercises persisted private 0600 PNG, exact SHA, no URL/key in receipt, late caller byte/scope mutation, duplicate writes, infected/stale/error scanner proofs, corrupted PNG, forged rights and malicious property getters. Tests/TS typecheck/full CI/Codex review NOT YET RUN/VERIFIED. No request endpoint, DB custody CAS, production trusted scanner, object-store adapter, promotion, images in UI, read/delivery, derivatives or signed rights/clinical approval. DO NOT mark #197 complete. Continue only with trusted transactional actor/tenant/version/quota/CSRF binding, durable custody/audit, storage and independent safety and rights approvals; G2/G2b NO-GO, synthetic-only.
 

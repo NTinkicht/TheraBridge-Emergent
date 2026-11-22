@@ -17,7 +17,7 @@ const s=(overrides={})=>({
   permissions:['center.children.read','center.schedule.read','center.activities.read','center.clinical.read'],
   ...overrides
 });
-let tree,oldDocument,oldWindow,media,focusLog,panelFocusables;
+let tree,oldDocument,oldWindow,oldStorage,media,focusLog,panelFocusables;
 const get=id=>tree.root.findByProps({'data-testid':id});
 const all=id=>tree.root.findAllByProps({'data-testid':id});
 const mount=async(session=s(),active='children',planned=[])=>act(async()=>{tree=create(h(ProductShell,{session,active,planned,children:'Synthetic workspace'}),{
@@ -27,13 +27,14 @@ const click=async id=>act(async()=>get(id).props.onClick());
 const change=async(id,value)=>act(async()=>get(id).props.onChange({target:{value}}));
 const output=()=>JSON.stringify(tree.toJSON());
 beforeEach(()=>{
-  jest.clearAllMocks();tree=null;focusLog=[];panelFocusables=[];oldDocument=global.document;oldWindow=global.window;
+  jest.clearAllMocks();tree=null;focusLog=[];panelFocusables=[];oldDocument=global.document;oldWindow=global.window;oldStorage=global.localStorage;
   media={matches:false,addEventListener:jest.fn(),removeEventListener:jest.fn()};
   global.window={matchMedia:jest.fn(()=>media)};
-  global.document={body:{style:{overflow:'scroll'}},documentElement:{style:{overflow:'auto'}},
+  global.document={body:{style:{overflow:'scroll'}},documentElement:{style:{overflow:'auto'},dataset:{appTheme:'light',familyTheme:'light'}},
     activeElement:null,querySelector:jest.fn(()=>({focus:()=>focusLog.push('desktop')}))};
+  global.localStorage={setItem:jest.fn()};
 });
-afterEach(async()=>{if(tree){await act(async()=>tree.unmount());tree=null;}global.document=oldDocument;global.window=oldWindow;});
+afterEach(async()=>{if(tree){await act(async()=>tree.unmount());tree=null;}global.document=oldDocument;global.window=oldWindow;global.localStorage=oldStorage;});
 describe('real staff navigation and keyboard interaction branches',()=>{
   it('filters only authorized destinations, including empty search and restoration',async()=>{
     await mount();
@@ -126,6 +127,57 @@ describe('real staff navigation and keyboard interaction branches',()=>{
   });
 });
 
+
+describe('M5 shared dark-theme cross-role regression',()=>{
+  const roles=['PLATFORM_ADMIN','CENTER_ADMIN','COORDINATOR','THERAPIST','SUPERVISOR','GUARDIAN'];
+  it.each(roles)('keeps %s topbar/sidebar/mobile navigation on one theme',async role=>{
+    const context=role==='PLATFORM_ADMIN'?{type:'platform',role}:{...center,role};
+    const permissions=role==='GUARDIAN'?['family.activities.read','family.practice.read']:
+      role==='PLATFORM_ADMIN'?['platform.applications.read']:
+      ['center.children.read','center.schedule.read','center.activities.read','center.clinical.read'];
+    await mount(s({activeContext:context,contexts:[context],permissions}),role==='GUARDIAN'?'practice':'children');
+    const root=get('product-shell');
+    expect(root.props.className).toContain(role==='GUARDIAN'?'theme-family-auto':'theme-clinical-auto');
+    expect(get('product-top-bar').props.className).toContain(role==='GUARDIAN'?'bg-fam-surface':'bg-surface-white');
+    expect(get('product-sidebar').props.className).toContain(role==='GUARDIAN'?'bg-fam-surface':'bg-surface-white');
+    expect(get('mobile-nav').props.className).toContain(role==='GUARDIAN'?'bg-fam-surface':'bg-surface-white');
+    await click('app-theme-toggle');
+    expect(get('product-shell').props['data-theme']).toBe('dark');
+    expect(get('app-theme-toggle').props['aria-pressed']).toBe(true);
+    expect(global.document.documentElement.dataset.appTheme).toBe('dark');
+    expect(global.document.documentElement.dataset.familyTheme).toBe('dark');
+    expect(global.localStorage.setItem).toHaveBeenCalledWith('tb-app-theme','dark');
+    await click('mobile-more-button');
+    expect(get('mobile-more-sheet')).toBeTruthy();
+    await click('mobile-more-close');
+    await click('app-theme-toggle');
+    expect(get('product-shell').props['data-theme']).toBe('light');
+    expect(get('app-theme-toggle').props['aria-label']).toBe('Switch to dark theme');
+  });
+  it('uses family-muted foreground on dark guardian mobile nav and More controls',async()=>{
+    await mount(s({activeContext:guardian,contexts:[guardian],
+      permissions:['family.activities.read','family.practice.read']}),'practice');
+    await click('app-theme-toggle');
+    expect(get('mobile-more-button').props.className).toContain('text-fam-muted');
+    expect(get('mobile-nav').props.className).toContain('bg-fam-surface');
+    await click('mobile-more-button');
+    expect(get('mobile-more-sheet')).toBeTruthy();
+    const quick=all('mobile-quick-practice');
+    if(quick.length) expect(quick[0].props.className).toContain('bg-fam-accentTint');
+    expect(JSON.stringify(tree.toJSON())).toContain('All destinations');
+  });
+  it('persists one dark preference across an authorized therapist-to-guardian context change',async()=>{
+    await mount(s({contexts:[center,guardian]}),'children');
+    await click('app-theme-toggle');
+    await act(async()=>tree.update(h(ProductShell,{session:s({
+      activeContext:guardian,contexts:[center,guardian],permissions:['family.activities.read','family.practice.read']
+    }),active:'practice',planned:[],children:'Fictional guardian activity'})));
+    expect(get('product-shell').props.className).toContain('theme-family-auto');
+    expect(get('product-shell').props['data-theme']).toBe('dark');
+    expect(get('app-theme-toggle').props['aria-pressed']).toBe(true);
+    expect(all('nav-clinical')).toHaveLength(0);
+  });
+});
 
 describe('real mobile dialog accessible focus-loop and expanded-only navigation',()=>{
   const focusable=()=>({getClientRects:()=>[{}],focus:jest.fn()});

@@ -132,6 +132,27 @@ export async function runWU2BrowserQualification({ passwords, output }) {
           assert.equal(dimensions.main, 1, 'Exactly one main landmark');
           assert(dimensions.document <= dimensions.viewport + 1,
             'WU2 horizontal overflow at ' + width + 'px');
+          // Owner M5 feedback: nested sticky calendar header must not cover a
+          // keyboard-focused booking slot after scrolling. Use only an existing
+          // synthetic coordinator schedule; never mutate an appointment.
+          if (persona.role === 'COORDINATOR' && width >= 768) {
+            const cal = page.getByTestId('calendar-grid');
+            await cal.waitFor({ state: 'visible' });
+            const port = cal.getByRole('region', { name: 'Appointment calendar hours' });
+            await port.evaluate(el => { el.scrollTop = el.scrollHeight; });
+            const firstSlot = cal.locator('[data-testid^="calendar-slot-"]').first();
+            await firstSlot.focus();
+            const visibleBelowHeader = await firstSlot.evaluate(el => {
+              const scroll = el.closest('[role="region"]');
+              const header = scroll?.querySelector('[data-testid^="calendar-head-"]');
+              if (!header || !scroll) return false;
+              const focused = el.getBoundingClientRect();
+              const dayHeading = header.getBoundingClientRect();
+              const pane = scroll.getBoundingClientRect();
+              return focused.top >= dayHeading.bottom - 2 && focused.top < pane.bottom;
+            });
+            assert(visibleBelowHeader, 'Keyboard-focused calendar slot hidden under sticky header');
+          }
           if (persona.role === 'CLINICAL_SUPERVISOR') {
             assert.equal(await page.locator('[data-testid^="family-message-thread"]').count(), 0,
               'Supervisor family conversation cannot be exposed');

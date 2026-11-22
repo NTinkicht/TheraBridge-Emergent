@@ -1,3 +1,47 @@
+## 2026-11-22 — PR #461 Gemini review closeout queue
+
+1. Run all final-HEAD GitHub CI including test, preview-container, demo-journey, live-session, compose, source-contracts, secret-scan, SBOM, Smart CI and eight unrounded >=90% Web/API coverage metrics; investigate any failure without reducing standards.
+2. Obtain exact-head independent Codex review after Gemini fixes and resolve outstanding original Codex P2s only on implementation + tested evidence. Reconcile any new findings.
+3. Keep all-role dark/light screenshot, keyboard/AT and actual owner acceptance NOT_RUN until evidenced. Do not merge without required gates, and never activate G2/G2b clinical actions.
+4. Once actually qualified, merge PR #461, deploy synthetic Render preview from reviewed main and verify exact commit before the next owner testing task.
+
+## 2026-11-22 — M5 global dark clinical-assist P2 (NOT YET QUALIFIED)
+
+Independent Codex review found that ReportDecisionAssist and HomePlanSyntheticAssist contained hardcoded white panel/field backgrounds with theme-lightened foregrounds, making explanatory and editable text unreadable in dark staff workspaces. Replaced fixed white surfaces with the existing semantic `bg-surface-white` and set explicit corresponding text where required, without changing any clinical workflow or access rule. Added shared consumer source/contrast regression. Final exact-HEAD CI and independent review and owner visual acceptance pending; G2/G2b remains NO-GO.
+
+## 2026-11-22 — M5 global dark shared ErrorState P2 (NOT QUALIFIED)
+
+Codex reviewed the preceding HEAD and found `ErrorState` used hardcoded dark red body text on a status-danger background now re-themed for dark staff pages. Replaced only that body foreground with shared `text-status-danger` semantic colour, respecting the existing family-specific foreground. Added light/dark 4.5:1 contrast regressions and source-integrated check. Final exact-head CI and independent review remain pending; no owner visual signoff, no clinical GO.
+
+## 2026-11-22 — Latest M5 dark specialty-card P2 verification gate
+
+1. Run final-HEAD full CI, seven-persona Chromium, coverage >=90% across eight API/Web metrics, browser/Compose/preview/secret/SBOM/Smart CI.
+2. Re-review latest commit for dark specialty-card dynamic tint and all outstanding child-search/mobile P2s; resolve only after verified.
+3. Record real visual/keyboard/assistive-technology acceptance across staff/guardian pages and five widths; remain NOT_RUN pending observation.
+4. Merge/deploy only on qualified HEAD and required owner acceptance; keep synthetic-only G2/G2b clinical NO-GO.
+
+## 2026-11-22 — PR #461 shared dark theme and cross-screen P2 checkpoint (NOT QUALIFIED)
+
+1. Qualify the final PR #461 HEAD using full six required CI jobs, measured API/Web eight >=90% metrics, all browser/Compose/preview/secret/SBOM and Smart CI checks. Diagnose any true failure without reducing standards.
+2. Obtain independent Codex review of the exact final head and resolve all open P2 threads only when fixed; inspect shared theme and child/schedule combobox regressions.
+3. Perform synthetic human role review at 320/390/768/1024/1440 with staff/guardian dark/light, nested surfaces, keyboard, contrast, RTL and real assistive technology; mark NOT_RUN until observed.
+4. Only merge after gates pass, then deploy reviewed main to Render synthetic demo and verify deployment commit; preserve G2/G2b clinical NO-GO and do not claim M5 milestone closure.
+
+## 2026-11-22 — PR #461 newest-head requalification
+
+1. Rerun eight unrounded >=90% API/Web metrics and complete required test, secret-scan, live-session, preview-container, demo-journey, compose, Child360, SBOM, source-contracts and Smart CI on the NEW P2-fix HEAD.
+2. Request independent Codex review of that exact final SHA after CI. Resolve P2 only after verifying scrollable active options by keyboard and preserving authorized person selection.
+3. Verify 320/390/768/1024/1440 actual screenshots, family dark contrast, keyboard and assistive technology manually; keep owner M5 acceptance separate from CI.
+4. Merge only on fully green final HEAD, no open P0/P1/P2 and AGENTS.md Rule 16; synthetic-only preview, clinical G2/G2b NO-GO preserved.
+
+## 2026-11-22 — PR #461 exact-HEAD completion gate
+
+1. Run real full CI on final HEAD: six required jobs, Smart CI, source contracts, browser/preview/Compose, security/SBOM and all eight unrounded >=90% Web/API branch/function/line/statement floors; fix genuine failures without disabling assertions.
+2. Verify interactive therapist/child autocomplete keyboard/pointer, schedule shared-scrollport alignment, all staff card grid/list widths, guardian dark-mode shell contrast, no unauthorized child/center exposure or hidden clinical guardrail.
+3. Inspect exact final HEAD and independent Codex review; explicitly dispose every P0/P1/P2/P3 comment under Rule 13, and request final exact-HEAD review after CI is green.
+4. Perform owner acceptance/real NVDA/VoiceOver, RTL, contrast and screenshot checks at 320/390/768/1024/1440; record PASS/FAIL/BLOCKED truthfully. Only then mark the 10 findings resolved. Next package is PR 2 administrative/operations, parallelizable with PR 3 therapist workspace after PR 1 merge.
+5. Preserve sample-only synthetic media and fail-closed G2/G2b. Do not deploy clinical activation or call PR #461 M5 closeout.
+
 ## 2026-11-20 — M5-14 post-merge offline staging integration (NOT QUALIFIED)
 Created an INTERNAL, no-HTTP, private-only candidate staging composition to connect full PNG integrity validation, independent trusted-scanner attestation and actual exclusive filesystem quarantine writes against one snapshotted byte buffer and exact immutable tenant/activity/draft intent. Hardened LocalQuarantineWriter to reject forged/accessor-backed and mutation-prone intents before any async IO. New test exercises persisted private 0600 PNG, exact SHA, no URL/key in receipt, late caller byte/scope mutation, duplicate writes, infected/stale/error scanner proofs, corrupted PNG, forged rights and malicious property getters. Tests/TS typecheck/full CI/Codex review NOT YET RUN/VERIFIED. No request endpoint, DB custody CAS, production trusted scanner, object-store adapter, promotion, images in UI, read/delivery, derivatives or signed rights/clinical approval. DO NOT mark #197 complete. Continue only with trusted transactional actor/tenant/version/quota/CSRF binding, durable custody/audit, storage and independent safety and rights approvals; G2/G2b NO-GO, synthetic-only.
 

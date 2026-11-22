@@ -16,6 +16,23 @@ h1, h2, h3 {
   --focus-ring: var(--fam-focus);
 }
 
+/* The official raster wordmark is designed for a light surface. A compact
+   white chip keeps it legible even when the enclosing staff/family shell is dark. */
+html[data-app-theme="dark"] :is(.theme-clinical-auto, .theme-family-auto) [data-testid="shell-logo-chip"] {
+  background-color: #FFFFFF;
+  border-radius: 10px;
+  padding: 4px 6px;
+}
+
+/* Dark-theme action fills become lighter for accessibility. Existing
+   text-white actions therefore need a dark on-action ink; apply to every
+   shared semantic action, not an isolated page-specific button. Light
+   mode and family --fam-onAccent actions remain unchanged. */
+html[data-app-theme="dark"] :is(.theme-clinical-auto, .theme-family-auto)
+  :is(.bg-brand-action, .bg-status-success, .bg-status-caution, .bg-status-danger) {
+  color: #0D1226;
+}
+
 .tnum {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
