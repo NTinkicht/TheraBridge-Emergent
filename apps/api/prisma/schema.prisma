@@ -189,6 +189,8 @@ model Center {
   timezone      String             @db.VarChar(64)
   country       String?            @db.VarChar(80)
   city          String?            @db.VarChar(80)
+  contactEmail  String?            @map("contact_email") @db.VarChar(254)
+  contactPhone  String?            @map("contact_phone") @db.VarChar(40)
   specialties   String[]           @db.VarChar(32)
   source        CenterSource       @default(DIRECT)
   applicationId String?            @unique @map("application_id") @db.Uuid
