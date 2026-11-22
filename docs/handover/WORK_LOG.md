@@ -1352,5 +1352,8 @@ On PR #456, exact-head CI for `8905ffb` failed the `demo-journey` job (run 44724
 ## 2026-11-22 — PR #469 Smart CI decision implementation (QUALIFICATION PENDING)
 Diagnosed unconditional `execution: full` in scripts/ci/smart-ci.mjs and redundant push+pull_request events on feature branches. Implemented PR-only full qualification for feature branches, full main push verification, narrowly allowlisted docs-only plan and strict gate including secret/SBOM/docs tests; added adversarial tests and Rule 16A owner-approved exception. Do not claim CI PASS or merge pending exact-head green checks and review.
 
+## 2026-11-23 — #473 21: version-scoped authoring steps (EXACT-HEAD QUALIFICATION PENDING)
+PlanVersion editor: mounted summary/goals/activities, no implicit draft save or release. Code and synthetic regression tests committed on the PR branch. All eight >=90% coverage floors, full per-PR CI, Codex P0/P1/P2 review disposition, five-width visual and keyboard/AT checks, and explicit owner acceptance remain separate and are **NOT YET CLAIMED**. Clinical G2/G2b NO-GO, permissions, consent, and rights restrictions stay unchanged. Do not close the observation based only on the existence of this PR.
+
 ## 2026-11-23 — PR #475, guardian observations 28–31 (NOT YET QUALIFIED)
 Rights-safe compact practice cards, a distinct family-documents destination, authorized linked-child tabs and clarified home-practice naming are implemented. The charts remain synthetic regardless of selected child; real family files remain blocked by the existing server release/consent gates. Full CI, eight >=90% metrics, Codex and five-width keyboard/AT/owner verification are pending. No production clinical or image rights approval is implied; G2/G2b remains NO-GO.
