@@ -34,7 +34,7 @@ export class UpdateCenterDto {
   // Empty string explicitly clears an optional center contact; callers
   // cannot smuggle whitespace or unexpected formatting into public settings.
   @IsOptional() @trim() @IsString() @MaxLength(254)
-  @Matches(/^$|^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/, { message: 'contactEmail must be a valid email address or blank' })
+  @Matches(/^$|^[^@\s]+@[^@\s]+\.[^@\s]+$/, { message: 'contactEmail must be a valid email address or blank' })
   contactEmail?: string;
   @IsOptional() @trim() @IsString()
   @Matches(/^$|^[+()0-9 .-]{6,40}$/, { message: 'contactPhone must be a valid phone number or blank' })
