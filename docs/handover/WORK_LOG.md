@@ -1,3 +1,7 @@
+## 2026-11-22 — M5-32 cross-screen specialty-card dark fix on #461
+
+Closed implementation gap found by Codex P2: replace hardcoded light ActivityCard colour/tint with runtime semantic CSS variables for single/multiple specialties, preserving existing specialty metadata identity and family behavior. Added Jest mounted and alpha/contrast tests; final CI and review NOT VERIFIED. No clinical action activated.
+
 ## 2026-11-22 — PR #461 shared dark theme and cross-screen P2 checkpoint (NOT QUALIFIED)
 
 Implemented global (not guardian-only) dark mode in shared shell/theme source, with both staff and family palette, pre-hydration preference restoration, role-neutral toggle, alpha-correct Tailwind variable colours, contrast-safe on-action text, and a logo contrast chip. Extended real browser checks for 7 personas × 5 widths and mounted/semantic Jest contracts. Fixed remaining known generic P2s by normalizing child and therapist active-combobox option across highlighting/ARIA/scroll/Enter, resetting child selection on status change, and using family foreground variants in dark mobile navigation. **Code committed; exact HEAD CI/review/human approval pending.** No clinical feature activation.
