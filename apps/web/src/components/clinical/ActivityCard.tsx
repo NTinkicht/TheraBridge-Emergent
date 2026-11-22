@@ -28,7 +28,7 @@ export function ActivityCard({ t, tone = 'clinical', extra, visual = false, comp
     : undefined;
   const showList = layout === 'list' && visual;
   return (
-    <Card tone={tone} className="flex h-full flex-col overflow-hidden" testId={`activity-${t.id}`}>
+    <Card tone={tone} className="flex min-h-0 flex-1 flex-col overflow-hidden" testId={`activity-${t.id}`}>
       {!fam && accent && <div aria-hidden="true" className="h-1.5 w-full shrink-0" style={{ background: accent }}
         data-testid={`activity-specialty-accent-${t.id}`} />}
       <div className={`flex min-w-0 flex-1 flex-col gap-4 p-5 ${showList ? 'sm:flex-row' : ''}`}
