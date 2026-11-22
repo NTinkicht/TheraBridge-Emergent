@@ -7,8 +7,9 @@ export function verifySmartGate(needs){
  const plan=needs['smart-plan'];
  if(plan?.result!=='success')throw Error('plan_not_successful');
  const mode=plan.outputs?.mode;
- // A targeted mode may never attest a PR's eight mandatory measured metrics.
- if(mode!=='full')throw Error('mandatory_full_coverage_required');
+ // Only narrowly classified owner-approved docs may use a reduced matrix.
+ // Skipped jobs never claim coverage or release evidence; code remains full.
+ if(mode!=='full' && mode!=='docs')throw Error('unsupported_ci_plan');
  const expected=expectedJobs(mode);
  const mismatches=[];
  for(const [name,outcome] of Object.entries(expected)){
@@ -16,7 +17,7 @@ export function verifySmartGate(needs){
  }
  if(mismatches.length)throw Error('required_checks_not_satisfied:'+mismatches.sort().join(','));
  return {mode,verified:Object.keys(expected).length,
-   status:'SMART_CI_POLICY_PASS'};
+   status:mode==='docs'?'SMART_CI_DOCS_POLICY_PASS':'SMART_CI_POLICY_PASS'};
 }
 if(process.argv[1]?.endsWith('/smart-ci-gate.mjs')){
  try{
