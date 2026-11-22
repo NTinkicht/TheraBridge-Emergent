@@ -18,10 +18,26 @@ afterEach(() => { if (tree) { act(() => tree.unmount()); tree = null; } });
 describe('M5 owner-feedback activity-card layouts and specialty identity', () => {
   it('uses the established OT palette and retains a visible safety notice outside disclosure', () => {
     mount();
-    expect(byId('activity-specialty-accent-activity-synthetic-01').props.style.background).toBe(colors.specialty.ot);
+    expect(byId('activity-specialty-accent-activity-synthetic-01').props.style.background).toBe('var(--tb-specialty-ot)');
+    expect(byId('activity-specialty-accent-activity-synthetic-01').props.style.background).not.toBe(colors.specialty.ot);
     expect(byId('activity-media-placeholder-activity-synthetic-01')).toBeTruthy();
     expect(byId('activity-safety-activity-synthetic-01').findAllByType('li')).toHaveLength(1);
     expect(tree.root.findAllByType('details')).toHaveLength(1);
+  });
+  it('uses role-independent semantic tint variables rather than light-only literal hex values', () => {
+    mount();
+    const surface = byId('activity-activity-synthetic-01').findAllByType('div')
+      .find(node => node.props.style?.background?.includes('--tb-specialty-'));
+    expect(surface?.props.style.background).toBe('var(--tb-specialty-otTint)');
+    expect(surface?.props.style.background).not.toBe(colors.specialty.otTint);
+  });
+  it('keeps multi-specialty gradient stops theme-aware for dark clinical shells', () => {
+    mount({service:'speech',services:['speech','occupational']});
+    const surface = byId('activity-activity-synthetic-01').findAllByType('div')
+      .find(node => node.props.style?.background?.startsWith('linear-gradient(115deg'));
+    expect(surface?.props.style.background).toContain('var(--tb-specialty-speechTint)');
+    expect(surface?.props.style.background).toContain('var(--tb-specialty-otTint)');
+    expect(surface?.props.style.background).not.toContain(colors.specialty.speechTint);
   });
   it('keeps a compact 4:3 thumbnail in list and a full-width visual in grid', () => {
     mount({}, {layout:'list'});
@@ -34,13 +50,13 @@ describe('M5 owner-feedback activity-card layouts and specialty identity', () =>
     mount({service:'speech',services:['speech','occupational'],library:'center'});
     const accent = byId('activity-specialty-accent-activity-synthetic-01').props.style.background;
     expect(accent).toContain('linear-gradient');
-    expect(accent).toContain(colors.specialty.speech);
-    expect(accent).toContain(colors.specialty.ot);
+    expect(accent).toContain('var(--tb-specialty-speech)');
+    expect(accent).toContain('var(--tb-specialty-ot)');
     expect(JSON.stringify(tree.toJSON())).toContain('Speech & language, Occupational therapy');
   });
   it('ignores unknown service aliases in a multi-service tint rather than inventing specialty tokens', () => {
     mount({services:['unknown', 'behavioral', 'behavioral'],materials:[],steps:[]});
-    expect(byId('activity-specialty-accent-activity-synthetic-01').props.style.background).toBe(colors.specialty.aba);
+    expect(byId('activity-specialty-accent-activity-synthetic-01').props.style.background).toBe('var(--tb-specialty-aba)');
     expect(tree.root.findAllByType('details')).toHaveLength(0);
     expect(byId('activity-safety-activity-synthetic-01')).toBeTruthy();
   });
