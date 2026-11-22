@@ -8,7 +8,7 @@ import { Dialog } from '@/components/design/states';
 import { ApiError } from '@/lib/api';
 import { SPECIALTY_OPTIONS } from '@/lib/auth';
 import { getCenterTz, isoWeekday, opsApi, zonedParts, zonedToUtc, type Appointment, type Assignment, type ChildRow, type Clash } from '@/lib/operations';
-import { RepeatFields, type Repeat } from './RepeatFields';
+import { RepeatFields, recurringIntervalWeeks, type Repeat } from './RepeatFields';
 
 export const serviceLabel = (s: string) => SPECIALTY_OPTIONS.find((o) => o.value === s)?.label ?? s;
 const tomorrow = () => zonedParts(new Date(Date.now() + 86_400_000).toISOString()).date;
@@ -25,7 +25,7 @@ export function BookDialog({ centerId, open, onClose, onDone, onError, childId, 
   const [children, setChildren] = useState<ChildRow[]>([]);
   const [team, setTeam] = useState<Assignment[]>([]);
   const [f, setF] = useState(() => (editing ? fromAppt(editing) : blank(tomorrow(), '09:00')));
-  const [repeat, setRepeat] = useState<Repeat>({ mode: 'none', weekdays: [], end: 'count', count: '10', until: '' });
+  const [repeat, setRepeat] = useState<Repeat>({ mode: 'none', intervalWeeks: '3', weekdays: [], end: 'count', count: '10', until: '' });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [clashes, setClashes] = useState<Clash[] | null>(null);
@@ -40,7 +40,7 @@ export function BookDialog({ centerId, open, onClose, onDone, onError, childId, 
     }
     const date = initial?.date ?? tomorrow();
     setF({ ...blank(date, initial?.start ?? '09:00'), childId: childId ?? '' });
-    setRepeat({ mode: 'none', weekdays: [isoWeekday(date)], end: 'count', count: '10', until: '' });
+    setRepeat({ mode: 'none', intervalWeeks: '3', weekdays: [isoWeekday(date)], end: 'count', count: '10', until: '' });
     opsApi.children(centerId, {}).then((r) => setChildren(r.items)).catch((e) => setMsg(errorText(e, onError)));
   }, [open, editing, childId, centerId, onError, initial]);
 
@@ -64,6 +64,7 @@ export function BookDialog({ centerId, open, onClose, onDone, onError, childId, 
     if (!editing && (!f.childId || !f.membershipId || !f.service)) return setMsg('Choose the child, service and therapist.');
     if (!f.date || !f.start || Number.isNaN(startsAt.getTime())) return setMsg('Enter a valid date and start time.');
     if (!editing && repeat.mode !== 'none' && !repeat.weekdays.length) return setMsg('Choose at least one day for the repeating visits.');
+    if (!editing && repeat.mode !== 'none' && recurringIntervalWeeks(repeat) === null) return setMsg('Choose a whole-number interval between 1 and 4 weeks.');
     setBusy(true);
     setMsg(null);
     try {
@@ -74,9 +75,12 @@ export function BookDialog({ centerId, open, onClose, onDone, onError, childId, 
         await opsApi.book(centerId, { childId: f.childId, membershipId: f.membershipId, service: f.service, startsAt: startsAt.toISOString(), endsAt: endsAt.toISOString(), room: f.room || undefined });
         onDone('Appointment booked.');
       } else {
+        // The server enforces the exact same interval range (1–4 weeks).
+        const intervalWeeks = recurringIntervalWeeks(repeat);
+        if (intervalWeeks === null) return setMsg('Choose a whole-number interval between 1 and 4 weeks.');
         const r = await opsApi.createSeries(centerId, {
           childId: f.childId, membershipId: f.membershipId, service: f.service, room: f.room || undefined, startDate: f.date, startTime: f.start, durationMinutes: Number(f.minutes),
-          weekdays: repeat.weekdays, intervalWeeks: repeat.mode === 'biweekly' ? 2 : 1, ...(repeat.end === 'count' ? { count: Number(repeat.count) } : { untilDate: repeat.until }), skipConflicts,
+          weekdays: repeat.weekdays, intervalWeeks, ...(repeat.end === 'count' ? { count: Number(repeat.count) } : { untilDate: repeat.until }), skipConflicts,
         });
         onDone(`${r.created} repeating ${r.created === 1 ? 'visit' : 'visits'} booked${r.skipped.length ? `, ${r.skipped.length} skipped because of clashes` : ''}.`);
       }
