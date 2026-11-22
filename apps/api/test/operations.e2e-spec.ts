@@ -157,9 +157,11 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
         width:1,height:1,scannerName:'SyntheticScanner',scannerVersion:'test',
       };
       try {
+        // SuperTest does not dispatch until .then/.end, so start the
+        // request before waiting for the scanner's pending promise.
         const pending=post(h,c(`children/${kid}/photo-candidates`),coordinator,{
           pngBase64:Buffer.alloc(64,7).toString('base64')
-        }).expect(403);
+        }).expect(403).then(() => undefined);
         await started;
         // This happens AFTER the request's first authorization check and
         // BEFORE the held ClamAV scan returns. Membership updates take the
