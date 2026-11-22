@@ -6,6 +6,7 @@ import { Button, Card, LockedAction, Pill } from '@/components/design/ui';
 import { serviceLabel } from '@/components/operations/BookDialog';
 import { clinicalApi, LOCKED_REASON, type SessionActivity, type Workspace } from '@/lib/clinical';
 import { Dictation } from './Dictation';
+import { SessionActivityPicker } from './SessionActivityPicker';
 import { ApiError } from '@/lib/api';
 import { formatZonedDateTimeInput, preservedZonedInstant, zonedDateTimeInputToIso } from '@/lib/operations';
 const input = 'mt-1 w-full rounded-control border border-border-light bg-transparent px-3 py-2 text-[14px]';
@@ -124,7 +125,14 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
         <h4 className="font-semibold">{index + 1}. {a.snapshot?.title ?? ws.templates.find(t => t.id === a.templateId)?.title}</h4>
         {(() => { const t = a.snapshot ?? ws.templates.find(t => t.id === a.templateId); return t && <details><summary className="cursor-pointer text-[14px]">Instructions, materials and estimated duration</summary><p>{t.minutes} minutes · {t.materials.join(', ')}</p><ol className="list-decimal pl-5">{t.steps.map((s,i) => <li key={i}>{s}</li>)}</ol><p>{t.safety.join(' ')}</p></details>; })()}
         <div className="grid gap-3 sm:grid-cols-2"><Field label="Actual minutes" type="number" value={String(a.minutes)} onChange={e => update(a.id, { minutes: Number(e.target.value) })} testId={`minutes-${a.id}`} /><Field label="Objective addressed" value={a.objective} onChange={e => update(a.id, { objective: e.target.value })} testId={`objective-${a.id}`} />
-        <SelectField label="Goal version (optional)" value={a.planVersionId ? `${a.planVersionId}|${a.goalKey}` : ''} options={[{ value: '', label: 'No goal reference' }, ...goals]} onChange={s => { const [planVersionId, goalKey] = s.split('|'); update(a.id, { planVersionId: planVersionId || undefined, goalKey: goalKey || undefined }); }} testId={`goal-${a.id}`} />
+        <details className="rounded-control border border-border-light bg-surface-subtle p-2"
+          data-testid={`session-activity-goal-details-${a.id}`}>
+          <summary className="min-h-[44px] cursor-pointer py-2 text-[13px] font-semibold text-brand-action">
+            Goal linkage (optional) · {a.planVersionId ? 'saved version selected' : 'no reference'}
+          </summary>
+          <SelectField label="Goal version (optional)" value={a.planVersionId ? `${a.planVersionId}|${a.goalKey}` : ''} options={[{ value: '', label: 'No goal reference' }, ...goals]} onChange={s => { const [planVersionId, goalKey] = s.split('|'); update(a.id, { planVersionId: planVersionId || undefined, goalKey: goalKey || undefined }); }} testId={`goal-${a.id}`} />
+          <p className="mt-1 text-[12px] text-brand-inkMuted">Link only an authorized exact plan version. No measurement or release is created.</p>
+        </details>
         <SelectField label="Completion" value={a.completion} onChange={s => {
           if (s !== 'COMPLETED' && (a.outcome || a.assistance) && !window.confirm('Clear recorded outcome and assistance for this unperformed activity? Objective, timing, goal and factual notes will be retained.')) return;
           update(a.id, { completion: s as SessionActivity['completion'], ...(s !== 'COMPLETED' ? { outcome: undefined, assistance: undefined } : {}) });
@@ -135,7 +143,14 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
         <div className="flex flex-wrap gap-2">{[-1,1].map(delta => <Button key={delta} variant="secondary" size="sm" disabled={!edit || index + delta < 0 || index + delta >= activities.length} onClick={() => { changed(); setActivities(items => { const next = [...items]; [next[index], next[index + delta]] = [next[index + delta], next[index]]; return next; }); }}>{delta < 0 ? 'Move up' : 'Move down'}</Button>)}<Button variant="ghost" size="sm" onClick={() => { changed(); setActivities(items => items.filter(x => x.id !== a.id)); }}>Remove activity</Button></div>
       </section>)}
       {!activities.length && <p className="text-[14px]">No activities selected yet.</p>}
-      {edit && <div className="space-y-2"><Field label={`Search ${serviceLabel(n.service)} activity library`} value={query} onChange={e => setQuery(e.target.value)} testId={`session-search-${n.id}`} /><div className="flex max-h-48 flex-col gap-2 overflow-y-auto">{ws.templates.filter(t => t.service === n.service && t.title.toLowerCase().includes(query.toLowerCase())).map(t => <Button key={t.id} variant="secondary" onClick={() => { changed(); /* Identity is minted once per click, outside the updater: React 19 may replay state updaters, which would otherwise re-key the row and drop the first edit. */ const id = crypto.randomUUID(); setActivities(items => [...items, { id, templateId: t.id, snapshot: t, minutes: 0, objective: '', completion: 'NOT_STARTED', observation: '' }]); }}>Add {t.title}</Button>)}</div></div>}
+      {edit && <SessionActivityPicker noteId={n.id} service={n.service} templates={ws.templates} query={query}
+        onQuery={setQuery} onAdd={t => {
+          changed();
+          // Stable identity is minted once, outside the state updater. No implicit save.
+          const id = crypto.randomUUID();
+          setActivities(items => [...items, { id, templateId: t.id, snapshot: t, minutes: 0,
+            objective: '', completion: 'NOT_STARTED', observation: '' }]);
+        }} />}
       <div className="grid gap-3 md:grid-cols-2">{[['focus','Session focus'],['activities','Overall session note'],['response','Child response / reviewed dictation'],['nextSteps','Next steps']].map(([key,label]) => <label key={key} className="block text-[14px]">{label}<textarea aria-label={label} className={input} rows={3} maxLength={4000} value={sections[key] ?? ''} onChange={e => { changed(); setSections(s => ({ ...s, [key]: e.target.value })); }} /></label>)}</div>
     </fieldset>
     {(conflicted || retainedLocal) && <section aria-label="Session conflict comparison" className="space-y-3 rounded-control border border-border-light p-3">
