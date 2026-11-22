@@ -102,6 +102,7 @@ test('docs exception fails closed for forks, unknown paths, deleted docs, mixed 
   paths('AGENTS.md'),paths('.github/workflows/ci.yml'),
   paths('scripts/ci/smart-ci.mjs'),
   [{path:'docs/handover/NEXT_WORK.md',status:'D'}],
+  [{path:'docs/roadmap/README.md',status:'T'}],
   [],
  ])assert.equal(selected(changes).execution,'full',JSON.stringify(changes));
  for(const overrides of [
