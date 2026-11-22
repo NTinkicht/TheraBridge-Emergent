@@ -42,6 +42,10 @@ try {
   await note.getByLabel('Outcome', { exact: true }).selectOption('ACHIEVED');
   await note.getByLabel('Assistance (separate from outcome)', { exact: true }).selectOption('SUBSTANTIAL_ASSISTANCE');
   await note.getByLabel('Actual minutes', { exact: true }).fill('5');
+  const syntheticDisclosure = note.getByTestId('session-synthetic-dictation');
+  assert.equal(await syntheticDisclosure.getAttribute('open'), null,
+    'Real clinician workflow starts with developer-only transcription controls collapsed');
+  await syntheticDisclosure.locator(':scope > summary').click();
   await note.getByRole('button', { name: 'Run synthetic transcription', exact: true }).click();
   await note.getByRole('button', { name: 'Insert reviewed text', exact: true }).waitFor({ state: 'visible' });
   await page.waitForTimeout(350);
@@ -119,6 +123,7 @@ try {
     await note.getByRole('button', { name: 'Save reviewed reconciliation as draft', exact: true }).waitFor();
     const pendingTranscript = '  Revoked uninserted العربية 😀\nexact trailing spaces  ';
     // Transcript was never inserted into clinical notes.
+    await remote.getByTestId('session-synthetic-dictation').locator(':scope > summary').click();
     await tab.getByLabel('Editable transcript (not saved)', { exact: true }).fill(pendingTranscript);
     await db.careAssignment.update({ where: { id: assignment.id }, data: { endedAt: new Date() } });
     const beforeRevoked = writes.length;
