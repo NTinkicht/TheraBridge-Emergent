@@ -50,7 +50,7 @@ test('all three Chromium-installing browser consumers may reuse only lockfile-sc
  const caches=[...yaml.matchAll(/name: Cache Playwright Chromium downloads/g)];
  assert.equal(caches.length,3);
  assert.equal([...yaml.matchAll(/key: tb-playwright-/g)].length,3);
- assert.equal([...yaml.matchAll(/yarn playwright install --with-deps chromium/g)].length,4,
+ assert.equal([...yaml.matchAll(/yarn playwright install --with-deps chromium/g)].length,3,
    'Cached browsers must not bypass Playwright runtime/dependency validation');
 });
 
