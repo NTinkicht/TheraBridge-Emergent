@@ -2,8 +2,17 @@
 
 import { Activity, Brain, Clock, Hand, ImageOff, MessageCircle, ShieldCheck, Users } from 'lucide-react';
 import { Card, type Tone } from '@/components/design/ui';
-import { isRecognizedSpecialty, specialtyDisplayName, specialtyIdentity } from '@/styles/specialty-identity';
+import { isRecognizedSpecialty, specialtyDisplayName, specialtyIdentity, type SpecialtyFamily } from '@/styles/specialty-identity';
 import type { Template } from '@/lib/clinical';
+
+// Keep the public specialty identity metadata (literal approved palette) unchanged.
+// The actual card must use theme-scoped semantic CSS variables: dark mode
+// recolours both the tint and any multi-specialty gradients automatically.
+const specialtySlot: Record<SpecialtyFamily, string> = {
+  speech: 'speech', occupational: 'ot', behavioral: 'aba', physical: 'physio', group: 'group',
+};
+const specialtySurface = (family: SpecialtyFamily, tint: boolean) =>
+  `var(--tb-specialty-${specialtySlot[family]}${tint ? 'Tint' : ''})`;
 
 // Presentation-only. The current template API assigns ONE service. The
 // optional services array supports future multi-specialty cards without
@@ -21,10 +30,10 @@ export function ActivityCard({ t, tone = 'clinical', extra, visual = false, comp
   const identity = isRecognizedSpecialty(t.service) ? specialtyIdentity(t.service) : null;
   const Icon = identity ? { 'message-circle': MessageCircle, hand: Hand, brain: Brain, activity: Activity, users: Users }[identity.icon] : null;
   const accent = identities.length > 1
-    ? `linear-gradient(90deg, ${identities.map((x, i) => `${x.color} ${(i / (identities.length - 1)) * 100}%`).join(', ')})`
-    : identities[0]?.color;
+    ? `linear-gradient(90deg, ${identities.map((x, i) => `${specialtySurface(x.family, false)} ${(i / (identities.length - 1)) * 100}%`).join(', ')})`
+    : identities[0] ? specialtySurface(identities[0].family, false) : undefined;
   const tint = identities.length > 1
-    ? `linear-gradient(115deg, ${identities.map((x, i) => `${x.tint} ${(i / (identities.length - 1)) * 100}%`).join(', ')})`
+    ? `linear-gradient(115deg, ${identities.map((x, i) => `${specialtySurface(x.family, true)} ${(i / (identities.length - 1)) * 100}%`).join(', ')})`
     : undefined;
   const showList = layout === 'list' && visual;
   return (
@@ -32,7 +41,7 @@ export function ActivityCard({ t, tone = 'clinical', extra, visual = false, comp
       {!fam && accent && <div aria-hidden="true" className="h-1.5 w-full shrink-0" style={{ background: accent }}
         data-testid={`activity-specialty-accent-${t.id}`} />}
       <div className={`flex min-w-0 flex-1 flex-col gap-4 p-5 ${showList ? 'sm:flex-row' : ''}`}
-        style={!fam && identities.length ? { background: tint ?? identities[0].tint } : undefined}>
+        style={!fam && identities.length ? { background: tint ?? specialtySurface(identities[0].family, true) } : undefined}>
         {visual && <div className={`flex aspect-[4/3] min-w-0 items-center justify-center rounded-control border border-border-light bg-surface-white ${showList ? 'w-full sm:w-44 sm:shrink-0 sm:self-start' : 'max-h-48 w-full'}`}
           data-testid={`activity-media-placeholder-${t.id}`}>
           <div className="flex flex-col items-center gap-2 px-3 text-center text-[13px] text-brand-inkMuted">
