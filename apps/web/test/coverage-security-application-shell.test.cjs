@@ -85,12 +85,13 @@ describe('M4-08 visual preview shell separates roles and mock unavailable naviga
   expect(out).toContain('Synthetic content');
   expect(out).toContain('data-testid="notifications-button"');
  });
- it('keeps visual family theme control separate from clinical shell',()=>{
+ it('shares the theme control across roles without leaking family palette to clinical shells',()=>{
   const family=draw(AppShell,{workspace:'family',active:'home',title:'Home',children:'Family'});
   const clinical=draw(AppShell,{workspace:'center',active:'home',title:'Home',children:'Clinical'});
   expect(family).toContain('data-testid="theme-toggle"');
   expect(family).toContain('data-theme="light"');
-  expect(clinical).not.toContain('data-testid="theme-toggle"');
+  expect(clinical).toContain('data-testid="theme-toggle"');
+  expect(clinical).toContain('theme-clinical-auto');
   expect(clinical).not.toContain('theme-family-auto');
  });
 });
