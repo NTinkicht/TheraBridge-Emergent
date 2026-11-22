@@ -1,3 +1,11 @@
+## 2026-11-22 — PR #462 final-head qualification and gated owner items
+
+1. Verify exact final HEAD all six mandatory jobs (test, secret-scan, live-session, preview-container, demo-journey, compose), source/Child360/provenance/Smart CI and all eight unrounded API/Web coverage metrics >=90%. Investigate and repair any failures, including Prisma migration replay and real DB contact tests. No bypass or loosened assertions.
+2. Request final independent Codex review only after stable CI-green exact HEAD. Disposition all reviewers' P0/P1/P2 and P3 under Rule 13; preserve changes across shared screens/roles/widths/themes.
+3. Complete 320/390/768/1024/1440 owner screenshots, keyboard/AT and role-specific usability. Until verified keep owner acceptance NOT_RUN.
+4. Keep #11 sensitive child medical intake, #13 child-photo consent/private media and #27 admin-managed grant policy as explicit unsigned gated work. Do not expose unapproved forms, release confidential data, or change clinical/authorization policy without required owner sign-off. Consider linked detailed follow-up issues when portioned outside PR2.
+5. When PR #462 is qualified, close only delivered acceptance items; preserve signed G2/G2b NO-GO, then continue PR3 as ordered roadmap.
+
 ## 2026-11-22 — PR #461 Gemini review closeout queue
 
 1. Run all final-HEAD GitHub CI including test, preview-container, demo-journey, live-session, compose, source-contracts, secret-scan, SBOM, Smart CI and eight unrounded >=90% Web/API coverage metrics; investigate any failure without reducing standards.
