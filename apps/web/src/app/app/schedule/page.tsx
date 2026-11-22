@@ -185,12 +185,12 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
         <div className="grid min-w-0 grid-cols-1 items-end gap-3 sm:grid-cols-2 xl:w-[520px]">
           {!isTherapist && <div className="relative space-y-3">
             <div className="relative">
-              <label htmlFor="schedule-therapist-query" className="block text-[13px] font-semibold">Find therapist</label>
+              <label htmlFor="schedule-therapist-query" className="block text-[14px] font-medium">Find therapist</label>
               <input id="schedule-therapist-query" type="search" role="combobox" autoComplete="off"
                 aria-autocomplete="list" aria-expanded={therapistSuggestions.length > 0}
                 aria-controls="schedule-therapist-suggestions"
                 aria-activedescendant={therapistSuggestions.length ? `schedule-therapist-suggestion-${Math.min(activeSuggestion, therapistSuggestions.length - 1)}` : undefined}
-                className="mt-1 min-h-[44px] w-full rounded-control border border-border-strong bg-surface-white px-3 text-[14px]"
+                className="mt-1.5 min-h-[48px] w-full rounded-control border border-border-strong bg-surface-white px-3 text-[15px]"
                 value={therapistSearch}
                 onFocus={() => setSuggestionsOpen(true)}
                 onBlur={() => setSuggestionsOpen(false)}
