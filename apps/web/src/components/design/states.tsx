@@ -47,7 +47,7 @@ export function ErrorState({ title = 'We couldn’t load this', body = 'The serv
       <AlertTriangle size={20} className={`shrink-0 ${fam ? 'text-fam-caution' : 'text-status-danger'}`} aria-hidden="true" />
       <div className="flex-1">
         <p className={`text-[14px] font-semibold ${fam ? 'text-fam-ink' : 'text-status-danger'}`}>{title}</p>
-        <p className={`text-[13px] ${fam ? 'text-fam-muted' : 'text-[#7A2630]'}`}>{body}</p>
+        <p className={`text-[13px] ${fam ? 'text-fam-muted' : 'text-status-danger'}`}>{body}</p>
       </div>
       <Button variant="secondary" tone={tone} size="sm" onClick={onRetry} data-testid={testId ? `${testId}-retry` : undefined}>
         <RotateCw size={14} aria-hidden="true" /> Retry
