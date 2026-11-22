@@ -1713,3 +1713,6 @@ Owner-approved four-package grouping: isolated illustrated-catalogue projection 
 
 ### M5 PR1 CI follow-up — 2026-11-20
 On PR #456, exact-head CI for `8905ffb` failed the `demo-journey` job (run 44724232146): Playwright timed out filling the hidden `review-queue-search` input after specialty selection remounted and collapsed the optional queue disclosure. Commit `fb5e4c3` explicitly reopens the disclosure before testing search, preserving the filter assertions. Fresh exact-head CI and Codex re-review are required; this is **not** a PASS or merge qualification. Synthetic-only and G2/G2b NO-GO remain unchanged.
+
+## 2026-11-22 — CI optimization qualification PR #469
+Status: NOT YET QUALIFIED; implementation committed, full exact-head CI and Codex review pending. No claim of executed coverage or actual docs-only reduction until merge and a real docs-only PR are independently observed. Expected: full PR + main policy/code checks, narrowed docs-only secret-scan/SBOM/smart-targeted/smart-ci-gate with all heavy jobs explicitly SKIPPED, NOT PASSED. Regression tests cover protected/mixed/deleted/type-changed docs and full fallback. No clinical release.
