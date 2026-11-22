@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Req, BadRequestException } from '@nestjs/common';
 import { RequirePermission, TbRequest } from '../auth/access';
 import type { Viewer } from '../operations/children.service';
-import { ActivityMediaDraftDto, ActivityMediaRejectDto } from './activity-media.dto';
+import { ActivityMediaDraftDto, ActivityMediaRejectDto, ActivityPrivatePngCandidateDto } from './activity-media.dto';
 import { ActivityMediaService } from './activity-media.service';
 
 const uuid = () => new ParseUUIDPipe();
@@ -33,6 +33,13 @@ export class ActivityMediaController {
   propose(@Param('centerId', uuid()) centerId: string, @Param('templateId', uuid()) templateId: string,
     @Body() dto: ActivityMediaDraftDto, @Req() req: TbRequest) {
     return this.media.propose(centerId, viewer(req), templateId, dto);
+  }
+  @Post(':draftId/candidates')
+  @RequirePermission('center.activities.manage')
+  uploadCandidate(@Param('centerId',uuid()) centerId:string,
+    @Param('templateId',uuid()) templateId:string,@Param('draftId',uuid()) draftId:string,
+    @Body() dto:ActivityPrivatePngCandidateDto,@Req() req:TbRequest) {
+    return this.media.uploadCandidate(centerId,viewer(req),templateId,draftId,dto.pngBase64);
   }
   @Post(':draftId/reject')
   @RequirePermission('center.activities.manage')
