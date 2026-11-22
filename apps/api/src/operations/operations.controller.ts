@@ -150,6 +150,22 @@ export class OperationsController {
     return this.children.readPrivatePhoto(centerId,childId,viewer(req));
   }
 
+  @Get('family/children/:childId/photo-candidates')
+  @RequirePermission('family.portal.read')
+  guardianPhotoCandidates(@Param('centerId',uuid()) centerId:string,@Param('childId',uuid()) childId:string,
+    @Req() req:TbRequest) {
+    return this.children.guardianPhotoCandidates(centerId,childId,viewer(req));
+  }
+
+  @Get('family/children/:childId/private-photo')
+  @Header('Cache-Control','private, no-store, max-age=0')
+  @Header('Pragma','no-cache')
+  @RequirePermission('family.portal.read')
+  guardianPrivatePhoto(@Param('centerId',uuid()) centerId:string,@Param('childId',uuid()) childId:string,
+    @Req() req:TbRequest) {
+    return this.children.guardianReadPhoto(centerId,childId,viewer(req));
+  }
+
   @Post('family/children/:childId/photo-candidates/:candidateId/consent')
   @RequirePermission('family.portal.read')
   guardianPhotoConsent(@Param('centerId',uuid()) centerId:string,@Param('childId',uuid()) childId:string,
