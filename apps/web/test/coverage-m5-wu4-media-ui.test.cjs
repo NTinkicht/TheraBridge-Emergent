@@ -13,9 +13,12 @@ describe('WU4-C private, draft-only illustration UX boundary', () => {
     const templateActions = fs.readFileSync(path.join(__dirname, '../src/components/clinical/TemplateActions.tsx'), 'utf8');
     expect(templateActions).toContain('Duplicate to customize another author');
   });
-  it('never exposes an image URL, upload control, publish action or generated preview', () => {
+  it('allows only private quarantined upload, never an image URL, publication or generated preview', () => {
     expect(comp).not.toMatch(/<img|<Image\s|type="file"|approve\(|publish\(/);
-    expect(comp).toContain('No image upload or publication is available');
+    expect(comp).toContain('PrivatePngCandidatePicker');
+    expect(comp).toContain('activityMediaDrafts.uploadCandidate(centerId,templateId,draft.id,pngBase64)');
+    expect(comp).toContain('independent rights and clinical review still required');
+    expect(comp).toContain('No image publication is available');
     expect(comp).toContain('clinical/design approval');
   });
   it('keeps genuine errors, busy states, canceled rejection and optimistic revision', () => {
