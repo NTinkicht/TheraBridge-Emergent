@@ -1513,3 +1513,6 @@ On PR #456, exact-head CI for `8905ffb` failed the `demo-journey` job (run 44724
 1. Run exact-head full CI on this policy/code PR; investigate red jobs rather than weaken checks.
 2. Obtain exact-head Codex review, dispose every finding and validate PR mergeability.
 3. Merge only when Rule 16 gates satisfied; then verify a genuinely documentation-only PR chooses docs mode, that code/mixed/QA/legal changes choose full mode, and that main push remains fully verified. Clinical G2/G2b NO-GO unchanged.
+
+## 2026-11-23 — PR #475, guardian observations 28–31 (NOT YET QUALIFIED)
+Rights-safe compact practice cards, a distinct family-documents destination, authorized linked-child tabs and clarified home-practice naming are implemented. The charts remain synthetic regardless of selected child; real family files remain blocked by the existing server release/consent gates. Full CI, eight >=90% metrics, Codex and five-width keyboard/AT/owner verification are pending. No production clinical or image rights approval is implied; G2/G2b remains NO-GO.

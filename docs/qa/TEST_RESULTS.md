@@ -1716,3 +1716,6 @@ On PR #456, exact-head CI for `8905ffb` failed the `demo-journey` job (run 44724
 
 ## 2026-11-22 — CI optimization qualification PR #469
 Status: NOT YET QUALIFIED; implementation committed, full exact-head CI and Codex review pending. No claim of executed coverage or actual docs-only reduction until merge and a real docs-only PR are independently observed. Expected: full PR + main policy/code checks, narrowed docs-only secret-scan/SBOM/smart-targeted/smart-ci-gate with all heavy jobs explicitly SKIPPED, NOT PASSED. Regression tests cover protected/mixed/deleted/type-changed docs and full fallback. No clinical release.
+
+## 2026-11-23 — PR #475, guardian observations 28–31 (NOT YET QUALIFIED)
+Rights-safe compact practice cards, a distinct family-documents destination, authorized linked-child tabs and clarified home-practice naming are implemented. The charts remain synthetic regardless of selected child; real family files remain blocked by the existing server release/consent gates. Full CI, eight >=90% metrics, Codex and five-width keyboard/AT/owner verification are pending. No production clinical or image rights approval is implied; G2/G2b remains NO-GO.

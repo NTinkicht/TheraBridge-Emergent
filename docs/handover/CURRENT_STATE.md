@@ -1289,3 +1289,6 @@ On PR #456, exact-head CI for `8905ffb` failed the `demo-journey` job (run 44724
 
 ## 2026-11-22 — Smart CI optimization PR #469 (NOT YET QUALIFIED)
 Owner authorized narrow, added/modified narrative Markdown-only PR execution with real secret-scan, SBOM, Smart CI docs contract and required gate. Full eight >=90% metrics and all original workers remain mandatory for code, policy, workflows, QA/legal/security evidence and main pushes. Duplicate feature-branch push events are removed; main push, PR and manual events remain. PR #469 exact-head complete CI, independent review and merge remain NOT RUN/IN PROGRESS; no clinical policy is activated.
+
+## 2026-11-23 — PR #475, guardian observations 28–31 (NOT YET QUALIFIED)
+Rights-safe compact practice cards, a distinct family-documents destination, authorized linked-child tabs and clarified home-practice naming are implemented. The charts remain synthetic regardless of selected child; real family files remain blocked by the existing server release/consent gates. Full CI, eight >=90% metrics, Codex and five-width keyboard/AT/owner verification are pending. No production clinical or image rights approval is implied; G2/G2b remains NO-GO.
