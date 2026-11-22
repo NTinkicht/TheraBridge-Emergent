@@ -5,6 +5,7 @@ import { SessionEditor } from './SessionEditor';
 import { Field } from '@/components/auth/Field';
 import { SelectField } from '@/components/centers/kit';
 import { GoalChart } from '@/components/clinical/GoalChart';
+import { AssessmentFieldGuide } from './AssessmentFieldGuide';
 import { GoalVersionContext } from './GoalVersionContext';
 import { GoalVersionLink } from './GoalVersionLink';
 import { currentGoals, historicalGoals, summarizeObservations, type Granularity } from '@/lib/progress-analysis';
@@ -39,6 +40,7 @@ export function AssessmentsPanel({ centerId, ws, run, pagination }: { centerId: 
       {ws.canEdit && (
         <Card className="space-y-3 p-5" testId="assessment-form">
           <h3 className="text-[16px] font-semibold">New initial assessment (draft)</h3>
+          <AssessmentFieldGuide service={f.service} />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <SelectField label="Service" value={f.service} onChange={(service) => setF({ ...f, service })} testId="assessment-service" options={ws.child.services.map((s) => ({ value: s, label: serviceLabel(s) }))} />
             <Field label="Assessed on" type="date" value={f.assessedOn} onChange={(e) => setF({ ...f, assessedOn: e.target.value })} testId="assessment-date" />
