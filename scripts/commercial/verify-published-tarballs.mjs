@@ -167,8 +167,9 @@ async function fetchWithTransientRetry(fetchBuffer,url,limits,{attempts=3}={}){
  for(let i=0;i<attempts;i++){
   try{return await fetchBuffer(url,limits);}
   catch(e){
-   const code=String(e?.message||e?.code||'');
-   if(!TRANSIENT_FETCH.has(code)||i===attempts-1)throw e;
+   const code=typeof e?.code==='string'?e.code:'';
+   const message=typeof e?.message==='string'?e.message:'';
+   if(!(TRANSIENT_FETCH.has(code)||TRANSIENT_FETCH.has(message))||i===attempts-1)throw e;
   }
  }
 }
