@@ -1,3 +1,7 @@
+## 2026-11-22 — M5 global dark shared ErrorState P2 (NOT QUALIFIED)
+
+Codex reviewed the preceding HEAD and found `ErrorState` used hardcoded dark red body text on a status-danger background now re-themed for dark staff pages. Replaced only that body foreground with shared `text-status-danger` semantic colour, respecting the existing family-specific foreground. Added light/dark 4.5:1 contrast regressions and source-integrated check. Final exact-head CI and independent review remain pending; no owner visual signoff, no clinical GO.
+
 ## 2026-11-22 — M5-32 cross-screen specialty-card dark fix on #461
 
 Closed implementation gap found by Codex P2: replace hardcoded light ActivityCard colour/tint with runtime semantic CSS variables for single/multiple specialties, preserving existing specialty metadata identity and family behavior. Added Jest mounted and alpha/contrast tests; final CI and review NOT VERIFIED. No clinical action activated.
