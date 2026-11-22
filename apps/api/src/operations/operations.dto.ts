@@ -18,6 +18,10 @@ export class PrivateCareFieldsDto {
   @IsOptional() @trim() @IsString() @MaxLength(600) medications?: string;
   @IsOptional() @trim() @IsString() @MaxLength(1200) careNotes?: string;
 }
+export class PrivatePngCandidateDto {
+  // 512 KiB binary -> <=699052 base64 chars, under the 1 MiB API JSON limit.
+  @IsString() @MinLength(44) @MaxLength(699052) pngBase64!: string;
+}
 export class PrivateCareUpdateDto extends PrivateCareFieldsDto {
   @IsInt() @Min(0) version!: number;
 }
