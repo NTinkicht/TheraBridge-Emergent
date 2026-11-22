@@ -32,6 +32,8 @@ test('schedule suggestions use authorized therapist results and keyboard interac
   assert.match(schedule, /e\.key === 'Escape'/);
   assert.match(schedule, /chooseTherapist\(therapistSuggestions/);
   assert.match(schedule, /setTherapist\(''\); setChosenTherapistName\(''\)/);
+  assert.ok(schedule.includes('revealActiveSuggestion(suggestionListRef.current'));
+  assert.ok(schedule.includes('ref={suggestionListRef} id="schedule-therapist-suggestions"'));
 });
 
 test('child autocomplete is center-scoped, cancelable, and navigates only to returned IDs', () => {
@@ -39,8 +41,8 @@ test('child autocomplete is center-scoped, cancelable, and navigates only to ret
   assert.match(children, /clearTimeout\(timer\)/);
   assert.match(children, /suggestions\?\.key === suggestionKey/);
   assert.match(children, /aria-autocomplete="list"/);
-  assert.match(children, /revealActiveSuggestion\\(suggestionListRef\\.current/);
-  assert.match(children, /ref=\\{suggestionListRef\\} role="listbox"/);
+  assert.ok(children.includes('revealActiveSuggestion(suggestionListRef.current'));
+  assert.ok(children.includes('ref={suggestionListRef} role="listbox"'));
   assert.match(children, /role="listbox"/);
   assert.match(children, /router\.push\(`\/app\/children\/\$\{c\.id\}`\)/);
   assert.match(children, /md:grid-cols-\[minmax\(0,1\.35fr\)_minmax\(0,1\.65fr\)_8rem\]/);
