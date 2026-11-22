@@ -45,7 +45,9 @@ export class WorkspaceService {
 
   async settings(centerId: string) {
     const c = await this.prisma.center.findUniqueOrThrow({ where: { id: centerId } });
-    return { id: c.id, name: c.name, slug: c.slug, timezone: c.timezone, country: c.country, city: c.city, specialties: c.specialties, status: c.status, version: c.version, createdAt: c.createdAt };
+    return { id: c.id, name: c.name, slug: c.slug, timezone: c.timezone, country: c.country, city: c.city,
+      contactEmail: c.contactEmail, contactPhone: c.contactPhone,
+      specialties: c.specialties, status: c.status, version: c.version, createdAt: c.createdAt };
   }
 
   async updateSettings(centerId: string, actorUserId: string, dto: UpdateCenterDto) {
@@ -54,6 +56,8 @@ export class WorkspaceService {
       ...(dto.name ? { name: clean(dto.name) } : {}), ...(dto.timezone ? { timezone: dto.timezone } : {}),
       ...(dto.country ? { country: clean(dto.country) } : {}), ...(dto.city ? { city: clean(dto.city) } : {}),
       ...(dto.specialties ? { specialties: uniq(dto.specialties) } : {}),
+      ...(dto.contactEmail !== undefined ? { contactEmail: dto.contactEmail.trim().toLowerCase() || null } : {}),
+      ...(dto.contactPhone !== undefined ? { contactPhone: dto.contactPhone.trim() || null } : {}),
     };
     if (data.name && (await this.prisma.center.findFirst({ where: { id: { not: centerId }, name: { equals: data.name, mode: 'insensitive' } } }))) {
       throw new ConflictException('Another center already uses this name.');
