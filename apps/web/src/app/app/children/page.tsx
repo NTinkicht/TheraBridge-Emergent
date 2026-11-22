@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Baby, Plus, Search } from 'lucide-react';
@@ -11,6 +11,7 @@ import { Button, Card, Pill } from '@/components/design/ui';
 import { Dialog, EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
 import { SPECIALTY_OPTIONS, type SessionInfo } from '@/lib/auth';
 import { ageFrom, dayLabel, opsApi, type ChildRow } from '@/lib/operations';
+import { revealActiveSuggestion } from '@/lib/combobox-scroll';
 
 function RegisterDialog({ centerId, open, onClose, onError }: { centerId: string; open: boolean; onClose: () => void; onError: (e: unknown) => void }) {
   const router = useRouter();
@@ -58,6 +59,7 @@ function Children({ session, onError }: { session: SessionInfo; onError: (e: unk
   const router = useRouter();
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(0);
+  const suggestionListRef = useRef<HTMLUListElement>(null);
   const [suggestions, setSuggestions] = useState<{ key: string; items: ChildRow[] } | null>(null);
   const suggestionKey = JSON.stringify([centerId, filters.status, query.trim()]);
   // Suggestions are fetched from the same authorized, center-scoped child
@@ -74,6 +76,9 @@ function Children({ session, onError }: { session: SessionInfo; onError: (e: unk
     return () => { active = false; clearTimeout(timer); };
   }, [centerId, filters.status, query, suggestionKey]);
   const matches = suggestionsOpen && suggestions?.key === suggestionKey ? suggestions.items : [];
+  useEffect(() => {
+    if (matches.length) revealActiveSuggestion(suggestionListRef.current, Math.min(activeSuggestion, matches.length - 1));
+  }, [activeSuggestion, matches.length, suggestionKey, suggestionsOpen]);
   const fetcher = useCallback(() => opsApi.children(centerId, filters), [centerId, filters]);
   const { data, failed, reload } = useLoad(fetcher, onError);
   const search = (e: FormEvent) => { e.preventDefault(); setFilters({ ...filters, q: query.trim() }); };
@@ -103,7 +108,7 @@ function Children({ session, onError }: { session: SessionInfo; onError: (e: unk
               placeholder="Start typing a child's name" maxLength={100} testId="children-search-input" />
           </div>
           <button type="submit" aria-label="Search" data-testid="children-search-button" className="grid min-h-[48px] w-12 shrink-0 place-items-center rounded-control bg-brand-action text-white hover:bg-brand-actionHover"><Search size={18} aria-hidden="true" /></button>
-          {matches.length > 0 && <ul role="listbox" id="children-search-suggestions" aria-label="Matching children"
+          {matches.length > 0 && <ul ref={suggestionListRef} role="listbox" id="children-search-suggestions" aria-label="Matching children"
             data-testid="children-search-suggestions"
             className="absolute inset-x-0 top-full z-30 mt-1 max-h-64 overflow-auto rounded-control border border-border-strong bg-surface-white py-1 shadow-lg">
             {matches.map((c, index) => <li key={c.id} id={`child-suggestion-${index}`} role="option" aria-selected={index === activeSuggestion}>
