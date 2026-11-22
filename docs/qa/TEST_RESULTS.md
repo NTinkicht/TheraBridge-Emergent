@@ -1,3 +1,9 @@
+## 2026-11-22 — PR #462 new tests authoring checkpoint (NOT YET FINAL PASS)
+
+Tests committed: custom recurrence `coverage-m5-pr2-custom-recurrence.test.cjs` (actual mounted shared form, boundaries), `coverage-mounted-booking-commands.test.cjs` (3/4 week series request, invalid denial), `coverage-stage2-mounted-appointment-actions.test.cjs` (series summary 1–4), `validators.e2e-spec.ts` (contact formatting and header injection), `centers.e2e-spec.ts` (real PostgreSQL contact creation/edit/clearing, optimistic version and unauthorized coordinator denial), mounted `coverage-stage2-mounted-center-settings.test.cjs` (read-only, invalid, edit, clear), mounted profile title guidance and scoped child directory/guardian deep link tests, plus CI-only Chrome `check-demo-journey.mjs` five-width center contact visibility and guardian quick-link navigation. No clinical/patient facts or real media stored.
+
+**Status:** test definitions committed; exact latest PR HEAD full CI, 8x >=90% metrics, independent final review, owner screenshots/AT are PENDING/NOT RUN at this checkpoint. Do not interpret older SHAs' green receipts or a draft as final qualification. Family/privacy/clinical G2/G2b remains fail-closed.
+
 ## 2026-11-22 — Gemini review follow-up tests (NOT YET RUN ON LATEST HEAD)
 
 Added mounted two-consumer `useSyncExternalStore` theme synchronization and cross-tab storage tests, preference-with-storage-disabled fallback and stale-key isolation, AppShell icon state test, and a real coordinator Schedule browser assertion that choosing a therapist via dropdown retains the selected scope but clears the stale directory query. Gemini reported no critical XSS/tenant-isolation finding. **These are committed test definitions, not PASS evidence: new CI, coverage and final independent review pending at this checkpoint.** All clinical/production gates remain fail-closed.
