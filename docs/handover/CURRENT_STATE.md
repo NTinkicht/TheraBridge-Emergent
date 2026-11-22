@@ -1,3 +1,7 @@
+## 2026-11-22 — PR #461 final Codex P2 autocomplete visibility fix (UNQUALIFIED HEAD)
+
+Codex exact-HEAD review on `c4a86dba` identified a real P2: keyboard active option could move beyond an eight-suggestion dropdown. Shared `revealActiveSuggestion` listbox-scoped scroll helper now handles forward/backward selection, viewport bounds and malformed index without page scrolling; both children and Schedule therapist lists are wired to this helper. Added mounted overflow/reverse-scroll and source integration regressions. Prior exact-head `c4a86dba` had all six core CI gates plus 8 unrounded API/Web >=90% metrics green. **The new P2 fix HEAD is not yet requalified; final CI, new independent review and human accessibility evidence remain pending.** All clinical G2/G2b NO-GO gates unchanged.
+
 ## 2026-11-22 — M5 owner-feedback shared UX PR #461 (DRAFT; NOT QUALIFIED)
 
 - Owner's 32 unique manual findings mapped to 5 packages. This PR addresses #1/#2/#3/#5/#6/#7/#8/#12/#26/#32, shared across administrator, coordinator, therapists, supervisor and guardian.
