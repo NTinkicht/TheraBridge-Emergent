@@ -38,15 +38,12 @@ Source: `docs/roadmap/M5-OWNER-MANUAL-FEEDBACK-20261122.md`; follows merged PR #
 - Updated live browser synthetic session and multi-tab tests to deliberately expand the developer disclosure; added mounted regression tests for default collapsed presentation, draft saving and completed-session access revocation.
 - Scope is **only a developer-control UX separation**; observation 20 owner acceptance, five-width per-role screenshots, manual keyboard/AT and full exact-head review/CI remain pending. Do not interpret the implementation as real STT availability or M5 closure.
 
-## NEXT DRAFT — observation 15: versioned goal/plan navigation (NOT IMPLEMENTED)
+## Observation 15 — exact progress goal/plan version navigation (IMPLEMENTED; QUALIFICATION PENDING)
 
-Predecessor: #468, merged as `3830366822705944c14c051ef0d6932f4aaa8c3b`.
-Owner observation 15: “Progress charts need goal/plan links and versioned target changes.”
+- Current and historical progress cards now expose a real accessible 44px link to the exact authorized child, plan version ID and goal key; no observation values, patient data, permissions or approval information are embedded in the URL.
+- Reused goal keys and goal names never imply continuity. Every historical link opens the existing read-only PlanVersionHistory with its own saved target; current links open the VersionEditor with existing permission and optimistic version gates.
+- Source version links in GoalVersionContext and progress cards share one navigation implementation. The session/unsaved transcript guard returns a boolean, preventing an URL mutation when navigation is refused, and modified clicks still use native links.
+- Target editing remains the already-existing explicitly saved draft flow (only if `ws.canEdit`, `v.mine`, status DRAFT/RETURNED_FOR_REVISION). This PR adds **no target-write endpoint** and does not rewrite historical versions, move clinical observations, infer improvement, sign, approve or release.
+- Added mounted synthetic regressions for exact identity, cross-version evidence, read-only roles, pending-navigation refusal, modified clicks and URL encoding.
 
-- Inspect existing progress visualization, goal version identities, plan relationship and M6 target semantics before changing any read or write path.
-- Add exact-version deep links from progress charts to the relevant authorized goal/plan, preserving immutable historical records and enforcing current-role/tenant access server-side.
-- Any target edit must create or use the approved versioned update flow; never silently overwrite a historical target or retroactively change chart meaning.
-- Test synthetic therapist/supervisor/guardian denied journeys, stale versions, cross-tenant/cross-child references, keyboard/mobile link behavior, reload, back navigation and other shared views using the same chart component.
-- Retain all eight ≥90% code coverage floors, full exact-HEAD CI, independent review, five-width visual and manual AT/owner acceptance; G2/G2b clinical release/signing remains NO-GO.
-
-**Status: PLANNING ONLY — NOT IMPLEMENTED, NOT TESTED, NOT QUALIFIED, NOT READY TO MERGE.**
+**NOT YET QUALIFIED:** exact-HEAD full API/Web coverage >=90% all eight metrics, browser journeys, independent review, five-width and keyboard/AT human checks, and owner acceptance still required. G2/G2b remains NO-GO.
