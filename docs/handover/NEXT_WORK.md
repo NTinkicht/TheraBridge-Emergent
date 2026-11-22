@@ -1,3 +1,10 @@
+## 2026-11-22 — PR #461 Gemini review closeout queue
+
+1. Run all final-HEAD GitHub CI including test, preview-container, demo-journey, live-session, compose, source-contracts, secret-scan, SBOM, Smart CI and eight unrounded >=90% Web/API coverage metrics; investigate any failure without reducing standards.
+2. Obtain exact-head independent Codex review after Gemini fixes and resolve outstanding original Codex P2s only on implementation + tested evidence. Reconcile any new findings.
+3. Keep all-role dark/light screenshot, keyboard/AT and actual owner acceptance NOT_RUN until evidenced. Do not merge without required gates, and never activate G2/G2b clinical actions.
+4. Once actually qualified, merge PR #461, deploy synthetic Render preview from reviewed main and verify exact commit before the next owner testing task.
+
 ## 2026-11-22 — M5 global dark clinical-assist P2 (NOT YET QUALIFIED)
 
 Independent Codex review found that ReportDecisionAssist and HomePlanSyntheticAssist contained hardcoded white panel/field backgrounds with theme-lightened foregrounds, making explanatory and editable text unreadable in dark staff workspaces. Replaced fixed white surfaces with the existing semantic `bg-surface-white` and set explicit corresponding text where required, without changing any clinical workflow or access rule. Added shared consumer source/contrast regression. Final exact-HEAD CI and independent review and owner visual acceptance pending; G2/G2b remains NO-GO.
