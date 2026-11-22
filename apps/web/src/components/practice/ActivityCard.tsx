@@ -1,21 +1,28 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, Clock, Package, ShieldCheck } from 'lucide-react';
+import { ChevronDown, Clock, ImageOff, Package, ShieldCheck } from 'lucide-react';
 import { Pill } from '@/components/design/ui';
 import { CHOICE_LABEL, CHOICE_TONE, dayName, type PracticeActivity, type Slot } from '@/lib/practice';
 
 export function SlotChip({ slot, onRecord, testId }: { slot: Slot; onRecord?: () => void; testId: string }) {
-  if (slot.recordable && onRecord) return <button type="button" onClick={onRecord} className="rounded-full border-2 border-dashed border-fam-accent px-3 py-1 text-[13px] font-semibold text-fam-accent hover:bg-fam-accentTint focus-visible:outline focus-visible:outline-2" aria-label={`Record ${dayName(slot.date, 'long')}`} data-testid={testId}>Record</button>;
+  if (slot.recordable && onRecord) return <button type="button" onClick={onRecord} className="inline-flex min-h-[44px] items-center rounded-full border-2 border-fam-accent bg-fam-accentTint px-4 py-2 text-[13px] font-semibold text-fam-accent hover:bg-fam-tile focus-visible:outline focus-visible:outline-2" aria-label={`Record ${dayName(slot.date, 'long')}`} data-testid={testId}>Record today’s answer</button>;
   return <span data-testid={testId} data-status={slot.status}><Pill tone={CHOICE_TONE[slot.status]}>{CHOICE_LABEL[slot.status]}</Pill></span>;
 }
 
 export function ActivityCard({ a, slots, onRecord, testId }: { a: PracticeActivity; slots: Slot[]; onRecord?: (s: Slot) => void; testId: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <article className="rounded-card border border-fam-border bg-fam-surface p-4" data-testid={testId}>
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
+    <article className="overflow-hidden rounded-card border border-fam-border bg-fam-surface p-3 sm:p-4" data-testid={testId}>
+      <div className="flex items-start gap-3">
+        <div className="flex aspect-[4/3] w-24 shrink-0 items-center justify-center rounded-control bg-fam-tile sm:w-28"
+          data-testid={`${testId}-illustration-placeholder`}>
+          <span className="space-y-1 px-1 text-center text-[11px] text-fam-muted">
+            <ImageOff size={19} className="mx-auto" aria-hidden="true"/>
+            <span className="block">No approved image</span>
+          </span>
+        </div>
+        <div className="min-w-0 flex-1">
           <p className="text-[11px] font-bold uppercase tracking-wide text-fam-caution">Sample activity</p>
           <h3 className="text-[17px] font-semibold">{a.title}</h3>
           <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-[13px] text-fam-muted"><span className="inline-flex items-center gap-1"><Clock size={13} aria-hidden="true" />{a.minutes} min</span><span>{a.frequency}</span></p>
