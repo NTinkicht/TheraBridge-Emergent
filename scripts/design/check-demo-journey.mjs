@@ -1014,8 +1014,11 @@ try {
 
     // TB-EM-041: the active preview must show only the persisted version,
     // not the browser's subsequently edited working copy.
+    // A fresh deep-linked route opens the plan with supporting evidence collapsed.
+    // Expand the outer disclosure before inspecting the nested immutable preview.
+    await page.getByTestId('plan-supporting-evidence').first().locator(':scope > summary').click();
     const activeSavedPreview = page.getByTestId('saved-home-plan-preview').first();
-    await activeSavedPreview.locator('summary').click();
+    await activeSavedPreview.locator(':scope > summary').click();
     const originalSavedSummary = await activeSavedPreview.getByTestId('saved-plan-preview-summary').innerText();
     assert(originalSavedSummary.trim().length > 0);
     assert((await activeSavedPreview.getByTestId('saved-plan-preview-disclaimer').innerText())
