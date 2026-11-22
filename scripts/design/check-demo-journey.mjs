@@ -252,6 +252,16 @@ try {
     assert.equal(await page.getByTestId('schedule-therapist-more').count(), 1,
       'Schedule must preserve the fresh search cursor after an obsolete page completes');
 
+    // Gemini follow-up: a selection through the fallback dropdown must not
+    // leave the adjacent search input displaying a stale query. Reset only
+    // the search, not the chosen permission-scoped calendar filter.
+    await scheduleFilter.selectOption(scheduleNewId);
+    assert.equal(await scheduleFilter.inputValue(), scheduleNewId,
+      'Dropdown must preserve the chosen therapist filter');
+    assert.equal(await page.getByTestId('schedule-therapist-search').inputValue(), '',
+      'Choosing from the dropdown must clear an obsolete therapist query');
+    await scheduleFilter.selectOption('');
+
   });
   await role('speech@childrens-home.therabridge.test', 'THERAPIST', async page => {
     // TB-EM-024: test the actual staff library, not the guardian sample page.
