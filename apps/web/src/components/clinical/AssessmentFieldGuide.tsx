@@ -1,5 +1,7 @@
 'use client';
 
+import { serviceLabel } from '@/components/operations/BookDialog';
+
 /** Non-diagnostic prompts. No values, findings or recommendations are generated. */
 const HELP: Record<string, string[]> = {
   speech: ['Describe the communication task and the setting actually observed.', 'Record the learner’s response and assistance used, without inferring a diagnosis.'],
@@ -16,7 +18,7 @@ export function AssessmentFieldGuide({ service }: { service: string }) {
   ];
   return <aside className="rounded-control border border-border-light bg-surface-subtle p-3"
     data-testid="assessment-specialty-guide" aria-label="Assessment writing guidance">
-    <p className="text-[13px] font-semibold">Drafting guidance · {service || 'selected specialty'}</p>
+    <p className="text-[13px] font-semibold">Drafting guidance · {service ? serviceLabel(service) : 'selected specialty'}</p>
     <ol className="mt-2 list-decimal space-y-1 pl-5 text-[12px] text-brand-inkMuted">
       {prompts.map(item => <li key={item}>{item}</li>)}
     </ol>

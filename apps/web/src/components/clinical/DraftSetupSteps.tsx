@@ -7,9 +7,9 @@ export function DraftSetupSteps({ kind, titleId, detailId }: { kind: 'report' | 
     <p className="text-[14px] font-semibold">Start a {kind} draft in two steps</p>
     <ol className="mt-2 flex flex-wrap gap-2 text-[13px]">
       <li><a className="inline-flex min-h-[44px] items-center rounded-control border border-border-light px-3 text-brand-action underline"
-        href={`#${titleId}`}>1. Choose specialty and title</a></li>
+        href={`#${titleId}`} onClick={() => document.getElementById(titleId)?.focus({ preventScroll: true })}>1. Choose specialty and title</a></li>
       <li><a className="inline-flex min-h-[44px] items-center rounded-control border border-border-light px-3 text-brand-action underline"
-        href={`#${detailId}`}>{kind === 'report' ? '2. Review report period and start draft' : '2. Start editable plan version'}</a></li>
+        href={`#${detailId}`} onClick={() => document.getElementById(detailId)?.focus({ preventScroll: true })}>{kind === 'report' ? '2. Review report period and start draft' : '2. Start editable plan version'}</a></li>
     </ol>
     <p className="mt-2 text-[12px] text-brand-inkMuted">
       {kind === 'report'

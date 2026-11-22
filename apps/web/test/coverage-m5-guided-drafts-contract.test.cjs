@@ -16,4 +16,29 @@ describe('M5 observation 23: draft-only authoring setup guides',()=>{
   expect(nav.findAllByType('a').map(x=>x.props.href)).toEqual(['#'+first,'#'+second]);
   expect(JSON.stringify(tree.toJSON())).toContain('No signing, approval or family release');
  });
+
+ it.each([
+  ['report','report-draft-identity','report-draft-period'],
+  ['plan','plan-draft-identity','plan-draft-action'],
+ ])('focuses each %s draft anchor on activation for keyboard navigation',async(kind,first,second)=>{
+  await act(async()=>{tree=create(React.createElement(DraftSetupSteps,{kind,titleId:first,detailId:second}));});
+  const anchors=tree.root.findAllByType('a');
+  const originalDocument=global.document;
+  const focusCalls=[];
+  global.document={getElementById:id=>({focus:opts=>focusCalls.push([id,opts.preventScroll])})};
+  try {
+   await act(async()=>{anchors[0].props.onClick(); anchors[1].props.onClick();});
+   expect(focusCalls).toEqual([[first,true],[second,true]]);
+   expect(anchors.map(a=>a.props.href)).toEqual(['#'+first,'#'+second]);
+  } finally { if(originalDocument===undefined) delete global.document; else global.document=originalDocument; }
+ });
+
+});
+
+const { AssessmentFieldGuide }=require('../src/components/clinical/AssessmentFieldGuide');
+it('uses the supported specialty label rather than a raw service slug',async()=>{
+ await act(async()=>{tree=create(React.createElement(AssessmentFieldGuide,{service:'occupational'}));});
+ const heading=tree.root.findAllByType('p')[0];
+ expect(heading.children.join('')).toBe('Drafting guidance · Occupational therapy');
+ expect(JSON.stringify(tree.toJSON())).toContain('functional activity');
 });

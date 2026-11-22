@@ -297,11 +297,11 @@ export function PlansPanel({ centerId, ws, run, pagination }: { centerId: string
       {ws.canEdit && (
         <Card className="space-y-3 p-5" testId="plan-create">
           <DraftSetupSteps kind="plan" titleId="plan-draft-identity" detailId="plan-draft-action" />
-          <div id="plan-draft-identity" className="grid scroll-mt-24 grid-cols-1 items-end gap-3 sm:grid-cols-[180px_1fr]">
+          <div id="plan-draft-identity" tabIndex={-1} className="grid scroll-mt-24 grid-cols-1 items-end gap-3 sm:grid-cols-[180px_1fr]">
           <SelectField label="Service" value={f.service} onChange={(service) => setF({ ...f, service })} testId="plan-service" options={ws.child.services.map((s) => ({ value: s, label: serviceLabel(s) }))} />
           <Field label="New plan title" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} testId="plan-title" />
           </div>
-          <div id="plan-draft-action" className="scroll-mt-24 space-y-2">
+          <div id="plan-draft-action" tabIndex={-1} className="scroll-mt-24 space-y-2">
             <p className="text-[12px] text-brand-inkMuted">This creates a draft only. Afterward, add goals and activities and explicitly save your version.</p>
             <Button onClick={() => void (async () => { if (await runPlanAction(() => clinicalApi.plan(centerId, ws.child.id, f), 'Plan created with a first draft.')) setF({ ...f, title: '' }); })()} data-testid="plan-create-button">Create plan</Button>
           </div>
