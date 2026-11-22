@@ -158,6 +158,20 @@ async function fetchTarball(url,{gzipBytes=MAX_GZIP}={}){
   req.on('timeout',()=>req.destroy(Error('TIMEOUT')));req.on('error',reject);
  });
 }
+// Retry ONLY transient transport failures. A successful retry must still pass the
+// original lockfile SRI and on-disk LICENSE/NOTICE comparisons. Never retry a
+// mismatched hash, malformed archive, unallowlisted source or oversized response.
+const TRANSIENT_FETCH=new Set(['TIMEOUT','TOTAL_DEADLINE_EXCEEDED','ECONNRESET','ECONNREFUSED','EAI_AGAIN','ETIMEDOUT','EPIPE','HTTP_408','HTTP_429','HTTP_500','HTTP_502','HTTP_503','HTTP_504']);
+async function fetchWithTransientRetry(fetchBuffer,url,limits,{attempts=3}={}){
+ if(!Number.isSafeInteger(attempts)||attempts<1||attempts>3)throw Error('INVALID_RETRY_BUDGET');
+ for(let i=0;i<attempts;i++){
+  try{return await fetchBuffer(url,limits);}
+  catch(e){
+   const code=String(e?.message||e?.code||'');
+   if(!TRANSIENT_FETCH.has(code)||i===attempts-1)throw e;
+  }
+ }
+}
 async function audit({installed,lockText,direct,installedFiles=null,maxFetch=256},{fetchBuffer=fetchTarball}={}){
  if(installed.schema!=='therabridge-installed-lock-provenance-v1'||
   installed.status!=='LOCK_METADATA_ONLY_NOT_TARBALL_OR_LICENSE_VERIFICATION'||
@@ -192,7 +206,7 @@ async function audit({installed,lockText,direct,installedFiles=null,maxFetch=256
    fetched++;
    jobs.push(async()=>{
     try{
-     const url=validatedUrl(candidates[0].resolved),limits=packageLimits(name,version),bytes=await fetchBuffer(url,limits);
+     const url=validatedUrl(candidates[0].resolved),limits=packageLimits(name,version),bytes=await fetchWithTransientRetry(fetchBuffer,url,limits);
      row.archiveSizeException=limits.exception;
      if(!Buffer.isBuffer(bytes)||bytes.length>limits.gzipBytes)throw Error('INVALID_OR_OVERSIZED_TARBALL');
      row.verifiedIntegrityAlgorithm=verifyIntegrity(bytes,candidates[0].integrity);
