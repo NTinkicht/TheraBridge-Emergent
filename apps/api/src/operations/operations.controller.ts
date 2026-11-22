@@ -166,6 +166,15 @@ export class OperationsController {
     return this.children.guardianReadPhoto(centerId,childId,viewer(req));
   }
 
+  @Get('family/children/:childId/photo-candidates/:candidateId/review')
+  @Header('Cache-Control','private, no-store, max-age=0')
+  @Header('Pragma','no-cache')
+  @RequirePermission('family.portal.read')
+  guardianReviewPhoto(@Param('centerId',uuid()) centerId:string,@Param('childId',uuid()) childId:string,
+    @Param('candidateId',uuid()) candidateId:string,@Req() req:TbRequest) {
+    return this.children.guardianReviewPhoto(centerId,childId,viewer(req),candidateId);
+  }
+
   @Post('family/children/:childId/photo-candidates/:candidateId/consent')
   @RequirePermission('family.portal.read')
   guardianPhotoConsent(@Param('centerId',uuid()) centerId:string,@Param('childId',uuid()) childId:string,
