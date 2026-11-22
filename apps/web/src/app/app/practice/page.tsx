@@ -9,6 +9,7 @@ import { RecordDialog } from '@/components/practice/RecordDialog';
 import { Pill } from '@/components/design/ui';
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
 import type { SessionInfo } from '@/lib/auth';
+import { guardianScopeKey } from '@/lib/guardian-scope';
 import { CHOICE_LABEL, CHOICE_TONE, dayName, practiceApi, type PracticeActivity } from '@/lib/practice';
 
 const shift = (d: string, n: number) => new Date(Date.parse(`${d}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
@@ -36,19 +37,22 @@ function Practice({ session, onError }: { session: SessionInfo; onError: (e: unk
   const centerId = session.activeContext?.type === 'center' ? session.activeContext.centerId : '';
   const [week, setWeek] = useState<string | undefined>();
   const [view, setView] = useState<'today' | 'week' | 'history'>('today');
-  const [childIdx, setChildIdx] = useState(0);
+  const [selectedChildId, setSelectedChildId] = useState('');
   const [rec, setRec] = useState<{ a: PracticeActivity; date: string } | null>(null);
   const fetcher = useCallback(() => practiceApi.week(centerId, week), [centerId, week]);
   const { data, failed, reload } = useLoad(fetcher, onError);
   if (failed) return <ErrorState tone="family" onRetry={() => void reload()} testId="practice-error" />;
   if (!data) return <SkeletonRows rows={4} testId="practice-loading" />;
-  const child = data.children[Math.min(childIdx, data.children.length - 1)];
+  const child = data.children.find(k => k.id === selectedChildId) ?? data.children[0];
   const canRecord = data.gates.practiceDemo;
   const day = data.week.days.includes(data.today) ? data.today : data.week.days[0];
   return (
     <div className="theme-family-auto space-y-4 rounded-card bg-fam-canvas p-4 text-fam-ink md:p-6" data-testid="practice-page">
       <div>
         <h1 className="flex items-center gap-2 font-display text-[26px] font-bold">Home practice</h1>
+        <p className="mt-1 text-[13px] text-fam-muted" data-testid="practice-purpose-note">
+          Home practice is where you see a daily or weekly schedule and record sample answers. The Sample activity library is for browsing activities, not recording answers.
+        </p>
         {child && <p className="text-[15px] text-fam-muted" data-testid="practice-child-name">For {child.name}</p>}
       </div>
       <p className="flex items-start gap-2 rounded-control border-2 border-dashed border-fam-caution bg-fam-surface p-3 text-[14px]" data-testid="practice-sample-banner">
@@ -59,7 +63,7 @@ function Practice({ session, onError }: { session: SessionInfo; onError: (e: unk
         <>
           {data.children.length > 1 && (
             <div role="group" aria-label="Choose a child" className="flex flex-wrap gap-2" data-testid="practice-children">
-              {data.children.map((k, i) => <button key={k.id} type="button" aria-pressed={k.id === child.id} className={tab(k.id === child.id)} onClick={() => setChildIdx(i)} data-testid={`practice-child-${k.id}`}>{k.name}</button>)}
+              {data.children.map((k) => <button key={k.id} type="button" aria-pressed={k.id === child.id} className={tab(k.id === child.id)} onClick={() => { setSelectedChildId(k.id); setRec(null); }} data-testid={`practice-child-${k.id}`}>{k.name}</button>)}
             </div>
           )}
           <div role="group" aria-label="Practice views" className="flex flex-wrap gap-2">
@@ -67,7 +71,7 @@ function Practice({ session, onError }: { session: SessionInfo; onError: (e: unk
             <button type="button" aria-pressed={view === 'week'} className={tab(view === 'week')} onClick={() => { setView('week'); setWeek(undefined); }} data-testid="practice-view-week"><CalendarDays size={15} aria-hidden="true" />This week</button>
             <button type="button" aria-pressed={view === 'history'} className={tab(view === 'history')} onClick={() => setView('history')} data-testid="practice-view-history"><History size={15} aria-hidden="true" />History</button>
           </div>
-          <GuardianPlanRequestPanel centerId={centerId} childId={child.id} />
+          <GuardianPlanRequestPanel key={child.id} centerId={centerId} childId={child.id} />
           {view === 'week' && (
             <div className="flex items-center justify-between gap-2 rounded-control bg-fam-surface p-2" data-testid="practice-week-nav">
               <button type="button" className="rounded-full p-2 hover:bg-fam-tile" aria-label="Previous week" onClick={() => setWeek(shift(data.week.start, -7))} data-testid="practice-week-prev"><ChevronLeft size={18} aria-hidden="true" /></button>
@@ -75,7 +79,7 @@ function Practice({ session, onError }: { session: SessionInfo; onError: (e: unk
               <button type="button" className="rounded-full p-2 hover:bg-fam-tile disabled:opacity-40" aria-label="Next week" disabled={data.week.days.includes(data.today)} onClick={() => setWeek(shift(data.week.start, 7))} data-testid="practice-week-next"><ChevronRight size={18} aria-hidden="true" /></button>
             </div>
           )}
-          {view === 'history' ? <HistoryList centerId={centerId} childId={child.id} onError={onError} /> : (
+          {view === 'history' ? <HistoryList key={child.id} centerId={centerId} childId={child.id} onError={onError} /> : (
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2" data-testid={`practice-${view}`}>
               {view === 'today' && <p className="text-[15px] font-semibold lg:col-span-2">{dayName(day, 'long')}</p>}
               {child.activities.map((a) => <ActivityCard key={a.id} a={a} testId={`practice-activity-${a.id}`} slots={view === 'today' ? a.slots.filter((s) => s.date === day) : a.slots} onRecord={canRecord ? (s) => setRec({ a, date: s.date }) : undefined} />)}
@@ -90,5 +94,5 @@ function Practice({ session, onError }: { session: SessionInfo; onError: (e: unk
 }
 
 export default function PracticePage() {
-  return <Workspace active="practice" permission="family.practice.read" deniedText="Home practice is for connected families.">{(s, onError) => <Practice session={s} onError={onError} />}</Workspace>;
+  return <Workspace active="practice" permission="family.practice.read" deniedText="Home practice is for connected families.">{(s, onError) => <Practice key={guardianScopeKey(s)} session={s} onError={onError} />}</Workspace>;
 }

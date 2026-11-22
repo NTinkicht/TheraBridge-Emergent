@@ -3,7 +3,6 @@
 import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { FileText } from 'lucide-react';
-import { DraftSetupSteps } from './DraftSetupSteps';
 import { Field } from '@/components/auth/Field';
 import { SelectField, useLoad } from '@/components/centers/kit';
 import { Button, Card, Pill } from '@/components/design/ui';
@@ -51,20 +50,14 @@ function ScopedReportsPanel({ centerId, ws, run, onError }: ReportsProps) {
       {ws.canEdit && (
         <Card className="space-y-3 p-5" testId="report-form">
           <h3 className="text-[16px] font-semibold">Start a progress report draft</h3>
-          <DraftSetupSteps kind="report" titleId="report-draft-identity" detailId="report-draft-period" />
           <p className="text-[13px] text-brand-inkMuted">The draft starts with recorded assessment summaries, goals and observations for the period. You write the summary and recommendations.</p>
-          <div id="report-draft-identity" tabIndex={-1} className="grid scroll-mt-24 grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <SelectField label="Service" value={f.service} onChange={(service) => setF({ ...f, service })} testId="report-service" options={ws.child.services.map((s) => ({ value: s, label: serviceLabel(s) }))} />
             <Field label="Title" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} testId="report-title" />
+            <Field label="Period from" type="date" value={f.periodStart} onChange={(e) => setF({ ...f, periodStart: e.target.value })} testId="report-from" />
+            <Field label="Period to" type="date" value={f.periodEnd} onChange={(e) => setF({ ...f, periodEnd: e.target.value })} testId="report-to" />
           </div>
-          <div id="report-draft-period" tabIndex={-1} className="scroll-mt-24 space-y-2">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Field label="Period from" type="date" value={f.periodStart} onChange={(e) => setF({ ...f, periodStart: e.target.value })} testId="report-from" />
-              <Field label="Period to" type="date" value={f.periodEnd} onChange={(e) => setF({ ...f, periodEnd: e.target.value })} testId="report-to" />
-            </div>
-            <p className="text-[12px] text-brand-inkMuted">Confirm the selected date range before creating a versioned draft. This does not submit or release a report.</p>
-            <Button onClick={() => void create()} data-testid="report-create">Start draft</Button>
-          </div>
+          <Button onClick={() => void create()} data-testid="report-create">Start draft</Button>
         </Card>
       )}
       {failed && <ErrorState onRetry={() => void reload()} testId="reports-error" />}

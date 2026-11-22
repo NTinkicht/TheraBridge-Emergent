@@ -42,6 +42,7 @@ const navAreas = Object.freeze({
   messages: 'scheduling', clinical: 'sessions', governance: 'governance',
   'access-review': 'governance', progress: 'care', 'practice-feedback': 'sessions',
   activities: 'sessions', practice: 'family', 'family-progress': 'family',
+  'family-documents': 'family',
   team: 'operations', center: 'operations', profile: 'account', security: 'account',
 });
 
@@ -64,8 +65,8 @@ export function validateIaCrosswalk(model) {
   if (model.schemaVersion !== 1 || model.evidenceType !== 'NAVIGATION_DESIGN_CANDIDATE_NOT_APPROVED' ||
       model.governance.clinical !== 'NO_GO_G2_G2b' || model.governance.ownerSignoff !== 'NOT_OBTAINED')
     throw new Error('IA crosswalk cannot claim implementation or clinical/owner approval');
-  if (model.features.length !== 66 || model.workflows.length !== 91 || model.navigation.length !== 20 ||
-      model.roleReview.length !== 7) throw new Error('Missing canonical 66/91/20/7 inventory items');
+  if (model.features.length !== 66 || model.workflows.length !== 91 || model.navigation.length !== 21 ||
+      model.roleReview.length !== 7) throw new Error('Missing canonical 66/91/21/7 inventory items');
   const check = (rows, key) => {
     if (new Set(rows.map(row => row[key])).size !== rows.length) throw new Error('Duplicate IA identifier');
     for (const row of rows) {

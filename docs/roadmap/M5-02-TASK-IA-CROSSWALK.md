@@ -15,7 +15,7 @@
 | Safety & governance | Policy, access, consent and release governance | Documents & review, Access & consent |
 | Account & access | Identity, security and personal settings | My profile, Account security |
 
-Every one of the **66 feature IDs**, **91 workflow IDs** and **20 current navigation entries** is classified *without deleting it*. The generated JSON has its canonical identifier, original title, work unit, evidence status, proposed task area, and explicit NOT_TESTED discoverability. **Eight conceptual areas are not eight new production routes.** Current server-side session permission filtering remains the only authority for existing nav visibility, and every future role/specialty mapping requires independent runtime validation. The 7-role review matrix is an explicit `NOT_TESTED` backlog, not a grant list.
+Every one of the **66 feature IDs**, **91 workflow IDs** and **21 current navigation entries** is classified *without deleting it*. The generated JSON has its canonical identifier, original title, work unit, evidence status, proposed task area, and explicit NOT_TESTED discoverability. **Eight conceptual areas are not eight new production routes.** Current server-side session permission filtering remains the only authority for existing nav visibility, and every future role/specialty mapping requires independent runtime validation. The 7-role review matrix is an explicit `NOT_TESTED` backlog, not a grant list.
 
 Two V2 exclusions are retained unchanged: feature **#39** school integration and workflow **WF-X6** child app and school integration. Synthetic/draft test behavior must never be promoted into real clinical approval, AI/STT/signing/consent/release authority, or unauthorized account access.
 
@@ -36,7 +36,7 @@ The following are **candidate task flows**, not proof of full task testing or ap
 
 ## Quantified evidence and nonclaims
 
-Source inventory: 66 features (31 PARTIAL / 34 PENDING_VERIFICATION / 1 V2_EXCLUDED) and 91 workflows (36 PARTIAL / 54 PENDING_VERIFICATION / 1 V2_EXCLUDED). These are historical reconciliation states, **not** M5 acceptance results. Current nav has 20 rows including **two** role-conditioned Activities entries at the same URL, one `center.activities.read` and one `family.activities.read`; do not deduplicate away either permission.
+Source inventory: 66 features (31 PARTIAL / 34 PENDING_VERIFICATION / 1 V2_EXCLUDED) and 91 workflows (36 PARTIAL / 54 PENDING_VERIFICATION / 1 V2_EXCLUDED). These are historical reconciliation states, **not** M5 acceptance results. Current nav has 21 rows including **two** role-conditioned Activities entries at the same URL, one `center.activities.read` and one `family.activities.read`; do not deduplicate away either permission.
 
 - **Completed in this source-only tranche:** reproducible crosswalk; fail-closed exact counts; grouped ownership; seven-role candidate journey map; CI negative tests and archival of structured JSON.
 - **Not completed:** actual in-app navigation refactor, clickable wireframes, human mental-model workshop, role-based permission integration tests, each workflow's proven destination, breadcrumbs/search behavior, screenshots, usability signoff or full accessibility/screen-reader/mobile/low-bandwidth/dark-theme acceptance.
@@ -52,3 +52,7 @@ node scripts/design/m5-ia-crosswalk.mjs /tmp/therabridge-m5-ia-proposal.json
 ```
 
 CI archives only the structured public synthetic requirement names and references; no cookies, account credentials, clinical records, or private workbook contents.
+
+## M5 guardian navigation amendment (observation 29)
+
+The new `/app/family-documents` guardian destination contributes one additional permission-conditioned navigation row (21 total). The source-only IA crosswalk now maps `family-documents` to Family & home and retains `family.progress.demo` as the existing presentation permission. This **does not** grant access to clinical files: every document remains denied by the separate server-side release/consent/child-scope gate, and no human role/visual acceptance is inferred. Previous 66 features, 91 workflows and seven personas remain unchanged.

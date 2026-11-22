@@ -11,7 +11,6 @@ import { ActivityCard } from './ActivityCard';
 import { HomeScheduleFields } from './HomeScheduleFields';
 import { HomeActivityDetails } from './HomeActivityDetails';
 import { HomePracticeCalendar } from './HomePracticeCalendar';
-import { DraftSetupSteps } from './DraftSetupSteps';
 import { HomePlanHandoff } from './HomePlanHandoff';
 import { SavedHomePlanPreview } from './SavedHomePlanPreview';
 import { homePlanHandoff } from '@/lib/home-plan-handoff';
@@ -295,16 +294,10 @@ export function PlansPanel({ centerId, ws, run, pagination }: { centerId: string
       {pagination.error && <p role="alert" className="text-[13px] text-status-caution" data-testid="plans-load-error">{pagination.error}</p>}
       {!ws.plans.length && <p className="text-[14px] text-brand-inkMuted" data-testid="plans-empty">No therapy plan yet.</p>}
       {ws.canEdit && (
-        <Card className="space-y-3 p-5" testId="plan-create">
-          <DraftSetupSteps kind="plan" titleId="plan-draft-identity" detailId="plan-draft-action" />
-          <div id="plan-draft-identity" tabIndex={-1} className="grid scroll-mt-24 grid-cols-1 items-end gap-3 sm:grid-cols-[180px_1fr]">
+        <Card className="grid grid-cols-1 items-end gap-3 p-5 sm:grid-cols-[180px_1fr_auto]" testId="plan-create">
           <SelectField label="Service" value={f.service} onChange={(service) => setF({ ...f, service })} testId="plan-service" options={ws.child.services.map((s) => ({ value: s, label: serviceLabel(s) }))} />
           <Field label="New plan title" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} testId="plan-title" />
-          </div>
-          <div id="plan-draft-action" tabIndex={-1} className="scroll-mt-24 space-y-2">
-            <p className="text-[12px] text-brand-inkMuted">This creates a draft only. Afterward, add goals and activities and explicitly save your version.</p>
-            <Button onClick={() => void (async () => { if (await runPlanAction(() => clinicalApi.plan(centerId, ws.child.id, f), 'Plan created with a first draft.')) setF({ ...f, title: '' }); })()} data-testid="plan-create-button">Create plan</Button>
-          </div>
+          <Button onClick={() => void (async () => { if (await runPlanAction(() => clinicalApi.plan(centerId, ws.child.id, f), 'Plan created with a first draft.')) setF({ ...f, title: '' }); })()} data-testid="plan-create-button">Create plan</Button>
         </Card>
       )}
     </div>
