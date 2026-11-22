@@ -44,7 +44,7 @@ describe('M2-H05 strict calendar, IANA, numeric and string validation', () => {
     for (const contactPhone of ['', '+971 6 555 1234', '(012) 345-6789']) {
       expect(issues(plainToInstance(UpdateCenterDto, { ...base, contactPhone }))).not.toContain('contactPhone');
     }
-    for (const contactPhone of ['123', '+971!5551234', '12345\\n2222', 'x'.repeat(41)]) {
+    for (const contactPhone of ['123', '+971!5551234', '12345\\n2222', 'x'.repeat(41), '------', '()....', '+( )--', '      ']) {
       expect(issues(plainToInstance(UpdateCenterDto, { ...base, contactPhone }))).toContain('contactPhone');
     }
   });
