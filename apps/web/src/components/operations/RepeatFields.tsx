@@ -3,7 +3,18 @@
 import { Field } from '@/components/auth/Field';
 import { SelectField } from '@/components/centers/kit';
 
-export interface Repeat { mode: 'none' | 'weekly' | 'biweekly'; weekdays: number[]; end: 'count' | 'until'; count: string; until: string }
+export interface Repeat { mode: 'none' | 'weekly' | 'biweekly' | 'custom'; intervalWeeks: string; weekdays: number[]; end: 'count' | 'until'; count: string; until: string }
+
+// The API already validates 1–4 weekly intervals. Keep this conversion in one
+// place so the custom UI cannot submit a fractional, NaN or out-of-range series.
+export function recurringIntervalWeeks(value: Repeat): number | null {
+  if (value.mode === 'none') return null;
+  if (value.mode === 'weekly') return 1;
+  if (value.mode === 'biweekly') return 2;
+  const text = value.intervalWeeks.trim();
+  if (!/^[1-4]$/.test(text)) return null;
+  return Number(text);
+}
 export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export function RepeatFields({ value, onChange }: { value: Repeat; onChange: (r: Repeat) => void }) {
@@ -11,9 +22,14 @@ export function RepeatFields({ value, onChange }: { value: Repeat; onChange: (r:
   return (
     <div className="space-y-3 rounded-control border border-border-light p-3" data-testid="book-repeat">
       <SelectField label="Repeat" value={value.mode} onChange={(v) => onChange({ ...value, mode: v as Repeat['mode'] })} testId="book-repeat-select"
-        options={[{ value: 'none', label: 'Does not repeat' }, { value: 'weekly', label: 'Every week' }, { value: 'biweekly', label: 'Every 2 weeks' }]} />
+        options={[{ value: 'none', label: 'Does not repeat' }, { value: 'weekly', label: 'Every week' }, { value: 'biweekly', label: 'Every 2 weeks' }, { value: 'custom', label: 'Custom — every 1 to 4 weeks' }]} />
       {value.mode !== 'none' && (
         <>
+          {value.mode === 'custom' && <Field label="Repeat every (weeks, 1–4)" type="number"
+            min={1} max={4} step={1} required value={value.intervalWeeks}
+            onChange={e => onChange({ ...value, intervalWeeks: e.target.value })}
+            hint="The existing booking service supports a visit every 1–4 weeks."
+            testId="book-repeat-custom-weeks" />}
           <fieldset>
             <legend className="mb-1 text-[14px] font-medium">On these days</legend>
             <div className="flex flex-wrap gap-2">
