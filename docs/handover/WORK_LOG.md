@@ -1348,3 +1348,6 @@ Owner-approved four-package grouping: isolated illustrated-catalogue projection 
 
 ### M5 PR1 CI follow-up — 2026-11-20
 On PR #456, exact-head CI for `8905ffb` failed the `demo-journey` job (run 44724232146): Playwright timed out filling the hidden `review-queue-search` input after specialty selection remounted and collapsed the optional queue disclosure. Commit `fb5e4c3` explicitly reopens the disclosure before testing search, preserving the filter assertions. Fresh exact-head CI and Codex re-review are required; this is **not** a PASS or merge qualification. Synthetic-only and G2/G2b NO-GO remain unchanged.
+
+## 2026-11-22 — PR #469 Smart CI decision implementation (QUALIFICATION PENDING)
+Diagnosed unconditional `execution: full` in scripts/ci/smart-ci.mjs and redundant push+pull_request events on feature branches. Implemented PR-only full qualification for feature branches, full main push verification, narrowly allowlisted docs-only plan and strict gate including secret/SBOM/docs tests; added adversarial tests and Rule 16A owner-approved exception. Do not claim CI PASS or merge pending exact-head green checks and review.
