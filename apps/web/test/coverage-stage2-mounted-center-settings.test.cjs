@@ -24,6 +24,7 @@ const CenterSettingsPage=require('../src/app/app/center/page').default;
 const center=(more={})=>({
  id:'center-a',name:'Fictional Center',slug:'fictional-center',city:'Sharjah',
  country:'United Arab Emirates',timezone:'Asia/Dubai',specialties:['speech'],
+ contactEmail:null,contactPhone:null,
  version:7,...more
 });
 let tree;
@@ -58,6 +59,8 @@ describe('mounted center settings tenant-scoped revision controls',()=>{
   await mount();
   expect(find('settings-save-button')).toHaveLength(0);
   expect(get('settings-name-input').props.disabled).toBe(true);
+  expect(get('settings-contact-email-input').props.disabled).toBe(true);
+  expect(get('settings-contact-phone-input').props.disabled).toBe(true);
   expect(centersApi.updateSettings).not.toHaveBeenCalled();
  });
  it('rejects empty center name, city, or country before server mutation',async()=>{
@@ -89,6 +92,39 @@ describe('mounted center settings tenant-scoped revision controls',()=>{
     specialties:['speech','ot'],version:7,timezone:'Asia/Dubai'
    }));
   expect(get('center-settings-success')).toBeTruthy();
+ });
+ it('saves contact details on the same optimistic revision used by other center fields',async()=>{
+  await mount();
+  await change('settings-contact-email-input','  CONTACT@EXAMPLE.TEST  ');
+  await change('settings-contact-phone-input','  +971 6 555 1234  ');
+  await submit();
+  expect(centersApi.updateSettings).toHaveBeenCalledWith('center-a',
+   expect.objectContaining({
+    contactEmail:'contact@example.test',contactPhone:'+971 6 555 1234',version:7
+   }));
+  expect(get('center-settings-success')).toBeTruthy();
+ });
+ it('allows clearing optional contacts without retaining stale private values',async()=>{
+  centersApi.settings.mockResolvedValue(center({
+    contactEmail:'office@center.test',contactPhone:'+971 6 555 1234'
+  }));
+  await mount();
+  await change('settings-contact-email-input','');
+  await change('settings-contact-phone-input','');
+  await submit();
+  expect(centersApi.updateSettings).toHaveBeenCalledWith('center-a',
+   expect.objectContaining({contactEmail:'',contactPhone:''}));
+ });
+ it('rejects malformed email and telephone inputs without calling update API',async()=>{
+  await mount();
+  await change('settings-contact-email-input','not-an-email');
+  await submit();
+  expect(get('center-settings-danger')).toBeTruthy();
+  expect(centersApi.updateSettings).not.toHaveBeenCalled();
+  await change('settings-contact-email-input','office@center.test');
+  await change('settings-contact-phone-input','123');
+  await submit();
+  expect(centersApi.updateSettings).not.toHaveBeenCalled();
  });
  it('retains original version and entered values on rejected concurrent change',async()=>{
   centersApi.updateSettings.mockRejectedValue({status:409,message:'Synthetic stale center revision'});
