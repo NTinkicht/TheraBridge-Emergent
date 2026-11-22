@@ -14,6 +14,7 @@ jest.mock('@/components/centers/kit',()=>{
   options.map(o=>h('option',{key:o.value,value:o.value},o.label)))};
 });
 jest.mock('@/components/operations/RepeatFields',()=>({
+ recurringIntervalWeeks:jest.requireActual('@/components/operations/RepeatFields').recurringIntervalWeeks,
  RepeatFields:({value,onChange})=>h('div',null,
   h('button',{type:'button','data-testid':'make-weekly-synthetic',
    onClick:()=>onChange({...value,mode:'weekly',weekdays:[2],end:'count',count:'4'})},'Four weekly visits'),
