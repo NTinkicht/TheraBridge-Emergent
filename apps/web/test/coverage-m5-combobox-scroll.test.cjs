@@ -1,4 +1,4 @@
-const {revealActiveSuggestion}=require('../src/lib/combobox-scroll');
+const {revealActiveSuggestion,effectiveSuggestionIndex}=require('../src/lib/combobox-scroll');
 
 const list = (scrollTop, rowTop, rowHeight=44, clientHeight=224) => ({
  scrollTop, offsetTop:10, clientHeight,
@@ -32,5 +32,34 @@ describe('M5 Codex P2: active combobox option stays visible within overflowing l
   revealActiveSuggestion(l,-1);
   revealActiveSuggestion(l,6);
   expect(l.scrollTop).toBe(200);
+ });
+});
+
+describe('M5 Codex P2: active selection never disagrees with ARIA after result scope shrinks',()=>{
+ it('clamps an old eighth option to the second new result consistently',()=>{
+  const selected=effectiveSuggestionIndex(7,2);
+  expect(selected).toBe(1);
+  const options=[{id:'synthetic-a'},{id:'synthetic-b'}];
+  expect(options.map((_,i)=>i===selected)).toEqual([false,true]);
+  expect(options[selected].id).toBe('synthetic-b');
+ });
+ it('starts with the first result when its old index is invalid',()=>{
+  expect(effectiveSuggestionIndex(-1,3)).toBe(0);
+  expect(effectiveSuggestionIndex(Number.NaN,3)).toBe(0);
+  expect(effectiveSuggestionIndex(8,1)).toBe(0);
+ });
+ it('never exposes a stale target when no authorized results remain',()=>{
+  expect(effectiveSuggestionIndex(7,0)).toBe(-1);
+  expect(effectiveSuggestionIndex(7,-1)).toBe(-1);
+  expect(effectiveSuggestionIndex(7,Number.NaN)).toBe(-1);
+ });
+ it('binds both screen pickers to the same effective index for highlight and keyboard selection',()=>{
+  const fs=require('fs'),path=require('path');
+  for(const route of ['app/children/page.tsx','app/schedule/page.tsx']){
+   const src=fs.readFileSync(path.join(__dirname,'../src/app',route),'utf8');
+   expect(src).toContain('effectiveSuggestionIndex(activeSuggestion,');
+   expect(src).toContain('aria-selected={index === selectedSuggestionIndex}');
+   expect(src).toContain('revealActiveSuggestion(suggestionListRef.current, selectedSuggestionIndex)');
+  }
  });
 });
