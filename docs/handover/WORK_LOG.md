@@ -1,3 +1,7 @@
+## 2026-11-22 — Address Gemini review on PR #461 (NEW HEAD NOT QUALIFIED)
+
+Read posted Gemini review on PR #461; no critical security finding claimed. Fixed shared theme subscription with React external-store semantics, cross-tab update handling, AppShell icon state coupling, and stale Schedule therapist query after dropdown selection. Tests added for duplicate mounted consumers, preference updates, storage errors, semantic icon rendering and real browser filter/search behavior. Existing permission/tenant/clinical/rights gates unchanged; no manual approval inferred. Final CI/review pending.
+
 ## 2026-11-22 — M5 global dark clinical-assist P2 (NOT YET QUALIFIED)
 
 Independent Codex review found that ReportDecisionAssist and HomePlanSyntheticAssist contained hardcoded white panel/field backgrounds with theme-lightened foregrounds, making explanatory and editable text unreadable in dark staff workspaces. Replaced fixed white surfaces with the existing semantic `bg-surface-white` and set explicit corresponding text where required, without changing any clinical workflow or access rule. Added shared consumer source/contrast regression. Final exact-HEAD CI and independent review and owner visual acceptance pending; G2/G2b remains NO-GO.
