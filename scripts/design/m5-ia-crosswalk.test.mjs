@@ -6,7 +6,9 @@ test('every canonical feature, workflow and current nav entry is proposed exactl
   const m = await buildIaCrosswalk();
   assert.equal(m.features.length, 66);
   assert.equal(m.workflows.length, 91);
-  assert.equal(m.navigation.length, 20);
+  assert.equal(m.navigation.length, 21);
+  assert.equal(m.navigation.find(n=>n.key==='family-documents')?.proposedArea,'family');
+  assert.equal(m.navigation.find(n=>n.key==='family-documents')?.permission,'family.progress.demo');
   assert.equal(m.roleReview.length, 7);
   assert.equal(m.summary.fullyProvenDiscoverable, 0);
   assert.equal(m.features.find(f => f.id === '39').proposedAvailability, 'V2_NOT_IN_V1_NAV');
