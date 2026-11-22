@@ -222,7 +222,12 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
             </div>
             <SelectField label="Therapist" value={therapist} onChange={value => {
               setTherapist(value);
-              setChosenTherapistName(therapists.find(t => t.membershipId === value)?.displayName ?? 'Selected therapist');
+              setChosenTherapistName(value ? (therapists.find(t => t.membershipId === value)?.displayName ?? 'Selected therapist') : '');
+              // The Find therapist input is a directory query, not the selected
+              // filter label. Clear stale partial text and reload the full
+              // authorized directory rather than narrowing the select options.
+              setTherapistSearch('');
+              setActiveSuggestion(0);
               setSuggestionsOpen(false);
             }} testId="schedule-therapist-filter" options={[
               { value: '', label: 'All therapists' },
