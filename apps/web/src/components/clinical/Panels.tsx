@@ -58,6 +58,11 @@ export function SessionsPanel({ centerId, ws, run, onPending }: { centerId: stri
   const [service, setService] = useState(ws.child.services[0] ?? '');
   const startRequest = useRef<Parameters<typeof clinicalApi.startSession>[2] | null>(null);
   const [busy, setBusy] = useState(false);
+  // An active session must remain mounted for autosave, conflict handling and pending drafts.
+  // Completed history is read-only and is opt-in to reduce visual overload.
+  const [showCompleted, setShowCompleted] = useState(false);
+  const activeNotes = ws.notes.filter(note => note.executionStatus !== 'COMPLETED');
+  const completedNotes = ws.notes.filter(note => note.executionStatus === 'COMPLETED');
   async function start(service: string, appointmentId?: string) {
     if (busy) return; setBusy(true);
     if (!startRequest.current || startRequest.current.service !== service || startRequest.current.appointmentId !== appointmentId) {
@@ -77,8 +82,22 @@ export function SessionsPanel({ centerId, ws, run, onPending }: { centerId: stri
       <SelectField label="Ad-hoc session specialty" value={service} onChange={setService} options={ws.child.services.map(value => ({ value, label: serviceLabel(value) }))} testId="session-specialty" />
       <Button disabled={busy || !service} onClick={() => void start(service)}>Start ad-hoc session</Button>
     </Card>}
-    {ws.notes.map(n => <SessionEditor key={n.id} centerId={centerId} n={n} ws={ws} onPending={onPending} />)}
-    {!ws.notes.length && <p>No sessions yet.</p>}
+    <section className="space-y-3" aria-label="Active session drafts" data-testid="active-sessions">
+      <h3 className="text-[16px] font-semibold">Active sessions ({activeNotes.length})</h3>
+      {activeNotes.map(n => <SessionEditor key={n.id} centerId={centerId} n={n} ws={ws} onPending={onPending} />)}
+      {!activeNotes.length && <p className="text-[14px] text-brand-inkMuted">No active session drafts.</p>}
+    </section>
+    {completedNotes.length > 0 && <section className="space-y-3" aria-label="Historical completed sessions" data-testid="historical-sessions">
+      <Button variant="secondary" aria-expanded={showCompleted} aria-controls="completed-session-list"
+        data-testid="historical-sessions-toggle" onClick={() => setShowCompleted(previous => !previous)}>
+        {showCompleted ? 'Hide' : 'Show'} historical sessions ({completedNotes.length})
+      </Button>
+      {showCompleted && <div id="completed-session-list" className="space-y-3" data-testid="historical-session-list">
+        <p className="text-[13px] text-brand-inkMuted">Completed sessions are read-only. Opening history does not sign or release clinical notes.</p>
+        {completedNotes.map(n => <SessionEditor key={n.id} centerId={centerId} n={n} ws={ws} onPending={onPending} />)}
+      </div>}
+    </section>}
+    {!ws.notes.length && <p className="text-[14px] text-brand-inkMuted" data-testid="sessions-empty">No sessions yet.</p>}
   </div>;
 }
 
