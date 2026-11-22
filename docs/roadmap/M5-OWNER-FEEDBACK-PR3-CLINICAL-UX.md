@@ -37,3 +37,16 @@ Source: `docs/roadmap/M5-OWNER-MANUAL-FEEDBACK-20261122.md`; follows merged PR #
 - A clear notice distinguishes fictional fixture transcription from real clinical recording; no microphone APIs, external speech services, consent, audio upload, signing, patient release or STT activation are added.
 - Updated live browser synthetic session and multi-tab tests to deliberately expand the developer disclosure; added mounted regression tests for default collapsed presentation, draft saving and completed-session access revocation.
 - Scope is **only a developer-control UX separation**; observation 20 owner acceptance, five-width per-role screenshots, manual keyboard/AT and full exact-head review/CI remain pending. Do not interpret the implementation as real STT availability or M5 closure.
+
+## NEXT DRAFT — observation 15: versioned goal/plan navigation (NOT IMPLEMENTED)
+
+Predecessor: #468, merged as `3830366822705944c14c051ef0d6932f4aaa8c3b`.
+Owner observation 15: “Progress charts need goal/plan links and versioned target changes.”
+
+- Inspect existing progress visualization, goal version identities, plan relationship and M6 target semantics before changing any read or write path.
+- Add exact-version deep links from progress charts to the relevant authorized goal/plan, preserving immutable historical records and enforcing current-role/tenant access server-side.
+- Any target edit must create or use the approved versioned update flow; never silently overwrite a historical target or retroactively change chart meaning.
+- Test synthetic therapist/supervisor/guardian denied journeys, stale versions, cross-tenant/cross-child references, keyboard/mobile link behavior, reload, back navigation and other shared views using the same chart component.
+- Retain all eight ≥90% code coverage floors, full exact-HEAD CI, independent review, five-width visual and manual AT/owner acceptance; G2/G2b clinical release/signing remains NO-GO.
+
+**Status: PLANNING ONLY — NOT IMPLEMENTED, NOT TESTED, NOT QUALIFIED, NOT READY TO MERGE.**
