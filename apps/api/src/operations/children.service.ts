@@ -9,7 +9,8 @@ import { InvitationsService } from '../centers/invitations.service';
 import { terminateTherapistCare } from '../centers/therapist-lifecycle';
 import { normalizeEmail } from '../common/security';
 import { PrismaService } from '../prisma/prisma.service';
-import type { AssignmentDto, ChildDto, GuardianDto, ListChildrenQuery, UpdateChildDto, ReferentDto } from './operations.dto';
+import { openPrivateData, sealPrivateData } from '../common/private-envelope';
+import type { AssignmentDto, ChildDto, GuardianDto, ListChildrenQuery, UpdateChildDto, ReferentDto, PrivateCareFieldsDto, PrivateCareUpdateDto } from './operations.dto';
 import { lockCenter, TrialService } from './trial.service';
 import { NoticesService } from './notices.service';
 
@@ -18,6 +19,18 @@ const clean = (s: string) => s.trim().replace(/\s+/g, ' ');
 export const childScope = (v: Viewer): Prisma.ChildWhereInput =>
   v.role === 'THERAPIST' ? { assignments: { some: { membershipId: v.membershipId, endedAt: null } } } : {};
 const dob = (s: string) => new Date(`${s}T00:00:00Z`);
+// Family/staff-reported medical context is not a verified clinical finding.
+// Encrypt at application layer and never include content in list/event/audit rows.
+const privateCareBody = (dto: PrivateCareFieldsDto) => ({
+  conditions: dto.conditions?.trim() ?? '',
+  allergies: dto.allergies?.trim() ?? '',
+  medications: dto.medications?.trim() ?? '',
+  careNotes: dto.careNotes?.trim() ?? '',
+  source: 'FAMILY_REPORTED_UNVERIFIED' as const,
+});
+const encryptCare = (centerId: string, childId: string, dto: PrivateCareFieldsDto) =>
+  sealPrivateData(Buffer.from(JSON.stringify(privateCareBody(dto)), 'utf8'), 'care-v1', centerId, childId);
+
 
 @Injectable()
 export class ChildrenService {
@@ -69,6 +82,10 @@ export class ChildrenService {
       const c = await tx.child.create({
         data: { centerId, firstName: clean(dto.firstName), lastName: clean(dto.lastName), preferredName: dto.preferredName ? clean(dto.preferredName) : null, dateOfBirth: dob(dto.dateOfBirth), services: uniq(dto.services), createdById: actorUserId, createdAt: now },
       });
+      if (dto.privateCare) {
+        const encryptedBody = encryptCare(centerId, c.id, dto.privateCare);
+        await tx.childCareIntake.create({ data: { centerId, childId: c.id, encryptedBody, modifiedById: actorUserId, createdAt: now, updatedAt: now } });
+      }
       await logCenterEvent(tx, centerId, 'child.registered', now, { actorUserId, meta: { childId: c.id } });
       return c;
     });
@@ -125,6 +142,68 @@ export class ChildrenService {
       appointments: c.appointments.map((a) => ({ id: a.id, startsAt: a.startsAt, endsAt: a.endsAt, service: a.service, status: a.status, room: a.room, therapist: name(a.membershipId), membershipId: a.membershipId, version: a.version })),
       events: await describeEvents(this.prisma, events),
     };
+  }
+
+  private async authorizeCare(centerId: string, id: string, v: Viewer) {
+    if (!['CENTER_ADMIN','COORDINATOR','THERAPIST'].includes(v.role))
+      throw new ForbiddenException('Private care context is restricted to the current care team.');
+    const membership = await this.prisma.membership.findFirst({ where: {
+      id: v.membershipId, userId: v.userId, centerId, status: 'ACTIVE',
+    }, select: { id: true } });
+    if (!membership) throw new NotFoundException('Child not found');
+    const child = await this.prisma.child.findFirst({ where: {
+      id, centerId,
+      ...(v.role === 'THERAPIST' ? childScope(v) : {}),
+    }, select: { id: true, status: true } });
+    if (!child) throw new NotFoundException('Child not found');
+    return child;
+  }
+
+  async privateCare(centerId: string, id: string, v: Viewer) {
+    await this.authorizeCare(centerId, id, v);
+    const row = await this.prisma.childCareIntake.findFirst({ where: { centerId, childId: id } });
+    if (!row) return { version: 0, source: 'FAMILY_REPORTED_UNVERIFIED',
+      conditions: '', allergies: '', medications: '', careNotes: '' };
+    const opened = openPrivateData(row.encryptedBody, 'care-v1', centerId, id);
+    return { ...JSON.parse(opened.toString('utf8')) as ReturnType<typeof privateCareBody>, version: row.version };
+  }
+
+  async updatePrivateCare(centerId: string, id: string, v: Viewer, dto: PrivateCareUpdateDto) {
+    if (!['CENTER_ADMIN','COORDINATOR'].includes(v.role))
+      throw new ForbiddenException('Only authorized child managers may change family-reported care context.');
+    await this.authorizeCare(centerId, id, v);
+    const encryptedBody = encryptCare(centerId, id, dto);
+    const now = this.trial.now();
+    try {
+      await this.prisma.$transaction(async tx => {
+        await this.trial.assertWritable(tx, centerId, now);
+        await tx.$queryRaw`SELECT id FROM child WHERE id=${id}::uuid AND center_id=${centerId}::uuid FOR UPDATE`;
+        const currentChild = await tx.child.findFirst({ where: { id, centerId } });
+        if (!currentChild || currentChild.status !== 'ACTIVE') throw new NotFoundException('Active child not found');
+        const current = await tx.childCareIntake.findFirst({ where: { centerId, childId: id } });
+        if (current?.version !== (dto.version || 0)) {
+          if (current || dto.version !== 0) throw new ConflictException('Care context changed. Reload before saving.');
+        }
+        if (!current) {
+          await tx.childCareIntake.create({ data: { centerId, childId: id, encryptedBody,
+            modifiedById: v.userId, createdAt: now, updatedAt: now } });
+        } else {
+          const updated = await tx.childCareIntake.updateMany({ where: { id: current.id, centerId, version: dto.version },
+            data: { encryptedBody, modifiedById: v.userId, version: { increment: 1 }, updatedAt: now } });
+          if (updated.count !== 1) throw new ConflictException('Care context changed. Reload before saving.');
+        }
+        await logCenterEvent(tx, centerId, 'child.care_context_updated', now, {
+          actorUserId: v.userId, meta: { childId: id, category: 'family_reported_unverified' },
+        });
+      });
+    } catch (error) {
+      if ((error as { code?: string }).code === 'P2002') throw new ConflictException('Care context changed. Reload before saving.');
+      throw error;
+    }
+    await this.audit.record('child.care_context_updated', {
+      actorUserId: v.userId, meta: { centerId, childId: id },
+    });
+    return this.privateCare(centerId, id, v);
   }
 
   async update(centerId: string, actorUserId: string, id: string, dto: UpdateChildDto) {
