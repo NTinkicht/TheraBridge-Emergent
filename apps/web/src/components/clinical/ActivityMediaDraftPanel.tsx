@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { FileImage, ShieldAlert } from 'lucide-react';
 import { Button, Card, Pill } from '@/components/design/ui';
 import { activityMediaDrafts, type ActivityMediaDraft as Draft, type ActivityMediaSource as SourceType } from '@/lib/activity-media';
+import { LocalActivityMediaReadiness } from './LocalActivityMediaReadiness';
 
 const initial = {
   sourceType: 'ORIGINAL' as SourceType, styleVersion: 'm5-b-v1',
@@ -120,6 +121,8 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
         No image upload or publication is available. This records a draft brief and provenance only.
         Human clinical/design approval and verified storage are separate mandatory gates.
       </p>
+      {/* Scope-coupled key invalidates pending local file checks when activity identity/version changes. */}
+      <LocalActivityMediaReadiness key={centerId + ':' + templateId + ':' + String(templateVersion ?? 'unversioned')} />
       {error && <p role="alert" className="text-sm text-status-danger">{error}</p>}
       {notice && <p role="status" className="text-sm text-status-success">{notice}</p>}
       <fieldset disabled={busy} aria-label="Illustration proposal metadata" className="grid grid-cols-1 gap-3 sm:grid-cols-2 disabled:opacity-60">

@@ -1521,3 +1521,6 @@ Assessment specialty help is factual and non-diagnostic; report/plan authoring g
 
 ## 2026-11-23 — PR #475, guardian observations 28–31 (NOT YET QUALIFIED)
 Rights-safe compact practice cards, a distinct family-documents destination, authorized linked-child tabs and clarified home-practice naming are implemented. The charts remain synthetic regardless of selected child; real family files remain blocked by the existing server release/consent gates. Full CI, eight >=90% metrics, Codex and five-width keyboard/AT/owner verification are pending. No production clinical or image rights approval is implied; G2/G2b remains NO-GO.
+
+## 2026-11-23 — PR #477, owner observation 25 (PARTIAL; NOT QUALIFIED)
+Optional staff-only PNG header/dimension check is implemented locally inside the pre-existing private metadata proposal panel; it never uploads, stores, previews, approves, sends or publishes image bytes. Added bounded/invalid/stale-choice/no-network mounted tests in apps/web/test/coverage-m5-obs25-local-media-readiness.test.cjs; execution and full exact-HEAD CI, eight >=90% API/Web metrics, independent review and five-width keyboard/AT/owner acceptance are PENDING. Image upload/storage/rights/scan/approval remain owner-gated in M5-14 #197; no real clinical release or G2/G2b GO. See docs/roadmap/M5-OWNER-OBS25-ACTIVITY-MEDIA-READINESS.md.
