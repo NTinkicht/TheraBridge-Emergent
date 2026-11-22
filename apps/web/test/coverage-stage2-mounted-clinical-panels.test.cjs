@@ -74,7 +74,7 @@ describe('Stage 2 mounted clinical assessments: exact source and validation',()=
  it('saves explicitly scoped assessment with optional structured area',async()=>{
   clinicalApi.assess.mockResolvedValue({id:'a1'});
   await mount(AssessmentsPanel,{pagination});
-  await change('assessment-service','ot');
+  await change('assessment-service','occupational');
   await change('assessment-summary','Fictional measured observation');
   await change('assessment-area','  Motor skills  ');
   await change('assessment-finding','Observed task with support');
