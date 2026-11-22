@@ -213,7 +213,8 @@ export class WorkspaceService {
       // Self-profile locks remain ordered center -> member, consistent with admin staff edits.
       await tx.$queryRaw`SELECT id FROM "center" WHERE id = ${centerId}::uuid FOR NO KEY UPDATE`;
       await tx.$queryRaw`SELECT id FROM "membership" WHERE id = ${membershipId}::uuid AND center_id = ${centerId}::uuid FOR UPDATE`;
-      const m = await tx.membership.findFirstOrThrow({ where: { id: membershipId, centerId }, include: { roles: true } });
+      const m = await tx.membership.findFirstOrThrow({ where: { id: membershipId, centerId, userId: actor.userId, status: 'ACTIVE' }, select: { id: true } });
+      if (!m.id) throw new BadRequestException('Active membership required.');
       if (dto.displayName) await tx.user.update({ where: { id: actor.userId }, data: { displayName: clean(dto.displayName) } });
       const profile = profileData(dto);
       await tx.membership.update({ where: { id: membershipId }, data: profile });
