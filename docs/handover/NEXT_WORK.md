@@ -1,3 +1,10 @@
+## 2026-11-22 — PR #461 shared dark theme and cross-screen P2 checkpoint (NOT QUALIFIED)
+
+1. Qualify the final PR #461 HEAD using full six required CI jobs, measured API/Web eight >=90% metrics, all browser/Compose/preview/secret/SBOM and Smart CI checks. Diagnose any true failure without reducing standards.
+2. Obtain independent Codex review of the exact final head and resolve all open P2 threads only when fixed; inspect shared theme and child/schedule combobox regressions.
+3. Perform synthetic human role review at 320/390/768/1024/1440 with staff/guardian dark/light, nested surfaces, keyboard, contrast, RTL and real assistive technology; mark NOT_RUN until observed.
+4. Only merge after gates pass, then deploy reviewed main to Render synthetic demo and verify deployment commit; preserve G2/G2b clinical NO-GO and do not claim M5 milestone closure.
+
 ## 2026-11-22 — PR #461 newest-head requalification
 
 1. Rerun eight unrounded >=90% API/Web metrics and complete required test, secret-scan, live-session, preview-container, demo-journey, compose, Child360, SBOM, source-contracts and Smart CI on the NEW P2-fix HEAD.
