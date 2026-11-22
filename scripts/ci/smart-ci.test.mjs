@@ -8,9 +8,8 @@ const selected=(changes,overrides={})=>decide({changes,eventName:'pull_request',
  baseRef:'main',mode:'targeted',requiredGateReady:true,fromFork:false,
  ownerPolicyApproved:true,...overrides});
 
-test('EVERY PR, including docs-only and CSS-only, executes the full eight-metric coverage CI job',()=>{
+test('Every code or executable-style PR still executes the full eight-metric coverage CI job',()=>{
  for(const changes of [
-  paths('docs/roadmap/README.md','docs/handover/NEXT_WORK.md'),
   paths('apps/web/src/app/globals.css','apps/web/public/logo.png'),
   paths('apps/api/src/auth/auth.service.ts'),
   paths('apps/web/src/app/guardian/page.tsx'),
@@ -28,17 +27,19 @@ test('EVERY PR, including docs-only and CSS-only, executes the full eight-metric
  }
 });
 
-test('CI settings, fork, event, base and owner approval cannot bypass full 90% coverage',()=>{
+test('CI settings, fork, event, base and absent owner approval cannot bypass full coverage',()=>{
  const cases=[
   {mode:'shadow'},{mode:''},{mode:'targeted',requiredGateReady:false},
   {eventName:'push'},{baseRef:'release'},{fromFork:true},
   {ownerPolicyApproved:false},
  ];
- for(const option of cases) assert.equal(selected(paths('README.md'),option).execution,'full');
+ for(const option of cases) assert.equal(selected(paths('apps/web/src/components/clinical/SessionEditor.tsx'),option).execution,'full');
 });
 
 test('the path classifier remains conservative for future risk diagnostics',()=>{
- assert.equal(classifyPaths(paths('docs/a.md')).candidate,'docs');
+ assert.equal(classifyPaths(paths('docs/roadmap/a.md')).candidate,'docs');
+ assert.equal(classifyPaths(paths('docs/commercial/launch-decision-register.md')).candidate,'full');
+ assert.equal(classifyPaths(paths('docs/qa/TEST_RESULTS.md')).candidate,'full');
  assert.equal(classifyPaths(paths('apps/web/src/globals.css')).candidate,'web-style');
  for(const x of ['AGENTS.md','apps/web/public/logo.svg','scripts/ci/smart-ci.mjs',
    'apps/api/prisma/schema.prisma','../bad.md']){
@@ -68,15 +69,45 @@ test('final Smart CI gate accepts only all genuinely successful full checks',()=
  assert.throws(()=>verifySmartGate(bad),/required_checks_not_satisfied/);
 });
 
-test('final gate rejects formerly optional docs/web-style plans regardless of green subset',()=>{
- for(const mode of ['docs','web-style']){
+test('final gate rejects web-style shortcut even if a subset appears green',()=>{
+ for(const mode of ['web-style']){
   const expected=expectedJobs(mode);
   const jobs=Object.fromEntries(Object.entries(expected).map(([k,v])=>[k,{result:v}]));
   jobs['smart-plan']={result:'success',outputs:{mode}};
-  assert.throws(()=>verifySmartGate(jobs),/mandatory_full_coverage_required/);
+  assert.throws(()=>verifySmartGate(jobs),/unsupported_ci_plan/);
  }
 });
 
+test('owner-approved documentation-only PR uses strict reduced matrix and no coverage claims',()=>{
+ const safe=selected(paths('docs/roadmap/M5-README.md','docs/handover/NEXT_WORK.md'));
+ assert.equal(safe.execution,'docs');
+ assert.equal(safe.candidate,'docs');
+ assert.equal(safe.reason,'owner_approved_safe_docs_only');
+ assert.equal(safe.required['secret-scan'],'success');
+ assert.equal(safe.required['sbom'],'success');
+ assert.equal(safe.required['smart-targeted'],'success');
+ for(const job of ['test','commercial-provenance','commercial-contracts','compose','preview-container','live-session'])
+  assert.equal(safe.required[job],'skipped',job);
+ const expected=expectedJobs('docs');
+ const needs=Object.fromEntries(Object.entries(expected).map(([k,v])=>[k,{result:v}]));
+ needs['smart-plan']={result:'success',outputs:{mode:'docs'}};
+ assert.equal(verifySmartGate(needs).status,'SMART_CI_DOCS_POLICY_PASS');
+ needs['sbom']={result:'skipped'};
+ assert.throws(()=>verifySmartGate(needs),/required_checks_not_satisfied/);
+});
+test('docs exception fails closed for forks, unknown paths, deleted docs, mixed code, policy and evidence',()=>{
+ for(const changes of [
+  paths('docs/roadmap/a.md','apps/web/src/app/page.tsx'),
+  paths('docs/commercial/rights.md'),paths('docs/qa/TEST_RESULTS.md'),
+  paths('AGENTS.md'),paths('.github/workflows/ci.yml'),
+  paths('scripts/ci/smart-ci.mjs'),
+  [{path:'docs/handover/NEXT_WORK.md',status:'D'}],
+  [],
+ ])assert.equal(selected(changes).execution,'full',JSON.stringify(changes));
+ for(const overrides of [
+  {fromFork:true},{eventName:'push'},{baseRef:'release'},{ownerPolicyApproved:false},
+ ])assert.equal(selected(paths('README.md'),overrides).execution,'full');
+});
 test('final gate rejects absent plan or invalid modes',()=>{
  assert.throws(()=>verifySmartGate({}),/plan_not_successful/);
  assert.throws(()=>verifySmartGate({'smart-plan':{result:'success',outputs:{mode:'invalid'}}}),/mandatory_full_coverage_required/);
@@ -89,5 +120,5 @@ test('CI triggers once for feature PR commits but still fully qualifies main and
  assert.doesNotMatch(workflow,/branches:\s*\["\*\*"\]/);
  assert.match(workflow,/if: needs\.smart-plan\.outputs\.mode == 'full'/);
  assert.equal(selected(paths('apps/web/src/components/clinical/SessionEditor.tsx')).execution,'full');
- assert.equal(selected(paths('docs/roadmap/README.md')).execution,'full');
+ assert.equal(selected(paths('docs/roadmap/README.md')).execution,'docs');
 });
