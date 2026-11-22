@@ -48,6 +48,9 @@ test('activities render consistent action regions with explicit origin and one l
   assert.match(activities, /className="flex h-full min-w-0 flex-col gap-2"/);
   assert.match(activities, /<ActivityCard t=\{t\} visual compact layout=\{view\} \/>/);
   assert.match(activities, /activity-actions-zone-/);
+  assert.match(activities, /activity-actions-menu-/);
+  assert.match(activities, /Activity actions/);
+  assert.match(activities, /<details className="rounded-control border/);
   assert.match(activities, /My activity/);
   assert.match(activities, /Shared activity/);
   assert.match(activities, /Sample activity/);
