@@ -10,10 +10,10 @@ Owner register: `docs/roadmap/M5-OWNER-MANUAL-FEEDBACK-20261122.md`.
 | 04 | Custom recurring visits | IMPLEMENTED IN BRANCH: custom numeric 1–4 week interval with client/server bounds, series summary parity, mounted tests and browser CI; monthly recurrence remains outside existing API |
 | 09 | Center contact phone + email | IMPLEMENTED IN BRANCH: additive nullable Prisma migration, tenant-scoped versioned API, validated empty clearing, audit, center form, Jest/PostgreSQL/browser tests; final qualification pending |
 | 10 | Job title vs role clarity | IMPLEMENTED IN BRANCH: explicit accessible profile guidance, personal title remains editable; no authorization changes |
-| 11 | Condition/allergy/medication intake | Sensitive child information: requires approved M6/M9 clinical schema, access control, consent, audit; NO-GO until approval |
-| 13 | Optional child photo | Consent, private storage, scan, signed URL, rights and retention: NO-GO until approval |
+| 11 | Condition/allergy/medication intake | GATED — owner approval in [#463](https://github.com/NTinkicht/TheraBridge-Emergent/issues/463): clinical data dictionary, least privilege and consent before storage |
+| 13 | Optional child photo | GATED — owner approval in [#464](https://github.com/NTinkicht/TheraBridge-Emergent/issues/464): consent, private quarantine, scanning, retention and revocation |
 | 14 | Child row quick actions | IMPLEMENTED IN BRANCH: link to existing child profile; guardian anchor only when center-scoped child already has guardian; no new message/release capability |
-| 27 | Specialty/responsibility role grants | Read-only in self-profile, admin-managed changes only; server authorization and formal owner decision need explicit review before altering active grants |
+| 27 | Specialty/responsibility role grants | GATED — authorization decision in [#465](https://github.com/NTinkicht/TheraBridge-Emergent/issues/465) before self-service grant behavior can change |
 
 ## Delivery conditions
 
