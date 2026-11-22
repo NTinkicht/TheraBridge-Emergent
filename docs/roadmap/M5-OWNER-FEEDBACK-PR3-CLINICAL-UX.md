@@ -47,3 +47,12 @@ Source: `docs/roadmap/M5-OWNER-MANUAL-FEEDBACK-20261122.md`; follows merged PR #
 - Added mounted synthetic regressions for exact identity, cross-version evidence, read-only roles, pending-navigation refusal, modified clicks and URL encoding.
 
 **NOT YET QUALIFIED:** exact-HEAD full API/Web coverage >=90% all eight metrics, browser journeys, independent review, five-width and keyboard/AT human checks, and owner acceptance still required. G2/G2b remains NO-GO.
+
+## Implementation — observations 18–19: session activity picker (qualification pending)
+
+- Replaced the long text-button selection list with a responsive, image-first 4:3 activity grid. The 44px **Add [activity]** button is a real native button for keyboard, touch and desktop; the existing reorder buttons remain the accessible alternative to optional drag/drop. No drag/drop-only action was introduced.
+- All catalogue choices use the already scoped `ws.templates` with an exact specialty match and local title search. **No network search, new API, image URL, imported private media, or unapproved third-party illustration**; each card visibly states when there is no rights-approved illustration.
+- The existing session editor retains stable per-click IDs, complete saved template snapshots (transport still uses the existing server-owned fields), optimistic version saving, pending-draft guard, conflict resolution, and clinical permissions.
+- Optional goal-version selection is in a collapsed native disclosure that **stays mounted**; changing completion, factual outcome and assistance uses the preexisting separate controls and the existing warning before clearing evidence.
+- Added synthetic mounted regression checks for rights-safe placeholders, keyboard Add, query empty state, specialty/permission scoping, optional version-link persistence, independent outcome/assistance, and unsigned draft-only save.
+- **Not completed or claimed:** image publication, upload or private rights/scan approval (PR4/M5-14), drag/drop, owner five-width/keyboard/AT acceptance, or final observation 18–19 owner signoff. Clinical G2/G2b NO-GO remains unchanged. Full exact-head CI and independent reviewer acceptance required.
