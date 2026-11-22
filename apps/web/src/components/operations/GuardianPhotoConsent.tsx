@@ -29,14 +29,14 @@ export function GuardianPhotoConsent({centerId,childId}: {centerId:string;childI
       .catch(()=>{if(valid)setPrivatePhoto(null);});
     return ()=>{valid=false;setReview(null);setPrivatePhoto(null);};
   },[centerId,childId]);
-  const inspect=async id=>{
+  const inspect=async (id:string)=>{
     setBusy(true);setError('');setReview(null);setConfirmed(false);
     try{const image=await opsApi.guardianReviewPhoto(centerId,childId,id);
       setReview({id,src:'data:image/png;base64,'+image.pngBase64});
     }catch{setError('Unable to privately inspect this photograph.');}
     finally{setBusy(false);}
   };
-  const decide=async consent=>{
+  const decide=async (consent:boolean)=>{
     if(!review||busy||(consent&&!confirmed))return;
     setBusy(true);setError('');
     try{
