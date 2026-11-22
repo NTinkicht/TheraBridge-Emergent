@@ -61,7 +61,10 @@ export async function preparePrivatePng(
   centerId: string, subjectId: string,
 ): Promise<PreparedImage> {
   const bytes=decodePrivatePng(input);
-  const verified=verifyPngCandidate(bytes); // exact PNG structure, CRC, bounded inflate; rejects EXIF/tEXt/iTXt.
+  // Malformed upload bytes reject as 422, never an uncaught 500 or parser leak.
+  let verified: ReturnType<typeof verifyPngCandidate>;
+  try { verified=verifyPngCandidate(bytes); }
+  catch { throw new UnprocessableEntityException('Private PNG candidate invalid.'); }
   const scannerVersion=await scanPrivatePng(bytes);
   // Only server-held key can place a verified candidate in the private database.
   const encryptedBytes=sealPrivateData(bytes,domain,centerId,subjectId);
