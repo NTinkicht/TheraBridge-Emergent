@@ -121,7 +121,8 @@ test('final gate rejects absent plan or invalid modes',()=>{
 
 test('CI triggers once for feature PR commits but still fully qualifies main and manual dispatch',()=>{
  const workflow=readFileSync(new URL('../../.github/workflows/ci.yml',import.meta.url),'utf8');
- assert.match(workflow,/^on:\n  push:\n    branches: \["main"\]\n  pull_request:\n  workflow_dispatch:/m);
+ assert.match(workflow,/^on:\n  push:\n    branches: \["main"\]\n    tags: \["v\*"\]/m);
+ assert.match(workflow,/^  pull_request:\n  schedule:\n    - cron: "30 4 \* \* \*"[^\n]*\n  workflow_dispatch:/m);
  assert.doesNotMatch(workflow,/branches:\s*\["\*\*"\]/);
  assert.match(workflow,/if: needs\.smart-plan\.outputs\.mode == 'full'/);
  assert.equal(selected(paths('apps/web/src/components/clinical/SessionEditor.tsx')).execution,'full');
