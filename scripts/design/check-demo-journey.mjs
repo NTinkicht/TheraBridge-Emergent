@@ -540,6 +540,10 @@ try {
 
 
     await page.getByTestId('clinical-tab-plan').click();
+    const evidenceDisclosure = page.getByTestId('plan-supporting-evidence').first();
+    assert.equal(await evidenceDisclosure.getAttribute('open'), null,
+      'Supporting plan evidence must be collapsed on first render');
+    await evidenceDisclosure.locator('summary').click();
     await page.getByTestId('goal-checkpoint-panel').first().waitFor();
     await page.getByTestId('goal-checkpoint-empty').first().waitFor();
     // TB-EM-037: response-overlay test is ONLY a fictional read-model UI
@@ -575,7 +579,9 @@ try {
     });
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
-    const checkpointCompare = page.getByTestId('plan-' + comparePlanId)
+    const comparedPlan = page.getByTestId('plan-' + comparePlanId);
+    await comparedPlan.getByTestId('plan-supporting-evidence').locator('summary').click();
+    const checkpointCompare = comparedPlan
       .getByTestId('checkpoint-compare').first();
     await checkpointCompare.getByTestId('checkpoint-compare-notes').waitFor();
     assert.equal(await checkpointCompare.getByTestId('checkpoint-compare-notes').locator('article').count(), 2);
