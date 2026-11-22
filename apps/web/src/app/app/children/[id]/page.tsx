@@ -202,7 +202,9 @@ function ChildPage({ id, session, onError }: { id: string; session: SessionInfo;
   // finishes. Scroll only after the current scoped child is rendered.
   useEffect(() => {
     if (child?.id && typeof window !== 'undefined' && window.location.hash === '#guardians') {
-      document.getElementById('guardians')?.scrollIntoView({ block: 'start' });
+      const target = document.getElementById('guardians');
+      target?.scrollIntoView({ block: 'start' });
+      target?.focus({ preventScroll: true });
     }
   }, [child?.id]);
   if (failed) return <ErrorState onRetry={() => void reload()} testId="child-error" />;
