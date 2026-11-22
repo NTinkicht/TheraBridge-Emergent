@@ -1,3 +1,7 @@
+## 2026-11-22 — PR #466 CI failure triage and regression update (REQUALIFICATION PENDING)
+
+Original HEAD `66425674`: both `test` and `measured-web` failed only two stale caseload-copy expectations (`coverage-operational-success-routes`, `coverage-m5-wu2-therapist`; test job 1841 PASS/2 FAIL), while `live-session` timed out seeking a completed session note after history was intentionally hidden by default. Preserved explicit synthetic-only/no-release checks and changed expected wording to the new actual UX. Updated the genuine PostgreSQL/two-tab live-session browser script to check collapsed history, expand it via accessible button and then verify completed note remains disabled. No assertions bypassed or checks disabled. Fresh exact-HEAD six-job CI and all eight >=90% API/Web coverage metrics **PENDING**. Do not merge pending review/owner AT; G2/G2b NO-GO.
+
 ## 2026-11-22 — M5 PR3 historical-session regression definitions (UNVERIFIED)
 
 Extended `apps/web/test/coverage-stage2-mounted-clinical-panels.test.cjs` with actual mounted SessionsPanel cases: active editors remain present across history expand/collapse, history not mounted by default, existing review-only mode cannot start sessions. Tests committed but no exact-HEAD result has yet been verified. Verify 320/390/768/1024/1440px keyboard, assistive technology and view-source boundaries; all eight >=90% measured coverage and six required CI jobs remain hard gates, G2/G2b NO-GO remains.
