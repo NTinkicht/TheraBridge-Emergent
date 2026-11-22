@@ -39,6 +39,8 @@ test('child autocomplete is center-scoped, cancelable, and navigates only to ret
   assert.match(children, /clearTimeout\(timer\)/);
   assert.match(children, /suggestions\?\.key === suggestionKey/);
   assert.match(children, /aria-autocomplete="list"/);
+  assert.match(children, /revealActiveSuggestion\\(suggestionListRef\\.current/);
+  assert.match(children, /ref=\\{suggestionListRef\\} role="listbox"/);
   assert.match(children, /role="listbox"/);
   assert.match(children, /router\.push\(`\/app\/children\/\$\{c\.id\}`\)/);
   assert.match(children, /md:grid-cols-\[minmax\(0,1\.35fr\)_minmax\(0,1\.65fr\)_8rem\]/);
