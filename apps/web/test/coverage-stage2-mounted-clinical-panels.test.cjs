@@ -141,6 +141,7 @@ describe('M5 PR3 historical sessions default collapsed with active drafts retain
    ws:ws({notes:[makeNote('open','COMPLETED'),makeNote('old','COMPLETED')]}),run,onPending})));
   expect(get('session-record-open').props.hidden).toBe(false);
   expect(get('session-record-open').findByType(Editor)).toBe(originalEditor);
+  expect(get('session-record-open').findByType('fieldset').props.disabled).toBe(true);
   expect(get('session-record-old').props.hidden).toBe(true);
   expect(html()).toContain('Your unsaved draft remains available for recovery');
   expect(onPending).toHaveBeenCalledWith('open',true);
