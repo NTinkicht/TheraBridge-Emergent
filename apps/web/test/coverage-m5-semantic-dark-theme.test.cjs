@@ -73,6 +73,23 @@ describe('application-wide semantic light/dark palette',()=>{
     expect(states).toContain("fam ? 'text-fam-muted' : 'text-status-danger'");
     expect(states).not.toContain("text-[#7A2630]");
   });
+  it('clinical report and home-plan assist panels keep dark text and surfaces paired',()=>{
+    const fs=require('fs'),path=require('path');
+    for(const file of ['ReportDecisionAssist.tsx','HomePlanSyntheticAssist.tsx']){
+      const src=fs.readFileSync(path.join(__dirname,'../src/components/clinical',file),'utf8');
+      expect(src).toContain('bg-surface-white');
+      expect(src).not.toMatch(/\\bbg-white\\b/);
+      expect(src).toContain('text-brand-ink');
+    }
+    const canvas=darkSemanticOverrides.surface.white,ink=darkSemanticOverrides.brand.ink;
+    const luminance=h=>{
+      const c=[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255)
+        .map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);
+      return .2126*c[0]+.7152*c[1]+.0722*c[2];
+    };
+    const ratio=(a,b)=>(Math.max(luminance(a),luminance(b))+.05)/(Math.min(luminance(a),luminance(b))+.05);
+    expect(ratio(canvas,ink)).toBeGreaterThanOrEqual(4.5);
+  });
   it('switches both family and clinical semantic surfaces, never just a guardian header',()=>{
     const selector='html[data-app-theme="dark"] .theme-clinical-auto, html[data-app-theme="dark"] .theme-family-auto';
     const dark=appThemeCss[selector];
