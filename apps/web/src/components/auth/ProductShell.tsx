@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeftRight, Baby, Building2, CalendarDays, ChevronDown, ChevronRight, ClipboardCheck, Home, Inbox, KeyRound, LineChart, ListChecks, Lock, LogOut, Menu, MessagesSquare, NotebookPen, PanelLeftClose, PanelLeftOpen, Settings2, Sparkles, Sprout, UserRound, Users, X, type LucideIcon } from 'lucide-react';
+import { ArrowLeftRight, Baby, Building2, CalendarDays, ChevronDown, ChevronRight, ClipboardCheck, Home, Inbox, KeyRound, LineChart, ListChecks, Lock, LogOut, Menu, MessagesSquare, Moon, NotebookPen, PanelLeftClose, PanelLeftOpen, Settings2, Sparkles, Sprout, Sun, UserRound, Users, X, type LucideIcon } from 'lucide-react';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { SignatureBand } from '@/components/brand/SignatureBand';
 import { Avatar } from '@/components/design/ui';
+import { useAppTheme } from '@/components/theme/useAppTheme';
 import { ROLE_LABELS, authApi, contextLabel, type SessionInfo } from '@/lib/auth';
 import { ApiError } from '@/lib/api';
 import { groupAuthorizedNav, quickMobileNav } from './nav-areas';
@@ -53,6 +54,7 @@ const NAV: { key: string; href: string; icon: LucideIcon; label: string; short: 
 
 export function ProductShell({ session, active, planned, children }: { session: SessionInfo; active: string; planned: PlannedModule[]; children: ReactNode }) {
   const router = useRouter();
+  const { theme, toggleTheme } = useAppTheme();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const [railCollapsed, setRailCollapsed] = useState(false);
@@ -77,9 +79,10 @@ export function ProductShell({ session, active, planned, children }: { session: 
   const activeGroup = groups.find((group) => group.items.some((n) => n.key === active));
   const activeGroupKey = activeGroup?.key;
   const family = ctx?.role === 'GUARDIAN';
-  // All navigation surfaces must inherit the same family theme scope as pages.
-  // No role, permission or stored preference changes are made here.
-  const navSurface = family ? 'border-fam-border bg-fam-surface text-fam-ink' : 'border-border-light bg-surface-white';
+  // All role shells use one shared theme: family keeps its own approved accent
+  // palette, while staff semantic surfaces follow the same light/dark preference.
+  // Role, permission, route and tenant membership are unchanged.
+  const navSurface = family ? 'border-fam-border bg-fam-surface text-fam-ink' : 'border-border-light bg-surface-white text-brand-ink';
   const navMuted = family ? 'text-fam-muted' : 'text-brand-inkMuted';
   const contextId = ctx?.type === 'center' ? ctx.centerId : 'platform';
 
@@ -154,7 +157,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
   }
 
   return (
-    <div className={`flex min-h-screen ${family ? 'theme-family-auto bg-fam-canvas text-fam-ink' : 'bg-canvas-clinical text-brand-ink'}`} data-testid="product-shell">
+    <div className={`flex min-h-screen ${family ? 'theme-family-auto bg-fam-canvas text-fam-ink' : 'theme-clinical-auto bg-canvas-clinical text-brand-ink'}`} data-testid="product-shell" data-theme={theme}>
       <a href="#main" data-testid="skip-to-main"
         className="sr-only focus:not-sr-only fixed focus:fixed left-3 top-3 z-[100] rounded-control bg-brand-action px-4 py-3 text-sm font-semibold text-white shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-action">
         Skip to main content
@@ -233,6 +236,12 @@ export function ProductShell({ session, active, planned, children }: { session: 
           <span className="md:hidden"><BrandMark variant="symbol" height={24} /></span>
           <p className={`min-w-0 flex-1 break-words text-[14px] ${navMuted}`} data-testid="active-context-label">{where}</p>
           <span className="hidden items-center gap-2 lg:flex"><Avatar name={session.user.displayName} size={32} /><span className="text-[14px] font-medium">{session.user.displayName}</span></span>
+          <button type="button" onClick={toggleTheme} data-testid="app-theme-toggle"
+            aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            aria-pressed={theme === 'dark'} title={theme === 'dark' ? 'Light theme' : 'Dark theme'}
+            className={`inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-control border transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${family ? 'border-fam-border text-fam-ink hover:bg-fam-tile' : 'border-border-light text-brand-ink hover:bg-surface-subtle'}`}>
+            {theme === 'dark' ? <Sun size={19} aria-hidden="true" /> : <Moon size={19} aria-hidden="true" />}
+          </button>
           <button type="button" onClick={() => void signOut()} disabled={signingOut} data-testid="sign-out-button"
             className={`inline-flex min-h-[44px] items-center gap-2 rounded-control border px-3 text-[14px] font-medium transition-colors ${family ? 'border-fam-border hover:bg-fam-tile' : 'border-border-light hover:bg-surface-subtle'}`}>
             <LogOut size={16} aria-hidden="true" /> {signingOut ? 'Signing out…' : 'Sign out'}
