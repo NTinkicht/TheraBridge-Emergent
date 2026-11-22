@@ -20,6 +20,21 @@ describe('application-wide semantic light/dark palette',()=>{
       }
     }
   });
+  it('retains WCAG AA contrast for shared navigation text and dark action fills',()=>{
+    const luminance=hex=>{
+      const channel=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255)
+        .map(c=>c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4));
+      return channel[0]*.2126+channel[1]*.7152+channel[2]*.0722;
+    };
+    const ratio=(x,y)=>{const a=luminance(x),b=luminance(y);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);};
+    const dark=darkSemanticOverrides;
+    for(const ink of [dark.brand.ink,dark.brand.inkMuted]){
+      expect(ratio(ink,dark.surface.white)).toBeGreaterThanOrEqual(4.5);
+    }
+    for(const fill of [dark.brand.action,dark.status.success,dark.status.caution,dark.status.danger]){
+      expect(ratio('#0D1226',fill)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
   it('switches both family and clinical semantic surfaces, never just a guardian header',()=>{
     const selector='html[data-app-theme="dark"] .theme-clinical-auto, html[data-app-theme="dark"] .theme-family-auto';
     const dark=appThemeCss[selector];
