@@ -7,7 +7,7 @@ const h = React.createElement;
 jest.mock('@/lib/activity-media', () => ({
   activityMediaDrafts: {
     endpoint: (c,t) => '/api/centers/'+c+'/activities/'+t+'/media-drafts',
-    list: jest.fn(), propose: jest.fn(), reject: jest.fn()
+    list: jest.fn(), propose: jest.fn(), reject: jest.fn(), uploadCandidate: jest.fn()
   }
 }));
 const {activityMediaDrafts: api} = require('../src/lib/activity-media');
@@ -47,7 +47,7 @@ describe('actual mounted private media proposal workflow',()=>{
     await open();
     expect(api.list).toHaveBeenCalledWith('center-a','activity-a');
     expect(output()).toContain('No proposals registered');
-    expect(output()).toContain('No image upload or publication is available');
+    expect(output()).toContain('No image publication is available');
     await click('Close illustration proposals');
     expect(output()).not.toContain('Private illustration proposal registry');
   });
