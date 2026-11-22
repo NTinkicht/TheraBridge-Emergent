@@ -84,6 +84,15 @@ describe('mounted child access and operational audit safety',()=>{
   expect(get('assignment-assign-a')).toBeTruthy();
   expect(get('synthetic-handover')).toBeTruthy();
  });
+ it('renders the existing scoped guardian card behind a stable quick-link anchor',async()=>{
+  await mount();
+  const section=get('child-guardians-anchor');
+  expect(section.props.id).toBe('guardians');
+  expect(section.props.className).toContain('scroll-mt-24');
+  expect(section.props.tabIndex).toBe(-1);
+  expect(get('guardians-card')).toBeTruthy();
+  expect(opsApi.child).toHaveBeenCalledWith('center-a','child-a');
+ });
  it('does not grant mutation controls to a read-only assigned therapist',async()=>{
   session.activeContext.role='THERAPIST';
   session.permissions=['center.children.read'];

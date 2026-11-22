@@ -12,20 +12,20 @@ Every item needs a code/test link, five-width before/after redacted visual evide
 
 | ID | Feedback (single underlying defect) | Package | Scope / dependency | Current status |
 |---|---|---|---|---|
-| 01 | Schedule filter alignment/typography | PR1 | Shared Schedule UI | IN_PR_461, NOT QUALIFIED |
-| 02 | Weekly calendar vertical grid/header alignment | PR1 | Shared Calendar scrollport | IN_PR_461, NOT QUALIFIED |
-| 03 | Schedule therapist search typeahead | PR1 | Scoped therapist directory | IN_PR_461, NOT QUALIFIED |
-| 04 | Custom appointment recurrence | PR2 | M7 recurring scheduling / server validation | REPORTED |
-| 05 | Children search typeahead | PR1 | Center- and role-scoped directory | IN_PR_461, NOT QUALIFIED |
-| 06 | Children rows shift when “No guardian” is present | PR1 | Fixed third status column | IN_PR_461, NOT QUALIFIED |
-| 07 | Activity catalogue card heights and action alignment | PR1 | Shared staff grid | IN_PR_461, NOT QUALIFIED |
-| 08 | Image placeholders unsuitable for Grid vs List | PR1 | 4:3 image-first grid + compact list | IN_PR_461, NOT QUALIFIED |
-| 09 | Missing centre phone and contact email | PR2 | Contact schema, forms and validation | REPORTED |
-| 10 | User job title editing / role distinction | PR2 | Profile fields vs admin-set permissions | REPORTED |
+| 01 | Schedule filter alignment/typography | PR1 | Shared Schedule UI | MERGED_PR_461, OWNER_VISUAL_QA_PENDING |
+| 02 | Weekly calendar vertical grid/header alignment | PR1 | Shared Calendar scrollport | MERGED_PR_461, OWNER_VISUAL_QA_PENDING |
+| 03 | Schedule therapist search typeahead | PR1 | Scoped therapist directory | MERGED_PR_461, OWNER_VISUAL_QA_PENDING |
+| 04 | Custom appointment recurrence | PR2 | M7 recurring scheduling / server validation | IN_PR_462, NOT QUALIFIED |
+| 05 | Children search typeahead | PR1 | Center- and role-scoped directory | MERGED_PR_461, OWNER_VISUAL_QA_PENDING |
+| 06 | Children rows shift when “No guardian” is present | PR1 | Fixed third status column | MERGED_PR_461, OWNER_VISUAL_QA_PENDING |
+| 07 | Activity catalogue card heights and action alignment | PR1 | Shared staff grid | MERGED_PR_461, OWNER_VISUAL_QA_PENDING |
+| 08 | Image placeholders unsuitable for Grid vs List | PR1 | 4:3 image-first grid + compact list | MERGED_PR_461, OWNER_VISUAL_QA_PENDING |
+| 09 | Missing centre phone and contact email | PR2 | Contact schema, forms and validation | IN_PR_462, NOT QUALIFIED |
+| 10 | User job title editing / role distinction | PR2 | Profile fields vs admin-set permissions | IN_PR_462, NOT QUALIFIED |
 | 11 | Child registration lacks condition/allergy/medication/care information | PR2 | Progressive intake; M6/M9 review and confidential access, no unapproved clinical activation | REPORTED |
-| 12 | Specialty colour identity and gradient for multi-specialty activities | PR1 | Approved Direction B tokens; existing API stores ONE service, multi-service persistence requires separate approved spec | IN_PR_461, NOT QUALIFIED |
+| 12 | Specialty colour identity and gradient for multi-specialty activities | PR1 | Approved Direction B tokens; existing API stores ONE service, multi-service persistence requires separate approved spec | MERGED_PR_461, OWNER_VISUAL_QA_PENDING |
 | 13 | Optional child profile photo | PR2 | Privacy, guardian consent, signed media controls | REPORTED |
-| 14 | Child-row quick actions incl. Guardian only if registered/authorized | PR2 | Role/scoped shortcuts, messaging gate | REPORTED |
+| 14 | Child-row quick actions incl. Guardian only if registered/authorized | PR2 | Role/scoped shortcuts, messaging gate | IN_PR_462, NOT QUALIFIED |
 | 15 | Progress charts need goal/plan links and versioned target changes | PR3 | Immutable history / M6 goal semantics | REPORTED |
 | 16 | Purpose of My Clinical Workspace unclear/redundant | PR3 | Task-oriented therapist home | REPORTED |
 | 17 | Historical Sessions expanded by default | PR3 | Default collapse; active session retained | REPORTED |
@@ -37,13 +37,13 @@ Every item needs a code/test link, five-width before/after redacted visual evide
 | 23 | Report and Plan creation require guided wizards | PR3 | Draft-only save/resume, validation and versioning | REPORTED |
 | 24 | Practice Feedback mixes unrelated handover/plan requests | PR3 | Separate family feedback, staffing and plan requests | REPORTED |
 | 25 | Activity creation needs optional image upload | PR4 | M5-14 private quarantine/scan/rights, no publish without approval | REPORTED |
-| 26 | Activity buttons differ without explanation | PR1 | Consistent collapsed action menu, ownership labels, permission-respecting items | IN_PR_461, NOT QUALIFIED |
+| 26 | Activity buttons differ without explanation | PR1 | Consistent collapsed action menu, ownership labels, permission-respecting items | MERGED_PR_461, OWNER_VISUAL_QA_PENDING |
 | 27 | Therapist specialty/responsibility checkbox appears editable but is controlled | PR2 | Read-only grants + admin request/approval, no self escalation | REPORTED |
 | 28 | Guardian activity cards, Record button and excess whitespace | PR5 | Warm, compact image-first cards; collapse reduces height | REPORTED |
 | 29 | Family Documents wrongly points to Progress | PR5 | Dedicated guardian-scoped released-document destination, M9 policy | REPORTED |
 | 30 | Guardian Progress Updates need same child tabs as Home | PR5 | Exact linked-child scope; unreleased progress stays sample-only | REPORTED |
 | 31 | Home Practice / Activities at Home naming confusion | PR5 | Unified purpose and navigation | REPORTED |
-| 32 | Dark theme leaves top/sidebar and shared navigation surfaces white outside the guardian home too | PR1 | App-wide shared shell/layout audit across Platform Admin, Centre Admin, Coordinator, Therapist specialty variants, Supervisor and Guardian; verify light/dark support and all routes where available | IMPLEMENTED_IN_PR_461 (all role shells + semantic tokens + 7-role Chromium check); GLOBAL NOT QUALIFIED pending exact-head CI and manual review |
+| 32 | Dark theme leaves top/sidebar and shared navigation surfaces white outside the guardian home too | PR1 | App-wide shared shell/layout audit across Platform Admin, Centre Admin, Coordinator, Therapist specialty variants, Supervisor and Guardian; verify light/dark support and all routes where available | MERGED_PR_461 (all role shells + semantic tokens + 7-role Chromium tests); OWNER VISUAL/AT ACCEPTANCE PENDING |
 
 ## Mandatory observation 32 verification (global dark-theme scope)
 
@@ -51,7 +51,7 @@ Every item needs a code/test link, five-width before/after redacted visual evide
 - Inspect the shared desktop sidebar, top bar, mobile navigation / More sheet, dialogs and nested panels across every applicable user role, including switching routes and user contexts.
 - Fix the shared token/surface cause rather than a one-page override; use explicit variants if different role themes are intentional. Preserve generic navigation and accessibility.
 - Verify at 320/390/768/1024/1440px with screenshots, light/dark toggles, reload/first-paint, contrast, keyboard focus, and denied-state screens. Record per-role per-route evidence; no PASS until truly observed.
-- PR #461 now updates shared semantic colour tokens for staff and family, real ProductShell and design-preview AppShell, and adds seven-persona × five-width Chromium checks of header, side/mobile navigation and canvas. **Automated and owner visual acceptance remain NOT_QUALIFIED until the final commit passes all gates.**
+- PR #461 now updates shared semantic colour tokens for staff and family, real ProductShell and design-preview AppShell, and adds seven-persona × five-width Chromium checks of header, side/mobile navigation and canvas. **PR #461 has merged with CI green; real cross-role owner visual/AT acceptance remains NOT_QUALIFIED.**
 
 ## Sequencing and safety
 

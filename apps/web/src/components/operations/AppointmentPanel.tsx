@@ -110,7 +110,7 @@ function SeriesSummary({ series, exception, cancelled }: { series: Series; excep
     <div className="flex items-start gap-2 rounded-control bg-surface-subtle p-3 text-[14px]" data-testid="series-summary">
       <RepeatIcon size={16} className="mt-0.5 shrink-0 text-brand-action" aria-hidden="true" />
       <p>
-        {series.intervalWeeks === 2 ? 'Every 2 weeks' : 'Every week'} on {days} · {left} upcoming
+        {series.intervalWeeks === 1 ? 'Every week' : `Every ${series.intervalWeeks} weeks`} on {days} · {left} upcoming
         {series.status === 'ENDED' ? ' · series ended' : ''}{exception ? (cancelled ? ' · this visit was cancelled on its own' : ' · this visit was moved on its own') : ''}
       </p>
     </div>

@@ -135,6 +135,18 @@ function Children({ session, onError }: { session: SessionInfo; onError: (e: unk
                   <span className="text-[13px] text-brand-inkMuted">{c.team.length ? c.team.map((t) => `${t.name} (${serviceLabel(t.service)})`).join(', ') : 'No therapist assigned'}<span className="block">{c.nextAppointment ? `Next: ${dayLabel(c.nextAppointment)}` : 'No upcoming visit'}</span></span>
                   <span className="flex min-h-[24px] flex-wrap items-center gap-1.5 md:justify-end">{!c.guardians && <Pill tone="caution">No guardian</Pill>}{!c.team.length && <Pill tone="caution">Unassigned</Pill>}{c.status === 'ARCHIVED' && <Pill>Archived</Pill>}</span>
                 </Link>
+                <nav aria-label={`Quick actions for ${c.preferredName ?? c.firstName} ${c.lastName}`}
+                  className="flex flex-wrap gap-2 px-5 pb-4" data-testid={`child-quick-actions-${c.id}`}>
+                  <Link href={`/app/children/${c.id}`} data-testid={`child-quick-profile-${c.id}`}
+                    className="inline-flex min-h-[44px] items-center rounded-control border border-border-light bg-surface-white px-3 text-[13px] font-semibold text-brand-action hover:bg-brand-actionTint focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action">
+                    View child profile
+                  </Link>
+                  {c.guardians > 0 && <Link href={`/app/children/${c.id}#guardians`}
+                    data-testid={`child-quick-guardian-${c.id}`}
+                    className="inline-flex min-h-[44px] items-center rounded-control border border-border-light bg-surface-white px-3 text-[13px] font-semibold text-brand-action hover:bg-brand-actionTint focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action">
+                    Guardian details
+                  </Link>}
+                </nav>
               </li>
             ))}
           </ul>

@@ -104,6 +104,40 @@ try {
     assert.equal(await page.getByTestId('activities-ownership-filter').locator('option[value="mine"]').count(), 0,
       'Read-only staff must not see Created by me');
 
+    // M5 PR2: verify the actual center-contact form on all standard widths.
+    // This is read-only synthetic browser evidence; it does not modify
+    // tenant contacts, patients or any clinical state.
+    await page.goto(base + '/app/center');
+    await page.getByTestId('center-settings-form').waitFor();
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({width,height:900});
+      for (const id of ['settings-contact-email-input','settings-contact-phone-input']) {
+        const bounds=await page.getByTestId(id).evaluate(el=>{
+          const r=el.getBoundingClientRect();
+          return {left:r.left,right:r.right,width:r.width,viewport:innerWidth};
+        });
+        assert(bounds.left>=-4 && bounds.right<=width+4 && bounds.width>=120,
+          id+' must be visible at '+width+'px: '+JSON.stringify(bounds));
+      }
+      assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+8),
+        'Center contacts must not introduce horizontal overflow at '+width);
+    }
+    // Child rows expose only existing authorized destinations. The guardian
+    // shortcut appears exclusively when a linked guardian exists.
+    await page.goto(base + '/app/children');
+    await page.getByTestId('child-quick-profile-'+child.id).waitFor();
+    const hasLinkedGuardian=kids.body.items.some(row=>row.id===child.id && row.guardians>0);
+    assert.equal(await page.getByTestId('child-quick-guardian-'+child.id).count(), hasLinkedGuardian?1:0,
+      'Guardian quick link must match the linked-guardian state');
+    if (hasLinkedGuardian) {
+      await page.getByTestId('child-quick-guardian-'+child.id).click();
+      await page.getByTestId('child-guardians-anchor').waitFor();
+      assert(page.url().endsWith('#guardians'), 'Scoped shortcut must navigate to the actual guardian section');
+      await page.waitForFunction(() => document.activeElement?.getAttribute('data-testid') === 'child-guardians-anchor');
+      assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('data-testid')), 'child-guardians-anchor',
+        'Guardian shortcut must move keyboard focus to the destination, not just scroll');
+    }
+
   });
   await role('coordinator@childrens-home.therabridge.test', 'COORDINATOR', async page => {
     // Scheduling requires explicit dates in a window of at most 42 days.

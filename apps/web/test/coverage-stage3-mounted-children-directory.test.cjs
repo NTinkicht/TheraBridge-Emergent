@@ -61,6 +61,28 @@ describe('real tenant-scoped child directory and operational registration',()=>{
   expect(display).toContain('No guardian');
   expect(display).toContain('No therapist assigned');
  });
+ it('exposes guardian quick action only for a child with an existing scoped guardian',async()=>{
+  opsApi.children.mockResolvedValue({items:[
+    child({id:'child-a',guardians:0}),
+    child({id:'child-b',preferredName:'Bea',guardians:2})
+  ]});
+  await mount();
+  expect(get('child-quick-profile-child-a').props.href).toBe('/app/children/child-a');
+  expect(find('child-quick-guardian-child-a')).toHaveLength(0);
+  expect(get('child-quick-guardian-child-b').props.href).toBe('/app/children/child-b#guardians');
+  expect(get('child-quick-actions-child-b').props['aria-label']).toContain('Bea');
+  // No new message/send route is granted by these purely navigational links.
+  expect(JSON.stringify(tree.toJSON())).not.toContain('/app/messages?childId=');
+ });
+ it('preserves read-only staff quick links without offering private guardian actions to unknown children',async()=>{
+  session.activeContext.role='THERAPIST';
+  session.permissions=['center.children.read'];
+  opsApi.children.mockResolvedValue({items:[child({guardians:0})]});
+  await mount();
+  expect(get('child-quick-profile-child-a')).toBeTruthy();
+  expect(find('child-quick-guardian-child-a')).toHaveLength(0);
+  expect(find('register-child-button')).toHaveLength(0);
+ });
  it('searches normalized child name and archived status within exact center',async()=>{
   await mount();
   await change('children-search-input','  Fictional Alex  ');

@@ -42,7 +42,7 @@ export interface CenterDetail {
   setup: { key: string; completedAt: string | null }[]; events: HistoryEvent[];
 }
 export interface CenterInput { name: string; slug?: string; timezone: string; country: string; city: string; specialties: string[]; applicationId?: string; firstAdmin: { email: string; displayName: string } }
-export interface CenterSettings { id: string; name: string; slug: string; timezone: string; country: string | null; city: string | null; specialties: string[]; status: string; version: number }
+export interface CenterSettings { id: string; name: string; slug: string; timezone: string; country: string | null; city: string | null; contactEmail: string | null; contactPhone: string | null; specialties: string[]; status: string; version: number }
 export interface Member {
   id: string; userId: string; displayName: string; email: string; status: MemberStatus; roles: Role[]; title: string | null; phone: string | null;
   specialties: string[]; responsibilities: string[]; statusReason: string | null; statusChangedAt: string | null; joinedAt: string;

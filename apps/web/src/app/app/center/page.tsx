@@ -9,19 +9,21 @@ import { SPECIALTY_OPTIONS, type SessionInfo } from '@/lib/auth';
 import { ZONES, centersApi, type CenterSettings } from '@/lib/centers';
 
 function SettingsForm({ centerId, initial, canEdit, onSaved, onError }: { centerId: string; initial: CenterSettings; canEdit: boolean; onSaved: (s: CenterSettings) => void; onError: (e: unknown) => void }) {
-  const [f, setF] = useState({ name: initial.name, city: initial.city ?? '', country: initial.country ?? '', timezone: initial.timezone });
+  const [f, setF] = useState({ name: initial.name, city: initial.city ?? '', country: initial.country ?? '', timezone: initial.timezone, contactEmail: initial.contactEmail ?? '', contactPhone: initial.contactPhone ?? '' });
   const [specialties, setSpecialties] = useState(initial.specialties);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ tone: 'danger' | 'success'; text: string } | null>(null);
-  useEffect(() => { setF({ name: initial.name, city: initial.city ?? '', country: initial.country ?? '', timezone: initial.timezone }); setSpecialties(initial.specialties); }, [initial]);
+  useEffect(() => { setF({ name: initial.name, city: initial.city ?? '', country: initial.country ?? '', timezone: initial.timezone, contactEmail: initial.contactEmail ?? '', contactPhone: initial.contactPhone ?? '' }); setSpecialties(initial.specialties); }, [initial]);
   async function save(e: FormEvent) {
     e.preventDefault();
     if (f.name.trim().length < 2 || f.city.trim().length < 2 || f.country.trim().length < 2) return setMsg({ tone: 'danger', text: 'Name, city and country need at least 2 characters.' });
     if (!specialties.length) return setMsg({ tone: 'danger', text: 'Choose at least one service.' });
+    if (f.contactEmail.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.contactEmail.trim())) return setMsg({ tone: 'danger', text: 'Enter a valid contact email or leave it blank.' });
+    if (f.contactPhone.trim() && !/^(?=.*\d)[+()0-9 .-]{6,40}$/.test(f.contactPhone.trim())) return setMsg({ tone: 'danger', text: 'Enter a valid contact phone or leave it blank.' });
     setBusy(true);
     setMsg(null);
     try {
-      onSaved(await centersApi.updateSettings(centerId, { ...f, name: f.name.trim(), city: f.city.trim(), country: f.country.trim(), specialties, version: initial.version }));
+      onSaved(await centersApi.updateSettings(centerId, { ...f, name: f.name.trim(), city: f.city.trim(), country: f.country.trim(), contactEmail: f.contactEmail.trim().toLowerCase(), contactPhone: f.contactPhone.trim(), specialties, version: initial.version }));
       setMsg({ tone: 'success', text: 'Center details saved.' });
     } catch (err) {
       const t = errorText(err, onError);
@@ -40,6 +42,18 @@ function SettingsForm({ centerId, initial, canEdit, onSaved, onError }: { center
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Country" value={f.country} onChange={(e) => setF({ ...f, country: e.target.value })} maxLength={80} disabled={!canEdit} testId="settings-country-input" />
           <Field label="City" value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} maxLength={80} disabled={!canEdit} testId="settings-city-input" />
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Contact email (optional)" type="email" value={f.contactEmail}
+            onChange={e => setF({ ...f, contactEmail: e.target.value })}
+            maxLength={254} disabled={!canEdit} autoComplete="email"
+            hint="Operational center contact, not a guardian or patient address."
+            testId="settings-contact-email-input" />
+          <Field label="Contact phone (optional)" type="tel" value={f.contactPhone}
+            onChange={e => setF({ ...f, contactPhone: e.target.value })}
+            maxLength={40} disabled={!canEdit} autoComplete="tel"
+            hint="Public center contact only; no clinical details."
+            testId="settings-contact-phone-input" />
         </div>
         <SelectField label="Time zone" value={f.timezone} onChange={(v) => setF({ ...f, timezone: v })} options={zones.map((z) => ({ value: z, label: z.replace('_', ' ') }))} testId="settings-timezone-select" />
         <ChoiceGroup label="Services offered" options={SPECIALTY_OPTIONS} value={specialties} onChange={setSpecialties} testId="settings-specialty" />
