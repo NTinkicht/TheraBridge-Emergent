@@ -70,7 +70,7 @@ export function CalendarGrid({ days, items, onOpen, onSlot }: { days: string[]; 
     <div className="overflow-hidden rounded-card border border-border-light bg-surface-white" data-testid="calendar-grid">
       {/* The header and slots must share one scrollport. A scrollbar on the
           hours-only pane previously shifted all body columns relative to headers. */}
-      <div className="max-h-[68vh] overflow-auto" role="region" aria-label="Appointment calendar hours" tabIndex={0}>
+      <div className="max-h-[68vh] scroll-pt-12 overflow-auto" role="region" aria-label="Appointment calendar hours" tabIndex={0}>
         <div className="sticky top-0 z-20 grid border-b border-border-light bg-surface-white" style={{ gridTemplateColumns: `56px repeat(${days.length}, minmax(0, 1fr))` }}>
         <span />
         {days.map((d) => (
