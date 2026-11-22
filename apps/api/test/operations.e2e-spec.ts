@@ -78,6 +78,58 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'trial.extended' } })).toBe(1);
   });
 
+  it('M5 #11: persists unverified restricted child care with encryption and versioned, tenant-safe updates', async () => {
+    const {randomBytes}=await import('node:crypto');
+    const original=process.env.TB_PRIVATE_DATA_KEY_B64;
+    process.env.TB_PRIVATE_DATA_KEY_B64=randomBytes(32).toString('base64');
+    try {
+      const kid=(await post(h,c('children'),admin,child({
+        privateCare:{sourceAcknowledged:true,conditions:'Synthetic childhood asthma',allergies:'Synthetic lactose',
+          medications:'Synthetic medicine list',careNotes:'Synthetic family instructions'}
+      })).expect(201)).body.id;
+      const row=await h.prisma.childCareIntake.findFirstOrThrow({where:{centerId,childId:kid}});
+      expect(Buffer.from(row.encryptedBody).toString('utf8')).not.toContain('Synthetic');
+      expect(row.source).toBe('FAMILY_REPORTED_UNVERIFIED');
+      const details=await get(admin,c(`children/${kid}`)).expect(200);
+      const list=await get(admin,c('children')).expect(200);
+      expect(JSON.stringify(details.body)).not.toContain('Synthetic lactose');
+      expect(JSON.stringify(list.body)).not.toContain('Synthetic lactose');
+      const read=await get(admin,c(`children/${kid}/private-care`)).expect(200);
+      expect(read.body).toMatchObject({version:1,conditions:'Synthetic childhood asthma',
+        allergies:'Synthetic lactose',source:'FAMILY_REPORTED_UNVERIFIED'});
+      const changed=await patch(admin,c(`children/${kid}/private-care`),{
+        sourceAcknowledged:true,version:1,allergies:'Synthetic changed',careNotes:'New synthetic note'
+      }).expect(200);
+      expect(changed.body).toMatchObject({version:2,allergies:'Synthetic changed'});
+      await patch(admin,c(`children/${kid}/private-care`),{
+        sourceAcknowledged:true,version:1,allergies:'stale'
+      }).expect(409);
+      const fresh=await get(admin,c(`children/${kid}/private-care`)).expect(200);
+      expect(fresh.body.allergies).toBe('Synthetic changed');
+      const audit=await h.prisma.centerEvent.findMany({where:{centerId}});
+      expect(JSON.stringify(audit)).not.toContain('Synthetic lactose');
+      expect(JSON.stringify(audit)).not.toContain('Synthetic changed');
+    } finally {
+      if(original===undefined)delete process.env.TB_PRIVATE_DATA_KEY_B64;
+      else process.env.TB_PRIVATE_DATA_KEY_B64=original;
+    }
+  });
+
+  it('M5 #13: guardian cannot read private care, and child photo rejects absent scanner before custody', async () => {
+    const kid=(await post(h,c('children'),admin,child()).expect(201)).body.id;
+    const fake=Buffer.from('not a png').toString('base64');
+    await post(h,c(`children/${kid}/photo-candidates`),admin,{pngBase64:fake}).expect(422);
+    expect(await h.prisma.privateMediaCandidate.count({where:{centerId,childId:kid}})).toBe(0);
+    const guardian=await post(h,c(`children/${kid}/guardians`),admin,{
+      displayName:'Synthetic Parent',email:'synthetic.photo@family.test',relationship:'mother',invite:true
+    }).expect(201);
+    expect(guardian.body.invited).toBe(true);
+    const parent=(await accept('synthetic.photo@family.test','Synthetic Parent')).s;
+    await get(parent,c(`children/${kid}/private-care`)).expect(403);
+    await post(h,c(`children/${kid}/photo-candidates`),parent,{pngBase64:fake}).expect(403);
+    expect((await get(parent,c(`family/children/${kid}/photo-candidates`)).expect(200)).body.candidates).toEqual([]);
+  });
+
   it('end-to-end: child → guardian invitation → therapist assignment → appointment → therapist day → parent portal', async () => {
     const coordinator = await staff('coord@ops.test', ['COORDINATOR']);
     const therapist = await staff('thera@ops.test', ['THERAPIST']);
