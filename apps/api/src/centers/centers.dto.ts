@@ -37,7 +37,7 @@ export class UpdateCenterDto {
   @Matches(/^$|^[^@\s]+@[^@\s]+\.[^@\s]+$/, { message: 'contactEmail must be a valid email address or blank' })
   contactEmail?: string;
   @IsOptional() @trim() @IsString()
-  @Matches(/^$|^[+()0-9 .-]{6,40}$/, { message: 'contactPhone must be a valid phone number or blank' })
+  @Matches(/^$|^(?=.*\d)[+()0-9 .-]{6,40}$/, { message: 'contactPhone must be a valid phone number or blank' })
   contactPhone?: string;
   @IsInt() @Min(1) version!: number;
 }
