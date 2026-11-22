@@ -81,6 +81,22 @@ export const opsApi = {
   children: (centerId: string, q: { q?: string; status?: string }) => rest.get<{ items: ChildRow[] }>(`${c(centerId, 'children')}?${qs(q)}`),
   createChild: (centerId: string, body: ChildInput) => rest.send<{ id: string }>('POST', c(centerId, 'children'), body),
   child: (centerId: string, id: string) => rest.get<ChildDetail & { timezone: string }>(c(centerId, `children/${id}`)).then((r) => { setCenterTz(r.timezone); return r; }),
+  uploadChildPhoto: (centerId:string,id:string,pngBase64:string) =>
+    rest.send<{id:string;status:'QUARANTINED';consentState:'PENDING';publishEnabled:false;width:number;height:number}>(
+      'POST',c(centerId,`children/${id}/photo-candidates`),{pngBase64}),
+  childPhotoCandidates: (centerId:string,id:string) =>
+    rest.get<{candidates:{id:string;status:string;consentState:string;width:number;height:number;createdAt:string}[];publicRelease:false}>(
+      c(centerId,`children/${id}/photo-candidates`)),
+  privateChildPhoto: (centerId:string,id:string) =>
+    rest.get<{mimeType:'image/png';pngBase64:string;width:number;height:number;publicRelease:false}>(
+      c(centerId,`children/${id}/private-photo`)),
+  guardianPhotoCandidates: (centerId:string,id:string) =>
+    rest.get<{candidates:{id:string;status:string;consentState:string}[]}>(
+      c(centerId,`family/children/${id}/photo-candidates`)),
+  guardianPhotoConsent: (centerId:string,id:string,candidateId:string,consent:boolean) =>
+    rest.send('POST',c(centerId,`family/children/${id}/photo-candidates/${candidateId}/consent`),{consent}),
+  guardianPhotoRevoke: (centerId:string,id:string) =>
+    rest.send('POST',c(centerId,`family/children/${id}/photo-consent/revoke`),{}),
   privateCare: (centerId: string, id: string) => rest.get<PrivateCareRecord>(c(centerId, `children/${id}/private-care`)),
   updatePrivateCare: (centerId: string, id: string, body: PrivateCareFields & { version: number }) =>
     rest.send<PrivateCareRecord>('PATCH', c(centerId, `children/${id}/private-care`), body),
