@@ -41,7 +41,7 @@ beforeAll(()=>{
  global.localStorage={setItem:jest.fn()};
 });
 afterAll(()=>{global.window=oldWindow;global.document=oldDoc;global.localStorage=oldLocalStorage;});
-beforeEach(()=>jest.clearAllMocks());
+beforeEach(()=>{jest.clearAllMocks();global.document.documentElement.dataset.appTheme='light';global.document.documentElement.dataset.familyTheme='light';});
 afterEach(async()=>{if(tree){await act(async()=>tree.unmount());tree=null;}});
 describe('real preview visual journeys and honest data-state transitions',()=>{
  it('shows deterministic synthetic fixture banner and correct therapist workspace',async()=>{
