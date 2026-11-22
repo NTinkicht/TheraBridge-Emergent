@@ -36,6 +36,9 @@ function ProfileForm({ centerId, me, onSaved, onError }: { centerId: string; me:
       {msg && <FormAlert tone={msg.tone} testId={`profile-${msg.tone}`}>{msg.text}</FormAlert>}
       <Card className="space-y-4 p-5 md:p-6">
         <div className="flex flex-wrap items-center gap-2 text-[14px]"><span className="text-brand-inkMuted">Your roles:</span><RolePills roles={me.roles} /></div>
+        <p className="text-[13px] text-brand-inkMuted" data-testid="profile-role-help">
+          Your job title describes your position and can be edited here. Center roles and access permissions are assigned by your administrator; changing your job title does not change your access.
+        </p>
         <Field label="Full name" value={f.displayName} onChange={(e) => setF({ ...f, displayName: e.target.value })} maxLength={120} testId="profile-name-input" />
         <Field label="Email" value={me.email} readOnly disabled testId="profile-email-input" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
