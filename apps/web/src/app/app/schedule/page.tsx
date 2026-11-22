@@ -12,7 +12,7 @@ import { Button, Card } from '@/components/design/ui';
 import { CompactTable, DisclosureSection } from '@/components/design/workspace-patterns';
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
 import type { SessionInfo } from '@/lib/auth';
-import { revealActiveSuggestion } from '@/lib/combobox-scroll';
+import { effectiveSuggestionIndex, revealActiveSuggestion } from '@/lib/combobox-scroll';
 import { addDays, dayKey, getCenterTz, opsApi, timeRange, zonedToUtc, type Appointment, type ChildRow, type Therapist } from '@/lib/operations';
 
 type View = 'day' | 'week';
@@ -139,10 +139,11 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
   // Do not infer membership, access or an appointment filter from raw typed text.
   const therapistSuggestions = !isTherapist && suggestionsOpen && therapistSearch.trim()
     ? therapists.filter(t => t.displayName.toLocaleLowerCase().includes(therapistSearch.trim().toLocaleLowerCase())).slice(0, 8) : [];
+  const selectedSuggestionIndex = effectiveSuggestionIndex(activeSuggestion, therapistSuggestions.length);
   useEffect(() => {
-    if (suggestionsOpen && therapistSuggestions.length)
-      revealActiveSuggestion(suggestionListRef.current, Math.min(activeSuggestion, therapistSuggestions.length - 1));
-  }, [activeSuggestion, suggestionsOpen, therapistSuggestions.length]);
+    if (selectedSuggestionIndex >= 0)
+      revealActiveSuggestion(suggestionListRef.current, selectedSuggestionIndex);
+  }, [selectedSuggestionIndex, suggestionsOpen, therapistSuggestions.length]);
   const chooseTherapist = (t: Therapist) => {
     setTherapist(t.membershipId);
     setChosenTherapistName(t.displayName);
@@ -195,7 +196,7 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
               <input id="schedule-therapist-query" type="search" role="combobox" autoComplete="off"
                 aria-autocomplete="list" aria-expanded={therapistSuggestions.length > 0}
                 aria-controls="schedule-therapist-suggestions"
-                aria-activedescendant={therapistSuggestions.length ? `schedule-therapist-suggestion-${Math.min(activeSuggestion, therapistSuggestions.length - 1)}` : undefined}
+                aria-activedescendant={therapistSuggestions.length ? `schedule-therapist-suggestion-${selectedSuggestionIndex}` : undefined}
                 className="mt-1.5 min-h-[48px] w-full rounded-control border border-border-strong bg-surface-white px-3 text-[15px]"
                 value={therapistSearch}
                 onFocus={() => setSuggestionsOpen(true)}
@@ -204,19 +205,19 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
                 onKeyDown={e => {
                   if (e.key === 'Escape') { setSuggestionsOpen(false); return; }
                   if (!therapistSuggestions.length) return;
-                  if (e.key === 'ArrowDown') { e.preventDefault(); setActiveSuggestion(i => (i + 1) % therapistSuggestions.length); }
-                  if (e.key === 'ArrowUp') { e.preventDefault(); setActiveSuggestion(i => (i + therapistSuggestions.length - 1) % therapistSuggestions.length); }
-                  if (e.key === 'Enter') { e.preventDefault(); chooseTherapist(therapistSuggestions[Math.min(activeSuggestion, therapistSuggestions.length - 1)]); }
+                  if (e.key === 'ArrowDown') { e.preventDefault(); setActiveSuggestion((selectedSuggestionIndex + 1) % therapistSuggestions.length); }
+                  if (e.key === 'ArrowUp') { e.preventDefault(); setActiveSuggestion((selectedSuggestionIndex + therapistSuggestions.length - 1) % therapistSuggestions.length); }
+                  if (e.key === 'Enter') { e.preventDefault(); chooseTherapist(therapistSuggestions[selectedSuggestionIndex]); }
                 }}
                 data-testid="schedule-therapist-search" placeholder="Type a therapist's name" />
               {therapistSuggestions.length > 0 && <ul ref={suggestionListRef} id="schedule-therapist-suggestions" role="listbox" aria-label="Matching therapists"
                 className="absolute inset-x-0 top-full z-30 max-h-56 overflow-auto rounded-control border border-border-strong bg-surface-white py-1 shadow-lg"
                 data-testid="schedule-therapist-suggestions">
-                {therapistSuggestions.map((t, index) => <li role="option" aria-selected={index === activeSuggestion}
+                {therapistSuggestions.map((t, index) => <li role="option" aria-selected={index === selectedSuggestionIndex}
                   id={`schedule-therapist-suggestion-${index}`} key={t.membershipId}>
                   <button type="button" tabIndex={-1} onMouseDown={e => e.preventDefault()}
                     onClick={() => chooseTherapist(t)}
-                    className={`min-h-[44px] w-full px-3 py-2 text-left text-[14px] hover:bg-brand-actionTint ${index === activeSuggestion ? 'bg-brand-actionTint' : ''}`}>{t.displayName}</button>
+                    className={`min-h-[44px] w-full px-3 py-2 text-left text-[14px] hover:bg-brand-actionTint ${index === selectedSuggestionIndex ? 'bg-brand-actionTint' : ''}`}>{t.displayName}</button>
                 </li>)}</ul>}
             </div>
             <SelectField label="Therapist" value={therapist} onChange={value => {
