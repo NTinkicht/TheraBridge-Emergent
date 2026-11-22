@@ -1,3 +1,10 @@
+## 2026-11-22 — PR #461 newest-head requalification
+
+1. Rerun eight unrounded >=90% API/Web metrics and complete required test, secret-scan, live-session, preview-container, demo-journey, compose, Child360, SBOM, source-contracts and Smart CI on the NEW P2-fix HEAD.
+2. Request independent Codex review of that exact final SHA after CI. Resolve P2 only after verifying scrollable active options by keyboard and preserving authorized person selection.
+3. Verify 320/390/768/1024/1440 actual screenshots, family dark contrast, keyboard and assistive technology manually; keep owner M5 acceptance separate from CI.
+4. Merge only on fully green final HEAD, no open P0/P1/P2 and AGENTS.md Rule 16; synthetic-only preview, clinical G2/G2b NO-GO preserved.
+
 ## 2026-11-22 — PR #461 exact-HEAD completion gate
 
 1. Run real full CI on final HEAD: six required jobs, Smart CI, source contracts, browser/preview/Compose, security/SBOM and all eight unrounded >=90% Web/API branch/function/line/statement floors; fix genuine failures without disabling assertions.
