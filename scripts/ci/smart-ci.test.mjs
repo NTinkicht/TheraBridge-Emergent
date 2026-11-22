@@ -110,7 +110,7 @@ test('docs exception fails closed for forks, unknown paths, deleted docs, mixed 
 });
 test('final gate rejects absent plan or invalid modes',()=>{
  assert.throws(()=>verifySmartGate({}),/plan_not_successful/);
- assert.throws(()=>verifySmartGate({'smart-plan':{result:'success',outputs:{mode:'invalid'}}}),/mandatory_full_coverage_required/);
+ assert.throws(()=>verifySmartGate({'smart-plan':{result:'success',outputs:{mode:'invalid'}}}),/unsupported_ci_plan/);
  assert.throws(()=>verifySmartGate({'smart-plan':{result:'failure'}}),/plan_not_successful/);
 });
 
