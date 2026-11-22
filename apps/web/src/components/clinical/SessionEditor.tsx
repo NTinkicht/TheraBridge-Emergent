@@ -64,6 +64,11 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
     setCompleted(n.executionStatus === 'COMPLETED');
   }, [n.id, n.version, ws.timezone]); // Prop identity/version is authoritative; dirty state is a guard, not a reset trigger.
 
+  // A completion observed in another tab must immediately revoke edit controls,
+  // even while unsaved local evidence is retained for recovery/comparison.
+  useEffect(() => {
+    if (n.executionStatus === 'COMPLETED') setCompleted(true);
+  }, [n.executionStatus]);
   const changed = () => { revision.current++; setDirty(true); setError(false); setStatus('Unsaved changes'); };
   useEffect(() => { onPending(n.id, dirty || transcriptPending || unresolved || conflicted || !!retainedLocal); return () => onPending(n.id, false); }, [dirty, transcriptPending, unresolved, conflicted, retainedLocal, n.id, onPending]);
   const update = (id: string, patch: Partial<SessionActivity>) => { changed(); setActivities(a => a.map(x => x.id === id ? { ...x, ...patch } : x)); };
