@@ -289,6 +289,18 @@ export class ChildrenService {
       width:candidate.width,height:candidate.height,publicRelease:false as const};
   }
 
+  async guardianReviewPhoto(centerId:string,childId:string,v:Viewer,candidateId:string) {
+    await this.linkedGuardian(centerId,childId,v);
+    const candidate=await this.prisma.privateMediaCandidate.findFirst({where:{
+      id:candidateId,centerId,childId,kind:'CHILD_PHOTO',
+      status:'QUARANTINED',consentState:'PENDING',revokedAt:null,
+    },select:{encryptedBytes:true,width:true,height:true}});
+    if(!candidate) throw new NotFoundException('Pending private photo not found');
+    const bytes=openPrivateData(candidate.encryptedBytes,'child-photo-v1',centerId,childId);
+    return {mimeType:'image/png' as const,pngBase64:bytes.toString('base64'),
+      width:candidate.width,height:candidate.height,previewOnly:true as const,publicRelease:false as const};
+  }
+
   async guardianPhotoDecision(centerId:string,childId:string,v:Viewer,candidateId:string,consent:boolean) {
     if(v.role!=='GUARDIAN') throw new ForbiddenException('Only an active linked guardian may give photo consent.');
     return this.prisma.$transaction(async tx=>{
