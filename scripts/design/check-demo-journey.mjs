@@ -540,8 +540,12 @@ try {
 
 
     await page.getByTestId('clinical-tab-plan').click();
-    await page.getByTestId('goal-checkpoint-panel').first().waitFor();
-    await page.getByTestId('goal-checkpoint-empty').first().waitFor();
+    const evidenceDisclosure = page.getByTestId('plan-supporting-evidence').first();
+    assert.equal(await evidenceDisclosure.getAttribute('open'), null,
+      'Supporting plan evidence must be collapsed on first render');
+    await evidenceDisclosure.locator(':scope > summary').click();
+    await evidenceDisclosure.getByTestId('goal-checkpoint-panel').first().waitFor();
+    await evidenceDisclosure.getByTestId('goal-checkpoint-empty').first().waitFor();
     // TB-EM-037: response-overlay test is ONLY a fictional read-model UI
     // check, not proof that source IDs were clinically validated. All seven
     // real role/permission checks still run against the original API.
@@ -575,7 +579,9 @@ try {
     });
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
-    const checkpointCompare = page.getByTestId('plan-' + comparePlanId)
+    const comparedPlan = page.getByTestId('plan-' + comparePlanId);
+    await comparedPlan.getByTestId('plan-supporting-evidence').locator(':scope > summary').click();
+    const checkpointCompare = comparedPlan
       .getByTestId('checkpoint-compare').first();
     await checkpointCompare.getByTestId('checkpoint-compare-notes').waitFor();
     assert.equal(await checkpointCompare.getByTestId('checkpoint-compare-notes').locator('article').count(), 2);
@@ -602,6 +608,7 @@ try {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('plan-supporting-evidence').first().locator(':scope > summary').click();
     await page.getByTestId('goal-checkpoint-empty').first().waitFor();
     await page.getByTestId('goal-checkpoint-goal').first().selectOption({ index: 1 });
     await page.getByTestId('goal-checkpoint-summary').first().fill('Reviewed available synthetic records; monitor further observations.');
@@ -637,7 +644,9 @@ try {
     });
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('plan-supporting-evidence').first().locator(':scope > summary').click();
     const shadowPanel = page.getByTestId('plan-' + shadowPlanId);
+    await shadowPanel.getByTestId('plan-supporting-evidence').locator(':scope > summary').click();
     await shadowPanel.getByTestId('goal-checkpoint-goal').selectOption({ index: 1 });
     await shadowPanel.getByTestId('goal-checkpoint-summary').fill('Reviewed the available synthetic sources in the second plan.');
     await shadowPanel.getByTestId('goal-checkpoint-save').waitFor();
@@ -796,6 +805,7 @@ try {
     await page.unroute(pagedAssessmentRoute);
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('plan-supporting-evidence').first().locator(':scope > summary').click();
     // Reload clears the checkpoint form's local goal/narrative selection.
     // Re-enter it before asserting that unsaved-plan gating is reversible.
     await page.getByTestId('goal-checkpoint-goal').first().selectOption({ index: 1 });
@@ -841,6 +851,7 @@ try {
     await page.getByTestId('clinical-tab-plan').click();
     await page.getByTestId('goal-review-worklist').waitFor();
     assert(!(await page.getByTestId('goal-review-timezone-invalid').count()), 'Valid centre timezone recovers');
+    await page.getByTestId('plan-supporting-evidence').first().locator(':scope > summary').click();
 
     await page.getByTestId('plan-evidence-goals').first().waitFor();
     await page.getByTestId('plan-source-none').first().waitFor();
@@ -1003,8 +1014,11 @@ try {
 
     // TB-EM-041: the active preview must show only the persisted version,
     // not the browser's subsequently edited working copy.
+    // A fresh deep-linked route opens the plan with supporting evidence collapsed.
+    // Expand the outer disclosure before inspecting the nested immutable preview.
+    await page.getByTestId('plan-supporting-evidence').first().locator(':scope > summary').click();
     const activeSavedPreview = page.getByTestId('saved-home-plan-preview').first();
-    await activeSavedPreview.locator('summary').click();
+    await activeSavedPreview.locator(':scope > summary').click();
     const originalSavedSummary = await activeSavedPreview.getByTestId('saved-plan-preview-summary').innerText();
     assert(originalSavedSummary.trim().length > 0);
     assert((await activeSavedPreview.getByTestId('saved-plan-preview-disclaimer').innerText())
@@ -1073,6 +1087,8 @@ try {
     assert(!calendar.includes('2027-02-31'), 'Monthly recurrence cannot invent invalid dates');
     // TB-EM-038: view the UNSAVED dated schedule only in the clinician's
     // existing authorized version; never post, release, or mark practice complete.
+    // The practice calendar is independently collapsed, even after evidence opens.
+    await page.getByTestId('plan-calendar-disclosure').first().locator(':scope > summary').click();
     const practiceCalendar = page.getByTestId('home-practice-calendar').first();
     await practiceCalendar.getByTestId('home-calendar-month').fill('2026-10');
     await practiceCalendar.getByTestId('home-calendar-day-2026-10-31').click();

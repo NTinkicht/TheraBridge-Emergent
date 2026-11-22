@@ -22,6 +22,14 @@ Source: `docs/roadmap/M5-OWNER-MANUAL-FEEDBACK-20261122.md`; follows merged PR #
 - No patient release, signing, clinical approval, STT or unapproved media publication; G2/G2b remains **NO-GO**.
 - This is a partial engineering implementation, not closure of observations 16–17 or milestone M5.
 
+## Follow-on implementation — owner observation 21 (progressive plan disclosure)
+
+- The editable version summary, goals, activity configuration, save and review actions remain visible and mounted.
+- Supporting plan evidence, saved family preview, goal checkpoints and home-practice calendar use native, keyboard-accessible collapsed disclosures. Their component trees remain mounted when the disclosure is closed, preserving existing local state and avoiding silent remounts.
+- The unchanged current-version, version-history and immutable evidence semantics remain in place. No write, submit, sign or family release occurs on disclosure.
+- Added mounted synthetic tests for default collapsed state, draft save version integrity, read-only roles and locked release actions.
+- **NOT QUALIFIED:** Five-width role-by-role visual and assistive-technology checks, owner acceptance, exact-HEAD CI and independent review remain required. This slice does not close observation 21 or the broader PR3 work.
+
 ## Follow-on independent slice — observation 20: synthetic transcription separation
 
 - Added a native keyboard-accessible collapsed developer-testing disclosure around the existing **synthetic-only** transcription component in each owned clinician session.
