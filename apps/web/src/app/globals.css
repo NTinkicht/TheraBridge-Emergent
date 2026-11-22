@@ -16,6 +16,14 @@ h1, h2, h3 {
   --focus-ring: var(--fam-focus);
 }
 
+/* The official raster wordmark is designed for a light surface. A compact
+   white chip keeps it legible even when the enclosing staff/family shell is dark. */
+html[data-app-theme="dark"] :is(.theme-clinical-auto, .theme-family-auto) [data-testid="shell-logo-chip"] {
+  background-color: #FFFFFF;
+  border-radius: 10px;
+  padding: 4px 6px;
+}
+
 .tnum {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
