@@ -1,3 +1,7 @@
+## 2026-11-22 — M5 UX PR3 engineering slice
+
+Created branch from merged #462 main. Refined `/app/clinical` into task-first authorized child selection, separated `IN_PROGRESS` session editors from `COMPLETED` notes, and added a keyboard-accessible collapsed-by-default historical-session toggle. Active editors remain mounted; completed session editing remains governed by existing `SessionEditor` controls. Added mounted cross-role history-toggle tests. Not deployed, accepted, or clinical-released. Remaining PR3 observations tracked for implementation; final CI/reviews/owner acceptance outstanding.
+
 ## 2026-11-22 — PR #462 next ordered M5 feedback work (new code, NOT RELEASED)
 
 Created draft from latest merged PR #461 main. Added shared RepeatFields custom whole-week interval 1–4 with BookDialog validation, AppointmentPanel display and mounted negative tests (empty/fractional/out-of-range); reused existing server SeriesDto 1–4 bound and existing 26-week/60-visit caps. Added additive nullable `center.contactEmail/contactPhone` Prisma migration, server DTO/tenant-scoped updateSettings/masked revision/audit, client settings type/UI and realistic validation/clear-role Postgres/Jest/browser checks. Added profile title-vs-role explanatory text without changing any authorizations. Added child directory quick profile link and conditional guardian anchor, after-fetch scroll and synthetic cross-role tests; NO messaging shortcut. Reviewed shared consumer impacts. Final CI and reviewer evidence not asserted yet; clinical/private policy gates remain NO-GO.
