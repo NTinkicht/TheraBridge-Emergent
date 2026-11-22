@@ -49,6 +49,9 @@ function Practice({ session, onError }: { session: SessionInfo; onError: (e: unk
     <div className="theme-family-auto space-y-4 rounded-card bg-fam-canvas p-4 text-fam-ink md:p-6" data-testid="practice-page">
       <div>
         <h1 className="flex items-center gap-2 font-display text-[26px] font-bold">Home practice</h1>
+        <p className="mt-1 text-[13px] text-fam-muted" data-testid="practice-purpose-note">
+          Home practice is where you see a daily or weekly schedule and record sample answers. The Sample activity library is for browsing activities, not recording answers.
+        </p>
         {child && <p className="text-[15px] text-fam-muted" data-testid="practice-child-name">For {child.name}</p>}
       </div>
       <p className="flex items-start gap-2 rounded-control border-2 border-dashed border-fam-caution bg-fam-surface p-3 text-[14px]" data-testid="practice-sample-banner">
