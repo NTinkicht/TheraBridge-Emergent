@@ -8,6 +8,7 @@ import { Field, FormAlert } from '@/components/auth/Field';
 import { HistoryCard, PageTitle, ReasonField, Row, SelectField, Workspace, errorText, useLoad } from '@/components/centers/kit';
 import { BookDialog, serviceLabel } from '@/components/operations/BookDialog';
 import { HandoverProposalPanel } from '@/components/operations/HandoverProposalPanel';
+import { PrivateCarePanel } from '@/components/operations/PrivateCarePanel';
 import { ApptPill } from '@/components/operations/Dashboards';
 import { Button, Card, Pill } from '@/components/design/ui';
 import { Dialog, ErrorState, SkeletonRows } from '@/components/design/states';
@@ -241,6 +242,10 @@ function ChildPage({ id, session, onError }: { id: string; session: SessionInfo;
               ? <Button className="mt-3" size="sm" variant="ghost" onClick={() => { setArchiving(true); setReason(''); }} data-testid="child-archive-button">Archive record</Button>
               : <Button className="mt-3" size="sm" variant="secondary" onClick={() => void run(() => opsApi.restoreChild(centerId, child.id), 'Child record restored.')} data-testid="child-restore-button">Restore record</Button>)}
           </Card>
+          {['CENTER_ADMIN','COORDINATOR','THERAPIST'].includes(session.activeContext?.role ?? '') &&
+            <PrivateCarePanel key={centerId + ':' + child.id}
+              centerId={centerId} childId={child.id} canEdit={manage}
+              active={child.status === 'ACTIVE'} />}
           <div id="guardians" tabIndex={-1} className="scroll-mt-24" data-testid="child-guardians-anchor">
             <Guardians {...ctx} />
           </div>
