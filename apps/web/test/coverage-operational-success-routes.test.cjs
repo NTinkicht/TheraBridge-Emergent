@@ -70,8 +70,9 @@ describe('M4-08: real clinical child-list success states with enforced caveats',
   const out=draw(ClinicalPage,{items:[sampleChild]});
   expect(out).toContain('data-testid="clinical-list"');
   expect(out).toContain('data-testid="clinical-child-fictional-child"');
-  expect(out).toContain('Assessments, therapy plans, session drafts and progress');
-  expect(out).toContain('nothing can be signed or released');
+  expect(out).toContain('Choose a child from your authorized caseload');
+  expect(out).toContain('continue a session, review progress, update a draft plan or prepare a report');
+  expect(out).toContain('signing and release are unavailable');
   expect(out).not.toContain('fake-patient-not-authorized');
  });
  it('keeps unassigned state separate from display of other center children',()=>{

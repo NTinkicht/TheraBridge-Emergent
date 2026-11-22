@@ -122,6 +122,46 @@ describe('Stage 2 mounted session start: stable retry request and access boundar
    clinicalApi.startSession.mock.calls[0][2]);
  });
 });
+describe('M5 PR3 historical sessions default collapsed with active drafts retained',()=>{
+ const makeNote=(id,executionStatus)=>({id,executionStatus,service:'speech',
+  sessionDate:'2026-11-10',actualStart:null,actualEnd:null,attendance:'PRESENT',
+  sections:{},activities:[],version:1,author:'Fictional therapist',mine:true,updatedAt:'2026-11-10T10:00:00Z'});
+ it('keeps completed history collapsed but preserves the same mounted editor through remote completion',async()=>{
+  const first=ws({notes:[makeNote('open','IN_PROGRESS'),makeNote('old','COMPLETED')]});
+  await mount(SessionsPanel,{onPending,ws:first});
+  const Editor=require('../src/components/clinical/SessionEditor').SessionEditor;
+  const active=get('session-record-open');
+  const historical=get('session-record-old');
+  const originalEditor=active.findByType(Editor);
+  expect(historical.props.hidden).toBe(true);
+  expect(get('historical-sessions-toggle').props['aria-expanded']).toBe(false);
+  // A real draft owns local state, which must survive an external status refresh.
+  await act(async()=>originalEditor.props.onPending('open',true));
+  await act(async()=>tree.update(h(SessionsPanel,{centerId:'synthetic-center',
+   ws:ws({notes:[makeNote('open','COMPLETED'),makeNote('old','COMPLETED')]}),run,onPending})));
+  expect(get('session-record-open').props.hidden).toBe(false);
+  expect(get('session-record-open').findByType(Editor)).toBe(originalEditor);
+  expect(get('session-record-open').findAllByType('fieldset').some(fieldset => fieldset.props.disabled === true)).toBe(true);
+  expect(get('session-record-old').props.hidden).toBe(true);
+  expect(html()).toContain('Your unsaved draft remains available for recovery');
+  expect(onPending).toHaveBeenCalledWith('open',true);
+  await click('historical-sessions-toggle');
+  expect(get('historical-sessions-toggle').props['aria-expanded']).toBe(true);
+  expect(get('session-record-old').props.hidden).toBe(false);
+  await click('historical-sessions-toggle');
+  expect(get('session-record-open').props.hidden).toBe(false);
+  expect(get('session-record-old').props.hidden).toBe(true);
+  await act(async()=>get('session-record-open').findByType(Editor).props.onPending('open',false));
+  expect(get('session-record-open').props.hidden).toBe(true);
+ });
+ it('keeps completed notes hidden for read-only reviewers without exposing session-start controls',async()=>{
+  await mount(SessionsPanel,{onPending,ws:ws({canEdit:false,notes:[makeNote('old','COMPLETED')]})});
+  expect(find('session-start')).toHaveLength(0);
+  expect(find('historical-session-list')).toHaveLength(0);
+  await click('historical-sessions-toggle');
+  expect(get('historical-session-list')).toBeTruthy();
+ });
+});
 describe('Stage 2 mounted clinical evidence: no version cross-contamination',()=>{
  const datasets=()=>ws({plans:[{
   ...plan(),versions:[

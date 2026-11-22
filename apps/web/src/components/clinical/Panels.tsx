@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { SessionEditor } from './SessionEditor';
 import { Field } from '@/components/auth/Field';
 import { SelectField } from '@/components/centers/kit';
@@ -58,6 +58,21 @@ export function SessionsPanel({ centerId, ws, run, onPending }: { centerId: stri
   const [service, setService] = useState(ws.child.services[0] ?? '');
   const startRequest = useRef<Parameters<typeof clinicalApi.startSession>[2] | null>(null);
   const [busy, setBusy] = useState(false);
+  // An active session must remain mounted for autosave, conflict handling and pending drafts.
+  // Completed history is read-only and is opt-in to reduce visual overload.
+  const [showCompleted, setShowCompleted] = useState(false);
+  const [pendingIds, setPendingIds] = useState<ReadonlySet<string>>(() => new Set());
+  const notePending = useCallback((id: string, pending: boolean) => {
+    onPending(id, pending);
+    setPendingIds(previous => {
+      if (previous.has(id) === pending) return previous;
+      const next = new Set(previous);
+      if (pending) next.add(id); else next.delete(id);
+      return next;
+    });
+  }, [onPending]);
+  const activeNotes = ws.notes.filter(note => note.executionStatus !== 'COMPLETED');
+  const completedNotes = ws.notes.filter(note => note.executionStatus === 'COMPLETED');
   async function start(service: string, appointmentId?: string) {
     if (busy) return; setBusy(true);
     if (!startRequest.current || startRequest.current.service !== service || startRequest.current.appointmentId !== appointmentId) {
@@ -77,8 +92,27 @@ export function SessionsPanel({ centerId, ws, run, onPending }: { centerId: stri
       <SelectField label="Ad-hoc session specialty" value={service} onChange={setService} options={ws.child.services.map(value => ({ value, label: serviceLabel(value) }))} testId="session-specialty" />
       <Button disabled={busy || !service} onClick={() => void start(service)}>Start ad-hoc session</Button>
     </Card>}
-    {ws.notes.map(n => <SessionEditor key={n.id} centerId={centerId} n={n} ws={ws} onPending={onPending} />)}
-    {!ws.notes.length && <p>No sessions yet.</p>}
+    <section className="space-y-3" aria-label="Session drafts and historical records" data-testid="active-sessions">
+      <h3 className="text-[16px] font-semibold">Active sessions ({activeNotes.length})</h3>
+      {!activeNotes.length && <p className="text-[14px] text-brand-inkMuted">No active session drafts.</p>}
+      {completedNotes.length > 0 && <div className="space-y-3" aria-label="Historical completed sessions" data-testid="historical-sessions">
+        <Button variant="secondary" aria-expanded={showCompleted} aria-controls="completed-session-list"
+          data-testid="historical-sessions-toggle" onClick={() => setShowCompleted(previous => !previous)}>
+          {showCompleted ? 'Hide' : 'Show'} historical sessions ({completedNotes.length})
+        </Button>
+        {showCompleted && <p id="completed-session-list" className="text-[13px] text-brand-inkMuted" data-testid="historical-session-list">Completed sessions are read-only. Opening history does not sign or release clinical notes.</p>}
+      </div>}
+      {/* One stable keyed list: a server-side completion must not remount an unsaved editor. */}
+      {ws.notes.map(n => {
+        const completed = n.executionStatus === 'COMPLETED';
+        const visible = !completed || showCompleted || pendingIds.has(n.id);
+        return <div key={n.id} hidden={!visible} data-testid={`session-record-${n.id}`}>
+          {completed && pendingIds.has(n.id) && !showCompleted && <p role="status" className="text-[13px] text-status-caution">This session was completed elsewhere. Your unsaved draft remains available for recovery; review it before leaving.</p>}
+          <SessionEditor centerId={centerId} n={n} ws={ws} onPending={notePending} />
+        </div>;
+      })}
+    </section>
+    {!ws.notes.length && <p className="text-[14px] text-brand-inkMuted" data-testid="sessions-empty">No sessions yet.</p>}
   </div>;
 }
 

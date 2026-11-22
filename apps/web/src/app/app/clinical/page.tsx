@@ -32,8 +32,8 @@ function List({ session, onError }: { session: SessionInfo; onError: (e: unknown
 
   return (
     <div className="space-y-5" data-testid="m5-therapist-workspace">
-      <PageTitle title={isSupervisor ? 'Clinical oversight' : 'My clinical workspace'}
-        body="Assessments, therapy plans, session drafts and progress. Start with the child, then move through evidence and reports. Synthetic data only; nothing can be signed or released."
+      <PageTitle title={isSupervisor ? 'Clinical oversight' : 'Start with a child'}
+        body="Choose a child from your authorized caseload to continue a session, review progress, update a draft plan or prepare a report. Synthetic drafts only; signing and release are unavailable."
         testId="clinical-title" />
       <TaskStepper label="Internal clinical drafting workflow" steps={[
         { id: 'child', label: 'Choose a child', status: 'current', description: 'Authorized caseload only' },
@@ -46,7 +46,7 @@ function List({ session, onError }: { session: SessionInfo; onError: (e: unknown
       </DisclosureSection>
       <Card className="space-y-3 p-4 sm:p-5" testId="clinical-caseload-filters">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-semibold">Authorized caseload</h2>
+          <h2 className="font-semibold">Choose a child to continue work</h2>
           {data && <Pill tone="info">{filtered.length} of {data.items.length} children shown</Pill>}
         </div>
         <div className="grid min-w-0 gap-3 sm:grid-cols-2">

@@ -197,6 +197,13 @@ try {
   assert((await remote.getByRole('region', { name: 'Session conflict comparison' }).innerText()).includes('Remote before revocation'));
   await tab.close();
   await page.reload(); await page.getByRole('tab', { name: 'Sessions', exact: true }).click();
+  // Completed sessions are intentionally collapsed by default; explicitly
+  // reveal history before verifying the saved note is read-only on reload.
+  const historyToggle = page.getByTestId('historical-sessions-toggle');
+  await historyToggle.waitFor();
+  assert.equal(await historyToggle.getAttribute('aria-expanded'), 'false');
+  await historyToggle.click();
+  assert.equal(await historyToggle.getAttribute('aria-expanded'), 'true');
   assert(await note.getByLabel('Overall session note', { exact: true }).isDisabled());
   assert.deepEqual(errors, []);
   console.log('PASS: real login → assigned child → ad-hoc start → library selection → separate result/assistance → synthetic transcript correction/insertion → autosave → reload/resume → complete → reload read-only; two-tab conflicts, blocked autosave, note/activity preservation, deliberate reconciliation, repeated updates, server retention, revoked/failed recovery and copyable exact uninserted transcript after remote completion; real Nest/Fastify and PostgreSQL, no mocked API responses.');

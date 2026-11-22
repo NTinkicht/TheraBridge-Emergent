@@ -26,8 +26,8 @@ describe('M5-06 mounted authorized therapist caseload',()=>{
   await act(async()=>{tree=create(h(Page));});
   expect(ids()).toEqual(['/app/clinical/child-a','/app/clinical/child-b']);
   const output=JSON.stringify(tree.toJSON());
-  expect(output).toContain('Synthetic data only');
-  expect(output).toContain('signing and release unavailable');
+  expect(output).toContain('Synthetic drafts only');
+  expect(output).toContain('signing and release are unavailable');
   expect(output).not.toContain('/app/messages');
   expect(get('clinical-caseload-filters')).toBeTruthy();
  });

@@ -1,3 +1,10 @@
+## 2026-11-22 — PR3 clinical-workflow feedback qualification and continuation
+
+1. Run exact-HEAD six-job CI, browser/Compose/source/SBOM/Smart CI and eight unrounded >=90% API/Web metrics; investigate any regressions without relaxing gates.
+2. Independently review session-history disclosure and active draft retention in all authorized clinical roles, at five widths and with keyboard/screen reader. Real owner visual/AT acceptance is NOT_RUN.
+3. Complete remaining PR3 observations 15 (versioned goal links), 18–20 (activity configuration and synthetic dictation), 21–23 (plan/report/assessment guidance), 24 (inbox separation); preserve draft-only and clinical release restrictions.
+4. Reconcile reviews on final HEAD and all four handover/QA records before considering merge. Never claim owner acceptance from CI alone.
+
 ## 2026-11-22 — PR #462 final-head qualification and gated owner items
 
 1. Verify exact final HEAD all six mandatory jobs (test, secret-scan, live-session, preview-container, demo-journey, compose), source/Child360/provenance/Smart CI and all eight unrounded API/Web coverage metrics >=90%. Investigate and repair any failures, including Prisma migration replay and real DB contact tests. No bypass or loosened assertions.
