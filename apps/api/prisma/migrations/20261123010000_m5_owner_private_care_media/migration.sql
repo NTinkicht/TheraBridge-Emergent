@@ -44,9 +44,11 @@ CREATE TABLE "private_media_candidate" (
     ("kind" = 'CHILD_PHOTO' AND "child_id" IS NOT NULL AND "template_id" IS NULL AND "template_version" IS NULL)
     OR ("kind" = 'ACTIVITY_IMAGE' AND "child_id" IS NULL AND "template_id" IS NOT NULL AND "template_version" > 0)
   ),
-  CONSTRAINT "private_media_never_approved" CHECK ("status" IN ('QUARANTINED', 'REVOKED')),
-  CONSTRAINT "private_media_never_consent_granted_by_staff" CHECK ("consent_state" = 'PENDING'),
-  CONSTRAINT "private_media_never_rights_granted_by_upload" CHECK ("rights_state" = 'UNVERIFIED'),
+  CONSTRAINT "private_media_lifecycle" CHECK (
+    ("status" = 'QUARANTINED' AND "consent_state" = 'PENDING' AND "rights_state" = 'UNVERIFIED')
+    OR ("status" = 'PRIVATE_READY' AND "kind" = 'CHILD_PHOTO' AND "consent_state" = 'GRANTED' AND "rights_state" = 'GUARDIAN_ATTESTED')
+    OR ("status" = 'REVOKED')
+  ),
   CONSTRAINT "private_media_cipher_minimum" CHECK (octet_length("encrypted_bytes") >= 29),
   CONSTRAINT "private_media_dimension_bounds" CHECK ("width" BETWEEN 1 AND 4096 AND "height" BETWEEN 1 AND 4096 AND "width"::bigint*"height" <= 12000000)
 );
