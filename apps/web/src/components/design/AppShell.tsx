@@ -8,8 +8,7 @@ import { SignatureBand } from '@/components/brand/SignatureBand';
 import { WORKSPACES, type NavItem, type WorkspaceKey } from '@/lib/design/nav';
 import { usePreview } from './PreviewContext';
 import { Avatar, LockedAction } from './ui';
-
-type Theme = 'light' | 'dark';
+import { useAppTheme } from '@/components/theme/useAppTheme';
 
 function Logo({ collapsed, family }: { collapsed: boolean; family: boolean }) {
   // Raster logo is only valid on light surfaces; the family theme puts it on a chip that turns white in dark mode.
@@ -61,27 +60,19 @@ export function AppShell({ workspace, active, title, children }: { workspace: Wo
     const opener = moreBtn.current;
     return () => { el.removeEventListener('keydown', trap); opener?.focus(); };
   }, [menu]);
-  const [theme, setTheme] = useState<Theme>('light');
+  const { theme, toggleTheme } = useAppTheme();
 
   useEffect(() => {
     setCollapsed(window.innerWidth < 1280);
-    if (!family) return;
-    setTheme(document.documentElement.dataset.familyTheme === 'dark' ? 'dark' : 'light');
-  }, [family]);
+  }, []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenu(null); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const toggleTheme = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    setTheme(next);
-    document.documentElement.dataset.familyTheme = next;
-    localStorage.setItem('tb-family-theme', next);
-  };
   const unavailable = (label: string) => { setMenu(null); notify(`“${label}” is outside this design preview.`); };
-  const dark = family && theme === 'dark';
+  const dark = theme === 'dark';
   const surface = family ? 'bg-fam-surface border-fam-border' : 'bg-surface-white border-border-light';
   const muted = family ? 'text-fam-muted' : 'text-brand-inkMuted';
   const iconBtn = `grid h-11 w-11 place-items-center rounded-control transition-colors ${family ? 'hover:bg-fam-tile' : 'hover:bg-surface-subtle'}`;
@@ -89,7 +80,7 @@ export function AppShell({ workspace, active, title, children }: { workspace: Wo
   const moreItems = ws.items.filter((i) => !ws.mobile.includes(i.key));
 
   return (
-    <div className={`flex min-h-screen ${family ? 'theme-family-auto bg-fam-canvas text-fam-ink' : 'bg-canvas-clinical text-brand-ink'}`} data-testid={`shell-${workspace}`} data-theme={family ? theme : undefined}>
+    <div className={`flex min-h-screen ${family ? 'theme-family-auto bg-fam-canvas text-fam-ink' : 'theme-clinical-auto bg-canvas-clinical text-brand-ink'}`} data-testid={`shell-${workspace}`} data-theme={theme}>
       <aside className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r transition-[width] duration-200 md:flex ${surface} ${collapsed ? 'w-[76px]' : 'w-sidebar'}`} data-testid="sidebar">
         <SignatureBand />
         <div className={`flex h-16 items-center ${collapsed ? 'justify-center' : 'px-5'}`}><Logo collapsed={collapsed} family={family} /></div>
@@ -119,7 +110,7 @@ export function AppShell({ workspace, active, title, children }: { workspace: Wo
           <span className="md:hidden"><Logo collapsed family={family} /></span>
           <p className="min-w-0 flex-1 truncate text-[15px] font-semibold md:hidden">{title}</p>
           <p className={`hidden min-w-0 flex-1 truncate text-[14px] md:block ${muted}`}>{ws.context} · {ws.role}</p>
-          {family && (
+          {(
             <button type="button" onClick={toggleTheme} className={iconBtn} aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'} aria-pressed={dark} data-testid="theme-toggle">
               <Sun size={19} aria-hidden="true" className="hidden [html[data-family-theme=dark]_&]:block" />
               <Moon size={19} aria-hidden="true" className="[html[data-family-theme=dark]_&]:hidden" />
