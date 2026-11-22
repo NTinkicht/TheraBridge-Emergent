@@ -9,6 +9,7 @@ import { HistoryCard, PageTitle, ReasonField, Row, SelectField, Workspace, error
 import { BookDialog, serviceLabel } from '@/components/operations/BookDialog';
 import { HandoverProposalPanel } from '@/components/operations/HandoverProposalPanel';
 import { PrivateCarePanel } from '@/components/operations/PrivateCarePanel';
+import { ChildPhotoPanel } from '@/components/operations/ChildPhotoPanel';
 import { ApptPill } from '@/components/operations/Dashboards';
 import { Button, Card, Pill } from '@/components/design/ui';
 import { Dialog, ErrorState, SkeletonRows } from '@/components/design/states';
@@ -245,6 +246,10 @@ function ChildPage({ id, session, onError }: { id: string; session: SessionInfo;
           {['CENTER_ADMIN','COORDINATOR','THERAPIST'].includes(session.activeContext?.role ?? '') &&
             <PrivateCarePanel key={centerId + ':' + child.id}
               centerId={centerId} childId={child.id} canEdit={manage}
+              active={child.status === 'ACTIVE'} />}
+          {['CENTER_ADMIN','COORDINATOR','THERAPIST'].includes(session.activeContext?.role ?? '') &&
+            <ChildPhotoPanel key={'photo:' + centerId + ':' + child.id}
+              centerId={centerId} childId={child.id} canManage={manage}
               active={child.status === 'ACTIVE'} />}
           <div id="guardians" tabIndex={-1} className="scroll-mt-24" data-testid="child-guardians-anchor">
             <Guardians {...ctx} />
