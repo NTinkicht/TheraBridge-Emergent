@@ -2,6 +2,7 @@
 // session start and exact plan-version observation provenance. Synthetic data.
 const React=require('react'),Renderer=require('react-test-renderer');
 const {act,create}=Renderer,h=React.createElement;
+jest.mock('next/link',()=>({__esModule:true,default:({href,children,...props})=>h('a',{href,...props},children)}));
 jest.mock('@/components/centers/kit',()=>{
  const a=jest.requireActual('@/components/centers/kit');
  return {...a,SelectField:({value,onChange,options,testId})=>h('select',{
@@ -351,5 +352,31 @@ describe('M4-08 90% real panel branch and permission qualification',()=>{
   await click('observation-save');
   expect(clinicalApi.observe.mock.calls[0][2].value).toBe(7);
   expect(get('observation-value').props.value).toBe('');
+ });
+});
+
+describe('M5 observation 15: progress charts link only to their exact authorized plan versions',()=>{
+ it('current and historical cards expose distinct read-only navigable version identities',async()=>{
+  const current=plan('pv-new','DRAFT',2).versions[0];
+  const older=plan('pv-old','SUPERSEDED',1).versions[0];
+  const navigate=jest.fn();
+  await mount(ProgressPanel,{ws:ws({plans:[{...plan(),versions:[current,older]}],
+    observations:[obs('new','pv-new',2,'2026-11-10'),obs('old','pv-old',9,'2026-10-19')]}),onNavigate:navigate});
+  const currentLink=get('progress-current-open-goal');
+  expect(currentLink.props.href).toContain('version=pv-new&goal=g1');
+  expect(currentLink.props.href).not.toContain('pv-old');
+  expect(get('progress-goal-g1').findByType('svg').props['aria-label']).not.toContain('9 on 2026-10-19');
+  await click('progress-history-toggle');
+  const historic=get('progress-historical-open-goal');
+  expect(historic.props.href).toContain('version=pv-old&goal=g1');
+  expect(JSON.stringify(historic.props.children)).toContain('read-only');
+  expect(get('historical-chart-pv-old-g1').findByType('svg').props['aria-label']).toContain('9 on 2026-10-19');
+  expect(clinicalApi.observe).not.toHaveBeenCalled();
+ });
+ it('shows goal navigation for read-only supervisor but no target edit form',async()=>{
+  await mount(ProgressPanel,{ws:ws({canEdit:false,canReview:true,plans:[plan()]}),onNavigate:jest.fn()});
+  expect(get('progress-current-open-goal').props.href).toContain('version=pv-new&goal=g1');
+  expect(find('observation-form')).toHaveLength(0);
+  expect(clinicalApi.observe).not.toHaveBeenCalled();
  });
 });
