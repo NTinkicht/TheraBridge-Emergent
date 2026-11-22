@@ -544,7 +544,7 @@ try {
     assert.equal(await evidenceDisclosure.getAttribute('open'), null,
       'Supporting plan evidence must be collapsed on first render');
     await evidenceDisclosure.locator(':scope > summary').click();
-    await page.getByTestId('goal-checkpoint-panel').first().waitFor();
+    await evidenceDisclosure.getByTestId('goal-checkpoint-panel').first().waitFor();
     await evidenceDisclosure.getByTestId('goal-checkpoint-empty').first().waitFor();
     // TB-EM-037: response-overlay test is ONLY a fictional read-model UI
     // check, not proof that source IDs were clinically validated. All seven
