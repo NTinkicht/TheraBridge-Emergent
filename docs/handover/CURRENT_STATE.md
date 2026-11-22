@@ -1,3 +1,7 @@
+## 2026-11-22 — M5 global dark shared ErrorState P2 (NOT QUALIFIED)
+
+Codex reviewed the preceding HEAD and found `ErrorState` used hardcoded dark red body text on a status-danger background now re-themed for dark staff pages. Replaced only that body foreground with shared `text-status-danger` semantic colour, respecting the existing family-specific foreground. Added light/dark 4.5:1 contrast regressions and source-integrated check. Final exact-head CI and independent review remain pending; no owner visual signoff, no clinical GO.
+
 ## 2026-11-22 — PR #461 Codex dark specialty-card P2 correction (UNQUALIFIED HEAD)
 
 Codex independently identified that staff ActivityCard surfaces still used literal light specialty tint/gradient values with light text in dark mode, breaking contrast. Updated only ActivityCard presentation to map approved specialty identities to semantic `--tb-specialty-*` CSS variables (single and multiple-service gradient). The approved literal specialty metadata, permissions and guardian card behavior are unchanged. Mounted card regressions and numerical dark-text/tint >=4.5:1 checks added. Full exact-head CI and independent review still PENDING. G2/G2b NO-GO preserved.
