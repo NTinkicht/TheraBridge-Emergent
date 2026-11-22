@@ -1,5 +1,6 @@
 import { DevMailboxService } from '../src/dev-mailbox/dev-mailbox.service';
 import { NoticesService } from '../src/operations/notices.service';
+import { ChildrenService } from '../src/operations/children.service';
 import { Harness, ORIGIN, PASSWORD, Signed, cookieFrom, createUser, makeApp, post, preAuth, resetDb, signIn } from './helpers';
 
 const DAY = 86_400_000;
@@ -134,6 +135,56 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     await post(h,c(`children/${kid}/photo-candidates`),parent,{pngBase64:fake}).expect(403);
     expect((await get(parent,c(`family/children/${kid}/photo-candidates`)).expect(200)).body.candidates).toEqual([]);
   });
+
+
+  it.each(['ROLE_REMOVED','SUSPENDED','REVOKED'] as const)(
+    'M5 #13 P1: post-scan photo custody denies coordinator after %s',
+    async (revocation) => {
+      const coordinator=await staff('late-revoked-photo@ops.test',['COORDINATOR']);
+      const kid=(await post(h,c('children'),admin,child()).expect(201)).body.id;
+      const membershipId=coordinator.body.activeContext.membershipId;
+      const svc=h.app.get(ChildrenService);
+      let scanStarted!: () => void;
+      let releaseScan!: (value: any) => void;
+      const started=new Promise<void>(resolve=>{scanStarted=resolve;});
+      const scanning=new Promise<any>(resolve=>{releaseScan=resolve;});
+      // No production scanner is mocked globally; only this request is held
+      // at its bounded scan boundary to test the exact role-change race.
+      const isolatedScan=jest.spyOn(svc as any,'preparePhotoCandidate')
+        .mockImplementation(async()=>{scanStarted();return scanning;});
+      const cleanCandidate={
+        encryptedBytes:Buffer.alloc(50,7),digestSha256:'a'.repeat(64),
+        width:1,height:1,scannerName:'SyntheticScanner',scannerVersion:'test',
+      };
+      try {
+        const pending=post(h,c(`children/${kid}/photo-candidates`),coordinator,{
+          pngBase64:Buffer.alloc(64,7).toString('base64')
+        }).expect(403);
+        await started;
+        // This happens AFTER the request's first authorization check and
+        // BEFORE the held ClamAV scan returns. Membership updates take the
+        // same live row/role locks that assertActor reads in its transaction.
+        if(revocation==='ROLE_REMOVED') {
+          await h.prisma.roleAssignment.deleteMany({where:{membershipId,role:'COORDINATOR'}});
+        } else {
+          await h.prisma.membership.update({where:{id:membershipId},
+            data:{status:revocation==='SUSPENDED'?'SUSPENDED':'REVOKED'}});
+        }
+        releaseScan(cleanCandidate);
+        await pending;
+        expect(await h.prisma.privateMediaCandidate.count({where:{
+          centerId,childId:kid,kind:'CHILD_PHOTO',
+        }})).toBe(0);
+        const logs=await h.prisma.centerEvent.findMany({where:{
+          centerId,type:'child.photo_candidate_created',
+        }});
+        expect(logs).toHaveLength(0);
+      } finally {
+        releaseScan?.(cleanCandidate);
+        isolatedScan.mockRestore();
+      }
+    }
+  );
 
   it('end-to-end: child → guardian invitation → therapist assignment → appointment → therapist day → parent portal', async () => {
     const coordinator = await staff('coord@ops.test', ['COORDINATOR']);
