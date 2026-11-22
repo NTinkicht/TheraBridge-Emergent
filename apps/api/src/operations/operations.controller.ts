@@ -2,7 +2,7 @@ import { BadRequestException, Body, Controller, Get, HttpCode, Param, ParseUUIDP
 import { RequirePermission, TbRequest } from '../auth/access';
 import {
   AppointmentDto, AppointmentStatusDto, AssignmentDto, ChildDto, ExtendTrialDto, FamilyPreferenceDto, GuardianDto, ListChildrenQuery, MessageDto, RangeQuery, ReasonDto, RescheduleDto,
-  SeriesCancelDto, SeriesDto, SeriesUpdateDto, ThreadDto, ThreadListQuery, UpdateChildDto, ReferentDto,
+  SeriesCancelDto, SeriesDto, SeriesUpdateDto, ThreadDto, ThreadListQuery, UpdateChildDto, ReferentDto, PrivateCareUpdateDto,
 } from './operations.dto';
 import { ChildrenService, Viewer } from './children.service';
 import { MessagesService } from './messages.service';
@@ -112,6 +112,19 @@ export class OperationsController {
   async update(@Param('centerId', uuid()) centerId: string, @Param('childId', uuid()) id: string, @Body() dto: UpdateChildDto, @Req() req: TbRequest) {
     await this.children.update(centerId, actor(req), id, dto);
     return this.children.detail(centerId, viewer(req), id);
+  }
+
+  @Get('children/:childId/private-care')
+  @RequirePermission('center.children.read')
+  privateCare(@Param('centerId', uuid()) centerId: string, @Param('childId', uuid()) id: string, @Req() req: TbRequest) {
+    return this.children.privateCare(centerId, id, viewer(req));
+  }
+
+  @Patch('children/:childId/private-care')
+  @RequirePermission('center.children.manage')
+  updatePrivateCare(@Param('centerId', uuid()) centerId: string, @Param('childId', uuid()) id: string,
+    @Body() dto: PrivateCareUpdateDto, @Req() req: TbRequest) {
+    return this.children.updatePrivateCare(centerId, id, viewer(req), dto);
   }
 
   @Post('children/:childId/archive')
