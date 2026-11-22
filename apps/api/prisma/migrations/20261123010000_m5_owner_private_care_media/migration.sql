@@ -27,6 +27,7 @@ CREATE TABLE "private_media_candidate" (
   "child_id" UUID,
   "template_id" UUID,
   "template_version" INTEGER,
+  "media_draft_id" UUID,
   "encrypted_bytes" BYTEA NOT NULL,
   "digest_sha256" VARCHAR(64) NOT NULL,
   "scanner_name" VARCHAR(80) NOT NULL,
@@ -41,8 +42,8 @@ CREATE TABLE "private_media_candidate" (
   "revoked_at" TIMESTAMPTZ(3),
   CONSTRAINT "private_media_candidate_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "private_media_subject_one" CHECK (
-    ("kind" = 'CHILD_PHOTO' AND "child_id" IS NOT NULL AND "template_id" IS NULL AND "template_version" IS NULL)
-    OR ("kind" = 'ACTIVITY_IMAGE' AND "child_id" IS NULL AND "template_id" IS NOT NULL AND "template_version" > 0)
+    ("kind" = 'CHILD_PHOTO' AND "child_id" IS NOT NULL AND "template_id" IS NULL AND "template_version" IS NULL AND "media_draft_id" IS NULL)
+    OR ("kind" = 'ACTIVITY_IMAGE' AND "child_id" IS NULL AND "template_id" IS NOT NULL AND "template_version" > 0 AND "media_draft_id" IS NOT NULL)
   ),
   CONSTRAINT "private_media_lifecycle" CHECK (
     ("status" = 'QUARANTINED' AND "consent_state" = 'PENDING' AND "rights_state" = 'UNVERIFIED')
@@ -57,3 +58,4 @@ CREATE INDEX "private_media_candidate_center_id_template_id_created_at_idx" ON "
 ALTER TABLE "private_media_candidate" ADD CONSTRAINT "private_media_candidate_center_id_fkey" FOREIGN KEY ("center_id") REFERENCES "center"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "private_media_candidate" ADD CONSTRAINT "private_media_candidate_child_id_fkey" FOREIGN KEY ("child_id") REFERENCES "child"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "private_media_candidate" ADD CONSTRAINT "private_media_candidate_template_id_fkey" FOREIGN KEY ("template_id") REFERENCES "activity_template"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "private_media_candidate" ADD CONSTRAINT "private_media_candidate_media_draft_id_fkey" FOREIGN KEY ("media_draft_id") REFERENCES "activity_media_draft"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
