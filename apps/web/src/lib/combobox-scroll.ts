@@ -7,7 +7,9 @@ export function revealActiveSuggestion(list: Pick<HTMLElement, 'scrollTop' | 'cl
   if (!list || !Number.isInteger(index) || index < 0) return;
   const row = list.children.item(index) as HTMLElement | null;
   if (!row) return;
-  const top = row.offsetTop - list.offsetTop;
+  // Rows use the positioned listbox as offsetParent. Subtracting the
+  // listbox's offsetTop (relative to the form) would shift every row.
+  const top = row.offsetTop;
   const bottom = top + row.offsetHeight;
   if (top < list.scrollTop) list.scrollTop = Math.max(0, top);
   else if (bottom > list.scrollTop + list.clientHeight)
