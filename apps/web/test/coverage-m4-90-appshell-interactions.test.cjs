@@ -65,7 +65,8 @@ describe('M5 shared AppShell interaction states and all-role theme',()=>{
   await click('theme-toggle');
   expect(get('shell-family').props['data-theme']).toBe('light');
  });
- it('existing dark family preference is loaded without altering other workspace',async()=>{
+ it('legacy family dark preference migrates when no explicit app preference exists',async()=>{
+  delete global.document.documentElement.dataset.appTheme;
   global.document.documentElement.dataset.familyTheme='dark';
   await mount('family','home');
   expect(get('shell-family').props['data-theme']).toBe('dark');
