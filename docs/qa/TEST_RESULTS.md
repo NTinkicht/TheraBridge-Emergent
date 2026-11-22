@@ -1,3 +1,7 @@
+## 2026-11-22 — M5 PR3 historical-session regression definitions (UNVERIFIED)
+
+Extended `apps/web/test/coverage-stage2-mounted-clinical-panels.test.cjs` with actual mounted SessionsPanel cases: active editors remain present across history expand/collapse, history not mounted by default, existing review-only mode cannot start sessions. Tests committed but no exact-HEAD result has yet been verified. Verify 320/390/768/1024/1440px keyboard, assistive technology and view-source boundaries; all eight >=90% measured coverage and six required CI jobs remain hard gates, G2/G2b NO-GO remains.
+
 ## 2026-11-22 — PR #462 new tests authoring checkpoint (NOT YET FINAL PASS)
 
 Tests committed: custom recurrence `coverage-m5-pr2-custom-recurrence.test.cjs` (actual mounted shared form, boundaries), `coverage-mounted-booking-commands.test.cjs` (3/4 week series request, invalid denial), `coverage-stage2-mounted-appointment-actions.test.cjs` (series summary 1–4), `validators.e2e-spec.ts` (contact formatting and header injection), `centers.e2e-spec.ts` (real PostgreSQL contact creation/edit/clearing, optimistic version and unauthorized coordinator denial), mounted `coverage-stage2-mounted-center-settings.test.cjs` (read-only, invalid, edit, clear), mounted profile title guidance and scoped child directory/guardian deep link tests, plus CI-only Chrome `check-demo-journey.mjs` five-width center contact visibility and guardian quick-link navigation. No clinical/patient facts or real media stored.
