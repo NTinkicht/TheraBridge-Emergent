@@ -49,6 +49,13 @@ describe('mounted self-profile and immutable identity fields',()=>{
   expect(get('profile-email-input').props.disabled).toBe(true);
   expect(get('profile-email-input').props.readOnly).toBe(true);
  });
+ it('distinguishes editable job title from center-admin-controlled access',async()=>{
+  await mount();
+  expect(get('profile-role-help').props.children.join?.('') ?? String(get('profile-role-help').props.children))
+    .toContain('changing your job title does not change your access');
+  expect(get('profile-title-input')).toBeTruthy();
+  expect(get('profile-email-input').props.disabled).toBe(true);
+ });
  it('rejects a blank or one-character display name',async()=>{
   await mount();
   await change('profile-name-input','X');
