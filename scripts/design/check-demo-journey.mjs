@@ -608,6 +608,7 @@ try {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('plan-supporting-evidence').first().locator(':scope > summary').click();
     await page.getByTestId('goal-checkpoint-empty').first().waitFor();
     await page.getByTestId('goal-checkpoint-goal').first().selectOption({ index: 1 });
     await page.getByTestId('goal-checkpoint-summary').first().fill('Reviewed available synthetic records; monitor further observations.');
@@ -643,7 +644,9 @@ try {
     });
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('plan-supporting-evidence').first().locator(':scope > summary').click();
     const shadowPanel = page.getByTestId('plan-' + shadowPlanId);
+    await shadowPanel.getByTestId('plan-supporting-evidence').locator(':scope > summary').click();
     await shadowPanel.getByTestId('goal-checkpoint-goal').selectOption({ index: 1 });
     await shadowPanel.getByTestId('goal-checkpoint-summary').fill('Reviewed the available synthetic sources in the second plan.');
     await shadowPanel.getByTestId('goal-checkpoint-save').waitFor();
@@ -802,6 +805,7 @@ try {
     await page.unroute(pagedAssessmentRoute);
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('plan-supporting-evidence').first().locator(':scope > summary').click();
     // Reload clears the checkpoint form's local goal/narrative selection.
     // Re-enter it before asserting that unsaved-plan gating is reversible.
     await page.getByTestId('goal-checkpoint-goal').first().selectOption({ index: 1 });
@@ -847,6 +851,7 @@ try {
     await page.getByTestId('clinical-tab-plan').click();
     await page.getByTestId('goal-review-worklist').waitFor();
     assert(!(await page.getByTestId('goal-review-timezone-invalid').count()), 'Valid centre timezone recovers');
+    await page.getByTestId('plan-supporting-evidence').first().locator(':scope > summary').click();
 
     await page.getByTestId('plan-evidence-goals').first().waitFor();
     await page.getByTestId('plan-source-none').first().waitFor();
