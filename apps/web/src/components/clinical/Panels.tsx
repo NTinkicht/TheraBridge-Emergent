@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { SessionEditor } from './SessionEditor';
 import { Field } from '@/components/auth/Field';
 import { SelectField } from '@/components/centers/kit';
@@ -62,7 +62,7 @@ export function SessionsPanel({ centerId, ws, run, onPending }: { centerId: stri
   // Completed history is read-only and is opt-in to reduce visual overload.
   const [showCompleted, setShowCompleted] = useState(false);
   const [pendingIds, setPendingIds] = useState<ReadonlySet<string>>(() => new Set());
-  const notePending = (id: string, pending: boolean) => {
+  const notePending = useCallback((id: string, pending: boolean) => {
     onPending(id, pending);
     setPendingIds(previous => {
       if (previous.has(id) === pending) return previous;
@@ -70,7 +70,7 @@ export function SessionsPanel({ centerId, ws, run, onPending }: { centerId: stri
       if (pending) next.add(id); else next.delete(id);
       return next;
     });
-  };
+  }, [onPending]);
   const activeNotes = ws.notes.filter(note => note.executionStatus !== 'COMPLETED');
   const completedNotes = ws.notes.filter(note => note.executionStatus === 'COMPLETED');
   async function start(service: string, appointmentId?: string) {
