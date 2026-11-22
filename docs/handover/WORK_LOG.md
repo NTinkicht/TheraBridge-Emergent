@@ -1,3 +1,7 @@
+## 2026-11-22 — PR #462 next ordered M5 feedback work (new code, NOT RELEASED)
+
+Created draft from latest merged PR #461 main. Added shared RepeatFields custom whole-week interval 1–4 with BookDialog validation, AppointmentPanel display and mounted negative tests (empty/fractional/out-of-range); reused existing server SeriesDto 1–4 bound and existing 26-week/60-visit caps. Added additive nullable `center.contactEmail/contactPhone` Prisma migration, server DTO/tenant-scoped updateSettings/masked revision/audit, client settings type/UI and realistic validation/clear-role Postgres/Jest/browser checks. Added profile title-vs-role explanatory text without changing any authorizations. Added child directory quick profile link and conditional guardian anchor, after-fetch scroll and synthetic cross-role tests; NO messaging shortcut. Reviewed shared consumer impacts. Final CI and reviewer evidence not asserted yet; clinical/private policy gates remain NO-GO.
+
 ## 2026-11-22 — Address Gemini review on PR #461 (NEW HEAD NOT QUALIFIED)
 
 Read posted Gemini review on PR #461; no critical security finding claimed. Fixed shared theme subscription with React external-store semantics, cross-tab update handling, AppShell icon state coupling, and stale Schedule therapist query after dropdown selection. Tests added for duplicate mounted consumers, preference updates, storage errors, semantic icon rendering and real browser filter/search behavior. Existing permission/tenant/clinical/rights gates unchanged; no manual approval inferred. Final CI/review pending.
