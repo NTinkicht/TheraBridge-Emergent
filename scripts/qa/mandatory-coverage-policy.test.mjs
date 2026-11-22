@@ -46,16 +46,29 @@ test('missing or invalid measured evidence fails closed',()=>{
  assert.throws(()=>measuredCoverage({api:fixture(9000),web:fixture(10001)}),/invalid_coverage/);
 });
 
-test('every PR including docs and style changes requires the full test and security job matrix',()=>{
- for(const file of ['docs/handover/NEXT_WORK.md','apps/web/src/globals.css','apps/api/src/app.module.ts']){
+test('all code, style, governance and safety-evidence PRs still require full measured coverage',()=>{
+ for(const file of ['apps/web/src/globals.css','apps/api/src/app.module.ts',
+  'AGENTS.md','docs/handover/REVIEW_DISPOSITION_RULE.md',
+  'docs/qa/TEST_RESULTS.md','docs/roadmap/M5-WU3-ACCEPTANCE-AND-RELEASE-LEDGER.md']){
   const p=decide({changes:[{path:file,status:'M'}],eventName:'pull_request',baseRef:'main',
     mode:'targeted',requiredGateReady:true,fromFork:false,ownerPolicyApproved:true});
-  assert.equal(p.execution,'full');
+  assert.equal(p.execution,'full',file);
   assert.equal(p.required.test,'success');
   const jobs=Object.fromEntries(Object.entries(expectedJobs('full')).map(([k,v])=>[k,{result:v}]));
   jobs['smart-plan']={result:'success',outputs:{mode:'full'}};
   assert.equal(verifySmartGate(jobs).status,'SMART_CI_POLICY_PASS');
   jobs['smart-plan'].outputs.mode='docs';
-  assert.throws(()=>verifySmartGate(jobs),/mandatory_full_coverage_required/);
+  assert.throws(()=>verifySmartGate(jobs),/required_checks_not_satisfied/);
  }
+});
+test('owner-approved narrative-only documentation skips measured coverage without claiming it passed',()=>{
+ const p=decide({changes:[{path:'docs/handover/NEXT_WORK.md',status:'M'}],
+  eventName:'pull_request',baseRef:'main',fromFork:false,ownerPolicyApproved:true});
+ assert.equal(p.execution,'docs');
+ assert.equal(p.required.test,'skipped');
+ const jobs=Object.fromEntries(Object.entries(expectedJobs('docs')).map(([k,v])=>[k,{result:v}]));
+ jobs['smart-plan']={result:'success',outputs:{mode:'docs'}};
+ assert.equal(verifySmartGate(jobs).status,'SMART_CI_DOCS_POLICY_PASS');
+ jobs['smart-targeted']={result:'skipped'};
+ assert.throws(()=>verifySmartGate(jobs),/required_checks_not_satisfied/);
 });

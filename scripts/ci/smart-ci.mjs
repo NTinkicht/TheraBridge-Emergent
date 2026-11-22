@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * TheraBridge Smart CI. Deterministic, fail-closed PR diff classification.
- * The six pre-existing CI checks remain fully executed in shadow mode.
- * Targeted execution requires a separately required smart-ci-gate check.
+ * Full eight-metric coverage and the six original safety jobs remain mandatory for code.
+ * Narrow owner-approved narrative-only changes require the strict docs smart-ci-gate.
  */
 import {execFileSync} from 'node:child_process';
 import {appendFileSync} from 'node:fs';
@@ -10,7 +10,7 @@ import {appendFileSync} from 'node:fs';
 const SHA=/^[0-9a-f]{40}$/;
 // Only narrative, non-policy docs may use targeted mode. Evidence, contracts,
 // release/rights/QA, instructions, workflows, and unknown paths require full CI.
-const SAFE_DOC=/^(?:README\.md|CONTRIBUTING\.md|docs\/(?:roadmap|handover|emergent\/workunits)\/(?:[A-Za-z0-9._-]+\/)*[A-Za-z0-9._-]+\.md)$/i;
+const SAFE_DOC=/^(?:README\.md|CONTRIBUTING\.md|docs\/handover\/(?:CURRENT_STATE|WORK_LOG|NEXT_WORK)\.md|docs\/roadmap\/(?:M4-01-README|M5-OWNER-FEEDBACK-PR2-OPERATIONS-INTAKE|M5-OWNER-FEEDBACK-PR3-CLINICAL-UX)\.md)$/;
 // Only non-executable static assets qualify. SVG/HTML/JS/JSON and unknown assets force full CI.
 const WEB_STYLE=/^apps\/web\/(?:src\/.*\.css|public\/(?:[^/]+\/)*[^/]+\.(?:png|jpe?g|webp|gif|ico|avif|woff2?|ttf|otf))$/i;
 const HARD_BLOCK=/(^|\/)(?:AGENTS\.md|SECURITY\.md|CODEOWNERS|Dockerfile(?:\.[^/]*)?|render\.yaml)$/i;

@@ -37,7 +37,7 @@ test('CI settings, fork, event, base and absent owner approval cannot bypass ful
 });
 
 test('the path classifier remains conservative for future risk diagnostics',()=>{
- assert.equal(classifyPaths(paths('docs/roadmap/a.md')).candidate,'docs');
+ assert.equal(classifyPaths(paths('docs/roadmap/M5-OWNER-FEEDBACK-PR3-CLINICAL-UX.md')).candidate,'docs');
  assert.equal(classifyPaths(paths('docs/commercial/launch-decision-register.md')).candidate,'full');
  assert.equal(classifyPaths(paths('docs/qa/TEST_RESULTS.md')).candidate,'full');
  assert.equal(classifyPaths(paths('apps/web/src/globals.css')).candidate,'web-style');
@@ -79,7 +79,7 @@ test('final gate rejects web-style shortcut even if a subset appears green',()=>
 });
 
 test('owner-approved documentation-only PR uses strict reduced matrix and no coverage claims',()=>{
- const safe=selected(paths('docs/roadmap/M5-README.md','docs/handover/NEXT_WORK.md'));
+ const safe=selected(paths('docs/roadmap/M5-OWNER-FEEDBACK-PR3-CLINICAL-UX.md','docs/handover/NEXT_WORK.md'));
  assert.equal(safe.execution,'docs');
  assert.equal(safe.candidate,'docs');
  assert.equal(safe.reason,'owner_approved_safe_docs_only');
@@ -99,6 +99,10 @@ test('docs exception fails closed for forks, unknown paths, deleted docs, mixed 
  for(const changes of [
   paths('docs/roadmap/a.md','apps/web/src/app/page.tsx'),
   paths('docs/commercial/rights.md'),paths('docs/qa/TEST_RESULTS.md'),
+  paths('docs/handover/REVIEW_DISPOSITION_RULE.md'),
+  paths('docs/handover/CONTINUITY_PROTOCOL.md'),
+  paths('docs/roadmap/M5-WU3-ACCEPTANCE-AND-RELEASE-LEDGER.md'),
+  paths('docs/roadmap/a.md'),
   paths('AGENTS.md'),paths('.github/workflows/ci.yml'),
   paths('scripts/ci/smart-ci.mjs'),
   [{path:'docs/handover/NEXT_WORK.md',status:'D'}],
@@ -121,5 +125,5 @@ test('CI triggers once for feature PR commits but still fully qualifies main and
  assert.doesNotMatch(workflow,/branches:\s*\["\*\*"\]/);
  assert.match(workflow,/if: needs\.smart-plan\.outputs\.mode == 'full'/);
  assert.equal(selected(paths('apps/web/src/components/clinical/SessionEditor.tsx')).execution,'full');
- assert.equal(selected(paths('docs/roadmap/README.md')).execution,'docs');
+ assert.equal(selected(paths('docs/handover/NEXT_WORK.md')).execution,'docs');
 });
