@@ -380,3 +380,23 @@ describe('M5 observation 15: progress charts link only to their exact authorized
   expect(clinicalApi.observe).not.toHaveBeenCalled();
  });
 });
+
+describe('M5 observation 22 assessment guidance remains non-diagnostic and read-only',()=>{
+ const pagination={hasMore:false,loading:false,error:'',load:jest.fn()};
+ it('switches specialty prompts without generating a finding or saving any draft',async()=>{
+  await mount(AssessmentsPanel,{pagination});
+  expect(get('assessment-specialty-guide')).toBeTruthy();
+  expect(html()).toContain('communication task');
+  await change('assessment-service','ot');
+  expect(html()).toContain('functional activity');
+  expect(html()).not.toContain('Describe the communication task');
+  expect(get('assessment-summary').props.value).toBe('');
+  expect(clinicalApi.assess).not.toHaveBeenCalled();
+ });
+ it('never reveals draft entry or editable guidance to an unauthorized reviewer',async()=>{
+  await mount(AssessmentsPanel,{pagination,ws:ws({canEdit:false})});
+  expect(find('assessment-specialty-guide')).toHaveLength(0);
+  expect(find('assessment-save')).toHaveLength(0);
+  expect(clinicalApi.assess).not.toHaveBeenCalled();
+ });
+});
