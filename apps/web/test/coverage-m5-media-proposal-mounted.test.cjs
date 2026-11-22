@@ -173,4 +173,51 @@ describe('actual mounted private media proposal workflow',()=>{
     await mount();await open();
     expect(output()).toContain('Could not load illustration proposals');
   });
+  it('opens and closes private intake only on the current rights proposal version',async()=>{
+    api.list.mockResolvedValue({items:[draft()],nextCursor:null,hasMore:false});
+    await mount();await open();
+    expect(button('Attach scanned private PNG')).toBeTruthy();
+    await click('Attach scanned private PNG');
+    expect(tree.root.findAllByProps({'data-testid':'private-png-candidate-picker'})).toHaveLength(1);
+    await click('Close private image intake');
+    expect(tree.root.findAllByProps({'data-testid':'private-png-candidate-picker'})).toHaveLength(0);
+    expect(api.uploadCandidate).not.toHaveBeenCalled();
+  });
+  it('refuses staging an image when metadata is stale or rejected',async()=>{
+    api.list.mockResolvedValue({items:[draft({templateVersion:2}),
+      draft({id:'rejected',state:'REJECTED'})],nextCursor:null,hasMore:false});
+    await mount(3);await open();
+    expect(buttons().filter(x=>label(x).includes('Attach scanned private PNG'))).toHaveLength(0);
+    expect(api.uploadCandidate).not.toHaveBeenCalled();
+  });
+  it('stages only a private candidate with exact center/template/draft and never publishes',async()=>{
+    api.list.mockResolvedValue({items:[draft()],nextCursor:null,hasMore:false});
+    api.uploadCandidate.mockResolvedValue({id:'quarantined-only',status:'QUARANTINED',
+      readEnabled:false,publishEnabled:false});
+    await mount();await open();await click('Attach scanned private PNG');
+    const input=tree.root.findByProps({'data-testid':'private-png-candidate-file'});
+    const bytes=Buffer.alloc(64,5),target={files:[{
+      type:'image/png',size:bytes.length,arrayBuffer:async()=>Uint8Array.from(bytes).buffer
+    }],value:'C:\\fakepath\\synthetic.png'};
+    await act(async()=>{input.props.onChange({currentTarget:target});await Promise.resolve();});
+    expect(api.uploadCandidate).toHaveBeenCalledWith('center-a','activity-a','draft-a',bytes.toString('base64'));
+    expect(output()).toContain('quarantined');
+    expect(output()).not.toContain('Publish image');
+    expect(target.value).toBe('');
+  });
+  it('scanner denial on private candidate never claims an approved or stored image',async()=>{
+    api.list.mockResolvedValue({items:[draft()],nextCursor:null,hasMore:false});
+    api.uploadCandidate.mockRejectedValue(new Error('malware scanner unavailable'));
+    await mount();await open();await click('Attach scanned private PNG');
+    const input=tree.root.findByProps({'data-testid':'private-png-candidate-file'});
+    const bytes=Buffer.alloc(64,8);
+    await act(async()=>{input.props.onChange({currentTarget:{
+      files:[{type:'image/png',size:64,arrayBuffer:async()=>Uint8Array.from(bytes).buffer}],
+      value:'private-filename.png'
+    }});await Promise.resolve();});
+    expect(output()).toContain('upload was not accepted');
+    expect(output()).not.toContain('Encrypted scanned illustration candidate is quarantined');
+    expect(output()).not.toContain('private-filename.png');
+  });
+
 });
