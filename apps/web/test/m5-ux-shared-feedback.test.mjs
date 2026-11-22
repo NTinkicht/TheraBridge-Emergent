@@ -18,7 +18,7 @@ test('weekly calendar headers share the scrollport and exact column widths with 
   assert.ok(scroll > 0 && header > scroll && body > header);
   // Sticky day header is ~36px; 48px scroll padding prevents a focused
   // keyboard appointment from being scrolled under it.
-  assert.match(calendar, /max-h-\\[68vh\\] scroll-pt-12 overflow-auto/);
+  assert.match(calendar, /max-h-\[68vh\] scroll-pt-12 overflow-auto/);
   assert.equal((calendar.match(/gridTemplateColumns: `56px repeat\(/g) || []).length, 2);
   assert.equal((calendar.match(/max-h-\[68vh\] scroll-pt-12 overflow-auto/g) || []).length, 1);
 });
