@@ -1,6 +1,6 @@
 import type { Config } from 'tailwindcss';
 import plugin from 'tailwindcss/plugin';
-import { colors, cssVariables, familySlots, familyThemeCss, typography } from './src/styles/tokens';
+import { appThemeCss, cssVariables, familySlots, familyThemeCss, themeColors, typography } from './src/styles/tokens';
 
 const fam = Object.fromEntries(familySlots.map((slot) => [slot, `var(--fam-${slot})`]));
 
@@ -8,7 +8,7 @@ export default {
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
     extend: {
-      colors: { ...colors, fam },
+      colors: { ...themeColors, fam },
       fontFamily: {
         sans: [`"${typography.body}"`, 'system-ui', 'sans-serif'],
         display: ['var(--font-display)', 'system-ui', 'sans-serif'],
@@ -25,6 +25,7 @@ export default {
   plugins: [plugin(({ addBase }) => addBase({
     ':root': cssVariables,
     ...familyThemeCss,
+    ...appThemeCss,
     '@media (prefers-color-scheme: dark)': {
       'html:not([data-family-theme="light"]) .theme-family-auto':
         familyThemeCss['.theme-family-dark, html[data-family-theme="dark"] .theme-family-auto'],
