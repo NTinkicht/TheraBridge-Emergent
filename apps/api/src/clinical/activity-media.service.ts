@@ -1,5 +1,6 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { preparePrivatePng } from '../common/private-image-candidate';
 import { TrialService } from '../operations/trial.service';
 import { logCenterEvent, type Tx } from '../centers/history';
 import { assertActor } from './governance-core';
@@ -88,6 +89,42 @@ export class ActivityMediaService {
       });
       return { ...created, uploaded: false, publishEnabled: false, clinicalReleaseEnabled: false };
     });
+  }
+
+  async uploadCandidate(centerId:string,v:Viewer,templateId:string,draftId:string,pngBase64:string) {
+    // Check actor/ownership and exact version BEFORE consuming scanner capacity.
+    const prior=await this.prisma.$transaction(async tx=>{
+      const template=await this.authorizedTemplate(tx,centerId,v,templateId);
+      const draft=await tx.activityMediaDraft.findFirst({where:{
+        id:draftId,centerId,templateId,templateVersion:template.version,state:'DRAFT',
+      },select:{id:true,templateVersion:true,createdById:true}});
+      if(!draft)throw new ConflictException('Private image proposal changed. Reload.');
+      if(v.role==='THERAPIST'&&draft.createdById!==v.userId)
+        throw new ForbiddenException('Only the proposing author may supply the image.');
+      return {templateVersion:draft.templateVersion};
+    });
+    const ready=await preparePrivatePng(pngBase64,'activity-image-v1',centerId,templateId);
+    const row=await this.prisma.$transaction(async tx=>{
+      await this.trial.assertWritable(tx,centerId,this.trial.now());
+      const template=await this.authorizedTemplate(tx,centerId,v,templateId);
+      const draft=await tx.activityMediaDraft.findFirst({where:{
+        id:draftId,centerId,templateId,templateVersion:prior.templateVersion,state:'DRAFT',
+      },select:{id:true,createdById:true}});
+      if(!draft || template.version!==prior.templateVersion)
+        throw new ConflictException('Activity or media draft changed during scanning.');
+      if(v.role==='THERAPIST'&&draft.createdById!==v.userId)
+        throw new ForbiddenException('Only the proposing author may supply the image.');
+      const created=await tx.privateMediaCandidate.create({data:{
+        centerId,kind:'ACTIVITY_IMAGE',templateId,templateVersion:template.version,mediaDraftId:draftId,
+        ...ready,createdById:v.userId,status:'QUARANTINED',consentState:'PENDING',rightsState:'UNVERIFIED',
+      }});
+      await logCenterEvent(tx,centerId,'media.private_candidate_quarantined',this.trial.now(),{
+        actorUserId:v.userId,meta:{templateId,mediaDraftId:draftId,candidateId:created.id},
+      });
+      return created;
+    });
+    return {id:row.id,status:'QUARANTINED' as const,width:row.width,height:row.height,
+      rightsApproved:false as const,publishEnabled:false as const,readEnabled:false as const};
   }
 
   async reject(centerId: string, v: Viewer, templateId: string, draftId: string, dto: ActivityMediaRejectDto) {
