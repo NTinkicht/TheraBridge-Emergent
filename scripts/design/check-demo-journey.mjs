@@ -1087,6 +1087,8 @@ try {
     assert(!calendar.includes('2027-02-31'), 'Monthly recurrence cannot invent invalid dates');
     // TB-EM-038: view the UNSAVED dated schedule only in the clinician's
     // existing authorized version; never post, release, or mark practice complete.
+    // The practice calendar is independently collapsed, even after evidence opens.
+    await page.getByTestId('plan-calendar-disclosure').first().locator(':scope > summary').click();
     const practiceCalendar = page.getByTestId('home-practice-calendar').first();
     await practiceCalendar.getByTestId('home-calendar-month').fill('2026-10');
     await practiceCalendar.getByTestId('home-calendar-day-2026-10-31').click();
