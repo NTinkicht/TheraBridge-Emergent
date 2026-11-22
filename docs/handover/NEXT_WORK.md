@@ -1,3 +1,10 @@
+## 2026-11-22 — Latest M5 dark specialty-card P2 verification gate
+
+1. Run final-HEAD full CI, seven-persona Chromium, coverage >=90% across eight API/Web metrics, browser/Compose/preview/secret/SBOM/Smart CI.
+2. Re-review latest commit for dark specialty-card dynamic tint and all outstanding child-search/mobile P2s; resolve only after verified.
+3. Record real visual/keyboard/assistive-technology acceptance across staff/guardian pages and five widths; remain NOT_RUN pending observation.
+4. Merge/deploy only on qualified HEAD and required owner acceptance; keep synthetic-only G2/G2b clinical NO-GO.
+
 ## 2026-11-22 — PR #461 shared dark theme and cross-screen P2 checkpoint (NOT QUALIFIED)
 
 1. Qualify the final PR #461 HEAD using full six required CI jobs, measured API/Web eight >=90% metrics, all browser/Compose/preview/secret/SBOM and Smart CI checks. Diagnose any true failure without reducing standards.
