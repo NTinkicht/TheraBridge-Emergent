@@ -149,4 +149,79 @@ describe('M5 owner private care/consent mounted source',()=>{
   expect(panel).toContain("draft.state==='DRAFT'");
   expect(panel).toContain('No image publication is available');
  });
+ test('file picker aborts empty selection and refuses to claim success after scanner rejection',async()=>{
+  const rejected=jest.fn().mockRejectedValue(new Error('scanner down'));
+  await mount(PrivatePngCandidatePicker,{label:'Private PNG',onStage:rejected});
+  const input=id('private-png-candidate-file');
+  await act(async()=>input.props.onChange({currentTarget:{files:[],value:'old.png'}}));
+  expect(rejected).not.toHaveBeenCalled();
+  const bytes=Buffer.alloc(64,3),target={files:[{type:'image/png',size:bytes.length,
+    arrayBuffer:async()=>Uint8Array.from(bytes).buffer}],value:'private-name.png'};
+  await act(async()=>{input.props.onChange({currentTarget:target});await Promise.resolve();});
+  expect(rejected).toHaveBeenCalledTimes(1);
+  expect(visible()).toContain('upload was not accepted');
+  expect(visible()).not.toContain('candidate submitted');
+  expect(visible()).not.toContain('private-name.png');
+ });
+ test('private child photo displays only existing consented bytes, and archived child cannot stage new files',async()=>{
+  opsApi.privateChildPhoto.mockResolvedValue({mimeType:'image/png',pngBase64:'aW1hZ2U='});
+  await mount(ChildPhotoPanel,{centerId:'tenant1',childId:'child1',canManage:true,active:false});
+  expect(id('child-consented-photo').props.src).toBe('data:image/png;base64,aW1hZ2U=');
+  expect(all('private-png-candidate-picker')).toHaveLength(0);
+  expect(all('child-photo-pending')).toHaveLength(0);
+ });
+ test('staff private photo panel denies upload control for nonmanaging authorized readers',async()=>{
+  await mount(ChildPhotoPanel,{centerId:'tenant1',childId:'child1',canManage:false,active:true});
+  expect(all('private-png-candidate-picker')).toHaveLength(0);
+  expect(all('child-consented-photo')).toHaveLength(0);
+ });
+ test('guardian empty state renders no private image, no approve, no pending links',async()=>{
+  await mount(GuardianPhotoConsent,{centerId:'tenant1',childId:'child1'});
+  expect(all('guardian-private-photo')).toHaveLength(0);
+  expect(all('guardian-photo-approve')).toHaveLength(0);
+  expect(all('guardian-photo-consent')).toHaveLength(0);
+ });
+ test('guardian transport denial shows safe error, never candidate identities or preview',async()=>{
+  opsApi.guardianPhotoCandidates.mockRejectedValue(new Error('cross-center-id'));
+  await mount(GuardianPhotoConsent,{centerId:'tenant2',childId:'child2'});
+  expect(visible()).toContain('candidates could not be loaded');
+  expect(visible()).not.toContain('cross-center-id');
+  expect(all('guardian-photo-review-preview')).toHaveLength(0);
+ });
+ test('guardian rejected photo review fails closed before rendering unverified image',async()=>{
+  opsApi.guardianPhotoCandidates.mockResolvedValue({candidates:[{id:'pending-one',
+    status:'QUARANTINED',consentState:'PENDING'}]});
+  opsApi.guardianReviewPhoto.mockRejectedValue(new Error('not authorized'));
+  await mount(GuardianPhotoConsent,{centerId:'tenant1',childId:'child1'});
+  await click('guardian-review-photo-pending-one');
+  expect(visible()).toContain('Unable to privately inspect');
+  expect(all('guardian-photo-review-preview')).toHaveLength(0);
+  expect(all('guardian-photo-approve')).toHaveLength(0);
+ });
+ test('guardian consent conflict preserves explicit pending review and does not pretend approval',async()=>{
+  opsApi.guardianPhotoCandidates.mockResolvedValue({candidates:[{id:'pending-two',
+    status:'QUARANTINED',consentState:'PENDING'}]});
+  opsApi.guardianPhotoConsent.mockRejectedValue(new Error('concurrent revocation'));
+  await mount(GuardianPhotoConsent,{centerId:'tenant1',childId:'child1'});
+  await click('guardian-review-photo-pending-two');
+  await act(async()=>id('guardian-photo-consent-confirm').props.onChange({target:{checked:true}}));
+  await click('guardian-photo-approve');
+  expect(visible()).toContain('consent was not saved');
+  expect(id('guardian-photo-review-preview')).toBeTruthy();
+  expect(opsApi.guardianPhotoConsent).toHaveBeenCalledTimes(1);
+ });
+ test('guardian failed revoke never claims photo deletion or clears consent display',async()=>{
+  opsApi.guardianPrivatePhoto.mockResolvedValue({mimeType:'image/png',pngBase64:'aW1hZ2U='});
+  opsApi.guardianPhotoRevoke.mockRejectedValue(new Error('server unreachable'));
+  await mount(GuardianPhotoConsent,{centerId:'tenant1',childId:'child1'});
+  await click('guardian-revoke-photo');
+  expect(visible()).toContain('could not be revoked');
+  expect(id('guardian-private-photo')).toBeTruthy();
+ });
+ test('restricted clinical context refuses saves on archived child even for manager',async()=>{
+  await mount(PrivateCarePanel,{centerId:'tenant1',childId:'child1',canEdit:true,active:false});
+  expect(all('private-care-save')).toHaveLength(0);
+  expect(id('private-care-allergies').props.disabled).toBe(true);
+ });
+
 });
