@@ -59,6 +59,20 @@ describe('application-wide semantic light/dark palette',()=>{
     expect(source).toContain('specialtySurface(x.family, false)');
     expect(source).not.toContain('background: tint ?? identities[0].tint');
   });
+  it('shared ErrorState body uses theme-aware danger ink with readable light and dark contrast',()=>{
+    const l=hex=>{
+      const a=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255)
+        .map(c=>c<=.04045?c/12.92:((c+.055)/1.055)**2.4);
+      return a[0]*.2126+a[1]*.7152+a[2]*.0722;
+    };
+    const contrast=(a,b)=>(Math.max(l(a),l(b))+.05)/(Math.min(l(a),l(b))+.05);
+    expect(contrast(colors.status.danger,colors.status.dangerSurface)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(darkSemanticOverrides.status.danger,darkSemanticOverrides.status.dangerSurface)).toBeGreaterThanOrEqual(4.5);
+    const fs=require('fs'),path=require('path');
+    const states=fs.readFileSync(path.join(__dirname,'../src/components/design/states.tsx'),'utf8');
+    expect(states).toContain("fam ? 'text-fam-muted' : 'text-status-danger'");
+    expect(states).not.toContain("text-[#7A2630]");
+  });
   it('switches both family and clinical semantic surfaces, never just a guardian header',()=>{
     const selector='html[data-app-theme="dark"] .theme-clinical-auto, html[data-app-theme="dark"] .theme-family-auto';
     const dark=appThemeCss[selector];
