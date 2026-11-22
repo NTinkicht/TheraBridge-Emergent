@@ -36,6 +36,7 @@ CREATE TABLE "private_media_candidate" (
   "height" INTEGER NOT NULL,
   "status" VARCHAR(20) NOT NULL DEFAULT 'QUARANTINED',
   "consent_state" VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+  "consented_guardian_link_id" UUID,
   "rights_state" VARCHAR(20) NOT NULL DEFAULT 'UNVERIFIED',
   "created_by_id" UUID NOT NULL,
   "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -46,8 +47,8 @@ CREATE TABLE "private_media_candidate" (
     OR ("kind" = 'ACTIVITY_IMAGE' AND "child_id" IS NULL AND "template_id" IS NOT NULL AND "template_version" > 0 AND "media_draft_id" IS NOT NULL)
   ),
   CONSTRAINT "private_media_lifecycle" CHECK (
-    ("status" = 'QUARANTINED' AND "consent_state" = 'PENDING' AND "rights_state" = 'UNVERIFIED')
-    OR ("status" = 'PRIVATE_READY' AND "kind" = 'CHILD_PHOTO' AND "consent_state" = 'GRANTED' AND "rights_state" = 'GUARDIAN_ATTESTED')
+    ("status" = 'QUARANTINED' AND "consent_state" = 'PENDING' AND "rights_state" = 'UNVERIFIED' AND "consented_guardian_link_id" IS NULL)
+    OR ("status" = 'PRIVATE_READY' AND "kind" = 'CHILD_PHOTO' AND "consent_state" = 'GRANTED' AND "rights_state" = 'GUARDIAN_ATTESTED' AND "consented_guardian_link_id" IS NOT NULL)
     OR ("status" = 'REVOKED')
   ),
   CONSTRAINT "private_media_cipher_minimum" CHECK (octet_length("encrypted_bytes") >= 29),
@@ -59,3 +60,4 @@ ALTER TABLE "private_media_candidate" ADD CONSTRAINT "private_media_candidate_ce
 ALTER TABLE "private_media_candidate" ADD CONSTRAINT "private_media_candidate_child_id_fkey" FOREIGN KEY ("child_id") REFERENCES "child"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "private_media_candidate" ADD CONSTRAINT "private_media_candidate_template_id_fkey" FOREIGN KEY ("template_id") REFERENCES "activity_template"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "private_media_candidate" ADD CONSTRAINT "private_media_candidate_media_draft_id_fkey" FOREIGN KEY ("media_draft_id") REFERENCES "activity_media_draft"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "private_media_candidate" ADD CONSTRAINT "private_media_candidate_consented_guardian_link_id_fkey" FOREIGN KEY ("consented_guardian_link_id") REFERENCES "guardian_link"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
