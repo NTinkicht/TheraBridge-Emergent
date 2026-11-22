@@ -1,3 +1,7 @@
+## 2026-11-22 — Gemini review follow-up tests (NOT YET RUN ON LATEST HEAD)
+
+Added mounted two-consumer `useSyncExternalStore` theme synchronization and cross-tab storage tests, preference-with-storage-disabled fallback and stale-key isolation, AppShell icon state test, and a real coordinator Schedule browser assertion that choosing a therapist via dropdown retains the selected scope but clears the stale directory query. Gemini reported no critical XSS/tenant-isolation finding. **These are committed test definitions, not PASS evidence: new CI, coverage and final independent review pending at this checkpoint.** All clinical/production gates remain fail-closed.
+
 ## 2026-11-22 — M5 global dark clinical-assist P2 (NOT YET QUALIFIED)
 
 Independent Codex review found that ReportDecisionAssist and HomePlanSyntheticAssist contained hardcoded white panel/field backgrounds with theme-lightened foregrounds, making explanatory and editable text unreadable in dark staff workspaces. Replaced fixed white surfaces with the existing semantic `bg-surface-white` and set explicit corresponding text where required, without changing any clinical workflow or access rule. Added shared consumer source/contrast regression. Final exact-HEAD CI and independent review and owner visual acceptance pending; G2/G2b remains NO-GO.
