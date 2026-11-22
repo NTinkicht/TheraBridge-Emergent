@@ -51,8 +51,15 @@ try {
   // Unknown outcomes never cross operation boundaries, and exact replays retain keys/payloads.
   const response = page.getByLabel('Child response / reviewed dictation', { exact: true });
   const transcript = page.getByLabel('Editable transcript (not saved)', { exact: true });
+  const syntheticDisclosure = page.getByTestId('session-synthetic-dictation').first();
+  assert.equal(await syntheticDisclosure.getAttribute('open'), null,
+    'Synthetic test tools must be collapsed by default in clinical sessions');
+  await syntheticDisclosure.locator(':scope > summary').click();
   const saveDraft = () => page.getByRole('button', { name: /^(Save draft|Retry save)$/ }).click();
-  const reload = async () => { await page.reload(); await page.getByRole('tab', { name: 'Sessions', exact: true }).click(); };
+  const reload = async () => {
+    await page.reload(); await page.getByRole('tab', { name: 'Sessions', exact: true }).click();
+    await page.getByTestId('session-synthetic-dictation').first().locator(':scope > summary').click();
+  };
   for (const [note, text, accepted] of [['', 'العربية café 😀', true], ['a'.repeat(3998), 'é', true], ['a'.repeat(3999), 'é', false], ['', 'x'.repeat(4001), false], ['note', 'review', true]]) {
     await response.fill(note); await transcript.fill(text);
     await page.getByRole('button', { name: 'Insert reviewed text', exact: true }).click();
@@ -107,10 +114,6 @@ try {
   await page.getByRole('button', { name: 'Save draft', exact: true }).click();
   await page.waitForFunction(() => [...document.querySelectorAll('[role="status"]')].some(e => e.textContent.includes('Saved on server ·')));
   assert.equal(saved.activities[0].outcome, 'ACHIEVED'); assert.equal(saved.activities[0].assistance, 'SUBSTANTIAL_ASSISTANCE');
-  const syntheticDisclosure = page.getByTestId('session-synthetic-dictation').first();
-  assert.equal(await syntheticDisclosure.getAttribute('open'), null,
-    'Synthetic test tools must be collapsed by default in clinical sessions');
-  await syntheticDisclosure.locator(':scope > summary').click();
   // M3-STT01: simulated capture has no audio/device access, and language-specific
   // fictional text stays local until explicit clinician insertion.
   await page.getByLabel('Synthetic dictation language').selectOption('fr');
@@ -222,7 +225,7 @@ try {
   await page.getByLabel('Overall session note', { exact: true }).fill('Original legacy content edited');
   await page.getByRole('button', { name: 'Save draft', exact: true }).click();
   await page.getByText(/Saved on server ·/).waitFor();
-  await page.reload(); await page.getByRole('tab', { name: 'Sessions', exact: true }).click();
+  await reload();
   assert.equal(await page.getByLabel('Overall session note', { exact: true }).inputValue(), 'Original legacy content edited');
   assert(await page.getByLabel('Actual start', { exact: true }).isDisabled());
   // An accepted tab switch discards the transcript and must clear the pending guard.
