@@ -143,3 +143,41 @@ describe('real schedule route with scoped access and controlled mutations',()=>{
   expect(opsApi.appointments).toHaveBeenCalledTimes(2);
  });
 });
+
+describe('M5 owner feedback: authorized therapist autocomplete',()=>{
+ it('uses real directory suggestions and keyboard selection without granting a new membership',async()=>{
+  opsApi.therapists.mockResolvedValue({items:[
+   {membershipId:'therapist-a',displayName:'Fictional Leila',specialties:['speech']},
+   {membershipId:'therapist-b',displayName:'Fictional Lena',specialties:['occupational']}
+  ],nextOffset:null});
+  await mount();
+  await act(async()=>get('schedule-therapist-search').props.onFocus());
+  await change('schedule-therapist-search','Fictional');
+  const matches=get('schedule-therapist-suggestions').findAllByProps({role:'option'});
+  expect(matches).toHaveLength(2);
+  expect(matches[0].props['aria-selected']).toBe(true);
+  const prevent=jest.fn();
+  await act(async()=>get('schedule-therapist-search').props.onKeyDown({key:'ArrowDown',preventDefault:prevent}));
+  expect(matches[1].props['aria-selected']).toBe(true);
+  await act(async()=>get('schedule-therapist-search').props.onKeyDown({key:'ArrowUp',preventDefault:prevent}));
+  expect(matches[0].props['aria-selected']).toBe(true);
+  await act(async()=>get('schedule-therapist-search').props.onKeyDown({key:'Enter',preventDefault:prevent}));
+  expect(opsApi.appointments).toHaveBeenLastCalledWith('center-a',expect.objectContaining({membershipId:'therapist-a'}));
+  expect(find('schedule-therapist-suggestions')).toHaveLength(0);
+  expect(prevent).toHaveBeenCalledTimes(3);
+ });
+ it('keeps mouse selection and clearing search scoped to server-authorized options', async()=>{
+  await mount();
+  await act(async()=>get('schedule-therapist-search').props.onFocus());
+  await change('schedule-therapist-search','Fictional Leila');
+  const item=get('schedule-therapist-suggestions').findByProps({role:'option'});
+  await act(async()=>item.findByType('button').props.onMouseDown({preventDefault:jest.fn()}));
+  await act(async()=>item.findByType('button').props.onClick());
+  expect(opsApi.appointments).toHaveBeenLastCalledWith('center-a',expect.objectContaining({membershipId:'therapist-a'}));
+  await change('schedule-therapist-search','Unknown name');
+  expect(opsApi.appointments).toHaveBeenLastCalledWith('center-a',expect.objectContaining({membershipId:undefined}));
+  expect(find('schedule-therapist-suggestions')).toHaveLength(0);
+  await act(async()=>get('schedule-therapist-search').props.onKeyDown({key:'Escape'}));
+  expect(find('schedule-therapist-suggestions')).toHaveLength(0);
+ });
+});
