@@ -1,3 +1,7 @@
+## 2026-11-22 — Fix final-head Codex P2 on PR #461
+
+Codex reported keyboard active autocomplete options became invisible below scrollable results. Implemented reusable listbox-only scrolling in `apps/web/src/lib/combobox-scroll.ts`, wired both therapist and child typeaheads; added five real scroll helper tests plus source-level integration assertions. This is an implementation checkpoint, not a final approval; rerun full exact-head CI and request another Codex review. No changes to permissions, private clinical records, release or media publication.
+
 ## 2026-11-22 — M5 manual-feedback PR 1/5 #461
 
 Captured 10 nonduplicated shared-component findings. Implemented code changes in calendar alignment, therapist/child searches, activity catalogue layout and guardian theme navigation. Added Node source contracts and mounted Jest synthetic tests; tests are **NOT RUN at authoring**. No PR merge, production media, clinical approval, real child data or release. All other 22 findings remain in subsequent agreed packages.
