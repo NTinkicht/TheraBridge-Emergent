@@ -256,6 +256,39 @@ export class ChildrenService {
       width:image.width,height:image.height,publicRelease:false as const};
   }
 
+  private async linkedGuardian(centerId:string,childId:string,v:Viewer) {
+    if(v.role!=='GUARDIAN')throw new ForbiddenException('Guardian-linked child access required.');
+    const link=await this.prisma.guardianLink.findFirst({where:{
+      centerId,childId,userId:v.userId,removedAt:null,
+      child:{status:'ACTIVE',centerId},
+    },select:{id:true}});
+    if(!link)throw new NotFoundException('Linked child not found');
+    return link;
+  }
+
+  async guardianPhotoCandidates(centerId:string,childId:string,v:Viewer) {
+    await this.linkedGuardian(centerId,childId,v);
+    const candidates=await this.prisma.privateMediaCandidate.findMany({where:{
+      centerId,childId,kind:'CHILD_PHOTO',
+      status:{in:['QUARANTINED','PRIVATE_READY']},
+    },orderBy:[{createdAt:'desc'},{id:'desc'}],take:15,
+      select:{id:true,status:true,consentState:true}});
+    return {candidates};
+  }
+
+  async guardianReadPhoto(centerId:string,childId:string,v:Viewer) {
+    await this.linkedGuardian(centerId,childId,v);
+    const candidate=await this.prisma.privateMediaCandidate.findFirst({where:{
+      centerId,childId,kind:'CHILD_PHOTO',status:'PRIVATE_READY',
+      consentState:'GRANTED',rightsState:'GUARDIAN_ATTESTED',revokedAt:null,
+    },orderBy:[{createdAt:'desc'},{id:'desc'}],
+    select:{encryptedBytes:true,width:true,height:true}});
+    if(!candidate)throw new NotFoundException('No consented private photo is available.');
+    const bytes=openPrivateData(candidate.encryptedBytes,'child-photo-v1',centerId,childId);
+    return {mimeType:'image/png' as const,pngBase64:bytes.toString('base64'),
+      width:candidate.width,height:candidate.height,publicRelease:false as const};
+  }
+
   async guardianPhotoDecision(centerId:string,childId:string,v:Viewer,candidateId:string,consent:boolean) {
     if(v.role!=='GUARDIAN') throw new ForbiddenException('Only an active linked guardian may give photo consent.');
     return this.prisma.$transaction(async tx=>{
