@@ -13,7 +13,7 @@ import { useAppTheme } from '@/components/theme/useAppTheme';
 function Logo({ collapsed, family }: { collapsed: boolean; family: boolean }) {
   // Raster logo is only valid on light surfaces; the family theme puts it on a chip that turns white in dark mode.
   return (
-    <span className={`inline-flex items-center gap-2 ${family ? 'rounded-[10px] bg-fam-logoChip px-1.5 py-1' : ''}`}>
+    <span data-testid="shell-logo-chip" className={`inline-flex items-center gap-2 ${family ? 'rounded-[10px] bg-fam-logoChip px-1.5 py-1' : ''}`}>
       <BrandMark variant="symbol" height={collapsed ? 24 : 26} />
       {!collapsed && <BrandMark variant="wordmark" height={17} />}
     </span>
