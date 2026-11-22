@@ -35,6 +35,30 @@ describe('application-wide semantic light/dark palette',()=>{
       expect(ratio('#0D1226',fill)).toBeGreaterThanOrEqual(4.5);
     }
   });
+  it('keeps every specialty activity tint readable against inherited dark clinical text',()=>{
+    const text=darkSemanticOverrides.brand.ink;
+    const muted=darkSemanticOverrides.brand.inkMuted;
+    const luminance=hex=>{
+      const c=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255)
+        .map(n=>n<=.04045?n/12.92:Math.pow((n+.055)/1.055,2.4));
+      return .2126*c[0]+.7152*c[1]+.0722*c[2];
+    };
+    const ratio=(x,y)=>{
+      const a=luminance(x),b=luminance(y);
+      return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+    };
+    for(const key of ['speechTint','otTint','abaTint','physioTint','groupTint']){
+      const tint=darkSemanticOverrides.specialty[key];
+      expect(ratio(text,tint)).toBeGreaterThanOrEqual(4.5);
+      expect(ratio(muted,tint)).toBeGreaterThanOrEqual(4.5);
+    }
+    const fs=require('fs'),path=require('path');
+    const source=fs.readFileSync(path.join(__dirname,'../src/components/clinical/ActivityCard.tsx'),'utf8');
+    expect(source).toContain('specialtySurface(identities[0].family, true)');
+    expect(source).toContain('specialtySurface(x.family, true)');
+    expect(source).toContain('specialtySurface(x.family, false)');
+    expect(source).not.toContain('background: tint ?? identities[0].tint');
+  });
   it('switches both family and clinical semantic surfaces, never just a guardian header',()=>{
     const selector='html[data-app-theme="dark"] .theme-clinical-auto, html[data-app-theme="dark"] .theme-family-auto';
     const dark=appThemeCss[selector];
