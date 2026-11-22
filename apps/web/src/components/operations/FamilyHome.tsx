@@ -10,6 +10,7 @@ import { EmptyState, ErrorState, SkeletonRows } from '@/components/design/states
 import { messagesApi } from '@/lib/messages';
 import { STATUS_LABEL, dayLabel, opsApi, timeRange, type FamilyOverview, type FamilyVisit } from '@/lib/operations';
 import { serviceLabel } from './BookDialog';
+import { GuardianPhotoConsent } from './GuardianPhotoConsent';
 
 type Kid = FamilyOverview['children'][number];
 const TONE = { SCHEDULED: 'info', COMPLETED: 'success', CANCELLED: 'neutral', NO_SHOW: 'caution' } as const;
@@ -79,6 +80,7 @@ function ChildCard({ centerId, centerName, kid, onError, onReminderSaved, remind
         {next ? <p className="mt-1 text-sm">{dayLabel(next.startsAt)} · {timeRange(next.startsAt,next.endsAt)} · {serviceLabel(next.service)}</p>
           : <p className="mt-1 text-sm text-fam-muted">No future confirmed visit is listed. A scheduled visit is not proof of attendance.</p>}
       </div>
+      <GuardianPhotoConsent centerId={centerId} childId={kid.id}/>
       <DisclosureSection tone="family" title="Appointments, care team and preferences"
         summary="Upcoming visits, attendance history, care team and reminders">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
