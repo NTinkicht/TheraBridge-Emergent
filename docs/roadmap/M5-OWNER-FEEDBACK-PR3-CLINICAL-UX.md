@@ -29,3 +29,11 @@ Source: `docs/roadmap/M5-OWNER-MANUAL-FEEDBACK-20261122.md`; follows merged PR #
 - The unchanged current-version, version-history and immutable evidence semantics remain in place. No write, submit, sign or family release occurs on disclosure.
 - Added mounted synthetic tests for default collapsed state, draft save version integrity, read-only roles and locked release actions.
 - **NOT QUALIFIED:** Five-width role-by-role visual and assistive-technology checks, owner acceptance, exact-HEAD CI and independent review remain required. This slice does not close observation 21 or the broader PR3 work.
+
+## Follow-on independent slice — observation 20: synthetic transcription separation
+
+- Added a native keyboard-accessible collapsed developer-testing disclosure around the existing **synthetic-only** transcription component in each owned clinician session.
+- The entire Dictation component remains **mounted even when collapsed**, retaining unsaved transcript, the parent's pending-navigation guard, remote completion safety, and explicit insertion rules. A disclosure toggle is not a discard or an insert.
+- A clear notice distinguishes fictional fixture transcription from real clinical recording; no microphone APIs, external speech services, consent, audio upload, signing, patient release or STT activation are added.
+- Updated live browser synthetic session and multi-tab tests to deliberately expand the developer disclosure; added mounted regression tests for default collapsed presentation, draft saving and completed-session access revocation.
+- Scope is **only a developer-control UX separation**; observation 20 owner acceptance, five-width per-role screenshots, manual keyboard/AT and full exact-head review/CI remain pending. Do not interpret the implementation as real STT availability or M5 closure.

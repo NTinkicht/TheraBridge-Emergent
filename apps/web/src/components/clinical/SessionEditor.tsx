@@ -150,8 +150,16 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
         {server && !completed && <><Button variant="secondary" disabled={saving || unresolved} onClick={() => void resolveConflict(true)}>Retain server version</Button><Button variant="secondary" disabled={saving || unresolved} onClick={() => { setReconciling(true); setError(true); setStatus('Reconcile in the existing fields. Autosave remains off; explicitly save reviewed reconciliation when ready.'); }}>Reconcile local changes</Button><Button disabled={saving || unresolved} onClick={() => void resolveConflict()}>Save reviewed reconciliation as draft</Button></>}
       </div>}
     </section>}
-    {/* Keep transcript state mounted when remote completion removes editing rights. */}
-    {n.mine && <Dictation disabled={!edit || saving || unresolved || conflicted} onInsert={insert} onPending={pending} />}
+    {/* Synthetic developer controls stay mounted for local transcript recovery; closing
+        disclosure never discards drafts or clears pending-navigation protection. */}
+    {n.mine && <details className="rounded-control border border-border-light bg-surface-subtle p-3"
+      data-testid="session-synthetic-dictation" aria-label="Synthetic transcription testing">
+      <summary className="min-h-11 cursor-pointer py-2 text-[14px] font-semibold text-brand-action">
+        Developer testing only · synthetic transcription
+      </summary>
+      <p className="my-3 text-[13px] text-brand-inkMuted">This optional testing area uses fictional text only. Real speech-to-text is unavailable; it is not part of the clinical recording workflow. Unsaved synthetic transcripts remain local until explicitly reviewed and inserted.</p>
+      <Dictation disabled={!edit || saving || unresolved || conflicted} onInsert={insert} onPending={pending} />
+    </details>}
     {edit && unresolved && (!conflicted || !!server) && <Button variant="secondary" disabled={saving} onClick={() => void save(retry.current?.executionStatus === 'COMPLETED', conflicted ? retry.current?.version : undefined)}>Resolve previous {retry.current?.executionStatus === 'COMPLETED' ? 'completion' : 'draft save'}</Button>}
     <p role="status" aria-live="polite" className={error ? 'text-status-danger text-[14px]' : 'text-brand-inkMuted text-[13px]'}>{status}</p>
     <div className="flex flex-wrap items-start gap-2">{edit && <><Button disabled={saving || conflicted} onClick={() => void save()}>{error && !unresolved ? 'Retry save' : 'Save draft'}</Button><Button variant="secondary" disabled={transcriptPending || saving || conflicted} onClick={() => void save(true)}>Review and complete session</Button></>}<LockedAction id={`sign-${n.id}`} label="Sign note" reason={LOCKED_REASON} /></div>

@@ -200,3 +200,38 @@ describe('M4-08 session persistence and completion remain unsigned',()=>{
  });
 
 });
+
+describe('M5 owner-feedback 20: synthetic dictation is separated from clinical actions',()=>{
+ it('starts collapsed but keeps its mounted test provider and clinical save action available',async()=>{
+  await mount();
+  const disclosure=get('session-synthetic-dictation');
+  expect(disclosure.type).toBe('details');
+  expect(disclosure.props.open).toBeUndefined();
+  expect(disclosure.findAllByType('summary')).toHaveLength(1);
+  expect(JSON.stringify(tree.toJSON())).toContain('Developer testing only');
+  expect(JSON.stringify(tree.toJSON())).toContain('Real speech-to-text is unavailable');
+  expect(get('synthetic-dictation-callback')).toBeTruthy();
+  expect(button('Save draft')).toBeTruthy();
+  expect(button('Sign note')).toBeTruthy();
+ });
+ it('keeps synthetic insertion guarded by existing draft save and never signs or releases',async()=>{
+  clinicalApi.saveSession.mockResolvedValue({version:4,updatedAt:'2026-11-10T10:00:00Z'});
+  await mount();
+  const disclosure=get('session-synthetic-dictation');
+  await act(async()=>get('synthetic-dictation-callback').props.onClick());
+  expect(get('session-synthetic-dictation')).toBe(disclosure);
+  await click('Save draft');
+  expect(clinicalApi.saveSession).toHaveBeenCalledWith('fictional-center','synthetic-session',
+   expect.objectContaining({executionStatus:'IN_PROGRESS',
+    sections:expect.objectContaining({response:'Synthetic reviewed transcript'})}));
+  expect(JSON.stringify(tree.toJSON())).toContain('Sign note');
+  expect(JSON.stringify(tree.toJSON())).not.toContain('Clinical signature completed');
+ });
+ it('keeps synthetic developer area mounted but refuses insertion after completion',async()=>{
+  await mount(note({executionStatus:'COMPLETED'}));
+  expect(get('session-synthetic-dictation')).toBeTruthy();
+  expect(get('synthetic-dictation-callback').props.disabled).toBe(true);
+  expect(button('Save draft')).toBeUndefined();
+  expect(button('Sign note')).toBeTruthy();
+ });
+});
