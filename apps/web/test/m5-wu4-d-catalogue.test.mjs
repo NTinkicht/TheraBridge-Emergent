@@ -12,7 +12,7 @@ test('M5-12 image-first staff preview fails closed until approved assets exist',
   assert.match(activity, /No approved illustration available/);
   assert.match(activity, /activity-media-placeholder-/);
   assert.doesNotMatch(activity, /<img\b|<Image\b|mediaDraft\.url|draft\.url|approve\(/);
-  assert.match(library, /<ActivityCard t=\{t\} visual compact \/>/);
+  assert.match(library, /<ActivityCard t=\{t\} visual compact layout=\{view\} \/>/);
   assert.match(activity, /compact = false/);
   assert.match(activity, /<details className=/);
   assert.match(activity, /activity-details-/);
