@@ -7,7 +7,10 @@ name: ci
 on:
   push:
     branches: ["main"]
+    tags: ["v*"] # Release candidates receive the exact-SHA full endurance gate.
   pull_request:
+  schedule:
+    - cron: "30 4 * * *" # Daily full M4-07 synthetic endurance on default branch.
   workflow_dispatch:
 
 # Superseded runs of the same event/ref cancel; PR and main require independent
@@ -937,8 +940,20 @@ jobs:
           bash -n scripts/preview/start.sh
           node --check scripts/preview/check-external.mjs
           node --check scripts/preview/generate-secrets.mjs
-      - name: Build unified preview image
-        run: docker build -f Dockerfile.preview -t tb-synthetic-preview:ci .
+      # Cache only deterministic Docker layers; still build the actual current HEAD,
+      # scan all image layers and produce an exact-image CycloneDX SBOM.
+      - name: Prepare isolated BuildKit builder
+        uses: docker/setup-buildx-action@v3
+      - name: Build unified preview image (exact HEAD, cached layers)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.preview
+          load: true
+          push: false
+          tags: tb-synthetic-preview:ci
+          cache-from: type=gha,scope=therabridge-unified-preview
+          cache-to: type=gha,scope=therabridge-unified-preview,mode=max,ignore-error=true
       - name: Verify no preview image layer ships sharp/libvips (incl. Yarn cache)
         run: bash scripts/preview/check-image-no-sharp.sh tb-synthetic-preview:ci
       - name: Generate container OS/runtime CycloneDX evidence from built preview image
@@ -982,14 +997,38 @@ jobs:
           docker exec tb-preview-ci node -e "const {PrismaClient}=require('@prisma/client');const p=new PrismaClient();p.center.count({where:{slug:'childrens-home-demo'}}).then(n=>{if(n!==1)process.exitCode=1;else console.log('PASS: one Children Home demo centre seeded')}).finally(()=>p.\$disconnect())"
       - name: M4-07 reject forged/shortened 512MiB workload receipt
         run: node --test scripts/qa/m4-sustained-receipt.test.mjs
+      - name: PR smoke reject shortened, forged or serial 512MiB receipt
+        run: node --test scripts/qa/m4-pr-overlap-receipt.test.mjs
+      # PR smoke is an ADDITIONAL regression profile, not evidence of ten
+      # minutes of uninterrupted operation. Main/schedule/tag/manual remain full.
+      - name: PR 200-second overlapping 1/4/8 synthetic API smoke, 512MiB non-root
+        if: github.event_name == 'pull_request'
+        timeout-minutes: 5
+        env:
+          TB_M4_LOCAL_LOAD_CONFIRM: DISPOSABLE_LOOPBACK_ONLY
+        run: node scripts/qa/m4-pr-overlap-http.mjs
+      - name: Validate PR numeric-only overlap receipt
+        if: github.event_name == 'pull_request'
+        run: node scripts/qa/m4-pr-overlap-receipt.mjs .workspace/m4-performance/m4-pr-overlap-load.json
+      - name: Archive PR 200-second overlap smoke (NOT M4-07 endurance or SLA)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-pr-overlap-512m-${{ github.run_id }}
+          path: .workspace/m4-performance/m4-pr-overlap-load.json
+          if-no-files-found: error
+          retention-days: 7
       - name: M4-07 sustained 10-minute synthetic API load with real 512MiB non-root preview cgroup
+        if: github.event_name != 'pull_request'
         timeout-minutes: 13
         env:
           TB_M4_LOCAL_LOAD_CONFIRM: DISPOSABLE_LOOPBACK_ONLY
         run: node scripts/qa/m4-local-sustained-http.mjs
       - name: Verify measured 10-minute synthetic workload receipt before publishing
+        if: github.event_name != 'pull_request'
         run: node scripts/qa/m4-sustained-receipt.mjs .workspace/m4-performance/m4-07-compose-load.json
       - name: Archive numeric-only M4-07 local synthetic load receipt (not production SLA)
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: m4-07-512m-sustained-${{ github.run_id }}
