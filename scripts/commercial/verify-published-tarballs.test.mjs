@@ -195,3 +195,28 @@ test('parseLock binds Yarn npm aliases to the real package name and exact versio
  assert.ok(lock.has(JSON.stringify(['@jest/react-is-18','18.3.1'])));
  assert.equal(lock.has(JSON.stringify(['react-is','18.3.0'])),false);
 });
+
+test('transient registry deadline retries then verifies exact pinned SRI and license hashes',async()=>{
+ const f=fixture();let tries=0;
+ const report=await audit(f,{fetchBuffer:async()=>{tries++;if(tries===1)throw Error('TOTAL_DEADLINE_EXCEEDED');return f.bytes;}});
+ assert.equal(tries,2);assert.equal(report.summary.TARBALL_INTEGRITY_VERIFIED_LICENSE_FILES_HASHED,1);
+ assert.equal(report.records[0].legalApproval,false);
+});
+
+test('persistent transient registry failure remains unresolved, never approved',async()=>{
+ const f=fixture();let tries=0;
+ const report=await audit(f,{fetchBuffer:async()=>{tries++;throw Error('TOTAL_DEADLINE_EXCEEDED');}});
+ assert.equal(tries,3);
+ assert.equal(report.records[0].status,'UNRESOLVED_TOTAL_DEADLINE_EXCEEDED');
+ assert.equal(report.records[0].tarballSha256,null);
+ assert.equal(report.records[0].legalApproval,false);
+});
+
+test('integrity mismatch and nontransient errors are never retried',async()=>{
+ const f=fixture();let tries=0;
+ const tampered=await audit(f,{fetchBuffer:async()=>{tries++;return Buffer.from('tampered');}});
+ assert.equal(tries,1);assert.equal(tampered.records[0].status,'UNRESOLVED_INTEGRITY_MISMATCH');
+ tries=0;
+ const unsafe=await audit(f,{fetchBuffer:async()=>{tries++;throw Error('TARBALL_TOO_LARGE');}});
+ assert.equal(tries,1);assert.equal(unsafe.records[0].status,'UNRESOLVED_TARBALL_TOO_LARGE');
+});
