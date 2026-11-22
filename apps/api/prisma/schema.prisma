@@ -1095,6 +1095,7 @@ model ActivityMediaDraft {
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
   center          Center   @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  mediaCandidates PrivateMediaCandidate[]
   template        ActivityTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
   createdBy       User @relation(fields: [createdById], references: [id], onDelete: Restrict)
 
@@ -1131,6 +1132,7 @@ model PrivateMediaCandidate {
   childId         String?  @map("child_id") @db.Uuid
   templateId      String?  @map("template_id") @db.Uuid
   templateVersion Int?     @map("template_version")
+  mediaDraftId    String?  @map("media_draft_id") @db.Uuid
   encryptedBytes  Bytes    @map("encrypted_bytes") @db.ByteA
   digestSha256    String   @map("digest_sha256") @db.VarChar(64)
   scannerName     String   @map("scanner_name") @db.VarChar(80)
@@ -1145,6 +1147,7 @@ model PrivateMediaCandidate {
   revokedAt       DateTime? @map("revoked_at") @db.Timestamptz(3)
   center          Center   @relation(fields: [centerId], references: [id], onDelete: Restrict)
   child           Child?   @relation(fields: [childId], references: [id], onDelete: Restrict)
+  mediaDraft      ActivityMediaDraft? @relation(fields: [mediaDraftId], references: [id], onDelete: Restrict)
   template        ActivityTemplate? @relation(fields: [templateId], references: [id], onDelete: Restrict)
 
   @@index([centerId, childId, createdAt])
