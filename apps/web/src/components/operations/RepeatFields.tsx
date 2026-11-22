@@ -7,12 +7,13 @@ export interface Repeat { mode: 'none' | 'weekly' | 'biweekly' | 'custom'; inter
 
 // The API already validates 1–4 weekly intervals. Keep this conversion in one
 // place so the custom UI cannot submit a fractional, NaN or out-of-range series.
-export function recurringIntervalWeeks(value: Repeat): number | null {
+// null = not recurring; undefined = invalid recurrence; number = valid cadence.
+export function recurringIntervalWeeks(value: Repeat): number | null | undefined {
   if (value.mode === 'none') return null;
   if (value.mode === 'weekly') return 1;
   if (value.mode === 'biweekly') return 2;
   const text = value.intervalWeeks.trim();
-  if (!/^[1-4]$/.test(text)) return null;
+  if (!/^[1-4]$/.test(text)) return undefined;
   return Number(text);
 }
 export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
