@@ -134,14 +134,23 @@ export function VersionEditor({ centerId, ws, planId, planTitle, service, v, sou
             unsavedPlanEdits={unsavedPlanEdits || otherPlanDirty} run={run} />
         </div>
       </details>
-      <label className="block text-[14px] font-medium">Plan summary<textarea className={`mt-1 ${input}`} rows={3} value={summary} disabled={!edit} onChange={(e) => setSummary(e.target.value)} data-testid="plan-summary" /></label>
-      <div>
+      <nav className="rounded-control border border-border-light bg-surface-subtle p-3" aria-label="Plan authoring steps" data-testid="plan-authoring-steps">
+        <h3 className="text-[15px] font-semibold">Work on this draft in three steps</h3>
+        <p className="mt-1 text-[12px] text-brand-inkMuted">Move between sections without discarding unsaved changes. Nothing is submitted, approved or shared until you choose an allowed action.</p>
+        <ol className="mt-3 flex flex-wrap gap-2 text-[13px]">
+          <li><a href={`#plan-summary-${v.id}`} className="inline-flex min-h-[44px] items-center rounded-control border border-border-light bg-surface-white px-3 font-semibold text-brand-action">1. Summary</a></li>
+          <li><a href={`#plan-goals-${v.id}`} className="inline-flex min-h-[44px] items-center rounded-control border border-border-light bg-surface-white px-3 font-semibold text-brand-action">2. Goals ({goals.length})</a></li>
+          <li><a href={`#plan-activities-${v.id}`} className="inline-flex min-h-[44px] items-center rounded-control border border-border-light bg-surface-white px-3 font-semibold text-brand-action">3. Home activities ({acts.length})</a></li>
+        </ol>
+      </nav>
+      <label id={`plan-summary-${v.id}`} className="block scroll-mt-24 text-[14px] font-medium">Plan summary<textarea className={`mt-1 ${input}`} rows={3} value={summary} disabled={!edit} onChange={(e) => setSummary(e.target.value)} data-testid="plan-summary" /></label>
+      <div id={`plan-goals-${v.id}`} className="scroll-mt-24">
         <h3 className="text-[15px] font-semibold">Goals</h3>
         <ul className="mt-2 space-y-2">{goals.map((g, i) => <GoalRow key={g.key} i={i} g={g} planId={planId} disabled={!edit} onChange={(n) => setGoals(goals.map((x, j) => (j === i ? n : x)))} onRemove={() => setGoals(goals.filter((_, j) => j !== i))} />)}</ul>
         {!goals.length && <p className="text-[14px] text-brand-inkMuted" data-testid="goals-empty">No goals yet.</p>}
         {edit && <Button size="sm" variant="secondary" className="mt-2" onClick={() => setGoals([...goals, { key: `g${Date.now().toString(36)}`, title: '', measure: 'percent', baseline: 0, target: 80 }])} data-testid="goal-add"><Plus size={15} aria-hidden="true" />Add goal</Button>}
       </div>
-      <div>
+      <div id={`plan-activities-${v.id}`} className="scroll-mt-24">
         <h3 className="text-[15px] font-semibold">Home activities</h3>
         <ul className="mt-2 space-y-2">
           {acts.map((a, i) => (
