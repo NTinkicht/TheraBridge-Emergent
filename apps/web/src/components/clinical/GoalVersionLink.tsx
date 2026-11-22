@@ -22,6 +22,6 @@ export function GoalVersionLink({ childId, versionId, goalKey, historical, onNav
       if (onNavigate() === false) return;
       window.history.pushState(null, '', target);
     }}>
-    {historical ? 'Inspect original historical goal and target (read-only)' : 'Open exact plan goal and edit draft target'}
+    {historical ? 'Inspect original historical goal and target (read-only)' : 'Open this goal in its exact plan version'}
   </Link>;
 }
