@@ -209,14 +209,25 @@ export class ChildrenService {
 
   // An uploaded child photograph is sealed and quarantined until an actual
   // connected guardian explicitly attests the photo and authorizes private use.
+  // Isolated scan stage allows adversarial testing of permission revocation
+  // while antivirus processing is pending; the post-scan transaction is
+  // authoritative and never trusts this stage's earlier authorization.
+  private preparePhotoCandidate(pngBase64: string, centerId: string, childId: string) {
+    return preparePrivatePng(pngBase64, 'child-photo-v1', centerId, childId);
+  }
+
   async uploadPhotoCandidate(centerId: string, childId: string, v: Viewer, pngBase64: string) {
     if (!['CENTER_ADMIN','COORDINATOR'].includes(v.role))
       throw new ForbiddenException('Only child managers can prepare a private photo candidate.');
     const child = await this.authorizeCare(centerId, childId, v);
     if (child.status !== 'ACTIVE') throw new NotFoundException('Active child not found');
-    const ready = await preparePrivatePng(pngBase64, 'child-photo-v1', centerId, childId);
+    const ready = await this.preparePhotoCandidate(pngBase64, centerId, childId);
     const record = await this.prisma.$transaction(async tx => {
       await this.trial.assertWritable(tx, centerId, this.trial.now());
+      // P1: Never store scanned photo if role, user or membership changed
+      // while antivirus was pending. This locks the live role assignment and
+      // verifies the exact active session role, not the original request guard.
+      await assertActor(tx, centerId, v, ['CENTER_ADMIN', 'COORDINATOR']);
       const current = await tx.child.findFirst({ where: { id: childId, centerId, status: 'ACTIVE' }, select: { id: true } });
       if (!current) throw new NotFoundException('Active child not found');
       const saved = await tx.privateMediaCandidate.create({ data: {
