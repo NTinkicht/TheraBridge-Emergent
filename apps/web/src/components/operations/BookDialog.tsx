@@ -64,7 +64,7 @@ export function BookDialog({ centerId, open, onClose, onDone, onError, childId, 
     if (!editing && (!f.childId || !f.membershipId || !f.service)) return setMsg('Choose the child, service and therapist.');
     if (!f.date || !f.start || Number.isNaN(startsAt.getTime())) return setMsg('Enter a valid date and start time.');
     if (!editing && repeat.mode !== 'none' && !repeat.weekdays.length) return setMsg('Choose at least one day for the repeating visits.');
-    if (!editing && repeat.mode !== 'none' && recurringIntervalWeeks(repeat) === null) return setMsg('Choose a whole-number interval between 1 and 4 weeks.');
+    if (!editing && repeat.mode !== 'none' && recurringIntervalWeeks(repeat) === undefined) return setMsg('Choose a whole-number interval between 1 and 4 weeks.');
     setBusy(true);
     setMsg(null);
     try {
@@ -77,7 +77,10 @@ export function BookDialog({ centerId, open, onClose, onDone, onError, childId, 
       } else {
         // The server enforces the exact same interval range (1–4 weeks).
         const intervalWeeks = recurringIntervalWeeks(repeat);
-        if (intervalWeeks === null) return setMsg('Choose a whole-number interval between 1 and 4 weeks.');
+        if (intervalWeeks == null) {
+          setMsg('Choose a whole-number interval between 1 and 4 weeks.');
+          return;
+        }
         const r = await opsApi.createSeries(centerId, {
           childId: f.childId, membershipId: f.membershipId, service: f.service, room: f.room || undefined, startDate: f.date, startTime: f.start, durationMinutes: Number(f.minutes),
           weekdays: repeat.weekdays, intervalWeeks, ...(repeat.end === 'count' ? { count: Number(repeat.count) } : { untilDate: repeat.until }), skipConflicts,
