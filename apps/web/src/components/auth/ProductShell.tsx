@@ -165,8 +165,10 @@ export function ProductShell({ session, active, planned, children }: { session: 
       <aside className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r transition-[width] md:flex ${navSurface} ${railCollapsed ? 'w-[76px]' : 'w-sidebar'}`} data-testid="product-sidebar" data-collapsed={railCollapsed}>
         <SignatureBand />
         <div className={`flex h-16 items-center ${railCollapsed ? 'justify-center px-2' : 'gap-2 px-5'}`}>
-          <BrandMark variant="symbol" height={26} />
-          {!railCollapsed && <BrandMark variant="wordmark" height={17} />}
+          <span data-testid="shell-logo-chip" className="inline-flex items-center gap-2">
+            <BrandMark variant="symbol" height={26} />
+            {!railCollapsed && <BrandMark variant="wordmark" height={17} />}
+          </span>
         </div>
         <button type="button" onClick={() => setRailCollapsed(value => !value)} data-testid="sidebar-collapse-toggle"
           aria-label={railCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!railCollapsed}
@@ -233,7 +235,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="md:hidden"><SignatureBand /></div>
         <header className={`sticky top-0 z-20 flex min-h-16 flex-wrap items-center gap-3 border-b px-4 py-2 md:px-8 ${navSurface}`} data-testid="product-top-bar">
-          <span className="md:hidden"><BrandMark variant="symbol" height={24} /></span>
+          <span data-testid="shell-logo-chip" className="md:hidden"><BrandMark variant="symbol" height={24} /></span>
           <p className={`min-w-0 flex-1 break-words text-[14px] ${navMuted}`} data-testid="active-context-label">{where}</p>
           <span className="hidden items-center gap-2 lg:flex"><Avatar name={session.user.displayName} size={32} /><span className="text-[14px] font-medium">{session.user.displayName}</span></span>
           <button type="button" onClick={toggleTheme} data-testid="app-theme-toggle"
