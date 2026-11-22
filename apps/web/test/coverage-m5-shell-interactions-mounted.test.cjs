@@ -154,6 +154,18 @@ describe('M5 shared dark-theme cross-role regression',()=>{
     expect(get('product-shell').props['data-theme']).toBe('light');
     expect(get('app-theme-toggle').props['aria-label']).toBe('Switch to dark theme');
   });
+  it('uses family-muted foreground on dark guardian mobile nav and More controls',async()=>{
+    await mount(s({activeContext:guardian,contexts:[guardian],
+      permissions:['family.activities.read','family.practice.read']}),'practice');
+    await click('app-theme-toggle');
+    expect(get('mobile-more-button').props.className).toContain('text-fam-muted');
+    expect(get('mobile-nav').props.className).toContain('bg-fam-surface');
+    await click('mobile-more-button');
+    expect(get('mobile-more-sheet')).toBeTruthy();
+    const quick=all('mobile-quick-practice');
+    if(quick.length) expect(quick[0].props.className).toContain('bg-fam-accentTint');
+    expect(JSON.stringify(tree.toJSON())).toContain('All destinations');
+  });
   it('persists one dark preference across an authorized therapist-to-guardian context change',async()=>{
     await mount(s({contexts:[center,guardian]}),'children');
     await click('app-theme-toggle');
