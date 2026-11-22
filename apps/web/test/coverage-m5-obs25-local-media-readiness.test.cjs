@@ -1,4 +1,5 @@
 const { readFileSync }=require('node:fs');
+const { resolve }=require('node:path');
 const React=require('react');
 const Renderer=require('react-test-renderer');
 const {act,create}=Renderer;
@@ -85,10 +86,10 @@ describe('observation 25: local-only, non-authorizing staff media readiness',()=
     expect(text(tree)).not.toContain('480 × 360 px');
   });
   it('is scoped through activity/version and cannot send media to metadata API',()=>{
-    const source=readFileSync('src/components/clinical/ActivityMediaDraftPanel.tsx','utf8');
+    const source=readFileSync(resolve(__dirname,'../src/components/clinical/ActivityMediaDraftPanel.tsx'),'utf8');
     expect(source).toContain('<LocalActivityMediaReadiness key={centerId +');
     expect(source).toContain('String(templateVersion ??');
-    const local=readFileSync('src/components/clinical/LocalActivityMediaReadiness.tsx','utf8');
+    const local=readFileSync(resolve(__dirname,'../src/components/clinical/LocalActivityMediaReadiness.tsx'),'utf8');
     expect(local).not.toMatch(/fetch\(|rest\.send|createObjectURL|FileReader|FormData|localStorage|sessionStorage/);
     expect(local).toContain('void choose(file)');
   });
