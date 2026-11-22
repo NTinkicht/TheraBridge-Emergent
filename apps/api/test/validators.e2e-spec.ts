@@ -32,6 +32,23 @@ describe('M2-H05 strict calendar, IANA, numeric and string validation', () => {
     expect(issues(plainToInstance(SubmitApplicationDto, { timezone: 'Mars/Phobos' }))).toContain('timezone');
   });
 
+  it('validates optional center operational contacts without accepting spaces or header injection', () => {
+    const base = { version: 1 };
+    for (const contactEmail of ['hello@center.test', '  CONTACT@CENTER.TEST  ', '']) {
+      const dto = plainToInstance(UpdateCenterDto, { ...base, contactEmail });
+      expect(issues(dto)).not.toContain('contactEmail');
+    }
+    for (const contactEmail of ['hello', 'a@@center.test', 'a@domain', 'x@y.test\\nBcc:foo@bad.test', 'a b@center.test']) {
+      expect(issues(plainToInstance(UpdateCenterDto, { ...base, contactEmail }))).toContain('contactEmail');
+    }
+    for (const contactPhone of ['', '+971 6 555 1234', '(012) 345-6789']) {
+      expect(issues(plainToInstance(UpdateCenterDto, { ...base, contactPhone }))).not.toContain('contactPhone');
+    }
+    for (const contactPhone of ['123', '+971!5551234', '12345\\n2222', 'x'.repeat(41)]) {
+      expect(issues(plainToInstance(UpdateCenterDto, { ...base, contactPhone }))).toContain('contactPhone');
+    }
+  });
+
   it('bounds percentages but preserves valid count/level measurements', () => {
     const goal = { key: 'a1', title: 'Synthetic measurable goal', measure: 'percent', baseline: 20, target: 80 };
     expect(issues(plainToInstance(GoalDto, goal))).toHaveLength(0);
