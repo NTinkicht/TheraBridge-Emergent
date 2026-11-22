@@ -93,6 +93,12 @@ export const opsApi = {
   guardianPhotoCandidates: (centerId:string,id:string) =>
     rest.get<{candidates:{id:string;status:string;consentState:string}[]}>(
       c(centerId,`family/children/${id}/photo-candidates`)),
+  guardianReviewPhoto: (centerId:string,id:string,candidateId:string) =>
+    rest.get<{mimeType:'image/png';pngBase64:string;width:number;height:number;previewOnly:true}>(
+      c(centerId,`family/children/${id}/photo-candidates/${candidateId}/review`)),
+  guardianPrivatePhoto: (centerId:string,id:string) =>
+    rest.get<{mimeType:'image/png';pngBase64:string;width:number;height:number}>(
+      c(centerId,`family/children/${id}/private-photo`)),
   guardianPhotoConsent: (centerId:string,id:string,candidateId:string,consent:boolean) =>
     rest.send('POST',c(centerId,`family/children/${id}/photo-candidates/${candidateId}/consent`),{consent}),
   guardianPhotoRevoke: (centerId:string,id:string) =>
