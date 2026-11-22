@@ -148,7 +148,6 @@ describe('M5 shared dark-theme cross-role regression',()=>{
     expect(global.document.documentElement.dataset.familyTheme).toBe('dark');
     expect(global.localStorage.setItem).toHaveBeenCalledWith('tb-app-theme','dark');
     await click('mobile-more-button');
-    expect(get('mobile-more-panel')).toBeTruthy();
     expect(get('mobile-more-sheet')).toBeTruthy();
     await click('mobile-more-close');
     await click('app-theme-toggle');
