@@ -46,11 +46,11 @@ test('parallel commercial provenance is required and never silently skipped in f
  assert.match(yaml,/^  smart-ci-gate:[\s\S]*^      - commercial-provenance$/m);
 });
 
-test('all four browser consumers may reuse only lockfile-scoped public Chromium binaries',()=>{
+test('all three Chromium-installing browser consumers may reuse only lockfile-scoped public Chromium binaries',()=>{
  const caches=[...yaml.matchAll(/name: Cache Playwright Chromium downloads/g)];
- assert.equal(caches.length,4);
- assert.equal([...yaml.matchAll(/key: tb-playwright-/g)].length,4);
- assert.equal([...yaml.matchAll(/yarn playwright install --with-deps chromium/g)].length,4,
+ assert.equal(caches.length,3);
+ assert.equal([...yaml.matchAll(/key: tb-playwright-/g)].length,3);
+ assert.equal([...yaml.matchAll(/yarn playwright install --with-deps chromium/g)].length,3,
    'Cached browsers must not bypass Playwright runtime/dependency validation');
 });
 
@@ -108,4 +108,54 @@ test('source-only architecture and governance validation runs as independently r
  assert.match(runtime,/Generate genuine full-scope Web Istanbul coverage/);
  assert.match(runtime,/run: yarn workspace @therabridge\/web build/);
  assert.match(yaml,/^      - source-contracts$/m);
+});
+
+
+test('PR preview overlap is distinctly labeled and cannot replace exact-SHA endurance on main or release tags',()=>{
+  const preview=yaml.slice(yaml.indexOf('\n  preview-container:'),yaml.indexOf('\n  smart-targeted:'));
+  assert.match(preview,/PR 200-second overlapping 1\/4\/8 synthetic API smoke/);
+  assert.match(preview,/run: node scripts\/qa\/m4-pr-overlap-http\.mjs/);
+  assert.match(preview,/run: node --test scripts\/qa\/m4-pr-overlap-receipt\.test\.mjs/);
+  assert.match(preview,/run: node scripts\/qa\/m4-pr-overlap-receipt\.mjs/);
+  assert.match(preview,/PR 200-second overlap smoke \(NOT M4-07 endurance or SLA\)/);
+  assert.match(preview,/M4-07 sustained 10-minute synthetic API load/);
+  assert.match(preview,/run: node scripts\/qa\/m4-local-sustained-http\.mjs/);
+  assert.match(preview,/run: node scripts\/qa\/m4-sustained-receipt\.mjs/);
+  assert.match(preview,/if: github\.event_name == 'pull_request'/);
+  assert.match(preview,/if: github\.event_name != 'pull_request'/);
+  assert.equal((preview.match(/name: M4-07 sustained 10-minute/g)||[]).length,1);
+  assert.equal((preview.match(/name: PR 200-second overlapping/g)||[]).length,1);
+  assert.match(yaml,/tags: \["v\*"\]/);
+  assert.match(yaml,/schedule:\n    - cron:/);
+  assert.match(yaml,/^      - preview-container$/m);
+});
+test('verified cache cannot bypass full exact-HEAD Docker image, image layer ban or SBOM',()=>{
+  const preview=yaml.slice(yaml.indexOf('\n  preview-container:'),yaml.indexOf('\n  smart-targeted:'));
+  assert.match(preview,/docker\/setup-buildx-action@v3/);
+  assert.match(preview,/docker\/build-push-action@v6/);
+  assert.match(preview,/file: Dockerfile\.preview/);
+  assert.match(preview,/load: true/);
+  assert.match(preview,/push: false/);
+  assert.match(preview,/cache-from: type=gha,scope=therabridge-unified-preview/);
+  assert.match(preview,/Verify no preview image layer ships sharp\/libvips/);
+  assert.match(preview,/anchore\/sbom-action@v0/);
+  assert.match(preview,/check-sbom\.mjs \/tmp\/therabridge-preview-image\.cdx\.json image/);
+  assert.match(preview,/docker run -d --name tb-preview-ci --network host --memory 512m --memory-swap 512m/);
+});
+
+
+test('browser regressions remain required and run parallel to the main API/Web coverage worker',()=>{
+  const app=yaml.slice(yaml.indexOf('\n  test:'),yaml.indexOf('\n  live-session:'));
+  const live=yaml.slice(yaml.indexOf('\n  live-session:'),yaml.indexOf('\n  demo-journey:'));
+  for(const run of ['node scripts/design/check-preview-entry.mjs',
+     'node scripts/design/m5-table-keyboard.mjs',
+     'node scripts/design/check-session-workflow.mjs']){
+    assert.match(live,new RegExp(run.replaceAll('.','\\.')));
+    assert(!app.includes(run),'not serial on test critical path: '+run);
+  }
+  assert.match(live,/name: Session editor responsive DOM and synthetic dictation regression/);
+  assert.match(live,/name: Real two-tab browser → API → PostgreSQL synthetic regression/);
+  assert.match(live,/yarn workspace @therabridge\/web build/);
+  assert.match(live,/yarn playwright install --with-deps chromium/);
+  assert.match(yaml,/^      - live-session$/m);
 });

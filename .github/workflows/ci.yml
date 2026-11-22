@@ -1,13 +1,16 @@
 name: ci
 
-# Open PRs receive the entire mandatory suite through pull_request. Only main
-# receives push CI: a feature-branch push must not launch a second copy of
-# commercial provenance, browser journeys, coverage, and preview load testing.
-# workflow_dispatch retains an explicit full-CI path for exceptional branches.
+# Open PRs receive full application verification plus a distinct fast-load smoke.
+# Main and v* release candidate tags retain full ten-minute endurance evidence.
+# Feature-branch pushes must not duplicate expensive PR jobs; scheduled and
+# manually dispatched runs retain full continuous endurance qualification.
 on:
   push:
     branches: ["main"]
+    tags: ["v*"] # Release candidates receive the exact-SHA full endurance gate.
   pull_request:
+  schedule:
+    - cron: "30 4 * * *" # Daily full M4-07 synthetic endurance on default branch.
   workflow_dispatch:
 
 # Superseded runs of the same event/ref cancel; PR and main require independent
@@ -655,27 +658,7 @@ jobs:
         env:
           API_UPSTREAM_ORIGIN: http://127.0.0.1:8001
 
-      # Cache only downloaded public Chromium binaries. Playwright still checks
-      # the lockfile-pinned revision and installs system dependencies every run.
-      # Never cache credentials, Node build outputs or clinical test state.
-      - name: Cache Playwright Chromium downloads
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: tb-playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
-      - name: Session editor responsive DOM and synthetic dictation regression
-        run: |
-          yarn playwright install --with-deps chromium
-          (cd apps/web && yarn start) > /tmp/therabridge-web.log 2>&1 &
-          WEB_PID=$!
-          trap 'kill "$WEB_PID" 2>/dev/null || true' EXIT
-          for attempt in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:3000/login > /dev/null; then break; fi
-            sleep 1
-          done
-          node scripts/design/check-preview-entry.mjs
-          node scripts/design/m5-table-keyboard.mjs
-          node scripts/design/check-session-workflow.mjs
+
 
   live-session:
     needs: smart-plan
@@ -729,6 +712,20 @@ jobs:
       - run: yarn playwright install --with-deps chromium
       - name: Real two-tab browser → API → PostgreSQL synthetic regression
         run: node scripts/design/run-session-live.mjs
+      # Fully synthetic mounted browser/accessibility checks moved from test
+      # to this independently required full-mode job to overlap API coverage.
+      - name: Session editor responsive DOM and synthetic dictation regression
+        run: |
+          (cd apps/web && yarn start) > /tmp/therabridge-web.log 2>&1 &
+          WEB_PID=$!
+          trap 'kill "$WEB_PID" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/login > /dev/null; then break; fi
+            sleep 1
+          done
+          node scripts/design/check-preview-entry.mjs
+          node scripts/design/m5-table-keyboard.mjs
+          node scripts/design/check-session-workflow.mjs
       # Never upload seed credentials, browser storage, or traces.
       - if: always()
         run: rm -f .workspace/local-credentials/synthetic-accounts.json
@@ -937,8 +934,20 @@ jobs:
           bash -n scripts/preview/start.sh
           node --check scripts/preview/check-external.mjs
           node --check scripts/preview/generate-secrets.mjs
-      - name: Build unified preview image
-        run: docker build -f Dockerfile.preview -t tb-synthetic-preview:ci .
+      # Cache only deterministic Docker layers; still build the actual current HEAD,
+      # scan all image layers and produce an exact-image CycloneDX SBOM.
+      - name: Prepare isolated BuildKit builder
+        uses: docker/setup-buildx-action@v3
+      - name: Build unified preview image (exact HEAD, cached layers)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.preview
+          load: true
+          push: false
+          tags: tb-synthetic-preview:ci
+          cache-from: type=gha,scope=therabridge-unified-preview
+          cache-to: type=gha,scope=therabridge-unified-preview,mode=max,ignore-error=true
       - name: Verify no preview image layer ships sharp/libvips (incl. Yarn cache)
         run: bash scripts/preview/check-image-no-sharp.sh tb-synthetic-preview:ci
       - name: Generate container OS/runtime CycloneDX evidence from built preview image
@@ -982,14 +991,38 @@ jobs:
           docker exec tb-preview-ci node -e "const {PrismaClient}=require('@prisma/client');const p=new PrismaClient();p.center.count({where:{slug:'childrens-home-demo'}}).then(n=>{if(n!==1)process.exitCode=1;else console.log('PASS: one Children Home demo centre seeded')}).finally(()=>p.\$disconnect())"
       - name: M4-07 reject forged/shortened 512MiB workload receipt
         run: node --test scripts/qa/m4-sustained-receipt.test.mjs
+      - name: PR smoke reject shortened, forged or serial 512MiB receipt
+        run: node --test scripts/qa/m4-pr-overlap-receipt.test.mjs
+      # PR smoke is an ADDITIONAL regression profile, not evidence of ten
+      # minutes of uninterrupted operation. Main/schedule/tag/manual remain full.
+      - name: PR 200-second overlapping 1/4/8 synthetic API smoke, 512MiB non-root
+        if: github.event_name == 'pull_request'
+        timeout-minutes: 5
+        env:
+          TB_M4_LOCAL_LOAD_CONFIRM: DISPOSABLE_LOOPBACK_ONLY
+        run: node scripts/qa/m4-pr-overlap-http.mjs
+      - name: Validate PR numeric-only overlap receipt
+        if: github.event_name == 'pull_request'
+        run: node scripts/qa/m4-pr-overlap-receipt.mjs .workspace/m4-performance/m4-pr-overlap-load.json
+      - name: Archive PR 200-second overlap smoke (NOT M4-07 endurance or SLA)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-pr-overlap-512m-${{ github.run_id }}
+          path: .workspace/m4-performance/m4-pr-overlap-load.json
+          if-no-files-found: error
+          retention-days: 7
       - name: M4-07 sustained 10-minute synthetic API load with real 512MiB non-root preview cgroup
+        if: github.event_name != 'pull_request'
         timeout-minutes: 13
         env:
           TB_M4_LOCAL_LOAD_CONFIRM: DISPOSABLE_LOOPBACK_ONLY
         run: node scripts/qa/m4-local-sustained-http.mjs
       - name: Verify measured 10-minute synthetic workload receipt before publishing
+        if: github.event_name != 'pull_request'
         run: node scripts/qa/m4-sustained-receipt.mjs .workspace/m4-performance/m4-07-compose-load.json
       - name: Archive numeric-only M4-07 local synthetic load receipt (not production SLA)
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: m4-07-512m-sustained-${{ github.run_id }}
