@@ -20,7 +20,14 @@ const fakeFile=(header=pngHeader(),overrides={})=>({
   slice:jest.fn(()=>({arrayBuffer:async()=>Uint8Array.from(header).buffer})),
   ...overrides,
 });
-const text=component=>JSON.stringify(component.toJSON());
+// Compare the text a user actually sees; JSON serialization puts React text
+// segments in separate array elements and cannot be used for substring checks.
+const text=component=>{
+  const visible=node=>typeof node==='string'?node:
+    Array.isArray(node)?node.map(visible).join(''):
+    node?visible(node.children):'';
+  return visible(component.toJSON());
+};
 let tree;
 afterEach(async()=>{if(tree){await act(async()=>tree.unmount());tree=null;}});
 
@@ -90,7 +97,10 @@ describe('observation 25: local-only, non-authorizing staff media readiness',()=
     expect(source).toContain('<LocalActivityMediaReadiness key={centerId +');
     expect(source).toContain('String(templateVersion ??');
     const local=readFileSync(resolve(__dirname,'../src/components/clinical/LocalActivityMediaReadiness.tsx'),'utf8');
-    expect(local).not.toMatch(/fetch\(|rest\.send|createObjectURL|FileReader|FormData|localStorage|sessionStorage/);
+    // Inspect executable source, not comments that document prohibited APIs.
+    // The negative assertion still fails if an actual transfer/storage call is added.
+    const executable=local.replace(/\/\*[\s\S]*?\*\//g,'').replace(/^\s*\/\/.*$/gm,'');
+    expect(executable).not.toMatch(/fetch\(|rest\.send|createObjectURL|FileReader|FormData|localStorage|sessionStorage/);
     expect(local).toContain('void choose(file)');
   });
 });
