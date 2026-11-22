@@ -297,4 +297,41 @@ describe('M5 owner private care/consent mounted source',()=>{
   expect(opsApi.guardianPhotoCandidates).toHaveBeenCalledWith('tenant2','child2');
  });
 
+ test('guardian explicit consent cannot be forged by activating a disabled confirmation action',async()=>{
+  opsApi.guardianPhotoCandidates.mockResolvedValue({candidates:[{
+    id:'pending-checkbox',status:'QUARANTINED',consentState:'PENDING'
+  }]});
+  await mount(GuardianPhotoConsent,{centerId:'tenant1',childId:'child1'});
+  await click('guardian-review-photo-pending-checkbox');
+  const approve=id('guardian-photo-approve');
+  expect(approve.props.disabled).toBe(true);
+  // Adversarial handler call bypasses DOM disabled behavior; service must still refuse.
+  await act(async()=>approve.props.onClick());
+  expect(opsApi.guardianPhotoConsent).not.toHaveBeenCalled();
+ });
+ test('duplicate restricted-care save while pending cannot create concurrent writes',async()=>{
+  let release;
+  opsApi.updatePrivateCare.mockImplementationOnce(()=>new Promise(ok=>{release=ok;}));
+  await mount(PrivateCarePanel,{centerId:'tenant1',childId:'child1',canEdit:true,active:true});
+  await act(async()=>id('private-care-save').props.onClick());
+  expect(id('private-care-save').props.disabled).toBe(true);
+  await act(async()=>id('private-care-save').props.onClick());
+  expect(opsApi.updatePrivateCare).toHaveBeenCalledTimes(1);
+  await act(async()=>{release(care({version:2}));await Promise.resolve();});
+  expect(id('private-care-saved')).toBeTruthy();
+ });
+ test('duplicate guardian revoke while one request is pending cannot send two deletes',async()=>{
+  opsApi.guardianPrivatePhoto.mockResolvedValue({mimeType:'image/png',pngBase64:'aW1hZ2U='});
+  let release;
+  opsApi.guardianPhotoRevoke.mockImplementationOnce(()=>new Promise(ok=>{release=ok;}));
+  await mount(GuardianPhotoConsent,{centerId:'tenant1',childId:'child1'});
+  await act(async()=>id('guardian-revoke-photo').props.onClick());
+  expect(id('guardian-revoke-photo').props.disabled).toBe(true);
+  await act(async()=>id('guardian-revoke-photo').props.onClick());
+  expect(opsApi.guardianPhotoRevoke).toHaveBeenCalledTimes(1);
+  opsApi.guardianPrivatePhoto.mockRejectedValue(new Error('revoked'));
+  await act(async()=>{release({revoked:true});await Promise.resolve();});
+  expect(all('guardian-private-photo')).toHaveLength(0);
+ });
+
 });
