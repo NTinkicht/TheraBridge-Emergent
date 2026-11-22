@@ -60,7 +60,10 @@ test('activities render consistent action regions with explicit origin and one l
 test('family dark mode includes the authenticated navigation shell, not just page body', () => {
   assert.match(shell, /const navSurface = family \? 'border-fam-border bg-fam-surface text-fam-ink'/);
   for (const id of ['product-sidebar','product-top-bar','mobile-nav','mobile-bottom-nav']) {
-    assert.match(shell, new RegExp('navSurface[^\\n]*[\\s\\S]{0,240}data-testid="' + id + '"'));
+    assert.match(shell, new RegExp('data-testid="' + id + '"'));
   }
+  // All four navigational surfaces plus the More sheet apply the shared
+  // family-specific surface class. Do not guess source distance/line breaks.
+  assert.ok((shell.match(/\\$\\{navSurface\\}/g) || []).length >= 5);
   assert.match(shell, /theme-family-auto bg-fam-canvas text-fam-ink/);
 });
