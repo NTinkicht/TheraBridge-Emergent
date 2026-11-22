@@ -4,7 +4,7 @@
 
 ## Deduplication and acceptance
 
-32 **unique** observations. Identical Schedule / Children / Library defects seen by Center Administrator, Coordinator, Speech Therapist and Supervisor are tracked **once** and must be verified in each authorized role. Other therapy specialties were reported to share the Speech Therapist comments but were not separately accepted. Protected clinical actions, real media and family document release remain gated.
+32 **unique** observations. Identical Schedule / Children / Library defects seen by Center Administrator, Coordinator, Speech Therapist and Supervisor are tracked **once** and must be verified in each authorized role. **Observation 32 is app-wide, not guardian-specific:** inspect shared header, sidebar, mobile navigation and nested content in every role and route where a dark theme can be selected. Preserve intended staff theme behavior; do not report a family-only fix as global acceptance. Other therapy specialties were reported to share the Speech Therapist comments but were not separately accepted. Protected clinical actions, real media and family document release remain gated.
 
 Every item needs a code/test link, five-width before/after redacted visual evidence, keyboard/accessibility review, exact-head CI + >=90% eight-metric API/Web standards, independent review and explicit owner's acceptance before marking **DONE**. No `PASS` is inferred from opening or merging a PR.
 
@@ -43,7 +43,15 @@ Every item needs a code/test link, five-width before/after redacted visual evide
 | 29 | Family Documents wrongly points to Progress | PR5 | Dedicated guardian-scoped released-document destination, M9 policy | REPORTED |
 | 30 | Guardian Progress Updates need same child tabs as Home | PR5 | Exact linked-child scope; unreleased progress stays sample-only | REPORTED |
 | 31 | Home Practice / Activities at Home naming confusion | PR5 | Unified purpose and navigation | REPORTED |
-| 32 | Guardian dark theme leaves top/sidebar white | PR1 | Shell-only family theme surfaces | IN_PR_461, NOT QUALIFIED |
+| 32 | Dark theme leaves top/sidebar and shared navigation surfaces white outside the guardian home too | PR1 | App-wide shared shell/layout audit across Platform Admin, Centre Admin, Coordinator, Therapist specialty variants, Supervisor and Guardian; verify light/dark support and all routes where available | PARTIAL_IN_PR_461 (guardian shell only); GLOBAL NOT QUALIFIED |
+
+## Mandatory observation 32 verification (global dark-theme scope)
+
+- Inventory which themes are actually available by role and route; do not silently introduce unsupported staff dark mode or assume a Guardian page is the only affected surface.
+- Inspect the shared desktop sidebar, top bar, mobile navigation / More sheet, dialogs and nested panels across every applicable user role, including switching routes and user contexts.
+- Fix the shared token/surface cause rather than a one-page override; use explicit variants if different role themes are intentional. Preserve generic navigation and accessibility.
+- Verify at 320/390/768/1024/1440px with screenshots, light/dark toggles, reload/first-paint, contrast, keyboard focus, and denied-state screens. Record per-role per-route evidence; no PASS until truly observed.
+- Existing PR #461 changes currently target **family navigation surfaces only**; staff and all-route parity remain **NOT_RUN / NOT_QUALIFIED**, pending additional implementation and independent checks.
 
 ## Sequencing and safety
 
