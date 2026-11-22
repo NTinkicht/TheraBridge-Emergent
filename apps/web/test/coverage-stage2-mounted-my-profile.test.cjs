@@ -56,6 +56,14 @@ describe('mounted self-profile and immutable identity fields',()=>{
   expect(get('profile-title-input')).toBeTruthy();
   expect(get('profile-email-input').props.disabled).toBe(true);
  });
+ it('shows specialties and responsibilities as admin-managed read-only grants',async()=>{
+  await mount();
+  expect(get('profile-admin-managed-grants')).toBeTruthy();
+  expect(find('profile-specialty')).toHaveLength(0);
+  expect(find('profile-responsibility')).toHaveLength(0);
+  expect(get('profile-specialties-readonly')).toBeTruthy();
+  expect(get('profile-responsibilities-readonly')).toBeTruthy();
+ });
  it('rejects a blank or one-character display name',async()=>{
   await mount();
   await change('profile-name-input','X');
@@ -75,11 +83,12 @@ describe('mounted self-profile and immutable identity fields',()=>{
   await change('profile-name-input','  Synthetic Dr Leila  ');
   await change('profile-title-input','  Speech therapist  ');
   await change('profile-phone-input','  +971 50 111 2233  ');
-  await click('profile-specialty-set');
   await submit();
   expect(centersApi.updateMe).toHaveBeenCalledWith('center-a',
    expect.objectContaining({displayName:'Synthetic Dr Leila',title:'Speech therapist',
-    phone:'+971 50 111 2233',specialties:['speech']}));
+    phone:'+971 50 111 2233'}));
+  expect(centersApi.updateMe.mock.calls[0][1]).not.toHaveProperty('specialties');
+  expect(centersApi.updateMe.mock.calls[0][1]).not.toHaveProperty('responsibilities');
   expect(centersApi.updateMe.mock.calls[0][1]).not.toHaveProperty('roles');
   expect(centersApi.updateMe.mock.calls[0][1]).not.toHaveProperty('email');
   expect(get('profile-success')).toBeTruthy();
