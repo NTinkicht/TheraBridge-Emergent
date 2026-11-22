@@ -1141,6 +1141,7 @@ model PrivateMediaCandidate {
   height          Int
   status          String   @default("QUARANTINED") @db.VarChar(20)
   consentState    String   @default("PENDING") @map("consent_state") @db.VarChar(20)
+  consentedGuardianLinkId String? @map("consented_guardian_link_id") @db.Uuid
   rightsState     String   @default("UNVERIFIED") @map("rights_state") @db.VarChar(20)
   createdById     String   @map("created_by_id") @db.Uuid
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
