@@ -8,7 +8,6 @@ import {execFileSync} from 'node:child_process';
 import {appendFileSync} from 'node:fs';
 
 const SHA=/^[0-9a-f]{40}$/;
-const DOC=/(^|\/)[^/]+\.mdx?$/i;
 // Only narrative, non-policy docs may use targeted mode. Evidence, contracts,
 // release/rights/QA, instructions, workflows, and unknown paths require full CI.
 const SAFE_DOC=/^(?:README\.md|CONTRIBUTING\.md|docs\/(?:roadmap|handover|emergent\/workunits)\/(?:[A-Za-z0-9._-]+\/)*[A-Za-z0-9._-]+\.md)$/i;
@@ -27,7 +26,7 @@ export function classifyPaths(changes) {
       path.startsWith('/')||path.includes('\\')||path.split('/').includes('..')||
       !VALID_STATUS.has(status))return {candidate:'full',reason:'invalid_change'};
    if(HARD_BLOCK.test(path))return {candidate:'full',reason:'protected_file'};
-   if(SAFE_DOC.test(path) && status!=='D'){docs++;continue;}
+   if(SAFE_DOC.test(path) && (status==='A'||status==='M')){docs++;continue;}
    if(WEB_STYLE.test(path)&&status!=='D'){web++;continue;}
    return {candidate:'full',reason:'code_or_unclassified_change'};
  }
