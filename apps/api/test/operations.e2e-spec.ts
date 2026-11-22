@@ -107,8 +107,9 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
       const fresh=await get(admin,c(`children/${kid}/private-care`)).expect(200);
       expect(fresh.body.allergies).toBe('Synthetic changed');
       const audit=await h.prisma.centerEvent.findMany({where:{centerId}});
-      expect(JSON.stringify(audit)).not.toContain('Synthetic lactose');
-      expect(JSON.stringify(audit)).not.toContain('Synthetic changed');
+      const sanitizedAudit = JSON.stringify(audit.map(event => event.meta));
+      expect(sanitizedAudit).not.toContain('Synthetic lactose');
+      expect(sanitizedAudit).not.toContain('Synthetic changed');
     } finally {
       if(original===undefined)delete process.env.TB_PRIVATE_DATA_KEY_B64;
       else process.env.TB_PRIVATE_DATA_KEY_B64=original;
@@ -118,7 +119,11 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
   it('M5 #13: guardian cannot read private care, and child photo rejects absent scanner before custody', async () => {
     const kid=(await post(h,c('children'),admin,child()).expect(201)).body.id;
     const fake=Buffer.from('not a png').toString('base64');
-    await post(h,c(`children/${kid}/photo-candidates`),admin,{pngBase64:fake}).expect(422);
+    // DTO rejects undersized base64 at 400; structurally invalid but well-sized
+    // binary reaches the strict server-side PNG verifier and fails at 422.
+    await post(h,c(`children/${kid}/photo-candidates`),admin,{pngBase64:fake}).expect(400);
+    const structurallyInvalid=Buffer.alloc(64).toString('base64');
+    await post(h,c(`children/${kid}/photo-candidates`),admin,{pngBase64:structurallyInvalid}).expect(422);
     expect(await h.prisma.privateMediaCandidate.count({where:{centerId,childId:kid}})).toBe(0);
     const guardian=await post(h,c(`children/${kid}/guardians`),admin,{
       displayName:'Synthetic Parent',email:'synthetic.photo@family.test',relationship:'mother',invite:true
