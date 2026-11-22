@@ -1,9 +1,9 @@
 name: ci
 
-# Open PRs receive the entire mandatory suite through pull_request. Only main
-# receives push CI: a feature-branch push must not launch a second copy of
-# commercial provenance, browser journeys, coverage, and preview load testing.
-# workflow_dispatch retains an explicit full-CI path for exceptional branches.
+# Open PRs receive full application verification plus a distinct fast-load smoke.
+# Main and v* release candidate tags retain full ten-minute endurance evidence.
+# Feature-branch pushes must not duplicate expensive PR jobs; scheduled and
+# manually dispatched runs retain full continuous endurance qualification.
 on:
   push:
     branches: ["main"]
