@@ -11,7 +11,7 @@ import { Button, Card, Pill } from '@/components/design/ui';
 import { Dialog, EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
 import { SPECIALTY_OPTIONS, type SessionInfo } from '@/lib/auth';
 import { ageFrom, dayLabel, opsApi, type ChildRow } from '@/lib/operations';
-import { revealActiveSuggestion } from '@/lib/combobox-scroll';
+import { effectiveSuggestionIndex, revealActiveSuggestion } from '@/lib/combobox-scroll';
 
 function RegisterDialog({ centerId, open, onClose, onError }: { centerId: string; open: boolean; onClose: () => void; onError: (e: unknown) => void }) {
   const router = useRouter();
@@ -76,9 +76,10 @@ function Children({ session, onError }: { session: SessionInfo; onError: (e: unk
     return () => { active = false; clearTimeout(timer); };
   }, [centerId, filters.status, query, suggestionKey]);
   const matches = suggestionsOpen && suggestions?.key === suggestionKey ? suggestions.items : [];
+  const selectedSuggestionIndex = effectiveSuggestionIndex(activeSuggestion, matches.length);
   useEffect(() => {
-    if (matches.length) revealActiveSuggestion(suggestionListRef.current, Math.min(activeSuggestion, matches.length - 1));
-  }, [activeSuggestion, matches.length, suggestionKey, suggestionsOpen]);
+    if (selectedSuggestionIndex >= 0) revealActiveSuggestion(suggestionListRef.current, selectedSuggestionIndex);
+  }, [selectedSuggestionIndex, suggestionKey, suggestionsOpen]);
   const fetcher = useCallback(() => opsApi.children(centerId, filters), [centerId, filters]);
   const { data, failed, reload } = useLoad(fetcher, onError);
   const search = (e: FormEvent) => { e.preventDefault(); setFilters({ ...filters, q: query.trim() }); };
@@ -95,31 +96,31 @@ function Children({ session, onError }: { session: SessionInfo; onError: (e: unk
               onKeyDown={e => {
                 if (e.key === 'Escape') { setSuggestionsOpen(false); return; }
                 if (!matches.length) return;
-                if (e.key === 'ArrowDown') { e.preventDefault(); setActiveSuggestion(i => (i + 1) % matches.length); }
-                if (e.key === 'ArrowUp') { e.preventDefault(); setActiveSuggestion(i => (i + matches.length - 1) % matches.length); }
+                if (e.key === 'ArrowDown') { e.preventDefault(); setActiveSuggestion((selectedSuggestionIndex + 1) % matches.length); }
+                if (e.key === 'ArrowUp') { e.preventDefault(); setActiveSuggestion((selectedSuggestionIndex + matches.length - 1) % matches.length); }
                 if (e.key === 'Enter' && suggestionsOpen) {
-                  e.preventDefault(); router.push(`/app/children/${matches[Math.min(activeSuggestion, matches.length - 1)].id}`);
+                  e.preventDefault(); router.push(`/app/children/${matches[selectedSuggestionIndex].id}`);
                   setSuggestionsOpen(false);
                 }
               }}
               role="combobox" autoComplete="off" aria-autocomplete="list"
               aria-expanded={matches.length > 0} aria-controls="children-search-suggestions"
-              aria-activedescendant={matches.length ? `child-suggestion-${Math.min(activeSuggestion, matches.length - 1)}` : undefined}
+              aria-activedescendant={matches.length ? `child-suggestion-${selectedSuggestionIndex}` : undefined}
               placeholder="Start typing a child's name" maxLength={100} testId="children-search-input" />
           </div>
           <button type="submit" aria-label="Search" data-testid="children-search-button" className="grid min-h-[48px] w-12 shrink-0 place-items-center rounded-control bg-brand-action text-white hover:bg-brand-actionHover"><Search size={18} aria-hidden="true" /></button>
           {matches.length > 0 && <ul ref={suggestionListRef} role="listbox" id="children-search-suggestions" aria-label="Matching children"
             data-testid="children-search-suggestions"
             className="absolute inset-x-0 top-full z-30 mt-1 max-h-64 overflow-auto rounded-control border border-border-strong bg-surface-white py-1 shadow-lg">
-            {matches.map((c, index) => <li key={c.id} id={`child-suggestion-${index}`} role="option" aria-selected={index === activeSuggestion}>
+            {matches.map((c, index) => <li key={c.id} id={`child-suggestion-${index}`} role="option" aria-selected={index === selectedSuggestionIndex}>
               <button type="button" tabIndex={-1} onMouseDown={e => e.preventDefault()}
                 onClick={() => { setSuggestionsOpen(false); router.push(`/app/children/${c.id}`); }}
-                className={`min-h-[44px] w-full px-4 py-2 text-left text-[14px] hover:bg-brand-actionTint ${index === activeSuggestion ? 'bg-brand-actionTint' : ''}`}>
+                className={`min-h-[44px] w-full px-4 py-2 text-left text-[14px] hover:bg-brand-actionTint ${index === selectedSuggestionIndex ? 'bg-brand-actionTint' : ''}`}>
                 {c.preferredName ?? c.firstName} {c.lastName}
               </button>
             </li>)}</ul>}
         </form>
-        <SelectField label="Status" value={filters.status} onChange={(status) => setFilters({ ...filters, status })} testId="children-status-filter" options={[{ value: 'ACTIVE', label: 'Active' }, { value: 'ARCHIVED', label: 'Archived' }]} />
+        <SelectField label="Status" value={filters.status} onChange={(status) => { setFilters({ ...filters, status }); setActiveSuggestion(0); }} testId="children-status-filter" options={[{ value: 'ACTIVE', label: 'Active' }, { value: 'ARCHIVED', label: 'Archived' }]} />
       </div>
       {failed && <ErrorState onRetry={() => void reload()} testId="children-error" />}
       {!failed && !data && <Card className="p-5"><SkeletonRows rows={4} testId="children-loading" /></Card>}
