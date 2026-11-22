@@ -56,7 +56,16 @@ function InboxView({ session, onError }: { session: SessionInfo; onError: (e: un
       {!invalid && failed && <ErrorState onRetry={() => void reload()} testId="feedback-error" />}
       {!invalid && !failed && !data && <Card className="p-5"><SkeletonRows rows={3} testId="feedback-loading" /></Card>}
       {session.activeContext?.type === 'center' && session.activeContext.role === 'THERAPIST' &&
-        <><HandoverInboxPanel centerId={centerId} /><ClinicianPlanRequestsPanel centerId={centerId} /></>}
+        <section className="space-y-3" aria-label="Other clinical requests" data-testid="separate-clinical-requests">
+          <h2 className="text-[17px] font-semibold">Other requests · separate from practice feedback</h2>
+          <p className="text-[13px] text-brand-inkMuted">Staff handover and family plan requests are different workflows. They do not count as recorded home-practice answers.</p>
+          <section aria-label="Staff clinical handover" data-testid="feedback-handover-section">
+            <HandoverInboxPanel centerId={centerId} />
+          </section>
+          <section aria-label="Family plan requests" data-testid="feedback-plan-request-section">
+            <ClinicianPlanRequestsPanel centerId={centerId} />
+          </section>
+        </section>}
       {!invalid && data && (
         <>
           <p className="text-[14px] text-brand-inkMuted" data-testid="feedback-counts">{data.counts.new} new of {data.counts.total} answers{data.canAcknowledge ? '' : ' · supervisors can read but not acknowledge'}</p>
