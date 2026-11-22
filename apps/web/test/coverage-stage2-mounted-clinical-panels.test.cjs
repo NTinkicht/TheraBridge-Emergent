@@ -74,7 +74,7 @@ describe('Stage 2 mounted clinical assessments: exact source and validation',()=
  it('saves explicitly scoped assessment with optional structured area',async()=>{
   clinicalApi.assess.mockResolvedValue({id:'a1'});
   await mount(AssessmentsPanel,{pagination});
-  await change('assessment-service','occupational');
+  await change('assessment-service','ot');
   await change('assessment-summary','Fictional measured observation');
   await change('assessment-area','  Motor skills  ');
   await change('assessment-finding','Observed task with support');
@@ -387,7 +387,7 @@ describe('M5 observation 22 assessment guidance remains non-diagnostic and read-
   await mount(AssessmentsPanel,{pagination});
   expect(get('assessment-specialty-guide')).toBeTruthy();
   expect(html()).toContain('communication task');
-  await change('assessment-service','ot');
+  await change('assessment-service','occupational');
   expect(html()).toContain('functional activity');
   expect(html()).not.toContain('Describe the communication task');
   expect(get('assessment-summary').props.value).toBe('');
