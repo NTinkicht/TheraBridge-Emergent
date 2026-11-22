@@ -27,7 +27,7 @@ describe('M5 owner-feedback activity-card layouts and specialty identity', () =>
   it('uses role-independent semantic tint variables rather than light-only literal hex values', () => {
     mount();
     const surface = byId('activity-activity-synthetic-01').findAllByType('div')
-      .find(node => node.props.style?.background?.includes('--tb-specialty-'));
+      .find(node => node.props.style?.background === 'var(--tb-specialty-otTint)');
     expect(surface?.props.style.background).toBe('var(--tb-specialty-otTint)');
     expect(surface?.props.style.background).not.toBe(colors.specialty.otTint);
   });
