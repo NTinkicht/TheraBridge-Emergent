@@ -246,11 +246,15 @@ export class ChildrenService {
     await this.authorizeCare(centerId,childId,v);
     const image=await this.prisma.privateMediaCandidate.findFirst({
       where:{centerId,childId,kind:'CHILD_PHOTO',status:'PRIVATE_READY',
-        consentState:'GRANTED',rightsState:'GUARDIAN_ATTESTED',revokedAt:null},
+        consentState:'GRANTED',rightsState:'GUARDIAN_ATTESTED',revokedAt:null,consentedGuardianLinkId:{not:null}},
       orderBy:[{createdAt:'desc'},{id:'desc'}],
-      select:{encryptedBytes:true,width:true,height:true,id:true},
+      select:{encryptedBytes:true,width:true,height:true,id:true,consentedGuardianLinkId:true},
     });
     if (!image) throw new NotFoundException('No consented private photo is available.');
+    const consentLink=await this.prisma.guardianLink.findFirst({where:{
+      id:image.consentedGuardianLinkId!,centerId,childId,removedAt:null,
+    },select:{id:true}});
+    if(!consentLink)throw new NotFoundException('No consented private photo is available.');
     const plain=openPrivateData(image.encryptedBytes,'child-photo-v1',centerId,childId);
     return {mimeType:'image/png' as const,pngBase64:plain.toString('base64'),
       width:image.width,height:image.height,publicRelease:false as const};
@@ -280,10 +284,14 @@ export class ChildrenService {
     await this.linkedGuardian(centerId,childId,v);
     const candidate=await this.prisma.privateMediaCandidate.findFirst({where:{
       centerId,childId,kind:'CHILD_PHOTO',status:'PRIVATE_READY',
-      consentState:'GRANTED',rightsState:'GUARDIAN_ATTESTED',revokedAt:null,
+      consentState:'GRANTED',rightsState:'GUARDIAN_ATTESTED',revokedAt:null,consentedGuardianLinkId:{not:null},
     },orderBy:[{createdAt:'desc'},{id:'desc'}],
-    select:{encryptedBytes:true,width:true,height:true}});
+    select:{encryptedBytes:true,width:true,height:true,consentedGuardianLinkId:true}});
     if(!candidate)throw new NotFoundException('No consented private photo is available.');
+    const consentLink=await this.prisma.guardianLink.findFirst({where:{
+      id:candidate.consentedGuardianLinkId!,centerId,childId,removedAt:null,
+    },select:{id:true}});
+    if(!consentLink)throw new NotFoundException('No consented private photo is available.');
     const bytes=openPrivateData(candidate.encryptedBytes,'child-photo-v1',centerId,childId);
     return {mimeType:'image/png' as const,pngBase64:bytes.toString('base64'),
       width:candidate.width,height:candidate.height,publicRelease:false as const};
@@ -321,7 +329,7 @@ export class ChildrenService {
           centerId,childId,kind:'CHILD_PHOTO',status:'PRIVATE_READY',id:{not:candidateId},
         }});
         await tx.privateMediaCandidate.update({where:{id:candidateId},data:{
-          status:'PRIVATE_READY',consentState:'GRANTED',rightsState:'GUARDIAN_ATTESTED',
+          status:'PRIVATE_READY',consentState:'GRANTED',rightsState:'GUARDIAN_ATTESTED',consentedGuardianLinkId:link.id,
         }});
       }else{
         // Denial purges ciphertext instead of retaining unconsented child imagery.
