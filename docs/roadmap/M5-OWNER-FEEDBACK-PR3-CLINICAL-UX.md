@@ -37,3 +37,13 @@ Source: `docs/roadmap/M5-OWNER-MANUAL-FEEDBACK-20261122.md`; follows merged PR #
 - A clear notice distinguishes fictional fixture transcription from real clinical recording; no microphone APIs, external speech services, consent, audio upload, signing, patient release or STT activation are added.
 - Updated live browser synthetic session and multi-tab tests to deliberately expand the developer disclosure; added mounted regression tests for default collapsed presentation, draft saving and completed-session access revocation.
 - Scope is **only a developer-control UX separation**; observation 20 owner acceptance, five-width per-role screenshots, manual keyboard/AT and full exact-head review/CI remain pending. Do not interpret the implementation as real STT availability or M5 closure.
+
+## Observation 15 — exact progress goal/plan version navigation (IMPLEMENTED; QUALIFICATION PENDING)
+
+- Current and historical progress cards now expose a real accessible 44px link to the exact authorized child, plan version ID and goal key; no observation values, patient data, permissions or approval information are embedded in the URL.
+- Reused goal keys and goal names never imply continuity. Every historical link opens the existing read-only PlanVersionHistory with its own saved target; current links open the VersionEditor with existing permission and optimistic version gates.
+- Source version links in GoalVersionContext and progress cards share one navigation implementation. The session/unsaved transcript guard returns a boolean, preventing an URL mutation when navigation is refused, and modified clicks still use native links.
+- Target editing remains the already-existing explicitly saved draft flow (only if `ws.canEdit`, `v.mine`, status DRAFT/RETURNED_FOR_REVISION). This PR adds **no target-write endpoint** and does not rewrite historical versions, move clinical observations, infer improvement, sign, approve or release.
+- Added mounted synthetic regressions for exact identity, cross-version evidence, read-only roles, pending-navigation refusal, modified clicks and URL encoding.
+
+**NOT YET QUALIFIED:** exact-HEAD full API/Web coverage >=90% all eight metrics, browser journeys, independent review, five-width and keyboard/AT human checks, and owner acceptance still required. G2/G2b remains NO-GO.

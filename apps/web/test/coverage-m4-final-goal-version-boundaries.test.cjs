@@ -159,3 +159,34 @@ describe('M4-08 mounted read-only evidence context does not claim cross-version 
   expect(navigate).not.toHaveBeenCalled();
  });
 });
+
+describe('M5 observation 15: exact goal navigation cannot discard drafts or mix versions',()=>{
+ it('keeps navigation unchanged after the caller refuses to discard a pending session',async()=>{
+  await mount();
+  navigate.mockReturnValue(false);
+  const link=all('progress-context-open-goal').find(x=>x.props.href.includes('version=v1'));
+  const preventDefault=jest.fn();
+  await act(async()=>link.props.onClick({button:0,preventDefault,
+    currentTarget:{getAttribute:()=>link.props.href}}));
+  expect(preventDefault).toHaveBeenCalledTimes(1);
+  expect(navigate).toHaveBeenCalledTimes(1);
+  expect(pushed).not.toHaveBeenCalled();
+ });
+ it('retains exact historical URL, including literal goal key, even with a matching current key',async()=>{
+  await mount();
+  const old=all('progress-context-open-goal').find(x=>x.props.href.includes('version=v1'));
+  const newer=all('progress-context-open-goal').find(x=>x.props.href.includes('version=v2'));
+  expect(old.props.href).toContain('version=v1&goal=reused-key');
+  expect(newer.props.href).toContain('version=v2&goal=reused-key');
+  expect(old.props.href).not.toBe(newer.props.href);
+  expect(JSON.stringify(old.props.children)).toContain('read-only');
+ });
+ it('percent-encodes child, version and goal identities without embedding observations',async()=>{
+  await mount({child:{id:'synthetic child/1'},plans:[plan('synthetic-plan','speech',[
+   version('pv/x',3,'DRAFT',[goal({key:'goal & special'})])
+  ])],observations:[]});
+  const href=all('progress-context-open-goal')[0].props.href;
+  expect(href).toContain('/synthetic%20child%2F1#plan?version=pv%2Fx&goal=goal%20%26%20special');
+  expect(href).not.toContain('obs-');
+ });
+});

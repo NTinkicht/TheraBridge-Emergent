@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { GoalVersionLink } from './GoalVersionLink';
 import { useState } from 'react';
 import { GitCompareArrows, History } from 'lucide-react';
 import { Card } from '@/components/design/ui';
@@ -11,7 +11,7 @@ import { goalVersionContext } from '@/lib/goal-version-context';
 const filterInput = 'mt-1 min-h-[44px] w-full rounded-control border border-border-light bg-surface-white px-3 py-2 text-[13px] focus-visible:outline-2 focus-visible:outline-brand-action';
 
 /** Read-only; authorized workspace already scopes both versions and evidence. */
-export function GoalVersionContext({ ws, onNavigate }: { ws: Workspace; onNavigate: () => void }) {
+export function GoalVersionContext({ ws, onNavigate }: { ws: Workspace; onNavigate: () => boolean | void }) {
   const [service, setService] = useState('ALL');
   const plans = goalVersionContext(ws);
   const services = [...new Set(plans.map(plan => plan.service))].sort();
@@ -94,23 +94,8 @@ export function GoalVersionContext({ ws, onNavigate }: { ws: Workspace; onNaviga
                 </ul> : <p className="text-brand-inkMuted">No clinician review checkpoints saved for this exact goal version.</p>}
               </div>
             </div>
-            <Link href={`/app/clinical/${encodeURIComponent(ws.child.id)}#plan?version=${encodeURIComponent(row.versionId)}&goal=${encodeURIComponent(row.goalKey)}`}
-              data-testid="progress-context-open-goal"
-              onClick={event => {
-                // A same-page hash-only Next navigation can resolve AFTER the
-                // Plan tab mounts. Set the exact target URL synchronously before
-                // switching tabs; keep modified clicks as normal links.
-                if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey ||
-                    event.button !== 0) return;
-                event.preventDefault();
-                const href = event.currentTarget.getAttribute('href');
-                if (!href) return;
-                window.history.pushState(null, '', href);
-                onNavigate();
-              }}
-              className="inline-flex min-h-[44px] items-center font-semibold text-brand-action underline">
-              Inspect this goal in its plan version
-            </Link>
+            <GoalVersionLink childId={ws.child.id} versionId={row.versionId} goalKey={row.goalKey}
+              historical={!row.currentVersion} onNavigate={onNavigate} testId="progress-context-open-goal" />
           </div>
         </details>)}
       </div>

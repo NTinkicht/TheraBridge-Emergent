@@ -6,6 +6,7 @@ import { Field } from '@/components/auth/Field';
 import { SelectField } from '@/components/centers/kit';
 import { GoalChart } from '@/components/clinical/GoalChart';
 import { GoalVersionContext } from './GoalVersionContext';
+import { GoalVersionLink } from './GoalVersionLink';
 import { currentGoals, historicalGoals, summarizeObservations, type Granularity } from '@/lib/progress-analysis';
 import { Button, Card, LockedAction, Pill } from '@/components/design/ui';
 import { serviceLabel } from '@/components/operations/BookDialog';
@@ -116,7 +117,7 @@ export function SessionsPanel({ centerId, ws, run, onPending }: { centerId: stri
   </div>;
 }
 
-export function ProgressPanel({ centerId, ws, run, onNavigate }: { centerId: string; ws: Workspace; run: Run; onNavigate: () => void }) {
+export function ProgressPanel({ centerId, ws, run, onNavigate }: { centerId: string; ws: Workspace; run: Run; onNavigate: () => boolean | void }) {
   const goals = currentGoals(ws).map(g => ({ ...g, versionId: g.planVersionId, plan: g.planTitle }));
   const [granularity, setGranularity] = useState<Granularity>('week');
   const [showHistory, setShowHistory] = useState(false);
@@ -134,6 +135,9 @@ export function ProgressPanel({ centerId, ws, run, onNavigate }: { centerId: str
           <Card key={`${g.versionId}-${g.key}`} className="p-5" testId={`progress-goal-${g.key}`}>
             <h3 className="text-[16px] font-semibold">{g.title}</h3>
             <p className="text-[13px] text-brand-inkMuted">{g.plan} · version {g.planVersionNumber} · {serviceLabel(g.service)} · baseline {g.baseline} → target {g.target} ({g.measure})</p>
+            <GoalVersionLink childId={ws.child.id} versionId={g.versionId} goalKey={g.key}
+              historical={false} onNavigate={onNavigate} testId="progress-current-open-goal" />
+            <p className="text-[12px] text-brand-inkMuted">Target changes use the existing editable plan draft, require an explicit save with a current version, and do not modify historical measurements.</p>
             {hist.length ? (
               <div className="mt-3">
                 <GoalChart points={hist.map((o) => ({ date: o.observedOn, value: o.value }))} baseline={g.baseline} target={g.target} measure={g.measure} from={hist[0].observedOn} to={hist[hist.length - 1].observedOn} testId={`progress-chart-${g.key}`} />
@@ -170,6 +174,8 @@ export function ProgressPanel({ centerId, ws, run, onNavigate }: { centerId: str
                   <span className="text-[12px] text-brand-inkMuted">{g.status.replaceAll('_',' ')} · read-only</span>
                 </div>
                 <p className="text-[12px] text-brand-inkMuted">{g.planTitle} · {serviceLabel(g.service)} · plan v{g.planVersionNumber} · baseline {g.baseline} → target {g.target} ({g.measure})</p>
+                <GoalVersionLink childId={ws.child.id} versionId={g.planVersionId} goalKey={g.key}
+                  historical onNavigate={onNavigate} testId="progress-historical-open-goal" />
                 {points.length===0 ? <p className="text-[13px]">No recorded observations for this historical goal.</p> :
                   <>
                     <GoalChart points={points.map(o=>({date:o.observedOn,value:o.value}))}

@@ -129,10 +129,11 @@ function ClinicalChild({ session, onError }: { session: SessionInfo; onError: (e
       return true;
     } catch (e) { const t = errorText(e, onError); if (t) setNotice({ tone: 'danger', text: t }); return false; }
   };
-  const changeTab = (next: (typeof TABS)[number][0]) => {
-    if (next === tab) return;
-    if (pending.current.size && !window.confirm('Unsaved session or transcript remains. Switch sections and discard it?')) return;
+  const changeTab = (next: (typeof TABS)[number][0]): boolean => {
+    if (next === tab) return true;
+    if (pending.current.size && !window.confirm('Unsaved session or transcript remains. Switch sections and discard it?')) return false;
     setTab(next); setNotice(null);
+    return true;
   };
   if (failed) return <ErrorState onRetry={() => void reload()} testId="clinical-error" />;
   if (!data) return <Card className="p-5"><SkeletonRows rows={5} testId="clinical-loading" /></Card>;
