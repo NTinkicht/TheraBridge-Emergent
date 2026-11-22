@@ -44,10 +44,11 @@ describe('custom recurrence 1–4 weeks on shared booking field',()=>{
    expect(get('book-repeat-until')).toBeTruthy();
  });
  it.each(['','0','5','1.5','2e0','03','abc','-1'])('refuses malformed custom week interval %s',async txt=>{
-   expect(recurringIntervalWeeks({...starting(),mode:'custom',intervalWeeks:txt})).toBeNull();
+   expect(recurringIntervalWeeks({...starting(),mode:'custom',intervalWeeks:txt})).toBeUndefined();
  });
  it('keeps default weekly/biweekly intervals and never sends custom value in one-off',()=>{
    expect(recurringIntervalWeeks({...starting(),mode:'none'})).toBeNull();
+   expect(recurringIntervalWeeks({...starting(),mode:'custom',intervalWeeks:'nope'})).toBeUndefined();
    expect(recurringIntervalWeeks({...starting(),mode:'weekly'})).toBe(1);
    expect(recurringIntervalWeeks({...starting(),mode:'biweekly'})).toBe(2);
    expect(recurringIntervalWeeks({...starting(),mode:'custom',intervalWeeks:'1'})).toBe(1);
