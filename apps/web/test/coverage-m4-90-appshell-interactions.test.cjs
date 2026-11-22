@@ -65,6 +65,16 @@ describe('M5 shared AppShell interaction states and all-role theme',()=>{
   await click('theme-toggle');
   expect(get('shell-family').props['data-theme']).toBe('light');
  });
+ it('staff theme toggle icon follows shared React state without CSS selector coupling',async()=>{
+  const { Sun, Moon } = require('lucide-react');
+  await mount('platform','overview');
+  expect(get('theme-toggle').findAllByType(Moon)).toHaveLength(1);
+  expect(get('theme-toggle').findAllByType(Sun)).toHaveLength(0);
+  await click('theme-toggle');
+  expect(get('theme-toggle').findAllByType(Sun)).toHaveLength(1);
+  expect(get('theme-toggle').findAllByType(Moon)).toHaveLength(0);
+  expect(get('theme-toggle').props['aria-label']).toBe('Switch to light theme');
+ });
  it('legacy family dark preference migrates when no explicit app preference exists',async()=>{
   delete global.document.documentElement.dataset.appTheme;
   global.document.documentElement.dataset.familyTheme='dark';
