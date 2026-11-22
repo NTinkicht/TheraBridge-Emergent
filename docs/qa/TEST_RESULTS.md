@@ -1,3 +1,7 @@
+## 2026-11-22 — Dark specialty activity card contract checkpoint (NOT YET QUALIFIED)
+
+Introduced CSS variable-based specialty gradients and solid tints in staff ActivityCard, avoiding near-invisible text against static light backgrounds when users select dark mode. Added source-mounted tests for single and multi-service cases and 4.5:1 contrast assertions on every specialty dark-tint/light-text combination. Full exact-HEAD CI, independent Codex and human visual accessibility acceptance still NOT VERIFIED. No old CI run is claimed for this commit.
+
 ## 2026-11-22 — PR #461 shared dark theme and cross-screen P2 checkpoint (NOT QUALIFIED)
 
 **Implementation-only checkpoint:** shared theme code and tests added for staff + guardian across all authenticated route shells. New Playwright computed-style checks exercise 7 synthetic personas × 5 widths (header/sidebar/mobile-nav/page canvas and light-mode restoration), with mounted real/preview role tests, RGB alpha variable tests and WCAG AA text colour-pair unit checks. Children and Schedule share effective combobox selected index; child status changes reset index; guardian mobile foregrounds use family tokens. **No new exact-head CI pass or human visual/AT acceptance is asserted in this checkpoint.** Earlier CI receipts apply only to earlier SHAs. All clinical/rights gates remain fail-closed.
