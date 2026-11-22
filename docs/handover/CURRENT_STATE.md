@@ -1289,3 +1289,6 @@ On PR #456, exact-head CI for `8905ffb` failed the `demo-journey` job (run 44724
 
 ## 2026-11-22 — Smart CI optimization PR #469 (NOT YET QUALIFIED)
 Owner authorized narrow, added/modified narrative Markdown-only PR execution with real secret-scan, SBOM, Smart CI docs contract and required gate. Full eight >=90% metrics and all original workers remain mandatory for code, policy, workflows, QA/legal/security evidence and main pushes. Duplicate feature-branch push events are removed; main push, PR and manual events remain. PR #469 exact-head complete CI, independent review and merge remain NOT RUN/IN PROGRESS; no clinical policy is activated.
+
+## 2026-11-23 — PR #474, observations 22–24 (NOT YET QUALIFIED)
+Assessment specialty help is factual and non-diagnostic; report/plan authoring gains accessible draft-only step guidance, not a completed persisted wizard. Staff handover and family plan requests are separate from sample practice feedback. Full CI, eight >=90% coverage gates, independent Codex findings, five-width keyboard/AT and owner acceptance are pending; clinical G2/G2b NO-GO stays fail-closed. Do not mark these items DONE on PR creation alone.

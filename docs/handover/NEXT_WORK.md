@@ -1513,3 +1513,6 @@ On PR #456, exact-head CI for `8905ffb` failed the `demo-journey` job (run 44724
 1. Run exact-head full CI on this policy/code PR; investigate red jobs rather than weaken checks.
 2. Obtain exact-head Codex review, dispose every finding and validate PR mergeability.
 3. Merge only when Rule 16 gates satisfied; then verify a genuinely documentation-only PR chooses docs mode, that code/mixed/QA/legal changes choose full mode, and that main push remains fully verified. Clinical G2/G2b NO-GO unchanged.
+
+## 2026-11-23 — PR #474, observations 22–24 (NOT YET QUALIFIED)
+Assessment specialty help is factual and non-diagnostic; report/plan authoring gains accessible draft-only step guidance, not a completed persisted wizard. Staff handover and family plan requests are separate from sample practice feedback. Full CI, eight >=90% coverage gates, independent Codex findings, five-width keyboard/AT and owner acceptance are pending; clinical G2/G2b NO-GO stays fail-closed. Do not mark these items DONE on PR creation alone.
