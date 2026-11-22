@@ -46,10 +46,10 @@ test('parallel commercial provenance is required and never silently skipped in f
  assert.match(yaml,/^  smart-ci-gate:[\s\S]*^      - commercial-provenance$/m);
 });
 
-test('all four browser consumers may reuse only lockfile-scoped public Chromium binaries',()=>{
+test('all three Chromium-installing browser consumers may reuse only lockfile-scoped public Chromium binaries',()=>{
  const caches=[...yaml.matchAll(/name: Cache Playwright Chromium downloads/g)];
- assert.equal(caches.length,4);
- assert.equal([...yaml.matchAll(/key: tb-playwright-/g)].length,4);
+ assert.equal(caches.length,3);
+ assert.equal([...yaml.matchAll(/key: tb-playwright-/g)].length,3);
  assert.equal([...yaml.matchAll(/yarn playwright install --with-deps chromium/g)].length,4,
    'Cached browsers must not bypass Playwright runtime/dependency validation');
 });
@@ -141,4 +141,21 @@ test('verified cache cannot bypass full exact-HEAD Docker image, image layer ban
   assert.match(preview,/anchore\/sbom-action@v0/);
   assert.match(preview,/check-sbom\.mjs \/tmp\/therabridge-preview-image\.cdx\.json image/);
   assert.match(preview,/docker run -d --name tb-preview-ci --network host --memory 512m --memory-swap 512m/);
+});
+
+
+test('browser regressions remain required and run parallel to the main API/Web coverage worker',()=>{
+  const app=yaml.slice(yaml.indexOf('\n  test:'),yaml.indexOf('\n  live-session:'));
+  const live=yaml.slice(yaml.indexOf('\n  live-session:'),yaml.indexOf('\n  demo-journey:'));
+  for(const run of ['node scripts/design/check-preview-entry.mjs',
+     'node scripts/design/m5-table-keyboard.mjs',
+     'node scripts/design/check-session-workflow.mjs']){
+    assert.match(live,new RegExp(run.replaceAll('.','\\.')));
+    assert(!app.includes(run),'not serial on test critical path: '+run);
+  }
+  assert.match(live,/name: Session editor responsive DOM and synthetic dictation regression/);
+  assert.match(live,/name: Real two-tab browser → API → PostgreSQL synthetic regression/);
+  assert.match(live,/yarn workspace @therabridge\/web build/);
+  assert.match(live,/yarn playwright install --with-deps chromium/);
+  assert.match(yaml,/^      - live-session$/m);
 });
