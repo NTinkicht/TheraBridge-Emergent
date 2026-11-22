@@ -224,4 +224,77 @@ describe('M5 owner private care/consent mounted source',()=>{
   expect(id('private-care-allergies').props.disabled).toBe(true);
  });
 
+ test('staff photo staging submits to server, refreshes only the current child and stays quarantined',async()=>{
+  await mount(ChildPhotoPanel,{centerId:'tenant2',childId:'child2',canManage:true,active:true});
+  const input=id('private-png-candidate-file');
+  const bytes=Buffer.alloc(64,2),file={type:'image/png',size:bytes.length,
+    arrayBuffer:async()=>Uint8Array.from(bytes).buffer};
+  await act(async()=>{input.props.onChange({currentTarget:{files:[file],value:'private-staff-name.png'}});
+    await Promise.resolve();});
+  expect(opsApi.uploadChildPhoto).toHaveBeenCalledWith('tenant2','child2',bytes.toString('base64'));
+  expect(opsApi.childPhotoCandidates).toHaveBeenCalledTimes(2);
+  expect(visible()).toContain('guardian must review and approve');
+  expect(visible()).not.toContain('private-staff-name.png');
+ });
+ test('staff photo staging failure does not assert successful guardian approval',async()=>{
+  opsApi.uploadChildPhoto.mockRejectedValue(new Error('scanner missing'));
+  await mount(ChildPhotoPanel,{centerId:'tenant2',childId:'child2',canManage:true,active:true});
+  const bytes=Buffer.alloc(64,6);
+  await act(async()=>{id('private-png-candidate-file').props.onChange({currentTarget:{files:[{
+    type:'image/png',size:64,arrayBuffer:async()=>Uint8Array.from(bytes).buffer
+  }],value:'private.png'}});await Promise.resolve();});
+  expect(visible()).toContain('upload was not accepted');
+  expect(visible()).not.toContain('guardian must review and approve');
+ });
+ test('staff photo status error has no private data and disabled new upload for read-only actor',async()=>{
+  opsApi.childPhotoCandidates.mockRejectedValue(new Error('foreign-child-secret'));
+  await mount(ChildPhotoPanel,{centerId:'tenant2',childId:'child2',canManage:false,active:true});
+  expect(visible()).toContain('Private photo status unavailable');
+  expect(visible()).not.toContain('foreign-child-secret');
+  expect(all('child-consented-photo')).toHaveLength(0);
+  expect(all('private-png-candidate-picker')).toHaveLength(0);
+ });
+ test('staff photo unexpected format remains hidden rather than rendered',async()=>{
+  opsApi.privateChildPhoto.mockResolvedValue({mimeType:'image/jpeg',pngBase64:'aW1hZ2U='});
+  await mount(ChildPhotoPanel,{centerId:'tenant2',childId:'child2',canManage:false,active:true});
+  expect(all('child-consented-photo')).toHaveLength(0);
+  expect(visible()).toContain('No consented private photo available');
+ });
+ test('private PNG file ignored if newer selection replaces pending read',async()=>{
+  const onStage=jest.fn();
+  await mount(PrivatePngCandidatePicker,{label:'Candidate',onStage});
+  const input=id('private-png-candidate-file');
+  let release;
+  const pending={type:'image/png',size:64,arrayBuffer:()=>new Promise(ok=>{release=ok;})};
+  await act(async()=>input.props.onChange({currentTarget:{files:[pending],value:'old.png'}}));
+  await act(async()=>input.props.onChange({currentTarget:{files:[{type:'image/jpeg',size:2}],value:'new.jpg'}}));
+  await act(async()=>{release(Uint8Array.from(Buffer.alloc(64)).buffer);await Promise.resolve();});
+  expect(onStage).not.toHaveBeenCalled();
+  expect(visible()).not.toContain('candidate submitted');
+ });
+ test('private PNG wrong read size and busy statuses never upload',async()=>{
+  const onStage=jest.fn();
+  await mount(PrivatePngCandidatePicker,{label:'Candidate',onStage});
+  const input=id('private-png-candidate-file');
+  await act(async()=>input.props.onChange({currentTarget:{files:[{
+    type:'image/png',size:0
+  }],value:'empty.png'}}));
+  expect(onStage).not.toHaveBeenCalled();
+  expect(visible()).toContain('Nothing was uploaded');
+ });
+ test('linked guardian change resets pending photo preview, confirmation and no stale child bytes',async()=>{
+  opsApi.guardianPhotoCandidates.mockResolvedValue({candidates:[{
+    id:'pending-1',status:'QUARANTINED',consentState:'PENDING'
+  }]});
+  await mount(GuardianPhotoConsent,{centerId:'tenant1',childId:'child1'});
+  await click('guardian-review-photo-pending-1');
+  await act(async()=>id('guardian-photo-consent-confirm').props.onChange({target:{checked:true}}));
+  opsApi.guardianPhotoCandidates.mockResolvedValue({candidates:[]});
+  await act(async()=>{tree.update(h(GuardianPhotoConsent,{centerId:'tenant2',childId:'child2'}));
+    await Promise.resolve();});
+  expect(all('guardian-photo-review-preview')).toHaveLength(0);
+  expect(all('guardian-photo-approve')).toHaveLength(0);
+  expect(opsApi.guardianPhotoCandidates).toHaveBeenCalledWith('tenant2','child2');
+ });
+
 });
