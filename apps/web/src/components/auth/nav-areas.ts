@@ -40,6 +40,7 @@ export const SHELL_AREA_BY_NAV_ID: Readonly<Record<string, ShellAreaId>> = Objec
   'activities|family.activities.read': 'family',
   'practice|family.practice.read': 'family',
   'family-progress|family.progress.demo': 'family',
+  'family-documents|family.progress.demo': 'family',
   'team|center.staff.read': 'operations',
   'center|center.settings.read': 'operations',
   'profile|center.profile.self': 'account',
