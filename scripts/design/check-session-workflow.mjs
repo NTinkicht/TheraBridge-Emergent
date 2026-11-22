@@ -107,6 +107,10 @@ try {
   await page.getByRole('button', { name: 'Save draft', exact: true }).click();
   await page.waitForFunction(() => [...document.querySelectorAll('[role="status"]')].some(e => e.textContent.includes('Saved on server ·')));
   assert.equal(saved.activities[0].outcome, 'ACHIEVED'); assert.equal(saved.activities[0].assistance, 'SUBSTANTIAL_ASSISTANCE');
+  const syntheticDisclosure = page.getByTestId('session-synthetic-dictation').first();
+  assert.equal(await syntheticDisclosure.getAttribute('open'), null,
+    'Synthetic test tools must be collapsed by default in clinical sessions');
+  await syntheticDisclosure.locator(':scope > summary').click();
   // M3-STT01: simulated capture has no audio/device access, and language-specific
   // fictional text stays local until explicit clinician insertion.
   await page.getByLabel('Synthetic dictation language').selectOption('fr');
