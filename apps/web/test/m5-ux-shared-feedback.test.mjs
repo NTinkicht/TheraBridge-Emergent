@@ -64,6 +64,6 @@ test('family dark mode includes the authenticated navigation shell, not just pag
   }
   // All four navigational surfaces plus the More sheet apply the shared
   // family-specific surface class. Do not guess source distance/line breaks.
-  assert.ok((shell.match(/\\$\\{navSurface\\}/g) || []).length >= 5);
+  assert.ok(shell.split('${navSurface}').length - 1 >= 5);
   assert.match(shell, /theme-family-auto bg-fam-canvas text-fam-ink/);
 });
