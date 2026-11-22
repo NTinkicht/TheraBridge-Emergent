@@ -17,15 +17,23 @@ function RegisterDialog({ centerId, open, onClose, onError }: { centerId: string
   const router = useRouter();
   const [f, setF] = useState({ firstName: '', lastName: '', preferredName: '', dateOfBirth: '' });
   const [services, setServices] = useState<string[]>([]);
+  const [care,setCare] = useState({conditions:'',allergies:'',medications:'',careNotes:''});
+  const [careAcknowledged,setCareAcknowledged] = useState(false);
+  useEffect(()=>{if(!open){setCare({conditions:'',allergies:'',medications:'',careNotes:''});setCareAcknowledged(false);}},[open,centerId]);
+
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   async function save() {
     const missing = [!f.firstName.trim() && 'first name', !f.lastName.trim() && 'last name', !f.dateOfBirth && 'date of birth', !services.length && 'at least one service'].filter(Boolean);
     if (missing.length) return setMsg(`Please add ${missing.join(', ')}.`);
+    const hasCare = Object.values(care).some(v=>v.trim().length>0);
+    if (hasCare && !careAcknowledged) return setMsg('Acknowledge that care notes are unverified family/staff-reported context.');
+
     setBusy(true);
     setMsg(null);
     try {
-      const r = await opsApi.createChild(centerId, { ...f, preferredName: f.preferredName || undefined, services });
+      const r = await opsApi.createChild(centerId, { ...f, preferredName: f.preferredName || undefined, services,
+        ...(hasCare ? {privateCare:{...care,sourceAcknowledged:true as const}} : {}) });
       router.push(`/app/children/${r.id}?registered=1`);
     } catch (e) {
       setMsg(errorText(e, onError));
@@ -44,7 +52,30 @@ function RegisterDialog({ centerId, open, onClose, onError }: { centerId: string
           <Field label="Date of birth" type="date" value={f.dateOfBirth} onChange={(e) => setF({ ...f, dateOfBirth: e.target.value })} testId="child-dob-input" />
         </div>
         <ChoiceGroup label="Services needed" options={SPECIALTY_OPTIONS} value={services} onChange={setServices} testId="child-service" />
-        <p className="text-[13px] text-brand-inkMuted">Operational details only. Clinical records are not part of this version. Synthetic data only.</p>
+        <details className="rounded-control border border-border-light p-3" data-testid="register-child-care-disclosure">
+          <summary className="cursor-pointer text-sm font-semibold">Optional restricted care context</summary>
+          <p className="mt-2 text-xs text-brand-inkMuted">
+            Reported by a family or staff member, not clinically verified. Stored separately under authenticated encryption; no information appears in the child directory.
+          </p>
+          {([
+            ['conditions','Conditions reported by family',600],
+            ['allergies','Allergies reported by family',600],
+            ['medications','Medication information reported by family',600],
+            ['careNotes','Other care notes',1200],
+          ] as const).map(([key,label,max])=><label key={key} className="mt-3 block text-[13px] font-medium">
+            {label}
+            <textarea value={care[key]} maxLength={max} rows={2}
+              onChange={e=>setCare(prev=>({...prev,[key]:e.target.value}))}
+              data-testid={`register-care-${key}`}
+              className="mt-1 min-h-[60px] w-full rounded-control border border-border-strong bg-surface-white p-2 text-sm"/>
+          </label>)}
+          <label className="mt-3 flex items-start gap-2 text-[13px]">
+            <input type="checkbox" checked={careAcknowledged} onChange={e=>setCareAcknowledged(e.target.checked)}
+              data-testid="register-care-acknowledge" className="mt-1 h-4 w-4"/>
+            I understand these fields record unverified context and are not clinical findings or treatment instructions.
+          </label>
+        </details>
+        <p className="text-[13px] text-brand-inkMuted">Restricted care fields are optional. Clinical signing and family release remain disabled.</p>
       </div>
     </Dialog>
   );
