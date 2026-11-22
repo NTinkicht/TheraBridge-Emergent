@@ -43,7 +43,7 @@ Every item needs a code/test link, five-width before/after redacted visual evide
 | 29 | Family Documents wrongly points to Progress | PR5 | Dedicated guardian-scoped released-document destination, M9 policy | REPORTED |
 | 30 | Guardian Progress Updates need same child tabs as Home | PR5 | Exact linked-child scope; unreleased progress stays sample-only | REPORTED |
 | 31 | Home Practice / Activities at Home naming confusion | PR5 | Unified purpose and navigation | REPORTED |
-| 32 | Dark theme leaves top/sidebar and shared navigation surfaces white outside the guardian home too | PR1 | App-wide shared shell/layout audit across Platform Admin, Centre Admin, Coordinator, Therapist specialty variants, Supervisor and Guardian; verify light/dark support and all routes where available | PARTIAL_IN_PR_461 (guardian shell only); GLOBAL NOT QUALIFIED |
+| 32 | Dark theme leaves top/sidebar and shared navigation surfaces white outside the guardian home too | PR1 | App-wide shared shell/layout audit across Platform Admin, Centre Admin, Coordinator, Therapist specialty variants, Supervisor and Guardian; verify light/dark support and all routes where available | IMPLEMENTED_IN_PR_461 (all role shells + semantic tokens + 7-role Chromium check); GLOBAL NOT QUALIFIED pending exact-head CI and manual review |
 
 ## Mandatory observation 32 verification (global dark-theme scope)
 
@@ -51,7 +51,7 @@ Every item needs a code/test link, five-width before/after redacted visual evide
 - Inspect the shared desktop sidebar, top bar, mobile navigation / More sheet, dialogs and nested panels across every applicable user role, including switching routes and user contexts.
 - Fix the shared token/surface cause rather than a one-page override; use explicit variants if different role themes are intentional. Preserve generic navigation and accessibility.
 - Verify at 320/390/768/1024/1440px with screenshots, light/dark toggles, reload/first-paint, contrast, keyboard focus, and denied-state screens. Record per-role per-route evidence; no PASS until truly observed.
-- Existing PR #461 changes currently target **family navigation surfaces only**; staff and all-route parity remain **NOT_RUN / NOT_QUALIFIED**, pending additional implementation and independent checks.
+- PR #461 now updates shared semantic colour tokens for staff and family, real ProductShell and design-preview AppShell, and adds seven-persona × five-width Chromium checks of header, side/mobile navigation and canvas. **Automated and owner visual acceptance remain NOT_QUALIFIED until the final commit passes all gates.**
 
 ## Sequencing and safety
 
