@@ -18,7 +18,7 @@ function SettingsForm({ centerId, initial, canEdit, onSaved, onError }: { center
     e.preventDefault();
     if (f.name.trim().length < 2 || f.city.trim().length < 2 || f.country.trim().length < 2) return setMsg({ tone: 'danger', text: 'Name, city and country need at least 2 characters.' });
     if (!specialties.length) return setMsg({ tone: 'danger', text: 'Choose at least one service.' });
-    if (f.contactEmail.trim() && !/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(f.contactEmail.trim())) return setMsg({ tone: 'danger', text: 'Enter a valid contact email or leave it blank.' });
+    if (f.contactEmail.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.contactEmail.trim())) return setMsg({ tone: 'danger', text: 'Enter a valid contact email or leave it blank.' });
     if (f.contactPhone.trim() && !/^[+()0-9 .-]{6,40}$/.test(f.contactPhone.trim())) return setMsg({ tone: 'danger', text: 'Enter a valid contact phone or leave it blank.' });
     setBusy(true);
     setMsg(null);
