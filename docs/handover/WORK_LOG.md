@@ -1,3 +1,7 @@
+## 2026-11-22 — PR #461 shared dark theme and cross-screen P2 checkpoint (NOT QUALIFIED)
+
+Implemented global (not guardian-only) dark mode in shared shell/theme source, with both staff and family palette, pre-hydration preference restoration, role-neutral toggle, alpha-correct Tailwind variable colours, contrast-safe on-action text, and a logo contrast chip. Extended real browser checks for 7 personas × 5 widths and mounted/semantic Jest contracts. Fixed remaining known generic P2s by normalizing child and therapist active-combobox option across highlighting/ARIA/scroll/Enter, resetting child selection on status change, and using family foreground variants in dark mobile navigation. **Code committed; exact HEAD CI/review/human approval pending.** No clinical feature activation.
+
 ## 2026-11-22 — Fix final-head Codex P2 on PR #461
 
 Codex reported keyboard active autocomplete options became invisible below scrollable results. Implemented reusable listbox-only scrolling in `apps/web/src/lib/combobox-scroll.ts`, wired both therapist and child typeaheads; added five real scroll helper tests plus source-level integration assertions. This is an implementation checkpoint, not a final approval; rerun full exact-head CI and request another Codex review. No changes to permissions, private clinical records, release or media publication.
