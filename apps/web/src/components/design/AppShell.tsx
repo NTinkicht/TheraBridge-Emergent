@@ -112,8 +112,7 @@ export function AppShell({ workspace, active, title, children }: { workspace: Wo
           <p className={`hidden min-w-0 flex-1 truncate text-[14px] md:block ${muted}`}>{ws.context} · {ws.role}</p>
           {(
             <button type="button" onClick={toggleTheme} className={iconBtn} aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'} aria-pressed={dark} data-testid="theme-toggle">
-              <Sun size={19} aria-hidden="true" className="hidden [html[data-family-theme=dark]_&]:block" />
-              <Moon size={19} aria-hidden="true" className="[html[data-family-theme=dark]_&]:hidden" />
+              {dark ? <Sun size={19} aria-hidden="true" /> : <Moon size={19} aria-hidden="true" />}
             </button>
           )}
           <div className="relative">
