@@ -12,6 +12,7 @@ import { Button, Card } from '@/components/design/ui';
 import { CompactTable, DisclosureSection } from '@/components/design/workspace-patterns';
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
 import type { SessionInfo } from '@/lib/auth';
+import { revealActiveSuggestion } from '@/lib/combobox-scroll';
 import { addDays, dayKey, getCenterTz, opsApi, timeRange, zonedToUtc, type Appointment, type ChildRow, type Therapist } from '@/lib/operations';
 
 type View = 'day' | 'week';
@@ -77,6 +78,7 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
   const [chosenTherapistName, setChosenTherapistName] = useState('');
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(0);
+  const suggestionListRef = useRef<HTMLUListElement>(null);
   const [children, setChildren] = useState<ChildRow[]>([]);
   const [booking, setBooking] = useState<{ date: string; start: string } | null | false>(false);
   const [editing, setEditing] = useState<Appointment | null>(null);
@@ -137,6 +139,10 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
   // Do not infer membership, access or an appointment filter from raw typed text.
   const therapistSuggestions = !isTherapist && suggestionsOpen && therapistSearch.trim()
     ? therapists.filter(t => t.displayName.toLocaleLowerCase().includes(therapistSearch.trim().toLocaleLowerCase())).slice(0, 8) : [];
+  useEffect(() => {
+    if (suggestionsOpen && therapistSuggestions.length)
+      revealActiveSuggestion(suggestionListRef.current, Math.min(activeSuggestion, therapistSuggestions.length - 1));
+  }, [activeSuggestion, suggestionsOpen, therapistSuggestions.length]);
   const chooseTherapist = (t: Therapist) => {
     setTherapist(t.membershipId);
     setChosenTherapistName(t.displayName);
@@ -203,7 +209,7 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
                   if (e.key === 'Enter') { e.preventDefault(); chooseTherapist(therapistSuggestions[Math.min(activeSuggestion, therapistSuggestions.length - 1)]); }
                 }}
                 data-testid="schedule-therapist-search" placeholder="Type a therapist's name" />
-              {therapistSuggestions.length > 0 && <ul id="schedule-therapist-suggestions" role="listbox" aria-label="Matching therapists"
+              {therapistSuggestions.length > 0 && <ul ref={suggestionListRef} id="schedule-therapist-suggestions" role="listbox" aria-label="Matching therapists"
                 className="absolute inset-x-0 top-full z-30 max-h-56 overflow-auto rounded-control border border-border-strong bg-surface-white py-1 shadow-lg"
                 data-testid="schedule-therapist-suggestions">
                 {therapistSuggestions.map((t, index) => <li role="option" aria-selected={index === activeSuggestion}
