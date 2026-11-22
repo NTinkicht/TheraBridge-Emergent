@@ -497,3 +497,38 @@ describe('M5 owner feedback 21: progressive plan disclosure preserves mounted dr
   expect(clinicalApi.submit).not.toHaveBeenCalled();
  });
 });
+
+describe('M5 owner observation 21: non-destructive plan authoring navigation',()=>{
+ it('links three authoring steps to the exact mounted plan-version fields',async()=>{
+  await mount();
+  const nav=get('plan-authoring-steps');
+  expect(nav.type).toBe('nav');
+  expect(nav.props['aria-label']).toBe('Plan authoring steps');
+  const links=nav.findAllByType('a');
+  expect(links.map(a=>a.props.href)).toEqual([
+   '#plan-summary-v1','#plan-goals-v1','#plan-activities-v1']);
+  expect(tree.root.findByProps({id:'plan-summary-v1'})).toBeTruthy();
+  expect(tree.root.findByProps({id:'plan-goals-v1'})).toBeTruthy();
+  expect(tree.root.findByProps({id:'plan-activities-v1'})).toBeTruthy();
+  expect(clinicalApi.submit).not.toHaveBeenCalled();
+ });
+ it('keeps existing draft edits and protected actions mounted through the guide',async()=>{
+  await mount();
+  const summary=get('plan-summary');
+  await change('plan-summary','Synthetic unsaved versioned objective');
+  expect(get('plan-summary')).toBe(summary);
+  expect(get('plan-save')).toBeTruthy();
+  expect(get('plan-authoring-steps')).toBeTruthy();
+  expect(clinicalApi.saveVersion).not.toHaveBeenCalled();
+  await click('plan-save');
+  expect(clinicalApi.saveVersion).toHaveBeenCalledWith('c1','v1',
+    expect.objectContaining({version:3,summary:'Synthetic unsaved versioned objective'}));
+  expect(clinicalApi.submit).not.toHaveBeenCalled();
+ });
+ it('shows the same navigation as read-only with save action still denied',async()=>{
+  await mount(version({mine:false,status:'IN_REVIEW'}),ws({canEdit:false}));
+  expect(get('plan-authoring-steps')).toBeTruthy();
+  expect(find('plan-save')).toHaveLength(0);
+  expect(get('plan-summary').props.disabled).toBe(true);
+ });
+});
