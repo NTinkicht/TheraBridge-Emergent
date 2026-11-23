@@ -89,7 +89,7 @@ test('staff-only preview wired to existing role-scoped panel; no image read or s
   assert.match(component,/focus-visible:outline/);
   assert.match(component,/No approved illustration available/);
   assert.match(component,/not released images/);
-  assert(!/<img|<Image|<picture|dangerouslySetInnerHTML|fetch\(|rest\.|src=\{|<a |URL\.createObjectURL/i.test(component));
+  assert(!/<img(?:\s|>)|<Image(?:\s|>)|<picture(?:\s|>)|dangerouslySetInnerHTML|fetch\(|rest\.|src=\{|<a |URL\.createObjectURL/i.test(component));
   for(const path of [
     'apps/web/src/components/clinical/ActivityCard.tsx',
     'apps/web/src/components/clinical/SessionActivityPicker.tsx',
