@@ -191,6 +191,9 @@ export async function reconcileProductionAssets(evidence,inputReceipts=[]){
       if(receipt.batchRevision!==batch.batchRevision||
          receipt.status!=='PRIVATE_QUARANTINED_PENDING_INDEPENDENT_ASSET_QA'||
          !validLabel(receipt.providerRunId)||
+         typeof receipt.masterSha256!=='string'||
+         typeof receipt.custodyManifestSha256!=='string'||
+         typeof receipt.bundleId!=='string'||
          !SHA.test(receipt.masterSha256)||!SHA.test(receipt.custodyManifestSha256)||
          !UUID.test(receipt.bundleId)||
          byRef.has(job.referenceId)||runs.has(receipt.providerRunId)||
