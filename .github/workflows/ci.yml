@@ -787,10 +787,19 @@ jobs:
         run: node --test scripts/design/m5-browser-observe.test.mjs scripts/design/m5-keyboard-journey.test.mjs
       - name: M5 WU2 five-width role acceptance receipt adversarial tests
         run: node --test scripts/design/m5-wu2-browser-qualification.test.mjs
+      - name: M5 media draft security/inventory adversarial qualification contracts
+        run: node --test scripts/qa/m5-media-inventory.test.mjs
       - name: M5 shared UX guardian five-width light/dark and screen-reader-honesty contract tests
         run: node --test scripts/design/m5-shared-guardian-browser.test.mjs scripts/design/m5-shared-ux-manual-acceptance.test.mjs
       - name: M5 major PR4 integrated real-browser receipt and false-approval adversarial tests
         run: node --test scripts/design/m5-integrated-browser-receipt.test.mjs
+      - name: Archive M5 actual synthetic PostgreSQL media inventory (no approved image claims)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-media-real-db-inventory-${{ github.sha }}
+          path: /tmp/therabridge-m5-media-inventory.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Archive M5 real-browser technical evidence plus pending manual matrix (NOT approval)
         uses: actions/upload-artifact@v4
         with:
