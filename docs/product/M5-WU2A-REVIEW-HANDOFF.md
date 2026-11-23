@@ -14,3 +14,10 @@ Human approvals NOT_OBTAINED: owner, designer, relevant clinicians, privacy/secu
 High-priority clinical screening questions (not clinical conclusions): small beads in S2 occupational; scissors in S3 occupational; tongs/small items in S4 occupational; assisted postures and therapy ball in S1/S3 physical; balance beam in S2 physical; walker in S5 physical; wheelchair/table access in S5 group. All images require hands/anatomy, props, safe supervision, age appropriateness and accessibility checks.
 
 Artwork must use canonical m5-b-v1 across every catalogue card, session picker, step graphic and family surface. No clinical instructions, guardian release, asset publication, or legal/rights signoff is granted by this checklist. G2/G2b remain NO-GO.
+## 2026-11-23: Therapist approval has been reported for all 25 concepts
+
+The project user stated: "The therapist approved them all." This refers to the 25 320x240 concept previews in the hash-pinned m5-b-v1 reference pack. The reported acceptance is now recorded for each source-image SHA-256 in docs/product/M5-WU2A-THERAPIST-CONCEPT-APPROVAL-REPORT.json. No further first-round therapist concept feedback is being requested for the unchanged set.
+
+**Evidence limitation:** A verified clinician identity and independently signed CLINICAL_STYLE Ed25519 receipt were not supplied. The strict human approval verifier must therefore still report the signed clinical STYLE role as missing. The user-reported result is not a clinical governance GO, legal permission, designer signoff or approval of production derivatives. Clinical G2/G2b remains NO-GO.
+
+Private-only WU2-B engineering may proceed while formal signature, design/owner/legal/IP and security decisions are collected. Production image masters, activity steps and public/guardian delivery remain unapproved.

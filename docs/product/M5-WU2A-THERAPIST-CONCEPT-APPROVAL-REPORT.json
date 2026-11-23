@@ -1,0 +1,310 @@
+{
+  "schemaVersion": 1,
+  "recordedOn": "2026-11-23",
+  "styleVersion": "m5-b-v1",
+  "referencePack": {
+    "zipSha256": "a32ba0c3037e607beb95f8bcefad50cdd580d2d08f01d2163684798355571379",
+    "manifestSha256": "bf26b55138f09bfdea7b4f5041ebf881356c1ecfe33029109264576044e72b77",
+    "contactSha256": "baeac7d3031bd40d3d0364b5405f83d27c0dc71e2e71b0f15d18f79e37fb2cf7",
+    "sourceSha256": "169c34a1589084b2cc7dd722bb0ec839165453a1b2a31b80f2ae6d2ff32e40a5",
+    "previewSize": "320x240",
+    "productionMastersProvided": false
+  },
+  "report": {
+    "statement": "The therapist approved them all.",
+    "reportedBy": "PROJECT_USER_IN_CONVERSATION",
+    "subject": "ALL_25_CONCEPT_PREVIEWS",
+    "outcome": "ALL_25_ACCEPTED_AS_REPORTED",
+    "evidenceStatus": "USER_REPORTED_NOT_SIGNED_OR_IDENTITY_VERIFIED",
+    "clinicianName": null,
+    "clinicianRegistryVerified": false,
+    "clinicalStyleEd25519Receipt": null
+  },
+  "gates": {
+    "ownerStyleApproval": "NOT_VERIFIED",
+    "designStyleApproval": "NOT_VERIFIED",
+    "clinicalStyleSignedApproval": "NOT_PROVIDED",
+    "independentPrivacySecurityApproval": "NOT_APPROVED",
+    "legalIpRights": "NOT_APPROVED",
+    "productionImageClinicalReview": "NOT_RUN",
+    "approvedImageDelivery": "DISABLED",
+    "clinicalGate": "NO_GO_G2_G2b"
+  },
+  "concepts": [
+    {
+      "referenceId": "WU2A-S1-SPEECH",
+      "scene": "therapist-guided",
+      "family": "speech",
+      "fileName": "01-01-speech-therapist-guided.webp",
+      "sha256": "87a139bc68727d20702eadaa565d82f7fcc0350cc324fe1ba60ce22171593344",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S1-OCCUPATIONAL",
+      "scene": "therapist-guided",
+      "family": "occupational",
+      "fileName": "01-02-occupational-therapist-guided.webp",
+      "sha256": "e85b3e554b9d811a25e3637a12ea1a813cda222b35f371451d56b9bb8ef57ac6",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S1-BEHAVIORAL",
+      "scene": "therapist-guided",
+      "family": "behavioral",
+      "fileName": "01-03-behavioral-therapist-guided.webp",
+      "sha256": "f83facc4f6e593f9e99ace7edd1b4230bf6e2ee243b28ace277435406e0e9a30",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S1-PHYSICAL",
+      "scene": "therapist-guided",
+      "family": "physical",
+      "fileName": "01-04-physical-therapist-guided.webp",
+      "sha256": "794024532ffb860a9e31acfc713c8b58e2533a3d4020d20a8bfbc23c6db69edb",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S1-GROUP",
+      "scene": "therapist-guided",
+      "family": "group",
+      "fileName": "01-05-group-therapist-guided.webp",
+      "sha256": "d06c3d8038783560b6f6e0a14885687f6158e38dfde2b8490261005549e3c756",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S2-SPEECH",
+      "scene": "independent-practice",
+      "family": "speech",
+      "fileName": "02-01-speech-independent-practice.webp",
+      "sha256": "76a81e6201f9894e4cb0c191ee4b962a124144099611cbab8053f63e2956cd05",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S2-OCCUPATIONAL",
+      "scene": "independent-practice",
+      "family": "occupational",
+      "fileName": "02-02-occupational-independent-practice.webp",
+      "sha256": "1ee038014400dfaab5e29e1f5cea2820cda8dd4c9948a68c446b83a47fbe88c4",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S2-BEHAVIORAL",
+      "scene": "independent-practice",
+      "family": "behavioral",
+      "fileName": "02-03-behavioral-independent-practice.webp",
+      "sha256": "1cfae39a1547fd63f2eb04d375d0306f336bb8836cf4092bcc30fbd97edbf9fc",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S2-PHYSICAL",
+      "scene": "independent-practice",
+      "family": "physical",
+      "fileName": "02-04-physical-independent-practice.webp",
+      "sha256": "5700a86aab7fcacd13cab79bf38fe7fb9bb237c412100355adf7fc8ee7f9c922",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S2-GROUP",
+      "scene": "independent-practice",
+      "family": "group",
+      "fileName": "02-05-group-independent-practice.webp",
+      "sha256": "87f1fa03c1381336fa2bac7ddf03fe8809681768ca6e757be34f7039cd0cf90e",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S3-SPEECH",
+      "scene": "home-support",
+      "family": "speech",
+      "fileName": "03-01-speech-home-support.webp",
+      "sha256": "534253456b4e5864d4eb215d8de193a67a9bb011ae64f1a1f7a0f2c437f46477",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S3-OCCUPATIONAL",
+      "scene": "home-support",
+      "family": "occupational",
+      "fileName": "03-02-occupational-home-support.webp",
+      "sha256": "cb95aadae48c28d000e5e0564c01dc0c7466c9747abe9c2ac2f7c8844b7e3e7e",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S3-BEHAVIORAL",
+      "scene": "home-support",
+      "family": "behavioral",
+      "fileName": "03-03-behavioral-home-support.webp",
+      "sha256": "4748c806c806cca8680eac99d6940aebe222a907db2ad3b4af6cd77d03a054d6",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S3-PHYSICAL",
+      "scene": "home-support",
+      "family": "physical",
+      "fileName": "03-04-physical-home-support.webp",
+      "sha256": "6805b12c4ff0164928cbd66e9ff1eabcad519d6ffa6553d9eac7fda0ec0bbb86",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S3-GROUP",
+      "scene": "home-support",
+      "family": "group",
+      "fileName": "03-05-group-home-support.webp",
+      "sha256": "7745f7a9b1c3e6986fce693ed246a1a587fb06f0492f4ee678e1e51a8b6f63d3",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S4-SPEECH",
+      "scene": "materials-sequence",
+      "family": "speech",
+      "fileName": "04-01-speech-materials-sequence.webp",
+      "sha256": "b62f884b0bc6e3991c27a809736d52a6f6c762edc25038054d77d96356962b2f",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S4-OCCUPATIONAL",
+      "scene": "materials-sequence",
+      "family": "occupational",
+      "fileName": "04-02-occupational-materials-sequence.webp",
+      "sha256": "befd76ae0dee797d5fa0e35b9fb67a9c60dc7eb1e1041a51ec8364afadac7a0c",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S4-BEHAVIORAL",
+      "scene": "materials-sequence",
+      "family": "behavioral",
+      "fileName": "04-03-behavioral-materials-sequence.webp",
+      "sha256": "3f1848bb7a9939b60745da7979a4d850a00050981b4de36114377e236c89e504",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S4-PHYSICAL",
+      "scene": "materials-sequence",
+      "family": "physical",
+      "fileName": "04-04-physical-materials-sequence.webp",
+      "sha256": "3da853b9a64ed8f19d64088ff5863e2ed6f36333b5f2e860ca9cdc47a2ee5428",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S4-GROUP",
+      "scene": "materials-sequence",
+      "family": "group",
+      "fileName": "04-05-group-materials-sequence.webp",
+      "sha256": "ed714c5b840c5bfaee31ac113dd9a601ef0f580ef3b65cb1f7c5761c4902b3d6",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S5-SPEECH",
+      "scene": "safety-access",
+      "family": "speech",
+      "fileName": "05-01-speech-safety-access.webp",
+      "sha256": "1f79a5575e47c2fb029f326d776f50573b0ccd88499f876f32a25ea56d0fe5d7",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S5-OCCUPATIONAL",
+      "scene": "safety-access",
+      "family": "occupational",
+      "fileName": "05-02-occupational-safety-access.webp",
+      "sha256": "cde9ebae337cdd91330c3dff9bb6017c7e7c77fd951d814a9620b4ae7f37392e",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S5-BEHAVIORAL",
+      "scene": "safety-access",
+      "family": "behavioral",
+      "fileName": "05-03-behavioral-safety-access.webp",
+      "sha256": "7c7d4e04d93010d3029551066bab12147d5150498771bff6167af9952831a96c",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S5-PHYSICAL",
+      "scene": "safety-access",
+      "family": "physical",
+      "fileName": "05-04-physical-safety-access.webp",
+      "sha256": "a7e5d4cddcd7abfe179e9c0c74c8d8a2cec3176225f545897c1393b8046acb3b",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    },
+    {
+      "referenceId": "WU2A-S5-GROUP",
+      "scene": "safety-access",
+      "family": "group",
+      "fileName": "05-05-group-safety-access.webp",
+      "sha256": "ad165b3e579f8cfc2e4832d575e0d82e55c32b2de7eb69d4d3c7bf44dc4ceb42",
+      "conceptReview": "ACCEPTED_AS_REPORTED_BY_USER",
+      "signedClinicianEvidence": "NOT_PROVIDED",
+      "productionAssetReview": "NOT_EVALUATED",
+      "publishEnabled": false
+    }
+  ]
+}
