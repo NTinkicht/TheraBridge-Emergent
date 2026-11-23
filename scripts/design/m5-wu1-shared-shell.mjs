@@ -79,7 +79,11 @@ async function apply(page, theme) {
   await page.waitForFunction(expected => {
     const root = document.documentElement.dataset;
     const shell = document.querySelector('[data-testid="product-shell"]');
-    return root.appTheme === expected && root.familyTheme === expected &&
+    // With no stored preference, the prepaint bootstrap legitimately leaves
+    // attributes unset and the shell defaults to light. A toggled dark value
+    // MUST be explicit in both dataset slots.
+    return (root.appTheme ?? 'light') === expected &&
+      (root.familyTheme ?? 'light') === expected &&
       shell?.getAttribute('data-theme') === expected;
   }, theme, { timeout: 7000, polling: 100 });
   return page.evaluate(() => {
@@ -140,10 +144,12 @@ export async function observeSharedShell(page, persona, width) {
     await sheet.waitFor({state: 'detached'});
     assert(await button.evaluate(element => document.activeElement === element),
       'Mobile More must restore keyboard focus after Escape');
-    assert(await page.evaluate(() =>
+    // React cleans up the scroll lock in an effect after the dialog unmount.
+    // Observe the real unlock without racing a queued passive cleanup effect.
+    await page.waitForFunction(() =>
       document.body.style.overflow !== 'hidden' &&
-      document.documentElement.style.overflow !== 'hidden'),
-      'Mobile dialog retained a global scroll lock');
+      document.documentElement.style.overflow !== 'hidden',
+      null, {timeout:5000,polling:100});
   } else {
     const rail = page.getByTestId('sidebar-collapse-toggle');
     await rail.click();
