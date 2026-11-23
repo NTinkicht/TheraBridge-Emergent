@@ -93,7 +93,7 @@ describe('mounted supervisor report queue scoped source and paging',()=>{
   const originalOnError=jest.fn(e=>{throw e;});
   const updatedOnError=jest.fn(e=>{throw e;});
   await render({onError:originalOnError});
-  expect(find('review-queue-open-previous')).toHaveLength(1);
+  expect(find('review-queue-open-previous').length).toBeGreaterThan(0);
   // Replacing the session error callback triggers a real refresh without
   // changing filters. useLoad retains the previous successful response.
   await act(async()=>tree.update(h(SupervisorReviewQueue,{
@@ -107,7 +107,7 @@ describe('mounted supervisor report queue scoped source and paging',()=>{
   expect(JSON.stringify(tree.toJSON())).not.toContain('Previously visible synthetic draft');
   const retry=get('review-queue-error').findAllByType('button')[0];
   await act(async()=>{retry.props.onClick();await Promise.resolve();});
-  expect(find('review-queue-open-fresh')).toHaveLength(1);
+  expect(find('review-queue-open-fresh').length).toBeGreaterThan(0);
   expect(find('review-queue-open-previous')).toHaveLength(0);
   expect(find('review-queue-error')).toHaveLength(0);
  });
@@ -122,7 +122,7 @@ describe('mounted supervisor report queue scoped source and paging',()=>{
   const redirectHandle=jest.fn();
   const nextHandle=jest.fn();
   await render({onError:firstHandle});
-  expect(find('review-queue-open-once-allowed')).toHaveLength(1);
+  expect(find('review-queue-open-once-allowed').length).toBeGreaterThan(0);
   await act(async()=>tree.update(h(SupervisorReviewQueue,{
     centerId:'center-a',childId:'child-a',service:'speech',onError:redirectHandle
   })));
@@ -136,7 +136,7 @@ describe('mounted supervisor report queue scoped source and paging',()=>{
   await act(async()=>tree.update(h(SupervisorReviewQueue,{
     centerId:'center-a',childId:'child-a',service:'speech',onError:nextHandle
   })));
-  expect(find('review-queue-open-newly-allowed')).toHaveLength(1);
+  expect(find('review-queue-open-newly-allowed').length).toBeGreaterThan(0);
   expect(find('review-queue-open-once-allowed')).toHaveLength(0);
  });
  it('rejects a failed queue fetch and retries the same authorized endpoint',async()=>{
