@@ -98,6 +98,11 @@ export class ActivityMediaService {
     });
   }
 
+  /** Isolated synthetic CI overrides only this scanner boundary; live callers never can. */
+  protected preparePngCandidate(input:unknown,centerId:string,templateId:string) {
+    return preparePrivatePng(input,'activity-image-v1',centerId,templateId);
+  }
+
   async uploadCandidate(centerId:string,v:Viewer,templateId:string,draftId:string,pngBase64:string) {
     // Check actor/ownership and exact version BEFORE consuming scanner capacity.
     const prior=await this.prisma.$transaction(async tx=>{
@@ -110,7 +115,7 @@ export class ActivityMediaService {
         throw new ForbiddenException('Only the proposing author may supply the image.');
       return {templateVersion:draft.templateVersion};
     });
-    const ready=await preparePrivatePng(pngBase64,'activity-image-v1',centerId,templateId);
+    const ready=await this.preparePngCandidate(pngBase64,centerId,templateId);
     const row=await this.prisma.$transaction(async tx=>{
       await this.trial.assertWritable(tx,centerId,this.trial.now());
       const template=await this.authorizedTemplate(tx,centerId,v,templateId);
