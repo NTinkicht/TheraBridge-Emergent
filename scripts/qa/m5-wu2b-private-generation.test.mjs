@@ -15,10 +15,20 @@ const evidence = () => ({
   providerId:'fictional-approved-provider-1',
   providerTermsSha256:sha('a'), commercialLicenseSha256:sha('b'),
 });
+const crc32=buffer=>{
+  let crc=0xffffffff;
+  for(const octet of buffer){
+    crc^=octet;
+    for(let n=0;n<8;n++)crc=(crc>>>1)^((crc&1)?0xedb88320:0);
+  }
+  return (crc^0xffffffff)>>>0;
+};
 const pngChunk=(type,data)=>{
   const out=Buffer.alloc(12+data.length);
   out.writeUInt32BE(data.length,0);out.write(type,4,'ascii');
-  data.copy(out,8);return out;
+  data.copy(out,8);
+  out.writeUInt32BE(crc32(out.subarray(4,8+data.length)),8+data.length);
+  return out;
 };
 const pngMaster=()=>{
   const ihdr=Buffer.alloc(13);
