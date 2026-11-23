@@ -101,6 +101,11 @@ async function apply(page, theme) {
       navBackground: style(nav).backgroundColor,
       navForeground: style(nav).color,
       canvasBackground: style(shell).backgroundColor,
+      // Non-identifying computed design-token diagnostics. Never DOM text.
+      semanticSurfaceRgb: style(shell).getPropertyValue('--tb-rgb-surface-white').trim(),
+      semanticSurfaceHex: style(shell).getPropertyValue('--tb-surface-white').trim(),
+      matchedDarkRule: document.documentElement.matches('[data-app-theme="dark"]') &&
+        shell.matches('.theme-clinical-auto, .theme-family-auto'),
       mainCount: document.querySelectorAll('main#main').length,
       viewport: window.innerWidth,
       document: document.documentElement.scrollWidth,
@@ -122,8 +127,17 @@ export async function observeSharedShell(page, persona, width) {
     assert(contrastRatio(observed.navForeground, observed.navBackground) >= 4.5,
       'Shared navigation text insufficient contrast');
   }
-  for (const key of ['headerBackground','navBackground','canvasBackground'])
-    assert.notEqual(light[key], dark[key], 'Theme switch failed to recolor shared shell ' + key);
+  for (const key of ['headerBackground','navBackground','canvasBackground']) {
+    assert.notEqual(light[key], dark[key],
+      'Theme switch failed to recolor shared shell ' + key +
+      '; light=' + JSON.stringify({
+        surfaceRgb:light.semanticSurfaceRgb,surfaceHex:light.semanticSurfaceHex,
+        darkSelector:light.matchedDarkRule,header:light.headerBackground,canvas:light.canvasBackground,
+      }) + '; dark=' + JSON.stringify({
+        surfaceRgb:dark.semanticSurfaceRgb,surfaceHex:dark.semanticSurfaceHex,
+        darkSelector:dark.matchedDarkRule,header:dark.headerBackground,canvas:dark.canvasBackground,
+      }));
+  }
   const toggle = page.getByTestId('app-theme-toggle');
   await toggle.focus();
   assert(await toggle.evaluate(element => document.activeElement === element),
