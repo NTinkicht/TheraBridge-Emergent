@@ -26,7 +26,7 @@ function setup(override: Record<string, unknown> = {}) {
     $queryRaw: jest.fn(async () => [{ id: templateId }]),
     activityTemplate: { findFirst },
     membership: { findFirst: jest.fn(async () => ({ id: actor.membershipId })) },
-    activityMediaDraft: { create, updateMany, findMany: jest.fn(async (_args?: unknown): Promise<{ id: string }[]> => []), findFirst: jest.fn(async () => ({ id: draftId })) },
+    activityMediaDraft: { create, updateMany, findMany: jest.fn(async (_args?: unknown): Promise<{ id: string }[]> => []), findFirst: jest.fn(async () => ({ id: draftId, createdById: userId })) },
     privateMediaCandidate: {
       updateMany: jest.fn(async () => ({ count: 2 })),
       findFirst: jest.fn(async () => ({ id: candidateId })),
