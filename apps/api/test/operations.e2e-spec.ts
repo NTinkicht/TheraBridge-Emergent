@@ -188,6 +188,64 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     }
   );
 
+
+  it.each(['ROLE_REMOVED','SUSPENDED','REVOKED'] as const)(
+    'M5 #11 Codex P2: private care write cannot commit after coordinator %s between precheck and center lock',
+    async (revocation) => {
+      const {randomBytes}=await import('node:crypto');
+      const priorKey=process.env.TB_PRIVATE_DATA_KEY_B64;
+      process.env.TB_PRIVATE_DATA_KEY_B64=randomBytes(32).toString('base64');
+      let releasePrecheck: (()=>void)|undefined;
+      let intercepted: jest.SpyInstance|undefined;
+      try {
+        const coordinator=await staff('late-revoked-care@ops.test',['COORDINATOR']);
+        const membershipId=coordinator.body.activeContext.membershipId;
+        const kid=(await post(h,c('children'),admin,child({
+          privateCare:{sourceAcknowledged:true,allergies:'Original synthetic report'}
+        })).expect(201)).body.id;
+        const before=await h.prisma.childCareIntake.findFirstOrThrow({where:{centerId,childId:kid}});
+        const svc=h.app.get(ChildrenService);
+        const original=(svc as any).authorizeCare.bind(svc);
+        let reached!:()=>void;
+        const ready=new Promise<void>(resolve=>{reached=resolve;});
+        const release=new Promise<void>(resolve=>{releasePrecheck=resolve;});
+        // Interpose AFTER the first, successful authorization and BEFORE
+        // entering the transaction. This models an actual revoked role during
+        // lock acquisition, rather than merely testing request-time RBAC.
+        intercepted=jest.spyOn(svc as any,'authorizeCare')
+          .mockImplementation(async (...args:any[])=>{
+            const result=await original(...args);
+            reached();
+            await release;
+            return result;
+          });
+        const pending=patch(coordinator,c(`children/${kid}/private-care`),{
+          sourceAcknowledged:true,version:1,allergies:'Unauthorized late mutation'
+        }).expect(403).then(()=>undefined);
+        await ready;
+        if(revocation==='ROLE_REMOVED'){
+          await h.prisma.roleAssignment.deleteMany({where:{membershipId,role:'COORDINATOR'}});
+        } else {
+          await h.prisma.membership.update({where:{id:membershipId},
+            data:{status:revocation==='SUSPENDED'?'SUSPENDED':'REVOKED'}});
+        }
+        releasePrecheck?.();
+        await pending;
+        const after=await h.prisma.childCareIntake.findFirstOrThrow({where:{centerId,childId:kid}});
+        expect(after.version).toBe(1);
+        expect(Buffer.from(after.encryptedBody)).toEqual(Buffer.from(before.encryptedBody));
+        expect(await h.prisma.centerEvent.count({where:{
+          centerId,type:'child.care_context_updated',
+        }})).toBe(0);
+      } finally {
+        releasePrecheck?.();
+        intercepted?.mockRestore();
+        if(priorKey===undefined)delete process.env.TB_PRIVATE_DATA_KEY_B64;
+        else process.env.TB_PRIVATE_DATA_KEY_B64=priorKey;
+      }
+    }
+  );
+
   it('end-to-end: child → guardian invitation → therapist assignment → appointment → therapist day → parent portal', async () => {
     const coordinator = await staff('coord@ops.test', ['COORDINATOR']);
     const therapist = await staff('thera@ops.test', ['THERAPIST']);
