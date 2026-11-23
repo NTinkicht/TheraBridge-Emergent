@@ -199,6 +199,51 @@ export class ActivityMediaService {
     });
   }
 
+  /**
+   * Security-only, destructive revocation of ONE private candidate.
+   * Deliberately available while a centre subscription is read-only: a
+   * formerly authorized reviewer must not be trapped with unsafe artwork.
+   * The transaction reacquires current role/tenant/specialty authority and
+   * serializes with upload and whole-draft rejection on the same draft row.
+   * No bytes, object key or image read handle is returned.
+   */
+  async revokeCandidate(centerId: string, v: Viewer, templateId: string,
+    draftId: string, candidateId: string) {
+    const now = this.trial.now();
+    return this.prisma.$transaction(async tx => {
+      await this.authorizedTemplate(tx, centerId, v, templateId);
+      await tx.$queryRaw`SELECT id FROM activity_media_draft
+        WHERE id=${draftId}::uuid AND center_id=${centerId}::uuid
+          AND template_id=${templateId}::uuid FOR UPDATE`;
+      const draft = await tx.activityMediaDraft.findFirst({
+        where: { id: draftId, centerId, templateId },
+        select: { id: true, createdById: true },
+      });
+      if (!draft) throw new NotFoundException('Private draft unavailable.');
+      if (v.role === 'THERAPIST' && draft.createdById !== v.userId)
+        throw new ForbiddenException('Only the proposing author may revoke private candidates.');
+      // updateMany is an atomic scoped compare-and-set. A forged, already
+      // revoked, foreign or concurrently rejected candidate all fail closed.
+      const changed = await tx.privateMediaCandidate.updateMany({
+        where: {
+          id: candidateId, centerId, templateId, mediaDraftId: draftId,
+          kind: 'ACTIVITY_IMAGE', status: 'QUARANTINED', revokedAt: null,
+        },
+        data: { status: 'REVOKED', revokedAt: now },
+      });
+      if (changed.count !== 1)
+        throw new ConflictException('Private candidate unavailable or already revoked.');
+      await logCenterEvent(tx, centerId, 'media.private_candidate_revoked', now, {
+        actorUserId: v.userId, meta: { templateId, mediaDraftId: draftId, candidateId },
+      });
+      return {
+        id: candidateId, status: 'REVOKED' as const,
+        readEnabled: false as const, publishEnabled: false as const,
+        clinicalReleaseEnabled: false as const,
+      };
+    });
+  }
+
   async reject(centerId: string, v: Viewer, templateId: string, draftId: string, dto: ActivityMediaRejectDto) {
     const now = this.trial.now();
     return this.prisma.$transaction(async tx => {

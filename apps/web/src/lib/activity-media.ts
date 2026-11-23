@@ -37,6 +37,10 @@ export const activityMediaDrafts = {
   uploadCandidate: (centerId:string,templateId:string,draftId:string,pngBase64:string) =>
     rest.send<{id:string;status:'QUARANTINED';publishEnabled:false;readEnabled:false}>(
       'POST',activityMediaDrafts.endpoint(centerId,templateId)+'/'+encodeURIComponent(draftId)+'/candidates',{pngBase64}),
+  revokeCandidate: (centerId:string,templateId:string,draftId:string,candidateId:string) =>
+    rest.send<{id:string;status:'REVOKED';readEnabled:false;publishEnabled:false;clinicalReleaseEnabled:false}>(
+      'POST',activityMediaDrafts.endpoint(centerId,templateId)+'/'+encodeURIComponent(draftId)+
+        '/candidates/'+encodeURIComponent(candidateId)+'/revoke',{}),
   reject: (centerId: string, templateId: string, id: string, version: number, reason: string) =>
     rest.send<{ id: string; state: 'REJECTED'; version: number }>('POST',
       activityMediaDrafts.endpoint(centerId, templateId) + '/' + encodeURIComponent(id) + '/reject', { version, reason }),

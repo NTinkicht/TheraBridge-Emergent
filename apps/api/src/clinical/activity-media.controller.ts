@@ -54,6 +54,14 @@ export class ActivityMediaController {
     @Body() dto:ActivityPrivatePngCandidateDto,@Req() req:TbRequest) {
     return this.media.uploadCandidate(centerId,viewer(req),templateId,draftId,dto.pngBase64);
   }
+  @Post(':draftId/candidates/:candidateId/revoke')
+  @RequirePermission('center.activities.manage')
+  revokeCandidate(@Param('centerId',uuid()) centerId:string,
+    @Param('templateId',uuid()) templateId:string,
+    @Param('draftId',uuid()) draftId:string,
+    @Param('candidateId',uuid()) candidateId:string,@Req() req:TbRequest) {
+    return this.media.revokeCandidate(centerId,viewer(req),templateId,draftId,candidateId);
+  }
   @Post(':draftId/reject')
   @RequirePermission('center.activities.manage')
   reject(@Param('centerId', uuid()) centerId: string, @Param('templateId', uuid()) templateId: string,

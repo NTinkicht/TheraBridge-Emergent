@@ -3,7 +3,9 @@
 const React=require('react');
 const {act,create}=require('react-test-renderer');
 const h=React.createElement;
-jest.mock('@/lib/activity-media',()=>({activityMediaDrafts:{candidates:jest.fn()}}));
+jest.mock('@/lib/activity-media',()=>({activityMediaDrafts:{
+  candidates:jest.fn(),revokeCandidate:jest.fn(),
+}}));
 const {activityMediaDrafts:api}=require('../src/lib/activity-media');
 const {ActivityMediaCandidateHistory}=require('../src/components/clinical/ActivityMediaCandidateHistory');
 const item=(id='candidate-one',override={})=>({
@@ -28,7 +30,11 @@ const mount=async()=>act(async()=>{tree=create(h(ActivityMediaCandidateHistory,{
   centerId:'center-a',templateId:'activity-a',draftId:'draft-a',
 }));});
 const cleanup=async()=>{if(tree){await act(async()=>tree.unmount());tree=null;}};
-beforeEach(()=>{jest.resetAllMocks();tree=null;api.candidates.mockResolvedValue(ok());});
+beforeEach(()=>{
+  jest.resetAllMocks();tree=null;api.candidates.mockResolvedValue(ok());
+  api.revokeCandidate.mockResolvedValue({id:'candidate-one',status:'REVOKED',
+    readEnabled:false,publishEnabled:false,clinicalReleaseEnabled:false});
+});
 afterEach(cleanup);
 
 describe('M5-14 isolated candidate history status-only interface',()=>{
@@ -125,6 +131,34 @@ describe('M5-14 isolated candidate history status-only interface',()=>{
   await click('Inspect private candidate statuses');
   expect(output()).toContain('Quarantined');
   expect(api.candidates).toHaveBeenCalledTimes(2);
+ });
+ it('requires explicit confirmation before revocation and reloads only current metadata',async()=>{
+  api.candidates.mockResolvedValueOnce(ok([item()]))
+    .mockResolvedValueOnce(ok([item('candidate-one',{status:'REVOKED',
+      revokedAt:'2026-11-23T05:00:00Z'})]));
+  await mount();await click('Inspect private candidate statuses');
+  await click('Revoke private candidate');
+  expect(api.revokeCandidate).not.toHaveBeenCalled();
+  await click('Cancel revocation');
+  expect(api.revokeCandidate).not.toHaveBeenCalled();
+  await click('Revoke private candidate');
+  await click('Confirm revocation');
+  expect(api.revokeCandidate).toHaveBeenCalledWith('center-a','activity-a','draft-a','candidate-one');
+  expect(output()).not.toContain('Quarantined</strong>');
+  expect(output()).toContain('Private candidate revoked');
+  await click('Inspect private candidate statuses');
+  expect(tree.root.findAllByType('li')[0].findByType('strong').children.join('')).toBe('Revoked');
+  expect(output()).not.toContain('Confirm revocation');
+ });
+ it('clears old candidate rows after a denied revoke response',async()=>{
+  api.candidates.mockResolvedValue(ok([item()]));
+  api.revokeCandidate.mockRejectedValueOnce(Object.assign(new Error('Denied'),{status:403}));
+  await mount();await click('Inspect private candidate statuses');
+  await click('Revoke private candidate');
+  await click('Confirm revocation');
+  expect(output()).toContain('Could not revoke');
+  expect(tree.root.findAllByType('li')).toHaveLength(0);
+  expect(output()).not.toContain('Revoke private candidate');
  });
  it('discards stale in-flight status responses after close and reopen',async()=>{
   let release;
