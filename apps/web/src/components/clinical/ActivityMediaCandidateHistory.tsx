@@ -27,15 +27,24 @@ export function ActivityMediaCandidateHistory({ centerId, templateId, draftId }:
       const result = await activityMediaDrafts.candidates(centerId, templateId, draftId,
         reset ? undefined : cursor ?? undefined);
       if (generation.current !== current) return;
-      if (!result.metadataOnly || result.readEnabled || result.publishEnabled ||
-        result.clinicalReleaseEnabled) throw new Error('Unexpected media permission response');
+      // A missing/changed rights envelope is an access denial. Invalidate
+      // previously loaded metadata before rendering any new result.
+      if (result.metadataOnly !== true || result.readEnabled !== false ||
+        result.publishEnabled !== false || result.clinicalReleaseEnabled !== false)
+        throw new Error('Unexpected media permission response');
       setItems(previous => reset ? result.items : [
         ...previous, ...result.items.filter(row => !previous.some(existing => existing.id === row.id)),
       ]);
       setCursor(result.nextCursor);
       setHasMore(result.hasMore);
     } catch {
-      if (generation.current === current) setError('Could not load private candidate status. Retry.');
+      if (generation.current === current) {
+        // Includes forbidden (403), expired sessions, failed pagination,
+        // network errors and invalid rights envelopes. The previous rows
+        // were authorized at an earlier instant, not necessarily now.
+        setItems([]); setCursor(null); setHasMore(false);
+        setError('Could not load private candidate status. Retry.');
+      }
     } finally {
       if (generation.current === current) setBusy(false);
     }
@@ -44,7 +53,10 @@ export function ActivityMediaCandidateHistory({ centerId, templateId, draftId }:
     if (expanded) {
       generation.current += 1;
       setExpanded(false); setBusy(false); setError('');
+      setItems([]); setCursor(null); setHasMore(false);
     } else {
+      // Do not display stale rows while rechecking permissions.
+      setItems([]); setCursor(null); setHasMore(false);
       setExpanded(true);
       void load(true);
     }
@@ -61,7 +73,7 @@ export function ActivityMediaCandidateHistory({ centerId, templateId, draftId }:
       {busy && <p role="status" className="text-[12px]">Loading candidate status…</p>}
       {!busy && !error && items.length === 0 &&
         <p className="text-[12px] text-brand-inkMuted">No private candidates recorded.</p>}
-      <ul className="space-y-1" aria-label="Private candidate status history">
+      {!error && <ul className="space-y-1" aria-label="Private candidate status history">
         {items.map(item => <li key={item.id} className="rounded-control border border-border-light p-2 text-[12px]">
           <strong>{item.status === 'QUARANTINED' ? 'Quarantined' :
             item.status === 'REVOKED' ? 'Revoked' : 'Unrecognized / blocked'}</strong>
@@ -69,8 +81,8 @@ export function ActivityMediaCandidateHistory({ centerId, templateId, draftId }:
           {' · '}{item.width}×{item.height} px
           {item.revokedAt ? ' · revoked' : ''}
         </li>)}
-      </ul>
-      {hasMore && <Button variant="secondary" size="sm" disabled={busy}
+      </ul>}
+      {!error && hasMore && <Button variant="secondary" size="sm" disabled={busy}
         onClick={() => void load(false)}>Load older candidate statuses</Button>}
     </>}
   </div>;

@@ -96,6 +96,9 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion,
     try {
       const result = await activityMediaDrafts.reject(centerId, templateId, draft.id, draft.version, reason.trim());
       setItems(prev => prev.map(item => item.id === result.id ? { ...item, ...result, rejectionReason: reason.trim() } : item));
+      // Candidate revocation commits atomically with rejection. Invalidate
+      // any mounted history for this draft before staff may inspect again.
+      setCandidateRevision(value => value + 1);
       setRejecting(null); setReason('');
       setNotice('Draft rejected. This decision was recorded for audit.');
     } catch {
@@ -185,7 +188,7 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion,
                   setCandidateRevision(value=>value+1);
                 }} />}
             </div>}
-          <ActivityMediaCandidateHistory key={draft.id + ':' + candidateRevision}
+          <ActivityMediaCandidateHistory key={[draft.id, draft.version, draft.state, candidateRevision].join(':')}
             centerId={centerId} templateId={templateId} draftId={draft.id} />
           {draft.state === 'DRAFT' && <div className="mt-2">
             {rejecting === draft.id ? <div className="space-y-2">

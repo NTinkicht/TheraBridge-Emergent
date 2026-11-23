@@ -86,6 +86,39 @@ describe('M5-14 isolated candidate history status-only interface',()=>{
   // list itself, not that notice, must be empty after a denied response.
   expect(tree.root.findAllByType('li')).toHaveLength(0);
  });
+ it('removes previously loaded candidate rows and cursors on success followed by forbidden access', async()=>{
+  api.candidates.mockResolvedValueOnce(ok([item('previously-visible')],true,'old-cursor'))
+    .mockRejectedValueOnce(Object.assign(new Error('Synthetic access withdrawn'),{status:403}))
+    .mockResolvedValueOnce(ok([item('newly-authorized',{status:'REVOKED',revokedAt:'2026-11-23T02:00:00Z'})]));
+  await mount();await click('Inspect private candidate statuses');
+  expect(tree.root.findAllByType('li')).toHaveLength(1);
+  expect(output()).toContain('previously-visible');
+  await click('Hide private candidate statuses');
+  await click('Inspect private candidate statuses');
+  expect(output()).toContain('Could not load private candidate status');
+  expect(output()).not.toContain('previously-visible');
+  expect(tree.root.findAllByType('li')).toHaveLength(0);
+  expect(output()).not.toContain('Load older candidate statuses');
+  await click('Hide private candidate statuses');
+  await click('Inspect private candidate statuses');
+  expect(tree.root.findAllByType('li')).toHaveLength(1);
+  expect(output()).toContain('Revoked');
+  expect(output()).not.toContain('previously-visible');
+  expect(api.candidates).toHaveBeenLastCalledWith('center-a','activity-a','draft-a',undefined);
+ });
+ it('clears a loaded status page after a rejected rights envelope on pagination',async()=>{
+  api.candidates.mockResolvedValueOnce(ok([item('earlier-candidate')],true,'old-cursor'))
+    .mockResolvedValueOnce({...ok([item('unsafe-row')]),readEnabled:true});
+  await mount();await click('Inspect private candidate statuses');
+  expect(tree.root.findAllByType('li')).toHaveLength(1);
+  await click('Load older candidate statuses');
+  expect(api.candidates).toHaveBeenLastCalledWith('center-a','activity-a','draft-a','old-cursor');
+  expect(output()).toContain('Could not load private candidate status');
+  expect(output()).not.toContain('earlier-candidate');
+  expect(output()).not.toContain('unsafe-row');
+  expect(tree.root.findAllByType('li')).toHaveLength(0);
+  expect(output()).not.toContain('Load older candidate statuses');
+ });
  it('retains a retryable error when a candidate metadata request fails',async()=>{
   api.candidates.mockRejectedValueOnce(new Error('Synthetic offline'))
     .mockResolvedValueOnce(ok([item('recovered')]));
