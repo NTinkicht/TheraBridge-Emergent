@@ -140,14 +140,18 @@ describe('M5-14 activity illustration draft boundary', () => {
     expect(tx.privateMediaCandidate.updateMany).not.toHaveBeenCalled();
     expect(tx.centerEvent.create).not.toHaveBeenCalled();
   });
-  it('locks the exact draft row on both final candidate admission and rejection', async () => {
+  it('locks the exact draft row before revoking linked candidates on rejection', async () => {
     const { service, tx } = setup();
     await service.reject(centerId, actor, templateId, draftId, {
       version: 1, reason: 'Concurrency test rejection',
     });
+    // Tagged Prisma SQL splits literal text around bound parameters. The
+    // FOR UPDATE clause is in the final segment, not the first segment.
     const queries = (tx.$queryRaw.mock.calls as unknown as Array<[readonly string[]]>)
-      .map(([parts]) => String(parts[0] ?? ''));
-    expect(queries.some(q => q.includes('activity_media_draft') && q.includes('FOR UPDATE'))).toBe(true);
+      .map(([parts]) => parts.join(' '));
+    expect(queries).toEqual(expect.arrayContaining([
+      expect.stringMatching(/activity_media_draft[\\s\\S]*FOR UPDATE/),
+    ]));
   });
   it('rejects the entire draft transition if quarantine revocation write fails', async () => {
     const { service, tx } = setup();

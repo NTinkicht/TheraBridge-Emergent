@@ -173,12 +173,17 @@ describe('M4-08 sample catalogue pagination and tenant-owned activity boundaries
    expect(JSON.stringify(conditions)).toContain(expectedService);
    expect(conditions.some((x:any)=>x.OR?.some((y:any)=>y.service?.in?.includes(expectedService)))).toBe(true);
   });
- it('unknown query still searches exact title/age/service without expanding source scope',async()=>{
+ it('unknown query searches title, age, category, skill, service without expanding source scope',async()=>{
   const {db,service}=make();
   await service.templatePage(centre,therapist,{search:'fictional qzx'});
   const conditions=db.activityTemplate.findMany.mock.calls[0][0].where.AND;
-  expect(conditions.at(-1).OR).toHaveLength(3);
-  expect(conditions.at(-1).OR[0]).toEqual({title:{contains:'fictional qzx',mode:'insensitive'}});
+  expect(conditions[0]).toEqual({OR:[{centerId:centre},{centerId:null}]});
+  expect(conditions.at(-1).OR).toHaveLength(5);
+  for (const field of ['title','ageBand','category','skill','service']) {
+   expect(conditions.at(-1).OR).toContainEqual({
+    [field]:{contains:'fictional qzx',mode:'insensitive'}
+   });
+  }
  });
  it('paginates with one extra row and exposes next offset only with actual more data',async()=>{
   const {db,service}=make();
