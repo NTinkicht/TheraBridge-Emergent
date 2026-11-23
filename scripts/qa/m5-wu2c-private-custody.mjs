@@ -240,3 +240,21 @@ export async function purgeExpiredPrivateIllustration({root,keyBase64,bundleId,
     if(key)key.fill(0);
   }
 }
+
+/**
+ * The operator-facing entrypoint NEVER accepts a caller-selected scan verdict.
+ * Scanner location and key come only from the server-host environment, and
+ * real ClamAV is mandatory. Missing variables fail before image persistence.
+ */
+export async function stagePrivateIllustrationOnHost({
+  root,referenceId,evidence,masterBytes,operatorId,nowMs,retentionDays,
+},env=process.env){
+  try{
+    if(!env||typeof env!=='object')deny();
+    const scanner=createLocalClamdScanner(env.TB_MEDIA_CLAMD_SOCKET);
+    return await stagePrivateIllustration({
+      root,keyBase64:env.TB_PRIVATE_DATA_KEY_B64,
+      referenceId,evidence,masterBytes,operatorId,nowMs,retentionDays,scanner,
+    });
+  }catch{deny();}
+}
