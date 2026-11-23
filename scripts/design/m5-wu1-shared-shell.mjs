@@ -59,6 +59,18 @@ export function validateSharedShellReceipt(receipt) {
   return true;
 }
 
+/** Parse one opaque, outward 3px-or-wider browser-computed focus ring.
+ * Reject low-alpha decorative shadows, inset/multiple rings and inferred CSS
+ * tokens. This is an observed ring, not a source-level token assertion. */
+export function parseOpaqueFocusShadow(value) {
+  if (typeof value !== 'string') return null;
+  const match=/^(rgb\\(\\s*\\d{1,3},\\s*\\d{1,3},\\s*\\d{1,3}\\s*\\))\\s+0px\\s+0px\\s+0px\\s+(\\d+(?:\\.\\d+)?)px$/.exec(value);
+  if (!match) return null;
+  const width=Number(match[2]);
+  if (!Number.isFinite(width) || width < 3) return null;
+  return {color:match[1],width};
+}
+
 export function buildSharedShellReceipt(observations) {
   const receipt = {
     schemaVersion: 1, environment: 'ISOLATED_SYNTHETIC_CI',
@@ -226,6 +238,7 @@ export async function observeSharedShell(page, persona, width) {
     return {active:document.activeElement===el,keyboardVisible:el.matches(':focus-visible'),
       outlineColor:style.outlineColor,outlineStyle:style.outlineStyle,
       outlineWidth:parseFloat(style.outlineWidth),
+      boxShadow:style.boxShadow,
       rootTheme:document.documentElement.dataset.appTheme??'UNSET',
       scope:el.closest('.theme-clinical-auto')?'clinical':el.closest('.theme-family-auto')?'family':'none',
       globalRuleMatch:el.matches('html :is(input, select, textarea, [role="combobox"]):focus-visible'),
@@ -233,11 +246,16 @@ export async function observeSharedShell(page, persona, width) {
       matchedRules:matchedRules.slice(-12)};
   
   });
-  assert(focus.active && focus.keyboardVisible && focus.outlineStyle === 'solid' && focus.outlineWidth >= 3,
-    'Shared navigation keyboard outline must be solid and >=3px at ' + persona + '/' + width +
-    ': ' + JSON.stringify(focus));
-  assert(contrastRatio(focus.outlineColor, dark.navBackground) >= 3,
-    'Shared staff focus indicator contrast must be at least 3:1');
+  // A native select can suppress the computed outline width (0px) while
+  // :focus-visible is true. Enforce a real opaque 3px box-shadow ring as an
+  // alternative rather than falsely accepting the old low-alpha ring.
+  const ring=parseOpaqueFocusShadow(focus.boxShadow);
+  const outlineOk=focus.outlineStyle==='solid' && focus.outlineWidth>=3 &&
+    contrastRatio(focus.outlineColor,dark.navBackground)>=3;
+  const shadowOk=!!ring && contrastRatio(ring.color,dark.navBackground)>=3;
+  assert(focus.active && focus.keyboardVisible && (outlineOk || shadowOk),
+    'Shared navigation keyboard focus requires an opaque >=3px, >=3:1 outline or shadow at ' +
+    persona + '/' + width + ': ' + JSON.stringify(focus));
 
   if (width < 768) {
     const button = page.getByTestId('mobile-more-button');

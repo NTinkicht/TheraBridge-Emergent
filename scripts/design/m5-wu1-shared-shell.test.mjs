@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {PERSONAS,VIEWPORTS} from '../qa/m5-route-audit.mjs';
-import {buildSharedShellReceipt,validateSharedShellReceipt}
+import {buildSharedShellReceipt,validateSharedShellReceipt,parseOpaqueFocusShadow}
   from './m5-wu1-shared-shell.mjs';
 
 const data=()=>PERSONAS.flatMap(({id})=>VIEWPORTS.map(width=>({
@@ -48,4 +48,18 @@ test('WU1 rejects unauthorized private data and invented screen-reader, owner, t
     r=>{r.summary.failed=1;},
     r=>{r.evidenceType='MANUAL_ACCEPTANCE';},
   ]){const r=buildSharedShellReceipt(data());mutation(r);assert.throws(()=>validateSharedShellReceipt(r));}
+});
+
+test('WU1 real-browser 3px focus fallback rejects low-alpha glow and undersized rings',()=>{
+  assert.deepEqual(parseOpaqueFocusShadow('rgb(125, 179, 232) 0px 0px 0px 3px'),
+    {color:'rgb(125, 179, 232)',width:3});
+  assert.deepEqual(parseOpaqueFocusShadow('rgb(92, 207, 219) 0px 0px 0px 4px'),
+    {color:'rgb(92, 207, 219)',width:4});
+  for(const invalid of [
+    'none','rgba(125, 179, 232, 0.2) 0px 0px 0px 3px',
+    'rgb(125, 179, 232) 0px 0px 0px 2px',
+    'rgb(125, 179, 232) 0px 0px 2px 3px',
+    'inset rgb(125, 179, 232) 0px 0px 0px 3px',
+    'rgb(125, 179, 232) 0px 0px 0px 3px, rgb(0,0,0) 0px 0px 0px 9px',
+  ]) assert.equal(parseOpaqueFocusShadow(invalid),null);
 });

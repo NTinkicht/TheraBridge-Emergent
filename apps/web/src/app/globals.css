@@ -119,6 +119,10 @@ body {
 html :is(input, select, textarea, [role="combobox"]):focus-visible {
   outline: 3px solid var(--focus-ring, var(--tb-brand-action)) !important;
   outline-offset: 2px !important;
+  /* Native Chromium selects can report computed outline-width:0 despite
+     a matched important outline. An equally strong, opaque external ring
+     must remain visibly measurable; never use the old 20% alpha glow. */
+  box-shadow: 0 0 0 3px var(--focus-ring, var(--tb-brand-action)) !important;
 }
 
 @keyframes tb-rise {

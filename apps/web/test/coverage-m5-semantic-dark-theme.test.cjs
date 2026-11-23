@@ -116,6 +116,7 @@ describe('application-wide semantic light/dark palette',()=>{
     expect(sheet).toContain('outline-width: 3px !important;');
     expect(sheet).toContain('html :is(input, select, textarea, [role="combobox"]):focus-visible');
     expect(sheet).toContain('outline: 3px solid var(--focus-ring, var(--tb-brand-action)) !important;');
+    expect(sheet).toContain('box-shadow: 0 0 0 3px var(--focus-ring, var(--tb-brand-action)) !important;');
     expect(sheet).toContain('outline-style: solid !important;');
     expect(sheet).toContain('outline-color: var(--tb-brand-action) !important;');
     expect(sheet).toContain('outline-offset: 2px;');
