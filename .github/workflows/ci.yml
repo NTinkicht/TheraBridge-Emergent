@@ -785,6 +785,8 @@ jobs:
         run: node scripts/design/run-demo-live.mjs
       - name: M5-01 browser and keyboard receipt schema adversarial tests
         run: node --test scripts/design/m5-browser-observe.test.mjs scripts/design/m5-keyboard-journey.test.mjs
+      - name: M5 WU1 full role-shell 5-width 2-theme focus/privacy and receipt adversarial tests
+        run: node --test scripts/design/m5-wu1-shared-shell.test.mjs
       - name: M5 WU2 five-width role acceptance receipt adversarial tests
         run: node --test scripts/design/m5-wu2-browser-qualification.test.mjs
       - name: M5 media style/security signature and real-inventory adversarial qualification contracts
@@ -812,6 +814,13 @@ jobs:
         with:
           name: m5-shared-ux-manual-not-run-${{ github.sha }}
           path: /tmp/therabridge-m5-shared-ux-human-pending.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Archive real 7-role x 5-width shared navigation/theme/focus browser evidence (not manual AT)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-wu1-cross-screen-shell-${{ github.sha }}
+          path: /tmp/therabridge-m5-wu1-cross-screen-shell.json
           if-no-files-found: error
           retention-days: 30
       - name: Archive M5 shared guardian five-width light/dark keyboard and semantic observations (not manual AT)

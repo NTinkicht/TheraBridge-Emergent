@@ -23,6 +23,8 @@ function ScopedSupervisorReviewQueue({ centerId, childId, service, onError }: {
   centerId: string; childId: string; service: string; onError: (e: unknown) => void;
 }) {
   const mounted = useRef(true);
+  const latestFetch = useRef(0);
+  const [accessFailure, setAccessFailure] = useState(false);
   useEffect(() => {
     mounted.current = true;
     return () => { mounted.current = false; };
@@ -30,7 +32,12 @@ function ScopedSupervisorReviewQueue({ centerId, childId, service, onError }: {
   // A pending request from an unmounted scope must never dispatch its late
   // 401/403/404 into the shared session handler for the newly selected scope.
   const scopedOnError = useCallback((error: unknown) => {
-    if (mounted.current) onError(error);
+    if (!mounted.current) return;
+    // The app's session handler *handles* 401/403/404 by navigating away,
+    // without throwing. useLoad therefore leaves failed=false for these
+    // errors. Always revoke old visible queue data before navigation.
+    setAccessFailure(true);
+    onError(error);
   }, [onError]);
   const [search, setSearch] = useState('');
   const [debounced, setDebounced] = useState('');
@@ -45,17 +52,25 @@ function ScopedSupervisorReviewQueue({ centerId, childId, service, onError }: {
   // former search nor a previous page can be displayed as the new worklist.
   const requestKey = JSON.stringify([centerId, childId, service, debounced, page]);
   const fetcher = useCallback(
-    async () => ({
-      requestKey,
-      result: await reportsApi.reviewQueue(centerId, {
+    async () => {
+      const generation = ++latestFetch.current;
+      const result = await reportsApi.reviewQueue(centerId, {
         childId: childId || undefined, service: service || undefined,
         search: debounced || undefined, page,
-      }),
-    }),
+      });
+      // A late success for an obsolete query cannot reauthorize a denied
+      // current page. No stale-response handler may change this boundary.
+      if (mounted.current && generation === latestFetch.current) setAccessFailure(false);
+      return { requestKey, result };
+    },
     [centerId, childId, service, debounced, page, requestKey],
   );
   const { data: loaded, failed, reload } = useLoad(fetcher, scopedOnError);
-  const data = loaded?.requestKey === requestKey ? loaded.result : null;
+  // useLoad intentionally keeps its last successful response for retry UX.
+  // A failed refresh (including a withdrawn 401/403) must NOT keep its old
+  // report links or author/child metadata visible beside the denial banner.
+  // Same fail-closed pattern as the scoped Schedule workspace.
+  const data = !failed && !accessFailure && loaded?.requestKey === requestKey ? loaded.result : null;
   const items = data?.items ?? [];
   const filterActive = !!(search.trim() || childId || service);
   return (

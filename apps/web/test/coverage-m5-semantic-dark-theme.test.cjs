@@ -107,6 +107,61 @@ describe('application-wide semantic light/dark palette',()=>{
     const ratio=(a,b)=>(Math.max(luminance(a),luminance(b))+.05)/(Math.min(luminance(a),luminance(b))+.05);
     expect(ratio(canvas,ink)).toBeGreaterThanOrEqual(4.5);
   });
+  it('ensures >=3px accessible keyboard input/select/combobox focus in staff dark mode',()=>{
+    const fs=require('node:fs'),path=require('node:path');
+    const sheet=fs.readFileSync(path.resolve(__dirname,'../src/app/globals.css'),'utf8');
+    expect(sheet).toContain(':is(input, select, textarea, [role="combobox"]):focus-visible');
+    expect(sheet).toContain('border-color: var(--tb-brand-action);');
+    expect(sheet).toContain('outline: 3px solid var(--tb-brand-action);');
+    expect(sheet).toContain('outline-width: 3px !important;');
+    expect(sheet).toContain('html :is(input, select, textarea, [role="combobox"]):focus-visible');
+    expect(sheet).toContain('outline: 3px solid var(--focus-ring, var(--tb-brand-action)) !important;');
+    expect(sheet).toContain('box-shadow: 0 0 0 3px var(--focus-ring, var(--tb-brand-action)) !important;');
+    expect(sheet).toContain('box-shadow: 0 0 0 3px var(--tb-brand-action) !important;');
+    expect(sheet).toContain('box-shadow: 0 0 0 3px var(--fam-focus) !important;');
+    expect(sheet).toContain('outline-style: solid !important;');
+    expect(sheet).toContain('outline-color: var(--tb-brand-action) !important;');
+    expect(sheet).toContain('outline-offset: 2px;');
+    expect(sheet).toContain('html[data-app-theme="dark"] .theme-family-auto');
+    expect(sheet).toContain('outline: 3px solid var(--fam-focus);');
+    expect(sheet).toContain('outline-color: var(--fam-focus) !important;');
+    // The UI controls previously reset the global keyboard outline to
+    // zero in Chromium even when :focus-visible and its ink were correct.
+    // Preserve the 3px width at the actual element, not only in CSS tokens.
+    for(const file of [
+      'components/auth/ProductShell.tsx',
+      'components/centers/kit.tsx',
+      'app/app/centers/page.tsx',
+    ]){
+      const source=fs.readFileSync(path.resolve(__dirname,'../src',file),'utf8');
+      expect(source).not.toContain('focus:outline-none');
+      expect(source).toContain('focus-visible:outline-[3px]');
+    }
+    // A source-level check alone is insufficient: the stylesheet must be
+    // parseable by the production PostCSS pipeline before any browser job.
+    const postcss=require('postcss');
+    expect(()=>postcss.parse(sheet,{from:'globals.css'})).not.toThrow();
+  });
+  it('real staff dark semantic utility overrides use canonical inherited tokens across shared screens',()=>{
+    const fs=require('node:fs'),path=require('node:path');
+    const sheet=fs.readFileSync(path.resolve(__dirname,'../src/app/globals.css'),'utf8');
+    for(const [name,token] of [
+      ['bg-surface-white','--tb-surface-white'],
+      ['bg-surface-subtle','--tb-surface-subtle'],
+      ['bg-brand-actionTint','--tb-brand-actionTint'],
+      ['text-brand-ink','--tb-brand-ink'],
+      ['text-brand-inkMuted','--tb-brand-inkMuted'],
+      ['text-brand-action','--tb-brand-action'],
+      ['border-border-light','--tb-border-light'],
+      ['border-border-strong','--tb-border-strong'],
+    ]){
+      expect(sheet).toContain('html[data-app-theme="dark"] .theme-clinical-auto .'+name+' {');
+      expect(sheet).toContain('var('+token+')');
+    }
+    expect(sheet).toContain('html[data-app-theme="dark"] .theme-clinical-auto.bg-canvas-clinical {');
+    expect(sheet).toContain('background-color: var(--tb-canvas-clinical);');
+    expect(sheet).not.toMatch(/\.theme-clinical-auto \.bg-surface-white\s*\{[^}]*#[0-9A-Fa-f]{6}/);
+  });
   it('switches both family and clinical semantic surfaces, never just a guardian header',()=>{
     const selector='html[data-app-theme="dark"] .theme-clinical-auto, html[data-app-theme="dark"] .theme-family-auto';
     const dark=appThemeCss[selector];

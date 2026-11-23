@@ -8,6 +8,8 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { PERSONAS, VIEWPORTS } from '../qa/m5-route-audit.mjs';
 import { observeKeyboardJourney, validateKeyboardJourneys } from './m5-keyboard-journey.mjs';
+import { observeSharedShell, buildSharedShellReceipt, SHARED_SHELL_OUTPUT }
+  from './m5-wu1-shared-shell.mjs';
 
 const BASE = 'http://127.0.0.1:3000';
 const ACCOUNT = Object.freeze({
@@ -112,6 +114,7 @@ export async function runBrowserAudit({ passwords, output }) {
   const dir = await mkdtemp(join(tmpdir(), 'therabridge-m5-audit-'));
   const observations = [];
   const keyboardJourneys = [];
+  const sharedShellObservations = [];
   try {
     for (const persona of PERSONAS) {
       const context = await browser.newContext({ viewport: { width: 390, height: 850 }, reducedMotion: 'reduce' });
@@ -180,6 +183,11 @@ export async function runBrowserAudit({ passwords, output }) {
               mainLandmarkStatus: dimensions.main ? 'PRESENT' : 'ABSENT',
               horizontalOverflow: dimensions.document > dimensions.viewport + 1 ? 'OBSERVED' : 'NONE',
             });
+            // The seven-role × five-width shell exercise is real browser
+            // interaction, not a source assertion or a fabricated manual pass.
+            if (route === '/app' && outcome === 'ROUTE_RENDERED') {
+              sharedShellObservations.push(await observeSharedShell(page, persona.id, width));
+            }
           }
         }
         keyboardJourneys.push(await observeKeyboardJourney(page, persona, { base: BASE, settle: observeSettledPage }));
@@ -203,6 +211,9 @@ export async function runBrowserAudit({ passwords, output }) {
       observations, keyboardJourneys,
     };
     validateBrowserReceipt(receipt);
+    const shellReceipt = buildSharedShellReceipt(sharedShellObservations);
+    await writeFile(SHARED_SHELL_OUTPUT, JSON.stringify(shellReceipt, null, 2) + '\n', {mode:0o600});
+    console.log('M5 WU1 real-browser seven-role shared-shell qualification:', JSON.stringify(shellReceipt.summary));
     await writeFile(output, JSON.stringify(receipt, null, 2) + '\n', { mode: 0o600 });
     console.log('M5-01 synthetic-browser observation:', JSON.stringify(receipt.summary));
     return receipt;

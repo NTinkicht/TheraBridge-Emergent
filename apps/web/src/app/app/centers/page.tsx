@@ -29,7 +29,7 @@ function CentersList({ onError }: { onError: (e: unknown) => void }) {
       <form onSubmit={search} role="search" className="flex max-w-md gap-2">
         <label htmlFor="center-search" className="sr-only">Search centers</label>
         <input id="center-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Name, address or city" maxLength={100} data-testid="centers-search-input"
-          className="min-h-[44px] min-w-0 flex-1 rounded-control border border-border-strong bg-surface-white px-3 text-[14px] focus:border-brand-action focus:outline-none focus:ring-[3px] focus:ring-brand-action/20" />
+          className="min-h-[44px] min-w-0 flex-1 rounded-control border border-border-strong bg-surface-white px-3 text-[14px] focus:border-brand-action focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus:ring-[3px] focus:ring-brand-action/20" />
         <button type="submit" aria-label="Search" data-testid="centers-search-button" className="grid min-h-[44px] w-11 place-items-center rounded-control bg-brand-action text-white hover:bg-brand-actionHover"><Search size={18} aria-hidden="true" /></button>
       </form>
       {failed && <ErrorState onRetry={() => void reload()} testId="centers-error" />}
