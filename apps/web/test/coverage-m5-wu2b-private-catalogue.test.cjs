@@ -1,3 +1,4 @@
+'use strict';
 // M5 WU2-B: real source-execution coverage for the new private-only catalogue.
 // Node's standalone node:test job is not part of the measured Web Istanbul
 // numerator. Keep these tests in the mandatory coverage-*.test.cjs runner.
