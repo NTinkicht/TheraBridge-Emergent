@@ -108,6 +108,35 @@ describe('real schedule route with scoped access and controlled mutations',()=>{
   expect(opsApi.therapists).toHaveBeenLastCalledWith('center-a',
    expect.objectContaining({search:'Leila',limit:100}));
  });
+ it('switching centers remounts schedule filters and ignores late child-directory results from the old center',async()=>{
+  let finishOld;
+  opsApi.children.mockImplementationOnce(()=>new Promise(resolve=>{finishOld=resolve;}))
+    .mockResolvedValueOnce({items:[{id:'child-b',firstName:'Synthetic',lastName:'Second',preferredName:'Second'}]});
+  await mount();
+  expect(opsApi.children).toHaveBeenCalledWith('center-a',{});
+  mockSession={...mockSession,activeContext:{...mockSession.activeContext,
+    centerId:'center-b',membershipId:'admin-b'}};
+  await act(async()=>{tree.update(h(SchedulePage));await Promise.resolve();});
+  expect(opsApi.children).toHaveBeenCalledWith('center-b',{});
+  expect(opsApi.appointments).toHaveBeenLastCalledWith('center-b',expect.any(Object));
+  const optionLabels=()=>get('schedule-child-filter').findAllByType('option').map(x=>x.props.children);
+  expect(optionLabels()).toContain('Second Second');
+  expect(optionLabels()).not.toContain('Alex Fictional');
+  await act(async()=>{finishOld({items:[{id:'child-a',firstName:'Fictional',
+    lastName:'Alex',preferredName:'Alex'}]});await Promise.resolve();});
+  expect(optionLabels()).toContain('Second Second');
+  expect(optionLabels()).not.toContain('Alex Fictional');
+ });
+ it('changing the active membership resets selected center filters and booking overlays',async()=>{
+  await mount();
+  await change('schedule-child-filter','child-a');
+  await click('book-appointment-button');
+  expect(get('synthetic-book-dialog')).toBeTruthy();
+  mockSession={...mockSession,activeContext:{...mockSession.activeContext,membershipId:'admin-replaced'}};
+  await act(async()=>{tree.update(h(SchedulePage));await Promise.resolve();});
+  expect(get('schedule-child-filter').props.value).toBe('');
+  expect(find('synthetic-book-dialog')).toHaveLength(0);
+ });
  it('permits manager booking and refreshes server data only after confirmed completion',async()=>{
   await mount();
   await click('book-appointment-button');
