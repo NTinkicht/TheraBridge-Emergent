@@ -131,10 +131,26 @@ export async function admitProductionMasterOnHost({
   if(!Buffer.isBuffer(masterBytes))deny();
   const snapshot=Buffer.from(masterBytes);
   try{
-    const provenance=await validateProductionMaster({evidence,submission,masterBytes:snapshot});
+    // Snapshot all caller-owned metadata BEFORE first await; the same rights
+    // evidence is used for preflight and the authenticated custody manifest.
+    const fixedEvidence=snapshotPlain(evidence,[
+      'providerId','providerTermsSha256','commercialLicenseSha256',
+    ]);
+    const fixedSubmission=snapshotPlain(submission,INPUT_KEYS);
+    const provenance=await validateProductionMaster({
+      evidence:fixedEvidence,submission:fixedSubmission,masterBytes:snapshot,
+    });
+    const productionProvenance={
+      referenceId:provenance.referenceId,
+      providerRunId:provenance.providerRunId,modelId:provenance.modelId,
+      modelVersion:provenance.modelVersion,costMicros:provenance.costMicros,
+      masterSha256:provenance.masterSha256,promptSha256:provenance.promptSha256,
+      sourceConceptSha256:provenance.sourceConceptSha256,
+      batchRevision:provenance.batchRevision,
+    };
     const staged=await stagePrivateIllustrationOnHost({
-      root,operatorId,evidence,referenceId:provenance.referenceId,
-      masterBytes:snapshot,nowMs,retentionDays,
+      root,operatorId,evidence:fixedEvidence,referenceId:provenance.referenceId,
+      masterBytes:snapshot,productionProvenance,nowMs,retentionDays,
     },env);
     if(!staged||staged.status!=='PRIVATE_QUARANTINED'||
        staged.assetCount!==3||staged.storageEncrypted!==true||
