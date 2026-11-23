@@ -791,6 +791,8 @@ jobs:
         run: node --test scripts/design/m5-wu2-browser-qualification.test.mjs
       - name: M5-14 operator runtime probe fail-closed offline tests (not production approval)
         run: node --test scripts/qa/m5-media-operator-probe.test.mjs
+      - name: M5 WU2-B private catalogue and 25-job generation/adversarial PNG intake contracts
+        run: node --test scripts/qa/m5-wu2b-private-generation.test.mjs
       - name: M5-13 therapist-reported concept acceptance must remain non-publication evidence
         run: node --test scripts/qa/m5-wu2a-therapist-attestation.test.mjs
       - name: M5-13 concept pack pinned hashes and tamper-denial contract
