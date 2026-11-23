@@ -220,7 +220,7 @@ export async function observeSharedShell(page, persona, width) {
       if (!el || document.activeElement!==el || !el.matches(':focus-visible')) return false;
       const style=getComputedStyle(el);
       return (style.outlineStyle==='solid' && parseFloat(style.outlineWidth)>=3) ||
-        /rgb\\([^)]*\\)\\s+0px\\s+0px\\s+0px\\s+[3-9](?:\\.\\d+)?px/.test(style.boxShadow);
+        /rgb\([^)]*\)\s+0px\s+0px\s+0px\s+[3-9](?:\.\d+)?px/.test(style.boxShadow);
     },focusId,{timeout:4000,polling:100});
   } catch (error) {
     if (error?.name!=='TimeoutError') throw error;
