@@ -177,3 +177,42 @@ test('operator host entrypoint refuses absent/remote ClamAV configuration even w
     }
   });
 });
+
+test('concurrent expirations never delete a bundle without its matching PURGED audit',async()=>{
+  await isolated(async root=>{
+    const secret=key(),now=1792800000000;
+    const receipts=[];
+    for(let i=0;i<4;i++){
+      const req=input(root,secret);
+      req.operatorId='synthetic-operator-'+i;
+      receipts.push(await stagePrivateIllustration(req));
+    }
+    const purges=receipts.map((item,i)=>purgeExpiredPrivateIllustration({
+      root,keyBase64:secret,bundleId:item.bundleId,
+      expectedManifestSha256:item.manifestSha256,
+      operatorId:'synthetic-operator-'+i,
+      nowMs:now+8*86400000,
+      clearance:{bundleId:item.bundleId,manifestSha256:item.manifestSha256,
+        reviewerId:'synthetic-retention-reviewer',noLegalHold:true},
+    }));
+    const done=await Promise.all(purges);
+    assert.equal(done.length,4);
+    assert(done.every(x=>x.status==='PURGED'));
+    assert.deepEqual(await readdir(join(root,'bundles')),[]);
+    const events=(await readFile(join(root,'custody-audit.jsonl'),'utf8'))
+      .split('\n').filter(Boolean).map(JSON.parse);
+    assert.equal(events.length,12);
+    assert.equal(events.filter(x=>x.event==='QUARANTINED').length,4);
+    assert.equal(events.filter(x=>x.event==='PURGE_REQUESTED').length,4);
+    assert.equal(events.filter(x=>x.event==='PURGED').length,4);
+    for(let i=0;i<events.length;i++){
+      assert.equal(events[i].seq,i+1);
+      assert.equal(events[i].previous,i===0?'0'.repeat(64):events[i-1].mac);
+    }
+    for(const item of receipts){
+      const requested=events.findIndex(e=>e.bundleId===item.bundleId&&e.event==='PURGE_REQUESTED');
+      assert.equal(events[requested+1].event,'PURGED');
+      assert.equal(events[requested+1].bundleId,item.bundleId);
+    }
+  });
+});
