@@ -787,8 +787,8 @@ jobs:
         run: node --test scripts/design/m5-browser-observe.test.mjs scripts/design/m5-keyboard-journey.test.mjs
       - name: M5 WU2 five-width role acceptance receipt adversarial tests
         run: node --test scripts/design/m5-wu2-browser-qualification.test.mjs
-      - name: M5 media draft security/inventory adversarial qualification contracts
-        run: node --test scripts/qa/m5-media-inventory.test.mjs
+      - name: M5 media style/security signature and real-inventory adversarial qualification contracts
+        run: node --test scripts/qa/m5-media-inventory.test.mjs scripts/qa/m5-media-approval-chain.test.mjs
       - name: M5 shared UX guardian five-width light/dark and screen-reader-honesty contract tests
         run: node --test scripts/design/m5-shared-guardian-browser.test.mjs scripts/design/m5-shared-ux-manual-acceptance.test.mjs
       - name: M5 major PR4 integrated real-browser receipt and false-approval adversarial tests
