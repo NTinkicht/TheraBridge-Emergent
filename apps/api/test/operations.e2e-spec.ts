@@ -317,6 +317,31 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     );
   }
 
+
+  it('M5 #13: a still-linked active guardian can revoke and purge a consented photo after child archival',async()=>{
+    const kid=(await post(h,c('children'),admin,child()).expect(201)).body.id;
+    const invited=(await post(h,c(`children/${kid}/guardians`),admin,{
+      displayName:'Synthetic Archive Guardian',email:'archive-photo@family.test',
+      relationship:'parent',invite:true,
+    }).expect(201)).body;
+    const parent=(await accept('archive-photo@family.test','Synthetic Archive Guardian')).s;
+    const link=await h.prisma.guardianLink.findFirstOrThrow({where:{id:invited.id,childId:kid,centerId}});
+    const childRecord=await h.prisma.child.findFirstOrThrow({where:{id:kid}});
+    const image=await h.prisma.privateMediaCandidate.create({data:{
+      centerId,childId:kid,kind:'CHILD_PHOTO',encryptedBytes:Buffer.alloc(50,9),
+      digestSha256:'e'.repeat(64),scannerName:'SyntheticScanner',scannerVersion:'test-v1',
+      width:1,height:1,status:'PRIVATE_READY',consentState:'GRANTED',
+      rightsState:'GUARDIAN_ATTESTED',consentedGuardianLinkId:link.id,
+      createdById:childRecord.createdById,
+    }});
+    await post(h,c(`children/${kid}/archive`),admin,{reason:'Synthetic moved away'}).expect(200);
+    expect(await h.prisma.privateMediaCandidate.count({where:{id:image.id}})).toBe(1);
+    const reply=await post(h,c(`family/children/${kid}/photo-consent/revoke`),parent,{});
+    expect([200,201]).toContain(reply.status);
+    expect(reply.body).toMatchObject({revoked:true,deleted:1});
+    expect(await h.prisma.privateMediaCandidate.count({where:{id:image.id}})).toBe(0);
+  });
+
   it('end-to-end: child → guardian invitation → therapist assignment → appointment → therapist day → parent portal', async () => {
     const coordinator = await staff('coord@ops.test', ['COORDINATOR']);
     const therapist = await staff('thera@ops.test', ['THERAPIST']);
