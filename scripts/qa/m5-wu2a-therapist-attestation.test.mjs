@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 import {ILLUSTRATION_REFERENCE_SLOTS,ILLUSTRATION_STYLE_STATE,ILLUSTRATION_STYLE_VERSION}
   from '../../apps/web/src/lib/illustration-style.mjs';
 import {REFERENCE_PINS} from './m5-wu2a-review-integrity.mjs';
@@ -52,6 +53,11 @@ function validate(x){
     assert.equal(item.productionAssetReview,'NOT_EVALUATED');
     assert.equal(item.publishEnabled,false);
   }
+  const pinnedSourceDigest=createHash('sha256')
+    .update(x.concepts.map(item=>item.referenceId+':'+item.sha256+'\n').join(''))
+    .digest('hex');
+  assert.equal(pinnedSourceDigest,
+    '19364dafdcaa38ca02a57165204fd20042c601201893c5e182345937b88189f5');
   return true;
 }
 test('reports therapist acceptance for each of 25 hash-bound concepts without granting publication',async()=>{
@@ -70,5 +76,6 @@ test('cannot upgrade user-reported concept feedback to authenticated human appro
     x=>{x.concepts.pop();},
     x=>{x.concepts[0].childName='private data';},
     x=>{x.concepts[0].referenceId='wrong';},
+    x=>{x.concepts[0].sha256='0'.repeat(64);},
   ]){const next=structuredClone(original);mutate(next);assert.throws(()=>validate(next));}
 });
