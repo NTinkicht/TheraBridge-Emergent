@@ -181,7 +181,7 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
           <div role="group" aria-label="Calendar view" className="inline-flex rounded-control border border-border-light p-0.5">
             {(['day', 'week'] as const).map((v) => (
               <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)} data-testid={`view-${v}`}
-                className={`min-h-[38px] rounded-[8px] px-3 text-[14px] font-semibold capitalize transition-colors ${view === v ? 'bg-brand-action text-white' : 'hover:bg-surface-subtle'}`}>{v}</button>
+                className={`min-h-11 rounded-[8px] px-3 text-[14px] font-semibold capitalize transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-action ${view === v ? 'bg-brand-action text-brand-actionOn' : 'hover:bg-surface-subtle'}`}>{v}</button>
             ))}
           </div>
           <Button size="sm" variant="secondary" aria-label={`Previous ${view}`} onClick={() => setAnchor(addDays(anchor, -step))} data-testid="week-prev"><ChevronLeft size={16} aria-hidden="true" /></Button>
