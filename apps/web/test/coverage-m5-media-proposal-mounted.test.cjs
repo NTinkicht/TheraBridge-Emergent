@@ -173,7 +173,7 @@ describe('actual mounted private media proposal workflow',()=>{
     const candidateRows=()=>tree.root.findAllByProps({'aria-label':'Private candidate status history'})
       .flatMap(ul=>ul.findAllByType('li'));
     expect(candidateRows()).toHaveLength(1);
-    expect(JSON.stringify(candidateRows()[0].toJSON())).toContain('Quarantined');
+    expect(candidateRows()[0].findByType('strong').children.join('')).toBe('Quarantined');
     await click('Reject draft');
     await change('Reason for rejection','Synthetic rights review found incorrect artwork');
     await click('Record rejection');
@@ -185,8 +185,8 @@ describe('actual mounted private media proposal workflow',()=>{
     await click('Inspect private candidate statuses');
     expect(api.candidates).toHaveBeenCalledTimes(2);
     expect(candidateRows()).toHaveLength(1);
-    expect(JSON.stringify(candidateRows()[0].toJSON())).toContain('Revoked');
-    expect(JSON.stringify(candidateRows()[0].toJSON())).not.toContain('Quarantined');
+    expect(candidateRows()[0].findByType('strong').children.join('')).toBe('Revoked');
+    expect(candidateRows()[0].findByType('strong').children.join('')).not.toBe('Quarantined');
   });
   it('can cancel rejection and preserves the original draft',async()=>{
     api.list.mockResolvedValue({items:[draft()],nextCursor:null,hasMore:false});
