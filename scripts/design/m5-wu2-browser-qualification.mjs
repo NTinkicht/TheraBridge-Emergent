@@ -132,6 +132,36 @@ export async function runWU2BrowserQualification({ passwords, output }) {
           assert.equal(dimensions.main, 1, 'Exactly one main landmark');
           assert(dimensions.document <= dimensions.viewport + 1,
             'WU2 horizontal overflow at ' + width + 'px');
+          // M5-06/07/08: screen-reader-oriented native roles/labels and real
+          // keyboard focus are observed on the three live role workspaces at
+          // every width. This is not a manual NVDA/VoiceOver certification.
+          const roleFocus = persona.role === 'THERAPIST' ? 'clinical-caseload-search'
+            : persona.role === 'COORDINATOR' ? 'schedule-therapist-search'
+            : 'governance-document-search';
+          const focusTarget = page.getByTestId(roleFocus);
+          await focusTarget.waitFor({ state: 'visible' });
+          await focusTarget.focus();
+          assert(await focusTarget.evaluate(el => document.activeElement === el),
+            'Role-scoped search must accept keyboard focus');
+          if (persona.role === 'COORDINATOR') {
+            const day=page.getByTestId('view-day'), week=page.getByTestId('view-week');
+            for (const toggle of [day,week]) {
+              const bounds=await toggle.boundingBox();
+              assert(bounds && bounds.height >= 43.5,
+                'Calendar view control must retain 44px target at ' + width + 'px');
+              assert(['true','false'].includes(await toggle.getAttribute('aria-pressed')),
+                'Coordinator day/week view must announce a pressed state');
+            }
+            assert.equal(await day.getAttribute('aria-pressed')==='true' || await week.getAttribute('aria-pressed')==='true',true);
+            assert.equal(await focusTarget.getAttribute('role'),'combobox',
+              'Therapist directory input must expose combobox semantics');
+          }
+          if (persona.role === 'CLINICAL_SUPERVISOR') {
+            assert.equal(await page.locator('main#main').count(), 1,
+              'Review queue keeps one accessible main landmark');
+            assert.equal(await page.locator('[data-testid^="family-message-thread"]').count(),0,
+              'Supervisor must never receive family conversations');
+          }
           // Owner M5 feedback: nested sticky calendar header must not cover a
           // keyboard-focused booking slot after scrolling. Use only an existing
           // synthetic coordinator schedule; never mutate an appointment.
