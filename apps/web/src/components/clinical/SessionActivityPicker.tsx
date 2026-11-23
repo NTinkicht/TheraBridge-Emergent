@@ -4,6 +4,7 @@ import { ImageOff, Search } from 'lucide-react';
 import { Field } from '@/components/auth/Field';
 import { serviceLabel } from '@/components/operations/BookDialog';
 import type { Template } from '@/lib/clinical';
+import { ILLUSTRATION_STYLE_VERSION } from '@/lib/illustration-style.mjs';
 
 /** Uses the existing authorized workspace template list; never loads remote or unapproved media. */
 export function SessionActivityPicker({ noteId, service, templates, query, onQuery, onAdd }: {
@@ -26,7 +27,8 @@ export function SessionActivityPicker({ noteId, service, templates, query, onQue
       {matching.map(t => <article key={t.id} className="flex min-w-0 flex-col overflow-hidden rounded-control border border-border-light bg-surface-white"
         data-testid={`session-activity-choice-${t.id}`}>
         <div className="flex aspect-[4/3] items-center justify-center border-b border-border-light bg-surface-subtle"
-          data-testid={`session-activity-choice-media-${t.id}`}>
+          data-testid={`session-activity-choice-media-${t.id}`}
+          data-illustration-style={ILLUSTRATION_STYLE_VERSION}>
           <div className="space-y-1 px-3 text-center text-[12px] text-brand-inkMuted">
             <ImageOff size={20} className="mx-auto" aria-hidden="true" />
             <span className="block">No approved illustration available</span>

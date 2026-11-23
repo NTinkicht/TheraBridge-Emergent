@@ -16,6 +16,8 @@ export function ActivityMediaCandidateHistory({ centerId, templateId, draftId }:
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [confirmRevoke, setConfirmRevoke] = useState<string | null>(null);
+  const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const generation = useRef(0);
   useEffect(() => () => { generation.current += 1; }, []);
@@ -49,19 +51,46 @@ export function ActivityMediaCandidateHistory({ centerId, templateId, draftId }:
       if (generation.current === current) setBusy(false);
     }
   }
+  async function revoke(id: string) {
+    if (busy || confirmRevoke !== id) return;
+    const current = ++generation.current;
+    setBusy(true); setError(''); setNotice('');
+    // Hide all earlier metadata immediately while the server re-checks role,
+    // draft ownership and the candidate's current quarantine state.
+    setItems([]); setCursor(null); setHasMore(false);
+    try {
+      const result = await activityMediaDrafts.revokeCandidate(centerId, templateId, draftId, id);
+      if (generation.current !== current) return;
+      if (result.id !== id || result.status !== 'REVOKED' ||
+          result.readEnabled !== false || result.publishEnabled !== false ||
+          result.clinicalReleaseEnabled !== false) throw new Error('Unexpected revocation response');
+      setExpanded(false); setConfirmRevoke(null);
+      setNotice('Private candidate revoked. Reopen to inspect current status.');
+    } catch {
+      if (generation.current === current) {
+        setError('Could not revoke the private candidate. Access may have changed; reopen to refresh.');
+        setConfirmRevoke(null);
+      }
+    } finally {
+      if (generation.current === current) setBusy(false);
+    }
+  }
   function toggle() {
     if (expanded) {
       generation.current += 1;
       setExpanded(false); setBusy(false); setError('');
+      setConfirmRevoke(null); setNotice('');
       setItems([]); setCursor(null); setHasMore(false);
     } else {
       // Do not display stale rows while rechecking permissions.
       setItems([]); setCursor(null); setHasMore(false);
+      setConfirmRevoke(null); setNotice('');
       setExpanded(true);
       void load(true);
     }
   }
   return <div className="mt-3 space-y-2" data-testid={`media-candidate-history-${draftId}`}>
+    {notice && <p role="status" className="text-[12px] text-status-success">{notice}</p>}
     <Button variant="secondary" size="sm" aria-expanded={expanded} onClick={toggle}>
       {expanded ? 'Hide private candidate statuses' : 'Inspect private candidate statuses'}
     </Button>
@@ -80,6 +109,17 @@ export function ActivityMediaCandidateHistory({ centerId, templateId, draftId }:
           {' · '}Template v{item.templateVersion ?? 'unknown'}
           {' · '}{item.width}×{item.height} px
           {item.revokedAt ? ' · revoked' : ''}
+          {item.status === 'QUARANTINED' && <div className="mt-2 flex flex-wrap gap-2">
+            {confirmRevoke !== item.id
+              ? <Button variant="secondary" size="sm" disabled={busy}
+                  onClick={() => setConfirmRevoke(item.id)}>Revoke private candidate</Button>
+              : <>
+                <Button variant="secondary" size="sm" disabled={busy}
+                  onClick={() => void revoke(item.id)}>Confirm revocation</Button>
+                <Button variant="secondary" size="sm" disabled={busy}
+                  onClick={() => setConfirmRevoke(null)}>Cancel revocation</Button>
+              </>}
+          </div>}
         </li>)}
       </ul>}
       {!error && hasMore && <Button variant="secondary" size="sm" disabled={busy}

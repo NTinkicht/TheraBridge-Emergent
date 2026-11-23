@@ -26,7 +26,7 @@ function setup(override: Record<string, unknown> = {}) {
     $queryRaw: jest.fn(async () => [{ id: templateId }]),
     activityTemplate: { findFirst },
     membership: { findFirst: jest.fn(async () => ({ id: actor.membershipId })) },
-    activityMediaDraft: { create, updateMany, findMany: jest.fn(async (_args?: unknown): Promise<{ id: string }[]> => []), findFirst: jest.fn(async () => ({ id: draftId })) },
+    activityMediaDraft: { create, updateMany, findMany: jest.fn(async (_args?: unknown): Promise<{ id: string }[]> => []), findFirst: jest.fn(async () => ({ id: draftId, createdById: userId })) },
     privateMediaCandidate: {
       updateMany: jest.fn(async () => ({ count: 2 })),
       findFirst: jest.fn(async () => ({ id: candidateId })),
@@ -71,6 +71,17 @@ describe('M5-14 activity illustration draft boundary', () => {
       await expect(service.propose(centerId, actor, templateId, {
         ...dto, stepNumber,
       })).rejects.toBeInstanceOf(UnprocessableEntityException);
+      expect(create).not.toHaveBeenCalled();
+    }
+  });
+
+  it('rejects any divergent illustration style before a DB transaction or draft write', async () => {
+    for (const styleVersion of ['legacy-v0', 'm5-direction-b-illustration-v1', '', 'm5-b-v2']) {
+      const { service, create, prisma } = setup();
+      await expect(service.propose(centerId, actor, templateId, {
+        ...dto, styleVersion,
+      } as never)).rejects.toBeInstanceOf(UnprocessableEntityException);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
       expect(create).not.toHaveBeenCalled();
     }
   });
@@ -164,6 +175,70 @@ describe('M5-14 activity illustration draft boundary', () => {
     const { service, updateMany } = setup();
     updateMany.mockResolvedValueOnce({ count: 0 });
     await expect(service.reject(centerId, actor, templateId, draftId, { version: 1, reason: 'Invalid reference licensing' })).rejects.toBeInstanceOf(ConflictException);
+  });
+});
+
+describe('WU2-A single candidate emergency revocation never grants reads', () => {
+  it('revokes only one exact scoped quarantined candidate in the same locked transaction and audits', async () => {
+    const { service, tx } = setup();
+    tx.activityMediaDraft.findFirst.mockResolvedValueOnce({
+      id: draftId, createdById: userId,
+    });
+    tx.privateMediaCandidate.updateMany.mockResolvedValueOnce({count:1});
+    const receipt = await service.revokeCandidate(centerId, actor, templateId, draftId, candidateId);
+    expect(receipt).toEqual({
+      id: candidateId, status:'REVOKED',readEnabled:false,publishEnabled:false,
+      clinicalReleaseEnabled:false,
+    });
+    expect(tx.privateMediaCandidate.updateMany).toHaveBeenCalledWith({
+      where: {id:candidateId,centerId,templateId,mediaDraftId:draftId,
+        kind:'ACTIVITY_IMAGE',status:'QUARANTINED',revokedAt:null},
+      data: {status:'REVOKED',revokedAt:now},
+    });
+    expect(tx.centerEvent.create).toHaveBeenCalledWith(expect.objectContaining({
+      data:expect.objectContaining({type:'media.private_candidate_revoked',centerId}),
+    }));
+    const locked=(tx.$queryRaw.mock.calls as unknown as Array<[readonly string[]]>)
+      .map(([parts])=>parts.join(' '));
+    expect(locked.some(q=>q.includes('activity_media_draft')&&q.includes('FOR UPDATE'))).toBe(true);
+    expect(JSON.stringify(receipt)).not.toMatch(/url|key|digest|encrypted|bytes|path/i);
+  });
+  it('denies foreign or missing draft before attempting any candidate mutation',async()=>{
+    const {service,tx}=setup();
+    tx.activityMediaDraft.findFirst.mockResolvedValueOnce(null as never);
+    await expect(service.revokeCandidate(centerId,actor,templateId,draftId,candidateId))
+      .rejects.toBeInstanceOf(NotFoundException);
+    expect(tx.privateMediaCandidate.updateMany).not.toHaveBeenCalled();
+    expect(tx.centerEvent.create).not.toHaveBeenCalled();
+  });
+  it('enforces original author even on an authorized therapist-owned template',async()=>{
+    const {service,tx}=setup();
+    tx.activityMediaDraft.findFirst.mockResolvedValueOnce({
+      id:draftId,createdById:'another-therapist',
+    });
+    await expect(service.revokeCandidate(centerId,actor,templateId,draftId,candidateId))
+      .rejects.toBeInstanceOf(ForbiddenException);
+    expect(tx.privateMediaCandidate.updateMany).not.toHaveBeenCalled();
+  });
+  it('conflicts for already revoked or wrong-scope candidate and does not audit success',async()=>{
+    const {service,tx}=setup();
+    tx.activityMediaDraft.findFirst.mockResolvedValueOnce({
+      id:draftId,createdById:userId,
+    });
+    tx.privateMediaCandidate.updateMany.mockResolvedValueOnce({count:0});
+    await expect(service.revokeCandidate(centerId,actor,templateId,draftId,candidateId))
+      .rejects.toBeInstanceOf(ConflictException);
+    expect(tx.centerEvent.create).not.toHaveBeenCalled();
+  });
+  it('fails the whole transaction on audit failure, never claims revocation success',async()=>{
+    const {service,tx}=setup();
+    tx.activityMediaDraft.findFirst.mockResolvedValueOnce({
+      id:draftId,createdById:userId,
+    });
+    tx.privateMediaCandidate.updateMany.mockResolvedValueOnce({count:1});
+    tx.centerEvent.create.mockRejectedValueOnce(new Error('Audit unavailable'));
+    await expect(service.revokeCandidate(centerId,actor,templateId,draftId,candidateId))
+      .rejects.toThrow('Audit unavailable');
   });
 });
 

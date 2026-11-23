@@ -195,8 +195,11 @@ describe('TB-EM-001 checkpoint B: tenancy, roles, deny-by-default authorization 
         'POST /auth/password/change', 'POST /auth/password/forgot', 'POST /auth/password/reset',
         'POST /center-applications',
         'POST /centers/:centerId/activities', 'POST /centers/:centerId/activities/:templateId/duplicate',
-        // M5-14: explicit metadata proposal/rejection only; no media approval or publishing.
-        'POST /centers/:centerId/activities/:templateId/media-drafts', 'POST /centers/:centerId/activities/:templateId/media-drafts/:draftId/candidates', 'POST /centers/:centerId/activities/:templateId/media-drafts/:draftId/reject',
+        // M5-14: only private metadata, quarantine, exact-candidate revoke and
+        // draft rejection. No media read, promotion, approval or publication.
+        'POST /centers/:centerId/activities/:templateId/media-drafts', 'POST /centers/:centerId/activities/:templateId/media-drafts/:draftId/candidates',
+        'POST /centers/:centerId/activities/:templateId/media-drafts/:draftId/candidates/:candidateId/revoke',
+        'POST /centers/:centerId/activities/:templateId/media-drafts/:draftId/reject',
         'POST /centers/:centerId/appointments', 'POST /centers/:centerId/appointments/:appointmentId/status',
         'POST /centers/:centerId/children', 'POST /centers/:centerId/children/:childId/archive', 'POST /centers/:centerId/children/:childId/assignments',
         'POST /centers/:centerId/children/:childId/assignments/:assignmentId/end', 'POST /centers/:centerId/children/:childId/guardians',
