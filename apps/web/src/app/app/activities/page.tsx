@@ -22,8 +22,10 @@ function NewTemplate({ centerId, onDone, onError }: { centerId: string; onDone: 
   const save = async () => {
     setErr(null);
     try {
-      await clinicalApi.createTemplate(centerId, { title: f.title, service: f.service, ageBand: f.ageBand, minutes: Number(f.minutes), category: f.category.trim() || undefined,
-        skill: f.skill.trim() || undefined, equipment: lines(f.equipment),
+      await clinicalApi.createTemplate(centerId, { title: f.title, service: f.service, ageBand: f.ageBand, minutes: Number(f.minutes),
+        ...(f.category.trim() ? { category: f.category.trim() } : {}),
+        ...(f.skill.trim() ? { skill: f.skill.trim() } : {}),
+        ...(lines(f.equipment).length ? { equipment: lines(f.equipment) } : {}),
         materials: lines(f.materials), steps: lines(f.steps), safety: lines(f.safety) });
       setF({ ...f, title: '', materials: '', steps: '', safety: '' });
       onDone();
@@ -71,8 +73,10 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
     category.trim(), skill.trim(), equipment.trim()]);
   const fetcher = useCallback(async () => ({ ...await clinicalApi.templates(centerId, {
     search: search.trim(), service: specialty === 'all' ? undefined : specialty,
-    ownership, limit: 100, category: category.trim(), skill: skill.trim(),
-    equipment: equipment.trim(),
+    ownership, limit: 100,
+    ...(category.trim() ? { category: category.trim() } : {}),
+    ...(skill.trim() ? { skill: skill.trim() } : {}),
+    ...(equipment.trim() ? { equipment: equipment.trim() } : {}),
   }), queryKey }), [centerId, search, specialty, ownership, category, skill, equipment, queryKey]);
   const { data, failed, reload } = useLoad(fetcher, onError);
   const first = data?.queryKey === queryKey ? data : null;
@@ -91,7 +95,10 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
     try {
       const next = await clinicalApi.templates(centerId, { offset: nextOffset, limit: 100,
         search: search.trim(), service: specialty === 'all' ? undefined : specialty,
-        ownership, category: category.trim(), skill: skill.trim(), equipment: equipment.trim() });
+        ownership,
+        ...(category.trim() ? { category: category.trim() } : {}),
+        ...(skill.trim() ? { skill: skill.trim() } : {}),
+        ...(equipment.trim() ? { equipment: equipment.trim() } : {}) });
       setAdditional(prev => ({ key: queryKey,
         items: [...(prev?.key === queryKey ? prev.items : []), ...next.items],
         hasMore: next.hasMore, nextOffset: next.nextOffset }));
