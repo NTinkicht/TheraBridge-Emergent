@@ -161,6 +161,13 @@ export async function preparePrivateDerivatives({evidence,referenceId,masterByte
       imageReadEnabled:false,guardianReadEnabled:false,publishEnabled:false,
       clinicalGate:'NO_GO_G2_G2b',
     });
-    return Object.freeze({receipt,squareBytes:square,cardBytes:card});
+    // Byte fields are intentionally NON-enumerable so ordinary structured
+    // status logging cannot accidentally serialize private illustration data.
+    const result={receipt};
+    Object.defineProperties(result,{
+      squareBytes:{value:square,enumerable:false},
+      cardBytes:{value:card,enumerable:false},
+    });
+    return Object.freeze(result);
   }catch{deny();}
 }
