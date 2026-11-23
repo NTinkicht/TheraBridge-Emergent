@@ -64,7 +64,7 @@ export function validateSharedShellReceipt(receipt) {
  * tokens. This is an observed ring, not a source-level token assertion. */
 export function parseOpaqueFocusShadow(value) {
   if (typeof value !== 'string') return null;
-  const match=/^(rgb\\(\\s*\\d{1,3},\\s*\\d{1,3},\\s*\\d{1,3}\\s*\\))\\s+0px\\s+0px\\s+0px\\s+(\\d+(?:\\.\\d+)?)px$/.exec(value);
+  const match=/^(rgb\(\s*\d{1,3},\s*\d{1,3},\s*\d{1,3}\s*\))\s+0px\s+0px\s+0px\s+(\d+(?:\.\d+)?)px$/.exec(value);
   if (!match) return null;
   const width=Number(match[2]);
   if (!Number.isFinite(width) || width < 3) return null;
