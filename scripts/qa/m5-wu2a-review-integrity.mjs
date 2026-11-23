@@ -1,6 +1,6 @@
 import {createHash} from 'node:crypto';
 import {readFile,lstat} from 'node:fs/promises';
-import {join,resolve} from 'node:path';
+import {join,resolve,dirname,parse} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {ILLUSTRATION_REFERENCE_SLOTS,ILLUSTRATION_STYLE_VERSION}
   from '../../apps/web/src/lib/illustration-style.mjs';
@@ -27,8 +27,20 @@ async function safeRead(root,name,max){
 export async function checkReferencePack(root,pins=REFERENCE_PINS){
   try {
     if(typeof root!=='string'||!root.startsWith('/'))throw new ReferenceCheckError();
-    const directory=resolve(root),st=await lstat(directory);
-    if(!st.isDirectory()||st.isSymbolicLink())throw new ReferenceCheckError();
+    const directory=resolve(root);
+    // resolve() normalizes strings; it does NOT detect ancestor symlinks.
+    // Walk the literal absolute path to the filesystem root with lstat()
+    // before reading any manifest or image to forbid alias traversal.
+    let component=directory;
+    const fsRoot=parse(directory).root;
+    for (;;) {
+      const st=await lstat(component);
+      if(!st.isDirectory()||st.isSymbolicLink())throw new ReferenceCheckError();
+      if(component===fsRoot)break;
+      const parent=dirname(component);
+      if(parent===component)throw new ReferenceCheckError();
+      component=parent;
+    }
     const bytes=await safeRead(directory,'reference-manifest.json',32768);
     if(hash(bytes)!==pins.manifest)throw new ReferenceCheckError();
     const m=JSON.parse(bytes.toString('utf8'));

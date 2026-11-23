@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {mkdtemp,writeFile,rm,symlink} from 'node:fs/promises';
-import {join} from 'node:path';import {tmpdir} from 'node:os';
+import {join,dirname,basename} from 'node:path';import {tmpdir} from 'node:os';
 import {createHash} from 'node:crypto';
 import {ILLUSTRATION_REFERENCE_SLOTS} from '../../apps/web/src/lib/illustration-style.mjs';
 import {checkReferencePack,REFERENCE_PINS,ReferenceCheckError} from './m5-wu2a-review-integrity.mjs';
@@ -33,6 +33,20 @@ test('25 synthetic concepts can verify but never approve',async()=>{
   assert.equal(x.verified,25);assert.equal(x.published,false);
   assert.equal(x.clinicalGate,'NO_GO_G2_G2b');
  }finally{await rm(f.root,{recursive:true,force:true});}
+});
+test('intermediate symlinked ancestor never qualifies a pinned reference pack',async()=>{
+  const f=await fixture(),base=await mkdtemp(join(tmpdir(),'m5-ancestor-'));
+  try {
+    // The leaf pack directory is real; only its intermediate parent is a
+    // symlink. Checking lstat(leaf) alone falsely accepted this path.
+    await symlink(dirname(f.root),join(base,'intermediate'));
+    const alias=join(base,'intermediate',basename(f.root));
+    await assert.rejects(checkReferencePack(alias,f.pins),ReferenceCheckError);
+    assert.equal((await checkReferencePack(f.root,f.pins)).verified,25);
+  } finally {
+    await rm(base,{recursive:true,force:true});
+    await rm(f.root,{recursive:true,force:true});
+  }
 });
 test('unpinned content, damaged image and symlink fail closed',async()=>{
  for(const mutate of [
