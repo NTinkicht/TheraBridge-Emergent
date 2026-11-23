@@ -1142,7 +1142,8 @@ try {
     await page.getByTestId('report-evidence-assist').waitFor();
     // M3-AI02: offline fictional report proposals never mutate clinical text
     // until a therapist explicitly inserts an edited draft; discard is lossless.
-    await page.getByTestId('synthetic-report-assist').waitFor();
+    await page.getByTestId('report-assist-disclosure-toggle').click();
+    await page.getByTestId('synthetic-report-assist').waitFor({state:'visible'});
     const beforeProposal = await page.getByTestId('report-section-assessment').inputValue();
     await page.getByTestId('synthetic-report-generate').click();
     assert((await page.getByTestId('synthetic-report-proposal').innerText()).includes('REFERENCED_NOT_VERIFIED'));
