@@ -174,6 +174,13 @@ test('inventory rejects duplicates and forged statuses, never promotes 25 receip
   ];
   for(const bad of rejected)await assert.rejects(reconcileProductionAssets(evidence(),bad),ProductionAssetError);
   await assert.rejects(reconcileProductionAssets(evidence(),Array(26).fill(entries[0])),ProductionAssetError);
+  const coercion={toString(){throw Error('unsafe coercion');}};
+  await assert.rejects(reconcileProductionAssets(evidence(),[
+    {...entries[0],masterSha256:coercion},
+  ]),ProductionAssetError);
+  await assert.rejects(reconcileProductionAssets(evidence(),[
+    {...entries[0],bundleId:coercion},
+  ]),ProductionAssetError);
 });
 test('operator-only host stage denies missing key/AV; cannot simulate a successful production release',async()=>{
   const {submission,png}=await valid();
