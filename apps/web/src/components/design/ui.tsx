@@ -8,7 +8,7 @@ type Size = 'sm' | 'md' | 'lg';
 
 const VARIANTS: Record<Tone, Record<Variant, string>> = {
   clinical: {
-    primary: 'bg-brand-action text-white shadow-sm hover:bg-brand-actionHover',
+    primary: 'bg-brand-action text-brand-actionOn shadow-sm hover:bg-brand-actionHover',
     secondary: 'border border-border-light bg-surface-white text-brand-ink hover:border-border-strong hover:bg-surface-subtle',
     ghost: 'text-brand-action hover:bg-brand-actionTint',
     danger: 'bg-status-danger text-white hover:brightness-95',
