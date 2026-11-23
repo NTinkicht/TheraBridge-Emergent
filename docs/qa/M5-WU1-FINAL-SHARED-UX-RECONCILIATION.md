@@ -40,3 +40,6 @@ The initial dark-token rebinding remains under real browser evaluation: CI saw d
 
 ## 2026-11-23 — Dark browser CSS settlement and Codex P2 focus repair
 Chromium confirmed shell AND header inherit the correct dark token, the canonical dark CSS selector matches and the override CSS rule is loaded; however the instantaneous computed-color sample still read light while theme dataset had already updated. The browser test now waits (hard 7-second deadline) for actual computed header/canvas colors to match their exact approved CSS variable values, in both modes; it does NOT accept theme attributes as proof. Codex P2 about resting dark border specificity hiding focus for staff inputs/selects/comboboxes is fixed by a 3px high-contrast action border/ring, with a real browser 3:1 focus-contrast assertion. CI and human acceptance remain separate.
+
+### Guardian focus non-regression note
+The same actual-browser focus assertion also covers the guardian shared navigation: its existing mobile select uses `focus:outline-none` and a low-alpha ring, while its desktop search uses 2px outline. Added a separate `theme-family-auto` 3px focus rule using the **approved family teal --fam-focus** token, not the staff action blue. This is a shared semantic accessibility repair, not a new guardian permission or clinical feature.

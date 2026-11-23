@@ -77,6 +77,15 @@ html[data-app-theme="dark"] .theme-clinical-auto
   outline: 3px solid var(--tb-brand-action);
   outline-offset: 2px;
 }
+/* The guardian's mobile selector has the same focus:outline-none + low-alpha
+   ring pattern. Preserve its distinct approved teal focus token; never
+   use the clinical action-blue token to force a family visual identity. */
+html[data-app-theme="dark"] .theme-family-auto
+  :is(input, select, textarea, [role="combobox"]):focus-visible {
+  border-color: var(--fam-focus);
+  outline: 3px solid var(--fam-focus);
+  outline-offset: 2px;
+}
 
 .tnum {
   font-variant-numeric: tabular-nums;
