@@ -275,7 +275,7 @@ export class ChildrenService {
       width:image.width,height:image.height,publicRelease:false as const};
   }
 
-  private async linkedGuardian(centerId:string,childId:string,v:Viewer) {
+  private async linkedGuardian(centerId:string,childId:string,v:Viewer,allowArchived=false) {
     if(v.role!=='GUARDIAN')throw new ForbiddenException('Guardian-linked child access required.');
     // Cached session permissions alone cannot authorize sensitive media reads.
     const membership=await this.prisma.membership.findFirst({where:{
@@ -285,13 +285,13 @@ export class ChildrenService {
     if(!membership)throw new ForbiddenException('Your guardian workspace access has changed.');
     const link=await this.prisma.guardianLink.findFirst({where:{
       centerId,childId,userId:v.userId,removedAt:null,
-      child:{status:'ACTIVE',centerId},
+      ...(allowArchived ? {} : {child:{status:'ACTIVE' as const,centerId}}),
     },select:{id:true}});
     if(!link)throw new NotFoundException('Linked child not found');
     return link;
   }
 
-  private async lockedGuardianPhotoWrite(tx:Tx,centerId:string,childId:string,v:Viewer) {
+  private async lockedGuardianPhotoWrite(tx:Tx,centerId:string,childId:string,v:Viewer,allowArchived=false) {
     // Revocation of membership/role and removal of the guardian-child link
     // must serialize with consent and erasure, not merely the HTTP guard.
     await lockCenter(tx,centerId);
@@ -300,7 +300,7 @@ export class ChildrenService {
       AND user_id=${v.userId}::uuid AND removed_at IS NULL FOR UPDATE`;
     const link=await tx.guardianLink.findFirst({where:{
       centerId,childId,userId:v.userId,removedAt:null,
-      child:{status:'ACTIVE',centerId},
+      ...(allowArchived ? {} : {child:{status:'ACTIVE' as const,centerId}}),
     },select:{id:true}});
     if(!link)throw new NotFoundException('Linked child not found');
     return link;
@@ -375,9 +375,10 @@ export class ChildrenService {
 
   async guardianRevokePhoto(centerId:string,childId:string,v:Viewer) {
     if(v.role!=='GUARDIAN') throw new ForbiddenException('Only a linked guardian may revoke photo consent.');
-    await this.linkedGuardian(centerId,childId,v);
+    // Erasure remains available even after a child record was archived.
+    await this.linkedGuardian(centerId,childId,v,true);
     return this.prisma.$transaction(async tx=>{
-      const link=await this.lockedGuardianPhotoWrite(tx,centerId,childId,v);
+      const link=await this.lockedGuardianPhotoWrite(tx,centerId,childId,v,true);
       // Hard delete ciphertext to revoke read and reduce retention risk.
       const purged=await tx.privateMediaCandidate.deleteMany({where:{
         centerId,childId,kind:'CHILD_PHOTO',status:{in:['PRIVATE_READY','QUARANTINED']},
