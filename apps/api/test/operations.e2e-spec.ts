@@ -246,6 +246,77 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     }
   );
 
+
+  for(const action of ['CONSENT','REVOKE'] as const) {
+    it.each(['ROLE_REMOVED','SUSPENDED','REVOKED','LINK_REMOVED'] as const)(
+      'M5 #13 Codex P1: guardian %s never commits after %s between precheck and lock',
+      async (revocation) => {
+        const kid=(await post(h,c('children'),admin,child()).expect(201)).body.id;
+        const email='late-guardian-photo@family.test';
+        const guardian=(await post(h,c(`children/${kid}/guardians`),admin,{
+          displayName:'Synthetic Guardian',email,relationship:'parent',invite:true,
+        }).expect(201)).body;
+        const parent=(await accept(email,'Synthetic Guardian')).s;
+        const membershipId=parent.body.activeContext.membershipId;
+        const link=await h.prisma.guardianLink.findFirstOrThrow({where:{
+          id:guardian.id,centerId,childId:kid,
+        }});
+        const saved=await h.prisma.privateMediaCandidate.create({data:{
+          centerId,childId:kid,kind:'CHILD_PHOTO',encryptedBytes:Buffer.alloc(50,7),
+          digestSha256:'d'.repeat(64),scannerName:'SyntheticScanner',
+          scannerVersion:'test-v1',width:1,height:1,
+          status:action==='CONSENT'?'QUARANTINED':'PRIVATE_READY',
+          consentState:action==='CONSENT'?'PENDING':'GRANTED',
+          rightsState:action==='CONSENT'?'UNVERIFIED':'GUARDIAN_ATTESTED',
+          ...(action==='REVOKE'?{consentedGuardianLinkId:link.id}:{}),
+          createdById:(await h.prisma.child.findFirstOrThrow({where:{id:kid}})).createdById,
+        }});
+        const svc=h.app.get(ChildrenService);
+        const real=(svc as any).linkedGuardian.bind(svc);
+        let prechecked!:()=>void;
+        let release!:()=>void;
+        const reached=new Promise<void>(resolve=>{prechecked=resolve;});
+        const continueRequest=new Promise<void>(resolve=>{release=resolve;});
+        const hold=jest.spyOn(svc as any,'linkedGuardian')
+          .mockImplementation(async (...args:any[])=>{
+            const result=await real(...args);
+            prechecked();
+            await continueRequest;
+            return result;
+          });
+        try {
+          const path=action==='CONSENT'
+            ?c(`family/children/${kid}/photo-candidates/${saved.id}/consent`)
+            :c(`family/children/${kid}/photo-consent/revoke`);
+          const expected=revocation==='LINK_REMOVED'?404:403;
+          const request=post(h,path,parent,action==='CONSENT'?{consent:true}:{})
+            .expect(expected).then(()=>undefined);
+          await reached;
+          if(revocation==='ROLE_REMOVED'){
+            await h.prisma.roleAssignment.deleteMany({where:{membershipId,role:'GUARDIAN'}});
+          } else if(revocation==='LINK_REMOVED'){
+            await h.prisma.guardianLink.updateMany({where:{id:link.id,centerId,childId:kid,removedAt:null},
+              data:{removedAt:new Date(),isPrimary:false}});
+          } else {
+            await h.prisma.membership.update({where:{id:membershipId},
+              data:{status:revocation==='SUSPENDED'?'SUSPENDED':'REVOKED'}});
+          }
+          release();
+          await request;
+          const after=await h.prisma.privateMediaCandidate.findFirstOrThrow({where:{id:saved.id}});
+          expect(after.status).toBe(action==='CONSENT'?'QUARANTINED':'PRIVATE_READY');
+          expect(after.consentState).toBe(action==='CONSENT'?'PENDING':'GRANTED');
+          expect(await h.prisma.centerEvent.count({where:{
+            centerId,type:{in:['child.photo_private_consent','child.photo_consent_revoked']},
+          }})).toBe(0);
+        } finally {
+          release();
+          hold.mockRestore();
+        }
+      }
+    );
+  }
+
   it('end-to-end: child → guardian invitation → therapist assignment → appointment → therapist day → parent portal', async () => {
     const coordinator = await staff('coord@ops.test', ['COORDINATOR']);
     const therapist = await staff('thera@ops.test', ['THERAPIST']);
