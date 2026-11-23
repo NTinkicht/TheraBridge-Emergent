@@ -97,7 +97,15 @@ test('M5-17 review denominator cannot fabricate 100% publication or an approved 
   }
 }));
 test('M5-17 only executes on isolated CI demo DB and prevents malformed identity',async()=>{
-  await assert.rejects(()=>buildSyntheticMediaInventory(mockDb().db,C));
+  // The workflow running this test itself has a synthetic CI DB env, so
+  // explicitly override it: never assume the ambient runner is production.
+  const existing=process.env.DEPLOYMENT_ENV;
+  process.env.DEPLOYMENT_ENV='production';
+  try { await assert.rejects(()=>buildSyntheticMediaInventory(mockDb().db,C)); }
+  finally {
+    if(existing===undefined)delete process.env.DEPLOYMENT_ENV;
+    else process.env.DEPLOYMENT_ENV=existing;
+  }
   await withDemo(async()=>{
     await assert.rejects(()=>buildSyntheticMediaInventory(mockDb().db,'../escape'));
     const f=fixtures();f.templates.push({...f.templates[0]});
