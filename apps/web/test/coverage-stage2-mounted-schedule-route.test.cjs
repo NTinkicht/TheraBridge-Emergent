@@ -127,6 +127,37 @@ describe('real schedule route with scoped access and controlled mutations',()=>{
   expect(optionLabels()).toContain('Second Second');
   expect(optionLabels()).not.toContain('Alex Fictional');
  });
+ it('fails closed with an empty child selector when the current center directory rejects a request',async()=>{
+  opsApi.children.mockRejectedValueOnce({status:403,message:'Synthetic scope revoked'});
+  await mount();
+  expect(opsApi.children).toHaveBeenCalledWith('center-a',{});
+  const options=get('schedule-child-filter').findAllByType('option');
+  expect(options.map(x=>x.props.value)).toEqual(['']);
+  expect(options.map(x=>x.props.children)).toEqual(['All children']);
+  expect(get('schedule-child-filter').props.value).toBe('');
+ });
+ it('ignores an old-center directory rejection after a new center has already populated authorized children',async()=>{
+  let failOld;
+  opsApi.children.mockImplementationOnce(()=>new Promise((_,reject)=>{failOld=reject;}))
+    .mockResolvedValueOnce({items:[{id:'only-new',firstName:'Current',lastName:'Center',preferredName:'Current'}]});
+  await mount();
+  mockSession={...mockSession,activeContext:{...mockSession.activeContext,
+    centerId:'center-new',membershipId:'admin-new'}};
+  await act(async()=>{tree.update(h(SchedulePage));await Promise.resolve();});
+  expect(get('schedule-child-filter').findAllByType('option').map(x=>x.props.value)).toEqual(['','only-new']);
+  await act(async()=>{failOld(new Error('old center revoked'));await Promise.resolve();});
+  expect(get('schedule-child-filter').findAllByType('option').map(x=>x.props.value)).toEqual(['','only-new']);
+  expect(opsApi.appointments).toHaveBeenLastCalledWith('center-new',expect.objectContaining({childId:undefined}));
+ });
+ it('a current scoped child-directory response after loading only exposes current authorized children',async()=>{
+  let returnAuthorized;
+  opsApi.children.mockImplementationOnce(()=>new Promise(resolve=>{returnAuthorized=resolve;}));
+  await mount();
+  expect(get('schedule-child-filter').findAllByType('option').map(x=>x.props.value)).toEqual(['']);
+  await act(async()=>{returnAuthorized({items:[{id:'current-kid',firstName:'Current',
+    lastName:'Authorized',preferredName:'Current'}]});await Promise.resolve();});
+  expect(get('schedule-child-filter').findAllByType('option').map(x=>x.props.value)).toEqual(['','current-kid']);
+ });
  it('changing the active membership resets selected center filters and booking overlays',async()=>{
   await mount();
   await change('schedule-child-filter','child-a');
