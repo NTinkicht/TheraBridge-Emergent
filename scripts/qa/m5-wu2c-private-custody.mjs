@@ -39,9 +39,12 @@ function snapshotProductionProvenance(input,receipt){
      plain.promptSha256!==receipt.promptSha256||
      plain.sourceConceptSha256!==receipt.sourceConceptSha256||
      plain.batchRevision!==receipt.batchRevision||
-     !PRODUCTION_LABEL.test(plain.providerRunId||'')||
-     !PRODUCTION_LABEL.test(plain.modelId||'')||
-     !PRODUCTION_LABEL.test(plain.modelVersion||'')||
+     typeof plain.providerRunId!=='string'||
+     typeof plain.modelId!=='string'||
+     typeof plain.modelVersion!=='string'||
+     !PRODUCTION_LABEL.test(plain.providerRunId)||
+     !PRODUCTION_LABEL.test(plain.modelId)||
+     !PRODUCTION_LABEL.test(plain.modelVersion)||
      !Number.isSafeInteger(plain.costMicros)||plain.costMicros<0||
      plain.costMicros>1_000_000_000)deny();
   return Object.freeze({
