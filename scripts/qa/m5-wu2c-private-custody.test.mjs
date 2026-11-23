@@ -8,6 +8,7 @@ import {deflateSync} from 'node:zlib';
 import {
   PRIVATE_CUSTODY_PUBLICATION_ENABLED,PrivateCustodyError,
   createLocalClamdScanner,stagePrivateIllustration,purgeExpiredPrivateIllustration,
+  stagePrivateIllustrationOnHost,
 } from './m5-wu2c-private-custody.mjs';
 
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -163,5 +164,16 @@ test('journal tampering blocks any additional storage and retention purge',async
       nowMs:req.nowMs+8*86400000,clearance,
     }),PrivateCustodyError);
     assert((await readdir(join(root,'bundles'))).includes(receipt.bundleId));
+  });
+});
+
+test('operator host entrypoint refuses absent/remote ClamAV configuration even with valid key',async()=>{
+  await isolated(async root=>{
+    const req=input(root,key());
+    delete req.scanner;delete req.keyBase64;
+    for(const env of [{}, {TB_PRIVATE_DATA_KEY_B64:key(),TB_MEDIA_CLAMD_SOCKET:'http://remote'},
+      {TB_PRIVATE_DATA_KEY_B64:'invalid',TB_MEDIA_CLAMD_SOCKET:'/run/clamav/not-present.sock'}]){
+      await assert.rejects(stagePrivateIllustrationOnHost(req,env),PrivateCustodyError);
+    }
   });
 });
