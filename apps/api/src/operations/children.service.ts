@@ -4,7 +4,7 @@ import { AuditService } from '../audit/audit.service';
 import { assertActor } from '../clinical/governance-core';
 import type { Viewer } from '../common/viewer';
 export type { Viewer } from '../common/viewer';
-import { describeEvents, invitationView, logCenterEvent, uniq, withUniqueGuard } from '../centers/history';
+import { describeEvents, invitationView, logCenterEvent, uniq, withUniqueGuard, type Tx } from '../centers/history';
 import { InvitationsService } from '../centers/invitations.service';
 import { terminateTherapistCare } from '../centers/therapist-lifecycle';
 import { normalizeEmail } from '../common/security';
@@ -277,7 +277,28 @@ export class ChildrenService {
 
   private async linkedGuardian(centerId:string,childId:string,v:Viewer) {
     if(v.role!=='GUARDIAN')throw new ForbiddenException('Guardian-linked child access required.');
+    // Cached session permissions alone cannot authorize sensitive media reads.
+    const membership=await this.prisma.membership.findFirst({where:{
+      id:v.membershipId,userId:v.userId,centerId,status:'ACTIVE',
+      user:{status:'ACTIVE'},center:{status:'ACTIVE'},roles:{some:{role:'GUARDIAN'}},
+    },select:{id:true}});
+    if(!membership)throw new ForbiddenException('Your guardian workspace access has changed.');
     const link=await this.prisma.guardianLink.findFirst({where:{
+      centerId,childId,userId:v.userId,removedAt:null,
+      child:{status:'ACTIVE',centerId},
+    },select:{id:true}});
+    if(!link)throw new NotFoundException('Linked child not found');
+    return link;
+  }
+
+  private async lockedGuardianPhotoWrite(tx:Tx,centerId:string,childId:string,v:Viewer) {
+    // Revocation of membership/role and removal of the guardian-child link
+    // must serialize with consent and erasure, not merely the HTTP guard.
+    await lockCenter(tx,centerId);
+    await assertActor(tx,centerId,v,['GUARDIAN']);
+    await tx.$queryRaw`SELECT id FROM guardian_link WHERE center_id=${centerId}::uuid AND child_id=${childId}::uuid
+      AND user_id=${v.userId}::uuid AND removed_at IS NULL FOR UPDATE`;
+    const link=await tx.guardianLink.findFirst({where:{
       centerId,childId,userId:v.userId,removedAt:null,
       child:{status:'ACTIVE',centerId},
     },select:{id:true}});
@@ -326,13 +347,9 @@ export class ChildrenService {
 
   async guardianPhotoDecision(centerId:string,childId:string,v:Viewer,candidateId:string,consent:boolean) {
     if(v.role!=='GUARDIAN') throw new ForbiddenException('Only an active linked guardian may give photo consent.');
+    await this.linkedGuardian(centerId,childId,v);
     return this.prisma.$transaction(async tx=>{
-      // Permission grant alone is insufficient: exact live guardian-child linkage is required.
-      const link=await tx.guardianLink.findFirst({where:{
-        centerId,childId,userId:v.userId,removedAt:null,
-        child:{status:'ACTIVE',centerId},
-      },select:{id:true}});
-      if(!link) throw new NotFoundException('Linked child not found');
+      const link=await this.lockedGuardianPhotoWrite(tx,centerId,childId,v);
       const row=await tx.privateMediaCandidate.findFirst({where:{
         id:candidateId,centerId,childId,kind:'CHILD_PHOTO',status:'QUARANTINED',
         consentState:'PENDING',rightsState:'UNVERIFIED',
@@ -358,11 +375,9 @@ export class ChildrenService {
 
   async guardianRevokePhoto(centerId:string,childId:string,v:Viewer) {
     if(v.role!=='GUARDIAN') throw new ForbiddenException('Only a linked guardian may revoke photo consent.');
+    await this.linkedGuardian(centerId,childId,v);
     return this.prisma.$transaction(async tx=>{
-      const link=await tx.guardianLink.findFirst({where:{
-        centerId,childId,userId:v.userId,removedAt:null,
-      },select:{id:true}});
-      if(!link)throw new NotFoundException('Linked child not found');
+      const link=await this.lockedGuardianPhotoWrite(tx,centerId,childId,v);
       // Hard delete ciphertext to revoke read and reduce retention risk.
       const purged=await tx.privateMediaCandidate.deleteMany({where:{
         centerId,childId,kind:'CHILD_PHOTO',status:{in:['PRIVATE_READY','QUARANTINED']},
