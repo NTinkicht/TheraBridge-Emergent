@@ -7,6 +7,7 @@ import { runBrowserAudit } from './m5-browser-observe.mjs';
 import { runChild360BrowserAcceptance } from './m5-child360-browser.mjs';
 import { runWU2BrowserQualification } from './m5-wu2-browser-qualification.mjs';
 import { runSharedGuardianQualification } from './m5-shared-guardian-browser.mjs';
+import { buildPendingSharedUxManualAcceptance } from './m5-shared-ux-manual-acceptance.mjs';
 import { buildM5IntegratedBrowserReceipt } from './m5-integrated-browser-receipt.mjs';
 
 const dbUrl = new URL(process.env.DATABASE_URL ?? '');
@@ -87,6 +88,9 @@ try {
       output: '/tmp/therabridge-m5-wu2-browser-qualification.json' });
     const guardianReceipt = await runSharedGuardianQualification({ passwords: demoPasswords,
       output: '/tmp/therabridge-m5-shared-guardian-ux.json' });
+    const pendingSharedManual = buildPendingSharedUxManualAcceptance();
+    await writeFile('/tmp/therabridge-m5-shared-ux-human-pending.json',
+      JSON.stringify(pendingSharedManual, null, 2) + '\n', { mode: 0o600 });
     const integrated = buildM5IntegratedBrowserReceipt(roleAudit, workspaceReceipt);
     await writeFile('/tmp/therabridge-m5-integrated-technical-receipt.json',
       JSON.stringify(integrated, null, 2) + '\n', { mode: 0o600 });
@@ -95,6 +99,8 @@ try {
       verifiedWorkspaceObservations: integrated.automated.verifiedWorkspaceObservations,
       guardianFiveWidthObservations: guardianReceipt.summary.observations,
       guardianScreenReaderManual: guardianReceipt.governance.screenReaderAcceptance,
+      sharedUxManualStatus: pendingSharedManual.summary.status,
+      pendingSharedUxHumanChecks: pendingSharedManual.summary.awaitingHumanChecks,
       pendingManualObservations: integrated.manual.observedPendingObservations,
       manualStatus: integrated.manual.status, clinicalGate: integrated.governance.clinicalGate,
     }));
