@@ -9,6 +9,7 @@ import {constants} from 'node:fs';
 import {mkdir,lstat,open,readFile,rename,rm,unlink} from 'node:fs/promises';
 import {dirname,isAbsolute,join,parse,resolve,sep} from 'node:path';
 import {createConnection} from 'node:net';
+import {setTimeout as sleep} from 'node:timers/promises';
 import {preparePrivateDerivatives} from './m5-wu2c-private-derivatives.mjs';
 
 const SHA=/^[0-9a-f]{64}$/;
@@ -61,36 +62,61 @@ function encrypt(bytes,key,scope){
   const body=Buffer.concat([c.update(bytes),c.final()]);
   return Buffer.concat([Buffer.from('TBC1'),nonce,c.getAuthTag(),body]);
 }
-async function audit(root,key,event){
+/**
+ * Serialize all append operations, including a purge's request/delete/final
+ * event, using one root-wide lock. A bounded retry avoids losing events on
+ * ordinary concurrent staging/purge; a stale/crashed lock fails closed.
+ */
+async function withAuditLock(root,work){
   const lockPath=join(root,'.audit-lock');
   let fd;
   try{
-    fd=await open(lockPath,constants.O_CREAT|constants.O_EXCL|constants.O_WRONLY|constants.O_NOFOLLOW,0o600);
-    const path=join(root,'custody-audit.jsonl');
-    let raw='';
-    try{raw=await readFile(path,'utf8');}catch(e){if(e?.code!=='ENOENT')deny();}
-    if(raw.length>2*1024*1024)deny();
-    const lines=raw?raw.trimEnd().split('\n'):[];
-    if(raw&&!raw.endsWith('\n'))deny();
-    let previous='0'.repeat(64);
-    for(let i=0;i<lines.length;i++){
-      const row=JSON.parse(lines[i]);
-      if(row.seq!==i+1||row.previous!==previous||typeof row.mac!=='string'||!SHA.test(row.mac))deny();
-      const {mac,...unsigned}=row;
-      const expected=HASH(key,'WU2C_AUDIT_V1:'+JSON.stringify(unsigned));
-      if(!timingSafeEqual(Buffer.from(mac,'hex'),Buffer.from(expected,'hex')))deny();
-      previous=row.mac;
+    for(let n=0;n<250;n++){
+      try{
+        fd=await open(lockPath,
+          constants.O_CREAT|constants.O_EXCL|constants.O_WRONLY|constants.O_NOFOLLOW,0o600);
+        break;
+      }catch(e){
+        if(e?.code!=='EEXIST')deny();
+        if(n===249)deny();
+        await sleep(30);
+      }
     }
-    const unsigned={seq:lines.length+1,previous,event:event.kind,bundleId:event.bundleId,
-      assetDigest:event.assetDigest,actor:event.actor,at:event.at};
-    const line={...unsigned,mac:HASH(key,'WU2C_AUDIT_V1:'+JSON.stringify(unsigned))};
-    const out=await open(path,constants.O_CREAT|constants.O_APPEND|constants.O_WRONLY|constants.O_NOFOLLOW,0o600);
-    try{await out.writeFile(JSON.stringify(line)+'\n');await out.sync();}finally{await out.close();}
-    return Object.freeze({sequence:line.seq,mac:line.mac});
+    if(!fd)deny();
+    return await work();
   }catch{deny();}
   finally{
-    if(fd){await fd.close();await unlink(lockPath).catch(()=>{});}
+    if(fd){
+      await fd.close().catch(()=>{});
+      await unlink(lockPath).catch(()=>{});
+    }
   }
+}
+async function appendAuditUnlocked(root,key,event){
+  const path=join(root,'custody-audit.jsonl');
+  let raw='';
+  try{raw=await readFile(path,'utf8');}catch(e){if(e?.code!=='ENOENT')deny();}
+  if(raw.length>2*1024*1024)deny();
+  const lines=raw?raw.trimEnd().split('\n'):[];
+  if(raw&&!raw.endsWith('\n'))deny();
+  let previous='0'.repeat(64);
+  for(let i=0;i<lines.length;i++){
+    const row=JSON.parse(lines[i]);
+    if(row.seq!==i+1||row.previous!==previous||typeof row.mac!=='string'||!SHA.test(row.mac))deny();
+    const {mac,...unsigned}=row;
+    const expected=HASH(key,'WU2C_AUDIT_V1:'+JSON.stringify(unsigned));
+    if(!timingSafeEqual(Buffer.from(mac,'hex'),Buffer.from(expected,'hex')))deny();
+    previous=row.mac;
+  }
+  const unsigned={seq:lines.length+1,previous,event:event.kind,bundleId:event.bundleId,
+    assetDigest:event.assetDigest,actor:event.actor,at:event.at};
+  const line={...unsigned,mac:HASH(key,'WU2C_AUDIT_V1:'+JSON.stringify(unsigned))};
+  const out=await open(path,constants.O_CREAT|constants.O_APPEND|constants.O_WRONLY|constants.O_NOFOLLOW,0o600);
+  try{await out.writeFile(JSON.stringify(line)+'\n');await out.sync();}finally{await out.close();}
+  return Object.freeze({sequence:line.seq,mac:line.mac});
+}
+async function audit(root,key,event){
+  return withAuditLock(root,()=>appendAuditUnlocked(root,key,event));
 }
 /** Actual local ClamAV UNIX-socket scanner. Not an independent security approval. */
 async function clamd(socket,command){
@@ -225,12 +251,15 @@ export async function purgeExpiredPrivateIllustration({root,keyBase64,bundleId,
        manifest.bundleId!==bundleId||manifest.status!=='PRIVATE_QUARANTINED'||
        manifest.legalHold!=='UNVERIFIED'||manifest.published!==false||
        !Number.isSafeInteger(manifest.expiresAt)||nowMs<manifest.expiresAt)deny();
-    await audit(root,key,{kind:'PURGE_REQUESTED',bundleId,assetDigest:expectedManifestSha256,
-      actor:operatorId,at:nowMs});
-    // No key, path or image content is exposed in the receipt or audit log.
-    await rm(target,{recursive:true,force:false});
-    const receipt=await audit(root,key,{kind:'PURGED',bundleId,assetDigest:expectedManifestSha256,
-      actor:operatorId,at:nowMs});
+    // Keep the root journal lock over BOTH audit events and the destructive
+    // rm. Other bundles cannot interleave or falsely fail after deletion.
+    const receipt=await withAuditLock(root,async()=>{
+      await appendAuditUnlocked(root,key,{kind:'PURGE_REQUESTED',bundleId,
+        assetDigest:expectedManifestSha256,actor:operatorId,at:nowMs});
+      await rm(target,{recursive:true,force:false});
+      return appendAuditUnlocked(root,key,{kind:'PURGED',bundleId,
+        assetDigest:expectedManifestSha256,actor:operatorId,at:nowMs});
+    });
     return Object.freeze({bundleId,status:'PURGED',auditSequence:receipt.sequence,
       published:false,readEnabled:false,guardianReadEnabled:false,
       clinicalGate:'NO_GO_G2_G2b'});
