@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createHash,randomBytes} from 'node:crypto';
-import {mkdtemp,readFile,readdir,rm,symlink,mkdir} from 'node:fs/promises';
+import {createHash,createHmac,randomBytes} from 'node:crypto';
+import {mkdtemp,readFile,readdir,rm,symlink,mkdir,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {deflateSync} from 'node:zlib';
@@ -214,5 +214,39 @@ test('concurrent expirations never delete a bundle without its matching PURGED a
       assert.equal(events[requested+1].event,'PURGED');
       assert.equal(events[requested+1].bundleId,item.bundleId);
     }
+  });
+});
+
+test('near-capacity valid HMAC journal denies purge BEFORE deleting its bundle',async()=>{
+  await isolated(async root=>{
+    const secret=key(),req=input(root,secret),receipt=await stagePrivateIllustration(req);
+    const path=join(root,'custody-audit.jsonl');
+    let raw=await readFile(path,'utf8');
+    const last=JSON.parse(raw.trimEnd().split('\n').at(-1));
+    let previous=last.mac,seq=last.seq;
+    const hmacKey=Buffer.from(secret,'base64');
+    const limit=2*1024*1024-1400;
+    while(Buffer.byteLength(raw)<limit){
+      const unsigned={seq:++seq,previous,event:'SYNTHETIC_AUDIT_PADDING',
+        bundleId:receipt.bundleId,assetDigest:'a'.repeat(64),
+        actor:'synthetic-operator',at:req.nowMs};
+      const mac=createHmac('sha256',hmacKey)
+        .update('WU2C_AUDIT_V1:'+JSON.stringify(unsigned)).digest('hex');
+      raw+=JSON.stringify({...unsigned,mac})+'\n';
+      previous=mac;
+    }
+    assert(Buffer.byteLength(raw)<=2*1024*1024);
+    assert(Buffer.byteLength(raw)>2*1024*1024-2048);
+    await writeFile(path,raw);
+    await assert.rejects(purgeExpiredPrivateIllustration({
+      root,keyBase64:secret,bundleId:receipt.bundleId,
+      expectedManifestSha256:receipt.manifestSha256,
+      operatorId:'synthetic-operator',nowMs:req.nowMs+8*86400000,
+      clearance:{bundleId:receipt.bundleId,
+        manifestSha256:receipt.manifestSha256,
+        reviewerId:'synthetic-retention-reviewer',noLegalHold:true},
+    }),PrivateCustodyError);
+    assert((await readdir(join(root,'bundles'))).includes(receipt.bundleId));
+    assert.equal(await readFile(path,'utf8'),raw);
   });
 });
