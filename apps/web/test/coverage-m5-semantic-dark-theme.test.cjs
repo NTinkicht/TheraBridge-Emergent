@@ -120,6 +120,18 @@ describe('application-wide semantic light/dark palette',()=>{
     expect(sheet).toContain('html[data-app-theme="dark"] .theme-family-auto');
     expect(sheet).toContain('outline: 3px solid var(--fam-focus);');
     expect(sheet).toContain('outline-color: var(--fam-focus) !important;');
+    // The UI controls previously reset the global keyboard outline to
+    // zero in Chromium even when :focus-visible and its ink were correct.
+    // Preserve the 3px width at the actual element, not only in CSS tokens.
+    for(const file of [
+      'components/auth/ProductShell.tsx',
+      'components/centers/kit.tsx',
+      'app/app/centers/page.tsx',
+    ]){
+      const source=fs.readFileSync(path.resolve(__dirname,'../src',file),'utf8');
+      expect(source).not.toContain('focus:outline-none');
+      expect(source).toContain('focus-visible:outline-[3px]');
+    }
     // A source-level check alone is insufficient: the stylesheet must be
     // parseable by the production PostCSS pipeline before any browser job.
     const postcss=require('postcss');
