@@ -200,9 +200,38 @@ export async function observeSharedShell(page, persona, width) {
     null,{timeout:3000,polling:100});
   const focus = await focusControl.evaluate(el => {
     const style = getComputedStyle(el);
+    // Safe, non-identifying cascade diagnostics are included only in a
+    // failure message; never include DOM text, attributes, or private data.
+    const matchedRules=[];
+    const collect=rules=>{
+      for(const rule of rules){
+        if(rule.cssRules){try{collect(rule.cssRules);}catch{}}
+        if(typeof rule.selectorText!=='string'||!rule.style)continue;
+        const properties=['outline','outline-width','outline-style','outline-color'];
+        if(!properties.some(name=>rule.style.getPropertyValue(name)))continue;
+        try{
+          if(!el.matches(rule.selectorText))continue;
+          matchedRules.push({
+            selector:rule.selectorText.slice(0,110),
+            outline:rule.style.getPropertyValue('outline').slice(0,80),
+            width:rule.style.getPropertyValue('outline-width').slice(0,30),
+            important:rule.style.getPropertyPriority('outline-width')==='important',
+          });
+        }catch{}
+      }
+    };
+    for(const sheet of document.styleSheets){
+      try{collect(sheet.cssRules);}catch{}
+    }
     return {active:document.activeElement===el,keyboardVisible:el.matches(':focus-visible'),
       outlineColor:style.outlineColor,outlineStyle:style.outlineStyle,
-      outlineWidth:parseFloat(style.outlineWidth)};
+      outlineWidth:parseFloat(style.outlineWidth),
+      rootTheme:document.documentElement.dataset.appTheme??'UNSET',
+      scope:el.closest('.theme-clinical-auto')?'clinical':el.closest('.theme-family-auto')?'family':'none',
+      globalRuleMatch:el.matches('html :is(input, select, textarea, [role="combobox"]):focus-visible'),
+      darkRuleMatch:el.matches('html[data-app-theme="dark"] .theme-clinical-auto :is(input, select, textarea, [role="combobox"]):focus-visible'),
+      matchedRules:matchedRules.slice(-12)};
+  
   });
   assert(focus.active && focus.keyboardVisible && focus.outlineStyle === 'solid' && focus.outlineWidth >= 3,
     'Shared navigation keyboard outline must be solid and >=3px at ' + persona + '/' + width +

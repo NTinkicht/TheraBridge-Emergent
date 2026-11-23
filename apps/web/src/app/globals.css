@@ -111,6 +111,16 @@ body {
   outline-offset: 2px;
 }
 
+/* The browser audit measured a zero-width outline on an actual keyboard-
+   focused select despite its correct :focus-visible state and dark ink.
+   Make ALL form controls consume the same semantic focus ring directly,
+   independent of their containing role shell or legacy focus utilities.
+   The visible ring is always >=3px and never appears for mouse-only focus. */
+html :is(input, select, textarea, [role="combobox"]):focus-visible {
+  outline: 3px solid var(--focus-ring, var(--tb-brand-action)) !important;
+  outline-offset: 2px !important;
+}
+
 @keyframes tb-rise {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
