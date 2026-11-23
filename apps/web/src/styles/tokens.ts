@@ -3,6 +3,7 @@ export const colors = {
   brand: {
     deepNavy: '#052464',
     action: '#0F5692',
+    actionOn: '#FFFFFF',
     cyan: '#0DA8B8',
     violet: '#7A4AB7',
     ink: '#14213D',
@@ -105,7 +106,7 @@ export const themeColors = Object.fromEntries(Object.entries(colors).map(([group
 // This deliberately does not grant access to any clinical feature.
 export const darkSemanticOverrides: Record<string, Record<string, string>> = {
   brand: {
-    ink: '#E9ECF5', inkMuted: '#B7C2DA', action: '#7DB3E8',
+    ink: '#E9ECF5', inkMuted: '#B7C2DA', action: '#7DB3E8', actionOn: '#0D1226',
     actionHover: '#A5CEEF', actionTint: '#1C3652', deepNavy: '#A7B9DA',
     familyTeal: '#5CCFDB', familyTint: '#13394A',
   },
