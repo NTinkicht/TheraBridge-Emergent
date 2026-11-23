@@ -62,7 +62,11 @@ describe('M5-12 persistent server-side taxonomy filters',()=>{
   await change('activities-equipment-filter','Cards');
   await click('activities-clear-filters');
   expect(clinicalApi.templates).toHaveBeenLastCalledWith('center-a',
-   expect.objectContaining({search:'',category:'',skill:'',equipment:'',ownership:'all'}));
+   expect.objectContaining({search:'',ownership:'all'}));
+  const latest=clinicalApi.templates.mock.lastCall[1];
+  expect(latest).not.toHaveProperty('category');
+  expect(latest).not.toHaveProperty('skill');
+  expect(latest).not.toHaveProperty('equipment');
   expect(get('activities-category-filter').props.value).toBe('');
   expect(get('activities-skill-filter').props.value).toBe('');
   expect(get('activities-equipment-filter').props.value).toBe('');
@@ -75,7 +79,10 @@ describe('M5-12 persistent server-side taxonomy filters',()=>{
     hasMore:false,nextOffset:null});
   await click('activities-load-more');
   expect(clinicalApi.templates).toHaveBeenLastCalledWith('center-a',
-   expect.objectContaining({offset:100,limit:100,category:'Speech',skill:'',equipment:''}));
+   expect.objectContaining({offset:100,limit:100,category:'Speech'}));
+  const older=clinicalApi.templates.mock.lastCall[1];
+  expect(older).not.toHaveProperty('skill');
+  expect(older).not.toHaveProperty('equipment');
   expect(find('synthetic-card-first')).toHaveLength(1);
   expect(find('synthetic-card-second')).toHaveLength(1);
  });

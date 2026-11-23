@@ -82,7 +82,9 @@ describe('M5-14 isolated candidate history status-only interface',()=>{
   await mount();await click('Inspect private candidate statuses');
   expect(output()).toContain('Could not load private candidate status');
   expect(tree.root.findAllByType('li')).toHaveLength(0);
-  expect(output()).not.toContain('Quarantined');
+  // The static security notice explicitly names quarantined images; the
+  // list itself, not that notice, must be empty after a denied response.
+  expect(tree.root.findAllByType('li')).toHaveLength(0);
  });
  it('retains a retryable error when a candidate metadata request fails',async()=>{
   api.candidates.mockRejectedValueOnce(new Error('Synthetic offline'))
