@@ -26,6 +26,7 @@ function setup(override: Record<string, unknown> = {}) {
     activityTemplate: { findFirst },
     membership: { findFirst: jest.fn(async () => ({ id: actor.membershipId })) },
     activityMediaDraft: { create, updateMany, findMany: jest.fn(async (_args?: unknown): Promise<{ id: string }[]> => []), findFirst: jest.fn(async () => ({ id: draftId })) },
+    privateMediaCandidate: { updateMany: jest.fn(async () => ({ count: 2 })) },
     centerEvent: { create: jest.fn(async () => ({})) },
   };
   const prisma = {
@@ -93,6 +94,35 @@ describe('M5-14 activity illustration draft boundary', () => {
     expect(tx.centerEvent.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ type: 'media.draft_rejected' }),
     }));
+  });
+
+  it('revokes only currently quarantined linked image candidates in the same scoped draft transaction', async () => {
+    const { service, tx } = setup();
+    await service.reject(centerId, actor, templateId, draftId,
+      { version: 1, reason: 'Rejected unsafe pose after human draft review' });
+    expect(tx.privateMediaCandidate.updateMany).toHaveBeenCalledTimes(1);
+    expect(tx.privateMediaCandidate.updateMany).toHaveBeenCalledWith({
+      where: {
+        centerId, templateId, mediaDraftId: draftId,
+        kind: 'ACTIVITY_IMAGE', status: 'QUARANTINED', revokedAt: null,
+      },
+      data: { status: 'REVOKED', revokedAt: now },
+    });
+  });
+  it('never revokes candidates when optimistic rejection fails, and never logs an audit on failure', async () => {
+    const { service, tx, updateMany } = setup();
+    updateMany.mockResolvedValueOnce({ count: 0 });
+    await expect(service.reject(centerId, actor, templateId, draftId,
+      { version: 1, reason: 'Stale draft rejection revision' })).rejects.toBeInstanceOf(ConflictException);
+    expect(tx.privateMediaCandidate.updateMany).not.toHaveBeenCalled();
+    expect(tx.centerEvent.create).not.toHaveBeenCalled();
+  });
+  it('rejects the entire draft transition if quarantine revocation write fails', async () => {
+    const { service, tx } = setup();
+    tx.privateMediaCandidate.updateMany.mockRejectedValueOnce(new Error('Synthetic DB revocation failure'));
+    await expect(service.reject(centerId, actor, templateId, draftId,
+      { version: 1, reason: 'Unsafe rights evidence in draft' })).rejects.toThrow('Synthetic DB revocation failure');
+    expect(tx.centerEvent.create).not.toHaveBeenCalled();
   });
 
   it('refuses stale or already rejected revisions', async () => {
