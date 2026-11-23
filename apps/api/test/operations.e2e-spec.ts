@@ -98,7 +98,8 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
       const read=await get(admin,c(`children/${kid}/private-care`)).expect(200);
       expect(read.body).toMatchObject({version:1,conditions:'Synthetic childhood asthma',
         allergies:'Synthetic lactose',source:'FAMILY_REPORTED_UNVERIFIED'});
-      const changed=await patch(admin,c(`children/${kid}/private-care`),{
+      // PostgreSQL accepts uppercase UUID path spelling; lower-case reads must decrypt it.
+      const changed=await patch(admin,c(`children/${kid.toUpperCase()}/private-care`),{
         sourceAcknowledged:true,version:1,allergies:'Synthetic changed',careNotes:'New synthetic note'
       }).expect(200);
       expect(changed.body).toMatchObject({version:2,allergies:'Synthetic changed'});
