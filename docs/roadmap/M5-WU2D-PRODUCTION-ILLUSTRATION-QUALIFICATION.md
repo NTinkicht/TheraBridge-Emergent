@@ -36,3 +36,18 @@ Source and image-provider input are untrusted. Never use patient/family media. R
 | 100% real published-activity coverage | NOT VERIFIED |
 | Guardian/public image release | DISABLED |
 | Clinical G2/G2b | NO-GO |
+
+## Implemented in this PR (source candidate — exact-head qualification pending)
+
+- `scripts/qa/m5-wu2d-production-assets.mjs` derives the exact 25 canonical, source-hash-pinned `m5-b-v1` slots without inventing any production image bytes. Strict operator-reported source/model/run/terms/license and SHA-256 provenance is bound to the original 1600×1200 PNG structural preflight, with no child data, approval or publish flags.
+- `admitProductionMasterOnHost` snapshots caller-controlled image/evidence before awaits, requires the pre-existing real private ClamAV + server-held-key operator adapter, and reports only private quarantine details. It does not accept browser-provided scanner verdicts or authorize image read.
+- The existing WU2-C quarantine adapter now optionally embeds exact, validated provider run/model, prompt, source and master digests in its AES-GCM-custody HMAC manifest. Direct calls with swapped digests or accessor-backed metadata fail closed. Missing metadata for older WU2-C custody remains backward-compatible.
+- `reconcileProductionAssets` detects duplicate slots, provider runs, master hashes and custody bundle IDs; its 25×5×5 ledger ALWAYS marks real image clinical/design/rights and independent media-security approvals as pending. 25 operator-reported private receipts are **never** interpreted as 100% approved or published coverage.
+- Blocking synthetic/adversarial Node tests are wired to the existing full `demo-journey` CI stage. They cover source/crop provenance, immutable byte snapshots, API/guardian denial, duplicate and tampered metadata, and actual synthetic private encrypted custody HMAC linkage.
+- No provider SDK, credentials, generation invocation, production original image bytes, clinician identity, public routes, final image approvals or clinical activation were added.
+
+## Actual deliverable gap and next qualification
+
+To finish all WU2-D acceptance, a commercially licensed model or authorized illustrator must **actually produce** each 1600×1200 master in the locked style using fictional subjects. An authorized operator must ingest each actual master on a correctly configured private host, collect the resulting encrypted HMAC manifest references, then obtain independently attributable **asset-specific** design, clinical/anatomy, legal/rights and accessibility signoffs, and independent operational media-security qualification. A genuine verified inventory must replace the empty/pending ledger. This PR implements intake and proof binding, **not** the unprovided image generation or signoffs. Guardian/public delivery and G2/G2b remain disabled.
+
+**Quality:** Latest full CI and all eight ≥90% API/Web coverage floors: NOT YET VERIFIED. Codex latest-head review: NOT YET VERIFIED. Five-width real-image QA, human/AT acceptance, independent rights and privacy reviews: NOT RUN. Exact final-HEAD checks required before merge.
