@@ -31,3 +31,6 @@ This is a compact **screening exercise, not an unapproved waiver** of M5-11's st
 ## Engineering exit evidence
 - Full exact-HEAD CI/Smart CI including eight >=90% API+Web metrics, browser, preview, compose, SBOM, secret scan; independent Codex review with P0-P2 dispositions; no P0/P1 issue left unfixed.
 - At authoring: **CI/independent review NOT YET RUN**. No human visual/AT usability approval has been observed. All governance gates G2/G2b NO-GO.
+
+## 2026-11-23 — Real CI cross-role dark theme defect and shared fix
+The new actual Chromium shell test reproduced a genuine issue: `html[data-app-theme="dark"]` and shell CSS `--tb-rgb-surface-white=21 27 51` changed correctly, but generated `bg-surface-white` and `bg-canvas-clinical` backgrounds remained light in the platform-admin role. Added scoped *shared* dark semantic utility rebinding in `apps/web/src/app/globals.css` for staff shell/card/action text/borders using canonical `--tb` tokens, not fixed hex or isolated page patches. Source contract checks prevent recurrence. The existing real browser still requires actual computed differences, AA foreground/background contrast, keyboard/focus and all roles/widths; exact-head CI and owner AT remain NOT_RUN until observed. G2/G2b NO-GO.

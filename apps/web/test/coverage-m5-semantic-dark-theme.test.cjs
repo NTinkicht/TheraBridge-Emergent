@@ -107,6 +107,26 @@ describe('application-wide semantic light/dark palette',()=>{
     const ratio=(a,b)=>(Math.max(luminance(a),luminance(b))+.05)/(Math.min(luminance(a),luminance(b))+.05);
     expect(ratio(canvas,ink)).toBeGreaterThanOrEqual(4.5);
   });
+  it('real staff dark semantic utility overrides use canonical inherited tokens across shared screens',()=>{
+    const fs=require('node:fs'),path=require('node:path');
+    const sheet=fs.readFileSync(path.resolve(__dirname,'../src/app/globals.css'),'utf8');
+    for(const [name,token] of [
+      ['bg-surface-white','--tb-surface-white'],
+      ['bg-surface-subtle','--tb-surface-subtle'],
+      ['bg-brand-actionTint','--tb-brand-actionTint'],
+      ['text-brand-ink','--tb-brand-ink'],
+      ['text-brand-inkMuted','--tb-brand-inkMuted'],
+      ['text-brand-action','--tb-brand-action'],
+      ['border-border-light','--tb-border-light'],
+      ['border-border-strong','--tb-border-strong'],
+    ]){
+      expect(sheet).toContain('html[data-app-theme="dark"] .theme-clinical-auto .'+name+' {');
+      expect(sheet).toContain('var('+token+')');
+    }
+    expect(sheet).toContain('html[data-app-theme="dark"] .theme-clinical-auto.bg-canvas-clinical {');
+    expect(sheet).toContain('background-color: var(--tb-canvas-clinical);');
+    expect(sheet).not.toMatch(/\.theme-clinical-auto \.bg-surface-white\s*\{[^}]*#[0-9A-Fa-f]{6}/);
+  });
   it('switches both family and clinical semantic surfaces, never just a guardian header',()=>{
     const selector='html[data-app-theme="dark"] .theme-clinical-auto, html[data-app-theme="dark"] .theme-family-auto';
     const dark=appThemeCss[selector];
