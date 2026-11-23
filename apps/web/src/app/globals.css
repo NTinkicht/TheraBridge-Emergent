@@ -93,7 +93,7 @@ html[data-app-theme="dark"] .theme-family-auto
   outline-style: solid !important;
   outline-color: var(--fam-focus) !important;
   outline-offset: 2px;
-
+}
 
 .tnum {
   font-variant-numeric: tabular-nums;

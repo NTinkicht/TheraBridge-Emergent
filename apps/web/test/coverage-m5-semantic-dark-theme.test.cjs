@@ -120,6 +120,10 @@ describe('application-wide semantic light/dark palette',()=>{
     expect(sheet).toContain('html[data-app-theme="dark"] .theme-family-auto');
     expect(sheet).toContain('outline: 3px solid var(--fam-focus);');
     expect(sheet).toContain('outline-color: var(--fam-focus) !important;');
+    // A source-level check alone is insufficient: the stylesheet must be
+    // parseable by the production PostCSS pipeline before any browser job.
+    const postcss=require('postcss');
+    expect(()=>postcss.parse(sheet,{from:'globals.css'})).not.toThrow();
   });
   it('real staff dark semantic utility overrides use canonical inherited tokens across shared screens',()=>{
     const fs=require('node:fs'),path=require('node:path');
