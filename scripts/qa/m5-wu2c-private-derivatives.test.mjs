@@ -114,3 +114,26 @@ test('snapshot source bytes before async plan lookup; caller mutation cannot rep
   assert.equal(result.receipt.masterSha256,original);
   assert.equal(result.receipt.publishEnabled,false);
 });
+
+test('CRC-valid high-bit PNG chunk aliases are rejected, not normalized to ASCII names',async()=>{
+  const master=syntheticMaster();
+  // This was a genuine reviewer finding: toString('ascii') masks high bits.
+  // Recompute each altered chunk's CRC so rejection is due to the canonical
+  // chunk-type guard rather than a coincidental checksum mismatch.
+  let cursor=8;
+  const locations=[];
+  while(cursor<master.length){
+    const size=master.readUInt32BE(cursor);
+    locations.push({typeAt:cursor+4,crcAt:cursor+8+size});
+    cursor+=size+12;
+  }
+  assert.equal(locations.length,3);
+  for(const {typeAt,crcAt} of locations){
+    const mutated=Buffer.from(master);
+    mutated[typeAt]|=0x80;
+    mutated.writeUInt32BE(crc32(mutated.subarray(typeAt,crcAt)),crcAt);
+    await assert.rejects(preparePrivateDerivatives({
+      evidence:license(),referenceId:'WU2A-S1-SPEECH',masterBytes:mutated,
+    }),PrivateDerivativeError);
+  }
+});
