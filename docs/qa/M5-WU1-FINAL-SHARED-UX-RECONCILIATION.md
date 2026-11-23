@@ -43,3 +43,6 @@ Chromium confirmed shell AND header inherit the correct dark token, the canonica
 
 ### Guardian focus non-regression note
 The same actual-browser focus assertion also covers the guardian shared navigation: its existing mobile select uses `focus:outline-none` and a low-alpha ring, while its desktop search uses 2px outline. Added a separate `theme-family-auto` 3px focus rule using the **approved family teal --fam-focus** token, not the staff action blue. This is a shared semantic accessibility repair, not a new guardian permission or clinical feature.
+
+### Real browser focus input-modality correction
+Initial new browser focus regression used a direct `focus()` immediately after clicking the theme toggle; Chromium rightly did not always set `:focus-visible` for pointer-modality programmatic focus. The fixed browser test sends an actual keyboard Tab first, requires `:focus-visible` on the shared select/search field, then checks computed solid 3px ring and >=3:1 contrast. No CSS assertions or acceptance thresholds were lowered.

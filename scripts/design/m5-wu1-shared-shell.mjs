@@ -190,13 +190,21 @@ export async function observeSharedShell(page, persona, width) {
 
   // Codex P2: a resting dark border may suppress the only visible focus cue.
   const focusControl = page.getByTestId(width < 768 ? 'mobile-nav-select' : 'desktop-destination-search');
+  // CSS :focus-visible depends on input modality. After clicking the theme
+  // toggle, programmatic focus alone may correctly show NO keyboard ring.
+  // Establish genuine keyboard modality first, then inspect the focused
+  // element's actual :focus-visible state and computed outline.
+  await page.keyboard.press('Tab');
   await focusControl.focus();
+  await page.waitForFunction(() => document.activeElement?.matches(':focus-visible') === true,
+    null,{timeout:3000,polling:100});
   const focus = await focusControl.evaluate(el => {
     const style = getComputedStyle(el);
-    return {active:document.activeElement===el,outlineColor:style.outlineColor,
-      outlineStyle:style.outlineStyle,outlineWidth:parseFloat(style.outlineWidth)};
+    return {active:document.activeElement===el,keyboardVisible:el.matches(':focus-visible'),
+      outlineColor:style.outlineColor,outlineStyle:style.outlineStyle,
+      outlineWidth:parseFloat(style.outlineWidth)};
   });
-  assert(focus.active && focus.outlineStyle === 'solid' && focus.outlineWidth >= 3,
+  assert(focus.active && focus.keyboardVisible && focus.outlineStyle === 'solid' && focus.outlineWidth >= 3,
     'Shared staff navigation focus outline must be visible at 3px');
   assert(contrastRatio(focus.outlineColor, dark.navBackground) >= 3,
     'Shared staff focus indicator contrast must be at least 3:1');
