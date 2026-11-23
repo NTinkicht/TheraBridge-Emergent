@@ -81,11 +81,16 @@ async function setTheme(page,mode){
   if((await themeButton.getAttribute('aria-pressed'))!==(mode==='dark'?'true':'false')){
     await themeButton.click();
   }
-  await page.waitForFunction(theme=>
-    document.documentElement.dataset.appTheme===theme &&
-    document.documentElement.dataset.familyTheme===theme &&
-    document.querySelector('[data-testid="product-shell"]')?.getAttribute('data-theme')===theme,
-    mode,{timeout:6000});
+  await page.waitForFunction(theme=>{
+    const root=document.documentElement.dataset;
+    // Default light mode is valid before the first user preference has
+    // ever been stored: bootstrap leaves both data attributes unset.
+    // Once toggled, both attributes must agree with the visible shell.
+    const app=root.appTheme??'light';
+    const family=root.familyTheme??'light';
+    return app===theme && family===theme &&
+      document.querySelector('[data-testid="product-shell"]')?.getAttribute('data-theme')===theme;
+  },mode,{timeout:6000});
 }
 
 async function contrastAndDigest(page){
