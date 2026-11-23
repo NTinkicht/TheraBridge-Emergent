@@ -178,6 +178,10 @@ export class ChildrenService {
     try {
       await this.prisma.$transaction(async tx => {
         await this.trial.assertWritable(tx, centerId, now);
+        // P2: the earlier request check is not authoritative. A coordinator
+        // can lose their live role or membership while waiting for the center
+        // lock. Revalidate under the same lock before writing sensitive care.
+        await assertActor(tx, centerId, v, ['CENTER_ADMIN', 'COORDINATOR']);
         await tx.$queryRaw`SELECT id FROM child WHERE id=${id}::uuid AND center_id=${centerId}::uuid FOR UPDATE`;
         const currentChild = await tx.child.findFirst({ where: { id, centerId } });
         if (!currentChild || currentChild.status !== 'ACTIVE') throw new NotFoundException('Active child not found');
