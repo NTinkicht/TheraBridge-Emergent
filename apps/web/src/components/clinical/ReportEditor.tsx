@@ -200,7 +200,11 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
         </div>
       )}
       {notice && state !== 'conflict' && <FormAlert tone={notice.tone} testId={`report-notice-${notice.tone}`}>{notice.text}</FormAlert>}
-      {edit && <section className="space-y-3 rounded-card border border-border-light bg-surface-subtle p-4" data-testid="synthetic-report-assist">
+      {edit && <details className="rounded-card border border-border-light bg-surface-subtle" data-testid="report-assist-disclosure">
+        <summary className="flex min-h-11 cursor-pointer items-center rounded-card px-4 py-3 text-[14px] font-semibold text-brand-action focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-action" data-testid="report-assist-disclosure-toggle">
+          Optional fictional drafting assistance · expand only when needed
+        </summary>
+        <section className="space-y-3 border-t border-border-light p-4" data-testid="synthetic-report-assist">
         <h3 className="text-[16px] font-semibold">Synthetic report drafting assistant</h3>
         <p className="text-[13px] text-brand-inkMuted">Offline fictional-evidence template only. No model call, recording, clinical validation, signing, or family release. Nothing is saved unless you explicitly insert and save it.</p>
         <label className="block text-[13px] font-semibold">Draft section
@@ -237,7 +241,8 @@ export function ReportEditor({ centerId, d, onReload, onError, onPreview, onSect
             }
           }} data-testid="synthetic-report-insert">Insert into report draft</Button>
         </div>}
-      </section>}
+        </section>
+      </details>}
       {edit && <div className="space-y-3 rounded-card border border-border-light bg-surface-subtle p-4" data-testid="report-evidence-assist">
         <h3 className="text-[16px] font-semibold">Evidence-assisted draft passages</h3>
         <p className="text-[13px] text-brand-inkMuted">Deterministic, source-referenced clinician draft decisions. No AI, publication, clinical verification, approval or release.</p>
