@@ -113,9 +113,13 @@ describe('application-wide semantic light/dark palette',()=>{
     expect(sheet).toContain(':is(input, select, textarea, [role="combobox"]):focus-visible');
     expect(sheet).toContain('border-color: var(--tb-brand-action);');
     expect(sheet).toContain('outline: 3px solid var(--tb-brand-action);');
+    expect(sheet).toContain('outline-width: 3px !important;');
+    expect(sheet).toContain('outline-style: solid !important;');
+    expect(sheet).toContain('outline-color: var(--tb-brand-action) !important;');
     expect(sheet).toContain('outline-offset: 2px;');
     expect(sheet).toContain('html[data-app-theme="dark"] .theme-family-auto');
     expect(sheet).toContain('outline: 3px solid var(--fam-focus);');
+    expect(sheet).toContain('outline-color: var(--fam-focus) !important;');
   });
   it('real staff dark semantic utility overrides use canonical inherited tokens across shared screens',()=>{
     const fs=require('node:fs'),path=require('node:path');

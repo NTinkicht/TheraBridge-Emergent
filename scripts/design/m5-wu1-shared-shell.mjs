@@ -205,7 +205,8 @@ export async function observeSharedShell(page, persona, width) {
       outlineWidth:parseFloat(style.outlineWidth)};
   });
   assert(focus.active && focus.keyboardVisible && focus.outlineStyle === 'solid' && focus.outlineWidth >= 3,
-    'Shared staff navigation focus outline must be visible at 3px');
+    'Shared navigation keyboard outline must be solid and >=3px at ' + persona + '/' + width +
+    ': ' + JSON.stringify(focus));
   assert(contrastRatio(focus.outlineColor, dark.navBackground) >= 3,
     'Shared staff focus indicator contrast must be at least 3:1');
 

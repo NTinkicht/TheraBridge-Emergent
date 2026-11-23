@@ -75,6 +75,11 @@ html[data-app-theme="dark"] .theme-clinical-auto
   :is(input, select, textarea, [role="combobox"]):focus-visible {
   border-color: var(--tb-brand-action);
   outline: 3px solid var(--tb-brand-action);
+  /* Tailwind focus:outline-none is an explicit utility; the accessibility
+     ring must win even if utility ordering changes in the production build. */
+  outline-width: 3px !important;
+  outline-style: solid !important;
+  outline-color: var(--tb-brand-action) !important;
   outline-offset: 2px;
 }
 /* The guardian's mobile selector has the same focus:outline-none + low-alpha
@@ -84,8 +89,11 @@ html[data-app-theme="dark"] .theme-family-auto
   :is(input, select, textarea, [role="combobox"]):focus-visible {
   border-color: var(--fam-focus);
   outline: 3px solid var(--fam-focus);
+  outline-width: 3px !important;
+  outline-style: solid !important;
+  outline-color: var(--fam-focus) !important;
   outline-offset: 2px;
-}
+
 
 .tnum {
   font-variant-numeric: tabular-nums;
