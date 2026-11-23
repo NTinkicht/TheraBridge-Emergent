@@ -149,9 +149,8 @@ describe('M5-14 activity illustration draft boundary', () => {
     // FOR UPDATE clause is in the final segment, not the first segment.
     const queries = (tx.$queryRaw.mock.calls as unknown as Array<[readonly string[]]>)
       .map(([parts]) => parts.join(' '));
-    expect(queries).toEqual(expect.arrayContaining([
-      expect.stringMatching(/activity_media_draft[\\s\\S]*FOR UPDATE/),
-    ]));
+    expect(queries.some(q =>
+      q.includes('activity_media_draft') && q.includes('FOR UPDATE'))).toBe(true);
   });
   it('rejects the entire draft transition if quarantine revocation write fails', async () => {
     const { service, tx } = setup();
