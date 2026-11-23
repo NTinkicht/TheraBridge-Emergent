@@ -249,7 +249,7 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
 
   for(const action of ['CONSENT','REVOKE'] as const) {
     it.each(['ROLE_REMOVED','SUSPENDED','REVOKED','LINK_REMOVED'] as const)(
-      'M5 #13 Codex P1: guardian %s never commits after %s between precheck and lock',
+      `M5 #13 Codex P1: guardian ${action} never commits after %s between precheck and lock`,
       async (revocation) => {
         const kid=(await post(h,c('children'),admin,child()).expect(201)).body.id;
         const email='late-guardian-photo@family.test';
