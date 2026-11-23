@@ -6,6 +6,7 @@
  */
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
+import {inflateSync} from 'node:zlib';
 import {ILLUSTRATION_REFERENCE_SLOTS, ILLUSTRATION_STYLE_VERSION}
   from '../../apps/web/src/lib/illustration-style.mjs';
 
@@ -32,6 +33,15 @@ const own = (object,key) => {
 const validEvidence = value => typeof value==='string' && HEX.test(value);
 const validLabel = value => typeof value==='string' &&
   /^[A-Za-z0-9][A-Za-z0-9._:-]{3,79}$/.test(value);
+// Every chunk CRC is checked before decoding; no ancillary metadata is admitted.
+const crc32=buffer=>{
+  let crc=0xffffffff;
+  for(const octet of buffer){
+    crc^=octet;
+    for(let n=0;n<8;n++) crc=(crc>>>1) ^ ((crc & 1)?0xedb88320:0);
+  }
+  return (crc^0xffffffff)>>>0;
+};
 
 /** All references are fixed, user-reported screened concepts, not signed clinical receipts. */
 export async function makePrivateGenerationBatch(evidence) {
@@ -114,24 +124,32 @@ export function inspectPrivateMaster(job,bytes) {
        bytes[24]!==8 || ![2,6].includes(bytes[25]) ||
        bytes[26]!==0 || bytes[27]!==0 || bytes[28]!==0)deny();
     let at=8, sawIDAT=false, sawIEND=false;
+    const compressed=[];
     while(at<bytes.length){
       if(at+12>bytes.length)deny();
       const length=bytes.readUInt32BE(at), type=bytes.toString('ascii',at+4,at+8);
       if(length>bytes.length-at-12 || !/^[A-Za-z]{4}$/.test(type))deny();
       if(at===8 && type!=='IHDR')deny();
       if(at!==8 && type==='IHDR')deny();
-      if(['tEXt','zTXt','iTXt','eXIf','sPLT','iCCP'].includes(type))deny();
-      if(type==='IDAT')sawIDAT=true;
+      if(!['IHDR','IDAT','IEND'].includes(type))deny();
+      if(bytes.readUInt32BE(at+8+length)!==crc32(bytes.subarray(at+4,at+8+length)))deny();
+      if(type==='IDAT'){sawIDAT=true;compressed.push(bytes.subarray(at+8,at+8+length));}
       if(type==='IEND'){
         if(length!==0 || at+12!==bytes.length)deny();
         sawIEND=true;
       }
-      // CRC and complete decode remain mandatory in the future isolated
-      // scanner/derivative processor; structural preflight grants no trust.
+      // This is only a format and raw-stream check; full image inspection,
+      // malicious-content scanning and derivative QA remain separate gates.
       at += length+12;
       if(sawIEND)break;
     }
     if(!sawIDAT||!sawIEND||at!==bytes.length)deny();
+    // The inflated raster is tightly bounded to prevent compressed bombs.
+    const expected=1200*(1+1600*(bytes[25]===6?4:3));
+    const raw=inflateSync(Buffer.concat(compressed),{maxOutputLength:expected});
+    if(raw.length!==expected)deny();
+    const pitch=1+1600*(bytes[25]===6?4:3);
+    for(let row=0;row<1200;row++) if(raw[row*pitch]>4)deny();
     return Object.freeze({
       referenceId:job.referenceId,sha256:sha(bytes),
       width:1600,height:1200,
