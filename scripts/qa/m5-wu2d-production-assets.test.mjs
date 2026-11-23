@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createHash} from 'node:crypto';
+import {createHash,randomBytes} from 'node:crypto';
+import {mkdtemp,readFile,readdir,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {stagePrivateIllustration,PrivateCustodyError} from './m5-wu2c-private-custody.mjs';
 import {deflateSync} from 'node:zlib';
 import {
   planProductionAssets,validateProductionMaster,
@@ -177,4 +181,57 @@ test('operator-only host stage denies missing key/AV; cannot simulate a successf
     root:'/tmp/therabridge-m5-wu2d-synthetic-private-only',
     operatorId:'synthetic-operator',evidence:evidence(),submission,masterBytes:png,
   },{}),ProductionAssetError);
+});
+
+test('real private custody staging HMAC-binds model/run provenance to each 3-asset manifest',async()=>{
+  const {submission,png}=await valid();
+  const root=await mkdtemp(join(tmpdir(),'tb-wu2d-master-'));
+  const keyBase64=randomBytes(32).toString('base64');
+  try{
+    const provenance={
+      referenceId:submission.referenceId,
+      providerRunId:submission.providerRunId,
+      modelId:submission.modelId,modelVersion:submission.modelVersion,
+      costMicros:submission.costMicros,masterSha256:submission.masterSha256,
+      promptSha256:submission.promptSha256,
+      sourceConceptSha256:submission.sourceConceptSha256,
+      batchRevision:submission.batchRevision,
+    };
+    const scanner=async bytes=>({
+      verdict:'CLEAN',sha256:sha(bytes),scannedBytes:bytes.length,
+      engine:'ClamAV',signatureSetVersion:'synthetic-fixture-v1',
+    });
+    const receipt=await stagePrivateIllustration({
+      root,keyBase64,referenceId:submission.referenceId,
+      evidence:evidence(),masterBytes:png,scanner,
+      operatorId:'synthetic-operator',productionProvenance:provenance,
+    });
+    assert.equal(receipt.assetCount,3);
+    assert.equal(receipt.status,'PRIVATE_QUARANTINED');
+    assert.equal(receipt.published,false);
+    const assetRoot=join(root,'bundles',receipt.bundleId);
+    const encoded=await readFile(join(assetRoot,'manifest.json'));
+    const saved=JSON.parse(encoded.toString('utf8'));
+    assert.equal(receipt.manifestSha256,sha(encoded));
+    assert.equal(saved.manifest.productionProvenance.modelId,submission.modelId);
+    assert.equal(saved.manifest.productionProvenance.providerRunId,submission.providerRunId);
+    assert.equal(saved.manifest.productionProvenance.masterSha256,sha(png));
+    assert.equal(saved.manifest.productionProvenance.promptSha256,submission.promptSha256);
+    assert.equal(saved.manifest.productionProvenance.sourceEvidence,
+      'OPERATOR_ASSERTED_NOT_PROVIDER_VERIFIED');
+    assert.equal(saved.manifest.productionProvenance.assetClinicalReview,'NOT_PROVIDED');
+    assert.equal(saved.manifest.productionProvenance.publishEnabled,false);
+    assert.equal(saved.manifest.published,false);
+    assert.deepEqual((await readdir(assetRoot)).sort(),
+      ['card.tbenc','manifest.json','master.tbenc','square.tbenc']);
+    await assert.rejects(stagePrivateIllustration({
+      root,keyBase64,referenceId:submission.referenceId,
+      evidence:evidence(),masterBytes:png,scanner,
+      operatorId:'synthetic-operator',
+      productionProvenance:{...provenance,promptSha256:'f'.repeat(64)},
+    }),PrivateCustodyError);
+    assert.equal((await readdir(join(root,'bundles'))).length,1);
+  }finally{
+    await rm(root,{recursive:true,force:true});
+  }
 });
