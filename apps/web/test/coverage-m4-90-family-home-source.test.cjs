@@ -66,6 +66,32 @@ describe('M4-08 real family-home branch qualification honors private child/visit
   expect(find('family-child-child-a')).toHaveLength(0);
   expect(html()).toContain('No children linked yet');
  });
+ it('three authorized siblings announce current selection, link button controls and remount only the selected child card',async()=>{
+  mockData=family([
+    kid({id:'sibling-a',name:'Synthetic Alpha',upcoming:[visit({id:'a-visit'})]}),
+    kid({id:'sibling-b',name:'Synthetic Beta',upcoming:[visit({id:'b-visit'})]}),
+    kid({id:'sibling-c',name:'Synthetic Gamma',upcoming:[]}),
+  ]);
+  await mount(['family.practice.read','family.progress.demo']);
+  const live=get('family-active-child-announcement');
+  expect(live.props.role).toBe('status');
+  expect(live.props['aria-live']).toBe('polite');
+  expect(live.props['aria-atomic']).toBe('true');
+  expect(find('family-child-sibling-a')).toHaveLength(1);
+  expect(find('family-child-sibling-b')).toHaveLength(0);
+  expect(get('family-switch-sibling-a').props['aria-pressed']).toBe(true);
+  await click('family-switch-sibling-b');
+  expect(get('family-switch-sibling-b').props['aria-pressed']).toBe(true);
+  expect(get('family-switch-sibling-b').props['aria-controls']).toBe('family-active-child-detail');
+  expect(get('family-active-child-announcement').children.join('')).toContain('Synthetic Beta');
+  expect(find('family-child-sibling-a')).toHaveLength(0);
+  expect(find('family-child-sibling-b')).toHaveLength(1);
+  expect(find('family-visit-a-visit')).toHaveLength(0);
+  await click('family-switch-sibling-c');
+  expect(get('family-active-child-announcement').children.join('')).toContain('Synthetic Gamma');
+  expect(find('family-child-sibling-b')).toHaveLength(0);
+  expect(find('family-child-sibling-c')).toHaveLength(1);
+ });
  it('authorized one-child overview includes only confirmed appointment and its team',async()=>{
   await mount();
   expect(get('family-child-child-a')).toBeTruthy();

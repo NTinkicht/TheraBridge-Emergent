@@ -100,7 +100,7 @@ function ScopedSupervisorReviewQueue({ centerId, childId, service, onError }: {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <details className="rounded-control border border-border-light px-3 py-2" data-testid={`review-queue-preview-${r.id}`}>
-              <summary className="flex min-h-9 cursor-pointer list-none items-center gap-1 text-sm font-semibold text-brand-action focus-visible:outline-2 focus-visible:outline-brand-action">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1 text-sm font-semibold text-brand-action focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-action">
                 <Eye size={16} aria-hidden="true"/> Context
               </summary>
               <p className="mt-2 max-w-xs text-xs text-brand-inkMuted">Draft by {r.author}, {serviceLabel(r.service)} for {r.childName}. Period {r.periodStart} to {r.periodEnd}. Open the report to inspect exact source evidence and permitted internal decisions.</p>
