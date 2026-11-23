@@ -137,6 +137,17 @@ export class ActivityMediaService {
         data: { state: 'REJECTED', rejectionReason: dto.reason, version: { increment: 1 }, updatedAt: now },
       });
       if (changed.count !== 1) throw new ConflictException('Artwork draft changed or is unavailable.');
+      // Revocation is atomic with the optimistic draft transition. Candidates
+      // scanned before rejection must never remain review-eligible; a raced
+      // uploader either commits first and is revoked here, or sees REJECTED.
+      // Keep encrypted bytes for controlled retention/audit cleanup only.
+      await tx.privateMediaCandidate.updateMany({
+        where: {
+          centerId, templateId, mediaDraftId: draftId,
+          kind: 'ACTIVITY_IMAGE', status: 'QUARANTINED', revokedAt: null,
+        },
+        data: { status: 'REVOKED', revokedAt: now },
+      });
       await logCenterEvent(tx, centerId, 'media.draft_rejected', now, {
         actorUserId: v.userId, meta: { templateId, mediaDraftId: draftId },
       });
