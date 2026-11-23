@@ -735,6 +735,11 @@ model ActivityTemplate {
   service     String   @db.VarChar(32)
   ageBand     String   @map("age_band") @db.VarChar(32)
   minutes     Int
+  // Optional clinician-authored discovery metadata. Never synthesize labels
+  // for legacy records; blank data stays explicitly unclassified.
+  category    String?  @db.VarChar(80)
+  skill       String?  @db.VarChar(80)
+  equipment   String[] @default([]) @db.VarChar(120)
   materials   String[] @db.VarChar(120)
   steps       String[] @db.VarChar(400)
   safety      String[] @db.VarChar(400)

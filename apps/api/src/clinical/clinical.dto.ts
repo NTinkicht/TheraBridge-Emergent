@@ -183,6 +183,11 @@ export class ReportVersionDto {
   @IsInt() @Min(1) version!: number;
 }
 export class TemplateDto {
+  @IsOptional() @TrimmedString() @IsString() @MaxLength(80) category?: string;
+  @IsOptional() @TrimmedString() @IsString() @MaxLength(80) skill?: string;
+  @IsOptional() @IsArray() @ArrayMaxSize(12) @IsString({ each: true })
+  @MaxLength(120, { each: true }) equipment?: string[];
+
   @TrimmedString() @IsString() @MinLength(3) @MaxLength(120) title!: string;
   @IsIn(SPECIALTIES) service!: string;
   @TrimmedString() @IsString() @MinLength(1) @MaxLength(32) ageBand!: string;
@@ -194,6 +199,11 @@ export class TemplateDto {
 
 /** Edit the author's centre-owned activity; specialty cannot be changed in place. */
 export class TemplateUpdateDto {
+  @IsOptional() @TrimmedString() @IsString() @MaxLength(80) category?: string;
+  @IsOptional() @TrimmedString() @IsString() @MaxLength(80) skill?: string;
+  @IsOptional() @IsArray() @ArrayMaxSize(12) @IsString({ each: true })
+  @MaxLength(120, { each: true }) equipment?: string[];
+
   @IsInt() @Min(1) version!: number;
   @TrimmedString() @IsString() @MinLength(3) @MaxLength(120) title!: string;
   @TrimmedString() @IsString() @MinLength(1) @MaxLength(32) ageBand!: string;

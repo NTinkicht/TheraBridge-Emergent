@@ -3,7 +3,8 @@ import { rest } from './auth';
 export interface Goal { key: string; title: string; measure: 'percent' | 'count' | 'level'; baseline: number; target: number; horizon?: 'SHORT_TERM' | 'LONG_TERM'; targetOn?: string; reviewOn?: string }
 export interface ActivitySchedule { cadence: 'WEEKLY' | 'MONTHLY'; startsOn: string; endsOn: string; weekdays?: number[]; monthDay?: number }
 export interface HomeActivity { templateId: string; frequency: string; note?: string; durationMinutes?: number; goalKey?: string; schedule?: ActivitySchedule; snapshot?: Template & { version: number; capturedAt: string } }
-export interface Template { id: string; title: string; service: string; ageBand: string; minutes: number; materials: string[]; steps: string[]; safety: string[]; library?: 'center' | 'synthetic'; version?: number; mine?: boolean }
+export interface Template { id: string; title: string; service: string; ageBand: string; minutes: number; materials: string[]; steps: string[]; safety: string[]; category?: string | null; skill?: string | null;
+  equipment?: string[]; library?: 'center' | 'synthetic'; version?: number; mine?: boolean }
 export interface GoalCheckpoint {
   kind: 'GOAL_CHECKPOINT'; goalKey: string; authorId: string; reviewedOn: string;
   at: string; summary: string; observationIds: string[];
@@ -59,14 +60,16 @@ export const clinicalApi = {
   saveSession: (centerId: string, id: string, body: { version: number; mutationKey: string; sections: Record<string, string>; activities: SessionActivity[]; actualStart: string; actualEnd?: string; attendance: string; executionStatus: string }) => rest.send<{ version: number; updatedAt: string }>('PATCH', c(centerId, `clinical/sessions/${id}`), body),
   saveNote: (centerId: string, id: string, sections: Record<string, string>, version: number) => rest.send('PATCH', c(centerId, `clinical/notes/${id}`), { sections, version }),
   observe: (centerId: string, childId: string, body: { planVersionId: string; goalKey: string; value: number; observedOn: string; note?: string }) => rest.send('POST', c(centerId, `clinical/children/${childId}/observations`), body),
-  templates: (centerId: string, options: { offset?: number; limit?: number; search?: string; service?: string; ownership?: string } = {}) => {
+  templates: (centerId: string, options: { offset?: number; limit?: number; search?: string; service?: string; ownership?: string;
+    category?: string; skill?: string; equipment?: string } = {}) => {
     const query = new URLSearchParams();
     for (const [key, value] of Object.entries(options)) if (value !== undefined && value !== '') query.set(key, String(value));
     return rest.get<{ items: Template[]; hasMore: boolean; nextOffset: number | null }>(c(centerId, 'activities' + (query.size ? '?' + query.toString() : '')));
   },
   createTemplate: (centerId: string, body: Omit<Template, 'id' | 'library'>) => rest.send('POST', c(centerId, 'activities'), body),
   duplicateTemplate: (centerId: string, id: string, title: string) => rest.send<{ id: string; version: number }>('POST', c(centerId, `activities/${id}/duplicate`), { title }),
-  editTemplate: (centerId: string, id: string, body: { version: number; title: string; ageBand: string; minutes: number; materials: string[]; steps: string[]; safety: string[] }) =>
+  editTemplate: (centerId: string, id: string, body: { version: number; title: string; ageBand: string; minutes: number; materials: string[]; steps: string[]; safety: string[];
+    category?: string; skill?: string; equipment?: string[] }) =>
     rest.send<{ id: string; version: number }>('PATCH', c(centerId, `activities/${id}`), body),
   // Reuses the existing server-authorized practice-feedback endpoint; does
   // not create a new pathway from guardian notes to clinical records.
