@@ -124,6 +124,15 @@ html :is(input, select, textarea, [role="combobox"]):focus-visible {
      must remain visibly measurable; never use the old 20% alpha glow. */
   box-shadow: 0 0 0 3px var(--focus-ring, var(--tb-brand-action)) !important;
 }
+/* The native select's focus indication must not depend on a nested custom-
+   property fallback. Bind each role family directly to its approved theme
+   token in BOTH light and dark modes. */
+.theme-clinical-auto :is(input, select, textarea, [role="combobox"]):focus-visible {
+  box-shadow: 0 0 0 3px var(--tb-brand-action) !important;
+}
+.theme-family-auto :is(input, select, textarea, [role="combobox"]):focus-visible {
+  box-shadow: 0 0 0 3px var(--fam-focus) !important;
+}
 
 @keyframes tb-rise {
   from { opacity: 0; transform: translateY(6px); }

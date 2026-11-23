@@ -201,7 +201,8 @@ export async function observeSharedShell(page, persona, width) {
     'Theme control not keyboard focusable');
 
   // Codex P2: a resting dark border may suppress the only visible focus cue.
-  const focusControl = page.getByTestId(width < 768 ? 'mobile-nav-select' : 'desktop-destination-search');
+  const focusId = width < 768 ? 'mobile-nav-select' : 'desktop-destination-search';
+  const focusControl = page.getByTestId(focusId);
   // CSS :focus-visible depends on input modality. After clicking the theme
   // toggle, programmatic focus alone may correctly show NO keyboard ring.
   // Establish genuine keyboard modality first, then inspect the focused
@@ -210,6 +211,21 @@ export async function observeSharedShell(page, persona, width) {
   await focusControl.focus();
   await page.waitForFunction(() => document.activeElement?.matches(':focus-visible') === true,
     null,{timeout:3000,polling:100});
+  // Actual dark-theme painting and focus effects may settle after the initial
+  // :focus-visible state becomes true. Wait only for a *computed* 3px ring,
+  // never for the presence of an authored CSS rule, before strict validation.
+  try {
+    await page.waitForFunction(id => {
+      const el=document.querySelector('[data-testid="' + id + '"]');
+      if (!el || document.activeElement!==el || !el.matches(':focus-visible')) return false;
+      const style=getComputedStyle(el);
+      return (style.outlineStyle==='solid' && parseFloat(style.outlineWidth)>=3) ||
+        /rgb\\([^)]*\\)\\s+0px\\s+0px\\s+0px\\s+[3-9](?:\\.\\d+)?px/.test(style.boxShadow);
+    },focusId,{timeout:4000,polling:100});
+  } catch (error) {
+    if (error?.name!=='TimeoutError') throw error;
+    // Final contrast-and-width assertion below records safe cascade diagnostics.
+  }
   const focus = await focusControl.evaluate(el => {
     const style = getComputedStyle(el);
     // Safe, non-identifying cascade diagnostics are included only in a
