@@ -55,7 +55,11 @@ function ScopedSupervisorReviewQueue({ centerId, childId, service, onError }: {
     [centerId, childId, service, debounced, page, requestKey],
   );
   const { data: loaded, failed, reload } = useLoad(fetcher, scopedOnError);
-  const data = loaded?.requestKey === requestKey ? loaded.result : null;
+  // useLoad intentionally keeps its last successful response for retry UX.
+  // A failed refresh (including a withdrawn 401/403) must NOT keep its old
+  // report links or author/child metadata visible beside the denial banner.
+  // Same fail-closed pattern as the scoped Schedule workspace.
+  const data = !failed && loaded?.requestKey === requestKey ? loaded.result : null;
   const items = data?.items ?? [];
   const filterActive = !!(search.trim() || childId || service);
   return (

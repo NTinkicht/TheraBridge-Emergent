@@ -84,6 +84,33 @@ describe('mounted supervisor report queue scoped source and paging',()=>{
   expect(reportsApi.reviewQueue).toHaveBeenLastCalledWith('center-a',
    expect.objectContaining({childId:'child-b',service:'ot',page:1}));
  });
+ it('hides previously authorized report links after a failed same-scope refresh and rechecks on retry',async()=>{
+  const original=page({items:[row({id:'previous',title:'Previously visible synthetic draft'})]});
+  const recovered=page({items:[row({id:'fresh',title:'New authorized synthetic draft'})]});
+  reportsApi.reviewQueue.mockResolvedValueOnce(original)
+   .mockRejectedValueOnce(Object.assign(new Error('Synthetic access denied'),{status:403}))
+   .mockResolvedValueOnce(recovered);
+  const originalOnError=jest.fn(e=>{throw e;});
+  const updatedOnError=jest.fn(e=>{throw e;});
+  await render({onError:originalOnError});
+  expect(find('review-queue-open-previous')).toHaveLength(1);
+  // Replacing the session error callback triggers a real refresh without
+  // changing filters. useLoad retains the previous successful response.
+  await act(async()=>tree.update(h(SupervisorReviewQueue,{
+    centerId:'center-a',childId:'child-a',service:'speech',onError:updatedOnError
+  })));
+  expect(updatedOnError).toHaveBeenCalledTimes(1);
+  expect(find('review-queue-error')).toHaveLength(1);
+  expect(find('review-queue-open-previous')).toHaveLength(0);
+  expect(find('review-queue-list')).toHaveLength(0);
+  expect(find('review-queue-pagination')).toHaveLength(0);
+  expect(JSON.stringify(tree.toJSON())).not.toContain('Previously visible synthetic draft');
+  const retry=get('review-queue-error').findAllByType('button')[0];
+  await act(async()=>{retry.props.onClick();await Promise.resolve();});
+  expect(find('review-queue-open-fresh')).toHaveLength(1);
+  expect(find('review-queue-open-previous')).toHaveLength(0);
+  expect(find('review-queue-error')).toHaveLength(0);
+ });
  it('rejects a failed queue fetch and retries the same authorized endpoint',async()=>{
   reportsApi.reviewQueue.mockRejectedValueOnce(new Error('synthetic denial'))
    .mockResolvedValueOnce(page());
