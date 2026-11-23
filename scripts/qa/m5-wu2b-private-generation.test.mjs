@@ -82,7 +82,10 @@ test('generation plan is pinned to same 25 exact refs and has zero release/provi
     assert.equal(job.storageKey,null);
     assert.equal(job.providerTermsSha256,sha('a'));
     assert.equal(job.commercialLicenseSha256,sha('b'));
-    assert(!/patient name|clinical note|real child/i.test(job.prompt));
+    // The fixed brief MUST prohibit real-child likenesses. Reject actual
+    // patient/clinical content without mistaking this safety ban for leakage.
+    assert.match(job.prompt,/No words, logos, real child likeness/);
+    assert.doesNotMatch(job.prompt,/patient name|clinical note/i);
     assert.equal(Object.isFrozen(job),true);
   }
   assert.throws(()=>{batch.jobs[0].publishEnabled=true;},TypeError);
