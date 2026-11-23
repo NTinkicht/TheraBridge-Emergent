@@ -42,7 +42,7 @@ function NewTemplate({ centerId, onDone, onError }: { centerId: string; onDone: 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {(['category', 'skill'] as const).map(key => <Field key={key}
           label={key === 'category' ? 'Activity category (optional)' : 'Skill (optional)'}
-          value={f[key]} onChange={e => setF(old => ({ ...old, [key]: e.target.value }))} />)}
+          value={f[key]} onChange={e => setF(old => ({ ...old, [key]: e.target.value }))} testId={`template-${key}`} />)}
         <label className="block text-[14px] font-medium">Equipment (one per line)
           <textarea rows={3} className={area} value={f.equipment}
             onChange={e => setF(old => ({ ...old, equipment: e.target.value }))} />
