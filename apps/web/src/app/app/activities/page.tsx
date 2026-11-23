@@ -69,8 +69,12 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
   const [skill, setSkill] = useState('');
   const [equipment, setEquipment] = useState('');
   const [view, setView] = useState<'grid' | 'list'>('grid');
+  // Preserve the existing four-part identity for legacy/unfiltered reads.
+  // Extend it only when an advanced filter is used, so an old response
+  // cannot be confused with a newly filtered query.
   const queryKey = JSON.stringify([centerId, search.trim(), specialty, ownership,
-    category.trim(), skill.trim(), equipment.trim()]);
+    ...(category.trim() || skill.trim() || equipment.trim()
+      ? [category.trim(), skill.trim(), equipment.trim()] : [])]);
   const fetcher = useCallback(async () => ({ ...await clinicalApi.templates(centerId, {
     search: search.trim(), service: specialty === 'all' ? undefined : specialty,
     ownership, limit: 100,
