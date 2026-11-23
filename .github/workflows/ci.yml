@@ -795,6 +795,8 @@ jobs:
         run: node --test scripts/qa/m5-wu2b-private-generation.test.mjs
       - name: M5 WU2-C private master crop, derivatives, alpha and admission denial tests
         run: node --test scripts/qa/m5-wu2c-private-derivatives.test.mjs
+      - name: M5 WU2-C encrypted quarantine, trusted scanner, audit and retention denial contracts
+        run: node --test scripts/qa/m5-wu2c-private-custody.test.mjs
       - name: M5-13 therapist-reported concept acceptance must remain non-publication evidence
         run: node --test scripts/qa/m5-wu2a-therapist-attestation.test.mjs
       - name: M5-13 concept pack pinned hashes and tamper-denial contract
