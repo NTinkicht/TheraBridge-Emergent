@@ -123,7 +123,9 @@ export function inspectM5MediaApprovalChain({
   const seen=new Set();
   const verified=new Map();
   for(const record of receipts){
-    if(!record||typeof record!=='object')continue;
+    // Reject hostile getter/proxy-like records before touching stage/role.
+    const fields=['schemaVersion','stage','role','subjectSha256','reviewerId','signedAt','decision','signatureB64'];
+    if(!exact(record,fields))continue;
     const key=record.stage+':'+record.role;
     // Multiple signed approvals for one role are ambiguous; reject that role,
     // rather than cherry-pick the one that says "approved".
