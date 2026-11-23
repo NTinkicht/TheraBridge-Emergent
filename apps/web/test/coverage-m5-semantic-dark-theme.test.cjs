@@ -107,6 +107,14 @@ describe('application-wide semantic light/dark palette',()=>{
     const ratio=(a,b)=>(Math.max(luminance(a),luminance(b))+.05)/(Math.min(luminance(a),luminance(b))+.05);
     expect(ratio(canvas,ink)).toBeGreaterThanOrEqual(4.5);
   });
+  it('ensures >=3px accessible keyboard input/select/combobox focus in staff dark mode',()=>{
+    const fs=require('node:fs'),path=require('node:path');
+    const sheet=fs.readFileSync(path.resolve(__dirname,'../src/app/globals.css'),'utf8');
+    expect(sheet).toContain(':is(input, select, textarea, [role="combobox"]):focus-visible');
+    expect(sheet).toContain('border-color: var(--tb-brand-action);');
+    expect(sheet).toContain('outline: 3px solid var(--tb-brand-action);');
+    expect(sheet).toContain('outline-offset: 2px;');
+  });
   it('real staff dark semantic utility overrides use canonical inherited tokens across shared screens',()=>{
     const fs=require('node:fs'),path=require('node:path');
     const sheet=fs.readFileSync(path.resolve(__dirname,'../src/app/globals.css'),'utf8');

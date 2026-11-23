@@ -68,6 +68,16 @@ html[data-app-theme="dark"] .theme-clinical-auto .border-border-strong {
   border-color: var(--tb-border-strong);
 }
 
+/* Fix the Codex P2: staff dark borders must not eclipse keyboard focus.
+   Shared inputs/selects/comboboxes show a high-contrast 3px action ring even
+   when an individual control uses focus:outline-none or a low-alpha ring. */
+html[data-app-theme="dark"] .theme-clinical-auto
+  :is(input, select, textarea, [role="combobox"]):focus-visible {
+  border-color: var(--tb-brand-action);
+  outline: 3px solid var(--tb-brand-action);
+  outline-offset: 2px;
+}
+
 .tnum {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;

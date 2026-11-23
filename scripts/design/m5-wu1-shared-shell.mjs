@@ -86,6 +86,27 @@ async function apply(page, theme) {
       (root.familyTheme ?? 'light') === expected &&
       shell?.getAttribute('data-theme') === expected;
   }, theme, { timeout: 7000, polling: 100 });
+  // Theme state may update before real computed CSS colors have settled.
+  // An incorrect stylesheet still fails after the finite 7-second deadline.
+  await page.waitForFunction(() => {
+    const shell = document.querySelector('[data-testid="product-shell"]');
+    const header = shell?.querySelector('[data-testid="product-top-bar"]');
+    if (!shell || !header) return false;
+    const family = shell.matches('.theme-family-auto');
+    const shellStyle = getComputedStyle(shell);
+    const headerStyle = getComputedStyle(header);
+    const rgb = value => {
+      const short = String(value ?? '').trim().replace('#','');
+      const full = short.length === 3 ? short.split('').map(x => x+x).join('') : short;
+      if (!/^[0-9a-f]{6}$/i.test(full)) return null;
+      return 'rgb(' + [0,2,4].map(i => parseInt(full.slice(i,i+2),16)).join(', ') + ')';
+    };
+    const surface = rgb(shellStyle.getPropertyValue(family ? '--fam-surface' : '--tb-surface-white'));
+    const canvas = rgb(shellStyle.getPropertyValue(family ? '--fam-canvas' : '--tb-canvas-clinical'));
+    return Boolean(surface && canvas &&
+      headerStyle.backgroundColor === surface &&
+      shellStyle.backgroundColor === canvas);
+  }, null, {timeout:7000,polling:100});
   return page.evaluate(() => {
     const get = id => document.querySelector('[data-testid="' + id + '"]');
     const shell = get('product-shell');
@@ -166,6 +187,19 @@ export async function observeSharedShell(page, persona, width) {
   await toggle.focus();
   assert(await toggle.evaluate(element => document.activeElement === element),
     'Theme control not keyboard focusable');
+
+  // Codex P2: a resting dark border may suppress the only visible focus cue.
+  const focusControl = page.getByTestId(width < 768 ? 'mobile-nav-select' : 'desktop-destination-search');
+  await focusControl.focus();
+  const focus = await focusControl.evaluate(el => {
+    const style = getComputedStyle(el);
+    return {active:document.activeElement===el,outlineColor:style.outlineColor,
+      outlineStyle:style.outlineStyle,outlineWidth:parseFloat(style.outlineWidth)};
+  });
+  assert(focus.active && focus.outlineStyle === 'solid' && focus.outlineWidth >= 3,
+    'Shared staff navigation focus outline must be visible at 3px');
+  assert(contrastRatio(focus.outlineColor, dark.navBackground) >= 3,
+    'Shared staff focus indicator contrast must be at least 3:1');
 
   if (width < 768) {
     const button = page.getByTestId('mobile-more-button');
