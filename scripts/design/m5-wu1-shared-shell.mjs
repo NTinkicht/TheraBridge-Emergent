@@ -104,6 +104,9 @@ async function apply(page, theme) {
       // Non-identifying computed design-token diagnostics. Never DOM text.
       semanticSurfaceRgb: style(shell).getPropertyValue('--tb-rgb-surface-white').trim(),
       semanticSurfaceHex: style(shell).getPropertyValue('--tb-surface-white').trim(),
+      headerSemanticSurfaceHex: style(header).getPropertyValue('--tb-surface-white').trim(),
+      headerSemanticSurfaceRgb: style(header).getPropertyValue('--tb-rgb-surface-white').trim(),
+      headerMatchesOverride: header.matches('html[data-app-theme="dark"] .theme-clinical-auto .bg-surface-white'),
       matchedDarkRule: document.documentElement.matches('[data-app-theme="dark"]') &&
         shell.matches('.theme-clinical-auto, .theme-family-auto'),
       mainCount: document.querySelectorAll('main#main').length,
@@ -128,6 +131,23 @@ export async function observeSharedShell(page, persona, width) {
       'Shared navigation text insufficient contrast');
   }
   for (const key of ['headerBackground','navBackground','canvasBackground']) {
+    let cssRuleFound='NOT_INSPECTED';
+    if (light[key] === dark[key]) {
+      cssRuleFound = await page.evaluate(() => {
+        const target='.theme-clinical-auto .bg-surface-white';
+        const scan=rules => {
+          for (const rule of rules) {
+            if (typeof rule.selectorText === 'string' && rule.selectorText.includes(target)) return true;
+            if (rule.cssRules && scan(rule.cssRules)) return true;
+          }
+          return false;
+        };
+        for (const sheet of document.styleSheets) {
+          try { if (scan(sheet.cssRules)) return 'PRESENT'; } catch { /* inaccessible external sheet */ }
+        }
+        return 'ABSENT';
+      });
+    }
     assert.notEqual(light[key], dark[key],
       'Theme switch failed to recolor shared shell ' + key +
       '; light=' + JSON.stringify({
@@ -135,7 +155,11 @@ export async function observeSharedShell(page, persona, width) {
         darkSelector:light.matchedDarkRule,header:light.headerBackground,canvas:light.canvasBackground,
       }) + '; dark=' + JSON.stringify({
         surfaceRgb:dark.semanticSurfaceRgb,surfaceHex:dark.semanticSurfaceHex,
-        darkSelector:dark.matchedDarkRule,header:dark.headerBackground,canvas:dark.canvasBackground,
+        inheritedHeaderHex:dark.headerSemanticSurfaceHex,
+        inheritedHeaderRgb:dark.headerSemanticSurfaceRgb,
+        headerMatchesOverride:dark.headerMatchesOverride,
+        cssRuleFound, darkSelector:dark.matchedDarkRule,
+        header:dark.headerBackground,canvas:dark.canvasBackground,
       }));
   }
   const toggle = page.getByTestId('app-theme-toggle');

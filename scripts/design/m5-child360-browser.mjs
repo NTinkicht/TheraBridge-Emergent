@@ -43,18 +43,28 @@ export async function runChild360BrowserAcceptance({ passwords }) {
     const child = await prisma.child.findFirstOrThrow({ where: { centerId: center.id, firstName: 'Yusuf', lastName: 'Ahmed' } });
     const clinical = base + '/app/clinical/' + encodeURIComponent(child.id);
     async function login(page, email) {
-      await page.goto(base + '/login', { waitUntil: 'domcontentloaded' });
-      await page.getByTestId('login-email-input').fill(email);
-      await page.getByTestId('login-password-input').fill(passwords[email]);
-      await page.getByTestId('login-submit-button').click();
-      // Next.js transitions may be client-side and need not emit a new
-      // DOMContentLoaded navigation. Observe the actual pathname state, just
-      // as the independently passing WU2 role-journey browser qualification
-      // does. Keep the same strict 20s deadline; session role is verified
-      // below before any Child360 observation counts.
-      await page.waitForFunction(() =>
-        window.location.pathname === '/app' || window.location.pathname.startsWith('/app/'),
-        null, { timeout: 20000, polling: 100 });
+      // The parallel full-CI runners can delay initial Next.js hydration.
+      // Retry the *real sign-in* once on a proven navigation timeout, never
+      // credit a retry as acceptance or bypass the subsequent server role
+      // assertion. An already-authenticated /login redirect is also checked.
+      for (let attempt=1; attempt<=2; attempt++) {
+        await page.goto(base + '/login', { waitUntil: 'domcontentloaded', timeout: 30000 });
+        if (!new URL(page.url()).pathname.startsWith('/app')) {
+          await page.getByTestId('login-email-input').fill(email);
+          await page.getByTestId('login-password-input').fill(passwords[email]);
+          await page.getByTestId('login-submit-button').click();
+        }
+        try {
+          await page.waitForFunction(() =>
+            window.location.pathname === '/app' || window.location.pathname.startsWith('/app/'),
+            null, { timeout: 20000, polling: 100 });
+          return;
+        } catch (error) {
+          if (error?.name !== 'TimeoutError' || attempt === 2) throw error;
+          // No credentials, names or personal information in CI output.
+          console.warn('M5 Child360 synthetic login route retry after hydration timeout');
+        }
+      }
     }
     for (const [email, role] of personas) {
       const context = await browser.newContext({ viewport: { width: 1440, height: 850 }, reducedMotion: 'reduce' });
