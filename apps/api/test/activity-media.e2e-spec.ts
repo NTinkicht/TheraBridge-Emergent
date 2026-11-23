@@ -145,7 +145,8 @@ describe('M5-14 activity illustration draft boundary', () => {
     await service.reject(centerId, actor, templateId, draftId, {
       version: 1, reason: 'Concurrency test rejection',
     });
-    const queries = tx.$queryRaw.mock.calls.map(call => String(call[0][0]));
+    const queries = (tx.$queryRaw.mock.calls as unknown as Array<[readonly string[]]>)
+      .map(([parts]) => String(parts[0] ?? ''));
     expect(queries.some(q => q.includes('activity_media_draft') && q.includes('FOR UPDATE'))).toBe(true);
   });
   it('rejects the entire draft transition if quarantine revocation write fails', async () => {

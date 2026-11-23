@@ -5,7 +5,7 @@ import type { TrialService } from '../src/operations/trial.service';
 describe('M5-12 activity taxonomy discovery on authorized server catalogue', () => {
   const centerId = '00000000-0000-4000-8000-000000000001';
   it('AND-filters specialty, category, skill, equipment and keeps tenant scope', async () => {
-    const findMany = jest.fn(async () => []);
+    const findMany = jest.fn(async (_args?: unknown) => []);
     const service = new ClinicalService({
       activityTemplate: { findMany },
     } as unknown as PrismaService, {} as TrialService);
@@ -13,7 +13,7 @@ describe('M5-12 activity taxonomy discovery on authorized server catalogue', () 
       service: 'speech', category: 'Picture choice', skill: 'Turn taking',
       equipment: 'Fictional cards', limit: 20,
     });
-    const input = findMany.mock.calls[0][0] as unknown as {
+    const input = findMany.mock.calls[0]?.[0] as unknown as {
       where: { AND: unknown[] }; take: number;
     };
     expect(input.take).toBe(21);
