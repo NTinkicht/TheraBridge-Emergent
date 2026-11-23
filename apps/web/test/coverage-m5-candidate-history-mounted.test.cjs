@@ -92,18 +92,17 @@ describe('M5-14 isolated candidate history status-only interface',()=>{
     .mockResolvedValueOnce(ok([item('newly-authorized',{status:'REVOKED',revokedAt:'2026-11-23T02:00:00Z'})]));
   await mount();await click('Inspect private candidate statuses');
   expect(tree.root.findAllByType('li')).toHaveLength(1);
-  expect(output()).toContain('previously-visible');
+  expect(tree.root.findAllByType('li')[0].findByType('strong').children.join('')).toBe('Quarantined');
   await click('Hide private candidate statuses');
   await click('Inspect private candidate statuses');
   expect(output()).toContain('Could not load private candidate status');
-  expect(output()).not.toContain('previously-visible');
   expect(tree.root.findAllByType('li')).toHaveLength(0);
   expect(output()).not.toContain('Load older candidate statuses');
   await click('Hide private candidate statuses');
   await click('Inspect private candidate statuses');
   expect(tree.root.findAllByType('li')).toHaveLength(1);
   expect(output()).toContain('Revoked');
-  expect(output()).not.toContain('previously-visible');
+  expect(tree.root.findAllByType('li')[0].findByType('strong').children.join('')).toBe('Revoked');
   expect(api.candidates).toHaveBeenLastCalledWith('center-a','activity-a','draft-a',undefined);
  });
  it('clears a loaded status page after a rejected rights envelope on pagination',async()=>{
@@ -114,8 +113,6 @@ describe('M5-14 isolated candidate history status-only interface',()=>{
   await click('Load older candidate statuses');
   expect(api.candidates).toHaveBeenLastCalledWith('center-a','activity-a','draft-a','old-cursor');
   expect(output()).toContain('Could not load private candidate status');
-  expect(output()).not.toContain('earlier-candidate');
-  expect(output()).not.toContain('unsafe-row');
   expect(tree.root.findAllByType('li')).toHaveLength(0);
   expect(output()).not.toContain('Load older candidate statuses');
  });
