@@ -12,6 +12,9 @@ import {makePrivateGenerationBatch,inspectPrivateMaster,PrivatePipelineError}
 
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const SIGNATURE=Buffer.from('89504e470d0a1a0a','hex');
+const CHUNK_IHDR=Buffer.from('IHDR','latin1');
+const CHUNK_IDAT=Buffer.from('IDAT','latin1');
+const CHUNK_IEND=Buffer.from('IEND','latin1');
 const BOUNDS=Object.freeze({master:[1600,1200],square:[1200,1200],card:[400,300]});
 export class PrivateDerivativeError extends Error {
   constructor(){super('Private illustration derivative validation failed; asset remains unpublished.');}
@@ -43,7 +46,12 @@ function decodeStrict(bytes,expectedWidth,expectedHeight){
     if(offset+12>bytes.length)deny();
     const n=bytes.readUInt32BE(offset);
     if(n>bytes.length-offset-12)deny();
-    const type=bytes.toString('ascii',offset+4,offset+8);
+    // Decode no chunk type text: Buffer.toString('ascii') silently clears
+    // high bits and would accept CRC-valid noncanonical PNG chunk names.
+    const tag=bytes.subarray(offset+4,offset+8);
+    const type=tag.equals(CHUNK_IHDR)?'IHDR':
+      tag.equals(CHUNK_IDAT)?'IDAT':tag.equals(CHUNK_IEND)?'IEND':null;
+    if(!type)deny();
     const data=bytes.subarray(offset+8,offset+8+n);
     if(bytes.readUInt32BE(offset+8+n)!==crc32(bytes.subarray(offset+4,offset+8+n)))deny();
     if(type==='IHDR'){
