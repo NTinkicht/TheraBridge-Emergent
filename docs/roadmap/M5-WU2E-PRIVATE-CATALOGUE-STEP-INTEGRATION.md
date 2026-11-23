@@ -22,3 +22,13 @@ Integrate the **single locked `m5-b-v1` illustration system** with current staff
 ## Exit criteria and evidence truth
 
 This PR can qualify the **private shell integration**, not M5-12/16 publication. Manual asset QA, real operational private media scanning/security certification, asset-specific clinician/design/legal approval, delivered alt translations, full card/print visual acceptance, 100% actual published activity coverage and owner/AT sessions remain **NOT RUN**. Keep #195 #199 #198 #197 #200 open until those independent decisions and signed gates exist.
+
+
+## Implemented in source (qualification pending)
+
+- A single immutable `m5-b-v1` step projection at `apps/web/src/lib/private-illustration-steps.mjs` is bound to the existing activity's exact numeric template version and at most 64 original, clinician-authored step strings (maximum 400 characters each). It denies accessor-backed, sparse, non-string, malformed, stale/unknown version or over-limit input. There are no remote image URLs, byte references, invented instructions, alt claims or media approval flags.
+- `PrivateIllustrationStepPreview.tsx` gives staff a native keyboard-operable `<details>` disclosure with semantic `<ol>`, focus indicators, 4:3 placeholders, exact step numbers, activity version and explicit no-approval warning. The 1/2/3-column responsive presentation uses standard breakpoints covering the existing 320/390/768/1024/1440 layout framework. The code adds no browser fetch, no `<img>`, print disclosure or new client endpoint.
+- The preview is mounted only in the existing `ActivityMediaDraftPanel`, which already belongs to the staff activity edit workspace and is protected by the existing scoped API. Its key includes center, template and version to avoid retaining obsolete UI state on activity changes. Guardian and session activity consumer components are deliberately unchanged.
+- Regression tests `scripts/qa/m5-wu2e-private-steps.test.mjs` assert snapshot/denial behavior, exact locked style and no-publication cross-screen contracts across `ActivityCard`, `SessionActivityPicker` and current text-only printable projection. The full `demo-journey` CI stage invokes them. The eight original API/Web >=90% coverage floors are unchanged.
+
+**Unverified:** exact-HEAD CI, independent Codex final-head review, human five-width/AT checks and real illustration safety/rights/operational media release review have not yet been observed for this branch. No image publication/clinical GO is implemented; #195 #199 remain open.
