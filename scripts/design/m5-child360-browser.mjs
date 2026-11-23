@@ -47,7 +47,14 @@ export async function runChild360BrowserAcceptance({ passwords }) {
       await page.getByTestId('login-email-input').fill(email);
       await page.getByTestId('login-password-input').fill(passwords[email]);
       await page.getByTestId('login-submit-button').click();
-      await page.waitForURL(/\/app(?:\/|$)/, { timeout: 20000, waitUntil: 'domcontentloaded' });
+      // Next.js transitions may be client-side and need not emit a new
+      // DOMContentLoaded navigation. Observe the actual pathname state, just
+      // as the independently passing WU2 role-journey browser qualification
+      // does. Keep the same strict 20s deadline; session role is verified
+      // below before any Child360 observation counts.
+      await page.waitForFunction(() =>
+        window.location.pathname === '/app' || window.location.pathname.startsWith('/app/'),
+        null, { timeout: 20000, polling: 100 });
     }
     for (const [email, role] of personas) {
       const context = await browser.newContext({ viewport: { width: 1440, height: 850 }, reducedMotion: 'reduce' });
