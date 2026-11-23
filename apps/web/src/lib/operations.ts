@@ -23,7 +23,14 @@ export interface ChildDetail {
   guardians: Guardian[]; assignments: Assignment[]; appointments: (Omit<Appointment, 'child' | 'childFull' | 'childId' | 'statusReason'>)[];
   events: { id: number; type: string; actor: string | null; subject: string | null; meta: Record<string, unknown>; createdAt: string }[];
 }
-export interface ChildInput { firstName: string; lastName: string; preferredName?: string; dateOfBirth: string; services: string[] }
+export interface PrivateCareFields {
+  sourceAcknowledged: true; conditions?: string; allergies?: string; medications?: string; careNotes?: string;
+}
+export interface PrivateCareRecord {
+  version: number; source: 'FAMILY_REPORTED_UNVERIFIED';
+  conditions: string; allergies: string; medications: string; careNotes: string;
+}
+export interface ChildInput { firstName: string; lastName: string; preferredName?: string; dateOfBirth: string; services: string[]; privateCare?: PrivateCareFields }
 export type HandoverStatus = 'PENDING_ACK' | 'ACKNOWLEDGED' | 'CANCELLED';
 export const HANDOVER_LABELS: Record<HandoverStatus, string> = {
   PENDING_ACK: 'Awaiting incoming therapist receipt',
@@ -74,6 +81,31 @@ export const opsApi = {
   children: (centerId: string, q: { q?: string; status?: string }) => rest.get<{ items: ChildRow[] }>(`${c(centerId, 'children')}?${qs(q)}`),
   createChild: (centerId: string, body: ChildInput) => rest.send<{ id: string }>('POST', c(centerId, 'children'), body),
   child: (centerId: string, id: string) => rest.get<ChildDetail & { timezone: string }>(c(centerId, `children/${id}`)).then((r) => { setCenterTz(r.timezone); return r; }),
+  uploadChildPhoto: (centerId:string,id:string,pngBase64:string) =>
+    rest.send<{id:string;status:'QUARANTINED';consentState:'PENDING';publishEnabled:false;width:number;height:number}>(
+      'POST',c(centerId,`children/${id}/photo-candidates`),{pngBase64}),
+  childPhotoCandidates: (centerId:string,id:string) =>
+    rest.get<{candidates:{id:string;status:string;consentState:string;width:number;height:number;createdAt:string}[];publicRelease:false}>(
+      c(centerId,`children/${id}/photo-candidates`)),
+  privateChildPhoto: (centerId:string,id:string) =>
+    rest.get<{mimeType:'image/png';pngBase64:string;width:number;height:number;publicRelease:false}>(
+      c(centerId,`children/${id}/private-photo`)),
+  guardianPhotoCandidates: (centerId:string,id:string) =>
+    rest.get<{candidates:{id:string;status:string;consentState:string}[]}>(
+      c(centerId,`family/children/${id}/photo-candidates`)),
+  guardianReviewPhoto: (centerId:string,id:string,candidateId:string) =>
+    rest.get<{mimeType:'image/png';pngBase64:string;width:number;height:number;previewOnly:true}>(
+      c(centerId,`family/children/${id}/photo-candidates/${candidateId}/review`)),
+  guardianPrivatePhoto: (centerId:string,id:string) =>
+    rest.get<{mimeType:'image/png';pngBase64:string;width:number;height:number}>(
+      c(centerId,`family/children/${id}/private-photo`)),
+  guardianPhotoConsent: (centerId:string,id:string,candidateId:string,consent:boolean) =>
+    rest.send('POST',c(centerId,`family/children/${id}/photo-candidates/${candidateId}/consent`),{consent}),
+  guardianPhotoRevoke: (centerId:string,id:string) =>
+    rest.send('POST',c(centerId,`family/children/${id}/photo-consent/revoke`),{}),
+  privateCare: (centerId: string, id: string) => rest.get<PrivateCareRecord>(c(centerId, `children/${id}/private-care`)),
+  updatePrivateCare: (centerId: string, id: string, body: PrivateCareFields & { version: number }) =>
+    rest.send<PrivateCareRecord>('PATCH', c(centerId, `children/${id}/private-care`), body),
   updateChild: (centerId: string, id: string, body: Partial<ChildInput> & { version: number }) => rest.send<ChildDetail>('PATCH', c(centerId, `children/${id}`), body),
   archiveChild: (centerId: string, id: string, reason: string) => rest.send<ChildDetail>('POST', c(centerId, `children/${id}/archive`), { reason }),
   restoreChild: (centerId: string, id: string) => rest.send<ChildDetail>('POST', c(centerId, `children/${id}/restore`)),

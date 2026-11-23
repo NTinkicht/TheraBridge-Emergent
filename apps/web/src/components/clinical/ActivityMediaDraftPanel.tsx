@@ -5,6 +5,7 @@ import { FileImage, ShieldAlert } from 'lucide-react';
 import { Button, Card, Pill } from '@/components/design/ui';
 import { activityMediaDrafts, type ActivityMediaDraft as Draft, type ActivityMediaSource as SourceType } from '@/lib/activity-media';
 import { LocalActivityMediaReadiness } from './LocalActivityMediaReadiness';
+import { PrivatePngCandidatePicker } from '@/components/operations/PrivatePngCandidatePicker';
 
 const initial = {
   sourceType: 'ORIGINAL' as SourceType, styleVersion: 'm5-b-v1',
@@ -30,6 +31,7 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [rejecting, setRejecting] = useState<string | null>(null);
+  const [attaching,setAttaching]=useState<string|null>(null);
   const [reason, setReason] = useState('');
   const base = activityMediaDrafts.endpoint(centerId, templateId);
 
@@ -118,7 +120,7 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
       <h4 className="font-display text-base font-semibold">Private illustration proposal registry</h4>
       <p className="flex gap-2 rounded-control bg-status-cautionSurface p-3 text-sm text-brand-ink">
         <ShieldAlert className="mt-0.5 shrink-0" size={18} aria-hidden="true" />
-        No image upload or publication is available. This records a draft brief and provenance only.
+        Only private scanned PNG candidate staging is available after a metadata draft. No image publication is available.
         Human clinical/design approval and verified storage are separate mandatory gates.
       </p>
       {/* Scope-coupled key invalidates pending local file checks when activity identity/version changes. */}
@@ -157,6 +159,20 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
           <p className="mt-2 break-words">{draft.altText}</p>
           <p className="mt-1 break-words text-brand-inkMuted">Source: {draft.sourceReference} · Rights: {draft.license}</p>
           {draft.rejectionReason && <p className="mt-1 text-status-danger">Rejected: {draft.rejectionReason}</p>}
+          {draft.state==='DRAFT' && templateVersion===draft.templateVersion &&
+            <div className="mt-2 space-y-2" data-testid={`media-private-upload-${draft.id}`}>
+              <Button variant="secondary" size="sm"
+                onClick={()=>setAttaching(current=>current===draft.id?null:draft.id)}>
+                {attaching===draft.id?'Close private image intake':'Attach scanned private PNG'}
+              </Button>
+              {attaching===draft.id&&<PrivatePngCandidatePicker
+                label="Stage a private illustration candidate (not published)"
+                onStage={async pngBase64=>{
+                  await activityMediaDrafts.uploadCandidate(centerId,templateId,draft.id,pngBase64);
+                  setNotice('Encrypted scanned illustration candidate is quarantined; independent rights and clinical review still required.');
+                  setAttaching(null);
+                }} />}
+            </div>}
           {draft.state === 'DRAFT' && <div className="mt-2">
             {rejecting === draft.id ? <div className="space-y-2">
               <label className="block font-medium">Reason for rejection
@@ -171,7 +187,7 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
         onClick={() => void loadMore()} data-testid={`media-drafts-more-${templateId}`}>
         {loadingMore ? 'Loading older proposals…' : 'Load older proposals'}
       </Button>}
-      <p className="text-xs text-brand-inkMuted">Showing {items.length}{hasMore ? '+' : ''} proposals. Every historical draft remains accessible by loading older pages. Proposals are never approved, uploaded or released assets.</p>
+      <p className="text-xs text-brand-inkMuted">Showing {items.length}{hasMore ? '+' : ''} proposals. Every historical draft remains accessible by loading older pages. Proposals may have a separate encrypted quarantined candidate. No asset is automatically approved, readable or released.</p>
     </Card>}
   </section>;
 }

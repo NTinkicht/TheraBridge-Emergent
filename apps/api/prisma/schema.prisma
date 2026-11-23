@@ -198,6 +198,8 @@ model Center {
   version       Int                @default(1)
   trialEndsAt   DateTime?          @map("trial_ends_at") @db.Timestamptz(3)
   children      Child[]
+  careIntakeRecords ChildCareIntake[]
+  privateMediaCandidates PrivateMediaCandidate[]
   guardianLinks GuardianLink[]
   mediaDrafts ActivityMediaDraft[]
   homePlanRequests HomePlanRequest[]
@@ -405,6 +407,8 @@ model Child {
   center        Center           @relation(fields: [centerId], references: [id], onDelete: Restrict)
   referentMember Membership?      @relation("ChildReferent", fields: [referentMembershipId], references: [id], onDelete: Restrict)
   referentHistory ChildReferentHistory[]
+  careIntake ChildCareIntake?
+  mediaCandidates PrivateMediaCandidate[]
   guardians     GuardianLink[]
   assignments   CareAssignment[]
   homePlanRequests HomePlanRequest[]
@@ -739,6 +743,7 @@ model ActivityTemplate {
   version     Int      @default(1)
   practiceOutcomes PracticeOutcome[]
   mediaDrafts ActivityMediaDraft[]
+  mediaCandidates PrivateMediaCandidate[]
 
   @@index([centerId])
   @@map("activity_template")
@@ -1090,9 +1095,63 @@ model ActivityMediaDraft {
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
   center          Center   @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  mediaCandidates PrivateMediaCandidate[]
   template        ActivityTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
   createdBy       User @relation(fields: [createdById], references: [id], onDelete: Restrict)
 
   @@index([centerId, templateId, createdAt(sort: Desc)])
   @@map("activity_media_draft")
+}
+
+
+// M5 owner #11 — encrypted, independently versioned family-reported sensitive intake.
+// No health information is ever written into center event meta or child list rows.
+model ChildCareIntake {
+  id             String   @id @default(uuid()) @db.Uuid
+  centerId       String   @map("center_id") @db.Uuid
+  childId        String   @unique @map("child_id") @db.Uuid
+  encryptedBody  Bytes    @map("encrypted_body") @db.ByteA
+  version        Int      @default(1)
+  source         String   @default("FAMILY_REPORTED_UNVERIFIED") @db.VarChar(36)
+  modifiedById   String   @map("modified_by_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  center         Center   @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  child          Child    @relation(fields: [childId], references: [id], onDelete: Restrict)
+
+  @@index([centerId, updatedAt])
+  @@map("child_care_intake")
+}
+
+// M5 #13/#25 — encrypted QUARANTINED candidates only; never a published media table.
+// No direct URL, public ACL, or automatic consent/rights approval.
+model PrivateMediaCandidate {
+  id              String   @id @default(uuid()) @db.Uuid
+  centerId        String   @map("center_id") @db.Uuid
+  kind            String   @db.VarChar(28)
+  childId         String?  @map("child_id") @db.Uuid
+  templateId      String?  @map("template_id") @db.Uuid
+  templateVersion Int?     @map("template_version")
+  mediaDraftId    String?  @map("media_draft_id") @db.Uuid
+  encryptedBytes  Bytes    @map("encrypted_bytes") @db.ByteA
+  digestSha256    String   @map("digest_sha256") @db.VarChar(64)
+  scannerName     String   @map("scanner_name") @db.VarChar(80)
+  scannerVersion  String   @map("scanner_version") @db.VarChar(80)
+  width           Int
+  height          Int
+  status          String   @default("QUARANTINED") @db.VarChar(20)
+  consentState    String   @default("PENDING") @map("consent_state") @db.VarChar(20)
+  consentedGuardianLinkId String? @map("consented_guardian_link_id") @db.Uuid
+  rightsState     String   @default("UNVERIFIED") @map("rights_state") @db.VarChar(20)
+  createdById     String   @map("created_by_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  revokedAt       DateTime? @map("revoked_at") @db.Timestamptz(3)
+  center          Center   @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  child           Child?   @relation(fields: [childId], references: [id], onDelete: Restrict)
+  mediaDraft      ActivityMediaDraft? @relation(fields: [mediaDraftId], references: [id], onDelete: Restrict)
+  template        ActivityTemplate? @relation(fields: [templateId], references: [id], onDelete: Restrict)
+
+  @@index([centerId, childId, createdAt])
+  @@index([centerId, templateId, createdAt])
+  @@map("private_media_candidate")
 }

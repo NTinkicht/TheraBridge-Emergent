@@ -1,8 +1,8 @@
-import { BadRequestException, Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Header, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
 import { RequirePermission, TbRequest } from '../auth/access';
 import {
   AppointmentDto, AppointmentStatusDto, AssignmentDto, ChildDto, ExtendTrialDto, FamilyPreferenceDto, GuardianDto, ListChildrenQuery, MessageDto, RangeQuery, ReasonDto, RescheduleDto,
-  SeriesCancelDto, SeriesDto, SeriesUpdateDto, ThreadDto, ThreadListQuery, UpdateChildDto, ReferentDto,
+  SeriesCancelDto, SeriesDto, SeriesUpdateDto, ThreadDto, ThreadListQuery, UpdateChildDto, ReferentDto, PrivateCareUpdateDto, PrivatePngCandidateDto, GuardianPhotoDecisionDto,
 } from './operations.dto';
 import { ChildrenService, Viewer } from './children.service';
 import { MessagesService } from './messages.service';
@@ -112,6 +112,81 @@ export class OperationsController {
   async update(@Param('centerId', uuid()) centerId: string, @Param('childId', uuid()) id: string, @Body() dto: UpdateChildDto, @Req() req: TbRequest) {
     await this.children.update(centerId, actor(req), id, dto);
     return this.children.detail(centerId, viewer(req), id);
+  }
+
+  @Get('children/:childId/private-care')
+  @RequirePermission('center.children.read')
+  privateCare(@Param('centerId', uuid()) centerId: string, @Param('childId', uuid()) id: string, @Req() req: TbRequest) {
+    return this.children.privateCare(centerId, id, viewer(req));
+  }
+
+  @Patch('children/:childId/private-care')
+  @RequirePermission('center.children.manage')
+  updatePrivateCare(@Param('centerId', uuid()) centerId: string, @Param('childId', uuid()) id: string,
+    @Body() dto: PrivateCareUpdateDto, @Req() req: TbRequest) {
+    return this.children.updatePrivateCare(centerId, id, viewer(req), dto);
+  }
+
+  @Post('children/:childId/photo-candidates')
+  @RequirePermission('center.children.manage')
+  uploadChildPhoto(@Param('centerId',uuid()) centerId:string,@Param('childId',uuid()) childId:string,
+    @Body() dto:PrivatePngCandidateDto,@Req() req:TbRequest) {
+    return this.children.uploadPhotoCandidate(centerId,childId,viewer(req),dto.pngBase64);
+  }
+
+  @Get('children/:childId/photo-candidates')
+  @RequirePermission('center.children.read')
+  childPhotoStatus(@Param('centerId',uuid()) centerId:string,@Param('childId',uuid()) childId:string,
+    @Req() req:TbRequest) {
+    return this.children.privatePhotoStatus(centerId,childId,viewer(req));
+  }
+
+  @Get('children/:childId/private-photo')
+  @Header('Cache-Control','private, no-store, max-age=0')
+  @Header('Pragma','no-cache')
+  @RequirePermission('center.children.read')
+  childPrivatePhoto(@Param('centerId',uuid()) centerId:string,@Param('childId',uuid()) childId:string,
+    @Req() req:TbRequest) {
+    return this.children.readPrivatePhoto(centerId,childId,viewer(req));
+  }
+
+  @Get('family/children/:childId/photo-candidates')
+  @RequirePermission('family.portal.read')
+  guardianPhotoCandidates(@Param('centerId',uuid()) centerId:string,@Param('childId',uuid()) childId:string,
+    @Req() req:TbRequest) {
+    return this.children.guardianPhotoCandidates(centerId,childId,viewer(req));
+  }
+
+  @Get('family/children/:childId/private-photo')
+  @Header('Cache-Control','private, no-store, max-age=0')
+  @Header('Pragma','no-cache')
+  @RequirePermission('family.portal.read')
+  guardianPrivatePhoto(@Param('centerId',uuid()) centerId:string,@Param('childId',uuid()) childId:string,
+    @Req() req:TbRequest) {
+    return this.children.guardianReadPhoto(centerId,childId,viewer(req));
+  }
+
+  @Get('family/children/:childId/photo-candidates/:candidateId/review')
+  @Header('Cache-Control','private, no-store, max-age=0')
+  @Header('Pragma','no-cache')
+  @RequirePermission('family.portal.read')
+  guardianReviewPhoto(@Param('centerId',uuid()) centerId:string,@Param('childId',uuid()) childId:string,
+    @Param('candidateId',uuid()) candidateId:string,@Req() req:TbRequest) {
+    return this.children.guardianReviewPhoto(centerId,childId,viewer(req),candidateId);
+  }
+
+  @Post('family/children/:childId/photo-candidates/:candidateId/consent')
+  @RequirePermission('family.portal.read')
+  guardianPhotoConsent(@Param('centerId',uuid()) centerId:string,@Param('childId',uuid()) childId:string,
+    @Param('candidateId',uuid()) candidateId:string,@Body() dto:GuardianPhotoDecisionDto,@Req() req:TbRequest) {
+    return this.children.guardianPhotoDecision(centerId,childId,viewer(req),candidateId,dto.consent);
+  }
+
+  @Post('family/children/:childId/photo-consent/revoke')
+  @RequirePermission('family.portal.read')
+  guardianPhotoRevoke(@Param('centerId',uuid()) centerId:string,@Param('childId',uuid()) childId:string,
+    @Req() req:TbRequest) {
+    return this.children.guardianRevokePhoto(centerId,childId,viewer(req));
   }
 
   @Post('children/:childId/archive')

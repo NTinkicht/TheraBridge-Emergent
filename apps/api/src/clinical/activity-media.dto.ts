@@ -1,6 +1,10 @@
 import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength, Matches } from 'class-validator';
 import { TrimmedString } from '../common/validators';
 
+export class ActivityPrivatePngCandidateDto {
+  @IsString() @MinLength(44) @MaxLength(699052) pngBase64!: string;
+}
+
 // Registers metadata for an unuploaded illustration proposal ONLY.
 // No client-provided public URL, storage path, approval or release state.
 export class ActivityMediaDraftDto {

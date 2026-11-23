@@ -65,7 +65,8 @@ export class UpdateStaffDto extends ProfileFields {
   @IsOptional() @trim() @IsString() @Matches(/^$|^[+()0-9 .-]{6,40}$/, { message: 'phone must be a phone number' }) phone?: string;
 }
 
-export class UpdateProfileDto extends ProfileFields {
+export class UpdateProfileDto {
+  @IsOptional() @trim() @IsString() @MaxLength(80) title?: string;
   @IsOptional() @trim() @IsString() @MinLength(2) @MaxLength(120) displayName?: string;
   @IsOptional() @trim() @IsString() @Matches(/^$|^[+()0-9 .-]{6,40}$/, { message: 'phone must be a phone number' }) phone?: string;
 }

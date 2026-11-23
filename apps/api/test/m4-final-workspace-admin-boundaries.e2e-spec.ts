@@ -214,6 +214,18 @@ describe('M4-08 scoped team directory and membership administration',()=>{
   expect(tx.membership.update).not.toHaveBeenCalled();
   expect(tx.session.updateMany).not.toHaveBeenCalled();
  });
+ it('rejects forged self-service specialties or responsibilities before database writes',async()=>{
+  for(const grants of [{specialties:['speech','occupational']},{specialties:[]},{responsibilities:['supervision']},
+      {specialties:undefined},{responsibilities:null}]) {
+    const {service,db,tx}=make();
+    await expect(service.updateMe('center-one','membership-one',{
+      userId:'user-one',role:'THERAPIST'
+    },{displayName:'Synthetic Therapist',...grants} as any)).rejects.toMatchObject({status:400});
+    expect(db.$transaction).not.toHaveBeenCalled();
+    expect(tx.membership.update).not.toHaveBeenCalled();
+    expect(tx.session.updateMany).not.toHaveBeenCalled();
+  }
+ });
  it('permits non-clinical self profile edits while preserving center scope',async()=>{
   const {service,tx,db,audit}=make();
   const value=await service.updateMe('center-one','membership-one',{

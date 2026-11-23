@@ -21,6 +21,9 @@ export const activityMediaDrafts = {
     templateVersion: number; sourceType: ActivityMediaSource; styleVersion: string;
     sceneType: string; altText: string; license: string; sourceReference: string; providerTerms?: string;
   }) => rest.send<ActivityMediaDraft>('POST', activityMediaDrafts.endpoint(centerId, templateId), body),
+  uploadCandidate: (centerId:string,templateId:string,draftId:string,pngBase64:string) =>
+    rest.send<{id:string;status:'QUARANTINED';publishEnabled:false;readEnabled:false}>(
+      'POST',activityMediaDrafts.endpoint(centerId,templateId)+'/'+encodeURIComponent(draftId)+'/candidates',{pngBase64}),
   reject: (centerId: string, templateId: string, id: string, version: number, reason: string) =>
     rest.send<{ id: string; state: 'REJECTED'; version: number }>('POST',
       activityMediaDrafts.endpoint(centerId, templateId) + '/' + encodeURIComponent(id) + '/reject', { version, reason }),
