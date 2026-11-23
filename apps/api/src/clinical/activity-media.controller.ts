@@ -34,6 +34,19 @@ export class ActivityMediaController {
     @Body() dto: ActivityMediaDraftDto, @Req() req: TbRequest) {
     return this.media.propose(centerId, viewer(req), templateId, dto);
   }
+  @Get(':draftId/candidates')
+  @RequirePermission('center.activities.manage')
+  candidateStatuses(@Param('centerId',uuid()) centerId:string,
+    @Param('templateId',uuid()) templateId:string,@Param('draftId',uuid()) draftId:string,
+    @Req() req:TbRequest,@Query('cursor') cursor?:string,@Query('limit') rawLimit?:string) {
+    if (cursor !== undefined && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(cursor))
+      throw new BadRequestException('Invalid candidate cursor.');
+    if (rawLimit !== undefined && !/^[1-9]\\d{0,2}$/.test(rawLimit))
+      throw new BadRequestException('Invalid candidate page size.');
+    const limit = rawLimit === undefined ? 50 : Number(rawLimit);
+    if (limit > 100) throw new BadRequestException('Invalid candidate page size.');
+    return this.media.candidateStatuses(centerId,viewer(req),templateId,draftId,cursor,limit);
+  }
   @Post(':draftId/candidates')
   @RequirePermission('center.activities.manage')
   uploadCandidate(@Param('centerId',uuid()) centerId:string,

@@ -70,6 +70,13 @@ export class ActivityMediaService {
       if (t.version !== dto.templateVersion) {
         throw new ConflictException('Activity changed. Reload before preparing artwork.');
       }
+      if (dto.stepNumber !== undefined && (
+          !Number.isSafeInteger(dto.stepNumber) || dto.stepNumber < 1 || dto.stepNumber > 64 ||
+          !Array.isArray(t.steps) || dto.stepNumber > t.steps.length ||
+          typeof t.steps[dto.stepNumber - 1] !== 'string' || !t.steps[dto.stepNumber - 1].trim()
+      )) {
+        throw new UnprocessableEntityException('Illustration step must refer to an existing activity instruction.');
+      }
       // The client may not claim an approved asset, uploaded bytes or public URL.
       // The future storage adapter and independent reviewer must attest those.
       if (dto.sourceType === 'GENERATED' && !dto.providerTerms?.trim()) {
@@ -77,8 +84,8 @@ export class ActivityMediaService {
       }
       const created = await tx.activityMediaDraft.create({
         data: {
-          centerId, templateId, templateVersion: t.version, service: t.service,
-          state: 'DRAFT', sourceType: dto.sourceType, styleVersion: dto.styleVersion,
+          centerId, templateId, templateVersion: t.version, stepNumber: dto.stepNumber ?? null,
+          service: t.service, state: 'DRAFT', sourceType: dto.sourceType, styleVersion: dto.styleVersion,
           sceneType: dto.sceneType, altText: dto.altText, license: dto.license,
           sourceReference: dto.sourceReference, providerTerms: dto.providerTerms ?? null,
           createdById: v.userId, createdAt: now, updatedAt: now,
@@ -125,6 +132,49 @@ export class ActivityMediaService {
     });
     return {id:row.id,status:'QUARANTINED' as const,width:row.width,height:row.height,
       rightsApproved:false as const,publishEnabled:false as const,readEnabled:false as const};
+  }
+
+  /**
+   * Reviewers may inspect only bounded, redacted status metadata for their
+   * own centre/activity. No private encrypted bytes, digest, key, storage
+   * location, URL, scanner internals or approval claims leave this endpoint.
+   * The same authorization is rechecked inside the transaction on every page.
+   */
+  async candidateStatuses(centerId: string, v: Viewer, templateId: string, draftId: string,
+    cursor?: string, limit = 50) {
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) {
+      throw new UnprocessableEntityException('Candidate page size must be between 1 and 100.');
+    }
+    const scope = { centerId, templateId, mediaDraftId: draftId, kind: 'ACTIVITY_IMAGE' };
+    return this.prisma.$transaction(async tx => {
+      await this.authorizedTemplate(tx, centerId, v, templateId);
+      const draft = await tx.activityMediaDraft.findFirst({
+        where: { id: draftId, centerId, templateId }, select: { id: true },
+      });
+      if (!draft) throw new NotFoundException('Illustration draft not found.');
+      if (cursor) {
+        const boundary = await tx.privateMediaCandidate.findFirst({
+          where: { ...scope, id: cursor }, select: { id: true },
+        });
+        if (!boundary) throw new NotFoundException('Candidate page cursor not found.');
+      }
+      const rows = await tx.privateMediaCandidate.findMany({
+        where: scope, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+        take: limit + 1,
+        select: {
+          id: true, status: true, width: true, height: true, createdAt: true,
+          templateVersion: true, revokedAt: true,
+        },
+      });
+      const items = rows.slice(0, limit);
+      return {
+        items, hasMore: rows.length > limit,
+        nextCursor: rows.length > limit ? items[items.length - 1].id : null,
+        metadataOnly: true as const, readEnabled: false as const,
+        publishEnabled: false as const, clinicalReleaseEnabled: false as const,
+      };
+    });
   }
 
   async reject(centerId: string, v: Viewer, templateId: string, draftId: string, dto: ActivityMediaRejectDto) {

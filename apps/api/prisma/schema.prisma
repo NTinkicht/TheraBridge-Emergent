@@ -1080,6 +1080,9 @@ model ActivityMediaDraft {
   centerId        String   @map("center_id") @db.Uuid
   templateId      String   @map("template_id") @db.Uuid
   templateVersion Int      @map("template_version")
+  // Null means a whole-activity illustration; a positive ordinal binds a draft
+  // to an exact step of the immutable source template version.
+  stepNumber      Int?     @map("step_number")
   service         String   @db.VarChar(32)
   state           String   @default("DRAFT") @db.VarChar(16)
   sourceType      String   @map("source_type") @db.VarChar(16)

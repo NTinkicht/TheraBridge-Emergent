@@ -9,6 +9,7 @@ export class ActivityPrivatePngCandidateDto {
 // No client-provided public URL, storage path, approval or release state.
 export class ActivityMediaDraftDto {
   @IsInt() @Min(1) @Max(1000000) templateVersion!: number;
+  @IsOptional() @IsInt() @Min(1) @Max(64) stepNumber?: number;
   @IsIn(['ORIGINAL', 'GENERATED', 'LICENSED']) sourceType!: 'ORIGINAL' | 'GENERATED' | 'LICENSED';
   @TrimmedString() @IsString() @MinLength(4) @MaxLength(120) styleVersion!: string;
   @TrimmedString() @IsString() @MinLength(3) @MaxLength(80) sceneType!: string;
