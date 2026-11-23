@@ -4,6 +4,7 @@ import { Activity, Brain, Clock, Hand, ImageOff, MessageCircle, ShieldCheck, Use
 import { Card, type Tone } from '@/components/design/ui';
 import { isRecognizedSpecialty, specialtyDisplayName, specialtyIdentity, type SpecialtyFamily } from '@/styles/specialty-identity';
 import type { Template } from '@/lib/clinical';
+import { ILLUSTRATION_STYLE_VERSION } from '@/lib/illustration-style.mjs';
 
 // Keep the public specialty identity metadata (literal approved palette) unchanged.
 // The actual card must use theme-scoped semantic CSS variables: dark mode
@@ -43,7 +44,8 @@ export function ActivityCard({ t, tone = 'clinical', extra, visual = false, comp
       <div className={`flex min-w-0 flex-1 flex-col gap-4 p-5 ${showList ? 'sm:flex-row' : ''}`}
         style={!fam && identities.length ? { background: tint ?? specialtySurface(identities[0].family, true) } : undefined}>
         {visual && <div className={`flex aspect-[4/3] min-w-0 items-center justify-center rounded-control border border-border-light bg-surface-white ${showList ? 'w-full sm:w-44 sm:shrink-0 sm:self-start' : 'max-h-48 w-full'}`}
-          data-testid={`activity-media-placeholder-${t.id}`}>
+          data-testid={`activity-media-placeholder-${t.id}`}
+          data-illustration-style={ILLUSTRATION_STYLE_VERSION}>
           <div className="flex flex-col items-center gap-2 px-3 text-center text-[13px] text-brand-inkMuted">
             <ImageOff size={24} aria-hidden="true" />
             <span>No approved illustration available</span>

@@ -75,6 +75,17 @@ describe('M5-14 activity illustration draft boundary', () => {
     }
   });
 
+  it('rejects any divergent illustration style before a DB transaction or draft write', async () => {
+    for (const styleVersion of ['legacy-v0', 'm5-direction-b-illustration-v1', '', 'm5-b-v2']) {
+      const { service, create, prisma } = setup();
+      await expect(service.propose(centerId, actor, templateId, {
+        ...dto, styleVersion,
+      } as never)).rejects.toBeInstanceOf(UnprocessableEntityException);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(create).not.toHaveBeenCalled();
+    }
+  });
+
   it('fails closed when source version changes', async () => {
     const { service, create } = setup({ version: 4 });
     await expect(service.propose(centerId, actor, templateId, dto)).rejects.toBeInstanceOf(ConflictException);

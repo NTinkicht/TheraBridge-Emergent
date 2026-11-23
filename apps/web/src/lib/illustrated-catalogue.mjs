@@ -2,7 +2,8 @@
  * M5 major 3: synthetic-only, deny-by-default catalogue projection.
  * This module intentionally has no media URL resolver or authorization role.
  */
-export const ILLUSTRATION_STYLE_VERSION = 'm5-direction-b-illustration-v1';
+import { ILLUSTRATION_STYLE_VERSION } from './illustration-style.mjs';
+export { ILLUSTRATION_STYLE_VERSION };
 export const CATALOGUE_MEDIA_STATE = 'UNAVAILABLE_PENDING_SIGNED_APPROVAL';
 
 const text = value => typeof value === 'string' ? value.trim() : '';

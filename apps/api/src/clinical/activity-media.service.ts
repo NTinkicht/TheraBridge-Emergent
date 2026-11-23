@@ -6,6 +6,7 @@ import { logCenterEvent, type Tx } from '../centers/history';
 import { assertActor } from './governance-core';
 import type { Viewer } from '../operations/children.service';
 import type { ActivityMediaDraftDto, ActivityMediaRejectDto } from './activity-media.dto';
+import { ILLUSTRATION_STYLE_VERSION } from './illustration-style';
 
 @Injectable()
 export class ActivityMediaService {
@@ -60,6 +61,11 @@ export class ActivityMediaService {
   }
 
   async propose(centerId: string, v: Viewer, templateId: string, dto: ActivityMediaDraftDto) {
+    // The service boundary must reject alternate/legacy visual styles even
+    // when invoked outside class-validator or by a future internal caller.
+    // Existing pre-lock drafts remain readable for audit, not publication.
+    if (dto.styleVersion !== ILLUSTRATION_STYLE_VERSION)
+      throw new UnprocessableEntityException('Unsupported illustration style version.');
     const now = this.trial.now();
     return this.prisma.$transaction(async tx => {
       await this.trial.assertWritable(tx, centerId, now);

@@ -7,9 +7,10 @@ import { activityMediaDrafts, type ActivityMediaDraft as Draft, type ActivityMed
 import { LocalActivityMediaReadiness } from './LocalActivityMediaReadiness';
 import { ActivityMediaCandidateHistory } from './ActivityMediaCandidateHistory';
 import { PrivatePngCandidatePicker } from '@/components/operations/PrivatePngCandidatePicker';
+import { ILLUSTRATION_STYLE_VERSION } from '@/lib/illustration-style.mjs';
 
 const initial = {
-  sourceType: 'ORIGINAL' as SourceType, styleVersion: 'm5-b-v1',
+  sourceType: 'ORIGINAL' as SourceType, styleVersion: ILLUSTRATION_STYLE_VERSION,
   sceneType: '', stepNumber: '', altText: '', license: '', sourceReference: '', providerTerms: '',
 };
 const cls = 'min-h-[44px] w-full rounded-control border border-border-strong bg-surface-white px-3 py-2 text-sm';
@@ -138,8 +139,12 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion,
           </select>
         </label>
         <label className="block text-sm font-medium">Proposed style version
-          <input className={cls + ' mt-1'} value={form.styleVersion} maxLength={120} minLength={4}
-            onChange={e => setForm(v => ({ ...v, styleVersion: e.target.value }))} required />
+          <input className={cls + ' mt-1'} value={ILLUSTRATION_STYLE_VERSION} readOnly
+            aria-readonly="true" data-testid="locked-illustration-style" />
+          <span className="mt-1 block text-[12px] text-brand-inkMuted">
+            Direction B is locked across all specialties and activity screens.
+            A metadata draft does not approve or publish an image.
+          </span>
         </label>
         {field('sceneType', 'Scene type', 'Guided fine-motor activity')}
         <label className="block text-sm font-medium">Illustration target

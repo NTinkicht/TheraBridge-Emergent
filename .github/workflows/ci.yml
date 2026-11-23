@@ -789,6 +789,8 @@ jobs:
         run: node --test scripts/design/m5-wu1-shared-shell.test.mjs
       - name: M5 WU2 five-width role acceptance receipt adversarial tests
         run: node --test scripts/design/m5-wu2-browser-qualification.test.mjs
+      - name: M5 WU2-A single illustration style / no-publication cross-surface contract
+        run: node --test scripts/qa/m5-wu2a-style-contract.test.mjs
       - name: M5 media style/security signature and real-inventory adversarial qualification contracts
         run: node --test scripts/qa/m5-media-inventory.test.mjs scripts/qa/m5-media-approval-chain.test.mjs
       - name: M5 shared UX guardian five-width light/dark and screen-reader-honesty contract tests
