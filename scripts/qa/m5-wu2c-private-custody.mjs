@@ -15,11 +15,45 @@ import {preparePrivateDerivatives} from './m5-wu2c-private-derivatives.mjs';
 const SHA=/^[0-9a-f]{64}$/;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const ACTOR=/^[a-zA-Z0-9_.-]{3,64}$/;
+const PRODUCTION_LABEL=/^[A-Za-z0-9][A-Za-z0-9._:-]{3,95}$/;
 const SOCKET=/^\/(?:run|var\/run)\/clamav\/[a-zA-Z0-9._-]{1,80}$/;
 const HEX=bytes=>createHash('sha256').update(bytes).digest('hex');
 const HASH=(key,data)=>createHmac('sha256',key).update(data).digest('hex');
 const ASSETS=Object.freeze(['master','square','card']);
 export const PRIVATE_CUSTODY_PUBLICATION_ENABLED=false;
+/** Optional WU2-D provenance, HMAC-bound to the encrypted private custody manifest.
+ * An operator's model/run claim is NOT independent provider or rights evidence.
+ */
+function snapshotProductionProvenance(input,receipt){
+  if(input===undefined)return null;
+  const keys=['referenceId','providerRunId','modelId','modelVersion','costMicros',
+    'masterSha256','promptSha256','sourceConceptSha256','batchRevision'];
+  if(!input||typeof input!=='object'||Array.isArray(input)||
+     Object.getPrototypeOf(input)!==Object.prototype)deny();
+  const desc=Object.getOwnPropertyDescriptors(input);
+  if(Reflect.ownKeys(input).length!==keys.length ||
+     keys.some(key=>!Object.hasOwn(desc,key)||!Object.hasOwn(desc[key],'value')))deny();
+  const plain=Object.fromEntries(keys.map(key=>[key,desc[key].value]));
+  if(plain.referenceId!==receipt.referenceId||
+     plain.masterSha256!==receipt.masterSha256||
+     plain.promptSha256!==receipt.promptSha256||
+     plain.sourceConceptSha256!==receipt.sourceConceptSha256||
+     plain.batchRevision!==receipt.batchRevision||
+     typeof plain.providerRunId!=='string'||
+     typeof plain.modelId!=='string'||
+     typeof plain.modelVersion!=='string'||
+     !PRODUCTION_LABEL.test(plain.providerRunId)||
+     !PRODUCTION_LABEL.test(plain.modelId)||
+     !PRODUCTION_LABEL.test(plain.modelVersion)||
+     !Number.isSafeInteger(plain.costMicros)||plain.costMicros<0||
+     plain.costMicros>1_000_000_000)deny();
+  return Object.freeze({
+    ...plain,sourceEvidence:'OPERATOR_ASSERTED_NOT_PROVIDER_VERIFIED',
+    assetDesignReview:'NOT_PROVIDED',assetClinicalReview:'NOT_PROVIDED',
+    rightsReview:'NOT_VERIFIED',publishEnabled:false,
+  });
+}
+
 export class PrivateCustodyError extends Error {
   constructor(){super('Private image custody denied; no public or guardian access.');}
 }
@@ -154,7 +188,7 @@ export function createLocalClamdScanner(socket){
  * its receipt is never an independent operational security approval.
  */
 export async function stagePrivateIllustration({root,keyBase64,referenceId,evidence,masterBytes,
-  scanner,operatorId,nowMs=Date.now(),retentionDays=7}){
+  scanner,operatorId,productionProvenance,nowMs=Date.now(),retentionDays=7}){
   if(!Buffer.isBuffer(masterBytes)||masterBytes.length>12*1024*1024||
      typeof scanner!=='function'||!ACTOR.test(operatorId||'')||
      !Number.isSafeInteger(nowMs)||nowMs<0||
@@ -165,6 +199,7 @@ export async function stagePrivateIllustration({root,keyBase64,referenceId,evide
     key=keyBytes(keyBase64);
     const bundles=await safeRoot(root);
     const output=await preparePrivateDerivatives({evidence,referenceId,masterBytes:snapshot});
+    const provenance=snapshotProductionProvenance(productionProvenance,output.receipt);
     const assets={master:snapshot,square:output.squareBytes,card:output.cardBytes};
     const scans={};
     for(const kind of ASSETS){
@@ -189,6 +224,7 @@ export async function stagePrivateIllustration({root,keyBase64,referenceId,evide
       providerTermsSha256:output.receipt.providerTermsSha256,
       commercialLicenseSha256:output.receipt.commercialLicenseSha256,
       createdAt:nowMs,expiresAt:nowMs+retentionDays*86400000,
+      ...(provenance?{productionProvenance:provenance}:{}),
       legalHold:'UNVERIFIED',status:'PRIVATE_QUARANTINED',
       assets:scans,rightsVerified:false,independentSecurityApproved:false,
       published:false,guardianReadEnabled:false,readEnabled:false,
@@ -282,14 +318,14 @@ export async function purgeExpiredPrivateIllustration({root,keyBase64,bundleId,
  * real ClamAV is mandatory. Missing variables fail before image persistence.
  */
 export async function stagePrivateIllustrationOnHost({
-  root,referenceId,evidence,masterBytes,operatorId,nowMs,retentionDays,
+  root,referenceId,evidence,masterBytes,operatorId,productionProvenance,nowMs,retentionDays,
 },env=process.env){
   try{
     if(!env||typeof env!=='object')deny();
     const scanner=createLocalClamdScanner(env.TB_MEDIA_CLAMD_SOCKET);
     return await stagePrivateIllustration({
       root,keyBase64:env.TB_PRIVATE_DATA_KEY_B64,
-      referenceId,evidence,masterBytes,operatorId,nowMs,retentionDays,scanner,
+      referenceId,evidence,masterBytes,operatorId,productionProvenance,nowMs,retentionDays,scanner,
     });
   }catch{deny();}
 }
