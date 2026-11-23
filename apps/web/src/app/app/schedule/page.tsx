@@ -110,7 +110,14 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
     }
   }, [data, tz]);
   useEffect(() => {
-    void opsApi.children(centerId, {}).then((r) => setChildren(r.items)).catch(() => setChildren([]));
+    // A revoked/changed center must not leave its child names in the new
+    // center's filter while the new authorized directory request is pending.
+    let active = true;
+    setChildren([]);
+    void opsApi.children(centerId, {})
+      .then(r => { if (active) setChildren(r.items); })
+      .catch(() => { if (active) setChildren([]); });
+    return () => { active = false; };
   }, [centerId]);
   useEffect(() => {
     const revision = ++therapistRequest.current;
@@ -277,5 +284,10 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
 }
 
 export default function SchedulePage() {
-  return <Workspace active="schedule" permission="center.schedule.read" deniedText="The schedule is available to center staff.">{(s, onError) => <Schedule session={s} onError={onError} />}</Workspace>;
+  return <Workspace active="schedule" permission="center.schedule.read" deniedText="The schedule is available to center staff.">{(s, onError) =>
+    <Schedule key={JSON.stringify([
+      s.activeContext?.type === 'center' ? s.activeContext.centerId : null,
+      s.activeContext?.type === 'center' ? s.activeContext.membershipId : null,
+      s.activeContext?.role,
+    ])} session={s} onError={onError} />}</Workspace>;
 }
