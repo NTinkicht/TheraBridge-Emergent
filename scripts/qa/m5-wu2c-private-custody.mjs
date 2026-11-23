@@ -254,6 +254,12 @@ export async function purgeExpiredPrivateIllustration({root,keyBase64,bundleId,
     // Keep the root journal lock over BOTH audit events and the destructive
     // rm. Other bundles cannot interleave or falsely fail after deletion.
     const receipt=await withAuditLock(root,async()=>{
+      // The audit file has a hard 2 MiB ceiling. Before ANY deletion reserve
+      // room for BOTH fixed-shape events and their MACs. Each serialized
+      // entry is < 1 KiB (bounded actor, UUID, SHA and safe integer time).
+      // Prevent deterministic loss of PURGED when journal is near capacity.
+      const journal=await readFile(join(root,'custody-audit.jsonl'));
+      if(journal.length>2*1024*1024-2048)deny();
       await appendAuditUnlocked(root,key,{kind:'PURGE_REQUESTED',bundleId,
         assetDigest:expectedManifestSha256,actor:operatorId,at:nowMs});
       await rm(target,{recursive:true,force:false});
