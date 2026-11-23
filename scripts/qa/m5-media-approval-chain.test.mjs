@@ -11,13 +11,14 @@ const style=mediaEvidenceSubject('STYLE',{
 const security=mediaEvidenceSubject('SECURITY',{
   implementationSha256:hex('c'),threatModelSha256:hex('d'),
   scannerPolicySha256:hex('e'),storagePolicySha256:hex('f')});
-const asset=mediaEvidenceSubject('ASSET',{
+const assetSubject={
   centerId:ID,templateId:TEMPLATE,templateVersion:7,candidateSha256:hex('1'),
   styleSubjectSha256:style,securitySubjectSha256:security,
-  rightsEvidenceSha256:hex('2'),derivativesSha256:hex('3'),altLocalizationSha256:hex('4')});
+  rightsEvidenceSha256:hex('2'),derivativesSha256:hex('3'),altLocalizationSha256:hex('4')};
+const asset=mediaEvidenceSubject('ASSET',assetSubject);
 const args=(receipts,trustAnchors,assetSubjectSha256=asset)=>({
   styleSubjectSha256:style,securitySubjectSha256:security,assetSubjectSha256,
-  receipts,trustAnchors,
+  assetSubject:assetSubjectSha256===null?null:assetSubject,receipts,trustAnchors,
 });
 function createHumanReceipts(){
   // Temporary in-memory test keys are never proof of ANY real human review.
@@ -127,4 +128,48 @@ test('M5 approved words alone are not evidence and no unknown subject can qualif
   const missingRights=inspectM5MediaApprovalChain(args(
     receipts.filter(r=>r.role!=='LEGAL_RIGHTS'),trustAnchors));
   assert.equal(missingRights.status,'BLOCKED_ASSET_RIGHTS_AND_CLINICAL_REVIEW');
+});
+
+test('Codex P2: matching independent signatures do not qualify an asset with wrong upstream bindings',()=>{
+  const {receipts,trustAnchors}=createHumanReceipts();
+  const subjectWithWrongSecurity={...assetSubject,securitySubjectSha256:hex('0')};
+  const wrongAssetHash=mediaEvidenceSubject('ASSET',subjectWithWrongSecurity);
+  // Signers have valid role credentials and signed this *other* asset. Yet its
+  // style/security pointers are not the reviewed upstream subjects.
+  const pairs=new Map();
+  const signed=receipts.map(record=>{
+    if(record.stage!=='ASSET')return record;
+    const pair=generateKeyPairSync('ed25519');
+    const revised={...record,subjectSha256:wrongAssetHash};
+    revised.signatureB64=sign(null,canonicalMediaApproval(revised),pair.privateKey).toString('base64');
+    pairs.set(record.reviewerId,{
+      publicKey:pair.publicKey.export({format:'pem',type:'spki'}),
+      allowedRoles:[record.role],
+    });
+    return revised;
+  });
+  const keys=new Map([...trustAnchors,...pairs]);
+  const result=inspectM5MediaApprovalChain({
+    ...args(signed,keys),assetSubjectSha256:wrongAssetHash,assetSubject:subjectWithWrongSecurity,
+  });
+  assert.equal(result.verifiedStyleEvidence,true);
+  assert.equal(result.verifiedSecurityEvidence,true);
+  assert.equal(result.verifiedAssetEvidence,false);
+  assert.equal(result.status,'BLOCKED_ASSET_UPSTREAM_BINDING');
+  assert.ok(result.missingRoles.includes('ASSET:UPSTREAM_BINDING'));
+  assert.equal(result.publishEnabled,false);
+});
+test('Codex P2: missing, forged or inconsistent asset payload cannot qualify an opaque approval',()=>{
+  const {receipts,trustAnchors}=createHumanReceipts();
+  for(const bad of [
+    undefined, {...assetSubject,styleSubjectSha256:hex('a')},
+    {...assetSubject,templateVersion:99}, {...assetSubject, extra:'untrusted'},
+  ]){
+    const result=inspectM5MediaApprovalChain({
+      ...args(receipts,trustAnchors),assetSubject:bad,
+    });
+    assert.equal(result.verifiedAssetEvidence,false);
+    assert.equal(result.publishEnabled,false);
+    assert.equal(result.status,'BLOCKED_ASSET_UPSTREAM_BINDING');
+  }
 });

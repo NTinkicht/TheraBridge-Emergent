@@ -121,6 +121,17 @@ export class ActivityMediaService {
         throw new ConflictException('Activity or media draft changed during scanning.');
       if(v.role==='THERAPIST'&&draft.createdById!==v.userId)
         throw new ForbiddenException('Only the proposing author may supply the image.');
+      // Both upload and rejection acquire this same row lock. A rejection
+      // cannot sweep before this candidate commits; an upload that starts
+      // after rejection sees REJECTED under the lock and is refused.
+      // Validate state AGAIN after waiting for any earlier transaction.
+      await tx.$queryRaw`SELECT id FROM activity_media_draft
+        WHERE id=${draftId}::uuid AND center_id=${centerId}::uuid
+          AND template_id=${templateId}::uuid FOR UPDATE`;
+      const stillOpen=await tx.activityMediaDraft.findFirst({where:{
+        id:draftId,centerId,templateId,templateVersion:prior.templateVersion,state:'DRAFT',
+      },select:{id:true}});
+      if(!stillOpen) throw new ConflictException('Artwork draft was rejected during scanning.');
       const created=await tx.privateMediaCandidate.create({data:{
         centerId,kind:'ACTIVITY_IMAGE',templateId,templateVersion:template.version,mediaDraftId:draftId,
         ...ready,createdById:v.userId,status:'QUARANTINED',consentState:'PENDING',rightsState:'UNVERIFIED',
@@ -182,6 +193,11 @@ export class ActivityMediaService {
     return this.prisma.$transaction(async tx => {
       await this.trial.assertWritable(tx, centerId, now);
       await this.authorizedTemplate(tx, centerId, v, templateId);
+      // Use the identical row lock as final candidate admission, before
+      // optimistic rejection and before sweeping every linked candidate.
+      await tx.$queryRaw`SELECT id FROM activity_media_draft
+        WHERE id=${draftId}::uuid AND center_id=${centerId}::uuid
+          AND template_id=${templateId}::uuid FOR UPDATE`;
       const changed = await tx.activityMediaDraft.updateMany({
         where: { id: draftId, centerId, templateId, version: dto.version, state: 'DRAFT' },
         data: { state: 'REJECTED', rejectionReason: dto.reason, version: { increment: 1 }, updatedAt: now },

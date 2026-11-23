@@ -140,6 +140,14 @@ describe('M5-14 activity illustration draft boundary', () => {
     expect(tx.privateMediaCandidate.updateMany).not.toHaveBeenCalled();
     expect(tx.centerEvent.create).not.toHaveBeenCalled();
   });
+  it('locks the exact draft row on both final candidate admission and rejection', async () => {
+    const { service, tx } = setup();
+    await service.reject(centerId, actor, templateId, draftId, {
+      version: 1, reason: 'Concurrency test rejection',
+    });
+    const queries = tx.$queryRaw.mock.calls.map(call => String(call[0][0]));
+    expect(queries.some(q => q.includes('activity_media_draft') && q.includes('FOR UPDATE'))).toBe(true);
+  });
   it('rejects the entire draft transition if quarantine revocation write fails', async () => {
     const { service, tx } = setup();
     tx.privateMediaCandidate.updateMany.mockRejectedValueOnce(new Error('Synthetic DB revocation failure'));

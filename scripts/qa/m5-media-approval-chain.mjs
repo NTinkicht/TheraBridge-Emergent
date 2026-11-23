@@ -112,13 +112,26 @@ const output=(status,missing,styleReady,securityReady,assetReady)=>Object.freeze
  * Distinct human identities must fill independent roles in each phase.
  */
 export function inspectM5MediaApprovalChain({
-  styleSubjectSha256,securitySubjectSha256,assetSubjectSha256,receipts,trustAnchors
+  styleSubjectSha256,securitySubjectSha256,assetSubjectSha256,assetSubject,receipts,trustAnchors
 }){
   if(!SHA.test(styleSubjectSha256)||!SHA.test(securitySubjectSha256)||
      (assetSubjectSha256!==null&&!SHA.test(assetSubjectSha256))||
      !Array.isArray(receipts)||receipts.length>128||
      !(trustAnchors instanceof Map)){
     throw new TypeError('Explicit immutable subjects and independent reviewer registry required');
+  }
+  // A signed opaque asset hash does not prove which upstream reviews were
+  // incorporated. Require the *exact* immutable asset subject, recompute its
+  // digest and verify its style/security dependency pointers. A mismatched
+  // chain can never claim even offline acceptance, regardless of signatures.
+  let assetBindingReady=assetSubjectSha256===null &&
+    (assetSubject===null||assetSubject===undefined);
+  if(assetSubjectSha256!==null){
+    try {
+      assetBindingReady=assetSubject.styleSubjectSha256===styleSubjectSha256 &&
+        assetSubject.securitySubjectSha256===securitySubjectSha256 &&
+        mediaEvidenceSubject('ASSET',assetSubject)===assetSubjectSha256;
+    } catch {assetBindingReady=false;}
   }
   const seen=new Set();
   const verified=new Map();
@@ -149,7 +162,7 @@ export function inspectM5MediaApprovalChain({
     new Set(allSecurity.map(x=>x.who)).size===allSecurity.length &&
     allSecurity.every(x=>!allStyle.some(v=>v.who===x.who));
   const allAssets=rolesFor('ASSET');
-  const assetReady=!!assetSubjectSha256&&styleReady&&securityReady&&
+  const assetReady=!!assetSubjectSha256&&assetBindingReady&&styleReady&&securityReady&&
     allAssets.every(x=>x.who)&&new Set(allAssets.map(x=>x.who)).size===allAssets.length &&
     allAssets.every(x=>![...allStyle,...allSecurity].some(v=>v.who===x.who));
   const missing=[
@@ -160,10 +173,12 @@ export function inspectM5MediaApprovalChain({
   // Distinct-reviewer failures also block, even when roles nominally signed.
   if(!styleReady&&!missing.some(x=>x.startsWith('STYLE:')))missing.push('STYLE:INDEPENDENCE');
   if(!securityReady&&!missing.some(x=>x.startsWith('SECURITY:')))missing.push('SECURITY:INDEPENDENCE');
+  if(assetSubjectSha256&&!assetBindingReady)missing.push('ASSET:UPSTREAM_BINDING');
   if(assetSubjectSha256&&!assetReady&&!missing.some(x=>x.startsWith('ASSET:')))missing.push('ASSET:INDEPENDENCE');
   const status=!styleReady?'BLOCKED_STYLE_HUMAN_APPROVAL':
     !securityReady?'BLOCKED_SECURITY_PRIVACY_APPROVAL':
     !assetSubjectSha256?'UPSTREAM_EVIDENCE_VERIFIED_NO_ASSET_SELECTED':
+    !assetBindingReady?'BLOCKED_ASSET_UPSTREAM_BINDING':
     !assetReady?'BLOCKED_ASSET_RIGHTS_AND_CLINICAL_REVIEW':
     'OFFLINE_EVIDENCE_VERIFIED_NO_PUBLICATION_AUTHORITY';
   return output(status,missing,styleReady,securityReady,assetReady);

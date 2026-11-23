@@ -9,6 +9,7 @@ import { runWU2BrowserQualification } from './m5-wu2-browser-qualification.mjs';
 import { runSharedGuardianQualification } from './m5-shared-guardian-browser.mjs';
 import { buildPendingSharedUxManualAcceptance } from './m5-shared-ux-manual-acceptance.mjs';
 import { buildSyntheticMediaInventory } from '../qa/m5-media-inventory.mjs';
+import { verifyPrivateMediaRejectionRace } from '../qa/m5-media-rejection-race.mjs';
 import { buildM5IntegratedBrowserReceipt } from './m5-integrated-browser-receipt.mjs';
 
 const dbUrl = new URL(process.env.DATABASE_URL ?? '');
@@ -79,6 +80,8 @@ try {
   const demoCenter = await db.center.findUniqueOrThrow({
     where: { slug: 'childrens-home-demo' }, select: { id: true },
   });
+  const raceReceipt=await verifyPrivateMediaRejectionRace(db,demoCenter.id);
+  console.log('M5 synthetic PostgreSQL media race verified:', JSON.stringify(raceReceipt));
   const mediaInventory = await buildSyntheticMediaInventory(db, demoCenter.id);
   await writeFile('/tmp/therabridge-m5-media-inventory.json',
     JSON.stringify(mediaInventory, null, 2) + '\n', { mode: 0o600 });
