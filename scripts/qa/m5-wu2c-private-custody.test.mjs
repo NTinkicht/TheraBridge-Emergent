@@ -107,7 +107,7 @@ test('private custody scans all three variants, atomically encrypts and logs; ex
     const purged=await purgeExpiredPrivateIllustration(purgeArgs);
     assert.equal(purged.status,'PURGED');
     assert.equal(purged.published,false);
-    assert.equal((await readdir(join(root,'bundles'))).length,0);
+    assert.equal((await readdir(join(root,'bundles')).catch(e=>e.code==='ENOENT'?[]:Promise.reject(e))).length,0);
     const audit=(await readFile(join(root,'custody-audit.jsonl'),'utf8')).split('\n').filter(Boolean).map(JSON.parse);
     assert.deepEqual(audit.map(row=>row.event),['QUARANTINED','PURGE_REQUESTED','PURGED']);
     assert.equal(audit[1].previous,audit[0].mac);
@@ -142,7 +142,7 @@ test('invalid crypto, public paths and symlink paths fail closed',async()=>{
     const to=join(root,'private-target');await mkdir(to,{mode:0o700});
     const alias=join(root,'alias');await symlink(to,alias);
     await assert.rejects(stagePrivateIllustration({...req,root:alias}),PrivateCustodyError);
-    assert.equal((await readdir(join(root,'bundles'))).length,0);
+    assert.equal((await readdir(join(root,'bundles')).catch(e=>e.code==='ENOENT'?[]:Promise.reject(e))).length,0);
   });
 });
 
