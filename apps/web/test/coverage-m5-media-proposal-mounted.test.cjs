@@ -34,8 +34,8 @@ const change=async(labelText,value)=>{
   if(!input)throw Error('Missing input: '+labelText);
   await act(async()=>input.props.onChange({target:{value}}));
 };
-const mount=async(version=2)=>act(async()=>{tree=create(h(ActivityMediaDraftPanel,{
-  centerId:'center-a',templateId:'activity-a',templateVersion:version
+const mount=async(version=2,steps=[])=>act(async()=>{tree=create(h(ActivityMediaDraftPanel,{
+  centerId:'center-a',templateId:'activity-a',templateVersion:version,steps
 }));});
 beforeEach(()=>{jest.resetAllMocks();tree=null;api.list.mockResolvedValue({items:[],nextCursor:null,hasMore:false});});
 afterEach(async()=>{if(tree){await act(async()=>tree.unmount());tree=null;}});
@@ -77,6 +77,33 @@ describe('actual mounted private media proposal workflow',()=>{
     }));
     expect(output()).toContain('No image was uploaded');
     expect(output()).toContain('Fictional child sorting colored blocks');
+  });
+  it('binds private artwork metadata to an actual numbered source step',async()=>{
+    await mount(2,['Select fictional card','Place on table']);
+    await open();
+    await change('Illustration target','2');
+    await change('Scene type','Guided fictional play');
+    await change('License or rights basis','INTERNAL_REVIEW_ONLY');
+    await change('Provenance / source evidence reference','SYNTHETIC-STEP-123');
+    await change('Proposed accessible description','A fictional character placing neutral cards');
+    api.propose.mockResolvedValue(draft({stepNumber:2}));
+    await click('Save private metadata draft');
+    expect(api.propose).toHaveBeenCalledWith('center-a','activity-a',
+      expect.objectContaining({stepNumber:2,templateVersion:2}));
+    expect(output()).toContain('Step 2');
+  });
+  it('defaults to whole activity when no step is selected',async()=>{
+    await mount(2,['Synthetic step']);
+    await open();
+    await change('Scene type','Guided fictional play');
+    await change('License or rights basis','INTERNAL_REVIEW_ONLY');
+    await change('Provenance / source evidence reference','SYNTHETIC-WHOLE-123');
+    await change('Proposed accessible description','A fictional character choosing safe cards');
+    api.propose.mockResolvedValue(draft({stepNumber:null}));
+    await click('Save private metadata draft');
+    expect(api.propose).toHaveBeenCalledWith('center-a','activity-a',
+      expect.objectContaining({stepNumber:undefined}));
+    expect(output()).toContain('whole activity');
   });
   it('blocks generated artwork until provider terms are entered',async()=>{
     await mount();await open();
