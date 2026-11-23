@@ -34,6 +34,11 @@ test('M5 manual matrix cannot turn a missing row or a single fabricated pass int
     roles:SHARED_ROLES,journeys:['workspace']
   });
   assert.equal(result.status,'NOT_QUALIFIED');
-  assert.equal(result.failures.some(x=>x.check==='screenReaderManual'),false);
+  const changed=forged.rows[0];
+  const changedKey=[changed.role,changed.journey,changed.width,changed.state].join(':');
+  assert.equal(result.failures.some(x=>x.key===changedKey && x.check==='screenReaderManual'),false,
+    'Only the explicitly changed screen-reader check is no longer pending');
+  assert.equal(result.failures.filter(x=>x.check==='screenReaderManual').length,99,
+    'All other screen-reader checks remain unperformed');
   assert.equal(result.failures.length,499);
 });
