@@ -59,6 +59,12 @@ export function ActivityCard({ t, tone = 'clinical', extra, visual = false, comp
             <span className={Icon ? 'ml-1' : ''}>{services.length > 1 ? services.map(specialtyDisplayName).join(', ') : specialtyDisplayName(t.service)}</span>
             {t.library === 'synthetic' ? ' · synthetic sample library' : ''}{extra ? ` · ${extra}` : ''}
           </p>
+          {(t.category || t.skill) && <p className="mt-2 text-[13px] text-brand-inkMuted">
+            {t.category ? `Category: ${t.category}` : ''}{t.category && t.skill ? ' · ' : ''}{t.skill ? `Skill: ${t.skill}` : ''}
+          </p>}
+          {t.equipment && t.equipment.length > 0 && <p className="mt-2 text-[13px]">
+            <span className="font-semibold">Equipment: </span>{t.equipment.join(', ')}
+          </p>}
           {t.materials.length > 0 && <p className="mt-3 text-[14px]"><span className="font-semibold">You’ll need: </span>{t.materials.join(', ')}</p>}
           {compact && t.steps.length > 0 && <details className="mt-3 rounded-control border border-border-light bg-surface-white p-3" data-testid={`activity-details-${t.id}`}>
             <summary className="cursor-pointer text-[14px] font-semibold">Instructions ({t.steps.length} steps)</summary>

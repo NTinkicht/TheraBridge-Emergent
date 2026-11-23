@@ -7,7 +7,8 @@ const h = React.createElement;
 jest.mock('@/lib/activity-media', () => ({
   activityMediaDrafts: {
     endpoint: (c,t) => '/api/centers/'+c+'/activities/'+t+'/media-drafts',
-    list: jest.fn(), propose: jest.fn(), reject: jest.fn(), uploadCandidate: jest.fn()
+    list: jest.fn(), propose: jest.fn(), reject: jest.fn(), uploadCandidate: jest.fn(),
+    candidates: jest.fn()
   }
 }));
 const {activityMediaDrafts: api} = require('../src/lib/activity-media');
@@ -34,10 +35,17 @@ const change=async(labelText,value)=>{
   if(!input)throw Error('Missing input: '+labelText);
   await act(async()=>input.props.onChange({target:{value}}));
 };
-const mount=async(version=2)=>act(async()=>{tree=create(h(ActivityMediaDraftPanel,{
-  centerId:'center-a',templateId:'activity-a',templateVersion:version
+const mount=async(version=2,steps=[])=>act(async()=>{tree=create(h(ActivityMediaDraftPanel,{
+  centerId:'center-a',templateId:'activity-a',templateVersion:version,steps
 }));});
-beforeEach(()=>{jest.resetAllMocks();tree=null;api.list.mockResolvedValue({items:[],nextCursor:null,hasMore:false});});
+beforeEach(()=>{
+  jest.resetAllMocks();tree=null;
+  api.list.mockResolvedValue({items:[],nextCursor:null,hasMore:false});
+  api.candidates.mockResolvedValue({
+    items:[],hasMore:false,nextCursor:null,metadataOnly:true,
+    readEnabled:false,publishEnabled:false,clinicalReleaseEnabled:false,
+  });
+});
 afterEach(async()=>{if(tree){await act(async()=>tree.unmount());tree=null;}});
 const open=async()=>click('Illustration proposals');
 
@@ -77,6 +85,33 @@ describe('actual mounted private media proposal workflow',()=>{
     }));
     expect(output()).toContain('No image was uploaded');
     expect(output()).toContain('Fictional child sorting colored blocks');
+  });
+  it('binds private artwork metadata to an actual numbered source step',async()=>{
+    await mount(2,['Select fictional card','Place on table']);
+    await open();
+    await change('Illustration target','2');
+    await change('Scene type','Guided fictional play');
+    await change('License or rights basis','INTERNAL_REVIEW_ONLY');
+    await change('Provenance / source evidence reference','SYNTHETIC-STEP-123');
+    await change('Proposed accessible description','A fictional character placing neutral cards');
+    api.propose.mockResolvedValue(draft({stepNumber:2}));
+    await click('Save private metadata draft');
+    expect(api.propose).toHaveBeenCalledWith('center-a','activity-a',
+      expect.objectContaining({stepNumber:2,templateVersion:2}));
+    expect(output()).toContain('Step 2');
+  });
+  it('defaults to whole activity when no step is selected',async()=>{
+    await mount(2,['Synthetic step']);
+    await open();
+    await change('Scene type','Guided fictional play');
+    await change('License or rights basis','INTERNAL_REVIEW_ONLY');
+    await change('Provenance / source evidence reference','SYNTHETIC-WHOLE-123');
+    await change('Proposed accessible description','A fictional character choosing safe cards');
+    api.propose.mockResolvedValue(draft({stepNumber:null}));
+    await click('Save private metadata draft');
+    expect(api.propose).toHaveBeenCalledWith('center-a','activity-a',
+      expect.objectContaining({stepNumber:undefined}));
+    expect(output()).toContain('whole activity');
   });
   it('blocks generated artwork until provider terms are entered',async()=>{
     await mount();await open();
@@ -121,6 +156,37 @@ describe('actual mounted private media proposal workflow',()=>{
     expect(output()).toContain('Draft rejected.');
     expect(output()).toContain('Unsafe synthetic positioning');
     expect(output()).not.toContain('Record rejection');
+  });
+  it('invalidates mounted quarantined candidate history after confirmed rejection and reopens with revoked state',async()=>{
+    api.list.mockResolvedValue({items:[draft()],nextCursor:null,hasMore:false});
+    const envelope=(status,revokedAt=null)=>({
+      items:[{id:'synthetic-candidate',status,templateVersion:2,width:1600,height:1200,
+        createdAt:'2026-11-23T00:00:00.000Z',revokedAt}],
+      nextCursor:null,hasMore:false,metadataOnly:true,readEnabled:false,
+      publishEnabled:false,clinicalReleaseEnabled:false,
+    });
+    api.candidates.mockResolvedValueOnce(envelope('QUARANTINED'))
+      .mockResolvedValueOnce(envelope('REVOKED','2026-11-23T01:00:00.000Z'));
+    api.reject.mockResolvedValue({id:'draft-a',state:'REJECTED',version:2});
+    await mount();await open();
+    await click('Inspect private candidate statuses');
+    const candidateRows=()=>tree.root.findAllByProps({'aria-label':'Private candidate status history'})
+      .flatMap(ul=>ul.findAllByType('li'));
+    expect(candidateRows()).toHaveLength(1);
+    expect(candidateRows()[0].findByType('strong').children.join('')).toBe('Quarantined');
+    await click('Reject draft');
+    await change('Reason for rejection','Synthetic rights review found incorrect artwork');
+    await click('Record rejection');
+    expect(api.reject).toHaveBeenCalledWith('center-a','activity-a','draft-a',1,
+      'Synthetic rights review found incorrect artwork');
+    // A successful rejection must dispose of the previous mounted candidate
+    // list immediately; stale "Quarantined" cannot remain in the DOM.
+    expect(candidateRows()).toHaveLength(0);
+    await click('Inspect private candidate statuses');
+    expect(api.candidates).toHaveBeenCalledTimes(2);
+    expect(candidateRows()).toHaveLength(1);
+    expect(candidateRows()[0].findByType('strong').children.join('')).toBe('Revoked');
+    expect(candidateRows()[0].findByType('strong').children.join('')).not.toBe('Quarantined');
   });
   it('can cancel rejection and preserves the original draft',async()=>{
     api.list.mockResolvedValue({items:[draft()],nextCursor:null,hasMore:false});

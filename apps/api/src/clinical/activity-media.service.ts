@@ -70,6 +70,13 @@ export class ActivityMediaService {
       if (t.version !== dto.templateVersion) {
         throw new ConflictException('Activity changed. Reload before preparing artwork.');
       }
+      if (dto.stepNumber !== undefined && (
+          !Number.isSafeInteger(dto.stepNumber) || dto.stepNumber < 1 || dto.stepNumber > 64 ||
+          !Array.isArray(t.steps) || dto.stepNumber > t.steps.length ||
+          typeof t.steps[dto.stepNumber - 1] !== 'string' || !t.steps[dto.stepNumber - 1].trim()
+      )) {
+        throw new UnprocessableEntityException('Illustration step must refer to an existing activity instruction.');
+      }
       // The client may not claim an approved asset, uploaded bytes or public URL.
       // The future storage adapter and independent reviewer must attest those.
       if (dto.sourceType === 'GENERATED' && !dto.providerTerms?.trim()) {
@@ -77,8 +84,8 @@ export class ActivityMediaService {
       }
       const created = await tx.activityMediaDraft.create({
         data: {
-          centerId, templateId, templateVersion: t.version, service: t.service,
-          state: 'DRAFT', sourceType: dto.sourceType, styleVersion: dto.styleVersion,
+          centerId, templateId, templateVersion: t.version, stepNumber: dto.stepNumber ?? null,
+          service: t.service, state: 'DRAFT', sourceType: dto.sourceType, styleVersion: dto.styleVersion,
           sceneType: dto.sceneType, altText: dto.altText, license: dto.license,
           sourceReference: dto.sourceReference, providerTerms: dto.providerTerms ?? null,
           createdById: v.userId, createdAt: now, updatedAt: now,
@@ -89,6 +96,11 @@ export class ActivityMediaService {
       });
       return { ...created, uploaded: false, publishEnabled: false, clinicalReleaseEnabled: false };
     });
+  }
+
+  /** Isolated synthetic CI overrides only this scanner boundary; live callers never can. */
+  protected preparePngCandidate(input:unknown,centerId:string,templateId:string) {
+    return preparePrivatePng(input,'activity-image-v1',centerId,templateId);
   }
 
   async uploadCandidate(centerId:string,v:Viewer,templateId:string,draftId:string,pngBase64:string) {
@@ -103,7 +115,7 @@ export class ActivityMediaService {
         throw new ForbiddenException('Only the proposing author may supply the image.');
       return {templateVersion:draft.templateVersion};
     });
-    const ready=await preparePrivatePng(pngBase64,'activity-image-v1',centerId,templateId);
+    const ready=await this.preparePngCandidate(pngBase64,centerId,templateId);
     const row=await this.prisma.$transaction(async tx=>{
       await this.trial.assertWritable(tx,centerId,this.trial.now());
       const template=await this.authorizedTemplate(tx,centerId,v,templateId);
@@ -114,6 +126,17 @@ export class ActivityMediaService {
         throw new ConflictException('Activity or media draft changed during scanning.');
       if(v.role==='THERAPIST'&&draft.createdById!==v.userId)
         throw new ForbiddenException('Only the proposing author may supply the image.');
+      // Both upload and rejection acquire this same row lock. A rejection
+      // cannot sweep before this candidate commits; an upload that starts
+      // after rejection sees REJECTED under the lock and is refused.
+      // Validate state AGAIN after waiting for any earlier transaction.
+      await tx.$queryRaw`SELECT id FROM activity_media_draft
+        WHERE id=${draftId}::uuid AND center_id=${centerId}::uuid
+          AND template_id=${templateId}::uuid FOR UPDATE`;
+      const stillOpen=await tx.activityMediaDraft.findFirst({where:{
+        id:draftId,centerId,templateId,templateVersion:prior.templateVersion,state:'DRAFT',
+      },select:{id:true}});
+      if(!stillOpen) throw new ConflictException('Artwork draft was rejected during scanning.');
       const created=await tx.privateMediaCandidate.create({data:{
         centerId,kind:'ACTIVITY_IMAGE',templateId,templateVersion:template.version,mediaDraftId:draftId,
         ...ready,createdById:v.userId,status:'QUARANTINED',consentState:'PENDING',rightsState:'UNVERIFIED',
@@ -127,16 +150,75 @@ export class ActivityMediaService {
       rightsApproved:false as const,publishEnabled:false as const,readEnabled:false as const};
   }
 
+  /**
+   * Reviewers may inspect only bounded, redacted status metadata for their
+   * own centre/activity. No private encrypted bytes, digest, key, storage
+   * location, URL, scanner internals or approval claims leave this endpoint.
+   * The same authorization is rechecked inside the transaction on every page.
+   */
+  async candidateStatuses(centerId: string, v: Viewer, templateId: string, draftId: string,
+    cursor?: string, limit = 50) {
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) {
+      throw new UnprocessableEntityException('Candidate page size must be between 1 and 100.');
+    }
+    const scope = { centerId, templateId, mediaDraftId: draftId, kind: 'ACTIVITY_IMAGE' };
+    return this.prisma.$transaction(async tx => {
+      await this.authorizedTemplate(tx, centerId, v, templateId);
+      const draft = await tx.activityMediaDraft.findFirst({
+        where: { id: draftId, centerId, templateId }, select: { id: true },
+      });
+      if (!draft) throw new NotFoundException('Illustration draft not found.');
+      if (cursor) {
+        const boundary = await tx.privateMediaCandidate.findFirst({
+          where: { ...scope, id: cursor }, select: { id: true },
+        });
+        if (!boundary) throw new NotFoundException('Candidate page cursor not found.');
+      }
+      const rows = await tx.privateMediaCandidate.findMany({
+        where: scope, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+        take: limit + 1,
+        select: {
+          id: true, status: true, width: true, height: true, createdAt: true,
+          templateVersion: true, revokedAt: true,
+        },
+      });
+      const items = rows.slice(0, limit);
+      return {
+        items, hasMore: rows.length > limit,
+        nextCursor: rows.length > limit ? items[items.length - 1].id : null,
+        metadataOnly: true as const, readEnabled: false as const,
+        publishEnabled: false as const, clinicalReleaseEnabled: false as const,
+      };
+    });
+  }
+
   async reject(centerId: string, v: Viewer, templateId: string, draftId: string, dto: ActivityMediaRejectDto) {
     const now = this.trial.now();
     return this.prisma.$transaction(async tx => {
       await this.trial.assertWritable(tx, centerId, now);
       await this.authorizedTemplate(tx, centerId, v, templateId);
+      // Use the identical row lock as final candidate admission, before
+      // optimistic rejection and before sweeping every linked candidate.
+      await tx.$queryRaw`SELECT id FROM activity_media_draft
+        WHERE id=${draftId}::uuid AND center_id=${centerId}::uuid
+          AND template_id=${templateId}::uuid FOR UPDATE`;
       const changed = await tx.activityMediaDraft.updateMany({
         where: { id: draftId, centerId, templateId, version: dto.version, state: 'DRAFT' },
         data: { state: 'REJECTED', rejectionReason: dto.reason, version: { increment: 1 }, updatedAt: now },
       });
       if (changed.count !== 1) throw new ConflictException('Artwork draft changed or is unavailable.');
+      // Revocation is atomic with the optimistic draft transition. Candidates
+      // scanned before rejection must never remain review-eligible; a raced
+      // uploader either commits first and is revoked here, or sees REJECTED.
+      // Keep encrypted bytes for controlled retention/audit cleanup only.
+      await tx.privateMediaCandidate.updateMany({
+        where: {
+          centerId, templateId, mediaDraftId: draftId,
+          kind: 'ACTIVITY_IMAGE', status: 'QUARANTINED', revokedAt: null,
+        },
+        data: { status: 'REVOKED', revokedAt: now },
+      });
       await logCenterEvent(tx, centerId, 'media.draft_rejected', now, {
         actorUserId: v.userId, meta: { templateId, mediaDraftId: draftId },
       });

@@ -9,6 +9,7 @@ const userId = '00000000-0000-4000-8000-000000000001';
 const centerId = '00000000-0000-4000-8000-000000000002';
 const templateId = '00000000-0000-4000-8000-000000000003';
 const draftId = '00000000-0000-4000-8000-000000000004';
+const candidateId = '00000000-0000-4000-8000-000000000006';
 const actor: Viewer = { userId, membershipId: '00000000-0000-4000-8000-000000000005', role: 'THERAPIST' };
 const dto = {
   templateVersion: 3, sourceType: 'GENERATED' as const, styleVersion: 'm5-b-v1',
@@ -20,12 +21,17 @@ const dto = {
 function setup(override: Record<string, unknown> = {}) {
   const create = jest.fn(async ({ data }: { data: Record<string, unknown> }) => ({ id: draftId, ...data, version: 1 }));
   const updateMany = jest.fn(async () => ({ count: 1 }));
-  const findFirst = jest.fn(async () => ({ id: templateId, centerId, createdById: userId, service: 'speech', version: 3, ...override }));
+  const findFirst = jest.fn(async () => ({ id: templateId, centerId, createdById: userId, service: 'speech', version: 3, steps: ['Choose a card', 'Match the pictures'], ...override }));
   const tx = {
     $queryRaw: jest.fn(async () => [{ id: templateId }]),
     activityTemplate: { findFirst },
     membership: { findFirst: jest.fn(async () => ({ id: actor.membershipId })) },
     activityMediaDraft: { create, updateMany, findMany: jest.fn(async (_args?: unknown): Promise<{ id: string }[]> => []), findFirst: jest.fn(async () => ({ id: draftId })) },
+    privateMediaCandidate: {
+      updateMany: jest.fn(async () => ({ count: 2 })),
+      findFirst: jest.fn(async () => ({ id: candidateId })),
+      findMany: jest.fn(async (): Promise<unknown[]> => []),
+    },
     centerEvent: { create: jest.fn(async () => ({})) },
   };
   const prisma = {
@@ -49,6 +55,24 @@ describe('M5-14 activity illustration draft boundary', () => {
     expect(tx.centerEvent.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ type: 'media.draft_registered', centerId }),
     }));
+  });
+
+  it('accepts a step-specific draft only for a real step on the exact source version', async () => {
+    const { service, create } = setup();
+    await service.propose(centerId, actor, templateId, { ...dto, stepNumber: 2 });
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ stepNumber: 2, templateVersion: 3 }),
+    }));
+  });
+
+  it('refuses a missing, out-of-range or non-integer step without writing a draft', async () => {
+    for (const stepNumber of [0, 3, 65, 1.5]) {
+      const { service, create } = setup();
+      await expect(service.propose(centerId, actor, templateId, {
+        ...dto, stepNumber,
+      })).rejects.toBeInstanceOf(UnprocessableEntityException);
+      expect(create).not.toHaveBeenCalled();
+    }
   });
 
   it('fails closed when source version changes', async () => {
@@ -93,6 +117,47 @@ describe('M5-14 activity illustration draft boundary', () => {
     expect(tx.centerEvent.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ type: 'media.draft_rejected' }),
     }));
+  });
+
+  it('revokes only currently quarantined linked image candidates in the same scoped draft transaction', async () => {
+    const { service, tx } = setup();
+    await service.reject(centerId, actor, templateId, draftId,
+      { version: 1, reason: 'Rejected unsafe pose after human draft review' });
+    expect(tx.privateMediaCandidate.updateMany).toHaveBeenCalledTimes(1);
+    expect(tx.privateMediaCandidate.updateMany).toHaveBeenCalledWith({
+      where: {
+        centerId, templateId, mediaDraftId: draftId,
+        kind: 'ACTIVITY_IMAGE', status: 'QUARANTINED', revokedAt: null,
+      },
+      data: { status: 'REVOKED', revokedAt: now },
+    });
+  });
+  it('never revokes candidates when optimistic rejection fails, and never logs an audit on failure', async () => {
+    const { service, tx, updateMany } = setup();
+    updateMany.mockResolvedValueOnce({ count: 0 });
+    await expect(service.reject(centerId, actor, templateId, draftId,
+      { version: 1, reason: 'Stale draft rejection revision' })).rejects.toBeInstanceOf(ConflictException);
+    expect(tx.privateMediaCandidate.updateMany).not.toHaveBeenCalled();
+    expect(tx.centerEvent.create).not.toHaveBeenCalled();
+  });
+  it('locks the exact draft row before revoking linked candidates on rejection', async () => {
+    const { service, tx } = setup();
+    await service.reject(centerId, actor, templateId, draftId, {
+      version: 1, reason: 'Concurrency test rejection',
+    });
+    // Tagged Prisma SQL splits literal text around bound parameters. The
+    // FOR UPDATE clause is in the final segment, not the first segment.
+    const queries = (tx.$queryRaw.mock.calls as unknown as Array<[readonly string[]]>)
+      .map(([parts]) => parts.join(' '));
+    expect(queries.some(q =>
+      q.includes('activity_media_draft') && q.includes('FOR UPDATE'))).toBe(true);
+  });
+  it('rejects the entire draft transition if quarantine revocation write fails', async () => {
+    const { service, tx } = setup();
+    tx.privateMediaCandidate.updateMany.mockRejectedValueOnce(new Error('Synthetic DB revocation failure'));
+    await expect(service.reject(centerId, actor, templateId, draftId,
+      { version: 1, reason: 'Unsafe rights evidence in draft' })).rejects.toThrow('Synthetic DB revocation failure');
+    expect(tx.centerEvent.create).not.toHaveBeenCalled();
   });
 
   it('refuses stale or already rejected revisions', async () => {
@@ -143,5 +208,53 @@ describe('M5-14 keyset pagination: rights history is never truncated', () => {
     await expect(service.list(centerId, actor, templateId, undefined, 101)).rejects.toBeInstanceOf(UnprocessableEntityException);
     await expect(service.list(centerId, actor, templateId, undefined, -1)).rejects.toBeInstanceOf(UnprocessableEntityException);
     expect(tx.activityMediaDraft.findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('M5-14 private candidate status history (no bytes or read authority)', () => {
+  it('lists bounded status-only metadata with tenant/draft scoping', async () => {
+    const { service, tx } = setup();
+    const item = { id: candidateId, status: 'QUARANTINED', width: 1600, height: 1200,
+      templateVersion: 3, createdAt: now, revokedAt: null };
+    tx.privateMediaCandidate.findMany.mockResolvedValueOnce([item] as never);
+    const result = await service.candidateStatuses(centerId, actor, templateId, draftId);
+    expect(result).toEqual(expect.objectContaining({
+      items: [item], hasMore: false, metadataOnly: true, readEnabled: false,
+      publishEnabled: false, clinicalReleaseEnabled: false,
+    }));
+    expect(tx.privateMediaCandidate.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { centerId, templateId, mediaDraftId: draftId, kind: 'ACTIVITY_IMAGE' },
+      select: {
+        id: true, status: true, width: true, height: true, createdAt: true,
+        templateVersion: true, revokedAt: true,
+      },
+    }));
+    expect(JSON.stringify(result)).not.toMatch(/encryptedBytes|digestSha256|scannerName|publicUrl|objectKey/);
+  });
+  it('rejects a foreign draft or foreign cursor before querying candidates', async () => {
+    const missing = setup();
+    missing.tx.activityMediaDraft.findFirst.mockResolvedValueOnce(null as never);
+    await expect(missing.service.candidateStatuses(centerId, actor, templateId, draftId))
+      .rejects.toBeInstanceOf(NotFoundException);
+    expect(missing.tx.privateMediaCandidate.findMany).not.toHaveBeenCalled();
+    const foreign = setup();
+    foreign.tx.privateMediaCandidate.findFirst.mockResolvedValueOnce(null as never);
+    await expect(foreign.service.candidateStatuses(centerId, actor, templateId, draftId, candidateId))
+      .rejects.toBeInstanceOf(NotFoundException);
+    expect(foreign.tx.privateMediaCandidate.findMany).not.toHaveBeenCalled();
+  });
+  it('paginates historical states without truncation or unbounded pages', async () => {
+    const { service, tx } = setup();
+    const items = Array.from({length: 51}, (_,i)=>({
+      id: '00000000-0000-4000-8000-' + String(i+100).padStart(12,'0'),
+      status: 'REVOKED', templateVersion: 2,
+    }));
+    tx.privateMediaCandidate.findMany.mockResolvedValueOnce(items as never);
+    const page = await service.candidateStatuses(centerId, actor, templateId, draftId);
+    expect(page.hasMore).toBe(true);
+    expect(page.items).toHaveLength(50);
+    expect(page.nextCursor).toBe(items[49].id);
+    await expect(service.candidateStatuses(centerId, actor, templateId, draftId, undefined, 101))
+      .rejects.toBeInstanceOf(UnprocessableEntityException);
   });
 });

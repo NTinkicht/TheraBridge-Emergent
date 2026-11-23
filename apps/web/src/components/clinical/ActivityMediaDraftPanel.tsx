@@ -5,18 +5,19 @@ import { FileImage, ShieldAlert } from 'lucide-react';
 import { Button, Card, Pill } from '@/components/design/ui';
 import { activityMediaDrafts, type ActivityMediaDraft as Draft, type ActivityMediaSource as SourceType } from '@/lib/activity-media';
 import { LocalActivityMediaReadiness } from './LocalActivityMediaReadiness';
+import { ActivityMediaCandidateHistory } from './ActivityMediaCandidateHistory';
 import { PrivatePngCandidatePicker } from '@/components/operations/PrivatePngCandidatePicker';
 
 const initial = {
   sourceType: 'ORIGINAL' as SourceType, styleVersion: 'm5-b-v1',
-  sceneType: '', altText: '', license: '', sourceReference: '', providerTerms: '',
+  sceneType: '', stepNumber: '', altText: '', license: '', sourceReference: '', providerTerms: '',
 };
 const cls = 'min-h-[44px] w-full rounded-control border border-border-strong bg-surface-white px-3 py-2 text-sm';
 
 // Metadata-only workflow. No image upload/preview or approval exists until the
 // separate private-byte verifier, rights sign-off and clinical gates are ready.
-export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion }: {
-  centerId: string; templateId: string; templateVersion?: number;
+export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion, steps = [] }: {
+  centerId: string; templateId: string; templateVersion?: number; steps?: readonly string[];
 }) {
   const [open, setOpen] = useState(false);
   // Invalidate previous-page and initial-list responses whenever panel lifetime changes.
@@ -32,6 +33,7 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
   const [notice, setNotice] = useState('');
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [attaching,setAttaching]=useState<string|null>(null);
+  const [candidateRevision,setCandidateRevision]=useState(0);
   const [reason, setReason] = useState('');
   const base = activityMediaDrafts.endpoint(centerId, templateId);
 
@@ -78,7 +80,7 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
     if (!templateVersion || busy || loading || loadingMore) return;
     setBusy(true); setError(''); setNotice('');
     try {
-      const saved = await activityMediaDrafts.propose(centerId, templateId, { ...form, templateVersion,
+      const saved = await activityMediaDrafts.propose(centerId, templateId, { ...form, templateVersion, stepNumber: form.stepNumber ? Number(form.stepNumber) : undefined,
         providerTerms: form.sourceType === 'GENERATED' ? form.providerTerms : undefined });
       setItems(prev => [saved, ...prev.filter(item => item.id !== saved.id)]);
       setNotice('Metadata proposal saved as a private draft. No image was uploaded, approved or shared.');
@@ -94,6 +96,8 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
     try {
       const result = await activityMediaDrafts.reject(centerId, templateId, draft.id, draft.version, reason.trim());
       setItems(prev => prev.map(item => item.id === result.id ? { ...item, ...result, rejectionReason: reason.trim() } : item));
+      // History identity includes this draft's optimistic version and state,
+      // so only the rejected row remounts after its atomic revocation.
       setRejecting(null); setReason('');
       setNotice('Draft rejected. This decision was recorded for audit.');
     } catch {
@@ -138,6 +142,15 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
             onChange={e => setForm(v => ({ ...v, styleVersion: e.target.value }))} required />
         </label>
         {field('sceneType', 'Scene type', 'Guided fine-motor activity')}
+        <label className="block text-sm font-medium">Illustration target
+          <select className={cls + ' mt-1'} value={form.stepNumber}
+            onChange={e => setForm(prev => ({ ...prev, stepNumber: e.target.value }))}>
+            <option value="">Whole activity</option>
+            {steps.slice(0, 64).map((step, i) => <option key={i} value={i + 1}>
+              {i + 1}. {step.length > 78 ? step.slice(0, 78) + '…' : step}
+            </option>)}
+          </select>
+        </label>
         {field('license', 'License or rights basis', 'Review record, not a license grant')}
         <div className="sm:col-span-2">{field('sourceReference', 'Provenance / source evidence reference', 'Internal record ID; never a public asset URL')}</div>
         <div className="sm:col-span-2">{field('altText', 'Proposed accessible description', 'Describe the action and relevant materials')}</div>
@@ -155,7 +168,7 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
         !items.length ? <p className="text-sm text-brand-inkMuted">No proposals registered for this activity.</p> :
         <ul className="space-y-3">{items.map(draft => <li key={draft.id} className="rounded-control border border-border-light p-3 text-sm">
           <div className="flex flex-wrap items-center gap-2"><Pill tone={draft.state === 'REJECTED' ? 'danger' : 'caution'}>{draft.state}</Pill>
-            <span className="text-brand-inkMuted">Activity v{draft.templateVersion} · {draft.sourceType} · {draft.styleVersion}</span></div>
+            <span className="text-brand-inkMuted">Activity v{draft.templateVersion} · {draft.stepNumber ? `Step ${draft.stepNumber}` : 'whole activity'} · {draft.sourceType} · {draft.styleVersion}</span></div>
           <p className="mt-2 break-words">{draft.altText}</p>
           <p className="mt-1 break-words text-brand-inkMuted">Source: {draft.sourceReference} · Rights: {draft.license}</p>
           {draft.rejectionReason && <p className="mt-1 text-status-danger">Rejected: {draft.rejectionReason}</p>}
@@ -171,8 +184,11 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
                   await activityMediaDrafts.uploadCandidate(centerId,templateId,draft.id,pngBase64);
                   setNotice('Encrypted scanned illustration candidate is quarantined; independent rights and clinical review still required.');
                   setAttaching(null);
+                  setCandidateRevision(value=>value+1);
                 }} />}
             </div>}
+          <ActivityMediaCandidateHistory key={[draft.id, draft.version, draft.state, candidateRevision].join(':')}
+            centerId={centerId} templateId={templateId} draftId={draft.id} />
           {draft.state === 'DRAFT' && <div className="mt-2">
             {rejecting === draft.id ? <div className="space-y-2">
               <label className="block font-medium">Reason for rejection

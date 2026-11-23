@@ -3,8 +3,13 @@ export type ActivityMediaSource = 'ORIGINAL' | 'GENERATED' | 'LICENSED';
 export type ActivityMediaDraft = {
   id: string; templateId: string; centerId: string; templateVersion: number;
   state: 'DRAFT' | 'REJECTED'; version: number; sourceType: ActivityMediaSource;
+  stepNumber: number | null;
   styleVersion: string; sceneType: string; altText: string; license: string;
   sourceReference: string; rejectionReason: string | null;
+};
+export type PrivateActivityCandidateStatus = {
+  id: string; status: string; width: number; height: number;
+  templateVersion: number | null; createdAt: string; revokedAt: string | null;
 };
 export const activityMediaDrafts = {
   endpoint: (centerId: string, templateId: string) =>
@@ -18,9 +23,17 @@ export const activityMediaDrafts = {
     }>(activityMediaDrafts.endpoint(centerId, templateId) + '?' + query.toString());
   },
   propose: (centerId: string, templateId: string, body: {
-    templateVersion: number; sourceType: ActivityMediaSource; styleVersion: string;
+    templateVersion: number; stepNumber?: number; sourceType: ActivityMediaSource; styleVersion: string;
     sceneType: string; altText: string; license: string; sourceReference: string; providerTerms?: string;
   }) => rest.send<ActivityMediaDraft>('POST', activityMediaDrafts.endpoint(centerId, templateId), body),
+  candidates: (centerId:string,templateId:string,draftId:string,cursor?:string,limit=50) => {
+    const query=new URLSearchParams({limit:String(limit)});
+    if(cursor)query.set('cursor',cursor);
+    return rest.get<{
+      items:PrivateActivityCandidateStatus[];hasMore:boolean;nextCursor:string|null;
+      metadataOnly:true;readEnabled:false;publishEnabled:false;clinicalReleaseEnabled:false;
+    }>(activityMediaDrafts.endpoint(centerId,templateId)+'/'+encodeURIComponent(draftId)+'/candidates?'+query);
+  },
   uploadCandidate: (centerId:string,templateId:string,draftId:string,pngBase64:string) =>
     rest.send<{id:string;status:'QUARANTINED';publishEnabled:false;readEnabled:false}>(
       'POST',activityMediaDrafts.endpoint(centerId,templateId)+'/'+encodeURIComponent(draftId)+'/candidates',{pngBase64}),

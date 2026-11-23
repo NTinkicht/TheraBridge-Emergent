@@ -735,6 +735,11 @@ model ActivityTemplate {
   service     String   @db.VarChar(32)
   ageBand     String   @map("age_band") @db.VarChar(32)
   minutes     Int
+  // Optional clinician-authored discovery metadata. Never synthesize labels
+  // for legacy records; blank data stays explicitly unclassified.
+  category    String?  @db.VarChar(80)
+  skill       String?  @db.VarChar(80)
+  equipment   String[] @default([]) @db.VarChar(120)
   materials   String[] @db.VarChar(120)
   steps       String[] @db.VarChar(400)
   safety      String[] @db.VarChar(400)
@@ -1080,6 +1085,9 @@ model ActivityMediaDraft {
   centerId        String   @map("center_id") @db.Uuid
   templateId      String   @map("template_id") @db.Uuid
   templateVersion Int      @map("template_version")
+  // Null means a whole-activity illustration; a positive ordinal binds a draft
+  // to an exact step of the immutable source template version.
+  stepNumber      Int?     @map("step_number")
   service         String   @db.VarChar(32)
   state           String   @default("DRAFT") @db.VarChar(16)
   sourceType      String   @map("source_type") @db.VarChar(16)

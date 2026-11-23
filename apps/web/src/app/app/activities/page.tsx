@@ -16,12 +16,17 @@ const lines = (s: string) => s.split('\n').map((x) => x.trim()).filter(Boolean);
 const area = 'mt-1 w-full rounded-control border border-border-light bg-transparent px-3 py-2 text-[14px]';
 
 function NewTemplate({ centerId, onDone, onError }: { centerId: string; onDone: () => void; onError: (e: unknown) => void }) {
-  const [f, setF] = useState({ title: '', service: 'speech', ageBand: '3-6 years', minutes: '10', materials: '', steps: '', safety: '' });
+  const [f, setF] = useState({ title: '', service: 'speech', ageBand: '3-6 years', minutes: '10',
+    category: '', skill: '', equipment: '', materials: '', steps: '', safety: '' });
   const [err, setErr] = useState<string | null>(null);
   const save = async () => {
     setErr(null);
     try {
-      await clinicalApi.createTemplate(centerId, { title: f.title, service: f.service, ageBand: f.ageBand, minutes: Number(f.minutes), materials: lines(f.materials), steps: lines(f.steps), safety: lines(f.safety) });
+      await clinicalApi.createTemplate(centerId, { title: f.title, service: f.service, ageBand: f.ageBand, minutes: Number(f.minutes),
+        ...(f.category.trim() ? { category: f.category.trim() } : {}),
+        ...(f.skill.trim() ? { skill: f.skill.trim() } : {}),
+        ...(lines(f.equipment).length ? { equipment: lines(f.equipment) } : {}),
+        materials: lines(f.materials), steps: lines(f.steps), safety: lines(f.safety) });
       setF({ ...f, title: '', materials: '', steps: '', safety: '' });
       onDone();
     } catch (e) { setErr(errorText(e, onError)); }
@@ -35,6 +40,15 @@ function NewTemplate({ centerId, onDone, onError }: { centerId: string; onDone: 
         <SelectField label="Service" value={f.service} onChange={(service) => setF({ ...f, service })} testId="template-service" options={SPECIALTY_OPTIONS.map((o) => ({ value: o.value, label: o.label }))} />
         <Field label="Age band" value={f.ageBand} onChange={(e) => setF({ ...f, ageBand: e.target.value })} testId="template-age" />
         <Field label="Minutes" type="number" value={f.minutes} onChange={(e) => setF({ ...f, minutes: e.target.value })} testId="template-minutes" />
+      </div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        {(['category', 'skill'] as const).map(key => <Field key={key}
+          label={key === 'category' ? 'Activity category (optional)' : 'Skill (optional)'}
+          value={f[key]} onChange={e => setF(old => ({ ...old, [key]: e.target.value }))} testId={`template-${key}`} />)}
+        <label className="block text-[14px] font-medium">Equipment (one per line)
+          <textarea rows={3} className={area} value={f.equipment}
+            onChange={e => setF(old => ({ ...old, equipment: e.target.value }))} />
+        </label>
       </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {(['materials', 'steps', 'safety'] as const).map((k) => <label key={k} className="block text-[14px] font-medium capitalize">{k === 'safety' ? 'Safety guidance' : k} (one per line)<textarea rows={4} className={area} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} data-testid={`template-${k}`} /></label>)}
@@ -51,12 +65,23 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
   const [search, setSearch] = useState('');
   const [specialty, setSpecialty] = useState('all');
   const [ownership, setOwnership] = useState('all');
+  const [category, setCategory] = useState('');
+  const [skill, setSkill] = useState('');
+  const [equipment, setEquipment] = useState('');
   const [view, setView] = useState<'grid' | 'list'>('grid');
-  const queryKey = JSON.stringify([centerId, search.trim(), specialty, ownership]);
+  // Preserve the existing four-part identity for legacy/unfiltered reads.
+  // Extend it only when an advanced filter is used, so an old response
+  // cannot be confused with a newly filtered query.
+  const queryKey = JSON.stringify([centerId, search.trim(), specialty, ownership,
+    ...(category.trim() || skill.trim() || equipment.trim()
+      ? [category.trim(), skill.trim(), equipment.trim()] : [])]);
   const fetcher = useCallback(async () => ({ ...await clinicalApi.templates(centerId, {
     search: search.trim(), service: specialty === 'all' ? undefined : specialty,
     ownership, limit: 100,
-  }), queryKey }), [centerId, search, specialty, ownership, queryKey]);
+    ...(category.trim() ? { category: category.trim() } : {}),
+    ...(skill.trim() ? { skill: skill.trim() } : {}),
+    ...(equipment.trim() ? { equipment: equipment.trim() } : {}),
+  }), queryKey }), [centerId, search, specialty, ownership, category, skill, equipment, queryKey]);
   const { data, failed, reload } = useLoad(fetcher, onError);
   const first = data?.queryKey === queryKey ? data : null;
   const [additional, setAdditional] = useState<{ key: string; items: Template[]; hasMore: boolean; nextOffset: number | null } | null>(null);
@@ -66,13 +91,18 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
   const templates = [...(first?.items ?? []), ...(validMore?.items ?? []).filter(t => !first?.items.some(x => x.id === t.id))];
   const hasMore = validMore?.hasMore ?? first?.hasMore ?? false;
   const nextOffset = validMore?.nextOffset ?? first?.nextOffset;
-  const filtering = !!search.trim() || specialty !== 'all' || ownership !== 'all';
+  const filtering = !!search.trim() || specialty !== 'all' || ownership !== 'all' ||
+    !!category.trim() || !!skill.trim() || !!equipment.trim();
   const loadMore = async () => {
     if (loadingMore || !hasMore || nextOffset === null || nextOffset === undefined) return;
     setLoadingMore(true); setLoadError('');
     try {
       const next = await clinicalApi.templates(centerId, { offset: nextOffset, limit: 100,
-        search: search.trim(), service: specialty === 'all' ? undefined : specialty, ownership });
+        search: search.trim(), service: specialty === 'all' ? undefined : specialty,
+        ownership,
+        ...(category.trim() ? { category: category.trim() } : {}),
+        ...(skill.trim() ? { skill: skill.trim() } : {}),
+        ...(equipment.trim() ? { equipment: equipment.trim() } : {}) });
       setAdditional(prev => ({ key: queryKey,
         items: [...(prev?.key === queryKey ? prev.items : []), ...next.items],
         hasMore: next.hasMore, nextOffset: next.nextOffset }));
@@ -124,6 +154,28 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
             </select>
           </label>
         </div>
+        <details className="rounded-control border border-border-light bg-surface-subtle px-3 py-2">
+          <summary className="min-h-[36px] cursor-pointer text-[13px] font-semibold">
+            Category, skill and equipment filters
+          </summary>
+          <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <label className="block text-[13px] font-medium">Category
+              <input value={category} maxLength={80} onChange={e => setCategory(e.target.value)}
+                data-testid="activities-category-filter" placeholder="Exact category"
+                className="mt-1 w-full rounded-control border border-border-strong bg-surface-white p-2" />
+            </label>
+            <label className="block text-[13px] font-medium">Skill
+              <input value={skill} maxLength={80} onChange={e => setSkill(e.target.value)}
+                data-testid="activities-skill-filter" placeholder="Exact skill"
+                className="mt-1 w-full rounded-control border border-border-strong bg-surface-white p-2" />
+            </label>
+            <label className="block text-[13px] font-medium">Equipment
+              <input value={equipment} maxLength={120} onChange={e => setEquipment(e.target.value)}
+                data-testid="activities-equipment-filter" placeholder="Exact equipment item"
+                className="mt-1 w-full rounded-control border border-border-strong bg-surface-white p-2" />
+            </label>
+          </div>
+        </details>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[13px] text-brand-inkMuted" role="status" data-testid="activities-result-count">
             {first ? `Showing ${templates.length}${hasMore ? '+' : ''} matching activities` : 'Searching activities…'}
@@ -134,7 +186,8 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
               <Button size="sm" variant={view === 'list' ? 'primary' : 'secondary'} onClick={() => setView('list')} aria-pressed={view === 'list'} data-testid="activities-list-view"><List size={15} aria-hidden="true" />List</Button>
             </div>
           {filtering && <Button size="sm" variant="ghost"
-            onClick={() => { setSearch(''); setSpecialty('all'); setOwnership('all'); }} data-testid="activities-clear-filters">
+            onClick={() => { setSearch(''); setSpecialty('all'); setOwnership('all');
+              setCategory(''); setSkill(''); setEquipment(''); }} data-testid="activities-clear-filters">
             Clear filters
           </Button>}
           </div>
@@ -162,7 +215,7 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
                 {session.permissions.includes('center.activities.manage') && t.library === 'center' &&
                   (session.activeContext?.type === 'center' && (session.activeContext.role === 'CLINICAL_SUPERVISOR' ||
                     (session.activeContext.role === 'THERAPIST' && t.mine === true))) &&
-                  <ActivityMediaDraftPanel key={centerId + ':' + t.id} centerId={centerId} templateId={t.id} templateVersion={t.version} />}
+                  <ActivityMediaDraftPanel key={centerId + ':' + t.id} centerId={centerId} templateId={t.id} templateVersion={t.version} steps={t.steps} />}
               </div>
             </details>}
           </div>
