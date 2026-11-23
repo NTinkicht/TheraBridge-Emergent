@@ -71,8 +71,8 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
     category.trim(), skill.trim(), equipment.trim()]);
   const fetcher = useCallback(async () => ({ ...await clinicalApi.templates(centerId, {
     search: search.trim(), service: specialty === 'all' ? undefined : specialty,
-    ownership, category: category.trim(), skill: skill.trim(),
-    equipment: equipment.trim(), limit: 100,
+    ownership, limit: 100, category: category.trim(), skill: skill.trim(),
+    equipment: equipment.trim(),
   }), queryKey }), [centerId, search, specialty, ownership, category, skill, equipment, queryKey]);
   const { data, failed, reload } = useLoad(fetcher, onError);
   const first = data?.queryKey === queryKey ? data : null;
