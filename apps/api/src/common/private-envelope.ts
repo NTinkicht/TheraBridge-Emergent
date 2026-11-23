@@ -14,10 +14,14 @@ function key(): Buffer {
   return decoded;
 }
 function context(domain: string, centerId: string, subjectId: string): Buffer {
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!/^(care-v1|child-photo-v1|activity-image-v1)$/.test(domain) ||
-      !/^[a-f0-9-]{36}$/i.test(centerId) || !/^[a-f0-9-]{36}$/i.test(subjectId))
+      !uuid.test(centerId) || !uuid.test(subjectId))
     throw new UnprocessableEntityException('Invalid private data scope.');
-  return Buffer.from(domain + ':' + centerId + ':' + subjectId, 'utf8');
+  // PostgreSQL UUID and Nest ParseUUIDPipe treat case as equivalent. AAD
+  // MUST use the same canonical representation on encryption and decryption,
+  // including paths submitted in uppercase and canonical DB identifiers.
+  return Buffer.from(domain + ':' + centerId.toLowerCase() + ':' + subjectId.toLowerCase(), 'utf8');
 }
 export function sealPrivateData(plain: Buffer, domain: string, centerId: string, subjectId: string): Buffer {
   if (!Buffer.isBuffer(plain) || plain.length === 0 || plain.length > 9 * 1024 * 1024)
