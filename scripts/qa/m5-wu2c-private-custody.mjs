@@ -15,6 +15,7 @@ import {preparePrivateDerivatives} from './m5-wu2c-private-derivatives.mjs';
 const SHA=/^[0-9a-f]{64}$/;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const ACTOR=/^[a-zA-Z0-9_.-]{3,64}$/;
+const PRODUCTION_LABEL=/^[A-Za-z0-9][A-Za-z0-9._:-]{3,95}$/;
 const SOCKET=/^\/(?:run|var\/run)\/clamav\/[a-zA-Z0-9._-]{1,80}$/;
 const HEX=bytes=>createHash('sha256').update(bytes).digest('hex');
 const HASH=(key,data)=>createHmac('sha256',key).update(data).digest('hex');
@@ -38,9 +39,9 @@ function snapshotProductionProvenance(input,receipt){
      plain.promptSha256!==receipt.promptSha256||
      plain.sourceConceptSha256!==receipt.sourceConceptSha256||
      plain.batchRevision!==receipt.batchRevision||
-     !ACTOR.test(plain.providerRunId||'')||
-     !ACTOR.test(plain.modelId||'')||
-     !ACTOR.test(plain.modelVersion||'')||
+     !PRODUCTION_LABEL.test(plain.providerRunId||'')||
+     !PRODUCTION_LABEL.test(plain.modelId||'')||
+     !PRODUCTION_LABEL.test(plain.modelVersion||'')||
      !Number.isSafeInteger(plain.costMicros)||plain.costMicros<0||
      plain.costMicros>1_000_000_000)deny();
   return Object.freeze({
