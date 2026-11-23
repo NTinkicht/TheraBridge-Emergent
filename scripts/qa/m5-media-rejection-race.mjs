@@ -10,6 +10,7 @@ const ProductionMediaService=compiled.ActivityMediaService??compiled.default?.Ac
 if(typeof ProductionMediaService!=='function')throw new Error('Compiled API service is required');
 const deferred=()=>{let resolve;const promise=new Promise(done=>{resolve=done;});return {promise,resolve};};
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const within=(promise,label)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Media race synchronization timeout: '+label)),12000))]);
 const fakeTrial={now:()=>new Date(),assertWritable:async()=>{}};
 const syntheticPrepared={
   encryptedBytes:Buffer.alloc(128,0x53),
@@ -90,10 +91,10 @@ export async function verifyPrivateMediaRejectionRace(db,centerId){
     const acquired=deferred(),go=deferred(),attempt=deferred();release.push(go);
     const pUpload=makeService(db,{afterLock:{acquired,release:go}})
       .uploadCandidate(centerId,v,t.id,a.id,'synthetic-scanner');
-    await acquired.promise;
+    await within(acquired.promise,'first production upload lock');
     const pReject=makeService(db,{beforeLock:attempt}).reject(centerId,v,t.id,a.id,
       {version:1,reason:'Synthetic rights rejected after uploaded draft'});
-    const pid=await attempt.promise;
+    const pid=await within(attempt.promise,'rejection lock contention');
     await proveBlocked(db,pid);
     go.resolve();
     await Promise.all([pUpload,pReject]);
@@ -112,14 +113,14 @@ export async function verifyPrivateMediaRejectionRace(db,centerId){
     const pRejectFirst=makeService(db,{afterLock:{
       acquired:rejectAcquired,release:releaseReject,
     }}).reject(centerId,v,t.id,b.id,{version:1,reason:'Synthetic incompatible artwork rejected'});
-    await rejectAcquired.promise;
+    await within(rejectAcquired.promise,'first production reject lock');
     const pUploadLate=makeService(db,{beforeLock:uploadAttempt,scanner:{
       started:scannerStarted,release:releaseScanner,
     }}).uploadCandidate(centerId,v,t.id,b.id,'synthetic-scanner')
       .then(()=>({admitted:true}),error=>({admitted:false,error}));
-    await scannerStarted.promise;
+    await within(scannerStarted.promise,'synthetic scanner boundary');
     releaseScanner.resolve();
-    await proveBlocked(db,await uploadAttempt.promise);
+    await proveBlocked(db,await within(uploadAttempt.promise,'late upload lock contention'));
     releaseReject.resolve();
     await pRejectFirst;
     const result=await pUploadLate;
