@@ -19,6 +19,27 @@ describe('private clinical and photo envelopes',()=>{
    ['care-v1',other,child],['care-v1',center,other],['child-photo-v1',center,child],
   ])expect(()=>openPrivateData(a,tuple[0],tuple[1],tuple[2])).toThrow();
  });
+ it.each(['care-v1','child-photo-v1','activity-image-v1'] as const)(
+  'normalizes equivalent upper/lowercase tenant and subject UUID spelling in %s AAD',
+  domain=>{
+    const payload=Buffer.from('synthetic sensitive payload');
+    const lower=sealPrivateData(payload,domain,center,child);
+    const upper=sealPrivateData(payload,domain,center.toUpperCase(),child.toUpperCase());
+    expect(openPrivateData(lower,domain,center.toUpperCase(),child)).toEqual(payload);
+    expect(openPrivateData(upper,domain,center,child.toUpperCase())).toEqual(payload);
+    expect(openPrivateData(upper,domain,center,child)).toEqual(payload);
+    expect(()=>openPrivateData(upper,domain,center,other)).toThrow();
+    expect(()=>openPrivateData(upper,domain,other,child)).toThrow();
+  }
+ );
+ it('rejects invalid UUID spelling rather than admitting ambiguous encryption scopes',()=>{
+   const plain=Buffer.from('synthetic');
+   for(const malformed of [center.replace(/-/g,'-').slice(0,35)+'-', 'f'.repeat(36),
+     '00000000-0000-0000-0000-0000000000zz']) {
+     expect(()=>sealPrivateData(plain,'care-v1',malformed,child)).toThrow();
+   }
+ });
+
  it('rejects ciphertext tampering, wrong version, missing tags and wrong key',()=>{
   const a=sealPrivateData(Buffer.from('synthetic-only'),'care-v1',center,child);
   for(const change of [
