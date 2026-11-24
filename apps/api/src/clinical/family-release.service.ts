@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException, Optional, UnprocessableEntityException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { Tx, logCenterEvent } from '../centers/history';
@@ -6,6 +6,7 @@ import type { Viewer } from '../common/viewer';
 import { assertActor, json } from './governance-core';
 import { FamilyApprovalDto, FamilyConsentDto, FamilyGrantChangeDto, FamilyGrantDto } from './family-release.dto';
 import { buildFamilyRendering, familyRenderingHash } from './family-release-rendering';
+import { ActivityMediaService } from './activity-media.service';
 import { decideFamilyRelease, FAMILY_RELEASE_NOTICE } from './family-release-policy';
 
 /**
@@ -15,7 +16,7 @@ import { decideFamilyRelease, FAMILY_RELEASE_NOTICE } from './family-release-pol
  */
 @Injectable()
 export class FamilyReleaseService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, @Optional() private readonly artwork?: ActivityMediaService) {}
 
   private async serialRetry<T>(run: () => Promise<T>): Promise<T> {
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -104,7 +105,16 @@ export class FamilyReleaseService {
         ? await tx.planVersion.findFirst({ where: { id: s.documentId, centerId, plan: { childId: s.childId } } })
         : await tx.progressReport.findFirst({ where: { id: s.documentId, centerId, childId: s.childId } });
       if (!latest || latest.status !== 'IN_REVIEW') throw new ConflictException('Document is no longer in review.');
-      const rendering = buildFamilyRendering(s.kind as 'PLAN' | 'REPORT', content);
+      const base = buildFamilyRendering(s.kind as 'PLAN' | 'REPORT', content);
+      let rendering: typeof base | (typeof base & { artwork: unknown }) = base;
+      // Explicit server-controlled synthetic-only rollout, never retroactive.
+      if (base.kind==='PLAN' && this.artwork && process.env.TB_FAMILY_ARTWORK_SYNTHETIC==='true' &&
+          Array.isArray(content.homeActivities)) {
+        const artwork=await Promise.all(content.homeActivities.map(async (a,index)=>({
+          activityIndex:index, slots:await this.artwork!.familyArtworkBindings(tx,centerId,a),
+        })));
+        rendering={...base,artwork};
+      }
       const hash = familyRenderingHash(rendering);
       const purpose = s.kind === 'PLAN' ? 'FAMILY_PLAN' : 'FAMILY_REPORT';
       const existing = await tx.syntheticFamilyApproval.findFirst({ where: { centerId, snapshotId: s.id, renderingHash: hash } });
@@ -305,7 +315,67 @@ export class FamilyReleaseService {
       select: { firstName: true, lastName: true } });
     if (!child) throw new NotFoundException();
     const childName = [child.firstName, child.lastName].filter(Boolean).join(' ');
-    return { release, approval, childName };
+    return { release, approval, childName, snap };
+  }
+
+
+  private artworkSlots(rendering:unknown,index:number): {slot:number;digestSha256:string;altText:string;instruction:string|null}[] {
+    const r=rendering as {artwork?:{activityIndex:number;slots:{slot:number;digestSha256:string;altText:string;instruction:string|null}[]}[]};
+    if (!Array.isArray(r?.artwork) || r.artwork.length>10) return [];
+    const groups=r.artwork.filter(a=>a?.activityIndex===index);
+    if (groups.length!==1 || !Array.isArray(groups[0].slots) || groups[0].slots.length>65) return [];
+    const slots=groups[0].slots;
+    if (slots.some(s=>!s || !Number.isInteger(s.slot)||s.slot<0||s.slot>64||
+      !/^[a-f0-9]{64}$/.test(s.digestSha256)||typeof s.altText!=='string') ||
+      new Set(slots.map(s=>s.slot)).size!==slots.length) return [];
+    return slots;
+  }
+
+  async artworkRead(centerId:string,v:Viewer,id:string,index:number,slot:number) {
+    if (!Number.isInteger(index)||index<0||index>9||!Number.isInteger(slot)||slot<0||slot>64)
+      throw new NotFoundException();
+    return this.prisma.$transaction(async tx=>{
+      if (!this.artwork || process.env.TB_FAMILY_ARTWORK_SYNTHETIC!=='true') throw new NotFoundException();
+      const {release,approval,snap}=await this.eligibleRead(tx,centerId,v,id);
+      if (approval.kind!=='PLAN') throw new NotFoundException();
+      const binding=this.artworkSlots(approval.rendering,index).find(s=>s.slot===slot);
+      const content=snap.content as Record<string,unknown>;
+      if (!binding || !Array.isArray(content.homeActivities) || index>=content.homeActivities.length)
+        throw new NotFoundException();
+      const image=await this.artwork.readFamilyArtwork(tx,centerId,content.homeActivities[index],slot,binding.digestSha256);
+      if (image.altText!==binding.altText) throw new NotFoundException();
+      await logCenterEvent(tx,centerId,'family.synthetic_artwork_read',new Date(),{actorUserId:v.userId,
+        meta:{releaseId:id,childId:release.childId,activityIndex:index,slot}});
+      return {activityIndex:index,slot,altText:image.altText,width:image.width,height:image.height,
+        pngBase64:image.pngBase64,synthetic:true as const};
+    },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
+  }
+
+  // Scope is a currently authorized immutable synthetic document, not a
+  // platform-wide claim. Count unique exact activity/version identities.
+  async artworkCoverage(centerId:string,v:Viewer,id:string) {
+    return this.prisma.$transaction(async tx=>{
+      if (!this.artwork || process.env.TB_FAMILY_ARTWORK_SYNTHETIC!=='true') throw new NotFoundException();
+      const {approval,snap}=await this.eligibleRead(tx,centerId,v,id);
+      if (approval.kind!=='PLAN') throw new NotFoundException();
+      const content=snap.content as Record<string,unknown>;
+      if (!Array.isArray(content.homeActivities)||content.homeActivities.length>10) throw new NotFoundException();
+      const seen=new Set<string>();
+      let total=0,covered=0;
+      for (const [index,a] of content.homeActivities.entries()) {
+        const x=a as {templateId?:string;snapshot?:{version?:number}};
+        const key=x?.templateId&&Number.isInteger(x.snapshot?.version)?JSON.stringify([x.templateId,x.snapshot?.version]):'legacy:'+index;
+        if (seen.has(key)) continue;
+        seen.add(key);total++;
+        const binding=this.artworkSlots(approval.rendering,index).find(s=>s.slot===0);
+        if (!binding) continue;
+        try {
+          const image=await this.artwork.readFamilyArtwork(tx,centerId,a,0,binding.digestSha256);
+          if (image.altText===binding.altText) covered++;
+        } catch(e) { if (!(e instanceof NotFoundException)) throw e; }
+      }
+      return {scope:'AUTHORIZED_SYNTHETIC_PLAN' as const,total,covered,percent:total?Math.floor(100*covered/total):null,synthetic:true as const};
+    },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
   }
 
   async mine(centerId: string, v: Viewer) {

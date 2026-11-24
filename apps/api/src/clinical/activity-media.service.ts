@@ -179,6 +179,16 @@ export class ActivityMediaService {
     return this.prisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT id FROM activity_template WHERE id=${templateId}::uuid AND center_id=${centerId}::uuid FOR SHARE`;
       const t = await this.authorizedTemplate(tx, centerId, v, templateId);
+      const { digestSha256: _digest, ...image } = await this.readVerifiedArtwork(tx,centerId,templateId,t,version,slot);
+      return { ...image, staffPreview:true as const, publishEnabled:false as const, clinicalReleaseEnabled:false as const };
+    }, { isolationLevel:'ReadCommitted' });
+  }
+
+
+  // Internal use by staff and the existing family-release service ONLY.
+  // The latter must first authorize the specific immutable release.
+  private async readVerifiedArtwork(tx:Tx,centerId:string,templateId:string,
+    t:Awaited<ReturnType<ActivityMediaService['authorizedTemplate']>>,version:number,slot:number,expectedDigest?:string) {
       const unavailable = () => new NotFoundException('Signed illustration unavailable.');
       if (t.version !== version) throw unavailable();
       const [initial] = await this.verifiedArtwork(tx, centerId, templateId, t, slot);
@@ -188,7 +198,8 @@ export class ActivityMediaService {
       await tx.$queryRaw`SELECT id FROM private_media_candidate WHERE id=${initial.candidateId}::uuid
         AND center_id=${centerId}::uuid AND template_id=${templateId}::uuid FOR SHARE`;
       const [current] = await this.verifiedArtwork(tx, centerId, templateId, t, slot);
-      if (!current || current.candidateId !== initial.candidateId || current.draftId !== initial.draftId) throw unavailable();
+      if (!current || current.candidateId !== initial.candidateId || current.draftId !== initial.draftId ||
+          (expectedDigest !== undefined && current.digestSha256 !== expectedDigest)) throw unavailable();
       const stored = await tx.privateMediaCandidate.findFirst({
         where:{ id:current.candidateId, centerId, templateId, templateVersion:version,
           mediaDraftId:current.draftId, kind:'ACTIVITY_IMAGE', status:'QUARANTINED', revokedAt:null,
@@ -205,8 +216,37 @@ export class ActivityMediaService {
       } catch { throw unavailable(); }
       return { templateVersion:version, stepNumber:current.stepNumber, altText:current.altText,
         width:current.width, height:current.height, pngBase64:bytes.toString('base64'),
-        staffPreview:true as const, publishEnabled:false as const, clinicalReleaseEnabled:false as const };
-    }, { isolationLevel:'ReadCommitted' });
+        digestSha256:current.digestSha256 };
+  }
+
+  /** Compare the entire server-captured activity snapshot before signing a
+   * family rendering. A changed or legacy template has no artwork binding. */
+  async familyArtworkBindings(tx:Tx,centerId:string,activity:unknown) {
+    const a = activity as {templateId?:unknown;snapshot?:Record<string,unknown>}|null;
+    const s=a?.snapshot;
+    if (!s || typeof a?.templateId!=='string' || s.id!==a.templateId ||
+        !/^[a-f0-9-]{36}$/.test(a.templateId) || !Number.isSafeInteger(s.version)) return [];
+    const templateId=a.templateId;
+    await tx.$queryRaw`SELECT id FROM activity_template WHERE id=${templateId}::uuid AND center_id=${centerId}::uuid FOR SHARE`;
+    const t=await tx.activityTemplate.findFirst({where:{id:templateId,centerId}});
+    if (!t || s.version!==t.version || s.title!==t.title || s.service!==t.service ||
+        s.ageBand!==t.ageBand || s.minutes!==t.minutes ||
+        JSON.stringify(s.steps)!==JSON.stringify(t.steps) || JSON.stringify(s.safety)!==JSON.stringify(t.safety) ||
+        JSON.stringify(s.materials)!==JSON.stringify(t.materials)) return [];
+    const rows=await this.verifiedArtwork(tx,centerId,templateId,t);
+    return rows.map(row=>({slot:row.stepNumber??0,digestSha256:row.digestSha256,altText:row.altText,
+      instruction:row.stepNumber===null?null:t.steps[row.stepNumber-1]}));
+  }
+
+  /** Called only after eligibleRead has authorized the recipient and release.
+   * Never substitute newly approved artwork into an existing release. */
+  async readFamilyArtwork(tx:Tx,centerId:string,activity:unknown,slot:number,digest:string) {
+    const bindings=await this.familyArtworkBindings(tx,centerId,activity);
+    if (!bindings.some(b=>b.slot===slot && b.digestSha256===digest)) throw new NotFoundException('Illustration unavailable.');
+    const a=activity as {templateId:string;snapshot:{version:number}};
+    const t=await tx.activityTemplate.findFirst({where:{id:a.templateId,centerId}});
+    if (!t) throw new NotFoundException('Illustration unavailable.');
+    return this.readVerifiedArtwork(tx,centerId,a.templateId,t,a.snapshot.version,slot,digest);
   }
 
   async propose(centerId: string, v: Viewer, templateId: string, dto: ActivityMediaDraftDto) {

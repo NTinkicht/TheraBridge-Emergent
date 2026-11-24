@@ -46,7 +46,7 @@ export class ActivityMediaController {
   @RequirePermission('center.activities.manage')
   readApprovedArtwork(@Param('centerId', uuid()) centerId: string, @Param('templateId', uuid()) templateId: string,
     @Param('version') version: string, @Param('slot') slot: string, @Req() req: TbRequest) {
-    if (!/^[1-9]\\d{0,8}$/.test(version) || !/^(0|[1-9]\\d?)$/.test(slot))
+    if (!/^[1-9]\d{0,8}$/.test(version) || !/^(0|[1-9]\d?)$/.test(slot))
       throw new BadRequestException('Invalid illustration version or slot.');
     return this.media.readApprovedArtwork(centerId, viewer(req), templateId, Number(version), Number(slot));
   }
