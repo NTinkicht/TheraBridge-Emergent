@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { stageArtworkR2 } from '../src/cli/stage-artwork-r2';
+import { stageArtworkR2,stageArtworkR2Batch } from '../src/cli/stage-artwork-r2';
 import * as storage from '../src/common/private-r2';
 import * as envelope from '../src/common/private-envelope';
 import * as png from '../src/clinical/activity-media-png-integrity';
@@ -113,4 +113,29 @@ describe('operator R2 promotion — synthetic fixture only',()=>{
   read.mockRejectedValueOnce(new Error('runtime read failed'));await expect(stageArtworkR2([id])).rejects.toThrow('runtime read failed');
   expect(prisma.$transaction).not.toHaveBeenCalled();expect(prisma.$disconnect).toHaveBeenCalledTimes(2);
  });
+ it('validates the entire bounded batch before any connection or write',async()=>{
+  const tooMany=Array.from({length:26},(_,i)=>'00000000-0000-4000-8000-'+String(i+1).padStart(12,'0'));
+  for(const args of [[],[id,id],[id,'-'.repeat(36)],tooMany])
+    await expect(stageArtworkR2Batch(args)).rejects.toThrow('Invalid private import candidate batch');
+  await expect(stageArtworkR2(['-'.repeat(36)])).rejects.toThrow('not authorized');
+  expect(PrismaClient).not.toHaveBeenCalled();expect(stage).not.toHaveBeenCalled();
+ });
+ it('stages explicit distinct candidates sequentially using the same per-candidate guards',async()=>{
+  const second='00000000-0000-4000-8000-000000000005';
+  prisma.privateMediaCandidate.findFirst.mockResolvedValueOnce(candidate).mockResolvedValueOnce({...candidate,id:second});
+  tx.privateMediaCandidate.findFirst.mockResolvedValueOnce(candidate).mockResolvedValueOnce({...candidate,id:second});
+  await expect(stageArtworkR2Batch([id,second])).resolves.toBe(2);
+  expect(stage).toHaveBeenNthCalledWith(1,pointer,bytes,expect.anything());
+  expect(stage).toHaveBeenNthCalledWith(2,storage.privateR2Pointer(centerId,second,bytes),bytes,expect.anything());
+  expect(prisma.$disconnect).toHaveBeenCalledTimes(2);
+ });
+ it('stops on the first failure; does not attempt later candidates or report completion',async()=>{
+  const second='00000000-0000-4000-8000-000000000005',third='00000000-0000-4000-8000-000000000006';
+  prisma.privateMediaCandidate.findFirst.mockResolvedValueOnce(candidate).mockResolvedValueOnce({...candidate,id:second});
+  stage.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('storage unavailable'));
+  await expect(stageArtworkR2Batch([id,second,third])).rejects.toThrow('storage unavailable');
+  expect(stage).toHaveBeenCalledTimes(2);expect(tx.privateMediaCandidate.update).toHaveBeenCalledTimes(1);
+  expect(prisma.$disconnect).toHaveBeenCalledTimes(2);
+ });
+
 });

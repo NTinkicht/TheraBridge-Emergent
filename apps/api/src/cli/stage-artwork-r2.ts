@@ -5,11 +5,13 @@ import { openPrivateData } from '../common/private-envelope';
 import { verifyPngCandidate } from '../clinical/activity-media-png-integrity';
 import { generatedReferenceDigest,assertGeneratedReferenceScope } from '../clinical/generated-artwork-reference';
 
+const candidateUuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
+
 // Only promote already scanned, encrypted and exact-reference synthetic
 // candidates. Does not create a draft/candidate/approval or release anything.
 // DB ciphertext retained as a controlled backup until a separate retention decision.
 export async function stageArtworkR2(args:string[]=process.argv.slice(2)){
-  if(args.length!==1||!/^[a-f0-9-]{36}$/.test(args[0])||
+  if(args.length!==1||!candidateUuid.test(args[0])||
     process.env.TB_ARTWORK_R2_IMPORT_ALLOWED!=='true'||
     !['local','development','demo','test'].includes(process.env.DEPLOYMENT_ENV??''))
     throw Error('Private synthetic import is not authorized.');
@@ -55,4 +57,20 @@ export async function stageArtworkR2(args:string[]=process.argv.slice(2)){
     console.log('Private encrypted candidate staged and read-back verified. No approval or release.');
   }finally{await prisma.$disconnect();}
 }
-if(require.main===module)stageArtworkR2().catch(()=>{console.error('Private R2 import failed; reconcile candidate and object before retry.');process.exitCode=1;});
+/** Bounded, explicit candidate batch. Validate the entire list before any
+ * write; reuse the existing guarded one-candidate path sequentially.
+ * A failed batch may have committed earlier candidates. A replay verifies
+ * existing pointers, never deletes objects or changes approval state. */
+export async function stageArtworkR2Batch(args:string[]=process.argv.slice(2)){
+  if(args.length<1||args.length>25||args.some(id=>!candidateUuid.test(id))||
+    new Set(args).size!==args.length)throw Error('Invalid private import candidate batch.');
+  let verified=0;
+  for(const id of args){
+    await stageArtworkR2([id]);
+    verified++;
+  }
+  return verified;
+}
+if(require.main===module)stageArtworkR2Batch().then(count=>{
+  console.log('Private candidate batch verified: '+count+'. No approval or release.');
+}).catch(()=>{console.error('Private R2 import failed; reconcile candidate and object before retry. Earlier candidates may have completed.');process.exitCode=1;});
