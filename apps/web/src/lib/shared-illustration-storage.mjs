@@ -1,4 +1,6 @@
 import {createHash,createHmac} from 'node:crypto';
+import {readFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
 import {sharedIllustration} from './shared-illustrations.mjs';
 const sha=b=>createHash('sha256').update(b).digest('hex');
 const mac=(k,v)=>createHmac('sha256',k).update(v).digest();
@@ -44,14 +46,35 @@ export async function readSharedObject(asset,config=sharedR2Config(),fetcher=fet
   if(!verifySharedBytes(asset,bytes))throw Error('shared_integrity');
   return bytes;
 }
-export async function sharedIllustrationResponse(id,file,env=process.env,read=readSharedObject) {
+// Only allowlisted generic demo thumbnails are bundled, never clinical media.
+// The preview Dockerfile copies apps/web in full; support repo and workspace cwd.
+export async function readBundledSharedObject(asset,readLocal=readFile,cwd=process.cwd()) {
+  const known=sharedIllustration(asset.id);
+  if(!known||known.digest!==asset.digest||known.bytes!==asset.bytes)throw Error('shared_integrity');
+  for(const prefix of [resolve(cwd,'apps/web/reference-assets'),resolve(cwd,'reference-assets')]){
+    let bytes;
+    try{bytes=await readLocal(resolve(prefix,'m5-b-v1',known.id,known.digest+'.webp'));}
+    catch(error){if(error?.code==='ENOENT')continue;throw error;}
+    if(!verifySharedBytes(known,bytes))throw Error('shared_integrity');
+    return bytes;
+  }
+  throw Error('shared_bundle_missing');
+}
+export async function readDemoSharedObject(asset,env=process.env,local=readBundledSharedObject,remote=readSharedObject) {
+  // Local-first for the already authorized synthetic website display assets.
+  // Existing R2 read-only copy remains a fallback if packaging is incomplete.
+  try{return await local(asset);}
+  catch(error){if(error?.message!=='shared_bundle_missing')throw error;}
+  return remote(asset,sharedR2Config(env));
+}
+export async function sharedIllustrationResponse(id,file,env=process.env,read) {
   const asset=sharedIllustration(id);
   // Only the existing synthetic demo may serve these reference assets. No
   // patient media, object path input, plan release or clinical authorization.
   if(env.DEPLOYMENT_ENV!=='preview'||env.DEMO_SEED_CONFIRM!=='CHILDRENS_HOME_SYNTHETIC_ONLY'||
     !asset||file!==asset.digest+'.webp')return new Response(null,{status:404,headers:{'Cache-Control':'no-store'}});
   try{
-    const bytes=await read(asset,sharedR2Config(env));
+    const bytes=read?await read(asset,sharedR2Config(env)):await readDemoSharedObject(asset,env);
     return new Response(new Uint8Array(bytes),{headers:{'Content-Type':'image/webp','Content-Length':String(bytes.length),
       'Cache-Control':'public, max-age=86400, immutable','X-Content-Type-Options':'nosniff'}});
   }catch(error){

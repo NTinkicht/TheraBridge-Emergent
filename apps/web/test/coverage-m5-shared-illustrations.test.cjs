@@ -68,8 +68,22 @@ test('route permits only exact versioned generic assets in synthetic preview; no
  expect((await storage.sharedIllustrationResponse(a.id,file,{...env,TB_R2_ACCESS_KEY_ID:'bad'},read)).status).toBe(503);
  expect((await storage.sharedIllustrationResponse(a.id,file,env,async()=>{throw Error('R2 unavailable')})).status).toBe(503);
 });
-test('default reader fails closed on missing runtime config',async()=>{
- const a=assets[0];expect((await storage.sharedIllustrationResponse(a.id,a.digest+'.webp',{...env,TB_R2_ACCESS_KEY_ID:''})).status).toBe(503);
+test('all 25 bundled thumbnails are served in preview without any R2 credentials, with exact hashes',async()=>{
+ const preview={DEPLOYMENT_ENV:'preview',DEMO_SEED_CONFIRM:'CHILDRENS_HOME_SYNTHETIC_ONLY'};
+ for(const a of assets){const r=await storage.sharedIllustrationResponse(a.id,a.digest+'.webp',preview);expect(r.status).toBe(200);expect(r.headers.get('content-type')).toBe('image/webp');const bytes=Buffer.from(await r.arrayBuffer());expect(bytes.length).toBe(a.bytes);expect(createHash('sha256').update(bytes).digest('hex')).toBe(a.digest);expect((await storage.sharedIllustrationResponse(a.id,a.digest+'.webp',{...preview,DEPLOYMENT_ENV:'production'})).status).toBe(404);}
+});
+test('bundled reader handles both working directories, refuses unknown or damaged bytes, and falls back only for missing assets',async()=>{
+ const a=assets[0],bytes=await storage.readBundledSharedObject(a);const missing=Object.assign(new Error('missing'),{code:'ENOENT'});let calls=0;
+ expect(await storage.readBundledSharedObject(a,async()=>{if(++calls===1)throw missing;return bytes},'/tmp/demo')).toEqual(bytes);expect(calls).toBe(2);
+ await expect(storage.readBundledSharedObject({...a,id:'../private'})).rejects.toThrow('shared_integrity');
+ await expect(storage.readBundledSharedObject({...a,digest:'wrong'})).rejects.toThrow('shared_integrity');
+ await expect(storage.readBundledSharedObject({...a,bytes:1})).rejects.toThrow('shared_integrity');
+ await expect(storage.readBundledSharedObject(a,async()=>Buffer.from('damaged'))).rejects.toThrow('shared_integrity');
+ await expect(storage.readBundledSharedObject(a,async()=>{throw missing})).rejects.toThrow('shared_bundle_missing');
+ await expect(storage.readBundledSharedObject(a,async()=>{throw Error('permission')})).rejects.toThrow('permission');
+ const remote=jest.fn(async()=>bytes);expect(await storage.readDemoSharedObject(a,env,async()=>{throw Error('shared_bundle_missing')},remote)).toEqual(bytes);expect(remote).toHaveBeenCalledTimes(1);
+ await expect(storage.readDemoSharedObject(a,env,async()=>{throw Error('shared_integrity')},remote)).rejects.toThrow('shared_integrity');expect(remote).toHaveBeenCalledTimes(1);
+ await expect(storage.readDemoSharedObject(a,{},async()=>{throw Error('shared_bundle_missing')},remote)).rejects.toThrow('shared_config_invalid');
 });
 test('mounted shared gallery contains all references and image error does not break layout',async()=>{
  const {SharedIllustrationLibrary,SharedIllustration}=require('../src/components/clinical/SharedIllustration');
