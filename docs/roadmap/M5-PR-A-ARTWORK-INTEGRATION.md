@@ -1,0 +1,3 @@
+# M5 PR A — artwork integration
+
+Predecessor #492 (4633940f6cf36272ae3bcd7b2693f0190127de7c). Scope #195–199. User reports artwork acceptance and directs integration. The 25 selected fictional illustrations are now generated; normalized masters are 1600×1200, from 1448×1086 sources. Keep actual image bytes out of public Git pending the existing asset-specific rights and clinical review. Integrate the digest-locked candidate pack into the existing staff proposal and private scanned-candidate workflow; do not activate clinical/public/guardian release or bypass storage controls. Opening checkpoint: NOT IMPLEMENTED/NOT TESTED.
