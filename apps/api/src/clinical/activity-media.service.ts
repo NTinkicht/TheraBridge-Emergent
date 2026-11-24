@@ -113,7 +113,13 @@ export class ActivityMediaService {
       const t = await this.authorizedTemplate(tx, centerId, v, templateId);
       const verified = await this.verifiedArtwork(tx, centerId, templateId, t);
       const items = verified.map(({ stepNumber, altText, width, height }) => ({ stepNumber, altText, width, height }));
+      const expectedSteps = t.steps.slice(0,64).flatMap((step,i)=>step.trim()?[i+1]:[]);
+      const verifiedSteps = items.filter(item=>item.stepNumber!==null).length;
       return { templateVersion:t.version, items,
+        coverage:{ wholeActivityVerified:items.some(item=>item.stepNumber===null),
+          verifiedSteps, expectedSteps:expectedSteps.length,
+          stepCoveragePercent:expectedSteps.length===0?null:Math.floor(100*verifiedSteps/expectedSteps.length),
+          publishedCoveragePercent:null, publishedCoverageAvailable:false as const },
         metadataOnly:true as const, readEnabled:false as const, publishEnabled:false as const,
         clinicalReleaseEnabled:false as const };
     }, { isolationLevel:'RepeatableRead' });

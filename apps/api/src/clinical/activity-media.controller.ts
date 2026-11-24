@@ -35,6 +35,7 @@ export class ActivityMediaController {
     return this.media.mapping(centerId, viewer(req), templateId);
   }
   @Get('approved-artwork')
+  @Header('Cache-Control', 'private, no-store, max-age=0')
   @RequirePermission('center.activities.manage')
   approvedArtwork(@Param('centerId', uuid()) centerId: string, @Param('templateId', uuid()) templateId: string,
     @Req() req: TbRequest) {

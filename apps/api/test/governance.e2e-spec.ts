@@ -28,6 +28,30 @@ describe('TB-EM-011 non-authorizing governance (real PostgreSQL)', () => {
   plan=(await h.prisma.planVersion.create({data:{centerId:c,planId:p.id,number:1,authorId,summary:'Immutable synthetic content',goals:[goal],createdAt:h.clock.now(),updatedAt:h.clock.now()}})).id;
   report=(await post(h,path(`clinical/children/${kid}/reports`),therapist,{service:'speech',title:'Synthetic report',periodStart:'2026-01-01',periodEnd:'2026-01-02'}).expect(201)).body.id;
  });
+ it('preserves signed artwork evidence across candidate revocation and rejects mutation or deletion', async () => {
+  const t=await h.prisma.activityTemplate.create({data:{centerId:c,title:'Synthetic activity',service:'speech',
+    ageBand:'6-8',minutes:5,materials:[],steps:['Synthetic step'],safety:[],createdById:authorId,createdAt:h.clock.now()}});
+  const draft=await h.prisma.activityMediaDraft.create({data:{centerId:c,templateId:t.id,templateVersion:t.version,
+    service:'speech',sourceType:'GENERATED',styleVersion:'m5-b-v1',sceneType:'home-support',
+    altText:'Synthetic artwork evidence fixture',license:'Synthetic fixture',sourceReference:'synthetic-fixture',
+    createdById:authorId}});
+  const candidate=await h.prisma.privateMediaCandidate.create({data:{centerId:c,templateId:t.id,
+    templateVersion:t.version,mediaDraftId:draft.id,kind:'ACTIVITY_IMAGE',encryptedBytes:Buffer.alloc(50,7),
+    digestSha256:'a'.repeat(64),scannerName:'ClamAV',scannerVersion:'fixture',width:400,height:300,
+    createdById:authorId}});
+  // Deliberately invalid test signatures: the database immutability guarantee
+  // is independent of whether a receipt can pass cryptographic verification.
+  const evidence=await h.prisma.activityArtworkApproval.create({data:{candidateId:candidate.id,centerId:c,
+    templateId:t.id,templateVersion:t.version,slot:0,digestSha256:'a'.repeat(64),contextSha256:'b'.repeat(64),
+    rightsEvidenceSha256:'c'.repeat(64),clinicalEvidenceSha256:'d'.repeat(64),
+    rightsSignature:'fixture',clinicalSignature:'fixture'}});
+  await expect(h.prisma.activityArtworkApproval.update({where:{candidateId:candidate.id},
+    data:{createdAt:new Date('2020-01-01')}})).rejects.toThrow(/immutable/);
+  await expect(h.prisma.activityArtworkApproval.delete({where:{candidateId:candidate.id}})).rejects.toThrow(/immutable/);
+  await post(h,path(`activities/${t.id}/media-drafts/${draft.id}/candidates/${candidate.id}/revoke`),therapist,{}).expect(201);
+  expect((await h.prisma.privateMediaCandidate.findUniqueOrThrow({where:{id:candidate.id}})).status).toBe('REVOKED');
+  expect(await h.prisma.activityArtworkApproval.findUniqueOrThrow({where:{candidateId:candidate.id}})).toEqual(evidence);
+ });
  it('M2-H05 reports distinguish stale RETURNED_FOR_REVISION resubmission from invalid status', async () => {
   await h.prisma.progressReport.update({ where: { id: report }, data: { sections: {
     summary: 'Synthetic report summary for internal reviewer', assessment: '', goals: '', sessions: '', recommendations: '', familySummary: '',
