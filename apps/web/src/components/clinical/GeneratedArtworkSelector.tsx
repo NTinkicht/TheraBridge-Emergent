@@ -18,10 +18,11 @@ export function GeneratedArtworkSelector({onSelect,service,disabled=false}:{
     urlRef.current=null;
     setPreview(null);
   };
-  useEffect(()=>()=>{generation.current++;if(urlRef.current)URL.revokeObjectURL(urlRef.current);},[]);
+  useEffect(()=>()=>{generation.current++;if(urlRef.current)URL.revokeObjectURL(urlRef.current);urlRef.current=null;},[service]);
   const family=service==='feeding'?'occupational':service==='developmental'?'behavioral':service;
   const choices=GENERATED_ARTWORK.filter(item=>family===undefined||item.family===family);
   const asset=choices.some(item=>item.referenceId===id)?findGeneratedArtwork(id):null;
+  const previewMatches=asset!==null&&preview?.asset.referenceId===asset.referenceId;
   const choose=async(file:File|undefined)=>{
     const n=++generation.current;
     clear();setStatus('');setBusy(false);
@@ -59,13 +60,13 @@ export function GeneratedArtworkSelector({onSelect,service,disabled=false}:{
           onChange={e=>{const file=e.currentTarget.files?.[0];e.currentTarget.value='';void choose(file);}} />
       </label>
     </>}
-    {preview&&<figure className="max-w-sm overflow-hidden rounded-control border border-border-light">
+    {previewMatches&&preview&&<figure className="max-w-sm overflow-hidden rounded-control border border-border-light">
       {/* The only source is an exact digest-pinned local fictional reference; never a server media URL. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={preview.url} alt={preview.asset.alt} width={400} height={300} className="block aspect-[4/3] h-auto w-full object-contain" />
       <figcaption className="p-2 text-xs text-brand-inkMuted">Local reference only · not approved for clinical use</figcaption>
     </figure>}
-    {preview&&<button type="button" disabled={disabled||busy}
+    {previewMatches&&preview&&<button type="button" disabled={disabled||busy}
       className="min-h-[44px] rounded-control border border-border-strong px-3 py-2 text-sm font-semibold"
       onClick={()=>onSelect(preview.asset)}>Use verified artwork metadata</button>}
     {busy&&<p role="status" className="text-sm">Verifying artwork…</p>}
