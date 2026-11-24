@@ -49,3 +49,14 @@ export function assertGeneratedReferenceBytes(source:unknown,input:unknown):void
   if(bytes.length<33||bytes.readUInt32BE(16)!==400||bytes.readUInt32BE(20)!==300||
     createHash('sha256').update(bytes).digest('hex')!==digest)fail();
 }
+
+/** Family and scene are reference taxonomy, not approval of technique congruence. */
+export function assertGeneratedReferenceScope(source:unknown,service:string,scene:string):void {
+  if(generatedReferenceDigest(source)===null)return;
+  const id=(source as string).split(':')[1];
+  const family=service==='feeding'?'occupational':service==='developmental'?'behavioral':service;
+  const scenes=['therapist-guided','independent-practice','home-support','materials-sequence','safety-access'];
+  const index=Number(id[6])-1;
+  if(!id.endsWith('-'+family.toUpperCase())||scene!==scenes[index])
+    throw new UnprocessableEntityException('Reference artwork specialty or scene does not match the proposal.');
+}
