@@ -458,3 +458,77 @@ describe('M5 clinical plan scheduling and history denial paths',()=>{
   expect(find('plan-template-more')).toHaveLength(0);
  });
 });
+
+describe('M5 owner feedback 21: progressive plan disclosure preserves mounted draft safety',()=>{
+ it('keeps optional evidence and calendar in native collapsed details while editing remains available',async()=>{
+  await mount();
+  const evidence=get('plan-supporting-evidence'),calendar=get('plan-calendar-disclosure');
+  expect(evidence.type).toBe('details');
+  expect(calendar.type).toBe('details');
+  expect(evidence.props.open).toBeUndefined();
+  expect(calendar.props.open).toBeUndefined();
+  expect(evidence.findAllByType('summary')).toHaveLength(1);
+  expect(calendar.findAllByType('summary')).toHaveLength(1);
+  expect(get('plan-summary').props.disabled).toBe(false);
+  expect(get('plan-save')).toBeTruthy();
+  expect(clinicalApi.submit).not.toHaveBeenCalled();
+ });
+ it('does not unmount or reset unsaved edits when supporting sections are collapsed',async()=>{
+  clinicalApi.saveVersion.mockResolvedValue({version:4});
+  await mount();
+  const evidence=get('plan-supporting-evidence'),calendar=get('plan-calendar-disclosure');
+  await change('plan-summary','Synthetic unsaved revised plan');
+  expect(get('plan-summary').props.value).toBe('Synthetic unsaved revised plan');
+  expect(get('plan-submit').props.disabled).toBe(true);
+  expect(get('plan-supporting-evidence')).toBe(evidence);
+  expect(get('plan-calendar-disclosure')).toBe(calendar);
+  await click('plan-save');
+  expect(clinicalApi.saveVersion).toHaveBeenCalledWith('c1','v1',
+   expect.objectContaining({version:3,summary:'Synthetic unsaved revised plan'}));
+  expect(clinicalApi.submit).not.toHaveBeenCalled();
+ });
+ it('retains read-only plan and clinical release lock under collapsed support panels',async()=>{
+  await mount(version({status:'IN_REVIEW',mine:false}),ws({canEdit:false,canReview:false}));
+  expect(get('plan-supporting-evidence').type).toBe('details');
+  expect(get('plan-calendar-disclosure').type).toBe('details');
+  expect(get('plan-summary').props.disabled).toBe(true);
+  expect(find('plan-save')).toHaveLength(0);
+  expect(JSON.stringify(tree.toJSON())).toContain('Approve and release');
+  expect(clinicalApi.submit).not.toHaveBeenCalled();
+ });
+});
+
+describe('M5 owner observation 21: non-destructive plan authoring navigation',()=>{
+ it('links three authoring steps to the exact mounted plan-version fields',async()=>{
+  await mount();
+  const nav=get('plan-authoring-steps');
+  expect(nav.type).toBe('nav');
+  expect(nav.props['aria-label']).toBe('Plan authoring steps');
+  const links=nav.findAllByType('a');
+  expect(links.map(a=>a.props.href)).toEqual([
+   '#plan-summary-v1','#plan-goals-v1','#plan-activities-v1']);
+  expect(tree.root.findByProps({id:'plan-summary-v1'})).toBeTruthy();
+  expect(tree.root.findByProps({id:'plan-goals-v1'})).toBeTruthy();
+  expect(tree.root.findByProps({id:'plan-activities-v1'})).toBeTruthy();
+  expect(clinicalApi.submit).not.toHaveBeenCalled();
+ });
+ it('keeps existing draft edits and protected actions mounted through the guide',async()=>{
+  await mount();
+  const summary=get('plan-summary');
+  await change('plan-summary','Synthetic unsaved versioned objective');
+  expect(get('plan-summary')).toBe(summary);
+  expect(get('plan-save')).toBeTruthy();
+  expect(get('plan-authoring-steps')).toBeTruthy();
+  expect(clinicalApi.saveVersion).not.toHaveBeenCalled();
+  await click('plan-save');
+  expect(clinicalApi.saveVersion).toHaveBeenCalledWith('c1','v1',
+    expect.objectContaining({version:3,summary:'Synthetic unsaved versioned objective'}));
+  expect(clinicalApi.submit).not.toHaveBeenCalled();
+ });
+ it('shows the same navigation as read-only with save action still denied',async()=>{
+  await mount(version({mine:false,status:'IN_REVIEW'}),ws({canEdit:false}));
+  expect(get('plan-authoring-steps')).toBeTruthy();
+  expect(find('plan-save')).toHaveLength(0);
+  expect(get('plan-summary').props.disabled).toBe(true);
+ });
+});

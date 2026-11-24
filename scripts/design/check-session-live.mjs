@@ -42,6 +42,10 @@ try {
   await note.getByLabel('Outcome', { exact: true }).selectOption('ACHIEVED');
   await note.getByLabel('Assistance (separate from outcome)', { exact: true }).selectOption('SUBSTANTIAL_ASSISTANCE');
   await note.getByLabel('Actual minutes', { exact: true }).fill('5');
+  const syntheticDisclosure = note.getByTestId('session-synthetic-dictation');
+  assert.equal(await syntheticDisclosure.getAttribute('open'), null,
+    'Real clinician workflow starts with developer-only transcription controls collapsed');
+  await syntheticDisclosure.locator(':scope > summary').click();
   await note.getByRole('button', { name: 'Run synthetic transcription', exact: true }).click();
   await note.getByRole('button', { name: 'Insert reviewed text', exact: true }).waitFor({ state: 'visible' });
   await page.waitForTimeout(350);
@@ -119,6 +123,7 @@ try {
     await note.getByRole('button', { name: 'Save reviewed reconciliation as draft', exact: true }).waitFor();
     const pendingTranscript = '  Revoked uninserted العربية 😀\nexact trailing spaces  ';
     // Transcript was never inserted into clinical notes.
+    await remote.getByTestId('session-synthetic-dictation').locator(':scope > summary').click();
     await tab.getByLabel('Editable transcript (not saved)', { exact: true }).fill(pendingTranscript);
     await db.careAssignment.update({ where: { id: assignment.id }, data: { endedAt: new Date() } });
     const beforeRevoked = writes.length;
@@ -197,6 +202,13 @@ try {
   assert((await remote.getByRole('region', { name: 'Session conflict comparison' }).innerText()).includes('Remote before revocation'));
   await tab.close();
   await page.reload(); await page.getByRole('tab', { name: 'Sessions', exact: true }).click();
+  // Completed sessions are intentionally collapsed by default; explicitly
+  // reveal history before verifying the saved note is read-only on reload.
+  const historyToggle = page.getByTestId('historical-sessions-toggle');
+  await historyToggle.waitFor();
+  assert.equal(await historyToggle.getAttribute('aria-expanded'), 'false');
+  await historyToggle.click();
+  assert.equal(await historyToggle.getAttribute('aria-expanded'), 'true');
   assert(await note.getByLabel('Overall session note', { exact: true }).isDisabled());
   assert.deepEqual(errors, []);
   console.log('PASS: real login → assigned child → ad-hoc start → library selection → separate result/assistance → synthetic transcript correction/insertion → autosave → reload/resume → complete → reload read-only; two-tab conflicts, blocked autosave, note/activity preservation, deliberate reconciliation, repeated updates, server retention, revoked/failed recovery and copyable exact uninserted transcript after remote completion; real Nest/Fastify and PostgreSQL, no mocked API responses.');

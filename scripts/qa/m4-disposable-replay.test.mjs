@@ -51,3 +51,14 @@ test('real PostgreSQL CAS race fails closed on lock timeout and stale version', 
   assert.match(source, /wait "\$M4_CAS_HOLDER_PID"/);
   assert.match(source, /stale CAS unexpectedly overwrote/);
 });
+
+// The main-branch M4-06 job previously exited after the disposable Docker
+// startup with no diagnostic. Do not use head -1 on multi-line docker port
+// output under pipefail: an upstream SIGPIPE can abort the whole script.
+test('disposable port discovery cannot SIGPIPE Docker and accepts loopback only',()=>{
+  assert.doesNotMatch(source,/docker port[^\n]*\|\s*head\s+-1/);
+  assert.match(source,/port_lines="\$\(docker port/);
+  assert.match(source,/127\\\.0\\\.0\\\.1:/);
+  assert.match(source,/trap '[^']*unexpected exit at script line/);
+  assert.match(source,/postgres:16-bookworm/);
+});

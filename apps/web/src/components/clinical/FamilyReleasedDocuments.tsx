@@ -3,10 +3,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { ApiError } from '@/lib/api';
 import { familyReleaseApi, type FamilyDocument } from '@/lib/family-releases';
 import { opsApi, type FamilyOverview } from '@/lib/operations';
+import { FamilyArtworkPreview } from './FamilyArtworkPreview';
 import { Button, Card } from '@/components/design/ui';
 
 type Item = { id: string; kind: string; status: string; childId: string; childName: string };
 export function FamilyReleasedDocuments({ centerId }: { centerId: string }) {
+  return <FamilyDocuments key={centerId} centerId={centerId}/>;
+}
+function FamilyDocuments({ centerId }: { centerId: string }) {
   const [enabled, setEnabled] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
   const [children, setChildren] = useState<FamilyOverview['children']>([]);
@@ -27,7 +31,7 @@ export function FamilyReleasedDocuments({ centerId }: { centerId: string }) {
   useEffect(() => { void reload(); }, [reload]);
 
   const open = async (id: string) => {
-    setBusy(true); setError('');
+    setBusy(true); setError(''); setSelected(null);
     try { setSelected(await familyReleaseApi.read(centerId, id)); }
     catch { setSelected(null); setError('This document is no longer available.'); await reload(); }
     finally { setBusy(false); }
@@ -68,7 +72,9 @@ export function FamilyReleasedDocuments({ centerId }: { centerId: string }) {
       {selected.rendering.kind === 'PLAN' && Array.isArray(selected.rendering.homeActivities) &&
         <div className="space-y-2"><h4 className="font-semibold">Home activities</h4><ul className="list-disc space-y-2 pl-6 text-sm">
           {(selected.rendering.homeActivities as { frequency: string; note: string }[]).map((activity, i) =>
-            <li key={i}><span className="font-semibold">{activity.frequency}</span>{activity.note && <p className="whitespace-pre-wrap">{activity.note}</p>}</li>)}
+            <li key={i}><span className="font-semibold">{activity.frequency}</span>{activity.note && <p className="whitespace-pre-wrap">{activity.note}</p>}
+              <FamilyArtworkPreview key={selected.id+':'+i} centerId={centerId} releaseId={selected.id}
+                index={i} manifest={selected.rendering.artwork}/></li>)}
         </ul></div>}
       <p className="text-xs text-fam-muted">This synthetic document is view-only and cannot be downloaded or exported.</p>
       <Button variant="ghost" size="sm" onClick={() => setSelected(null)}>Close document</Button>

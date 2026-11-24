@@ -571,6 +571,7 @@ export class ClinicalService {
   async templatePage(centerId: string, v?: Viewer, options: {
     offset?: number; limit?: number; search?: string; service?: string;
     services?: string[]; ownership?: 'all' | 'mine' | 'center' | 'samples';
+    category?: string; skill?: string; equipment?: string;
   } = {}) {
     const offset = options.offset ?? 0, limit = options.limit ?? 100;
     const conditions: Prisma.ActivityTemplateWhereInput[] = [
@@ -578,6 +579,9 @@ export class ClinicalService {
     ];
     if (options.services) conditions.push({ service: { in: options.services } });
     if (options.service) conditions.push({ service: options.service });
+    if (options.category) conditions.push({ category: { equals: options.category, mode: 'insensitive' } });
+    if (options.skill) conditions.push({ skill: { equals: options.skill, mode: 'insensitive' } });
+    if (options.equipment) conditions.push({ equipment: { has: options.equipment } });
     if (options.ownership === 'mine') conditions.push({ centerId, createdById: v?.userId ?? '__none__' });
     if (options.ownership === 'center') conditions.push({ centerId });
     if (options.ownership === 'samples') conditions.push({ centerId: null });
@@ -592,6 +596,8 @@ export class ClinicalService {
       conditions.push({ OR: [
         { title: { contains: options.search, mode: 'insensitive' } },
         { ageBand: { contains: options.search, mode: 'insensitive' } },
+        { category: { contains: options.search, mode: 'insensitive' } },
+        { skill: { contains: options.search, mode: 'insensitive' } },
         { service: { contains: options.search, mode: 'insensitive' } },
         ...(serviceMatches.length ? [{ service: { in: serviceMatches } }] : []),
       ] });
@@ -604,7 +610,8 @@ export class ClinicalService {
     const hasMore = rows.length > limit;
     return { items: rows.slice(0, limit).map((t) => ({
       id: t.id, title: t.title, service: t.service, ageBand: t.ageBand,
-      minutes: t.minutes, materials: t.materials, steps: t.steps, safety: t.safety,
+      minutes: t.minutes, category: t.category, skill: t.skill,
+      equipment: t.equipment, materials: t.materials, steps: t.steps, safety: t.safety,
       library: t.centerId ? 'center' : 'synthetic', version: t.version,
       mine: !!v && t.centerId === centerId && t.createdById === v.userId,
     })), hasMore, nextOffset: hasMore ? offset + limit : null };
@@ -643,6 +650,7 @@ export class ClinicalService {
           centerId, createdById: v.userId, createdAt: now,
           title: this.templateTitle(dto.title), service: source.service,
           ageBand: source.ageBand, minutes: source.minutes,
+          category: source.category, skill: source.skill, equipment: [...source.equipment],
           materials: [...source.materials], steps: [...source.steps], safety: [...source.safety],
         },
       });

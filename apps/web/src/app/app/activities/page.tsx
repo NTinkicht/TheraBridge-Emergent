@@ -4,7 +4,10 @@ import { useCallback, useState } from 'react';
 import { HeartHandshake, LayoutGrid, List, Plus, Search, Sparkles } from 'lucide-react';
 import { Field, FormAlert } from '@/components/auth/Field';
 import { PageTitle, SelectField, Workspace, errorText, useLoad } from '@/components/centers/kit';
+import { CenterArtworkCoveragePanel } from '@/components/clinical/CenterArtworkCoveragePanel';
 import { ActivityCard } from '@/components/clinical/ActivityCard';
+import { GeneratedArtworkGallery, type LocalArtworkPreview } from '@/components/clinical/GeneratedArtworkGallery';
+import { LocalMappedArtworkReview } from '@/components/clinical/LocalMappedArtworkReview';
 import { ActivityMediaDraftPanel } from '@/components/clinical/ActivityMediaDraftPanel';
 import { TemplateActions } from '@/components/clinical/TemplateActions';
 import { Button, Card } from '@/components/design/ui';
@@ -16,12 +19,17 @@ const lines = (s: string) => s.split('\n').map((x) => x.trim()).filter(Boolean);
 const area = 'mt-1 w-full rounded-control border border-border-light bg-transparent px-3 py-2 text-[14px]';
 
 function NewTemplate({ centerId, onDone, onError }: { centerId: string; onDone: () => void; onError: (e: unknown) => void }) {
-  const [f, setF] = useState({ title: '', service: 'speech', ageBand: '3-6 years', minutes: '10', materials: '', steps: '', safety: '' });
+  const [f, setF] = useState({ title: '', service: 'speech', ageBand: '3-6 years', minutes: '10',
+    category: '', skill: '', equipment: '', materials: '', steps: '', safety: '' });
   const [err, setErr] = useState<string | null>(null);
   const save = async () => {
     setErr(null);
     try {
-      await clinicalApi.createTemplate(centerId, { title: f.title, service: f.service, ageBand: f.ageBand, minutes: Number(f.minutes), materials: lines(f.materials), steps: lines(f.steps), safety: lines(f.safety) });
+      await clinicalApi.createTemplate(centerId, { title: f.title, service: f.service, ageBand: f.ageBand, minutes: Number(f.minutes),
+        ...(f.category.trim() ? { category: f.category.trim() } : {}),
+        ...(f.skill.trim() ? { skill: f.skill.trim() } : {}),
+        ...(lines(f.equipment).length ? { equipment: lines(f.equipment) } : {}),
+        materials: lines(f.materials), steps: lines(f.steps), safety: lines(f.safety) });
       setF({ ...f, title: '', materials: '', steps: '', safety: '' });
       onDone();
     } catch (e) { setErr(errorText(e, onError)); }
@@ -37,6 +45,15 @@ function NewTemplate({ centerId, onDone, onError }: { centerId: string; onDone: 
         <Field label="Minutes" type="number" value={f.minutes} onChange={(e) => setF({ ...f, minutes: e.target.value })} testId="template-minutes" />
       </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        {(['category', 'skill'] as const).map(key => <Field key={key}
+          label={key === 'category' ? 'Activity category (optional)' : 'Skill (optional)'}
+          value={f[key]} onChange={e => setF(old => ({ ...old, [key]: e.target.value }))} testId={`template-${key}`} />)}
+        <label className="block text-[14px] font-medium">Equipment (one per line)
+          <textarea rows={3} className={area} value={f.equipment}
+            onChange={e => setF(old => ({ ...old, equipment: e.target.value }))} />
+        </label>
+      </div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {(['materials', 'steps', 'safety'] as const).map((k) => <label key={k} className="block text-[14px] font-medium capitalize">{k === 'safety' ? 'Safety guidance' : k} (one per line)<textarea rows={4} className={area} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} data-testid={`template-${k}`} /></label>)}
       </div>
       <Button onClick={() => void save()} data-testid="template-save"><Plus size={15} aria-hidden="true" />Add to library</Button>
@@ -48,15 +65,30 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
   const centerId = session.activeContext?.type === 'center' ? session.activeContext.centerId : '';
   const [notice, setNotice] = useState('');
   const [creating, setCreating] = useState(false);
+  const [showArtwork, setShowArtwork] = useState(false);
+  const [localArtwork,setLocalArtwork] = useState<readonly LocalArtworkPreview[]>([]);
+  const canReviewArtwork = session.permissions.includes('center.activities.manage') && session.activeContext?.type === 'center' &&
+    ['THERAPIST','CLINICAL_SUPERVISOR'].includes(session.activeContext.role);
   const [search, setSearch] = useState('');
   const [specialty, setSpecialty] = useState('all');
   const [ownership, setOwnership] = useState('all');
+  const [category, setCategory] = useState('');
+  const [skill, setSkill] = useState('');
+  const [equipment, setEquipment] = useState('');
   const [view, setView] = useState<'grid' | 'list'>('grid');
-  const queryKey = JSON.stringify([centerId, search.trim(), specialty, ownership]);
+  // Preserve the existing four-part identity for legacy/unfiltered reads.
+  // Extend it only when an advanced filter is used, so an old response
+  // cannot be confused with a newly filtered query.
+  const queryKey = JSON.stringify([centerId, search.trim(), specialty, ownership,
+    ...(category.trim() || skill.trim() || equipment.trim()
+      ? [category.trim(), skill.trim(), equipment.trim()] : [])]);
   const fetcher = useCallback(async () => ({ ...await clinicalApi.templates(centerId, {
     search: search.trim(), service: specialty === 'all' ? undefined : specialty,
     ownership, limit: 100,
-  }), queryKey }), [centerId, search, specialty, ownership, queryKey]);
+    ...(category.trim() ? { category: category.trim() } : {}),
+    ...(skill.trim() ? { skill: skill.trim() } : {}),
+    ...(equipment.trim() ? { equipment: equipment.trim() } : {}),
+  }), queryKey }), [centerId, search, specialty, ownership, category, skill, equipment, queryKey]);
   const { data, failed, reload } = useLoad(fetcher, onError);
   const first = data?.queryKey === queryKey ? data : null;
   const [additional, setAdditional] = useState<{ key: string; items: Template[]; hasMore: boolean; nextOffset: number | null } | null>(null);
@@ -66,13 +98,18 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
   const templates = [...(first?.items ?? []), ...(validMore?.items ?? []).filter(t => !first?.items.some(x => x.id === t.id))];
   const hasMore = validMore?.hasMore ?? first?.hasMore ?? false;
   const nextOffset = validMore?.nextOffset ?? first?.nextOffset;
-  const filtering = !!search.trim() || specialty !== 'all' || ownership !== 'all';
+  const filtering = !!search.trim() || specialty !== 'all' || ownership !== 'all' ||
+    !!category.trim() || !!skill.trim() || !!equipment.trim();
   const loadMore = async () => {
     if (loadingMore || !hasMore || nextOffset === null || nextOffset === undefined) return;
     setLoadingMore(true); setLoadError('');
     try {
       const next = await clinicalApi.templates(centerId, { offset: nextOffset, limit: 100,
-        search: search.trim(), service: specialty === 'all' ? undefined : specialty, ownership });
+        search: search.trim(), service: specialty === 'all' ? undefined : specialty,
+        ownership,
+        ...(category.trim() ? { category: category.trim() } : {}),
+        ...(skill.trim() ? { skill: skill.trim() } : {}),
+        ...(equipment.trim() ? { equipment: equipment.trim() } : {}) });
       setAdditional(prev => ({ key: queryKey,
         items: [...(prev?.key === queryKey ? prev.items : []), ...next.items],
         hasMore: next.hasMore, nextOffset: next.nextOffset }));
@@ -83,12 +120,22 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
     <div className="space-y-5">
       <PageTitle title="Activity library" body="Step-by-step home activities with safety guidance, ready to add to therapy plan drafts." testId="activities-title" />
       {notice && <FormAlert tone="success" testId="template-saved">{notice}</FormAlert>}
+      {canReviewArtwork && session.activeContext?.type==='center' && session.activeContext.role==='CLINICAL_SUPERVISOR' &&
+        <CenterArtworkCoveragePanel key={JSON.stringify([centerId,session.user.id,session.activeContext.membershipId])} centerId={centerId}/>}
       {session.permissions.includes('center.activities.manage') && (
         <div className="space-y-3">
           <Button variant="secondary" onClick={() => setCreating(value => !value)} data-testid="template-form-toggle" aria-expanded={creating}>
             <Plus size={16} aria-hidden="true" />{creating ? 'Close activity form' : 'Create activity'}
           </Button>
           {creating && <NewTemplate centerId={centerId} onError={onError} onDone={() => { setCreating(false); setNotice('Activity created.'); setAdditional(null); void reload(); }} />}
+        </div>
+      )}
+      {session.permissions.includes('center.activities.manage') && session.activeContext?.type === 'center' &&
+        ['THERAPIST','CLINICAL_SUPERVISOR'].includes(session.activeContext.role) && (
+        <div className="space-y-3">
+          <Button variant="secondary" aria-expanded={showArtwork} data-testid="artwork-gallery-toggle"
+            onClick={() => { setLocalArtwork([]); setShowArtwork(value => !value); }}>{showArtwork ? 'Close original illustration collection' : 'Review original illustration collection'}</Button>
+          {showArtwork && <GeneratedArtworkGallery key={centerId + ':' + session.activeContext.role} onVerified={setLocalArtwork} />}
         </div>
       )}
       {failed && <ErrorState onRetry={() => void reload()} testId="activities-error" />}
@@ -124,6 +171,28 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
             </select>
           </label>
         </div>
+        <details className="rounded-control border border-border-light bg-surface-subtle px-3 py-2">
+          <summary className="min-h-[36px] cursor-pointer text-[13px] font-semibold">
+            Category, skill and equipment filters
+          </summary>
+          <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <label className="block text-[13px] font-medium">Category
+              <input value={category} maxLength={80} onChange={e => setCategory(e.target.value)}
+                data-testid="activities-category-filter" placeholder="Exact category"
+                className="mt-1 w-full rounded-control border border-border-strong bg-surface-white p-2" />
+            </label>
+            <label className="block text-[13px] font-medium">Skill
+              <input value={skill} maxLength={80} onChange={e => setSkill(e.target.value)}
+                data-testid="activities-skill-filter" placeholder="Exact skill"
+                className="mt-1 w-full rounded-control border border-border-strong bg-surface-white p-2" />
+            </label>
+            <label className="block text-[13px] font-medium">Equipment
+              <input value={equipment} maxLength={120} onChange={e => setEquipment(e.target.value)}
+                data-testid="activities-equipment-filter" placeholder="Exact equipment item"
+                className="mt-1 w-full rounded-control border border-border-strong bg-surface-white p-2" />
+            </label>
+          </div>
+        </details>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[13px] text-brand-inkMuted" role="status" data-testid="activities-result-count">
             {first ? `Showing ${templates.length}${hasMore ? '+' : ''} matching activities` : 'Searching activities…'}
@@ -134,7 +203,8 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
               <Button size="sm" variant={view === 'list' ? 'primary' : 'secondary'} onClick={() => setView('list')} aria-pressed={view === 'list'} data-testid="activities-list-view"><List size={15} aria-hidden="true" />List</Button>
             </div>
           {filtering && <Button size="sm" variant="ghost"
-            onClick={() => { setSearch(''); setSpecialty('all'); setOwnership('all'); }} data-testid="activities-clear-filters">
+            onClick={() => { setSearch(''); setSpecialty('all'); setOwnership('all');
+              setCategory(''); setSkill(''); setEquipment(''); }} data-testid="activities-clear-filters">
             Clear filters
           </Button>}
           </div>
@@ -145,16 +215,37 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
         <div data-testid="activities-no-results"><EmptyState icon={Search} title="No matching activities"
           body="Try another keyword or clear your filters. Your saved activities are unchanged." /></div>}
       {first && templates.length > 0 && <div className={view === 'grid' ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3' : 'grid grid-cols-1 gap-4'} data-testid="activities-list" data-layout={view}>{templates.map(t => (
-        <div key={t.id} className="min-w-0 space-y-2">
-          <ActivityCard t={t} visual compact />
-          {session.permissions.includes('center.activities.manage') && (
-            <TemplateActions centerId={centerId} template={t} onError={onError}
-              onChanged={message => { setNotice(message); setAdditional(null); void reload(); }} />
-          )}
-          {session.permissions.includes('center.activities.manage') && t.library === 'center' &&
-            (session.activeContext?.type === 'center' && (session.activeContext.role === 'CLINICAL_SUPERVISOR' ||
-              (session.activeContext.role === 'THERAPIST' && t.mine === true))) &&
-            <ActivityMediaDraftPanel key={centerId + ':' + t.id} centerId={centerId} templateId={t.id} templateVersion={t.version} />}
+        <div key={t.id} className="flex h-full min-w-0 flex-col gap-2">
+          <ActivityCard t={t} visual compact layout={view} artworkScope={
+            canReviewArtwork && t.library === 'center' && t.version && session.activeContext?.type === 'center' &&
+              (session.activeContext.role === 'CLINICAL_SUPERVISOR' || t.mine === true)
+              ? { centerId, templateId:t.id, version:t.version,
+                  actorKey:JSON.stringify([session.user.id,session.activeContext.membershipId,session.activeContext.role]) }
+              : undefined
+          } />
+          {canReviewArtwork && showArtwork && localArtwork.length > 0 && t.library === 'center' &&
+            (session.activeContext?.type === 'center' && (session.activeContext.role === 'CLINICAL_SUPERVISOR' || t.mine === true)) &&
+            <LocalMappedArtworkReview key={[centerId,t.id,t.version,session.activeContext.role].join(':')}
+              centerId={centerId} template={t} previews={localArtwork} />}
+          <div className="mt-auto flex flex-col gap-2" data-testid={`activity-actions-zone-${t.id}`}>
+            <p className="text-[12px] font-semibold text-brand-inkMuted" data-testid={`activity-ownership-${t.id}`}>
+              {t.mine === true ? 'My activity' : t.library === 'synthetic' ? 'Sample activity' : 'Shared activity'}
+            </p>
+            {session.permissions.includes('center.activities.manage') && <details className="rounded-control border border-border-light bg-surface-white"
+              data-testid={`activity-actions-menu-${t.id}`}>
+              <summary className="flex min-h-[44px] cursor-pointer items-center px-3 text-[13px] font-semibold">
+                Activity actions
+              </summary>
+              <div className="space-y-2 border-t border-border-light p-3">
+                <TemplateActions centerId={centerId} template={t} onError={onError}
+                  onChanged={message => { setNotice(message); setAdditional(null); void reload(); }} />
+                {session.permissions.includes('center.activities.manage') && t.library === 'center' &&
+                  (session.activeContext?.type === 'center' && (session.activeContext.role === 'CLINICAL_SUPERVISOR' ||
+                    (session.activeContext.role === 'THERAPIST' && t.mine === true))) &&
+                  <ActivityMediaDraftPanel key={centerId + ':' + t.id} centerId={centerId} templateId={t.id} templateVersion={t.version} service={t.service} steps={t.steps} />}
+              </div>
+            </details>}
+          </div>
         </div>
       ))}</div>}
       {first && hasMore && <Button variant="secondary" disabled={loadingMore} onClick={() => void loadMore()} data-testid="activities-load-more">
@@ -192,7 +283,7 @@ function FamilyActivities({ session, onError }: { session: SessionInfo; onError:
 export default function ActivitiesPage() {
   return (
     <Workspace active="activities" permission="center.activities.read|family.activities.read" deniedText="Activities are available to center staff and connected families.">
-      {(s, onError) => (s.permissions.includes('family.activities.read') ? <FamilyActivities session={s} onError={onError} /> : <StaffLibrary session={s} onError={onError} />)}
+      {(s, onError) => (s.permissions.includes('family.activities.read') ? <FamilyActivities session={s} onError={onError} /> : <StaffLibrary key={JSON.stringify(s.activeContext)} session={s} onError={onError} />)}
     </Workspace>
   );
 }

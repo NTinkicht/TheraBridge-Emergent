@@ -138,6 +138,12 @@ describe('mounted appointment authorization, recurrence and conflict actions',()
   expect(opsApi.cancelSeries).toHaveBeenCalledWith('center-a','series-fictional',
    expect.stringMatching(/^2035-12-1[45]$/),'Synthetic staffing change');
  });
+ it.each([1,2,3,4])('displays the exact every-%i-weeks cadence already stored by server',async intervalWeeks=>{
+  opsApi.series.mockResolvedValue(recurrence({intervalWeeks}));
+  await render(visit({seriesId:'series-fictional'}));
+  expect(html()).toContain(intervalWeeks===1?'Every week':`Every ${intervalWeeks} weeks`);
+  expect(get('series-summary')).toBeTruthy();
+ });
  it('hides mass-series edit for independently moved exception while keeping cancellation review',async()=>{
   opsApi.series.mockResolvedValue(recurrence());
   await render(visit({seriesId:'series-fictional',isException:true}));

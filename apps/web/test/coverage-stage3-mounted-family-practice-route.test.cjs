@@ -47,7 +47,8 @@ beforeEach(()=>{
  jest.clearAllMocks();practiceApi.week.mockReset();practiceApi.history.mockReset();
  practiceApi.week.mockResolvedValue(week());
  practiceApi.history.mockResolvedValue({items:[]});
- session={activeContext:{type:'center',centerId:'center-a'},
+ session={user:{id:'synthetic-guardian',email:'synthetic.guardian@example.test',displayName:'Fictional guardian'},
+ activeContext:{type:'center',centerId:'center-a',membershipId:'membership-a',centerName:'Synthetic center',centerSlug:'synthetic',role:'GUARDIAN'},
  permissions:['family.practice.read']};
  onError=jest.fn(e=>{throw e;});
 });
@@ -109,6 +110,24 @@ describe('mounted guardian synthetic practice keeps progress and releases separa
   expect(get('history-item-feedback-a')).toBeTruthy();
   expect(get('history-seen-feedback-a')).toBeTruthy();
   expect(find('practice-today')).toHaveLength(0);
+ });
+ it('closes a pending record dialog when a different linked child is selected',async()=>{
+  practiceApi.week.mockResolvedValue(week({children:[child(),child('child-b')]}));
+  await mount();await click('fake-record-child-a-activity');
+  expect(get('fake-record-dialog')).toBeTruthy();
+  await click('practice-child-child-b');
+  expect(find('fake-record-dialog')).toHaveLength(0);
+  expect(get('fake-requests-child-b')).toBeTruthy();
+ });
+ it('remounts on center switch without leaking the previous center child',async()=>{
+  await mount();
+  expect(out()).toContain('Fictional Alex');
+  practiceApi.week.mockResolvedValueOnce(week({children:[{...child('child-b'),name:'Fictional Blair'}]}));
+  session={...session,activeContext:{...session.activeContext,centerId:'center-b',membershipId:'membership-b'}};
+  await act(async()=>{tree.update(h(PracticePage));await Promise.resolve();});
+  expect(practiceApi.week).toHaveBeenLastCalledWith('center-b',undefined);
+  expect(get('practice-child-name').props.children.join('')).toBe('For Fictional Blair');
+  expect(out()).not.toContain('Fictional Alex');
  });
  it('shows no-linked-child and empty-sample cases without inventing clinical tasks',async()=>{
   practiceApi.week.mockResolvedValue(week({children:[]}));

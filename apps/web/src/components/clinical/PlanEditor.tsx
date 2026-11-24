@@ -11,6 +11,7 @@ import { ActivityCard } from './ActivityCard';
 import { HomeScheduleFields } from './HomeScheduleFields';
 import { HomeActivityDetails } from './HomeActivityDetails';
 import { HomePracticeCalendar } from './HomePracticeCalendar';
+import { DraftSetupSteps } from './DraftSetupSteps';
 import { HomePlanHandoff } from './HomePlanHandoff';
 import { SavedHomePlanPreview } from './SavedHomePlanPreview';
 import { homePlanHandoff } from '@/lib/home-plan-handoff';
@@ -121,19 +122,36 @@ export function VersionEditor({ centerId, ws, planId, planTitle, service, v, sou
     <div className="space-y-4" data-testid={`plan-version-${v.number}`}>
       <div className="flex flex-wrap items-center gap-2"><Pill tone={STATUS[v.status][1]} testId="plan-version-status">{`Version ${v.number} · ${STATUS[v.status][0]}`}</Pill><span className="text-[13px] text-brand-inkMuted">by {v.author}</span></div>
       {v.reviewNotes.map((n, i) => <FormAlert key={i} tone="info" testId={`review-note-${i}`}>Supervisor review: {n.comment}</FormAlert>)}
-      <PlanEvidenceTrail version={v} origin={source} observations={ws.observations} />
-      <SavedHomePlanPreview key={v.id} version={v} templates={templateWs.templates}
-        title={planTitle} service={service} origin={source} unsaved={unsavedPlanEdits} />
-      <GoalCheckpointPanel centerId={centerId} version={v} ws={ws} editable={edit}
-        unsavedPlanEdits={unsavedPlanEdits || otherPlanDirty} run={run} />
-      <label className="block text-[14px] font-medium">Plan summary<textarea className={`mt-1 ${input}`} rows={3} value={summary} disabled={!edit} onChange={(e) => setSummary(e.target.value)} data-testid="plan-summary" /></label>
-      <div>
+      <details className="rounded-control border border-border-light p-3" data-testid="plan-supporting-evidence">
+        <summary className="min-h-11 cursor-pointer py-2 text-[14px] font-semibold text-brand-action">
+          Supporting evidence, saved home-plan preview and goal checkpoints
+        </summary>
+        <div className="mt-3 space-y-4">
+          <p className="text-[12px] text-brand-inkMuted">Supporting records are optional to view. Opening or closing this section does not save, sign, approve or release a plan.</p>
+          <PlanEvidenceTrail version={v} origin={source} observations={ws.observations} />
+          <SavedHomePlanPreview key={v.id} version={v} templates={templateWs.templates}
+            title={planTitle} service={service} origin={source} unsaved={unsavedPlanEdits} />
+          <GoalCheckpointPanel centerId={centerId} version={v} ws={ws} editable={edit}
+            unsavedPlanEdits={unsavedPlanEdits || otherPlanDirty} run={run} />
+        </div>
+      </details>
+      <nav className="rounded-control border border-border-light bg-surface-subtle p-3" aria-label="Plan authoring steps" data-testid="plan-authoring-steps">
+        <h3 className="text-[15px] font-semibold">Work on this draft in three steps</h3>
+        <p className="mt-1 text-[12px] text-brand-inkMuted">Move between sections without discarding unsaved changes. Nothing is submitted, approved or shared until you choose an allowed action.</p>
+        <ol className="mt-3 flex flex-wrap gap-2 text-[13px]">
+          <li><a href={`#plan-summary-${v.id}`} className="inline-flex min-h-[44px] items-center rounded-control border border-border-light bg-surface-white px-3 font-semibold text-brand-action">1. Summary</a></li>
+          <li><a href={`#plan-goals-${v.id}`} className="inline-flex min-h-[44px] items-center rounded-control border border-border-light bg-surface-white px-3 font-semibold text-brand-action">2. Goals ({goals.length})</a></li>
+          <li><a href={`#plan-activities-${v.id}`} className="inline-flex min-h-[44px] items-center rounded-control border border-border-light bg-surface-white px-3 font-semibold text-brand-action">3. Home activities ({acts.length})</a></li>
+        </ol>
+      </nav>
+      <label id={`plan-summary-${v.id}`} className="block scroll-mt-24 text-[14px] font-medium">Plan summary<textarea className={`mt-1 ${input}`} rows={3} value={summary} disabled={!edit} onChange={(e) => setSummary(e.target.value)} data-testid="plan-summary" /></label>
+      <div id={`plan-goals-${v.id}`} className="scroll-mt-24">
         <h3 className="text-[15px] font-semibold">Goals</h3>
         <ul className="mt-2 space-y-2">{goals.map((g, i) => <GoalRow key={g.key} i={i} g={g} planId={planId} disabled={!edit} onChange={(n) => setGoals(goals.map((x, j) => (j === i ? n : x)))} onRemove={() => setGoals(goals.filter((_, j) => j !== i))} />)}</ul>
         {!goals.length && <p className="text-[14px] text-brand-inkMuted" data-testid="goals-empty">No goals yet.</p>}
         {edit && <Button size="sm" variant="secondary" className="mt-2" onClick={() => setGoals([...goals, { key: `g${Date.now().toString(36)}`, title: '', measure: 'percent', baseline: 0, target: 80 }])} data-testid="goal-add"><Plus size={15} aria-hidden="true" />Add goal</Button>}
       </div>
-      <div>
+      <div id={`plan-activities-${v.id}`} className="scroll-mt-24">
         <h3 className="text-[15px] font-semibold">Home activities</h3>
         <ul className="mt-2 space-y-2">
           {acts.map((a, i) => (
@@ -169,8 +187,13 @@ export function VersionEditor({ centerId, ws, planId, planTitle, service, v, sou
           {searchedTemplates?.length === 0 && <p role="status" className="text-[12px]">No matching activities for this plan specialty.</p>}
         </div>}
       </div>
-      <HomePracticeCalendar key={v.id} activities={acts} goals={goals} templates={templateWs.templates}
-        versionNumber={v.number} timezone={ws.timezone} unsaved={unsavedPlanEdits} />
+      <details className="rounded-control border border-border-light p-3" data-testid="plan-calendar-disclosure">
+        <summary className="min-h-11 cursor-pointer py-2 text-[14px] font-semibold text-brand-action">Preview the home-practice calendar</summary>
+        <div className="mt-3">
+          <HomePracticeCalendar key={v.id} activities={acts} goals={goals} templates={templateWs.templates}
+            versionNumber={v.number} timezone={ws.timezone} unsaved={unsavedPlanEdits} />
+        </div>
+      </details>
       {edit && <HomePlanSyntheticAssist ws={ws} v={v} service={service} centerId={centerId} existing={acts} editableGoals={goals} onInsert={candidate => setActs(previous => previous.some(a => a.templateId === candidate.templateId) ? previous : [...previous, candidate])} />}
       {edit && <HomePlanHandoff result={handoff} versionNumber={v.number} />}
       <div className="flex flex-wrap items-start gap-2">
@@ -272,10 +295,16 @@ export function PlansPanel({ centerId, ws, run, pagination }: { centerId: string
       {pagination.error && <p role="alert" className="text-[13px] text-status-caution" data-testid="plans-load-error">{pagination.error}</p>}
       {!ws.plans.length && <p className="text-[14px] text-brand-inkMuted" data-testid="plans-empty">No therapy plan yet.</p>}
       {ws.canEdit && (
-        <Card className="grid grid-cols-1 items-end gap-3 p-5 sm:grid-cols-[180px_1fr_auto]" testId="plan-create">
+        <Card className="space-y-3 p-5" testId="plan-create">
+          <DraftSetupSteps kind="plan" titleId="plan-draft-identity" detailId="plan-draft-action" />
+          <div id="plan-draft-identity" tabIndex={-1} className="grid scroll-mt-24 grid-cols-1 items-end gap-3 sm:grid-cols-[180px_1fr]">
           <SelectField label="Service" value={f.service} onChange={(service) => setF({ ...f, service })} testId="plan-service" options={ws.child.services.map((s) => ({ value: s, label: serviceLabel(s) }))} />
           <Field label="New plan title" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} testId="plan-title" />
-          <Button onClick={() => void (async () => { if (await runPlanAction(() => clinicalApi.plan(centerId, ws.child.id, f), 'Plan created with a first draft.')) setF({ ...f, title: '' }); })()} data-testid="plan-create-button">Create plan</Button>
+          </div>
+          <div id="plan-draft-action" tabIndex={-1} className="scroll-mt-24 space-y-2">
+            <p className="text-[12px] text-brand-inkMuted">This creates a draft only. Afterward, add goals and activities and explicitly save your version.</p>
+            <Button onClick={() => void (async () => { if (await runPlanAction(() => clinicalApi.plan(centerId, ws.child.id, f), 'Plan created with a first draft.')) setF({ ...f, title: '' }); })()} data-testid="plan-create-button">Create plan</Button>
+          </div>
         </Card>
       )}
     </div>

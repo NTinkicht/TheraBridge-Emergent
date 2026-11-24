@@ -6,6 +6,10 @@ import { PrismaClient } from '@prisma/client';
 import { runBrowserAudit } from './m5-browser-observe.mjs';
 import { runChild360BrowserAcceptance } from './m5-child360-browser.mjs';
 import { runWU2BrowserQualification } from './m5-wu2-browser-qualification.mjs';
+import { runSharedGuardianQualification } from './m5-shared-guardian-browser.mjs';
+import { buildPendingSharedUxManualAcceptance } from './m5-shared-ux-manual-acceptance.mjs';
+import { buildSyntheticMediaInventory } from '../qa/m5-media-inventory.mjs';
+import { verifyPrivateMediaRejectionRace } from '../qa/m5-media-rejection-race.mjs';
 import { buildM5IntegratedBrowserReceipt } from './m5-integrated-browser-receipt.mjs';
 
 const dbUrl = new URL(process.env.DATABASE_URL ?? '');
@@ -69,6 +73,20 @@ try {
   await run('node', ['scripts/design/check-demo-data.mjs']);
   await run('yarn', ['workspace', '@therabridge/api', 'seed:demo']); // strict idempotency test
   await run('node', ['scripts/design/check-demo-data.mjs']);
+  // M5-17: read actual isolated synthetic PostgreSQL metadata under a
+  // repeatable-read transaction. There is no published-image table; report
+  // genuine counts and unknown published denominators rather than fabricate
+  // an illustration approval or 100% published image coverage.
+  const demoCenter = await db.center.findUniqueOrThrow({
+    where: { slug: 'childrens-home-demo' }, select: { id: true },
+  });
+  const raceReceipt=await verifyPrivateMediaRejectionRace(db,demoCenter.id);
+  console.log('M5 synthetic PostgreSQL media race verified:', JSON.stringify(raceReceipt));
+  const mediaInventory = await buildSyntheticMediaInventory(db, demoCenter.id);
+  await writeFile('/tmp/therabridge-m5-media-inventory.json',
+    JSON.stringify(mediaInventory, null, 2) + '\n', { mode: 0o600 });
+  console.log('M5 real synthetic activity/media inventory (NOT accepted image coverage):',
+    JSON.stringify({ ...mediaInventory.counts, status: mediaInventory.status }));
   start('node', ['apps/api/dist/main.js']);
   start('node', ['node_modules/next/dist/bin/next', 'start', 'apps/web', '-H', '127.0.0.1', '-p', '3000']);
   await ready('http://127.0.0.1:8001/api/health');
@@ -84,12 +102,21 @@ try {
       output: '/tmp/therabridge-m5-01-browser-observations.json' });
     const workspaceReceipt = await runWU2BrowserQualification({ passwords: demoPasswords,
       output: '/tmp/therabridge-m5-wu2-browser-qualification.json' });
+    const guardianReceipt = await runSharedGuardianQualification({ passwords: demoPasswords,
+      output: '/tmp/therabridge-m5-shared-guardian-ux.json' });
+    const pendingSharedManual = buildPendingSharedUxManualAcceptance();
+    await writeFile('/tmp/therabridge-m5-shared-ux-human-pending.json',
+      JSON.stringify(pendingSharedManual, null, 2) + '\n', { mode: 0o600 });
     const integrated = buildM5IntegratedBrowserReceipt(roleAudit, workspaceReceipt);
     await writeFile('/tmp/therabridge-m5-integrated-technical-receipt.json',
       JSON.stringify(integrated, null, 2) + '\n', { mode: 0o600 });
     console.log('M5 integrated synthetic-only acceptance evidence:', JSON.stringify({
       baselineRouteObservations: integrated.automated.baselineRouteObservations,
       verifiedWorkspaceObservations: integrated.automated.verifiedWorkspaceObservations,
+      guardianFiveWidthObservations: guardianReceipt.summary.observations,
+      guardianScreenReaderManual: guardianReceipt.governance.screenReaderAcceptance,
+      sharedUxManualStatus: pendingSharedManual.summary.status,
+      pendingSharedUxHumanChecks: pendingSharedManual.summary.awaitingHumanChecks,
       pendingManualObservations: integrated.manual.observedPendingObservations,
       manualStatus: integrated.manual.status, clinicalGate: integrated.governance.clinicalGate,
     }));

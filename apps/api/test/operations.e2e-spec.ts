@@ -1,5 +1,6 @@
 import { DevMailboxService } from '../src/dev-mailbox/dev-mailbox.service';
 import { NoticesService } from '../src/operations/notices.service';
+import { ChildrenService } from '../src/operations/children.service';
 import { Harness, ORIGIN, PASSWORD, Signed, cookieFrom, createUser, makeApp, post, preAuth, resetDb, signIn } from './helpers';
 
 const DAY = 86_400_000;
@@ -76,6 +77,270 @@ describe('TB-EM-005 trials + TB-EM-006 center operations (real PostgreSQL)', () 
     expect(ext.body).toMatchObject({ expired: false, daysLeft: 14 });
     await post(h, c('invitations'), admin, { email: 'late@ops.test', displayName: 'Late One', roles: ['COORDINATOR'] }).expect(201);
     expect(await h.prisma.centerEvent.count({ where: { centerId, type: 'trial.extended' } })).toBe(1);
+  });
+
+  it('M5 #11: persists unverified restricted child care with encryption and versioned, tenant-safe updates', async () => {
+    const {randomBytes}=await import('node:crypto');
+    const original=process.env.TB_PRIVATE_DATA_KEY_B64;
+    process.env.TB_PRIVATE_DATA_KEY_B64=randomBytes(32).toString('base64');
+    try {
+      const kid=(await post(h,c('children'),admin,child({
+        privateCare:{sourceAcknowledged:true,conditions:'Synthetic childhood asthma',allergies:'Synthetic lactose',
+          medications:'Synthetic medicine list',careNotes:'Synthetic family instructions'}
+      })).expect(201)).body.id;
+      const row=await h.prisma.childCareIntake.findFirstOrThrow({where:{centerId,childId:kid}});
+      expect(Buffer.from(row.encryptedBody).toString('utf8')).not.toContain('Synthetic');
+      expect(row.source).toBe('FAMILY_REPORTED_UNVERIFIED');
+      const details=await get(admin,c(`children/${kid}`)).expect(200);
+      const list=await get(admin,c('children')).expect(200);
+      expect(JSON.stringify(details.body)).not.toContain('Synthetic lactose');
+      expect(JSON.stringify(list.body)).not.toContain('Synthetic lactose');
+      const read=await get(admin,c(`children/${kid}/private-care`)).expect(200);
+      expect(read.body).toMatchObject({version:1,conditions:'Synthetic childhood asthma',
+        allergies:'Synthetic lactose',source:'FAMILY_REPORTED_UNVERIFIED'});
+      // PostgreSQL accepts uppercase UUID path spelling; lower-case reads must decrypt it.
+      const changed=await patch(admin,c(`children/${kid.toUpperCase()}/private-care`),{
+        sourceAcknowledged:true,version:1,allergies:'Synthetic changed',careNotes:'New synthetic note'
+      }).expect(200);
+      expect(changed.body).toMatchObject({version:2,allergies:'Synthetic changed'});
+      await patch(admin,c(`children/${kid}/private-care`),{
+        sourceAcknowledged:true,version:1,allergies:'stale'
+      }).expect(409);
+      const fresh=await get(admin,c(`children/${kid}/private-care`)).expect(200);
+      expect(fresh.body.allergies).toBe('Synthetic changed');
+      const audit=await h.prisma.centerEvent.findMany({where:{centerId}});
+      const sanitizedAudit = JSON.stringify(audit.map(event => event.meta));
+      expect(sanitizedAudit).not.toContain('Synthetic lactose');
+      expect(sanitizedAudit).not.toContain('Synthetic changed');
+    } finally {
+      if(original===undefined)delete process.env.TB_PRIVATE_DATA_KEY_B64;
+      else process.env.TB_PRIVATE_DATA_KEY_B64=original;
+    }
+  });
+
+  it('M5 #13: guardian cannot read private care, and child photo rejects absent scanner before custody', async () => {
+    const kid=(await post(h,c('children'),admin,child()).expect(201)).body.id;
+    const fake=Buffer.from('not a png').toString('base64');
+    // DTO rejects undersized base64 at 400; structurally invalid but well-sized
+    // binary reaches the strict server-side PNG verifier and fails at 422.
+    await post(h,c(`children/${kid}/photo-candidates`),admin,{pngBase64:fake}).expect(400);
+    const structurallyInvalid=Buffer.alloc(64).toString('base64');
+    await post(h,c(`children/${kid}/photo-candidates`),admin,{pngBase64:structurallyInvalid}).expect(422);
+    expect(await h.prisma.privateMediaCandidate.count({where:{centerId,childId:kid}})).toBe(0);
+    const guardian=await post(h,c(`children/${kid}/guardians`),admin,{
+      displayName:'Synthetic Parent',email:'synthetic.photo@family.test',relationship:'mother',invite:true
+    }).expect(201);
+    expect(guardian.body.invited).toBe(true);
+    const parent=(await accept('synthetic.photo@family.test','Synthetic Parent')).s;
+    await get(parent,c(`children/${kid}/private-care`)).expect(403);
+    await post(h,c(`children/${kid}/photo-candidates`),parent,{pngBase64:fake}).expect(403);
+    expect((await get(parent,c(`family/children/${kid}/photo-candidates`)).expect(200)).body.candidates).toEqual([]);
+  });
+
+
+  it.each(['ROLE_REMOVED','SUSPENDED','REVOKED'] as const)(
+    'M5 #13 P1: post-scan photo custody denies coordinator after %s',
+    async (revocation) => {
+      const coordinator=await staff('late-revoked-photo@ops.test',['COORDINATOR']);
+      const kid=(await post(h,c('children'),admin,child()).expect(201)).body.id;
+      const membershipId=coordinator.body.activeContext.membershipId;
+      const svc=h.app.get(ChildrenService);
+      let scanStarted!: () => void;
+      let releaseScan!: (value: any) => void;
+      const started=new Promise<void>(resolve=>{scanStarted=resolve;});
+      const scanning=new Promise<any>(resolve=>{releaseScan=resolve;});
+      // No production scanner is mocked globally; only this request is held
+      // at its bounded scan boundary to test the exact role-change race.
+      const isolatedScan=jest.spyOn(svc as any,'preparePhotoCandidate')
+        .mockImplementation(async()=>{scanStarted();return scanning;});
+      const cleanCandidate={
+        encryptedBytes:Buffer.alloc(50,7),digestSha256:'a'.repeat(64),
+        width:1,height:1,scannerName:'SyntheticScanner',scannerVersion:'test',
+      };
+      try {
+        // SuperTest does not dispatch until .then/.end, so start the
+        // request before waiting for the scanner's pending promise.
+        const pending=post(h,c(`children/${kid}/photo-candidates`),coordinator,{
+          pngBase64:Buffer.alloc(64,7).toString('base64')
+        }).expect(403).then(() => undefined);
+        await started;
+        // This happens AFTER the request's first authorization check and
+        // BEFORE the held ClamAV scan returns. Membership updates take the
+        // same live row/role locks that assertActor reads in its transaction.
+        if(revocation==='ROLE_REMOVED') {
+          await h.prisma.roleAssignment.deleteMany({where:{membershipId,role:'COORDINATOR'}});
+        } else {
+          await h.prisma.membership.update({where:{id:membershipId},
+            data:{status:revocation==='SUSPENDED'?'SUSPENDED':'REVOKED'}});
+        }
+        releaseScan(cleanCandidate);
+        await pending;
+        expect(await h.prisma.privateMediaCandidate.count({where:{
+          centerId,childId:kid,kind:'CHILD_PHOTO',
+        }})).toBe(0);
+        const logs=await h.prisma.centerEvent.findMany({where:{
+          centerId,type:'child.photo_candidate_created',
+        }});
+        expect(logs).toHaveLength(0);
+      } finally {
+        releaseScan?.(cleanCandidate);
+        isolatedScan.mockRestore();
+      }
+    }
+  );
+
+
+  it.each(['ROLE_REMOVED','SUSPENDED','REVOKED'] as const)(
+    'M5 #11 Codex P2: private care write cannot commit after coordinator %s between precheck and center lock',
+    async (revocation) => {
+      const {randomBytes}=await import('node:crypto');
+      const priorKey=process.env.TB_PRIVATE_DATA_KEY_B64;
+      process.env.TB_PRIVATE_DATA_KEY_B64=randomBytes(32).toString('base64');
+      let releasePrecheck: (()=>void)|undefined;
+      let intercepted: jest.SpyInstance|undefined;
+      try {
+        const coordinator=await staff('late-revoked-care@ops.test',['COORDINATOR']);
+        const membershipId=coordinator.body.activeContext.membershipId;
+        const kid=(await post(h,c('children'),admin,child({
+          privateCare:{sourceAcknowledged:true,allergies:'Original synthetic report'}
+        })).expect(201)).body.id;
+        const before=await h.prisma.childCareIntake.findFirstOrThrow({where:{centerId,childId:kid}});
+        const svc=h.app.get(ChildrenService);
+        const original=(svc as any).authorizeCare.bind(svc);
+        let reached!:()=>void;
+        const ready=new Promise<void>(resolve=>{reached=resolve;});
+        const release=new Promise<void>(resolve=>{releasePrecheck=resolve;});
+        // Interpose AFTER the first, successful authorization and BEFORE
+        // entering the transaction. This models an actual revoked role during
+        // lock acquisition, rather than merely testing request-time RBAC.
+        intercepted=jest.spyOn(svc as any,'authorizeCare')
+          .mockImplementation(async (...args:any[])=>{
+            const result=await original(...args);
+            reached();
+            await release;
+            return result;
+          });
+        const pending=patch(coordinator,c(`children/${kid}/private-care`),{
+          sourceAcknowledged:true,version:1,allergies:'Unauthorized late mutation'
+        }).expect(403).then(()=>undefined);
+        await ready;
+        if(revocation==='ROLE_REMOVED'){
+          await h.prisma.roleAssignment.deleteMany({where:{membershipId,role:'COORDINATOR'}});
+        } else {
+          await h.prisma.membership.update({where:{id:membershipId},
+            data:{status:revocation==='SUSPENDED'?'SUSPENDED':'REVOKED'}});
+        }
+        releasePrecheck?.();
+        await pending;
+        const after=await h.prisma.childCareIntake.findFirstOrThrow({where:{centerId,childId:kid}});
+        expect(after.version).toBe(1);
+        expect(Buffer.from(after.encryptedBody)).toEqual(Buffer.from(before.encryptedBody));
+        expect(await h.prisma.centerEvent.count({where:{
+          centerId,type:'child.care_context_updated',
+        }})).toBe(0);
+      } finally {
+        releasePrecheck?.();
+        intercepted?.mockRestore();
+        if(priorKey===undefined)delete process.env.TB_PRIVATE_DATA_KEY_B64;
+        else process.env.TB_PRIVATE_DATA_KEY_B64=priorKey;
+      }
+    }
+  );
+
+
+  for(const action of ['CONSENT','REVOKE'] as const) {
+    it.each(['ROLE_REMOVED','SUSPENDED','REVOKED','LINK_REMOVED'] as const)(
+      `M5 #13 Codex P1: guardian ${action} never commits after %s between precheck and lock`,
+      async (revocation) => {
+        const kid=(await post(h,c('children'),admin,child()).expect(201)).body.id;
+        const email='late-guardian-photo@family.test';
+        const guardian=(await post(h,c(`children/${kid}/guardians`),admin,{
+          displayName:'Synthetic Guardian',email,relationship:'parent',invite:true,
+        }).expect(201)).body;
+        const parent=(await accept(email,'Synthetic Guardian')).s;
+        const membershipId=parent.body.activeContext.membershipId;
+        const link=await h.prisma.guardianLink.findFirstOrThrow({where:{
+          id:guardian.id,centerId,childId:kid,
+        }});
+        const saved=await h.prisma.privateMediaCandidate.create({data:{
+          centerId,childId:kid,kind:'CHILD_PHOTO',encryptedBytes:Buffer.alloc(50,7),
+          digestSha256:'d'.repeat(64),scannerName:'SyntheticScanner',
+          scannerVersion:'test-v1',width:1,height:1,
+          status:action==='CONSENT'?'QUARANTINED':'PRIVATE_READY',
+          consentState:action==='CONSENT'?'PENDING':'GRANTED',
+          rightsState:action==='CONSENT'?'UNVERIFIED':'GUARDIAN_ATTESTED',
+          ...(action==='REVOKE'?{consentedGuardianLinkId:link.id}:{}),
+          createdById:(await h.prisma.child.findFirstOrThrow({where:{id:kid}})).createdById,
+        }});
+        const svc=h.app.get(ChildrenService);
+        const real=(svc as any).linkedGuardian.bind(svc);
+        let prechecked!:()=>void;
+        let release!:()=>void;
+        const reached=new Promise<void>(resolve=>{prechecked=resolve;});
+        const continueRequest=new Promise<void>(resolve=>{release=resolve;});
+        const hold=jest.spyOn(svc as any,'linkedGuardian')
+          .mockImplementation(async (...args:any[])=>{
+            const result=await real(...args);
+            prechecked();
+            await continueRequest;
+            return result;
+          });
+        try {
+          const path=action==='CONSENT'
+            ?c(`family/children/${kid}/photo-candidates/${saved.id}/consent`)
+            :c(`family/children/${kid}/photo-consent/revoke`);
+          const expected=revocation==='LINK_REMOVED'?404:403;
+          const request=post(h,path,parent,action==='CONSENT'?{consent:true}:{})
+            .expect(expected).then(()=>undefined);
+          await reached;
+          if(revocation==='ROLE_REMOVED'){
+            await h.prisma.roleAssignment.deleteMany({where:{membershipId,role:'GUARDIAN'}});
+          } else if(revocation==='LINK_REMOVED'){
+            await h.prisma.guardianLink.updateMany({where:{id:link.id,centerId,childId:kid,removedAt:null},
+              data:{removedAt:new Date(),isPrimary:false}});
+          } else {
+            await h.prisma.membership.update({where:{id:membershipId},
+              data:{status:revocation==='SUSPENDED'?'SUSPENDED':'REVOKED'}});
+          }
+          release();
+          await request;
+          const after=await h.prisma.privateMediaCandidate.findFirstOrThrow({where:{id:saved.id}});
+          expect(after.status).toBe(action==='CONSENT'?'QUARANTINED':'PRIVATE_READY');
+          expect(after.consentState).toBe(action==='CONSENT'?'PENDING':'GRANTED');
+          expect(await h.prisma.centerEvent.count({where:{
+            centerId,type:{in:['child.photo_private_consent','child.photo_consent_revoked']},
+          }})).toBe(0);
+        } finally {
+          release();
+          hold.mockRestore();
+        }
+      }
+    );
+  }
+
+
+  it('M5 #13: a still-linked active guardian can revoke and purge a consented photo after child archival',async()=>{
+    const kid=(await post(h,c('children'),admin,child()).expect(201)).body.id;
+    const invited=(await post(h,c(`children/${kid}/guardians`),admin,{
+      displayName:'Synthetic Archive Guardian',email:'archive-photo@family.test',
+      relationship:'parent',invite:true,
+    }).expect(201)).body;
+    const parent=(await accept('archive-photo@family.test','Synthetic Archive Guardian')).s;
+    const link=await h.prisma.guardianLink.findFirstOrThrow({where:{id:invited.id,childId:kid,centerId}});
+    const childRecord=await h.prisma.child.findFirstOrThrow({where:{id:kid}});
+    const image=await h.prisma.privateMediaCandidate.create({data:{
+      centerId,childId:kid,kind:'CHILD_PHOTO',encryptedBytes:Buffer.alloc(50,9),
+      digestSha256:'e'.repeat(64),scannerName:'SyntheticScanner',scannerVersion:'test-v1',
+      width:1,height:1,status:'PRIVATE_READY',consentState:'GRANTED',
+      rightsState:'GUARDIAN_ATTESTED',consentedGuardianLinkId:link.id,
+      createdById:childRecord.createdById,
+    }});
+    await post(h,c(`children/${kid}/archive`),admin,{reason:'Synthetic moved away'}).expect(200);
+    expect(await h.prisma.privateMediaCandidate.count({where:{id:image.id}})).toBe(1);
+    const reply=await post(h,c(`family/children/${kid}/photo-consent/revoke`),parent,{});
+    expect([200,201]).toContain(reply.status);
+    expect(reply.body).toMatchObject({revoked:true,deleted:1});
+    expect(await h.prisma.privateMediaCandidate.count({where:{id:image.id}})).toBe(0);
   });
 
   it('end-to-end: child → guardian invitation → therapist assignment → appointment → therapist day → parent portal', async () => {

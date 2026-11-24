@@ -10,6 +10,7 @@ import { EmptyState, ErrorState, SkeletonRows } from '@/components/design/states
 import { messagesApi } from '@/lib/messages';
 import { STATUS_LABEL, dayLabel, opsApi, timeRange, type FamilyOverview, type FamilyVisit } from '@/lib/operations';
 import { serviceLabel } from './BookDialog';
+import { GuardianPhotoConsent } from './GuardianPhotoConsent';
 
 type Kid = FamilyOverview['children'][number];
 const TONE = { SCHEDULED: 'info', COMPLETED: 'success', CANCELLED: 'neutral', NO_SHOW: 'caution' } as const;
@@ -79,6 +80,7 @@ function ChildCard({ centerId, centerName, kid, onError, onReminderSaved, remind
         {next ? <p className="mt-1 text-sm">{dayLabel(next.startsAt)} · {timeRange(next.startsAt,next.endsAt)} · {serviceLabel(next.service)}</p>
           : <p className="mt-1 text-sm text-fam-muted">No future confirmed visit is listed. A scheduled visit is not proof of attendance.</p>}
       </div>
+      <GuardianPhotoConsent centerId={centerId} childId={kid.id}/>
       <DisclosureSection tone="family" title="Appointments, care team and preferences"
         summary="Upcoming visits, attendance history, care team and reminders">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -165,7 +167,7 @@ function ScopedFamilyHome({ centerId, onError, permissions }: { centerId: string
       {data.children.length > 1 && <div role="group" aria-label="Choose a child"
         className="flex max-w-full flex-wrap gap-2" data-testid="family-sibling-switcher">
         {data.children.map(kid => <button key={kid.id} type="button"
-          aria-pressed={selected?.id === kid.id} data-testid={`family-switch-${kid.id}`}
+          aria-pressed={selected?.id === kid.id} aria-controls="family-active-child-detail" data-testid={`family-switch-${kid.id}`}
           onClick={() => setChosen(kid.id)}
           className={`min-h-11 rounded-control border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-fam-focus ${selected?.id===kid.id
             ? 'border-fam-accent bg-fam-accentTint text-fam-ink'
@@ -173,6 +175,9 @@ function ScopedFamilyHome({ centerId, onError, permissions }: { centerId: string
           {kid.name}
         </button>)}
       </div>}
+      {selected && <p role="status" aria-live="polite" aria-atomic="true" className="sr-only" data-testid="family-active-child-announcement">
+        Showing the family workspace for {selected.name}. Only currently authorized information for this child is displayed.
+      </p>}
       {selected && <section className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label={`Quick tasks for ${selected.name}`}
         data-testid="family-quick-tasks">
         {can('family.practice.read') && <Link href="/app/practice"
@@ -190,12 +195,12 @@ function ScopedFamilyHome({ centerId, onError, permissions }: { centerId: string
         </span>
         {unread > 0 ? <Pill tone="info" testId="family-unread">{unread} new</Pill> : <CalendarCheck2 size={18} className="text-fam-muted" aria-hidden="true" />}
       </Link>}
-      {selected && <ChildCard key={selected.id} centerId={centerId} centerName={data.center.name}
+      {selected && <section id="family-active-child-detail" aria-label={`Details for ${selected.name}`}><ChildCard key={selected.id} centerId={centerId} centerName={data.center.name}
         kid={{ ...selected, remindersEnabled: reminderValues[selected.id] ?? selected.remindersEnabled }}
         onReminderSaved={(id, enabled) => setReminderValues(prev => ({ ...prev, [id]: enabled }))}
         reminderBusy={pendingReminders.has(selected.id)} onReminderBusy={markPending}
         reminderError={reminderErrors.has(selected.id)} onReminderFailure={id => setReminderError(id, true)}
-        onReminderClearError={id => setReminderError(id, false)} onError={onError} />}
+        onReminderClearError={id => setReminderError(id, false)} onError={onError} /></section>}
     </div>
   );
 }

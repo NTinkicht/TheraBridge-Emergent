@@ -4,17 +4,24 @@ import { useEffect, useRef, useState } from 'react';
 import { FileImage, ShieldAlert } from 'lucide-react';
 import { Button, Card, Pill } from '@/components/design/ui';
 import { activityMediaDrafts, type ActivityMediaDraft as Draft, type ActivityMediaSource as SourceType } from '@/lib/activity-media';
+import { LocalActivityMediaReadiness } from './LocalActivityMediaReadiness';
+import { ActivityMediaMappingStatus } from './ActivityMediaMappingStatus';
+import { GeneratedArtworkSelector } from './GeneratedArtworkSelector';
+import { PrivateIllustrationStepPreview } from './PrivateIllustrationStepPreview';
+import { ActivityMediaCandidateHistory } from './ActivityMediaCandidateHistory';
+import { PrivatePngCandidatePicker } from '@/components/operations/PrivatePngCandidatePicker';
+import { ILLUSTRATION_STYLE_VERSION } from '@/lib/illustration-style.mjs';
 
 const initial = {
-  sourceType: 'ORIGINAL' as SourceType, styleVersion: 'm5-b-v1',
-  sceneType: '', altText: '', license: '', sourceReference: '', providerTerms: '',
+  sourceType: 'ORIGINAL' as SourceType, styleVersion: ILLUSTRATION_STYLE_VERSION,
+  sceneType: '', stepNumber: '', altText: '', license: '', sourceReference: '', providerTerms: '',
 };
 const cls = 'min-h-[44px] w-full rounded-control border border-border-strong bg-surface-white px-3 py-2 text-sm';
 
 // Metadata-only workflow. No image upload/preview or approval exists until the
 // separate private-byte verifier, rights sign-off and clinical gates are ready.
-export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion }: {
-  centerId: string; templateId: string; templateVersion?: number;
+export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion, service, steps = [] }: {
+  centerId: string; templateId: string; templateVersion?: number; service?: string; steps?: readonly string[];
 }) {
   const [open, setOpen] = useState(false);
   // Invalidate previous-page and initial-list responses whenever panel lifetime changes.
@@ -29,6 +36,8 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [rejecting, setRejecting] = useState<string | null>(null);
+  const [attaching,setAttaching]=useState<string|null>(null);
+  const [candidateRevision,setCandidateRevision]=useState(0);
   const [reason, setReason] = useState('');
   const base = activityMediaDrafts.endpoint(centerId, templateId);
 
@@ -75,7 +84,7 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
     if (!templateVersion || busy || loading || loadingMore) return;
     setBusy(true); setError(''); setNotice('');
     try {
-      const saved = await activityMediaDrafts.propose(centerId, templateId, { ...form, templateVersion,
+      const saved = await activityMediaDrafts.propose(centerId, templateId, { ...form, templateVersion, stepNumber: form.stepNumber ? Number(form.stepNumber) : undefined,
         providerTerms: form.sourceType === 'GENERATED' ? form.providerTerms : undefined });
       setItems(prev => [saved, ...prev.filter(item => item.id !== saved.id)]);
       setNotice('Metadata proposal saved as a private draft. No image was uploaded, approved or shared.');
@@ -91,6 +100,8 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
     try {
       const result = await activityMediaDrafts.reject(centerId, templateId, draft.id, draft.version, reason.trim());
       setItems(prev => prev.map(item => item.id === result.id ? { ...item, ...result, rejectionReason: reason.trim() } : item));
+      // History identity includes this draft's optimistic version and state,
+      // so only the rejected row remounts after its atomic revocation.
       setRejecting(null); setReason('');
       setNotice('Draft rejected. This decision was recorded for audit.');
     } catch {
@@ -117,9 +128,21 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
       <h4 className="font-display text-base font-semibold">Private illustration proposal registry</h4>
       <p className="flex gap-2 rounded-control bg-status-cautionSurface p-3 text-sm text-brand-ink">
         <ShieldAlert className="mt-0.5 shrink-0" size={18} aria-hidden="true" />
-        No image upload or publication is available. This records a draft brief and provenance only.
+        Only private scanned PNG candidate staging is available after a metadata draft. No image publication is available.
         Human clinical/design approval and verified storage are separate mandatory gates.
       </p>
+      <ActivityMediaMappingStatus key={[centerId, templateId, templateVersion, candidateRevision].join(':')}
+        centerId={centerId} templateId={templateId} templateVersion={templateVersion} />
+      <PrivateIllustrationStepPreview key={centerId + ':' + templateId + ':' + String(templateVersion ?? 'unversioned')}
+        templateVersion={templateVersion} steps={steps} />
+      <GeneratedArtworkSelector key={centerId + ':' + templateId + ':' + String(templateVersion ?? 'unversioned')}
+        service={service} disabled={busy || !templateVersion}
+        onSelect={asset=>setForm(previous=>({...previous,sourceType:'GENERATED',
+          sceneType:asset.scene,altText:asset.alt,
+          sourceReference:'m5-b-v1:' + asset.referenceId + ':sha256:' + asset.reviewSha256,
+          license:'',providerTerms:''}))} />
+      {/* Scope-coupled key invalidates pending local file checks when activity identity/version changes. */}
+      <LocalActivityMediaReadiness key={centerId + ':' + templateId + ':' + String(templateVersion ?? 'unversioned')} />
       {error && <p role="alert" className="text-sm text-status-danger">{error}</p>}
       {notice && <p role="status" className="text-sm text-status-success">{notice}</p>}
       <fieldset disabled={busy} aria-label="Illustration proposal metadata" className="grid grid-cols-1 gap-3 sm:grid-cols-2 disabled:opacity-60">
@@ -129,10 +152,23 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
           </select>
         </label>
         <label className="block text-sm font-medium">Proposed style version
-          <input className={cls + ' mt-1'} value={form.styleVersion} maxLength={120} minLength={4}
-            onChange={e => setForm(v => ({ ...v, styleVersion: e.target.value }))} required />
+          <input className={cls + ' mt-1'} value={ILLUSTRATION_STYLE_VERSION} readOnly
+            aria-readonly="true" data-testid="locked-illustration-style" />
+          <span className="mt-1 block text-[12px] text-brand-inkMuted">
+            Direction B is locked across all specialties and activity screens.
+            A metadata draft does not approve or publish an image.
+          </span>
         </label>
         {field('sceneType', 'Scene type', 'Guided fine-motor activity')}
+        <label className="block text-sm font-medium">Illustration target
+          <select className={cls + ' mt-1'} value={form.stepNumber}
+            onChange={e => setForm(prev => ({ ...prev, stepNumber: e.target.value }))}>
+            <option value="">Whole activity</option>
+            {steps.slice(0, 64).map((step, i) => <option key={i} value={i + 1}>
+              {i + 1}. {step.length > 78 ? step.slice(0, 78) + '…' : step}
+            </option>)}
+          </select>
+        </label>
         {field('license', 'License or rights basis', 'Review record, not a license grant')}
         <div className="sm:col-span-2">{field('sourceReference', 'Provenance / source evidence reference', 'Internal record ID; never a public asset URL')}</div>
         <div className="sm:col-span-2">{field('altText', 'Proposed accessible description', 'Describe the action and relevant materials')}</div>
@@ -150,10 +186,38 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
         !items.length ? <p className="text-sm text-brand-inkMuted">No proposals registered for this activity.</p> :
         <ul className="space-y-3">{items.map(draft => <li key={draft.id} className="rounded-control border border-border-light p-3 text-sm">
           <div className="flex flex-wrap items-center gap-2"><Pill tone={draft.state === 'REJECTED' ? 'danger' : 'caution'}>{draft.state}</Pill>
-            <span className="text-brand-inkMuted">Activity v{draft.templateVersion} · {draft.sourceType} · {draft.styleVersion}</span></div>
+            <span className="text-brand-inkMuted">Activity v{draft.templateVersion} · {draft.stepNumber ? `Step ${draft.stepNumber}` : 'whole activity'} · {draft.sourceType} · {draft.styleVersion}</span></div>
           <p className="mt-2 break-words">{draft.altText}</p>
           <p className="mt-1 break-words text-brand-inkMuted">Source: {draft.sourceReference} · Rights: {draft.license}</p>
           {draft.rejectionReason && <p className="mt-1 text-status-danger">Rejected: {draft.rejectionReason}</p>}
+          {draft.state==='DRAFT' && templateVersion===draft.templateVersion &&
+            <div className="mt-2 space-y-2" data-testid={`media-private-upload-${draft.id}`}>
+              <Button variant="secondary" size="sm"
+                onClick={()=>setAttaching(current=>current===draft.id?null:draft.id)}>
+                {attaching===draft.id?'Close private image intake':'Attach scanned private PNG'}
+              </Button>
+              {attaching===draft.id&&(draft.sourceReference.startsWith('m5-b-v1:')?
+                <GeneratedArtworkSelector key={[centerId,templateId,templateVersion,draft.id].join(':')}
+                  service={service} lockedReference={draft.sourceReference}
+                  instruction={draft.stepNumber===null?'Whole activity — compare with all authored instructions.':steps[draft.stepNumber-1]??'Instruction unavailable; reload activity.'}
+                  disabled={draft.stepNumber!==null&&!steps[draft.stepNumber-1]?.trim()}
+                  onStage={async pngBase64=>{
+                    await activityMediaDrafts.uploadCandidate(centerId,templateId,draft.id,pngBase64);
+                    setNotice('Encrypted scanned illustration candidate is quarantined; independent rights and clinical review still required.');
+                    setAttaching(null);
+                    setCandidateRevision(value=>value+1);
+                  }} />:
+                <PrivatePngCandidatePicker
+                  label="Stage a private illustration candidate (not published)"
+                  onStage={async pngBase64=>{
+                    await activityMediaDrafts.uploadCandidate(centerId,templateId,draft.id,pngBase64);
+                    setNotice('Encrypted scanned illustration candidate is quarantined; independent rights and clinical review still required.');
+                    setAttaching(null);
+                    setCandidateRevision(value=>value+1);
+                  }} />)}
+            </div>}
+          <ActivityMediaCandidateHistory key={[draft.id, draft.version, draft.state, candidateRevision].join(':')}
+            centerId={centerId} templateId={templateId} draftId={draft.id} />
           {draft.state === 'DRAFT' && <div className="mt-2">
             {rejecting === draft.id ? <div className="space-y-2">
               <label className="block font-medium">Reason for rejection
@@ -168,7 +232,7 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion 
         onClick={() => void loadMore()} data-testid={`media-drafts-more-${templateId}`}>
         {loadingMore ? 'Loading older proposals…' : 'Load older proposals'}
       </Button>}
-      <p className="text-xs text-brand-inkMuted">Showing {items.length}{hasMore ? '+' : ''} proposals. Every historical draft remains accessible by loading older pages. Proposals are never approved, uploaded or released assets.</p>
+      <p className="text-xs text-brand-inkMuted">Showing {items.length}{hasMore ? '+' : ''} proposals. Every historical draft remains accessible by loading older pages. Proposals may have a separate encrypted quarantined candidate. No asset is automatically approved, readable or released.</p>
     </Card>}
   </section>;
 }

@@ -13,6 +13,13 @@ Use Node 24 (see `.nvmrc`) and Yarn 1. Install dependencies with `yarn install -
 - `yarn workspace @therabridge/web test`: zero-dependency Node unit tests for trusted upstream origin parsing; `yarn workspace @therabridge/web build` builds the web app.
 - GitHub CI additionally runs immutable migration guards, secret scans, a real browser/API/Postgres journey, Docker Compose, and a unified Render-style synthetic preview with UID 1000 and HTTP health checks.
 
+
+## Smart CI event and documentation policy
+
+Each open pull request runs one PR-triggered CI workflow; feature-branch pushes do not launch a duplicate full workflow. Pushes to `main` and explicit manual dispatch run the complete quality suite. Code, tests, CI configuration, governance, commercial/QA evidence and mixed changes retain all six mandatory jobs and eight API/Web coverage floors at ≥90%.
+
+Only a short, explicitly enumerated set of narrative Markdown files is eligible for the owner-approved `docs` plan. That plan requires a secret scan, SBOM, documentation/roadmap contract checks and the mandatory Smart CI policy gate. Heavy checks skipped on a docs-only PR are **not run** and must never be represented as passed or as coverage evidence. See Rule 16A in `AGENTS.md` and `scripts/ci/smart-ci.mjs` for the exact allowlist and fail-closed restrictions.
+
 ## Container runtime and deployment
 
 The API and web Docker images run as unprivileged UID 1000, with writable Next cache and Prisma-runtime paths. The unified `Dockerfile.preview` uses the same non-root identity, a health check and two separately bounded 192 MiB Node V8 heaps; these are *old-space* ceilings, not full RSS limits. The preview launcher strictly requires synthetic preview configuration, private loopback API proxy, secure cookies, disabled family messaging, and an explicit dedicated demo database. Render's free-tier 512 MiB memory limit remains a resource constraint: validate actual RSS under load before relying on hosted availability.

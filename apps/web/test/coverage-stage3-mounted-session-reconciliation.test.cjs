@@ -357,3 +357,63 @@ describe('M4-08 90% real session interaction and identity preservation',()=>{
   expect(output()).toContain('Sign note');
  });
 });
+
+describe('M5 owner feedback 18–19: authorized image-first picker and progressive goal controls',()=>{
+ it('offers image-first placeholder cards with a real keyboard Add action, no external image source',async()=>{
+  await mount(note({activities:[]}));
+  const picker=get('session-activity-picker');
+  expect(picker).toBeTruthy();
+  expect(get('session-activity-picker-results')).toBeTruthy();
+  expect(get('session-activity-choice-t1')).toBeTruthy();
+  expect(get('session-activity-choice-media-t1')).toBeTruthy();
+  expect(output()).toContain('No approved illustration available');
+  expect(output()).not.toContain('https://');
+  expect(get('session-activity-add-t1').props.type).toBe('button');
+  expect(button('Add Fictional activity')).toBeTruthy();
+ });
+ it('only exposes templates in the authorized specialty, preserves empty search state',async()=>{
+  const extra={...template,id:'ot-private',service:'ot',title:'Private OT activity'};
+  await mount(note({activities:[]}),workspace({templates:[template,extra]}));
+  expect(find('session-activity-choice-t1')).toHaveLength(1);
+  expect(find('session-activity-choice-ot-private')).toHaveLength(0);
+  await change('session-search-note-a','no match');
+  expect(find('session-activity-choice-t1')).toHaveLength(0);
+  expect(get('session-activity-picker-empty')).toBeTruthy();
+  expect(clinicalApi.saveSession).not.toHaveBeenCalled();
+ });
+ it('adds exact authorized snapshot once per click without automatic signature or release',async()=>{
+  const uuid=jest.spyOn(global.crypto,'randomUUID').mockImplementationOnce(()=>'fictional-picked-id');
+  try {
+   await mount(note({activities:[]}));
+   await click('Add Fictional activity');
+   expect(get('session-activity-goal-details-fictional-picked-id').type).toBe('details');
+   expect(get('session-activity-goal-details-fictional-picked-id').props.open).toBeUndefined();
+   expect(get('goal-fictional-picked-id')).toBeTruthy();
+   await click('Save draft');
+   expect(clinicalApi.saveSession.mock.calls[0][2].activities).toEqual([
+    expect.objectContaining({id:'fictional-picked-id',templateId:'t1',
+      completion:'NOT_STARTED',objective:''})
+   ]);
+   expect(clinicalApi.saveSession.mock.calls[0][2].executionStatus).toBe('IN_PROGRESS');
+  } finally {uuid.mockRestore();}
+ });
+ it('keeps optional exact-version goal selector mounted and preserves independent outcome/assistance',async()=>{
+  await mount();
+  const disclosure=get('session-activity-goal-details-activity-a');
+  expect(disclosure.type).toBe('details');
+  expect(disclosure.props.open).toBeUndefined();
+  await change('goal-activity-a','v1|goal-a');
+  await change('outcome-activity-a','ACHIEVED');
+  await change('assistance-activity-a','INDEPENDENT');
+  expect(get('session-activity-goal-details-activity-a')).toBe(disclosure);
+  await click('Save draft');
+  const item=clinicalApi.saveSession.mock.calls[0][2].activities[0];
+  expect(item).toMatchObject({planVersionId:'v1',goalKey:'goal-a',outcome:'ACHIEVED',assistance:'INDEPENDENT'});
+ });
+ it('keeps picker absent after remote completion or revoked editor authorization',async()=>{
+  await mount(note({executionStatus:'COMPLETED'}),workspace({canEdit:false}));
+  expect(find('session-activity-picker')).toHaveLength(0);
+  expect(button('Add Fictional activity')).toBeUndefined();
+  expect(clinicalApi.saveSession).not.toHaveBeenCalled();
+ });
+});

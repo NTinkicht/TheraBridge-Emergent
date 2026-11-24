@@ -13,6 +13,8 @@ export function TemplateActions({ centerId, template, onChanged, onError }: {
   const [mode, setMode] = useState<'none' | 'copy' | 'edit'>('none');
   const [f, setF] = useState({
     title: template.title, ageBand: template.ageBand, minutes: String(template.minutes),
+    category: template.category ?? '', skill: template.skill ?? '',
+    equipment: (template.equipment ?? []).join('\n'),
     materials: template.materials.join('\n'), steps: template.steps.join('\n'),
     safety: template.safety.join('\n'),
   });
@@ -22,6 +24,8 @@ export function TemplateActions({ centerId, template, onChanged, onError }: {
     setF({
       title: next === 'copy' ? `${template.title} — copy` : template.title,
       ageBand: template.ageBand, minutes: String(template.minutes),
+      category: template.category ?? '', skill: template.skill ?? '',
+      equipment: (template.equipment ?? []).join('\n'),
       materials: template.materials.join('\n'), steps: template.steps.join('\n'),
       safety: template.safety.join('\n'),
     });
@@ -42,8 +46,11 @@ export function TemplateActions({ centerId, template, onChanged, onError }: {
         if (template.version === undefined) throw new Error('Activity version is missing. Reload before editing.');
         await clinicalApi.editTemplate(centerId, template.id, {
           version: template.version, title: f.title.trim(), ageBand: f.ageBand.trim(),
-          minutes: Number(f.minutes), materials: items(f.materials),
-          steps: items(f.steps), safety: items(f.safety),
+          minutes: Number(f.minutes),
+          ...(f.category.trim() || template.category ? { category: f.category.trim() } : {}),
+          ...(f.skill.trim() || template.skill ? { skill: f.skill.trim() } : {}),
+          ...(items(f.equipment).length || template.equipment?.length ? { equipment: items(f.equipment) } : {}),
+          materials: items(f.materials), steps: items(f.steps), safety: items(f.safety),
         });
         onChanged('Activity updated. Previously captured plan and session activity snapshots are unchanged.');
       }
@@ -83,6 +90,15 @@ export function TemplateActions({ centerId, template, onChanged, onError }: {
         {(['materials','steps','safety'] as const).map(k=><label key={k} className="block text-[13px] font-semibold capitalize">{k} (one per line)
           <textarea className="mt-1 w-full rounded-control border border-border-strong p-2 text-[13px]" rows={3} value={f[k]} onChange={e=>setF(old=>({...old,[k]:e.target.value}))}/>
         </label>)}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {(['category','skill'] as const).map(key => <label key={key} className="block text-[13px] font-semibold capitalize">{key}
+            <input maxLength={80} value={f[key]} onChange={e=>setF(old=>({...old,[key]:e.target.value}))}
+              className="mt-1 w-full rounded-control border border-border-strong p-2" /></label>)}
+          <label className="block text-[13px] font-semibold">Equipment (one per line)
+            <textarea rows={2} value={f.equipment} onChange={e=>setF(old=>({...old,equipment:e.target.value}))}
+              className="mt-1 w-full rounded-control border border-border-strong p-2" />
+          </label>
+        </div>
       </>}
       <div className="flex gap-2">
         <Button size="sm" disabled={busy} onClick={() => void submit()} data-testid={`activity-action-save-${template.id}`}>{busy ? 'Saving…' : mode === 'copy' ? 'Create my copy' : 'Save updated version'}</Button>

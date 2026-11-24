@@ -7,7 +7,8 @@ const h = React.createElement;
 jest.mock('@/lib/activity-media', () => ({
   activityMediaDrafts: {
     endpoint: (c,t) => '/api/centers/'+c+'/activities/'+t+'/media-drafts',
-    list: jest.fn(), propose: jest.fn(), reject: jest.fn()
+    list: jest.fn(), propose: jest.fn(), reject: jest.fn(), uploadCandidate: jest.fn(),
+    candidates: jest.fn()
   }
 }));
 const {activityMediaDrafts: api} = require('../src/lib/activity-media');
@@ -34,10 +35,17 @@ const change=async(labelText,value)=>{
   if(!input)throw Error('Missing input: '+labelText);
   await act(async()=>input.props.onChange({target:{value}}));
 };
-const mount=async(version=2)=>act(async()=>{tree=create(h(ActivityMediaDraftPanel,{
-  centerId:'center-a',templateId:'activity-a',templateVersion:version
+const mount=async(version=2,steps=[])=>act(async()=>{tree=create(h(ActivityMediaDraftPanel,{
+  centerId:'center-a',templateId:'activity-a',templateVersion:version,steps
 }));});
-beforeEach(()=>{jest.resetAllMocks();tree=null;api.list.mockResolvedValue({items:[],nextCursor:null,hasMore:false});});
+beforeEach(()=>{
+  jest.resetAllMocks();tree=null;
+  api.list.mockResolvedValue({items:[],nextCursor:null,hasMore:false});
+  api.candidates.mockResolvedValue({
+    items:[],hasMore:false,nextCursor:null,metadataOnly:true,
+    readEnabled:false,publishEnabled:false,clinicalReleaseEnabled:false,
+  });
+});
 afterEach(async()=>{if(tree){await act(async()=>tree.unmount());tree=null;}});
 const open=async()=>click('Illustration proposals');
 
@@ -47,7 +55,7 @@ describe('actual mounted private media proposal workflow',()=>{
     await open();
     expect(api.list).toHaveBeenCalledWith('center-a','activity-a');
     expect(output()).toContain('No proposals registered');
-    expect(output()).toContain('No image upload or publication is available');
+    expect(output()).toContain('No image publication is available');
     await click('Close illustration proposals');
     expect(output()).not.toContain('Private illustration proposal registry');
   });
@@ -77,6 +85,33 @@ describe('actual mounted private media proposal workflow',()=>{
     }));
     expect(output()).toContain('No image was uploaded');
     expect(output()).toContain('Fictional child sorting colored blocks');
+  });
+  it('binds private artwork metadata to an actual numbered source step',async()=>{
+    await mount(2,['Select fictional card','Place on table']);
+    await open();
+    await change('Illustration target','2');
+    await change('Scene type','Guided fictional play');
+    await change('License or rights basis','INTERNAL_REVIEW_ONLY');
+    await change('Provenance / source evidence reference','SYNTHETIC-STEP-123');
+    await change('Proposed accessible description','A fictional character placing neutral cards');
+    api.propose.mockResolvedValue(draft({stepNumber:2}));
+    await click('Save private metadata draft');
+    expect(api.propose).toHaveBeenCalledWith('center-a','activity-a',
+      expect.objectContaining({stepNumber:2,templateVersion:2}));
+    expect(output()).toContain('Step 2');
+  });
+  it('defaults to whole activity when no step is selected',async()=>{
+    await mount(2,['Synthetic step']);
+    await open();
+    await change('Scene type','Guided fictional play');
+    await change('License or rights basis','INTERNAL_REVIEW_ONLY');
+    await change('Provenance / source evidence reference','SYNTHETIC-WHOLE-123');
+    await change('Proposed accessible description','A fictional character choosing safe cards');
+    api.propose.mockResolvedValue(draft({stepNumber:null}));
+    await click('Save private metadata draft');
+    expect(api.propose).toHaveBeenCalledWith('center-a','activity-a',
+      expect.objectContaining({stepNumber:undefined}));
+    expect(output()).toContain('whole activity');
   });
   it('blocks generated artwork until provider terms are entered',async()=>{
     await mount();await open();
@@ -121,6 +156,37 @@ describe('actual mounted private media proposal workflow',()=>{
     expect(output()).toContain('Draft rejected.');
     expect(output()).toContain('Unsafe synthetic positioning');
     expect(output()).not.toContain('Record rejection');
+  });
+  it('invalidates mounted quarantined candidate history after confirmed rejection and reopens with revoked state',async()=>{
+    api.list.mockResolvedValue({items:[draft()],nextCursor:null,hasMore:false});
+    const envelope=(status,revokedAt=null)=>({
+      items:[{id:'synthetic-candidate',status,templateVersion:2,width:1600,height:1200,
+        createdAt:'2026-11-23T00:00:00.000Z',revokedAt}],
+      nextCursor:null,hasMore:false,metadataOnly:true,readEnabled:false,
+      publishEnabled:false,clinicalReleaseEnabled:false,
+    });
+    api.candidates.mockResolvedValueOnce(envelope('QUARANTINED'))
+      .mockResolvedValueOnce(envelope('REVOKED','2026-11-23T01:00:00.000Z'));
+    api.reject.mockResolvedValue({id:'draft-a',state:'REJECTED',version:2});
+    await mount();await open();
+    await click('Inspect private candidate statuses');
+    const candidateRows=()=>tree.root.findAllByProps({'aria-label':'Private candidate status history'})
+      .flatMap(ul=>ul.findAllByType('li'));
+    expect(candidateRows()).toHaveLength(1);
+    expect(candidateRows()[0].findByType('strong').children.join('')).toBe('Quarantined');
+    await click('Reject draft');
+    await change('Reason for rejection','Synthetic rights review found incorrect artwork');
+    await click('Record rejection');
+    expect(api.reject).toHaveBeenCalledWith('center-a','activity-a','draft-a',1,
+      'Synthetic rights review found incorrect artwork');
+    // A successful rejection must dispose of the previous mounted candidate
+    // list immediately; stale "Quarantined" cannot remain in the DOM.
+    expect(candidateRows()).toHaveLength(0);
+    await click('Inspect private candidate statuses');
+    expect(api.candidates).toHaveBeenCalledTimes(2);
+    expect(candidateRows()).toHaveLength(1);
+    expect(candidateRows()[0].findByType('strong').children.join('')).toBe('Revoked');
+    expect(candidateRows()[0].findByType('strong').children.join('')).not.toBe('Quarantined');
   });
   it('can cancel rejection and preserves the original draft',async()=>{
     api.list.mockResolvedValue({items:[draft()],nextCursor:null,hasMore:false});
@@ -173,4 +239,51 @@ describe('actual mounted private media proposal workflow',()=>{
     await mount();await open();
     expect(output()).toContain('Could not load illustration proposals');
   });
+  it('opens and closes private intake only on the current rights proposal version',async()=>{
+    api.list.mockResolvedValue({items:[draft()],nextCursor:null,hasMore:false});
+    await mount();await open();
+    expect(button('Attach scanned private PNG')).toBeTruthy();
+    await click('Attach scanned private PNG');
+    expect(tree.root.findAllByProps({'data-testid':'private-png-candidate-picker'})).toHaveLength(1);
+    await click('Close private image intake');
+    expect(tree.root.findAllByProps({'data-testid':'private-png-candidate-picker'})).toHaveLength(0);
+    expect(api.uploadCandidate).not.toHaveBeenCalled();
+  });
+  it('refuses staging an image when metadata is stale or rejected',async()=>{
+    api.list.mockResolvedValue({items:[draft({templateVersion:2}),
+      draft({id:'rejected',state:'REJECTED'})],nextCursor:null,hasMore:false});
+    await mount(3);await open();
+    expect(buttons().filter(x=>label(x).includes('Attach scanned private PNG'))).toHaveLength(0);
+    expect(api.uploadCandidate).not.toHaveBeenCalled();
+  });
+  it('stages only a private candidate with exact center/template/draft and never publishes',async()=>{
+    api.list.mockResolvedValue({items:[draft()],nextCursor:null,hasMore:false});
+    api.uploadCandidate.mockResolvedValue({id:'quarantined-only',status:'QUARANTINED',
+      readEnabled:false,publishEnabled:false});
+    await mount();await open();await click('Attach scanned private PNG');
+    const input=tree.root.findByProps({'data-testid':'private-png-candidate-file'});
+    const bytes=Buffer.alloc(64,5),target={files:[{
+      type:'image/png',size:bytes.length,arrayBuffer:async()=>Uint8Array.from(bytes).buffer
+    }],value:'C:\\fakepath\\synthetic.png'};
+    await act(async()=>{input.props.onChange({currentTarget:target});await Promise.resolve();});
+    expect(api.uploadCandidate).toHaveBeenCalledWith('center-a','activity-a','draft-a',bytes.toString('base64'));
+    expect(output()).toContain('quarantined');
+    expect(output()).not.toContain('Publish image');
+    expect(target.value).toBe('');
+  });
+  it('scanner denial on private candidate never claims an approved or stored image',async()=>{
+    api.list.mockResolvedValue({items:[draft()],nextCursor:null,hasMore:false});
+    api.uploadCandidate.mockRejectedValue(new Error('malware scanner unavailable'));
+    await mount();await open();await click('Attach scanned private PNG');
+    const input=tree.root.findByProps({'data-testid':'private-png-candidate-file'});
+    const bytes=Buffer.alloc(64,8);
+    await act(async()=>{input.props.onChange({currentTarget:{
+      files:[{type:'image/png',size:64,arrayBuffer:async()=>Uint8Array.from(bytes).buffer}],
+      value:'private-filename.png'
+    }});await Promise.resolve();});
+    expect(output()).toContain('upload was not accepted');
+    expect(output()).not.toContain('Encrypted scanned illustration candidate is quarantined');
+    expect(output()).not.toContain('private-filename.png');
+  });
+
 });

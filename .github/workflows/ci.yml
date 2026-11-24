@@ -1,12 +1,20 @@
 name: ci
 
+# Open PRs receive full application verification plus a distinct fast-load smoke.
+# Main and v* release candidate tags retain full ten-minute endurance evidence.
+# Feature-branch pushes must not duplicate expensive PR jobs; scheduled and
+# manually dispatched runs retain full continuous endurance qualification.
 on:
   push:
-    branches: ["**"]
+    branches: ["main"]
+    tags: ["v*"] # Release candidates receive the exact-SHA full endurance gate.
   pull_request:
+  schedule:
+    - cron: "30 4 * * *" # Daily full M4-07 synthetic endurance on default branch.
   workflow_dispatch:
 
-# Superseded pushes to the same ref should not consume two costly Docker jobs.
+# Superseded runs of the same event/ref cancel; PR and main require independent
+# full qualification because the eventual merge commit has a different tree.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -425,6 +433,28 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Fail fast on M5 WU2-F pilot implementation and adversarial test syntax
+        run: |
+          node --check scripts/qa/m5-wu2f-pilot-readiness.mjs
+          node --check scripts/qa/m5-wu2f-pilot-readiness.test.mjs
+      - name: Fail fast on M5 WU2-F isolated synthetic pilot assertions before browser install
+        run: node --test scripts/qa/m5-wu2f-pilot-readiness.test.mjs
+      - name: M5 PR A generated artwork manifest and private intake integrity
+        run: node --test scripts/qa/m5-pr-a-artwork.test.mjs
+      - name: M5 PR A build and exercise the isolated real ClamAV custody runtime
+        timeout-minutes: 5
+        run: |
+          docker build -f Dockerfile.artwork-custody -t tb-artwork-custody:ci .
+          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
+            --memory 3g --pids-limit 128 \
+            --tmpfs /run/clamav:rw,noexec,nosuid,nodev,uid=1000,gid=1000,mode=0700,size=128m \
+            --tmpfs /tmp:rw,noexec,nosuid,nodev,uid=1000,gid=1000,mode=0700,size=64m \
+            --mount "type=bind,source=$PWD/scripts/qa/artwork-custody-container-smoke.sh,target=/repo/custody-smoke.sh,readonly" \
+            --entrypoint /bin/bash tb-artwork-custody:ci /repo/custody-smoke.sh
+          if docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges tb-artwork-custody:ci stage; then
+            echo 'ERROR: stage unexpectedly accepted missing private host configuration' >&2
+            exit 1
+          fi
       - name: Verify Smart CI classifier, policy gate and workflow wiring
         run: node --test scripts/ci/smart-ci.test.mjs scripts/ci/smart-ci-workflow.test.mjs
       - name: M5-01 source-only route, role and viewport audit with adversarial tests
@@ -650,27 +680,7 @@ jobs:
         env:
           API_UPSTREAM_ORIGIN: http://127.0.0.1:8001
 
-      # Cache only downloaded public Chromium binaries. Playwright still checks
-      # the lockfile-pinned revision and installs system dependencies every run.
-      # Never cache credentials, Node build outputs or clinical test state.
-      - name: Cache Playwright Chromium downloads
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: tb-playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
-      - name: Session editor responsive DOM and synthetic dictation regression
-        run: |
-          yarn playwright install --with-deps chromium
-          (cd apps/web && yarn start) > /tmp/therabridge-web.log 2>&1 &
-          WEB_PID=$!
-          trap 'kill "$WEB_PID" 2>/dev/null || true' EXIT
-          for attempt in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:3000/login > /dev/null; then break; fi
-            sleep 1
-          done
-          node scripts/design/check-preview-entry.mjs
-          node scripts/design/m5-table-keyboard.mjs
-          node scripts/design/check-session-workflow.mjs
+
 
   live-session:
     needs: smart-plan
@@ -724,6 +734,20 @@ jobs:
       - run: yarn playwright install --with-deps chromium
       - name: Real two-tab browser → API → PostgreSQL synthetic regression
         run: node scripts/design/run-session-live.mjs
+      # Fully synthetic mounted browser/accessibility checks moved from test
+      # to this independently required full-mode job to overlap API coverage.
+      - name: Session editor responsive DOM and synthetic dictation regression
+        run: |
+          (cd apps/web && yarn start) > /tmp/therabridge-web.log 2>&1 &
+          WEB_PID=$!
+          trap 'kill "$WEB_PID" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/login > /dev/null; then break; fi
+            sleep 1
+          done
+          node scripts/design/check-preview-entry.mjs
+          node scripts/design/m5-table-keyboard.mjs
+          node scripts/design/check-session-workflow.mjs
       # Never upload seed credentials, browser storage, or traces.
       - if: always()
         run: rm -f .workspace/local-credentials/synthetic-accounts.json
@@ -783,15 +807,69 @@ jobs:
         run: node scripts/design/run-demo-live.mjs
       - name: M5-01 browser and keyboard receipt schema adversarial tests
         run: node --test scripts/design/m5-browser-observe.test.mjs scripts/design/m5-keyboard-journey.test.mjs
+      - name: M5 WU1 full role-shell 5-width 2-theme focus/privacy and receipt adversarial tests
+        run: node --test scripts/design/m5-wu1-shared-shell.test.mjs
       - name: M5 WU2 five-width role acceptance receipt adversarial tests
         run: node --test scripts/design/m5-wu2-browser-qualification.test.mjs
+      - name: M5-14 operator runtime probe fail-closed offline tests (not production approval)
+        run: node --test scripts/qa/m5-media-operator-probe.test.mjs
+      - name: M5 WU2-B private catalogue and 25-job generation/adversarial PNG intake contracts
+        run: node --test scripts/qa/m5-wu2b-private-generation.test.mjs
+      - name: M5 WU2-C private master crop, derivatives, alpha and admission denial tests
+        run: node --test scripts/qa/m5-wu2c-private-derivatives.test.mjs
+      - name: M5 WU2-C encrypted quarantine, trusted scanner, audit and retention denial contracts
+        run: node --test scripts/qa/m5-wu2c-private-custody.test.mjs
+      - name: M5 WU2-D 25-slot production provenance, private master and non-publication QA contracts
+        run: node --test scripts/qa/m5-wu2d-production-assets.test.mjs
+      - name: M5 WU2-E private staff steps, accessible fallback and no-publication cross-surface tests
+        run: node --test scripts/qa/m5-wu2e-private-steps.test.mjs
+      - name: M5 WU2-F synthetic-db pilot integrity, 20-candidate matching and fail-closed published-coverage tests
+        run: node --test scripts/qa/m5-wu2f-pilot-readiness.test.mjs
+      - name: M5-13 therapist-reported concept acceptance must remain non-publication evidence
+        run: node --test scripts/qa/m5-wu2a-therapist-attestation.test.mjs
+      - name: M5-13 concept pack pinned hashes and tamper-denial contract
+        run: node --test scripts/qa/m5-wu2a-review-integrity.test.mjs
+      - name: M5 WU2-A single illustration style / no-publication cross-surface contract
+        run: node --test scripts/qa/m5-wu2a-style-contract.test.mjs
+      - name: M5 media style/security signature and real-inventory adversarial qualification contracts
+        run: node --test scripts/qa/m5-media-inventory.test.mjs scripts/qa/m5-media-approval-chain.test.mjs
+      - name: M5 shared UX guardian five-width light/dark and screen-reader-honesty contract tests
+        run: node --test scripts/design/m5-shared-guardian-browser.test.mjs scripts/design/m5-shared-ux-manual-acceptance.test.mjs
       - name: M5 major PR4 integrated real-browser receipt and false-approval adversarial tests
         run: node --test scripts/design/m5-integrated-browser-receipt.test.mjs
+      - name: Archive M5 actual synthetic PostgreSQL media inventory (no approved image claims)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-media-real-db-inventory-${{ github.sha }}
+          path: /tmp/therabridge-m5-media-inventory.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Archive M5 real-browser technical evidence plus pending manual matrix (NOT approval)
         uses: actions/upload-artifact@v4
         with:
           name: m5-integrated-technical-only-${{ github.sha }}
           path: /tmp/therabridge-m5-integrated-technical-receipt.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Archive strictly pending M5 shared UX human screen-reader/visual/usability matrix (NOT approval)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-shared-ux-manual-not-run-${{ github.sha }}
+          path: /tmp/therabridge-m5-shared-ux-human-pending.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Archive real 7-role x 5-width shared navigation/theme/focus browser evidence (not manual AT)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-wu1-cross-screen-shell-${{ github.sha }}
+          path: /tmp/therabridge-m5-wu1-cross-screen-shell.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Archive M5 shared guardian five-width light/dark keyboard and semantic observations (not manual AT)
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-shared-guardian-ux-technical-${{ github.sha }}
+          path: /tmp/therabridge-m5-shared-guardian-ux.json
           if-no-files-found: error
           retention-days: 30
       - name: Archive WU2 numeric-only synthetic role/viewport qualification (not screenshots)
@@ -932,8 +1010,20 @@ jobs:
           bash -n scripts/preview/start.sh
           node --check scripts/preview/check-external.mjs
           node --check scripts/preview/generate-secrets.mjs
-      - name: Build unified preview image
-        run: docker build -f Dockerfile.preview -t tb-synthetic-preview:ci .
+      # Cache only deterministic Docker layers; still build the actual current HEAD,
+      # scan all image layers and produce an exact-image CycloneDX SBOM.
+      - name: Prepare isolated BuildKit builder
+        uses: docker/setup-buildx-action@v3
+      - name: Build unified preview image (exact HEAD, cached layers)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.preview
+          load: true
+          push: false
+          tags: tb-synthetic-preview:ci
+          cache-from: type=gha,scope=therabridge-unified-preview
+          cache-to: type=gha,scope=therabridge-unified-preview,mode=max,ignore-error=true
       - name: Verify no preview image layer ships sharp/libvips (incl. Yarn cache)
         run: bash scripts/preview/check-image-no-sharp.sh tb-synthetic-preview:ci
       - name: Generate container OS/runtime CycloneDX evidence from built preview image
@@ -977,14 +1067,38 @@ jobs:
           docker exec tb-preview-ci node -e "const {PrismaClient}=require('@prisma/client');const p=new PrismaClient();p.center.count({where:{slug:'childrens-home-demo'}}).then(n=>{if(n!==1)process.exitCode=1;else console.log('PASS: one Children Home demo centre seeded')}).finally(()=>p.\$disconnect())"
       - name: M4-07 reject forged/shortened 512MiB workload receipt
         run: node --test scripts/qa/m4-sustained-receipt.test.mjs
+      - name: PR smoke reject shortened, forged or serial 512MiB receipt
+        run: node --test scripts/qa/m4-pr-overlap-receipt.test.mjs
+      # PR smoke is an ADDITIONAL regression profile, not evidence of ten
+      # minutes of uninterrupted operation. Main/schedule/tag/manual remain full.
+      - name: PR 200-second overlapping 1/4/8 synthetic API smoke, 512MiB non-root
+        if: github.event_name == 'pull_request'
+        timeout-minutes: 5
+        env:
+          TB_M4_LOCAL_LOAD_CONFIRM: DISPOSABLE_LOOPBACK_ONLY
+        run: node scripts/qa/m4-pr-overlap-http.mjs
+      - name: Validate PR numeric-only overlap receipt
+        if: github.event_name == 'pull_request'
+        run: node scripts/qa/m4-pr-overlap-receipt.mjs .workspace/m4-performance/m4-pr-overlap-load.json
+      - name: Archive PR 200-second overlap smoke (NOT M4-07 endurance or SLA)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-pr-overlap-512m-${{ github.run_id }}
+          path: .workspace/m4-performance/m4-pr-overlap-load.json
+          if-no-files-found: error
+          retention-days: 7
       - name: M4-07 sustained 10-minute synthetic API load with real 512MiB non-root preview cgroup
+        if: github.event_name != 'pull_request'
         timeout-minutes: 13
         env:
           TB_M4_LOCAL_LOAD_CONFIRM: DISPOSABLE_LOOPBACK_ONLY
         run: node scripts/qa/m4-local-sustained-http.mjs
       - name: Verify measured 10-minute synthetic workload receipt before publishing
+        if: github.event_name != 'pull_request'
         run: node scripts/qa/m4-sustained-receipt.mjs .workspace/m4-performance/m4-07-compose-load.json
       - name: Archive numeric-only M4-07 local synthetic load receipt (not production SLA)
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: m4-07-512m-sustained-${{ github.run_id }}

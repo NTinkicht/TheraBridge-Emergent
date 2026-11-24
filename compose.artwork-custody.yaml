@@ -1,0 +1,45 @@
+# Explicit operator-only invocation; never include in the app's compose file.
+services:
+  artwork-custody:
+    build:
+      context: .
+      dockerfile: Dockerfile.artwork-custody
+    network_mode: none
+    read_only: true
+    user: "1000:1000"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 3g
+    pids_limit: 128
+    tmpfs:
+      - /run/clamav:rw,noexec,nosuid,nodev,uid=1000,gid=1000,mode=0700,size=128m
+      - /tmp:rw,noexec,nosuid,nodev,uid=1000,gid=1000,mode=0700,size=64m
+    environment:
+      - TB_PRIVATE_DATA_KEY_B64
+      - TB_ARTWORK_OPERATOR_ID
+    volumes:
+      - type: bind
+        source: ${TB_ARTWORK_PACK_DIR:?absolute private extracted pack directory required}
+        target: /private/input
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${TB_ARTWORK_EVIDENCE_DIR:?absolute private evidence directory required}
+        target: /private/evidence
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${TB_ARTWORK_SIGNATURE_DIR:?absolute updated ClamAV signature directory required}
+        target: /var/lib/clamav
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${TB_ARTWORK_STATE_DIR:?absolute durable private custody directory required}
+        target: /private/state
+        bind:
+          create_host_path: false
+    command: ["stage"]

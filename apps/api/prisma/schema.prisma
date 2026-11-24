@@ -189,6 +189,8 @@ model Center {
   timezone      String             @db.VarChar(64)
   country       String?            @db.VarChar(80)
   city          String?            @db.VarChar(80)
+  contactEmail  String?            @map("contact_email") @db.VarChar(254)
+  contactPhone  String?            @map("contact_phone") @db.VarChar(40)
   specialties   String[]           @db.VarChar(32)
   source        CenterSource       @default(DIRECT)
   applicationId String?            @unique @map("application_id") @db.Uuid
@@ -196,6 +198,8 @@ model Center {
   version       Int                @default(1)
   trialEndsAt   DateTime?          @map("trial_ends_at") @db.Timestamptz(3)
   children      Child[]
+  careIntakeRecords ChildCareIntake[]
+  privateMediaCandidates PrivateMediaCandidate[]
   guardianLinks GuardianLink[]
   mediaDrafts ActivityMediaDraft[]
   homePlanRequests HomePlanRequest[]
@@ -403,6 +407,8 @@ model Child {
   center        Center           @relation(fields: [centerId], references: [id], onDelete: Restrict)
   referentMember Membership?      @relation("ChildReferent", fields: [referentMembershipId], references: [id], onDelete: Restrict)
   referentHistory ChildReferentHistory[]
+  careIntake ChildCareIntake?
+  mediaCandidates PrivateMediaCandidate[]
   guardians     GuardianLink[]
   assignments   CareAssignment[]
   homePlanRequests HomePlanRequest[]
@@ -729,6 +735,11 @@ model ActivityTemplate {
   service     String   @db.VarChar(32)
   ageBand     String   @map("age_band") @db.VarChar(32)
   minutes     Int
+  // Optional clinician-authored discovery metadata. Never synthesize labels
+  // for legacy records; blank data stays explicitly unclassified.
+  category    String?  @db.VarChar(80)
+  skill       String?  @db.VarChar(80)
+  equipment   String[] @default([]) @db.VarChar(120)
   materials   String[] @db.VarChar(120)
   steps       String[] @db.VarChar(400)
   safety      String[] @db.VarChar(400)
@@ -737,6 +748,7 @@ model ActivityTemplate {
   version     Int      @default(1)
   practiceOutcomes PracticeOutcome[]
   mediaDrafts ActivityMediaDraft[]
+  mediaCandidates PrivateMediaCandidate[]
 
   @@index([centerId])
   @@map("activity_template")
@@ -1073,6 +1085,9 @@ model ActivityMediaDraft {
   centerId        String   @map("center_id") @db.Uuid
   templateId      String   @map("template_id") @db.Uuid
   templateVersion Int      @map("template_version")
+  // Null means a whole-activity illustration; a positive ordinal binds a draft
+  // to an exact step of the immutable source template version.
+  stepNumber      Int?     @map("step_number")
   service         String   @db.VarChar(32)
   state           String   @default("DRAFT") @db.VarChar(16)
   sourceType      String   @map("source_type") @db.VarChar(16)
@@ -1088,9 +1103,91 @@ model ActivityMediaDraft {
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
   center          Center   @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  mediaCandidates PrivateMediaCandidate[]
   template        ActivityTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
   createdBy       User @relation(fields: [createdById], references: [id], onDelete: Restrict)
 
   @@index([centerId, templateId, createdAt(sort: Desc)])
   @@map("activity_media_draft")
+}
+
+
+// M5 owner #11 — encrypted, independently versioned family-reported sensitive intake.
+// No health information is ever written into center event meta or child list rows.
+model ChildCareIntake {
+  id             String   @id @default(uuid()) @db.Uuid
+  centerId       String   @map("center_id") @db.Uuid
+  childId        String   @unique @map("child_id") @db.Uuid
+  encryptedBody  Bytes    @map("encrypted_body") @db.ByteA
+  version        Int      @default(1)
+  source         String   @default("FAMILY_REPORTED_UNVERIFIED") @db.VarChar(36)
+  modifiedById   String   @map("modified_by_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  center         Center   @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  child          Child    @relation(fields: [childId], references: [id], onDelete: Restrict)
+
+  @@index([centerId, updatedAt])
+  @@map("child_care_intake")
+}
+
+// M5 #13/#25 — encrypted QUARANTINED candidates only; never a published media table.
+// No direct URL, public ACL, or automatic consent/rights approval.
+model PrivateMediaCandidate {
+  id              String   @id @default(uuid()) @db.Uuid
+  centerId        String   @map("center_id") @db.Uuid
+  kind            String   @db.VarChar(28)
+  childId         String?  @map("child_id") @db.Uuid
+  templateId      String?  @map("template_id") @db.Uuid
+  templateVersion Int?     @map("template_version")
+  mediaDraftId    String?  @map("media_draft_id") @db.Uuid
+  encryptedBytes  Bytes    @map("encrypted_bytes") @db.ByteA
+  digestSha256    String   @map("digest_sha256") @db.VarChar(64)
+  scannerName     String   @map("scanner_name") @db.VarChar(80)
+  scannerVersion  String   @map("scanner_version") @db.VarChar(80)
+  width           Int
+  height          Int
+  status          String   @default("QUARANTINED") @db.VarChar(20)
+  consentState    String   @default("PENDING") @map("consent_state") @db.VarChar(20)
+  consentedGuardianLinkId String? @map("consented_guardian_link_id") @db.Uuid
+  rightsState     String   @default("UNVERIFIED") @map("rights_state") @db.VarChar(20)
+  createdById     String   @map("created_by_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  revokedAt       DateTime? @map("revoked_at") @db.Timestamptz(3)
+  center          Center   @relation(fields: [centerId], references: [id], onDelete: Restrict)
+  child           Child?   @relation(fields: [childId], references: [id], onDelete: Restrict)
+  mediaDraft      ActivityMediaDraft? @relation(fields: [mediaDraftId], references: [id], onDelete: Restrict)
+  template        ActivityTemplate? @relation(fields: [templateId], references: [id], onDelete: Restrict)
+
+  // Optional verified ciphertext mirror; no client-supplied URL or object key.
+  r2CipherSha256 String? @map("r2_cipher_sha256") @db.VarChar(64)
+  r2CipherBytes Int? @map("r2_cipher_bytes")
+  approvedArtwork ActivityArtworkApproval?
+
+  @@index([centerId, childId, createdAt])
+  @@index([centerId, templateId, createdAt])
+  @@map("private_media_candidate")
+}
+
+
+// Immutable, independently signed approval evidence for ONE exact candidate.
+// No HTTP write endpoint; trusted evidence onboarding is a separate gate.
+// Candidate/draft revocation remains authoritative even with an approval row.
+model ActivityArtworkApproval {
+  candidateId       String   @id @map("candidate_id") @db.Uuid
+  centerId          String   @map("center_id") @db.Uuid
+  templateId        String   @map("template_id") @db.Uuid
+  templateVersion   Int      @map("template_version")
+  slot              Int
+  digestSha256      String   @map("digest_sha256") @db.VarChar(64)
+  contextSha256     String   @map("context_sha256") @db.VarChar(64)
+  rightsEvidenceSha256 String @map("rights_evidence_sha256") @db.VarChar(64)
+  clinicalEvidenceSha256 String @map("clinical_evidence_sha256") @db.VarChar(64)
+  rightsSignature   String   @map("rights_signature") @db.VarChar(88)
+  clinicalSignature String   @map("clinical_signature") @db.VarChar(88)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  candidate PrivateMediaCandidate @relation(fields: [candidateId], references: [id], onDelete: Restrict)
+
+  @@unique([centerId, templateId, templateVersion, slot], map: "activity_artwork_approval_slot_key")
+  @@map("activity_artwork_approval")
 }

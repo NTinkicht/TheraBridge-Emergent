@@ -17,13 +17,13 @@ const load = async () => {
   return { nav, shell, source, rows };
 };
 
-test('M5-03 grouped app nav is exact current permission-specific 20-entry M5-02 eight-area crosswalk', async () => {
+test('M5-03 grouped app nav is exact current permission-specific 21-entry M5-02 eight-area crosswalk', async () => {
   const {nav,source,rows}=await load();
   const proposal=await buildIaCrosswalk({sourceAudit:await buildAudit()});
-  assert.equal(nav.length,20);
-  assert.equal(rows.length,20);
-  assert.equal(new Set(rows.map(x=>x.identity)).size,20);
-  assert.equal(proposal.navigation.length,20);
+  assert.equal(nav.length,21);
+  assert.equal(rows.length,21);
+  assert.equal(new Set(rows.map(x=>x.identity)).size,21);
+  assert.equal(proposal.navigation.length,21);
   const expected = new Map(proposal.navigation.map(n=>[n.key+'|'+(n.permission??''),n.proposedArea]));
   assert.deepEqual([...rows].sort((a,b)=>a.identity.localeCompare(b.identity)),
     [...expected].map(([identity,area])=>({identity,area})).sort((a,b)=>a.identity.localeCompare(b.identity)));
@@ -62,7 +62,7 @@ test('family and center activity links remain permission distinct and responsive
     'Do not persist navigation context across role changes');
 });
 
-test('source verifier refuses drift in original 20-entry permission audit contract', async () => {
+test('source verifier refuses drift in original 21-entry permission audit contract', async () => {
   const {nav,rows}=await load();
   const fromNav=new Set(nav.map(n=>n.key+'|'+(n.permission??'')));
   const fromGroups=new Set(rows.map(x=>x.identity));

@@ -4,12 +4,14 @@ import { AuditService } from '../audit/audit.service';
 import { assertActor } from '../clinical/governance-core';
 import type { Viewer } from '../common/viewer';
 export type { Viewer } from '../common/viewer';
-import { describeEvents, invitationView, logCenterEvent, uniq, withUniqueGuard } from '../centers/history';
+import { describeEvents, invitationView, logCenterEvent, uniq, withUniqueGuard, type Tx } from '../centers/history';
 import { InvitationsService } from '../centers/invitations.service';
 import { terminateTherapistCare } from '../centers/therapist-lifecycle';
 import { normalizeEmail } from '../common/security';
 import { PrismaService } from '../prisma/prisma.service';
-import type { AssignmentDto, ChildDto, GuardianDto, ListChildrenQuery, UpdateChildDto, ReferentDto } from './operations.dto';
+import { openPrivateData, sealPrivateData } from '../common/private-envelope';
+import { preparePrivatePng } from '../common/private-image-candidate';
+import type { AssignmentDto, ChildDto, GuardianDto, ListChildrenQuery, UpdateChildDto, ReferentDto, PrivateCareFieldsDto, PrivateCareUpdateDto } from './operations.dto';
 import { lockCenter, TrialService } from './trial.service';
 import { NoticesService } from './notices.service';
 
@@ -18,6 +20,18 @@ const clean = (s: string) => s.trim().replace(/\s+/g, ' ');
 export const childScope = (v: Viewer): Prisma.ChildWhereInput =>
   v.role === 'THERAPIST' ? { assignments: { some: { membershipId: v.membershipId, endedAt: null } } } : {};
 const dob = (s: string) => new Date(`${s}T00:00:00Z`);
+// Family/staff-reported medical context is not a verified clinical finding.
+// Encrypt at application layer and never include content in list/event/audit rows.
+const privateCareBody = (dto: PrivateCareFieldsDto) => ({
+  conditions: dto.conditions?.trim() ?? '',
+  allergies: dto.allergies?.trim() ?? '',
+  medications: dto.medications?.trim() ?? '',
+  careNotes: dto.careNotes?.trim() ?? '',
+  source: 'FAMILY_REPORTED_UNVERIFIED' as const,
+});
+const encryptCare = (centerId: string, childId: string, dto: PrivateCareFieldsDto) =>
+  sealPrivateData(Buffer.from(JSON.stringify(privateCareBody(dto)), 'utf8'), 'care-v1', centerId, childId);
+
 
 @Injectable()
 export class ChildrenService {
@@ -69,6 +83,10 @@ export class ChildrenService {
       const c = await tx.child.create({
         data: { centerId, firstName: clean(dto.firstName), lastName: clean(dto.lastName), preferredName: dto.preferredName ? clean(dto.preferredName) : null, dateOfBirth: dob(dto.dateOfBirth), services: uniq(dto.services), createdById: actorUserId, createdAt: now },
       });
+      if (dto.privateCare) {
+        const encryptedBody = encryptCare(centerId, c.id, dto.privateCare);
+        await tx.childCareIntake.create({ data: { centerId, childId: c.id, encryptedBody, modifiedById: actorUserId, createdAt: now, updatedAt: now } });
+      }
       await logCenterEvent(tx, centerId, 'child.registered', now, { actorUserId, meta: { childId: c.id } });
       return c;
     });
@@ -125,6 +143,250 @@ export class ChildrenService {
       appointments: c.appointments.map((a) => ({ id: a.id, startsAt: a.startsAt, endsAt: a.endsAt, service: a.service, status: a.status, room: a.room, therapist: name(a.membershipId), membershipId: a.membershipId, version: a.version })),
       events: await describeEvents(this.prisma, events),
     };
+  }
+
+  private async authorizeCare(centerId: string, id: string, v: Viewer) {
+    if (!['CENTER_ADMIN','COORDINATOR','THERAPIST'].includes(v.role))
+      throw new ForbiddenException('Private care context is restricted to the current care team.');
+    const membership = await this.prisma.membership.findFirst({ where: {
+      id: v.membershipId, userId: v.userId, centerId, status: 'ACTIVE',
+    }, select: { id: true } });
+    if (!membership) throw new NotFoundException('Child not found');
+    const child = await this.prisma.child.findFirst({ where: {
+      id, centerId,
+      ...(v.role === 'THERAPIST' ? childScope(v) : {}),
+    }, select: { id: true, status: true } });
+    if (!child) throw new NotFoundException('Child not found');
+    return child;
+  }
+
+  async privateCare(centerId: string, id: string, v: Viewer) {
+    await this.authorizeCare(centerId, id, v);
+    const row = await this.prisma.childCareIntake.findFirst({ where: { centerId, childId: id } });
+    if (!row) return { version: 0, source: 'FAMILY_REPORTED_UNVERIFIED',
+      conditions: '', allergies: '', medications: '', careNotes: '' };
+    const opened = openPrivateData(row.encryptedBody, 'care-v1', centerId, id);
+    return { ...JSON.parse(opened.toString('utf8')) as ReturnType<typeof privateCareBody>, version: row.version };
+  }
+
+  async updatePrivateCare(centerId: string, id: string, v: Viewer, dto: PrivateCareUpdateDto) {
+    if (!['CENTER_ADMIN','COORDINATOR'].includes(v.role))
+      throw new ForbiddenException('Only authorized child managers may change family-reported care context.');
+    await this.authorizeCare(centerId, id, v);
+    const encryptedBody = encryptCare(centerId, id, dto);
+    const now = this.trial.now();
+    try {
+      await this.prisma.$transaction(async tx => {
+        await this.trial.assertWritable(tx, centerId, now);
+        // P2: the earlier request check is not authoritative. A coordinator
+        // can lose their live role or membership while waiting for the center
+        // lock. Revalidate under the same lock before writing sensitive care.
+        await assertActor(tx, centerId, v, ['CENTER_ADMIN', 'COORDINATOR']);
+        await tx.$queryRaw`SELECT id FROM child WHERE id=${id}::uuid AND center_id=${centerId}::uuid FOR UPDATE`;
+        const currentChild = await tx.child.findFirst({ where: { id, centerId } });
+        if (!currentChild || currentChild.status !== 'ACTIVE') throw new NotFoundException('Active child not found');
+        const current = await tx.childCareIntake.findFirst({ where: { centerId, childId: id } });
+        if (current?.version !== (dto.version || 0)) {
+          if (current || dto.version !== 0) throw new ConflictException('Care context changed. Reload before saving.');
+        }
+        if (!current) {
+          await tx.childCareIntake.create({ data: { centerId, childId: id, encryptedBody,
+            modifiedById: v.userId, createdAt: now, updatedAt: now } });
+        } else {
+          const updated = await tx.childCareIntake.updateMany({ where: { id: current.id, centerId, version: dto.version },
+            data: { encryptedBody, modifiedById: v.userId, version: { increment: 1 }, updatedAt: now } });
+          if (updated.count !== 1) throw new ConflictException('Care context changed. Reload before saving.');
+        }
+        await logCenterEvent(tx, centerId, 'child.care_context_updated', now, {
+          actorUserId: v.userId, meta: { childId: id, category: 'family_reported_unverified' },
+        });
+      });
+    } catch (error) {
+      if ((error as { code?: string }).code === 'P2002') throw new ConflictException('Care context changed. Reload before saving.');
+      throw error;
+    }
+    await this.audit.record('child.care_context_updated', {
+      actorUserId: v.userId, meta: { centerId, childId: id },
+    });
+    return this.privateCare(centerId, id, v);
+  }
+
+  // An uploaded child photograph is sealed and quarantined until an actual
+  // connected guardian explicitly attests the photo and authorizes private use.
+  // Isolated scan stage allows adversarial testing of permission revocation
+  // while antivirus processing is pending; the post-scan transaction is
+  // authoritative and never trusts this stage's earlier authorization.
+  private preparePhotoCandidate(pngBase64: string, centerId: string, childId: string) {
+    return preparePrivatePng(pngBase64, 'child-photo-v1', centerId, childId);
+  }
+
+  async uploadPhotoCandidate(centerId: string, childId: string, v: Viewer, pngBase64: string) {
+    if (!['CENTER_ADMIN','COORDINATOR'].includes(v.role))
+      throw new ForbiddenException('Only child managers can prepare a private photo candidate.');
+    const child = await this.authorizeCare(centerId, childId, v);
+    if (child.status !== 'ACTIVE') throw new NotFoundException('Active child not found');
+    const ready = await this.preparePhotoCandidate(pngBase64, centerId, childId);
+    const record = await this.prisma.$transaction(async tx => {
+      await this.trial.assertWritable(tx, centerId, this.trial.now());
+      // P1: Never store scanned photo if role, user or membership changed
+      // while antivirus was pending. This locks the live role assignment and
+      // verifies the exact active session role, not the original request guard.
+      await assertActor(tx, centerId, v, ['CENTER_ADMIN', 'COORDINATOR']);
+      const current = await tx.child.findFirst({ where: { id: childId, centerId, status: 'ACTIVE' }, select: { id: true } });
+      if (!current) throw new NotFoundException('Active child not found');
+      const saved = await tx.privateMediaCandidate.create({ data: {
+        centerId, kind:'CHILD_PHOTO', childId,
+        ...ready, createdById:v.userId, status:'QUARANTINED',
+        consentState:'PENDING', rightsState:'UNVERIFIED',
+      } });
+      await logCenterEvent(tx, centerId, 'child.photo_candidate_created', this.trial.now(),
+        { actorUserId:v.userId, meta:{childId,candidateId:saved.id,kind:'CHILD_PHOTO'} });
+      return saved;
+    });
+    await this.audit.record('child.photo_candidate_created', {actorUserId:v.userId,meta:{centerId,childId,candidateId:record.id}});
+    return { id:record.id, status:'QUARANTINED' as const, consentState:'PENDING' as const,
+      publishEnabled:false as const, width:record.width,height:record.height };
+  }
+
+  async privatePhotoStatus(centerId: string, childId: string, v: Viewer) {
+    await this.authorizeCare(centerId, childId, v);
+    const rows=await this.prisma.privateMediaCandidate.findMany({where:{
+      centerId,childId,kind:'CHILD_PHOTO',status:{in:['QUARANTINED','PRIVATE_READY']},
+    },orderBy:[{createdAt:'desc'},{id:'desc'}],take:15,
+      select:{id:true,status:true,consentState:true,width:true,height:true,createdAt:true}});
+    return {candidates:rows,publicRelease:false};
+  }
+
+  async readPrivatePhoto(centerId:string,childId:string,v:Viewer) {
+    await this.authorizeCare(centerId,childId,v);
+    const image=await this.prisma.privateMediaCandidate.findFirst({
+      where:{centerId,childId,kind:'CHILD_PHOTO',status:'PRIVATE_READY',
+        consentState:'GRANTED',rightsState:'GUARDIAN_ATTESTED',revokedAt:null,consentedGuardianLinkId:{not:null}},
+      orderBy:[{createdAt:'desc'},{id:'desc'}],
+      select:{encryptedBytes:true,width:true,height:true,id:true,consentedGuardianLinkId:true},
+    });
+    if (!image) throw new NotFoundException('No consented private photo is available.');
+    const consentLink=await this.prisma.guardianLink.findFirst({where:{
+      id:image.consentedGuardianLinkId!,centerId,childId,removedAt:null,
+    },select:{id:true}});
+    if(!consentLink)throw new NotFoundException('No consented private photo is available.');
+    const plain=openPrivateData(image.encryptedBytes,'child-photo-v1',centerId,childId);
+    return {mimeType:'image/png' as const,pngBase64:plain.toString('base64'),
+      width:image.width,height:image.height,publicRelease:false as const};
+  }
+
+  private async linkedGuardian(centerId:string,childId:string,v:Viewer,allowArchived=false) {
+    if(v.role!=='GUARDIAN')throw new ForbiddenException('Guardian-linked child access required.');
+    // Cached session permissions alone cannot authorize sensitive media reads.
+    const membership=await this.prisma.membership.findFirst({where:{
+      id:v.membershipId,userId:v.userId,centerId,status:'ACTIVE',
+      user:{status:'ACTIVE'},center:{status:'ACTIVE'},roles:{some:{role:'GUARDIAN'}},
+    },select:{id:true}});
+    if(!membership)throw new ForbiddenException('Your guardian workspace access has changed.');
+    const link=await this.prisma.guardianLink.findFirst({where:{
+      centerId,childId,userId:v.userId,removedAt:null,
+      ...(allowArchived ? {} : {child:{status:'ACTIVE' as const,centerId}}),
+    },select:{id:true}});
+    if(!link)throw new NotFoundException('Linked child not found');
+    return link;
+  }
+
+  private async lockedGuardianPhotoWrite(tx:Tx,centerId:string,childId:string,v:Viewer,allowArchived=false) {
+    // Revocation of membership/role and removal of the guardian-child link
+    // must serialize with consent and erasure, not merely the HTTP guard.
+    await lockCenter(tx,centerId);
+    await assertActor(tx,centerId,v,['GUARDIAN']);
+    await tx.$queryRaw`SELECT id FROM guardian_link WHERE center_id=${centerId}::uuid AND child_id=${childId}::uuid
+      AND user_id=${v.userId}::uuid AND removed_at IS NULL FOR UPDATE`;
+    const link=await tx.guardianLink.findFirst({where:{
+      centerId,childId,userId:v.userId,removedAt:null,
+      ...(allowArchived ? {} : {child:{status:'ACTIVE' as const,centerId}}),
+    },select:{id:true}});
+    if(!link)throw new NotFoundException('Linked child not found');
+    return link;
+  }
+
+  async guardianPhotoCandidates(centerId:string,childId:string,v:Viewer) {
+    await this.linkedGuardian(centerId,childId,v);
+    const candidates=await this.prisma.privateMediaCandidate.findMany({where:{
+      centerId,childId,kind:'CHILD_PHOTO',
+      status:{in:['QUARANTINED','PRIVATE_READY']},
+    },orderBy:[{createdAt:'desc'},{id:'desc'}],take:15,
+      select:{id:true,status:true,consentState:true}});
+    return {candidates};
+  }
+
+  async guardianReadPhoto(centerId:string,childId:string,v:Viewer) {
+    await this.linkedGuardian(centerId,childId,v);
+    const candidate=await this.prisma.privateMediaCandidate.findFirst({where:{
+      centerId,childId,kind:'CHILD_PHOTO',status:'PRIVATE_READY',
+      consentState:'GRANTED',rightsState:'GUARDIAN_ATTESTED',revokedAt:null,consentedGuardianLinkId:{not:null},
+    },orderBy:[{createdAt:'desc'},{id:'desc'}],
+    select:{encryptedBytes:true,width:true,height:true,consentedGuardianLinkId:true}});
+    if(!candidate)throw new NotFoundException('No consented private photo is available.');
+    const consentLink=await this.prisma.guardianLink.findFirst({where:{
+      id:candidate.consentedGuardianLinkId!,centerId,childId,removedAt:null,
+    },select:{id:true}});
+    if(!consentLink)throw new NotFoundException('No consented private photo is available.');
+    const bytes=openPrivateData(candidate.encryptedBytes,'child-photo-v1',centerId,childId);
+    return {mimeType:'image/png' as const,pngBase64:bytes.toString('base64'),
+      width:candidate.width,height:candidate.height,publicRelease:false as const};
+  }
+
+  async guardianReviewPhoto(centerId:string,childId:string,v:Viewer,candidateId:string) {
+    await this.linkedGuardian(centerId,childId,v);
+    const candidate=await this.prisma.privateMediaCandidate.findFirst({where:{
+      id:candidateId,centerId,childId,kind:'CHILD_PHOTO',
+      status:'QUARANTINED',consentState:'PENDING',revokedAt:null,
+    },select:{encryptedBytes:true,width:true,height:true}});
+    if(!candidate) throw new NotFoundException('Pending private photo not found');
+    const bytes=openPrivateData(candidate.encryptedBytes,'child-photo-v1',centerId,childId);
+    return {mimeType:'image/png' as const,pngBase64:bytes.toString('base64'),
+      width:candidate.width,height:candidate.height,previewOnly:true as const,publicRelease:false as const};
+  }
+
+  async guardianPhotoDecision(centerId:string,childId:string,v:Viewer,candidateId:string,consent:boolean) {
+    if(v.role!=='GUARDIAN') throw new ForbiddenException('Only an active linked guardian may give photo consent.');
+    await this.linkedGuardian(centerId,childId,v);
+    return this.prisma.$transaction(async tx=>{
+      const link=await this.lockedGuardianPhotoWrite(tx,centerId,childId,v);
+      const row=await tx.privateMediaCandidate.findFirst({where:{
+        id:candidateId,centerId,childId,kind:'CHILD_PHOTO',status:'QUARANTINED',
+        consentState:'PENDING',rightsState:'UNVERIFIED',
+      },select:{id:true}});
+      if(!row)throw new NotFoundException('Pending photo candidate not found');
+      if(consent){
+        // Replace older private-ready photo, revoking its private-read eligibility.
+        await tx.privateMediaCandidate.deleteMany({where:{
+          centerId,childId,kind:'CHILD_PHOTO',status:'PRIVATE_READY',id:{not:candidateId},
+        }});
+        await tx.privateMediaCandidate.update({where:{id:candidateId},data:{
+          status:'PRIVATE_READY',consentState:'GRANTED',rightsState:'GUARDIAN_ATTESTED',consentedGuardianLinkId:link.id,
+        }});
+      }else{
+        // Denial purges ciphertext instead of retaining unconsented child imagery.
+        await tx.privateMediaCandidate.delete({where:{id:candidateId}});
+      }
+      await logCenterEvent(tx,centerId,consent?'child.photo_private_consent':'child.photo_private_denied',
+        this.trial.now(),{actorUserId:v.userId,meta:{childId,candidateId,linkedGuardianId:link.id}});
+      return {consentRecorded:true,privateReady:consent,publicRelease:false};
+    });
+  }
+
+  async guardianRevokePhoto(centerId:string,childId:string,v:Viewer) {
+    if(v.role!=='GUARDIAN') throw new ForbiddenException('Only a linked guardian may revoke photo consent.');
+    // Erasure remains available even after a child record was archived.
+    await this.linkedGuardian(centerId,childId,v,true);
+    return this.prisma.$transaction(async tx=>{
+      const link=await this.lockedGuardianPhotoWrite(tx,centerId,childId,v,true);
+      // Hard delete ciphertext to revoke read and reduce retention risk.
+      const purged=await tx.privateMediaCandidate.deleteMany({where:{
+        centerId,childId,kind:'CHILD_PHOTO',status:{in:['PRIVATE_READY','QUARANTINED']},
+      }});
+      await logCenterEvent(tx,centerId,'child.photo_consent_revoked',this.trial.now(),
+        {actorUserId:v.userId,meta:{childId,purgedCandidates:purged.count}});
+      return {revoked:true,deleted:purged.count};
+    });
   }
 
   async update(centerId: string, actorUserId: string, id: string, dto: UpdateChildDto) {

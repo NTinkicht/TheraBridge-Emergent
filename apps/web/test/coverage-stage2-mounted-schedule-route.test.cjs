@@ -108,6 +108,66 @@ describe('real schedule route with scoped access and controlled mutations',()=>{
   expect(opsApi.therapists).toHaveBeenLastCalledWith('center-a',
    expect.objectContaining({search:'Leila',limit:100}));
  });
+ it('switching centers remounts schedule filters and ignores late child-directory results from the old center',async()=>{
+  let finishOld;
+  opsApi.children.mockImplementationOnce(()=>new Promise(resolve=>{finishOld=resolve;}))
+    .mockResolvedValueOnce({items:[{id:'child-b',firstName:'Synthetic',lastName:'Second',preferredName:'Second'}]});
+  await mount();
+  expect(opsApi.children).toHaveBeenCalledWith('center-a',{});
+  mockSession={...mockSession,activeContext:{...mockSession.activeContext,
+    centerId:'center-b',membershipId:'admin-b'}};
+  await act(async()=>{tree.update(h(SchedulePage));await Promise.resolve();});
+  expect(opsApi.children).toHaveBeenCalledWith('center-b',{});
+  expect(opsApi.appointments).toHaveBeenLastCalledWith('center-b',expect.any(Object));
+  const optionLabels=()=>get('schedule-child-filter').findAllByType('option').map(x=>x.props.children);
+  expect(optionLabels()).toContain('Second Second');
+  expect(optionLabels()).not.toContain('Alex Fictional');
+  await act(async()=>{finishOld({items:[{id:'child-a',firstName:'Fictional',
+    lastName:'Alex',preferredName:'Alex'}]});await Promise.resolve();});
+  expect(optionLabels()).toContain('Second Second');
+  expect(optionLabels()).not.toContain('Alex Fictional');
+ });
+ it('fails closed with an empty child selector when the current center directory rejects a request',async()=>{
+  opsApi.children.mockRejectedValueOnce({status:403,message:'Synthetic scope revoked'});
+  await mount();
+  expect(opsApi.children).toHaveBeenCalledWith('center-a',{});
+  const options=get('schedule-child-filter').findAllByType('option');
+  expect(options.map(x=>x.props.value)).toEqual(['']);
+  expect(options.map(x=>x.props.children)).toEqual(['All children']);
+  expect(get('schedule-child-filter').props.value).toBe('');
+ });
+ it('ignores an old-center directory rejection after a new center has already populated authorized children',async()=>{
+  let failOld;
+  opsApi.children.mockImplementationOnce(()=>new Promise((_,reject)=>{failOld=reject;}))
+    .mockResolvedValueOnce({items:[{id:'only-new',firstName:'Current',lastName:'Center',preferredName:'Current'}]});
+  await mount();
+  mockSession={...mockSession,activeContext:{...mockSession.activeContext,
+    centerId:'center-new',membershipId:'admin-new'}};
+  await act(async()=>{tree.update(h(SchedulePage));await Promise.resolve();});
+  expect(get('schedule-child-filter').findAllByType('option').map(x=>x.props.value)).toEqual(['','only-new']);
+  await act(async()=>{failOld(new Error('old center revoked'));await Promise.resolve();});
+  expect(get('schedule-child-filter').findAllByType('option').map(x=>x.props.value)).toEqual(['','only-new']);
+  expect(opsApi.appointments).toHaveBeenLastCalledWith('center-new',expect.objectContaining({childId:undefined}));
+ });
+ it('a current scoped child-directory response after loading only exposes current authorized children',async()=>{
+  let returnAuthorized;
+  opsApi.children.mockImplementationOnce(()=>new Promise(resolve=>{returnAuthorized=resolve;}));
+  await mount();
+  expect(get('schedule-child-filter').findAllByType('option').map(x=>x.props.value)).toEqual(['']);
+  await act(async()=>{returnAuthorized({items:[{id:'current-kid',firstName:'Current',
+    lastName:'Authorized',preferredName:'Current'}]});await Promise.resolve();});
+  expect(get('schedule-child-filter').findAllByType('option').map(x=>x.props.value)).toEqual(['','current-kid']);
+ });
+ it('changing the active membership resets selected center filters and booking overlays',async()=>{
+  await mount();
+  await change('schedule-child-filter','child-a');
+  await click('book-appointment-button');
+  expect(get('synthetic-book-dialog')).toBeTruthy();
+  mockSession={...mockSession,activeContext:{...mockSession.activeContext,membershipId:'admin-replaced'}};
+  await act(async()=>{tree.update(h(SchedulePage));await Promise.resolve();});
+  expect(get('schedule-child-filter').props.value).toBe('');
+  expect(find('synthetic-book-dialog')).toHaveLength(0);
+ });
  it('permits manager booking and refreshes server data only after confirmed completion',async()=>{
   await mount();
   await click('book-appointment-button');
@@ -141,5 +201,43 @@ describe('real schedule route with scoped access and controlled mutations',()=>{
   await act(async()=>{retry.props.onClick();await Promise.resolve();});
   expect(get('schedule-empty')).toBeTruthy();
   expect(opsApi.appointments).toHaveBeenCalledTimes(2);
+ });
+});
+
+describe('M5 owner feedback: authorized therapist autocomplete',()=>{
+ it('uses real directory suggestions and keyboard selection without granting a new membership',async()=>{
+  opsApi.therapists.mockResolvedValue({items:[
+   {membershipId:'therapist-a',displayName:'Fictional Leila',specialties:['speech']},
+   {membershipId:'therapist-b',displayName:'Fictional Lena',specialties:['occupational']}
+  ],nextOffset:null});
+  await mount();
+  await act(async()=>get('schedule-therapist-search').props.onFocus());
+  await change('schedule-therapist-search','Fictional');
+  const matches=get('schedule-therapist-suggestions').findAllByProps({role:'option'});
+  expect(matches).toHaveLength(2);
+  expect(matches[0].props['aria-selected']).toBe(true);
+  const prevent=jest.fn();
+  await act(async()=>get('schedule-therapist-search').props.onKeyDown({key:'ArrowDown',preventDefault:prevent}));
+  expect(matches[1].props['aria-selected']).toBe(true);
+  await act(async()=>get('schedule-therapist-search').props.onKeyDown({key:'ArrowUp',preventDefault:prevent}));
+  expect(matches[0].props['aria-selected']).toBe(true);
+  await act(async()=>get('schedule-therapist-search').props.onKeyDown({key:'Enter',preventDefault:prevent}));
+  expect(opsApi.appointments).toHaveBeenLastCalledWith('center-a',expect.objectContaining({membershipId:'therapist-a'}));
+  expect(find('schedule-therapist-suggestions')).toHaveLength(0);
+  expect(prevent).toHaveBeenCalledTimes(3);
+ });
+ it('keeps mouse selection and clearing search scoped to server-authorized options', async()=>{
+  await mount();
+  await act(async()=>get('schedule-therapist-search').props.onFocus());
+  await change('schedule-therapist-search','Fictional Leila');
+  const item=get('schedule-therapist-suggestions').findByProps({role:'option'});
+  await act(async()=>item.findByType('button').props.onMouseDown({preventDefault:jest.fn()}));
+  await act(async()=>item.findByType('button').props.onClick());
+  expect(opsApi.appointments).toHaveBeenLastCalledWith('center-a',expect.objectContaining({membershipId:'therapist-a'}));
+  await change('schedule-therapist-search','Unknown name');
+  expect(opsApi.appointments).toHaveBeenLastCalledWith('center-a',expect.objectContaining({membershipId:undefined}));
+  expect(find('schedule-therapist-suggestions')).toHaveLength(0);
+  await act(async()=>get('schedule-therapist-search').props.onKeyDown({key:'Escape'}));
+  expect(find('schedule-therapist-suggestions')).toHaveLength(0);
  });
 });

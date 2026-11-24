@@ -31,6 +31,14 @@ export class UpdateCenterDto {
   @IsOptional() @trim() @IsString() @MinLength(2) @MaxLength(80) country?: string;
   @IsOptional() @trim() @IsString() @MinLength(2) @MaxLength(80) city?: string;
   @IsOptional() @IsArray() @ArrayMinSize(1) @ArrayMaxSize(6) @IsIn(SPECIALTIES, { each: true }) specialties?: string[];
+  // Empty string explicitly clears an optional center contact; callers
+  // cannot smuggle whitespace or unexpected formatting into public settings.
+  @IsOptional() @trim() @IsString() @MaxLength(254)
+  @Matches(/^$|^[^@\s]+@[^@\s]+\.[^@\s]+$/, { message: 'contactEmail must be a valid email address or blank' })
+  contactEmail?: string;
+  @IsOptional() @trim() @IsString()
+  @Matches(/^$|^(?=.*\d)[+()0-9 .-]{6,40}$/, { message: 'contactPhone must be a valid phone number or blank' })
+  contactPhone?: string;
   @IsInt() @Min(1) version!: number;
 }
 
@@ -57,7 +65,8 @@ export class UpdateStaffDto extends ProfileFields {
   @IsOptional() @trim() @IsString() @Matches(/^$|^[+()0-9 .-]{6,40}$/, { message: 'phone must be a phone number' }) phone?: string;
 }
 
-export class UpdateProfileDto extends ProfileFields {
+export class UpdateProfileDto {
+  @IsOptional() @trim() @IsString() @MaxLength(80) title?: string;
   @IsOptional() @trim() @IsString() @MinLength(2) @MaxLength(120) displayName?: string;
   @IsOptional() @trim() @IsString() @Matches(/^$|^[+()0-9 .-]{6,40}$/, { message: 'phone must be a phone number' }) phone?: string;
 }

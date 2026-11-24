@@ -2,6 +2,7 @@
 // session start and exact plan-version observation provenance. Synthetic data.
 const React=require('react'),Renderer=require('react-test-renderer');
 const {act,create}=Renderer,h=React.createElement;
+jest.mock('next/link',()=>({__esModule:true,default:({href,children,...props})=>h('a',{href,...props},children)}));
 jest.mock('@/components/centers/kit',()=>{
  const a=jest.requireActual('@/components/centers/kit');
  return {...a,SelectField:({value,onChange,options,testId})=>h('select',{
@@ -120,6 +121,46 @@ describe('Stage 2 mounted session start: stable retry request and access boundar
   expect(clinicalApi.startSession).toHaveBeenCalledTimes(2);
   expect(clinicalApi.startSession.mock.calls[1][2]).toEqual(
    clinicalApi.startSession.mock.calls[0][2]);
+ });
+});
+describe('M5 PR3 historical sessions default collapsed with active drafts retained',()=>{
+ const makeNote=(id,executionStatus)=>({id,executionStatus,service:'speech',
+  sessionDate:'2026-11-10',actualStart:null,actualEnd:null,attendance:'PRESENT',
+  sections:{},activities:[],version:1,author:'Fictional therapist',mine:true,updatedAt:'2026-11-10T10:00:00Z'});
+ it('keeps completed history collapsed but preserves the same mounted editor through remote completion',async()=>{
+  const first=ws({notes:[makeNote('open','IN_PROGRESS'),makeNote('old','COMPLETED')]});
+  await mount(SessionsPanel,{onPending,ws:first});
+  const Editor=require('../src/components/clinical/SessionEditor').SessionEditor;
+  const active=get('session-record-open');
+  const historical=get('session-record-old');
+  const originalEditor=active.findByType(Editor);
+  expect(historical.props.hidden).toBe(true);
+  expect(get('historical-sessions-toggle').props['aria-expanded']).toBe(false);
+  // A real draft owns local state, which must survive an external status refresh.
+  await act(async()=>originalEditor.props.onPending('open',true));
+  await act(async()=>tree.update(h(SessionsPanel,{centerId:'synthetic-center',
+   ws:ws({notes:[makeNote('open','COMPLETED'),makeNote('old','COMPLETED')]}),run,onPending})));
+  expect(get('session-record-open').props.hidden).toBe(false);
+  expect(get('session-record-open').findByType(Editor)).toBe(originalEditor);
+  expect(get('session-record-open').findAllByType('fieldset').some(fieldset => fieldset.props.disabled === true)).toBe(true);
+  expect(get('session-record-old').props.hidden).toBe(true);
+  expect(html()).toContain('Your unsaved draft remains available for recovery');
+  expect(onPending).toHaveBeenCalledWith('open',true);
+  await click('historical-sessions-toggle');
+  expect(get('historical-sessions-toggle').props['aria-expanded']).toBe(true);
+  expect(get('session-record-old').props.hidden).toBe(false);
+  await click('historical-sessions-toggle');
+  expect(get('session-record-open').props.hidden).toBe(false);
+  expect(get('session-record-old').props.hidden).toBe(true);
+  await act(async()=>get('session-record-open').findByType(Editor).props.onPending('open',false));
+  expect(get('session-record-open').props.hidden).toBe(true);
+ });
+ it('keeps completed notes hidden for read-only reviewers without exposing session-start controls',async()=>{
+  await mount(SessionsPanel,{onPending,ws:ws({canEdit:false,notes:[makeNote('old','COMPLETED')]})});
+  expect(find('session-start')).toHaveLength(0);
+  expect(find('historical-session-list')).toHaveLength(0);
+  await click('historical-sessions-toggle');
+  expect(get('historical-session-list')).toBeTruthy();
  });
 });
 describe('Stage 2 mounted clinical evidence: no version cross-contamination',()=>{
@@ -311,5 +352,51 @@ describe('M4-08 90% real panel branch and permission qualification',()=>{
   await click('observation-save');
   expect(clinicalApi.observe.mock.calls[0][2].value).toBe(7);
   expect(get('observation-value').props.value).toBe('');
+ });
+});
+
+describe('M5 observation 15: progress charts link only to their exact authorized plan versions',()=>{
+ it('current and historical cards expose distinct read-only navigable version identities',async()=>{
+  const current=plan('pv-new','DRAFT',2).versions[0];
+  const older=plan('pv-old','SUPERSEDED',1).versions[0];
+  const navigate=jest.fn();
+  await mount(ProgressPanel,{ws:ws({plans:[{...plan(),versions:[current,older]}],
+    observations:[obs('new','pv-new',2,'2026-11-10'),obs('old','pv-old',9,'2026-10-19')]}),onNavigate:navigate});
+  const currentLink=get('progress-current-open-goal');
+  expect(currentLink.props.href).toContain('version=pv-new&goal=g1');
+  expect(currentLink.props.href).not.toContain('pv-old');
+  expect(get('progress-goal-g1').findByType('svg').props['aria-label']).not.toContain('9 on 2026-10-19');
+  await click('progress-history-toggle');
+  const historic=get('progress-historical-open-goal');
+  expect(historic.props.href).toContain('version=pv-old&goal=g1');
+  expect(JSON.stringify(historic.props.children)).toContain('read-only');
+  expect(get('historical-chart-pv-old-g1').findByType('svg').props['aria-label']).toContain('9 on 2026-10-19');
+  expect(clinicalApi.observe).not.toHaveBeenCalled();
+ });
+ it('shows goal navigation for read-only supervisor but no target edit form',async()=>{
+  await mount(ProgressPanel,{ws:ws({canEdit:false,canReview:true,plans:[plan()]}),onNavigate:jest.fn()});
+  expect(get('progress-current-open-goal').props.href).toContain('version=pv-new&goal=g1');
+  expect(find('observation-form')).toHaveLength(0);
+  expect(clinicalApi.observe).not.toHaveBeenCalled();
+ });
+});
+
+describe('M5 observation 22 assessment guidance remains non-diagnostic and read-only',()=>{
+ const pagination={hasMore:false,loading:false,error:'',load:jest.fn()};
+ it('switches specialty prompts without generating a finding or saving any draft',async()=>{
+  await mount(AssessmentsPanel,{pagination});
+  expect(get('assessment-specialty-guide')).toBeTruthy();
+  expect(html()).toContain('communication task');
+  await change('assessment-service','occupational');
+  expect(html()).toContain('functional activity');
+  expect(html()).not.toContain('Describe the communication task');
+  expect(get('assessment-summary').props.value).toBe('');
+  expect(clinicalApi.assess).not.toHaveBeenCalled();
+ });
+ it('never reveals draft entry or editable guidance to an unauthorized reviewer',async()=>{
+  await mount(AssessmentsPanel,{pagination,ws:ws({canEdit:false})});
+  expect(find('assessment-specialty-guide')).toHaveLength(0);
+  expect(find('assessment-save')).toHaveLength(0);
+  expect(clinicalApi.assess).not.toHaveBeenCalled();
  });
 });

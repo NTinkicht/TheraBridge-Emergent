@@ -12,6 +12,7 @@ import { Button, Card } from '@/components/design/ui';
 import { CompactTable, DisclosureSection } from '@/components/design/workspace-patterns';
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/design/states';
 import type { SessionInfo } from '@/lib/auth';
+import { effectiveSuggestionIndex, revealActiveSuggestion } from '@/lib/combobox-scroll';
 import { addDays, dayKey, getCenterTz, opsApi, timeRange, zonedToUtc, type Appointment, type ChildRow, type Therapist } from '@/lib/operations';
 
 type View = 'day' | 'week';
@@ -75,6 +76,9 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
   const [therapistLoading, setTherapistLoading] = useState(false);
   const therapistRequest = useRef(0);
   const [chosenTherapistName, setChosenTherapistName] = useState('');
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [activeSuggestion, setActiveSuggestion] = useState(0);
+  const suggestionListRef = useRef<HTMLUListElement>(null);
   const [children, setChildren] = useState<ChildRow[]>([]);
   const [booking, setBooking] = useState<{ date: string; start: string } | null | false>(false);
   const [editing, setEditing] = useState<Appointment | null>(null);
@@ -106,7 +110,14 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
     }
   }, [data, tz]);
   useEffect(() => {
-    void opsApi.children(centerId, {}).then((r) => setChildren(r.items)).catch(() => setChildren([]));
+    // A revoked/changed center must not leave its child names in the new
+    // center's filter while the new authorized directory request is pending.
+    let active = true;
+    setChildren([]);
+    void opsApi.children(centerId, {})
+      .then(r => { if (active) setChildren(r.items); })
+      .catch(() => { if (active) setChildren([]); });
+    return () => { active = false; };
   }, [centerId]);
   useEffect(() => {
     const revision = ++therapistRequest.current;
@@ -131,6 +142,21 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
     finally { if (revision === therapistRequest.current) setTherapistLoading(false); }
   };
 
+  // Suggestions come exclusively from the permission-scoped therapist endpoint.
+  // Do not infer membership, access or an appointment filter from raw typed text.
+  const therapistSuggestions = !isTherapist && suggestionsOpen && therapistSearch.trim()
+    ? therapists.filter(t => t.displayName.toLocaleLowerCase().includes(therapistSearch.trim().toLocaleLowerCase())).slice(0, 8) : [];
+  const selectedSuggestionIndex = effectiveSuggestionIndex(activeSuggestion, therapistSuggestions.length);
+  useEffect(() => {
+    if (selectedSuggestionIndex >= 0)
+      revealActiveSuggestion(suggestionListRef.current, selectedSuggestionIndex);
+  }, [selectedSuggestionIndex, suggestionsOpen, therapistSuggestions.length]);
+  const chooseTherapist = (t: Therapist) => {
+    setTherapist(t.membershipId);
+    setChosenTherapistName(t.displayName);
+    setTherapistSearch(t.displayName);
+    setSuggestionsOpen(false);
+  };
   const shown = useMemo(() => data ? data.items.filter((a) => days.includes(dayKey(a.startsAt))) : [], [data, days]);
   const step = view === 'day' ? 1 : 7;
   const label = view === 'day' ? dayTitle(anchor, { weekday: 'long', month: 'short', day: 'numeric' }) : `${dayTitle(days[0], { month: 'short', day: 'numeric' })} – ${dayTitle(days[6], { month: 'short', day: 'numeric' })}`;
@@ -157,12 +183,12 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
         Displayed in center time zone: <strong>{tz?.replaceAll('_', ' ') ?? 'Unavailable — check center settings'}</strong>.
         Recurring series edits and exceptions must be confirmed in the existing appointment details.
       </p>
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <div role="group" aria-label="Calendar view" className="inline-flex rounded-control border border-border-light p-0.5">
             {(['day', 'week'] as const).map((v) => (
               <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)} data-testid={`view-${v}`}
-                className={`min-h-[38px] rounded-[8px] px-3 text-[14px] font-semibold capitalize transition-colors ${view === v ? 'bg-brand-action text-white' : 'hover:bg-surface-subtle'}`}>{v}</button>
+                className={`min-h-11 rounded-[8px] px-3 text-[14px] font-semibold capitalize transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-action ${view === v ? 'bg-brand-action text-brand-actionOn' : 'hover:bg-surface-subtle'}`}>{v}</button>
             ))}
           </div>
           <Button size="sm" variant="secondary" aria-label={`Previous ${view}`} onClick={() => setAnchor(addDays(anchor, -step))} data-testid="week-prev"><ChevronLeft size={16} aria-hidden="true" /></Button>
@@ -170,13 +196,47 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
           <Button size="sm" variant="secondary" aria-label={`Next ${view}`} onClick={() => setAnchor(addDays(anchor, step))} data-testid="week-next"><ChevronRight size={16} aria-hidden="true" /></Button>
           <Button size="sm" variant="ghost" onClick={() => setAnchor(dayKey(new Date()))} data-testid="week-today">Today</Button>
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:w-[480px]">
-          {!isTherapist && <div className="space-y-2">
-            <label className="block text-[12px] font-medium">Find therapist
-              <input type="search" className="mt-1 w-full rounded-control border border-border-light px-3 py-2 text-[14px]" value={therapistSearch}
-                onChange={e => { therapistRequest.current++; setTherapistSearch(e.target.value); }} data-testid="schedule-therapist-search" placeholder="Search name" />
-            </label>
-            <SelectField label="Therapist" value={therapist} onChange={value => { setTherapist(value); setChosenTherapistName(therapists.find(t => t.membershipId === value)?.displayName ?? 'Selected therapist'); }} testId="schedule-therapist-filter" options={[
+        <div className="grid min-w-0 grid-cols-1 items-end gap-3 sm:grid-cols-2 xl:w-[520px]">
+          {!isTherapist && <div className="relative space-y-3">
+            <div className="relative">
+              <label htmlFor="schedule-therapist-query" className="block text-[14px] font-medium">Find therapist</label>
+              <input id="schedule-therapist-query" type="search" role="combobox" autoComplete="off"
+                aria-autocomplete="list" aria-expanded={therapistSuggestions.length > 0}
+                aria-controls="schedule-therapist-suggestions"
+                aria-activedescendant={therapistSuggestions.length ? `schedule-therapist-suggestion-${selectedSuggestionIndex}` : undefined}
+                className="mt-1.5 min-h-[48px] w-full rounded-control border border-border-strong bg-surface-white px-3 text-[15px]"
+                value={therapistSearch}
+                onFocus={() => setSuggestionsOpen(true)}
+                onBlur={() => setSuggestionsOpen(false)}
+                onChange={e => { therapistRequest.current++; setTherapistSearch(e.target.value); setTherapist(''); setChosenTherapistName(''); setActiveSuggestion(0); setSuggestionsOpen(true); }}
+                onKeyDown={e => {
+                  if (e.key === 'Escape') { setSuggestionsOpen(false); return; }
+                  if (!therapistSuggestions.length) return;
+                  if (e.key === 'ArrowDown') { e.preventDefault(); setActiveSuggestion((selectedSuggestionIndex + 1) % therapistSuggestions.length); }
+                  if (e.key === 'ArrowUp') { e.preventDefault(); setActiveSuggestion((selectedSuggestionIndex + therapistSuggestions.length - 1) % therapistSuggestions.length); }
+                  if (e.key === 'Enter') { e.preventDefault(); chooseTherapist(therapistSuggestions[selectedSuggestionIndex]); }
+                }}
+                data-testid="schedule-therapist-search" placeholder="Type a therapist's name" />
+              {therapistSuggestions.length > 0 && <ul ref={suggestionListRef} id="schedule-therapist-suggestions" role="listbox" aria-label="Matching therapists"
+                className="absolute inset-x-0 top-full z-30 max-h-56 overflow-auto rounded-control border border-border-strong bg-surface-white py-1 shadow-lg"
+                data-testid="schedule-therapist-suggestions">
+                {therapistSuggestions.map((t, index) => <li role="option" aria-selected={index === selectedSuggestionIndex}
+                  id={`schedule-therapist-suggestion-${index}`} key={t.membershipId}>
+                  <button type="button" tabIndex={-1} onMouseDown={e => e.preventDefault()}
+                    onClick={() => chooseTherapist(t)}
+                    className={`min-h-[44px] w-full px-3 py-2 text-left text-[14px] hover:bg-brand-actionTint ${index === selectedSuggestionIndex ? 'bg-brand-actionTint' : ''}`}>{t.displayName}</button>
+                </li>)}</ul>}
+            </div>
+            <SelectField label="Therapist" value={therapist} onChange={value => {
+              setTherapist(value);
+              setChosenTherapistName(value ? (therapists.find(t => t.membershipId === value)?.displayName ?? 'Selected therapist') : '');
+              // The Find therapist input is a directory query, not the selected
+              // filter label. Clear stale partial text and reload the full
+              // authorized directory rather than narrowing the select options.
+              setTherapistSearch('');
+              setActiveSuggestion(0);
+              setSuggestionsOpen(false);
+            }} testId="schedule-therapist-filter" options={[
               { value: '', label: 'All therapists' },
               ...(therapist && !therapists.some(t => t.membershipId === therapist) ? [{ value: therapist, label: chosenTherapistName }] : []),
               ...therapists.map(t => ({ value: t.membershipId, label: t.displayName })),
@@ -224,5 +284,10 @@ function Schedule({ session, onError }: { session: SessionInfo; onError: (e: unk
 }
 
 export default function SchedulePage() {
-  return <Workspace active="schedule" permission="center.schedule.read" deniedText="The schedule is available to center staff.">{(s, onError) => <Schedule session={s} onError={onError} />}</Workspace>;
+  return <Workspace active="schedule" permission="center.schedule.read" deniedText="The schedule is available to center staff.">{(s, onError) =>
+    <Schedule key={JSON.stringify([
+      s.activeContext?.type === 'center' ? s.activeContext.centerId : null,
+      s.activeContext?.type === 'center' ? s.activeContext.membershipId : null,
+      s.activeContext?.role,
+    ])} session={s} onError={onError} />}</Workspace>;
 }

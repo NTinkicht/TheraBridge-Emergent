@@ -1,11 +1,13 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { SessionEditor } from './SessionEditor';
 import { Field } from '@/components/auth/Field';
 import { SelectField } from '@/components/centers/kit';
 import { GoalChart } from '@/components/clinical/GoalChart';
+import { AssessmentFieldGuide } from './AssessmentFieldGuide';
 import { GoalVersionContext } from './GoalVersionContext';
+import { GoalVersionLink } from './GoalVersionLink';
 import { currentGoals, historicalGoals, summarizeObservations, type Granularity } from '@/lib/progress-analysis';
 import { Button, Card, LockedAction, Pill } from '@/components/design/ui';
 import { serviceLabel } from '@/components/operations/BookDialog';
@@ -38,6 +40,7 @@ export function AssessmentsPanel({ centerId, ws, run, pagination }: { centerId: 
       {ws.canEdit && (
         <Card className="space-y-3 p-5" testId="assessment-form">
           <h3 className="text-[16px] font-semibold">New initial assessment (draft)</h3>
+          <AssessmentFieldGuide service={f.service} />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <SelectField label="Service" value={f.service} onChange={(service) => setF({ ...f, service })} testId="assessment-service" options={ws.child.services.map((s) => ({ value: s, label: serviceLabel(s) }))} />
             <Field label="Assessed on" type="date" value={f.assessedOn} onChange={(e) => setF({ ...f, assessedOn: e.target.value })} testId="assessment-date" />
@@ -58,6 +61,21 @@ export function SessionsPanel({ centerId, ws, run, onPending }: { centerId: stri
   const [service, setService] = useState(ws.child.services[0] ?? '');
   const startRequest = useRef<Parameters<typeof clinicalApi.startSession>[2] | null>(null);
   const [busy, setBusy] = useState(false);
+  // An active session must remain mounted for autosave, conflict handling and pending drafts.
+  // Completed history is read-only and is opt-in to reduce visual overload.
+  const [showCompleted, setShowCompleted] = useState(false);
+  const [pendingIds, setPendingIds] = useState<ReadonlySet<string>>(() => new Set());
+  const notePending = useCallback((id: string, pending: boolean) => {
+    onPending(id, pending);
+    setPendingIds(previous => {
+      if (previous.has(id) === pending) return previous;
+      const next = new Set(previous);
+      if (pending) next.add(id); else next.delete(id);
+      return next;
+    });
+  }, [onPending]);
+  const activeNotes = ws.notes.filter(note => note.executionStatus !== 'COMPLETED');
+  const completedNotes = ws.notes.filter(note => note.executionStatus === 'COMPLETED');
   async function start(service: string, appointmentId?: string) {
     if (busy) return; setBusy(true);
     if (!startRequest.current || startRequest.current.service !== service || startRequest.current.appointmentId !== appointmentId) {
@@ -77,12 +95,31 @@ export function SessionsPanel({ centerId, ws, run, onPending }: { centerId: stri
       <SelectField label="Ad-hoc session specialty" value={service} onChange={setService} options={ws.child.services.map(value => ({ value, label: serviceLabel(value) }))} testId="session-specialty" />
       <Button disabled={busy || !service} onClick={() => void start(service)}>Start ad-hoc session</Button>
     </Card>}
-    {ws.notes.map(n => <SessionEditor key={n.id} centerId={centerId} n={n} ws={ws} onPending={onPending} />)}
-    {!ws.notes.length && <p>No sessions yet.</p>}
+    <section className="space-y-3" aria-label="Session drafts and historical records" data-testid="active-sessions">
+      <h3 className="text-[16px] font-semibold">Active sessions ({activeNotes.length})</h3>
+      {!activeNotes.length && <p className="text-[14px] text-brand-inkMuted">No active session drafts.</p>}
+      {completedNotes.length > 0 && <div className="space-y-3" aria-label="Historical completed sessions" data-testid="historical-sessions">
+        <Button variant="secondary" aria-expanded={showCompleted} aria-controls="completed-session-list"
+          data-testid="historical-sessions-toggle" onClick={() => setShowCompleted(previous => !previous)}>
+          {showCompleted ? 'Hide' : 'Show'} historical sessions ({completedNotes.length})
+        </Button>
+        {showCompleted && <p id="completed-session-list" className="text-[13px] text-brand-inkMuted" data-testid="historical-session-list">Completed sessions are read-only. Opening history does not sign or release clinical notes.</p>}
+      </div>}
+      {/* One stable keyed list: a server-side completion must not remount an unsaved editor. */}
+      {ws.notes.map(n => {
+        const completed = n.executionStatus === 'COMPLETED';
+        const visible = !completed || showCompleted || pendingIds.has(n.id);
+        return <div key={n.id} hidden={!visible} data-testid={`session-record-${n.id}`}>
+          {completed && pendingIds.has(n.id) && !showCompleted && <p role="status" className="text-[13px] text-status-caution">This session was completed elsewhere. Your unsaved draft remains available for recovery; review it before leaving.</p>}
+          <SessionEditor centerId={centerId} n={n} ws={ws} onPending={notePending} />
+        </div>;
+      })}
+    </section>
+    {!ws.notes.length && <p className="text-[14px] text-brand-inkMuted" data-testid="sessions-empty">No sessions yet.</p>}
   </div>;
 }
 
-export function ProgressPanel({ centerId, ws, run, onNavigate }: { centerId: string; ws: Workspace; run: Run; onNavigate: () => void }) {
+export function ProgressPanel({ centerId, ws, run, onNavigate }: { centerId: string; ws: Workspace; run: Run; onNavigate: () => boolean | void }) {
   const goals = currentGoals(ws).map(g => ({ ...g, versionId: g.planVersionId, plan: g.planTitle }));
   const [granularity, setGranularity] = useState<Granularity>('week');
   const [showHistory, setShowHistory] = useState(false);
@@ -100,6 +137,9 @@ export function ProgressPanel({ centerId, ws, run, onNavigate }: { centerId: str
           <Card key={`${g.versionId}-${g.key}`} className="p-5" testId={`progress-goal-${g.key}`}>
             <h3 className="text-[16px] font-semibold">{g.title}</h3>
             <p className="text-[13px] text-brand-inkMuted">{g.plan} · version {g.planVersionNumber} · {serviceLabel(g.service)} · baseline {g.baseline} → target {g.target} ({g.measure})</p>
+            <GoalVersionLink childId={ws.child.id} versionId={g.versionId} goalKey={g.key}
+              historical={false} onNavigate={onNavigate} testId="progress-current-open-goal" />
+            <p className="text-[12px] text-brand-inkMuted">Target changes use the existing editable plan draft, require an explicit save with a current version, and do not modify historical measurements.</p>
             {hist.length ? (
               <div className="mt-3">
                 <GoalChart points={hist.map((o) => ({ date: o.observedOn, value: o.value }))} baseline={g.baseline} target={g.target} measure={g.measure} from={hist[0].observedOn} to={hist[hist.length - 1].observedOn} testId={`progress-chart-${g.key}`} />
@@ -136,6 +176,8 @@ export function ProgressPanel({ centerId, ws, run, onNavigate }: { centerId: str
                   <span className="text-[12px] text-brand-inkMuted">{g.status.replaceAll('_',' ')} · read-only</span>
                 </div>
                 <p className="text-[12px] text-brand-inkMuted">{g.planTitle} · {serviceLabel(g.service)} · plan v{g.planVersionNumber} · baseline {g.baseline} → target {g.target} ({g.measure})</p>
+                <GoalVersionLink childId={ws.child.id} versionId={g.planVersionId} goalKey={g.key}
+                  historical onNavigate={onNavigate} testId="progress-historical-open-goal" />
                 {points.length===0 ? <p className="text-[13px]">No recorded observations for this historical goal.</p> :
                   <>
                     <GoalChart points={points.map(o=>({date:o.observedOn,value:o.value}))}

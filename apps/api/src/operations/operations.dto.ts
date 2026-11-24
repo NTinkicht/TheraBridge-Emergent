@@ -1,6 +1,6 @@
 import { Transform, Type } from 'class-transformer';
 import {
-  ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsEmail, IsIn, IsInt, IsISO8601, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength,
+  ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsEmail, IsIn, IsInt, IsISO8601, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength, ValidateNested,
 } from 'class-validator';
 import { SPECIALTIES } from '../applications/applications.dto';
 import { IsCalendarDate } from '../common/validators';
@@ -8,12 +8,34 @@ import { IsCalendarDate } from '../common/validators';
 const trim = () => Transform(({ value }) => (typeof value === 'string' ? value.trim() : value));
 export const RELATIONSHIPS = ['mother', 'father', 'parent', 'grandparent', 'legal_guardian', 'foster_parent', 'other'] as const;
 
+// Family/staff-reported context only. Not a diagnosis, verified prescription or
+// release decision; API stores this separately in encrypted, restricted custody.
+export class PrivateCareFieldsDto {
+  @IsIn([true], { message: 'Confirm that the information is unverified family/staff-reported context.' })
+  sourceAcknowledged!: true;
+  @IsOptional() @trim() @IsString() @MaxLength(600) conditions?: string;
+  @IsOptional() @trim() @IsString() @MaxLength(600) allergies?: string;
+  @IsOptional() @trim() @IsString() @MaxLength(600) medications?: string;
+  @IsOptional() @trim() @IsString() @MaxLength(1200) careNotes?: string;
+}
+export class PrivatePngCandidateDto {
+  // 512 KiB binary -> <=699052 base64 chars, under the 1 MiB API JSON limit.
+  @IsString() @MinLength(44) @MaxLength(699052) pngBase64!: string;
+}
+export class GuardianPhotoDecisionDto {
+  @IsBoolean() consent!: boolean;
+}
+export class PrivateCareUpdateDto extends PrivateCareFieldsDto {
+  @IsInt() @Min(0) version!: number;
+}
+
 export class ChildDto {
   @trim() @IsString() @MinLength(1) @MaxLength(80) firstName!: string;
   @trim() @IsString() @MinLength(1) @MaxLength(80) lastName!: string;
   @IsOptional() @trim() @IsString() @MaxLength(80) preferredName?: string;
   @IsCalendarDate() dateOfBirth!: string;
   @IsArray() @ArrayMinSize(1) @ArrayMaxSize(6) @IsIn(SPECIALTIES, { each: true }) services!: string[];
+  @IsOptional() @ValidateNested() @Type(() => PrivateCareFieldsDto) privateCare?: PrivateCareFieldsDto;
 }
 
 export class UpdateChildDto {

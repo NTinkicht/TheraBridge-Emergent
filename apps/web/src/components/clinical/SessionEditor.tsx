@@ -6,6 +6,7 @@ import { Button, Card, LockedAction, Pill } from '@/components/design/ui';
 import { serviceLabel } from '@/components/operations/BookDialog';
 import { clinicalApi, LOCKED_REASON, type SessionActivity, type Workspace } from '@/lib/clinical';
 import { Dictation } from './Dictation';
+import { SessionActivityPicker } from './SessionActivityPicker';
 import { ApiError } from '@/lib/api';
 import { formatZonedDateTimeInput, preservedZonedInstant, zonedDateTimeInputToIso } from '@/lib/operations';
 const input = 'mt-1 w-full rounded-control border border-border-light bg-transparent px-3 py-2 text-[14px]';
@@ -64,6 +65,11 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
     setCompleted(n.executionStatus === 'COMPLETED');
   }, [n.id, n.version, ws.timezone]); // Prop identity/version is authoritative; dirty state is a guard, not a reset trigger.
 
+  // A completion observed in another tab must immediately revoke edit controls,
+  // even while unsaved local evidence is retained for recovery/comparison.
+  useEffect(() => {
+    if (n.executionStatus === 'COMPLETED') setCompleted(true);
+  }, [n.executionStatus]);
   const changed = () => { revision.current++; setDirty(true); setError(false); setStatus('Unsaved changes'); };
   useEffect(() => { onPending(n.id, dirty || transcriptPending || unresolved || conflicted || !!retainedLocal); return () => onPending(n.id, false); }, [dirty, transcriptPending, unresolved, conflicted, retainedLocal, n.id, onPending]);
   const update = (id: string, patch: Partial<SessionActivity>) => { changed(); setActivities(a => a.map(x => x.id === id ? { ...x, ...patch } : x)); };
@@ -117,9 +123,16 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
       <p className="text-[13px] text-brand-inkMuted">Activity results are factual, unvalidated session evidence—not approved progress measurements. Goals retain their exact version and measurement semantics.</p>
       {activities.map((a, index) => <section key={a.id} className="space-y-3 rounded-control border border-border-light p-3" aria-label={`Activity ${index + 1}`}>
         <h4 className="font-semibold">{index + 1}. {a.snapshot?.title ?? ws.templates.find(t => t.id === a.templateId)?.title}</h4>
-        {(() => { const t = a.snapshot ?? ws.templates.find(t => t.id === a.templateId); return t && <details><summary className="cursor-pointer text-[14px]">Instructions, materials and estimated duration</summary><p>{t.minutes} minutes · {t.materials.join(', ')}</p><ol className="list-decimal pl-5">{t.steps.map((s,i) => <li key={i}>{s}</li>)}</ol><p>{t.safety.join(' ')}</p></details>; })()}
+        {(() => { const t = a.snapshot ?? ws.templates.find(t => t.id === a.templateId); return t && <details><summary className="flex min-h-11 cursor-pointer items-center text-[14px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-action">Instructions, materials and estimated duration</summary><p>{t.minutes} minutes · {t.materials.join(', ')}</p><ol className="list-decimal pl-5">{t.steps.map((s,i) => <li key={i}>{s}</li>)}</ol><p>{t.safety.join(' ')}</p></details>; })()}
         <div className="grid gap-3 sm:grid-cols-2"><Field label="Actual minutes" type="number" value={String(a.minutes)} onChange={e => update(a.id, { minutes: Number(e.target.value) })} testId={`minutes-${a.id}`} /><Field label="Objective addressed" value={a.objective} onChange={e => update(a.id, { objective: e.target.value })} testId={`objective-${a.id}`} />
-        <SelectField label="Goal version (optional)" value={a.planVersionId ? `${a.planVersionId}|${a.goalKey}` : ''} options={[{ value: '', label: 'No goal reference' }, ...goals]} onChange={s => { const [planVersionId, goalKey] = s.split('|'); update(a.id, { planVersionId: planVersionId || undefined, goalKey: goalKey || undefined }); }} testId={`goal-${a.id}`} />
+        <details className="rounded-control border border-border-light bg-surface-subtle p-2"
+          data-testid={`session-activity-goal-details-${a.id}`}>
+          <summary className="min-h-[44px] cursor-pointer py-2 text-[13px] font-semibold text-brand-action">
+            Goal linkage (optional) · {a.planVersionId ? 'saved version selected' : 'no reference'}
+          </summary>
+          <SelectField label="Goal version (optional)" value={a.planVersionId ? `${a.planVersionId}|${a.goalKey}` : ''} options={[{ value: '', label: 'No goal reference' }, ...goals]} onChange={s => { const [planVersionId, goalKey] = s.split('|'); update(a.id, { planVersionId: planVersionId || undefined, goalKey: goalKey || undefined }); }} testId={`goal-${a.id}`} />
+          <p className="mt-1 text-[12px] text-brand-inkMuted">Link only an authorized exact plan version. No measurement or release is created.</p>
+        </details>
         <SelectField label="Completion" value={a.completion} onChange={s => {
           if (s !== 'COMPLETED' && (a.outcome || a.assistance) && !window.confirm('Clear recorded outcome and assistance for this unperformed activity? Objective, timing, goal and factual notes will be retained.')) return;
           update(a.id, { completion: s as SessionActivity['completion'], ...(s !== 'COMPLETED' ? { outcome: undefined, assistance: undefined } : {}) });
@@ -127,10 +140,17 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
         <fieldset disabled={a.completion !== 'COMPLETED'}><SelectField label="Outcome" value={a.outcome ?? ''} onChange={s => update(a.id, { outcome: s as SessionActivity['outcome'] || undefined })} options={[{ value: '', label: 'Not recorded' }, ...options(['ACHIEVED', 'PARTIAL', 'NOT_ACHIEVED'])]} testId={`outcome-${a.id}`} /></fieldset>
         <fieldset disabled={a.completion !== 'COMPLETED'}><SelectField label="Assistance (separate from outcome)" value={a.assistance ?? ''} onChange={s => update(a.id, { assistance: s as SessionActivity['assistance'] || undefined })} options={[{ value: '', label: 'Not recorded' }, ...options(['INDEPENDENT', 'SOME_ASSISTANCE', 'SUBSTANTIAL_ASSISTANCE'])]} testId={`assistance-${a.id}`} /></fieldset></div>
         <label className="block text-[14px]">Factual observation<textarea aria-label="Factual observation" className={input} value={a.observation} maxLength={1000} onChange={e => update(a.id, { observation: e.target.value })} /></label>
-        <div className="flex flex-wrap gap-2">{[-1,1].map(delta => <Button key={delta} variant="secondary" size="sm" disabled={!edit || index + delta < 0 || index + delta >= activities.length} onClick={() => { changed(); setActivities(items => { const next = [...items]; [next[index], next[index + delta]] = [next[index + delta], next[index]]; return next; }); }}>{delta < 0 ? 'Move up' : 'Move down'}</Button>)}<Button variant="ghost" size="sm" onClick={() => { changed(); setActivities(items => items.filter(x => x.id !== a.id)); }}>Remove activity</Button></div>
+        <div className="flex flex-wrap gap-2">{[-1,1].map(delta => <Button key={delta} variant="secondary" size="sm" aria-label={`Move activity ${index + 1} ${a.snapshot?.title ?? ws.templates.find(t => t.id === a.templateId)?.title ?? 'untitled'} ${delta < 0 ? 'up' : 'down'}`} disabled={!edit || index + delta < 0 || index + delta >= activities.length} onClick={() => { changed(); setActivities(items => { const next = [...items]; [next[index], next[index + delta]] = [next[index + delta], next[index]]; return next; }); }}>{delta < 0 ? 'Move up' : 'Move down'}</Button>)}<Button variant="ghost" size="sm" aria-label={`Remove activity ${index + 1}: ${a.snapshot?.title ?? ws.templates.find(t => t.id === a.templateId)?.title ?? 'untitled'}`} onClick={() => { changed(); setActivities(items => items.filter(x => x.id !== a.id)); }}>Remove activity</Button></div>
       </section>)}
       {!activities.length && <p className="text-[14px]">No activities selected yet.</p>}
-      {edit && <div className="space-y-2"><Field label={`Search ${serviceLabel(n.service)} activity library`} value={query} onChange={e => setQuery(e.target.value)} testId={`session-search-${n.id}`} /><div className="flex max-h-48 flex-col gap-2 overflow-y-auto">{ws.templates.filter(t => t.service === n.service && t.title.toLowerCase().includes(query.toLowerCase())).map(t => <Button key={t.id} variant="secondary" onClick={() => { changed(); /* Identity is minted once per click, outside the updater: React 19 may replay state updaters, which would otherwise re-key the row and drop the first edit. */ const id = crypto.randomUUID(); setActivities(items => [...items, { id, templateId: t.id, snapshot: t, minutes: 0, objective: '', completion: 'NOT_STARTED', observation: '' }]); }}>Add {t.title}</Button>)}</div></div>}
+      {edit && <SessionActivityPicker noteId={n.id} service={n.service} templates={ws.templates} query={query}
+        onQuery={setQuery} onAdd={t => {
+          changed();
+          // Stable identity is minted once, outside the state updater. No implicit save.
+          const id = crypto.randomUUID();
+          setActivities(items => [...items, { id, templateId: t.id, snapshot: t, minutes: 0,
+            objective: '', completion: 'NOT_STARTED', observation: '' }]);
+        }} />}
       <div className="grid gap-3 md:grid-cols-2">{[['focus','Session focus'],['activities','Overall session note'],['response','Child response / reviewed dictation'],['nextSteps','Next steps']].map(([key,label]) => <label key={key} className="block text-[14px]">{label}<textarea aria-label={label} className={input} rows={3} maxLength={4000} value={sections[key] ?? ''} onChange={e => { changed(); setSections(s => ({ ...s, [key]: e.target.value })); }} /></label>)}</div>
     </fieldset>
     {(conflicted || retainedLocal) && <section aria-label="Session conflict comparison" className="space-y-3 rounded-control border border-border-light p-3">
@@ -145,8 +165,16 @@ export function SessionEditor({ centerId, n, ws, onPending }: { centerId: string
         {server && !completed && <><Button variant="secondary" disabled={saving || unresolved} onClick={() => void resolveConflict(true)}>Retain server version</Button><Button variant="secondary" disabled={saving || unresolved} onClick={() => { setReconciling(true); setError(true); setStatus('Reconcile in the existing fields. Autosave remains off; explicitly save reviewed reconciliation when ready.'); }}>Reconcile local changes</Button><Button disabled={saving || unresolved} onClick={() => void resolveConflict()}>Save reviewed reconciliation as draft</Button></>}
       </div>}
     </section>}
-    {/* Keep transcript state mounted when remote completion removes editing rights. */}
-    {n.mine && <Dictation disabled={!edit || saving || unresolved || conflicted} onInsert={insert} onPending={pending} />}
+    {/* Synthetic developer controls stay mounted for local transcript recovery; closing
+        disclosure never discards drafts or clears pending-navigation protection. */}
+    {n.mine && <details className="rounded-control border border-border-light bg-surface-subtle p-3"
+      data-testid="session-synthetic-dictation" aria-label="Synthetic transcription testing">
+      <summary className="min-h-11 cursor-pointer py-2 text-[14px] font-semibold text-brand-action">
+        Developer testing only · synthetic transcription
+      </summary>
+      <p className="my-3 text-[13px] text-brand-inkMuted">This optional testing area uses fictional text only. Real speech-to-text is unavailable; it is not part of the clinical recording workflow. Unsaved synthetic transcripts remain local until explicitly reviewed and inserted.</p>
+      <Dictation disabled={!edit || saving || unresolved || conflicted} onInsert={insert} onPending={pending} />
+    </details>}
     {edit && unresolved && (!conflicted || !!server) && <Button variant="secondary" disabled={saving} onClick={() => void save(retry.current?.executionStatus === 'COMPLETED', conflicted ? retry.current?.version : undefined)}>Resolve previous {retry.current?.executionStatus === 'COMPLETED' ? 'completion' : 'draft save'}</Button>}
     <p role="status" aria-live="polite" className={error ? 'text-status-danger text-[14px]' : 'text-brand-inkMuted text-[13px]'}>{status}</p>
     <div className="flex flex-wrap items-start gap-2">{edit && <><Button disabled={saving || conflicted} onClick={() => void save()}>{error && !unresolved ? 'Retry save' : 'Save draft'}</Button><Button variant="secondary" disabled={transcriptPending || saving || conflicted} onClick={() => void save(true)}>Review and complete session</Button></>}<LockedAction id={`sign-${n.id}`} label="Sign note" reason={LOCKED_REASON} /></div>

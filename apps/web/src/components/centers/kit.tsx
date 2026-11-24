@@ -11,7 +11,7 @@ import { SkeletonRows } from '@/components/design/states';
 import { ROLE_LABELS, type Role, type SessionInfo } from '@/lib/auth';
 import type { HistoryEvent, InvitationStatus, MemberStatus } from '@/lib/centers';
 
-export type ShellKey = 'governance' | 'access-review' | 'home' | 'security' | 'applications' | 'centers' | 'setup' | 'team' | 'center' | 'profile' | 'children' | 'schedule' | 'messages' | 'clinical' | 'activities' | 'progress' | 'family-progress' | 'practice' | 'practice-feedback';
+export type ShellKey = 'governance' | 'access-review' | 'home' | 'security' | 'applications' | 'centers' | 'setup' | 'team' | 'center' | 'profile' | 'children' | 'schedule' | 'messages' | 'clinical' | 'activities' | 'progress' | 'family-progress' | 'family-documents' | 'practice' | 'practice-feedback';
 
 // Session gate + permission check + shell, shared by every TB-EM-003/004 screen.
 export function Workspace({ active, permission, deniedText, children }: { active: ShellKey; permission: string; deniedText: string; children: (s: SessionInfo, onError: (e: unknown) => void) => ReactNode }) {
@@ -113,7 +113,7 @@ export function SelectField({ label, value, onChange, options, testId }: { label
     <div className="space-y-1.5">
       <label htmlFor={fieldId} className="block text-[14px] font-medium">{label}</label>
       <select id={fieldId} value={value} onChange={(e) => onChange(e.target.value)} data-testid={testId}
-        className="block min-h-[48px] w-full rounded-control border border-border-strong bg-surface-white px-3 text-[15px] focus:border-brand-action focus:outline-none focus:ring-[3px] focus:ring-brand-action/20">
+        className="block min-h-[48px] w-full rounded-control border border-border-strong bg-surface-white px-3 text-[15px] focus:border-brand-action focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus:ring-[3px] focus:ring-brand-action/20">
         {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </div>
@@ -182,7 +182,7 @@ export function ReasonField({ value, onChange, testId, label = 'Reason (kept in 
     <div className="space-y-1.5">
       <label htmlFor={fieldId} className="block text-[14px] font-medium">{label}</label>
       <textarea id={fieldId} rows={3} maxLength={500} value={value} onChange={(e) => onChange(e.target.value)} data-testid={testId}
-        className="block w-full rounded-control border border-border-strong bg-surface-white px-3.5 py-3 text-[15px] focus:border-brand-action focus:outline-none focus:ring-[3px] focus:ring-brand-action/20" />
+        className="block w-full rounded-control border border-border-strong bg-surface-white px-3.5 py-3 text-[15px] focus:border-brand-action focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus:ring-[3px] focus:ring-brand-action/20" />
     </div>
   );
 }

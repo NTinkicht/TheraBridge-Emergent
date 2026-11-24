@@ -3,7 +3,18 @@ import { rest } from './auth';
 const root = (centerId: string) => `/api/centers/${centerId}/family-releases`;
 export type FamilyDocument = { id: string; kind: 'PLAN' | 'REPORT'; status: string; replaced: boolean; childId: string; childName: string;
   rendering: Record<string, unknown>; renderingHash: string; synthetic: true };
+export type CenterArtworkCoverage = {
+  scope:'CENTER_ACTIVE_SYNTHETIC_PLAN_GRANTS';complete:boolean;reason:'INVENTORY_LIMIT'|'INVALID_SOURCE'|null;
+  eligibleGrants:number|null;total:number|null;covered:number|null;percent:number|null;synthetic:true;
+};
 export const familyReleaseApi = {
+  centerArtworkCoverage:(centerId:string)=>rest.get<CenterArtworkCoverage>(root(centerId)+'/artwork-coverage'),
+  artwork: (centerId:string,id:string,index:number,slot:number) =>
+    rest.get<{activityIndex:number;slot:number;altText:string;width:number;height:number;pngBase64:string;synthetic:true}>(
+      '/api/centers/'+encodeURIComponent(centerId)+'/family-releases/mine/'+encodeURIComponent(id)+'/artwork/'+index+'/'+slot),
+  artworkCoverage: (centerId:string,id:string) =>
+    rest.get<{scope:'AUTHORIZED_SYNTHETIC_PLAN';total:number;covered:number;percent:number|null;synthetic:true}>(
+      '/api/centers/'+encodeURIComponent(centerId)+'/family-releases/mine/'+encodeURIComponent(id)+'/artwork-coverage'),
   mine: (c: string) => rest.get<{ synthetic: true; items: { id: string; kind: string; status: string; childId: string; childName: string }[] }>(`${root(c)}/mine`),
   read: (c: string, id: string) => rest.get<FamilyDocument>(`${root(c)}/mine/${id}`),
   consent: (c: string, childId: string, purpose: 'FAMILY_PLAN' | 'FAMILY_REPORT', withdraw = false) =>

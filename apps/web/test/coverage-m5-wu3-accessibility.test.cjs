@@ -39,7 +39,7 @@ describe('M5-10 keyboard, RTL, focus landmarks and responsive contracts',()=>{
   const shell=read('components/auth/ProductShell.tsx');
   expect(shell).toContain('href="#main"');
   expect(shell).toContain('data-testid="skip-to-main"');
-  expect(shell).toContain('<main id="main" tabIndex={-1}');
+  expect(shell).toMatch(/<main\b[^>]*\bid="main"[^>]*\btabIndex=\{-1\}/);
   expect(shell).toContain('data-testid="mobile-more-sheet"');
   expect(shell).toContain('aria-modal="true"');
  });

@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import type { MembershipStatus, Prisma, Role } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { CLOCK, Clock } from '../common/clock';
@@ -45,7 +45,9 @@ export class WorkspaceService {
 
   async settings(centerId: string) {
     const c = await this.prisma.center.findUniqueOrThrow({ where: { id: centerId } });
-    return { id: c.id, name: c.name, slug: c.slug, timezone: c.timezone, country: c.country, city: c.city, specialties: c.specialties, status: c.status, version: c.version, createdAt: c.createdAt };
+    return { id: c.id, name: c.name, slug: c.slug, timezone: c.timezone, country: c.country, city: c.city,
+      contactEmail: c.contactEmail, contactPhone: c.contactPhone,
+      specialties: c.specialties, status: c.status, version: c.version, createdAt: c.createdAt };
   }
 
   async updateSettings(centerId: string, actorUserId: string, dto: UpdateCenterDto) {
@@ -54,6 +56,8 @@ export class WorkspaceService {
       ...(dto.name ? { name: clean(dto.name) } : {}), ...(dto.timezone ? { timezone: dto.timezone } : {}),
       ...(dto.country ? { country: clean(dto.country) } : {}), ...(dto.city ? { city: clean(dto.city) } : {}),
       ...(dto.specialties ? { specialties: uniq(dto.specialties) } : {}),
+      ...(dto.contactEmail !== undefined ? { contactEmail: dto.contactEmail.trim().toLowerCase() || null } : {}),
+      ...(dto.contactPhone !== undefined ? { contactPhone: dto.contactPhone.trim() || null } : {}),
     };
     if (data.name && (await this.prisma.center.findFirst({ where: { id: { not: centerId }, name: { equals: data.name, mode: 'insensitive' } } }))) {
       throw new ConflictException('Another center already uses this name.');
@@ -198,27 +202,27 @@ export class WorkspaceService {
   }
 
   async updateMe(centerId: string, membershipId: string, actor: { userId: string; role: Role }, dto: UpdateProfileDto) {
+    // Reject forged callers, even if DTO/class-validator is bypassed in tests.
+    // Specialties are enforced by clinical authorization and cannot be self-assigned.
+    if (Object.prototype.hasOwnProperty.call(dto, 'specialties') ||
+        Object.prototype.hasOwnProperty.call(dto, 'responsibilities')) {
+      throw new BadRequestException('Specialties and responsibilities are managed by the center administrator.');
+    }
     const now = this.clock.now();
-    const cancelled = await this.prisma.$transaction(async (tx) => {
-      // Self-service changes can include specialties: use same lock order as staff edits.
+    await this.prisma.$transaction(async (tx) => {
+      // Self-profile locks remain ordered center -> member, consistent with admin staff edits.
       await tx.$queryRaw`SELECT id FROM "center" WHERE id = ${centerId}::uuid FOR NO KEY UPDATE`;
       await tx.$queryRaw`SELECT id FROM "membership" WHERE id = ${membershipId}::uuid AND center_id = ${centerId}::uuid FOR UPDATE`;
-      const m = await tx.membership.findFirstOrThrow({ where: { id: membershipId, centerId }, include: { roles: true } });
-      const changes: { id: string; before: Date }[] = [];
-      if (dto.specialties && m.roles.some((r) => r.role === 'THERAPIST')) {
-        for (const service of m.specialties.filter((s) => !dto.specialties!.includes(s))) {
-          changes.push(...(await terminateTherapistCare(tx, centerId, membershipId, actor.userId, now, 'Therapist specialty removed', { service })).noticeAppointments);
-        }
-      }
+      const m = await tx.membership.findFirstOrThrow({ where: { id: membershipId, centerId, userId: actor.userId, status: 'ACTIVE' }, select: { id: true } });
+      if (!m.id) throw new BadRequestException('Active membership required.');
       if (dto.displayName) await tx.user.update({ where: { id: actor.userId }, data: { displayName: clean(dto.displayName) } });
       const profile = profileData(dto);
       await tx.membership.update({ where: { id: membershipId }, data: profile });
       const fields = [...Object.keys(profile), ...(dto.displayName ? ['displayName'] : [])];
       await logCenterEvent(tx, centerId, 'member.profile_updated', now, { actorUserId: actor.userId, subjectUserId: actor.userId, membershipId, meta: { fields } });
       if (actor.role === 'CENTER_ADMIN') await completeSetupStep(tx, centerId, 'your_profile', actor.userId, now);
-      return changes;
+      return true;
     });
-    await this.notices.changed(cancelled, 'cancelled');
     await this.audit.record('member.profile_updated', { actorUserId: actor.userId, meta: { centerId, membershipId } });
     return this.me(centerId, membershipId);
   }

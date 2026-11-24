@@ -8,6 +8,8 @@ import { Field, FormAlert } from '@/components/auth/Field';
 import { HistoryCard, PageTitle, ReasonField, Row, SelectField, Workspace, errorText, useLoad } from '@/components/centers/kit';
 import { BookDialog, serviceLabel } from '@/components/operations/BookDialog';
 import { HandoverProposalPanel } from '@/components/operations/HandoverProposalPanel';
+import { PrivateCarePanel } from '@/components/operations/PrivateCarePanel';
+import { ChildPhotoPanel } from '@/components/operations/ChildPhotoPanel';
 import { ApptPill } from '@/components/operations/Dashboards';
 import { Button, Card, Pill } from '@/components/design/ui';
 import { Dialog, ErrorState, SkeletonRows } from '@/components/design/states';
@@ -198,6 +200,15 @@ function ChildPage({ id, session, onError }: { id: string; session: SessionInfo;
   const [reason, setReason] = useState('');
   const [archiveErr, setArchiveErr] = useState<string | null>(null);
   useEffect(() => { if (new URLSearchParams(window.location.search).get('registered')) setNotice({ tone: 'success', text: 'Child registered. Next: add a guardian and assign a therapist.' }); }, []);
+  // A directory quick link may land before the authorised detail fetch
+  // finishes. Scroll only after the current scoped child is rendered.
+  useEffect(() => {
+    if (child?.id && typeof window !== 'undefined' && window.location.hash === '#guardians') {
+      const target = document.getElementById('guardians');
+      target?.scrollIntoView({ block: 'start' });
+      target?.focus({ preventScroll: true });
+    }
+  }, [child?.id]);
   if (failed) return <ErrorState onRetry={() => void reload()} testId="child-error" />;
   if (!child) return <Card className="p-5"><SkeletonRows rows={5} testId="child-loading" /></Card>;
   const run = async (fn: () => Promise<unknown>, ok: string) => {
@@ -232,7 +243,17 @@ function ChildPage({ id, session, onError }: { id: string; session: SessionInfo;
               ? <Button className="mt-3" size="sm" variant="ghost" onClick={() => { setArchiving(true); setReason(''); }} data-testid="child-archive-button">Archive record</Button>
               : <Button className="mt-3" size="sm" variant="secondary" onClick={() => void run(() => opsApi.restoreChild(centerId, child.id), 'Child record restored.')} data-testid="child-restore-button">Restore record</Button>)}
           </Card>
-          <Guardians {...ctx} />
+          {['CENTER_ADMIN','COORDINATOR','THERAPIST'].includes(session.activeContext?.role ?? '') &&
+            <PrivateCarePanel key={centerId + ':' + child.id}
+              centerId={centerId} childId={child.id} canEdit={manage}
+              active={child.status === 'ACTIVE'} />}
+          {['CENTER_ADMIN','COORDINATOR','THERAPIST'].includes(session.activeContext?.role ?? '') &&
+            <ChildPhotoPanel key={'photo:' + centerId + ':' + child.id}
+              centerId={centerId} childId={child.id} canManage={manage}
+              active={child.status === 'ACTIVE'} />}
+          <div id="guardians" tabIndex={-1} className="scroll-mt-24" data-testid="child-guardians-anchor">
+            <Guardians {...ctx} />
+          </div>
           <CareTeam {...ctx} />
           {manage && child.status === 'ACTIVE' && <HandoverProposalPanel centerId={centerId} child={child} />}
           <Card className="p-5 md:p-6" testId="child-appointments">

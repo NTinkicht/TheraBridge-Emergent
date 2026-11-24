@@ -142,6 +142,7 @@ export async function observeKeyboardJourney(page, persona, { base, settle }) {
     'Tab from last dialog action must wrap to first');
   await page.keyboard.press('Escape');
   await page.getByTestId('mobile-more-sheet').waitFor({ state: 'hidden' });
+  await page.waitForFunction(()=>document.activeElement?.getAttribute('data-testid')==='mobile-more-button',null,{timeout:5000});
   assert(await more.evaluate(el => document.activeElement === el),
     'Escape must return keyboard focus to More button');
   await page.waitForFunction(previous =>

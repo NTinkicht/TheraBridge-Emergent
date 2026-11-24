@@ -1,0 +1,14 @@
+# One-shot private operator tool; NOT a distributed application or web service.
+# Build separately on an authorized isolated synthetic-media custody host.
+FROM node:24-bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends clamav-daemon ca-certificates tini \
+ && rm -rf /var/lib/apt/lists/*
+WORKDIR /repo
+COPY scripts/qa/m5-pr-a-artwork-pack.mjs scripts/qa/m5-wu2c-private-custody.mjs scripts/qa/m5-wu2c-private-derivatives.mjs scripts/qa/m5-wu2b-private-generation.mjs scripts/qa/
+COPY apps/web/src/lib/generated-artwork.mjs apps/web/src/lib/illustration-style.mjs apps/web/src/lib/
+COPY docs/product/M5-WU2A-THERAPIST-CONCEPT-APPROVAL-REPORT.json docs/product/
+COPY scripts/qa/artwork-custody-entrypoint.sh /usr/local/bin/artwork-custody
+RUN chmod 0555 /usr/local/bin/artwork-custody && mkdir -p /run/clamav /private/input /private/state /private/evidence \
+ && chown node:node /run/clamav
+USER node
+ENTRYPOINT ["/usr/bin/tini","--","/usr/local/bin/artwork-custody"]

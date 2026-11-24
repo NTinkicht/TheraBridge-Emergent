@@ -16,6 +16,85 @@ h1, h2, h3 {
   --focus-ring: var(--fam-focus);
 }
 
+/* The official raster wordmark is designed for a light surface. A compact
+   white chip keeps it legible even when the enclosing staff/family shell is dark. */
+html[data-app-theme="dark"] :is(.theme-clinical-auto, .theme-family-auto) [data-testid="shell-logo-chip"] {
+  background-color: #FFFFFF;
+  border-radius: 10px;
+  padding: 4px 6px;
+}
+
+/* Dark-theme action fills become lighter for accessibility. Existing
+   text-white actions therefore need a dark on-action ink; apply to every
+   shared semantic action, not an isolated page-specific button. Light
+   mode and family --fam-onAccent actions remain unchanged. */
+html[data-app-theme="dark"] :is(.theme-clinical-auto, .theme-family-auto)
+  :is(.bg-brand-action, .bg-status-success, .bg-status-caution, .bg-status-danger) {
+  color: #0D1226;
+}
+
+/* Some generated Tailwind semantic colour utilities have a literal light
+   fallback in the production build. The dark semantic tokens on the shell
+   are correct; rebind shared surfaces and common text/borders to those same
+   inherited tokens AFTER utilities. This applies to all staff roles and
+   avoids per-page overrides or changing the approved light palette.
+   A real seven-persona / five-width browser check verifies computed styles. */
+html[data-app-theme="dark"] .theme-clinical-auto.bg-canvas-clinical {
+  background-color: var(--tb-canvas-clinical);
+  color: var(--tb-brand-ink);
+}
+html[data-app-theme="dark"] .theme-clinical-auto .bg-surface-white {
+  background-color: var(--tb-surface-white);
+}
+html[data-app-theme="dark"] .theme-clinical-auto .bg-surface-subtle {
+  background-color: var(--tb-surface-subtle);
+}
+html[data-app-theme="dark"] .theme-clinical-auto .bg-brand-actionTint {
+  background-color: var(--tb-brand-actionTint);
+}
+html[data-app-theme="dark"] .theme-clinical-auto .text-brand-ink {
+  color: var(--tb-brand-ink);
+}
+html[data-app-theme="dark"] .theme-clinical-auto .text-brand-inkMuted {
+  color: var(--tb-brand-inkMuted);
+}
+html[data-app-theme="dark"] .theme-clinical-auto .text-brand-action {
+  color: var(--tb-brand-action);
+}
+html[data-app-theme="dark"] .theme-clinical-auto .border-border-light {
+  border-color: var(--tb-border-light);
+}
+html[data-app-theme="dark"] .theme-clinical-auto .border-border-strong {
+  border-color: var(--tb-border-strong);
+}
+
+/* Fix the Codex P2: staff dark borders must not eclipse keyboard focus.
+   Shared inputs/selects/comboboxes show a high-contrast 3px action ring even
+   when an individual control uses focus:outline-none or a low-alpha ring. */
+html[data-app-theme="dark"] .theme-clinical-auto
+  :is(input, select, textarea, [role="combobox"]):focus-visible {
+  border-color: var(--tb-brand-action);
+  outline: 3px solid var(--tb-brand-action);
+  /* Tailwind focus:outline-none is an explicit utility; the accessibility
+     ring must win even if utility ordering changes in the production build. */
+  outline-width: 3px !important;
+  outline-style: solid !important;
+  outline-color: var(--tb-brand-action) !important;
+  outline-offset: 2px;
+}
+/* The guardian's mobile selector has the same focus:outline-none + low-alpha
+   ring pattern. Preserve its distinct approved teal focus token; never
+   use the clinical action-blue token to force a family visual identity. */
+html[data-app-theme="dark"] .theme-family-auto
+  :is(input, select, textarea, [role="combobox"]):focus-visible {
+  border-color: var(--fam-focus);
+  outline: 3px solid var(--fam-focus);
+  outline-width: 3px !important;
+  outline-style: solid !important;
+  outline-color: var(--fam-focus) !important;
+  outline-offset: 2px;
+}
+
 .tnum {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
@@ -30,6 +109,29 @@ body {
 :focus-visible {
   outline: 3px solid var(--focus-ring, var(--tb-brand-action));
   outline-offset: 2px;
+}
+
+/* The browser audit measured a zero-width outline on an actual keyboard-
+   focused select despite its correct :focus-visible state and dark ink.
+   Make ALL form controls consume the same semantic focus ring directly,
+   independent of their containing role shell or legacy focus utilities.
+   The visible ring is always >=3px and never appears for mouse-only focus. */
+html :is(input, select, textarea, [role="combobox"]):focus-visible {
+  outline: 3px solid var(--focus-ring, var(--tb-brand-action)) !important;
+  outline-offset: 2px !important;
+  /* Native Chromium selects can report computed outline-width:0 despite
+     a matched important outline. An equally strong, opaque external ring
+     must remain visibly measurable; never use the old 20% alpha glow. */
+  box-shadow: 0 0 0 3px var(--focus-ring, var(--tb-brand-action)) !important;
+}
+/* The native select's focus indication must not depend on a nested custom-
+   property fallback. Bind each role family directly to its approved theme
+   token in BOTH light and dark modes. */
+.theme-clinical-auto :is(input, select, textarea, [role="combobox"]):focus-visible {
+  box-shadow: 0 0 0 3px var(--tb-brand-action) !important;
+}
+.theme-family-auto :is(input, select, textarea, [role="combobox"]):focus-visible {
+  box-shadow: 0 0 0 3px var(--fam-focus) !important;
 }
 
 @keyframes tb-rise {

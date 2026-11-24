@@ -14,6 +14,7 @@ jest.mock('@/components/centers/kit',()=>{
   options.map(o=>h('option',{key:o.value,value:o.value},o.label)))};
 });
 jest.mock('@/components/operations/RepeatFields',()=>({
+ recurringIntervalWeeks:jest.requireActual('@/components/operations/RepeatFields').recurringIntervalWeeks,
  RepeatFields:({value,onChange})=>h('div',null,
   h('button',{type:'button','data-testid':'make-weekly-synthetic',
    onClick:()=>onChange({...value,mode:'weekly',weekdays:[2],end:'count',count:'4'})},'Four weekly visits'),
@@ -21,7 +22,16 @@ jest.mock('@/components/operations/RepeatFields',()=>({
    onClick:()=>onChange({...value,mode:'biweekly',weekdays:[1,3],
      end:'until',until:'2026-12-14'})},'Biweekly until date'),
   h('button',{type:'button','data-testid':'make-weekly-empty-synthetic',
-   onClick:()=>onChange({...value,mode:'weekly',weekdays:[]})},'No weekdays'))
+   onClick:()=>onChange({...value,mode:'weekly',weekdays:[]})},'No weekdays'),
+  h('button',{type:'button','data-testid':'make-custom-three-weeks',
+   onClick:()=>onChange({...value,mode:'custom',intervalWeeks:'3',weekdays:[2,4],
+     end:'count',count:'4'})},'Every 3 weeks'),
+  h('button',{type:'button','data-testid':'make-custom-four-weeks',
+   onClick:()=>onChange({...value,mode:'custom',intervalWeeks:'4',weekdays:[1],
+     end:'until',until:'2035-12-30'})},'Every 4 weeks'),
+  h('button',{type:'button','data-testid':'make-invalid-custom',
+   onClick:()=>onChange({...value,mode:'custom',intervalWeeks:'1.5',weekdays:[3],
+     end:'count',count:'4'})},'Invalid cadence'))
 }));
 jest.mock('@/lib/operations',()=>{
  const actual=jest.requireActual('@/lib/operations');
@@ -152,6 +162,32 @@ describe('M4-08 booking refuses unauthorized/unassigned therapist choices',()=>{
    childId:'kid',membershipId:'therapist-1',intervalWeeks:2,
    weekdays:[1,3],untilDate:'2026-12-14',skipConflicts:false
   }));
+  expect(opsApi.book).not.toHaveBeenCalled();
+ });
+ it('books a 3-week multi-day series through the existing validated API',async()=>{
+  await mount();await choose('book-child-select','kid');
+  await click('make-custom-three-weeks');
+  await click('book-save');
+  expect(opsApi.createSeries).toHaveBeenCalledWith('center-1',expect.objectContaining({
+   childId:'kid',membershipId:'therapist-1',service:'speech',
+   intervalWeeks:3,weekdays:[2,4],count:4,skipConflicts:false
+  }));
+  expect(opsApi.book).not.toHaveBeenCalled();
+ });
+ it('preserves custom 4-week cadence and explicit until-date limit',async()=>{
+  await mount();await choose('book-child-select','kid');
+  await click('make-custom-four-weeks');
+  await click('book-save');
+  expect(opsApi.createSeries).toHaveBeenCalledWith('center-1',expect.objectContaining({
+   intervalWeeks:4,weekdays:[1],untilDate:'2035-12-30'
+  }));
+ });
+ it('rejects fractional custom weeks BEFORE sending a booking request',async()=>{
+  await mount();await choose('book-child-select','kid');
+  await click('make-invalid-custom');
+  await click('book-save');
+  expect(get('book-error')).toBeTruthy();
+  expect(opsApi.createSeries).not.toHaveBeenCalled();
   expect(opsApi.book).not.toHaveBeenCalled();
  });
  it('moves one existing visit without changing sibling series visits',async()=>{

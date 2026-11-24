@@ -18,6 +18,8 @@ cleanup() {
   rm -rf "$root"
 }
 trap cleanup EXIT
+# Failed commands must leave a non-sensitive phase/line breadcrumb; no URLs, stderr dumps or credentials.
+trap 'code=$?; echo "FAIL: disposable replay unexpected exit at script line $LINENO (status $code)" >&2' ERR
 docker run -d --name "$container" -p 127.0.0.1::5432 -e POSTGRES_DB=therabridge_m4 -e POSTGRES_USER=tb_m4_owner \
   -e POSTGRES_PASSWORD=synthetic_disposable_only postgres:16-bookworm >/dev/null
 for _ in {1..40}; do
@@ -25,8 +27,12 @@ for _ in {1..40}; do
   sleep 1
 done
 docker exec "$container" pg_isready -U tb_m4_owner -d therabridge_m4 >/dev/null
-port="$(docker port "$container" 5432/tcp | head -1 | sed -E 's/.*:([0-9]+)$/\1/')"
-[[ "$port" =~ ^[0-9]+$ ]] || { echo "FAIL: ephemeral database port missing" >&2; exit 1; }
+# Do not pipe docker port into head -1 under pipefail: multiple address lines
+# can SIGPIPE docker (exit 141) even when the container is perfectly healthy.
+# Only accept an exact loopback bind, never a wildcard or remote address.
+port_lines="$(docker port "$container" 5432/tcp)"
+port="$(printf '%s\n' "$port_lines" | sed -nE 's/^127\.0\.0\.1:([0-9]+)$/\1/p')"
+[[ "$port" =~ ^[0-9]+$ ]] || { echo "FAIL: exact loopback ephemeral port missing or ambiguous" >&2; exit 1; }
 export DATABASE_URL="postgresql://tb_m4_owner:synthetic_disposable_only@127.0.0.1:${port}/therabridge_m4?schema=public"
 export MIGRATION_DATABASE_URL="$DATABASE_URL"
 sql() { docker exec "$container" psql -X -qAt -v ON_ERROR_STOP=1 -U tb_m4_owner -d therabridge_m4 -c "$1"; }

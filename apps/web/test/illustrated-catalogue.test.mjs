@@ -169,7 +169,7 @@ test('printable instructions are numbered, immutable and never expose unapproved
   const print = projectPrintableActivity(source);
   assert.equal(print.status, 'SYNTHETIC_PREVIEW_NOT_APPROVED_FOR_RELEASE');
   assert.equal(print.illustration.src, null);
-  assert.equal(print.styleVersion, 'm5-direction-b-illustration-v1');
+  assert.equal(print.styleVersion, 'm5-b-v1');
   assert.deepEqual(print.instructions.items.map(step => step.accessibleLabel), [
     'Step 1: Place blocks', 'Step 2: Step carefully',
   ]);

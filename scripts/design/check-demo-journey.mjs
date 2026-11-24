@@ -30,6 +30,7 @@ async function role(email, expectedRole, verify) {
     });
     assert.equal(session.status, 200, 'API session must work through same-origin Next routing');
     assert.equal(session.data.activeContext?.role, expectedRole, 'Wrong active context for ' + email);
+    await verifySharedDarkShell(page, expectedRole);
     await verify(page, session.data);
     const signedOut = await page.evaluate(async csrfToken => {
       const response = await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', headers: { 'X-CSRF-Token': csrfToken } });
@@ -40,6 +41,45 @@ async function role(email, expectedRole, verify) {
     await ctx.close();
   }
 }
+// M5-32: REAL Chromium regression for every authorised demo role, including
+// both clinician specialty accounts. Checks CSS computed colours, not merely
+// class names. Never stores screenshots, patient data or login credentials.
+async function verifySharedDarkShell(page, roleName) {
+  const shell = page.getByTestId('product-shell');
+  await shell.waitFor();
+  const toggle = page.getByTestId('app-theme-toggle');
+  await toggle.waitFor();
+  const light = await page.getByTestId('product-top-bar').evaluate(el =>
+    getComputedStyle(el).backgroundColor);
+  assert.equal(light, 'rgb(255, 255, 255)', roleName + ' light topbar baseline');
+  await toggle.click();
+  await page.waitForFunction(() =>
+    document.documentElement.dataset.appTheme === 'dark' &&
+    document.querySelector('[data-testid="product-shell"]')?.getAttribute('data-theme') === 'dark');
+  for (const width of [320, 390, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const observed = await page.evaluate(() => {
+      const c = selector => getComputedStyle(document.querySelector(selector)).backgroundColor;
+      const nav = innerWidth < 768 ? '[data-testid="mobile-nav"]' : '[data-testid="product-sidebar"]';
+      return { header: c('[data-testid="product-top-bar"]'),
+        nav: c(nav), canvas: c('[data-testid="product-shell"]'),
+        viewport: innerWidth, document: document.documentElement.scrollWidth };
+    });
+    assert.equal(observed.header, 'rgb(21, 27, 51)', roleName + ' header at ' + width);
+    assert.equal(observed.nav, observed.header, roleName + ' shared nav palette at ' + width);
+    assert.equal(observed.canvas, 'rgb(13, 18, 38)', roleName + ' dark page canvas at ' + width);
+    assert(observed.document <= width + 8, roleName + ' dark navigation overflow at ' + width);
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await toggle.click();
+  await page.waitForFunction(() =>
+    document.documentElement.dataset.appTheme === 'light' &&
+    document.querySelector('[data-testid="product-shell"]')?.getAttribute('data-theme') === 'light');
+  const restored = await page.getByTestId('product-top-bar').evaluate(el =>
+    getComputedStyle(el).backgroundColor);
+  assert.equal(restored, light, roleName + ' light mode must restore exactly');
+}
+
 const read = (page, path) => page.evaluate(async url => {
   const r = await fetch(url, { credentials: 'include' });
   return { status: r.status, body: await r.json().catch(() => null) };
@@ -63,6 +103,40 @@ try {
     await page.getByTestId('activities-discovery').waitFor();
     assert.equal(await page.getByTestId('activities-ownership-filter').locator('option[value="mine"]').count(), 0,
       'Read-only staff must not see Created by me');
+
+    // M5 PR2: verify the actual center-contact form on all standard widths.
+    // This is read-only synthetic browser evidence; it does not modify
+    // tenant contacts, patients or any clinical state.
+    await page.goto(base + '/app/center');
+    await page.getByTestId('center-settings-form').waitFor();
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({width,height:900});
+      for (const id of ['settings-contact-email-input','settings-contact-phone-input']) {
+        const bounds=await page.getByTestId(id).evaluate(el=>{
+          const r=el.getBoundingClientRect();
+          return {left:r.left,right:r.right,width:r.width,viewport:innerWidth};
+        });
+        assert(bounds.left>=-4 && bounds.right<=width+4 && bounds.width>=120,
+          id+' must be visible at '+width+'px: '+JSON.stringify(bounds));
+      }
+      assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+8),
+        'Center contacts must not introduce horizontal overflow at '+width);
+    }
+    // Child rows expose only existing authorized destinations. The guardian
+    // shortcut appears exclusively when a linked guardian exists.
+    await page.goto(base + '/app/children');
+    await page.getByTestId('child-quick-profile-'+child.id).waitFor();
+    const hasLinkedGuardian=kids.body.items.some(row=>row.id===child.id && row.guardians>0);
+    assert.equal(await page.getByTestId('child-quick-guardian-'+child.id).count(), hasLinkedGuardian?1:0,
+      'Guardian quick link must match the linked-guardian state');
+    if (hasLinkedGuardian) {
+      await page.getByTestId('child-quick-guardian-'+child.id).click();
+      await page.getByTestId('child-guardians-anchor').waitFor();
+      assert(page.url().endsWith('#guardians'), 'Scoped shortcut must navigate to the actual guardian section');
+      await page.waitForFunction(() => document.activeElement?.getAttribute('data-testid') === 'child-guardians-anchor');
+      assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('data-testid')), 'child-guardians-anchor',
+        'Guardian shortcut must move keyboard focus to the destination, not just scroll');
+    }
 
   });
   await role('coordinator@childrens-home.therabridge.test', 'COORDINATOR', async page => {
@@ -211,6 +285,16 @@ try {
       'Schedule must discard a delayed page from an earlier search');
     assert.equal(await page.getByTestId('schedule-therapist-more').count(), 1,
       'Schedule must preserve the fresh search cursor after an obsolete page completes');
+
+    // Gemini follow-up: a selection through the fallback dropdown must not
+    // leave the adjacent search input displaying a stale query. Reset only
+    // the search, not the chosen permission-scoped calendar filter.
+    await scheduleFilter.selectOption(scheduleNewId);
+    assert.equal(await scheduleFilter.inputValue(), scheduleNewId,
+      'Dropdown must preserve the chosen therapist filter');
+    assert.equal(await page.getByTestId('schedule-therapist-search').inputValue(), '',
+      'Choosing from the dropdown must clear an obsolete therapist query');
+    await scheduleFilter.selectOption('');
 
   });
   await role('speech@childrens-home.therabridge.test', 'THERAPIST', async page => {
@@ -456,8 +540,12 @@ try {
 
 
     await page.getByTestId('clinical-tab-plan').click();
-    await page.getByTestId('goal-checkpoint-panel').first().waitFor();
-    await page.getByTestId('goal-checkpoint-empty').first().waitFor();
+    const evidenceDisclosure = page.getByTestId('plan-supporting-evidence').first();
+    assert.equal(await evidenceDisclosure.getAttribute('open'), null,
+      'Supporting plan evidence must be collapsed on first render');
+    await evidenceDisclosure.locator(':scope > summary').click();
+    await evidenceDisclosure.getByTestId('goal-checkpoint-panel').first().waitFor();
+    await evidenceDisclosure.getByTestId('goal-checkpoint-empty').first().waitFor();
     // TB-EM-037: response-overlay test is ONLY a fictional read-model UI
     // check, not proof that source IDs were clinically validated. All seven
     // real role/permission checks still run against the original API.
@@ -491,7 +579,9 @@ try {
     });
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
-    const checkpointCompare = page.getByTestId('plan-' + comparePlanId)
+    const comparedPlan = page.getByTestId('plan-' + comparePlanId);
+    await comparedPlan.getByTestId('plan-supporting-evidence').locator(':scope > summary').click();
+    const checkpointCompare = comparedPlan
       .getByTestId('checkpoint-compare').first();
     await checkpointCompare.getByTestId('checkpoint-compare-notes').waitFor();
     assert.equal(await checkpointCompare.getByTestId('checkpoint-compare-notes').locator('article').count(), 2);
@@ -518,6 +608,7 @@ try {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('plan-supporting-evidence').first().locator(':scope > summary').click();
     await page.getByTestId('goal-checkpoint-empty').first().waitFor();
     await page.getByTestId('goal-checkpoint-goal').first().selectOption({ index: 1 });
     await page.getByTestId('goal-checkpoint-summary').first().fill('Reviewed available synthetic records; monitor further observations.');
@@ -553,7 +644,9 @@ try {
     });
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('plan-supporting-evidence').first().locator(':scope > summary').click();
     const shadowPanel = page.getByTestId('plan-' + shadowPlanId);
+    await shadowPanel.getByTestId('plan-supporting-evidence').locator(':scope > summary').click();
     await shadowPanel.getByTestId('goal-checkpoint-goal').selectOption({ index: 1 });
     await shadowPanel.getByTestId('goal-checkpoint-summary').fill('Reviewed the available synthetic sources in the second plan.');
     await shadowPanel.getByTestId('goal-checkpoint-save').waitFor();
@@ -712,6 +805,7 @@ try {
     await page.unroute(pagedAssessmentRoute);
     await page.reload();
     await page.getByTestId('clinical-tab-plan').click();
+    await page.getByTestId('plan-supporting-evidence').first().locator(':scope > summary').click();
     // Reload clears the checkpoint form's local goal/narrative selection.
     // Re-enter it before asserting that unsaved-plan gating is reversible.
     await page.getByTestId('goal-checkpoint-goal').first().selectOption({ index: 1 });
@@ -757,6 +851,7 @@ try {
     await page.getByTestId('clinical-tab-plan').click();
     await page.getByTestId('goal-review-worklist').waitFor();
     assert(!(await page.getByTestId('goal-review-timezone-invalid').count()), 'Valid centre timezone recovers');
+    await page.getByTestId('plan-supporting-evidence').first().locator(':scope > summary').click();
 
     await page.getByTestId('plan-evidence-goals').first().waitFor();
     await page.getByTestId('plan-source-none').first().waitFor();
@@ -919,8 +1014,11 @@ try {
 
     // TB-EM-041: the active preview must show only the persisted version,
     // not the browser's subsequently edited working copy.
+    // A fresh deep-linked route opens the plan with supporting evidence collapsed.
+    // Expand the outer disclosure before inspecting the nested immutable preview.
+    await page.getByTestId('plan-supporting-evidence').first().locator(':scope > summary').click();
     const activeSavedPreview = page.getByTestId('saved-home-plan-preview').first();
-    await activeSavedPreview.locator('summary').click();
+    await activeSavedPreview.locator(':scope > summary').click();
     const originalSavedSummary = await activeSavedPreview.getByTestId('saved-plan-preview-summary').innerText();
     assert(originalSavedSummary.trim().length > 0);
     assert((await activeSavedPreview.getByTestId('saved-plan-preview-disclaimer').innerText())
@@ -989,6 +1087,8 @@ try {
     assert(!calendar.includes('2027-02-31'), 'Monthly recurrence cannot invent invalid dates');
     // TB-EM-038: view the UNSAVED dated schedule only in the clinician's
     // existing authorized version; never post, release, or mark practice complete.
+    // The practice calendar is independently collapsed, even after evidence opens.
+    await page.getByTestId('plan-calendar-disclosure').first().locator(':scope > summary').click();
     const practiceCalendar = page.getByTestId('home-practice-calendar').first();
     await practiceCalendar.getByTestId('home-calendar-month').fill('2026-10');
     await practiceCalendar.getByTestId('home-calendar-day-2026-10-31').click();
@@ -1042,7 +1142,8 @@ try {
     await page.getByTestId('report-evidence-assist').waitFor();
     // M3-AI02: offline fictional report proposals never mutate clinical text
     // until a therapist explicitly inserts an edited draft; discard is lossless.
-    await page.getByTestId('synthetic-report-assist').waitFor();
+    await page.getByTestId('report-assist-disclosure-toggle').click();
+    await page.getByTestId('synthetic-report-assist').waitFor({state:'visible'});
     const beforeProposal = await page.getByTestId('report-section-assessment').inputValue();
     await page.getByTestId('synthetic-report-generate').click();
     assert((await page.getByTestId('synthetic-report-proposal').innerText()).includes('REFERENCED_NOT_VERIFIED'));
