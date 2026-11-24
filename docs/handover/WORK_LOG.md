@@ -1523,3 +1523,6 @@ Codex P2 FIX_NOW: platform migration uses random UUIDs for four global samples. 
 
 
 2026-11-25 PR #497: explicitly enable visual cards on guardian Activities at home and pass verified sample/unreleased context for portable global sample matching. Commercial provenance failure was an exact source asset inventory increase from 92 to 117 (73 to 98 images/icons); reconcile all four ledger/qualification stages and tests without removing or approving any asset or changing clinical/commercial gates.
+
+### 2026-11-25 — owner-requested activity card visual corrections
+Remove the unapproved per-image caption from the shared illustration component across every consumer. Render the original 4:3 reference image edge-to-edge at its container width, without distortion or crop; remove the fixed height cap for shared catalogue images while retaining existing private-media and missing-image behavior. Practice schedule rows use full-width date-left/action-right alignment, including multiple days, retaining keyboard access and recordability checks. Existing sample-page context, safety information, accessibility alt text, assets, database and clinical release controls unchanged. Regression tests cover caption absence, responsive image classes, and right-aligned actions; fresh CI and independent review pending.

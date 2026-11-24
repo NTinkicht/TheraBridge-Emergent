@@ -90,6 +90,10 @@ test('mounted shared gallery contains all references and image error does not br
  let tree;await act(async()=>{tree=create(React.createElement(SharedIllustrationLibrary))});
  expect(tree.root.findAllByType('img')).toHaveLength(25);
  const imgs=tree.root.findAllByType('img');expect(imgs[0].props.alt).toBe(assets[0].alt);
+ expect(tree.root.findAllByType('figcaption')).toHaveLength(0);
+ expect(JSON.stringify(tree.toJSON())).not.toContain('Specialty reference art (not instructions)');
+ expect(imgs[0].props.className).toContain('h-auto w-full');
+ expect(imgs[0].props.className).not.toMatch(/max-h-|object-contain/);
  await act(async()=>imgs[0].props.onError());
  expect(tree.root.findAllByType('img')).toHaveLength(24);
  expect(JSON.stringify(tree.toJSON())).toContain('Reference image unavailable');
@@ -130,5 +134,5 @@ test('actual guardian catalogue cards render images for every current family sam
  const {ActivityCard}=require('../src/components/clinical/ActivityCard');
  const family=DEMO_ILLUSTRATION_MAP.filter(x=>['Bubble breath and sounds','Snack-time choices','Playdough pinch and roll','Pillow path balance walk'].includes(x.title)||x.title.includes('(sample only)')||x.title.startsWith('Synthetic demo - '));
  expect(family).toHaveLength(9);
- for(const t of family){let tree;await act(async()=>{tree=create(React.createElement(ActivityCard,{t:{...t,materials:[],safety:[],minutes:10,ageBand:'sample'},tone:'family',visual:true,syntheticSample:true}))});expect(tree.root.findByType('img').props.src).toBe(lib.sharedIllustrationUrl(lib.sharedIllustrationForActivity(t,true)));await act(async()=>tree.unmount());}
+ for(const t of family){let tree;await act(async()=>{tree=create(React.createElement(ActivityCard,{t:{...t,materials:[],safety:[],minutes:10,ageBand:'sample'},tone:'family',visual:true,syntheticSample:true}))});expect(tree.root.findByType('img').props.src).toBe(lib.sharedIllustrationUrl(lib.sharedIllustrationForActivity(t,true)));const media=tree.root.findByProps({'data-testid':'activity-media-placeholder-'+t.id});expect(media.props.className).toContain('w-full');expect(media.props.className).not.toContain('max-h-48');expect(tree.root.findAllByType('figcaption')).toHaveLength(0);await act(async()=>tree.unmount());}
 });

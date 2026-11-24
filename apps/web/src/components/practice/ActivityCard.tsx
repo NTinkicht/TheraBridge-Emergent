@@ -8,7 +8,7 @@ import { Pill } from '@/components/design/ui';
 import { CHOICE_LABEL, CHOICE_TONE, dayName, type PracticeActivity, type Slot } from '@/lib/practice';
 
 export function SlotChip({ slot, onRecord, testId }: { slot: Slot; onRecord?: () => void; testId: string }) {
-  if (slot.recordable && onRecord) return <button type="button" onClick={onRecord} className="inline-flex min-h-[44px] items-center rounded-full border-2 border-fam-accent bg-fam-accentTint px-4 py-2 text-[13px] font-semibold text-fam-accent hover:bg-fam-tile focus-visible:outline focus-visible:outline-2" aria-label={`Record answer for ${dayName(slot.date, 'long')}`} data-testid={testId}>Record answer</button>;
+  if (slot.recordable && onRecord) return <button type="button" onClick={onRecord} className="inline-flex min-h-[44px] shrink-0 items-center rounded-full border-2 border-fam-accent bg-fam-accentTint px-4 py-2 text-[13px] font-semibold text-fam-accent hover:bg-fam-tile focus-visible:outline focus-visible:outline-2" aria-label={`Record answer for ${dayName(slot.date, 'long')}`} data-testid={testId}>Record answer</button>;
   return <span data-testid={testId} data-status={slot.status}><Pill tone={CHOICE_TONE[slot.status]}>{CHOICE_LABEL[slot.status]}</Pill></span>;
 }
 
@@ -31,8 +31,8 @@ export function ActivityCard({ a, slots, onRecord, testId }: { a: PracticeActivi
           <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-[13px] text-fam-muted"><span className="inline-flex items-center gap-1"><Clock size={13} aria-hidden="true" />{a.minutes} min</span><span>{a.frequency}</span></p>
         </div>
       </div>
-      <ul className="mt-3 flex flex-wrap gap-2" aria-label="Planned days">
-        {slots.map((s) => <li key={s.date} className="flex items-center gap-1.5 text-[13px]"><span className="text-fam-muted">{dayName(s.date)}</span><SlotChip slot={s} onRecord={onRecord ? () => onRecord(s) : undefined} testId={`${testId}-slot-${s.date}`} /></li>)}
+      <ul className="mt-3 flex flex-col gap-2" aria-label="Planned days">
+        {slots.map((s) => <li key={s.date} className="flex w-full items-center justify-between gap-3 text-[13px]"><span className="min-w-0 text-fam-muted">{dayName(s.date)}</span><SlotChip slot={s} onRecord={onRecord ? () => onRecord(s) : undefined} testId={`${testId}-slot-${s.date}`} /></li>)}
         {!slots.length && <li className="text-[13px] text-fam-muted">Not planned for this day.</li>}
       </ul>
       <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="mt-3 inline-flex items-center gap-1 text-[14px] font-semibold text-fam-accent" data-testid={`${testId}-toggle`}>

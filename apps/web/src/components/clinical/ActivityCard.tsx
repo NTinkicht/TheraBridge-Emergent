@@ -47,7 +47,7 @@ export function ActivityCard({ t, tone = 'clinical', extra, visual = false, comp
         data-testid={`activity-specialty-accent-${t.id}`} />}
       <div className={`flex min-w-0 flex-1 flex-col gap-4 p-5 ${showList ? 'sm:flex-row' : ''}`}
         style={!fam && identities.length ? { background: tint ?? specialtySurface(identities[0].family, true) } : undefined}>
-        {(visual || shared) && <div className={`flex aspect-[4/3] min-w-0 items-center justify-center rounded-control border border-border-light bg-surface-white ${showList ? 'w-full sm:w-44 sm:shrink-0 sm:self-start' : 'max-h-48 w-full'}`}
+        {(visual || shared) && <div className={`flex aspect-[4/3] min-w-0 items-center justify-center overflow-hidden rounded-control border border-border-light bg-surface-white ${showList ? 'w-full sm:w-44 sm:shrink-0 sm:self-start' : shared ? 'w-full' : 'max-h-48 w-full'}`}
           data-testid={`activity-media-placeholder-${t.id}`}
           data-illustration-style={ILLUSTRATION_STYLE_VERSION}>
           {shared ? <SharedIllustration asset={shared}/> : !fam && artworkScope ? <StaffArtworkImage scope={artworkScope} slot={0} /> :
