@@ -250,4 +250,5 @@ test('deny production DB, malicious accessors/array holes and an in-flight calle
   }finally{
     if(prev===undefined)delete process.env.DEPLOYMENT_ENV;
     else process.env.DEPLOYMENT_ENV=prev;
-  }}));
+  }
+}));
