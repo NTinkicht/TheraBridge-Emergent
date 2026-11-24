@@ -1,5 +1,7 @@
 'use client';
 
+import { SharedIllustration } from '@/components/clinical/SharedIllustration';
+import { sharedIllustrationForActivity } from '@/lib/shared-illustrations.mjs';
 import { ImageOff, Search } from 'lucide-react';
 import { Field } from '@/components/auth/Field';
 import { serviceLabel } from '@/components/operations/BookDialog';
@@ -19,7 +21,7 @@ export function SessionActivityPicker({ noteId, service, templates, query, onQue
       <Search size={17} aria-hidden="true" className="text-brand-action" />
       <h4 className="font-semibold">Choose an activity · {serviceLabel(service)}</h4>
     </div>
-    <p className="text-[12px] text-brand-inkMuted">Choose from this authorized specialty catalogue. Images appear only when approved for use; no private image is fetched or published. The same Add button works by keyboard or touch.</p>
+    <p className="text-[12px] text-brand-inkMuted">Choose from this authorized specialty catalogue. Generic reference images are separate from clinical media; no private image is fetched or published. The same Add button works by keyboard or touch.</p>
     <Field label={`Search ${serviceLabel(service)} activity library`} value={query}
       onChange={e => onQuery(e.target.value)} testId={`session-search-${noteId}`} />
     <div className="grid max-h-[480px] grid-cols-1 gap-3 overflow-y-auto sm:grid-cols-2 xl:grid-cols-3"
@@ -29,10 +31,10 @@ export function SessionActivityPicker({ noteId, service, templates, query, onQue
         <div className="flex aspect-[4/3] items-center justify-center border-b border-border-light bg-surface-subtle"
           data-testid={`session-activity-choice-media-${t.id}`}
           data-illustration-style={ILLUSTRATION_STYLE_VERSION}>
-          <div className="space-y-1 px-3 text-center text-[12px] text-brand-inkMuted">
+          {sharedIllustrationForActivity(t) ? <SharedIllustration asset={sharedIllustrationForActivity(t)!}/> : <div className="space-y-1 px-3 text-center text-[12px] text-brand-inkMuted">
             <ImageOff size={20} className="mx-auto" aria-hidden="true" />
             <span className="block">No approved illustration available</span>
-          </div>
+          </div>}
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-2 p-3">
           <p className="break-words text-[14px] font-semibold">{t.title}</p>

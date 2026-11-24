@@ -1,6 +1,8 @@
 'use client';
 
 import { Activity, Brain, Clock, Hand, ImageOff, MessageCircle, ShieldCheck, Users } from 'lucide-react';
+import { SharedIllustration } from '@/components/clinical/SharedIllustration';
+import { sharedIllustrationForActivity } from '@/lib/shared-illustrations.mjs';
 import { StaffArtworkImage, type StaffArtworkScope } from './StaffArtworkImage';
 import { Card, type Tone } from '@/components/design/ui';
 import { isRecognizedSpecialty, specialtyDisplayName, specialtyIdentity, type SpecialtyFamily } from '@/styles/specialty-identity';
@@ -23,6 +25,7 @@ export function ActivityCard({ t, tone = 'clinical', extra, visual = false, comp
   t: Template; tone?: Tone; extra?: string; visual?: boolean; compact?: boolean; layout?: 'grid' | 'list'; artworkScope?: StaffArtworkScope;
 }) {
   const fam = tone === 'family';
+  const shared = sharedIllustrationForActivity(t);
   const candidateServices = (t as Template & { services?: readonly string[] }).services;
   const services = Array.isArray(candidateServices) && candidateServices.length
     ? candidateServices.filter(isRecognizedSpecialty) : [t.service];
@@ -44,10 +47,10 @@ export function ActivityCard({ t, tone = 'clinical', extra, visual = false, comp
         data-testid={`activity-specialty-accent-${t.id}`} />}
       <div className={`flex min-w-0 flex-1 flex-col gap-4 p-5 ${showList ? 'sm:flex-row' : ''}`}
         style={!fam && identities.length ? { background: tint ?? specialtySurface(identities[0].family, true) } : undefined}>
-        {visual && <div className={`flex aspect-[4/3] min-w-0 items-center justify-center rounded-control border border-border-light bg-surface-white ${showList ? 'w-full sm:w-44 sm:shrink-0 sm:self-start' : 'max-h-48 w-full'}`}
+        {(visual || shared) && <div className={`flex aspect-[4/3] min-w-0 items-center justify-center rounded-control border border-border-light bg-surface-white ${showList ? 'w-full sm:w-44 sm:shrink-0 sm:self-start' : 'max-h-48 w-full'}`}
           data-testid={`activity-media-placeholder-${t.id}`}
           data-illustration-style={ILLUSTRATION_STYLE_VERSION}>
-          {!fam && artworkScope ? <StaffArtworkImage scope={artworkScope} slot={0} /> :
+          {shared ? <SharedIllustration asset={shared}/> : !fam && artworkScope ? <StaffArtworkImage scope={artworkScope} slot={0} /> :
           <div className="flex flex-col items-center gap-2 px-3 text-center text-[13px] text-brand-inkMuted">
             <ImageOff size={24} aria-hidden="true" />
             <span>No approved illustration available</span>
