@@ -46,7 +46,7 @@ export function assertGeneratedReferenceBytes(source:unknown,input:unknown):void
   const digest=generatedReferenceDigest(source);
   if(digest===null)return;
   const bytes=decodePrivatePng(input);
-  if(bytes.length<33||bytes.readUInt32BE(16)!==400||bytes.readUInt32BE(20)!==300||
+  if(bytes.length!==REFERENCES[(source as string).split(':')[1]].bytes||bytes.length<33||bytes.readUInt32BE(16)!==400||bytes.readUInt32BE(20)!==300||
     createHash('sha256').update(bytes).digest('hex')!==digest)fail();
 }
 
