@@ -388,6 +388,11 @@ export class FamilyReleaseService {
   async centerArtworkCoverage(centerId:string,v:Viewer) {
     return this.prisma.$transaction(async tx=>{
       await assertActor(tx,centerId,v,['CLINICAL_SUPERVISOR']);
+      return this.centerArtworkCoverageTx(tx,centerId);
+    },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable,timeout:30000});
+  }
+
+  private async centerArtworkCoverageTx(tx:Tx,centerId:string) {
       await this.synthetic(tx,centerId);
       if (!this.artwork || process.env.TB_FAMILY_ARTWORK_SYNTHETIC!=='true') throw new NotFoundException();
       const grants=await tx.syntheticFamilyGrant.findMany({
@@ -444,7 +449,39 @@ export class FamilyReleaseService {
       const total=coveredByVersion.size,covered=[...coveredByVersion.values()].filter(Boolean).length;
       return {scope,complete:true as const,reason:null,eligibleGrants,total,covered,
         percent:total?Math.floor(100*covered/total):null,synthetic:true as const};
-    },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable,timeout:30000});
+  }
+
+  /** Local/private operator only: report across the complete active synthetic
+   * release inventory. No HTTP endpoint, centre or recipient details, and no
+   * approval, release or publication writes. Centre/version pairs are distinct.
+   * A bounded or invalid centre report invalidates the whole aggregate. */
+  async platformArtworkCoverage() {
+    if(process.env.TB_ARTWORK_COVERAGE_OPERATOR_ALLOWED!=='true' ||
+       !['local','development','demo','test'].includes(process.env.DEPLOYMENT_ENV??'') ||
+       process.env.TB_FAMILY_RELEASE_SYNTHETIC!=='true' ||
+       process.env.TB_FAMILY_ARTWORK_SYNTHETIC!=='true')
+      throw new ForbiddenException('Synthetic artwork coverage operator is disabled.');
+    return this.prisma.$transaction(async tx=>{
+      const centers=await tx.center.findMany({
+        where:{status:'ACTIVE',syntheticFamilyReleaseEnabled:true},
+        select:{id:true},orderBy:{id:'asc'},take:26,
+      });
+      const scope='PLATFORM_ACTIVE_SYNTHETIC_PLAN_GRANTS' as const;
+      const incomplete=(reason:'CENTER_LIMIT'|'CENTER_INCOMPLETE')=>({
+        scope,complete:false as const,reason,centers:null,eligibleGrants:null,total:null,covered:null,percent:null,synthetic:true as const,
+      });
+      if(centers.length>25)return incomplete('CENTER_LIMIT');
+      let eligibleGrants=0,total=0,covered=0;
+      for(const center of centers){
+        const report=await this.centerArtworkCoverageTx(tx,center.id);
+        if(!report.complete)return incomplete('CENTER_INCOMPLETE');
+        eligibleGrants+=report.eligibleGrants;
+        total+=report.total;
+        covered+=report.covered;
+      }
+      return {scope,complete:true as const,reason:null,centers:centers.length,eligibleGrants,total,covered,
+        percent:total?Math.floor(100*covered/total):null,synthetic:true as const};
+    },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable,timeout:60000});
   }
 
   async mine(centerId: string, v: Viewer) {

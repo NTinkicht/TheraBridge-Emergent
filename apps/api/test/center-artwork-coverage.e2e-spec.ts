@@ -72,3 +72,51 @@ describe('centre aggregate released artwork coverage',()=>{
    await expect(service.centerArtworkCoverage('c',v)).rejects.toThrow('storage down');
  });
 });
+
+
+describe('private platform-wide synthetic released artwork coverage',()=>{
+ const keys=['DEPLOYMENT_ENV','TB_ARTWORK_COVERAGE_OPERATOR_ALLOWED','TB_FAMILY_RELEASE_SYNTHETIC','TB_FAMILY_ARTWORK_SYNTHETIC'] as const;
+ const old=keys.map(k=>process.env[k]);
+ beforeEach(()=>{for(const k of keys)process.env[k]=k==='DEPLOYMENT_ENV'?'demo':'true';});
+ afterEach(()=>{keys.forEach((k,i)=>{if(old[i]===undefined)delete process.env[k];else process.env[k]=old[i];});jest.restoreAllMocks();});
+ const complete=(total:number,covered:number,eligibleGrants:number)=>({complete:true,reason:null,total,covered,eligibleGrants});
+ function setup(){
+   const tx={center:{findMany:jest.fn().mockResolvedValue([{id:'c1'},{id:'c2'}])}};
+   const service=new FamilyReleaseService({$transaction:async(fn:any)=>fn(tx)} as never);
+   const report=jest.spyOn(service as any,'centerArtworkCoverageTx').mockResolvedValue(complete(1,1,1));
+   return {tx,service,report};
+ }
+ it('combines exact centre counts instead of averaging percentages; never emits centre ids',async()=>{
+   const {service,tx,report}=setup();
+   report.mockResolvedValueOnce(complete(2,1,3)).mockResolvedValueOnce(complete(8,8,4));
+   expect(await service.platformArtworkCoverage()).toEqual({
+     scope:'PLATFORM_ACTIVE_SYNTHETIC_PLAN_GRANTS',complete:true,reason:null,centers:2,eligibleGrants:7,total:10,covered:9,percent:90,synthetic:true});
+   expect(tx.center.findMany).toHaveBeenCalledWith({where:{status:'ACTIVE',syntheticFamilyReleaseEnabled:true},select:{id:true},orderBy:{id:'asc'},take:26});
+   expect(report.mock.calls).toEqual([[tx,'c1'],[tx,'c2']]);
+ });
+ it.each(keys)('fails closed if %s is absent',async k=>{
+   const {service,tx}=setup();delete process.env[k];
+   await expect(service.platformArtworkCoverage()).rejects.toBeInstanceOf(ForbiddenException);
+   expect(tx.center.findMany).not.toHaveBeenCalled();
+ });
+ it('refuses production even with other flags',async()=>{
+   const {service,tx}=setup();process.env.DEPLOYMENT_ENV='production';
+   await expect(service.platformArtworkCoverage()).rejects.toBeInstanceOf(ForbiddenException);
+   expect(tx.center.findMany).not.toHaveBeenCalled();
+ });
+ it('returns no partial result when a centre or inventory is incomplete',async()=>{
+   const {service,tx,report}=setup();
+   tx.center.findMany.mockResolvedValueOnce(Array(26).fill({id:'c'}));
+   expect(await service.platformArtworkCoverage()).toMatchObject({complete:false,reason:'CENTER_LIMIT',total:null,percent:null});
+   expect(report).not.toHaveBeenCalled();
+   report.mockResolvedValueOnce(complete(1,1,1)).mockResolvedValueOnce({complete:false});
+   expect(await service.platformArtworkCoverage()).toMatchObject({complete:false,reason:'CENTER_INCOMPLETE',covered:null,percent:null});
+ });
+ it('reports empty denominator as null, and propagates unexpected errors',async()=>{
+   const {service,tx,report}=setup();
+   tx.center.findMany.mockResolvedValueOnce([]);
+   expect(await service.platformArtworkCoverage()).toMatchObject({complete:true,centers:0,total:0,percent:null});
+   report.mockRejectedValueOnce(new Error('unexpected'));
+   await expect(service.platformArtworkCoverage()).rejects.toThrow('unexpected');
+ });
+});
