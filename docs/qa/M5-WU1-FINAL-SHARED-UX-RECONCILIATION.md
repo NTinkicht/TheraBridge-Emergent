@@ -46,3 +46,8 @@ The same actual-browser focus assertion also covers the guardian shared navigati
 
 ### Real browser focus input-modality correction
 Initial new browser focus regression used a direct `focus()` immediately after clicking the theme toggle; Chromium rightly did not always set `:focus-visible` for pointer-modality programmatic focus. The fixed browser test sends an actual keyboard Tab first, requires `:focus-visible` on the shared select/search field, then checks computed solid 3px ring and >=3:1 contrast. No CSS assertions or acceptance thresholds were lowered.
+
+## 2026-11-24 — M5 PR B shared UX: actual modal background isolation (qualification pending)
+
+PR #493 synthetic artwork intake merged at `72990af6256f8fddb296837725c38f9e112b87c1` after all six exact-head CI jobs, eight coverage floors, commercial and Codex review PASS; no artwork publication or M5 closure. PR B follows agreed shared UX qualification (#187/#189–194). Source inspection identified a shared shell accessibility gap: aria-modal and keyboard wrap did not make background controls inert; the pointer backdrop was separately keyboard-focusable and breakpoint closure retained an obsolete search. Implemented native inert on background landmarks and controls, backdrop excluded from keyboard/AT order, focus restoration after React removes inert, clear search on breakpoint closure. Mounted regression plus actual browser background-focus denial and restoration in the existing seven-role/five-width shell run. New CI/review NOT RUN at authoring. Human screen-reader/visual/usability acceptance still not run; no waiver, clinical activation, production deployment or commercial approval. Actual artwork custody import and signed approved delivery remain open in #195–200.
+

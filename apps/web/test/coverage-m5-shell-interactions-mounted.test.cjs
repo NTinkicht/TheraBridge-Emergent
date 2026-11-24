@@ -229,3 +229,23 @@ describe('real mobile dialog accessible focus-loop and expanded-only navigation'
     expect(get('mobile-nav-select')).toBeTruthy();
   });
 });
+
+test('shared mobile modal makes all background regions inert and restores them after closing or resizing',async()=>{
+ await mount();
+ const ids=['skip-to-main','product-sidebar','product-top-bar','shell-breadcrumb','mobile-nav','mobile-bottom-nav'];
+ const main=()=>tree.root.findByType('main');
+ await click('mobile-more-button');
+ for(const id of ids)expect(get(id).props.inert).toBe(true);
+ expect(main().props.inert).toBe(true);
+ const backdrop=tree.root.findByProps({'aria-label':'Dismiss navigation'});
+ expect(backdrop.props.tabIndex).toBe(-1);expect(backdrop.props['aria-hidden']).toBe(true);
+ const e={preventDefault:jest.fn()};await act(async()=>backdrop.props.onMouseDown(e));expect(e.preventDefault).toHaveBeenCalled();
+ await click('mobile-more-close');
+ for(const id of ids)expect(get(id).props.inert).toBe(false);
+ expect(main().props.inert).toBe(false);
+ await click('mobile-more-button');await change('mobile-destination-search','unknown-page');
+ const callback=media.addEventListener.mock.calls.filter(([key])=>key==='change').at(-1)[1];media.matches=true;
+ await act(async()=>callback());
+ expect(get('desktop-destination-search').props.value).toBe('');
+ expect(get('product-sidebar').props.inert).toBe(false);expect(focusLog).toContain('desktop');
+});

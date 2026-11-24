@@ -283,11 +283,20 @@ export async function observeSharedShell(page, persona, width) {
     assert.equal(await modal.getAttribute('aria-modal'), 'true');
     await page.waitForFunction(() => document.activeElement?.getAttribute('data-testid') ===
       'mobile-more-close', null, {timeout: 5000});
+    // Verify real browser inert behavior, not aria-modal declaration alone.
+    const background = await page.evaluate(() => {
+      const ids=['skip-to-main','product-sidebar','product-top-bar','shell-breadcrumb','mobile-nav','mobile-bottom-nav'];
+      const all=ids.every(id=>document.querySelector('[data-testid="'+id+'"]')?.inert===true) && document.getElementById('main')?.inert===true;
+      document.querySelector('[data-testid="sign-out-button"]')?.focus();
+      return {all,focusStayedInside:document.getElementById('mobile-more-panel')?.contains(document.activeElement)===true};
+    });
+    assert(background.all&&background.focusStayedInside,'Modal background must be inert and unable to receive focus');
     // Real keyboard-only dialog exit and return to the original invoker.
     await page.keyboard.press('Escape');
     await sheet.waitFor({state: 'detached'});
     assert(await button.evaluate(element => document.activeElement === element),
       'Mobile More must restore keyboard focus after Escape');
+    assert(await page.evaluate(()=>!document.getElementById('main')?.inert && !document.querySelector('[data-testid="product-top-bar"]')?.inert && !document.querySelector('[data-testid="mobile-bottom-nav"]')?.inert),'Modal background interaction must be restored on close');
     // React cleans up the scroll lock in an effect after the dialog unmount.
     // Observe the real unlock without racing a queued passive cleanup effect.
     await page.waitForFunction(() =>
