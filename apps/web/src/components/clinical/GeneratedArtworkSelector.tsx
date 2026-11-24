@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { GENERATED_ARTWORK, findGeneratedArtwork, verifyGeneratedReviewBytes, type GeneratedArtwork } from '@/lib/generated-artwork.mjs';
 
 /** Local, hash-verified synthetic reference artwork. Not a released activity instruction. */
-export function GeneratedArtworkSelector({onSelect,disabled=false}:{
-  onSelect:(asset:GeneratedArtwork)=>void;disabled?:boolean;
+export function GeneratedArtworkSelector({onSelect,service,disabled=false}:{
+  onSelect:(asset:GeneratedArtwork)=>void;service?:string;disabled?:boolean;
 }) {
   const [id,setId]=useState('');
   const [preview,setPreview]=useState<{url:string;asset:GeneratedArtwork}|null>(null);
@@ -19,7 +19,9 @@ export function GeneratedArtworkSelector({onSelect,disabled=false}:{
     setPreview(null);
   };
   useEffect(()=>()=>{generation.current++;if(urlRef.current)URL.revokeObjectURL(urlRef.current);},[]);
-  const asset=findGeneratedArtwork(id);
+  const family=service==='feeding'?'occupational':service==='developmental'?'behavioral':service;
+  const choices=GENERATED_ARTWORK.filter(item=>family===undefined||item.family===family);
+  const asset=choices.some(item=>item.referenceId===id)?findGeneratedArtwork(id):null;
   const choose=async(file:File|undefined)=>{
     const n=++generation.current;
     clear();setStatus('');setBusy(false);
@@ -46,7 +48,7 @@ export function GeneratedArtworkSelector({onSelect,disabled=false}:{
       <select disabled={disabled} value={id} className="mt-1 min-h-[44px] w-full rounded-control border border-border-strong bg-surface-white p-2"
         onChange={e=>{generation.current++;clear();setBusy(false);setStatus('');setId(e.target.value);}}>
         <option value="">Select a reference</option>
-        {GENERATED_ARTWORK.map(item=><option key={item.referenceId} value={item.referenceId}>{item.family} · {item.scene} · {item.referenceId}</option>)}
+        {choices.map(item=><option key={item.referenceId} value={item.referenceId}>{item.family} · {item.scene} · {item.referenceId}</option>)}
       </select>
     </label>
     {asset&&<>
