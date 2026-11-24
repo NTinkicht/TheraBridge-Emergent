@@ -14,7 +14,7 @@ export function SlotChip({ slot, onRecord, testId }: { slot: Slot; onRecord?: ()
 
 export function ActivityCard({ a, slots, onRecord, testId }: { a: PracticeActivity; slots: Slot[]; onRecord?: (s: Slot) => void; testId: string }) {
   const [open, setOpen] = useState(false);
-  const shared = sharedIllustrationForActivity(a);
+  const shared = sharedIllustrationForActivity(a,true);
   return (
     <article className="overflow-hidden rounded-card border border-fam-border bg-fam-surface p-3 sm:p-4" data-testid={testId}>
       <div className="flex items-start gap-3">

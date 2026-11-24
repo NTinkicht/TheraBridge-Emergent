@@ -274,7 +274,7 @@ function FamilyActivities({ session, onError }: { session: SessionInfo; onError:
       {data?.children.map((c) => (
         <section key={c.id} className="space-y-3" data-testid={`family-activities-child-${c.id}`}>
           <h2 className="text-[18px] font-semibold">For {c.name}</h2>
-          {c.activities.length ? <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">{c.activities.map((t) => <ActivityCard key={t.id} t={t} tone="family" />)}</div>
+          {c.activities.length ? <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">{c.activities.map((t) => <ActivityCard key={t.id} t={t} tone="family" visual syntheticSample={data.sample === true && data.released === false} />)}</div>
             : <p className="text-[14px] text-fam-muted">No sample activities for these services yet.</p>}
         </section>
       ))}

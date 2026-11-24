@@ -21,11 +21,11 @@ const specialtySurface = (family: SpecialtyFamily, tint: boolean) =>
 // Presentation-only. The current template API assigns ONE service. The
 // optional services array supports future multi-specialty cards without
 // inventing permissions or changing the stored clinical activity.
-export function ActivityCard({ t, tone = 'clinical', extra, visual = false, compact = false, layout = 'grid', artworkScope }: {
-  t: Template; tone?: Tone; extra?: string; visual?: boolean; compact?: boolean; layout?: 'grid' | 'list'; artworkScope?: StaffArtworkScope;
+export function ActivityCard({ t, tone = 'clinical', extra, visual = false, compact = false, layout = 'grid', artworkScope, syntheticSample = false }: {
+  t: Template; tone?: Tone; extra?: string; visual?: boolean; compact?: boolean; layout?: 'grid' | 'list'; artworkScope?: StaffArtworkScope; syntheticSample?: boolean;
 }) {
   const fam = tone === 'family';
-  const shared = sharedIllustrationForActivity(t);
+  const shared = sharedIllustrationForActivity(t, syntheticSample);
   const candidateServices = (t as Template & { services?: readonly string[] }).services;
   const services = Array.isArray(candidateServices) && candidateServices.length
     ? candidateServices.filter(isRecognizedSpecialty) : [t.service];

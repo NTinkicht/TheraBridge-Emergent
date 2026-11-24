@@ -24,11 +24,11 @@ function fixtures(){
  t.sourceCommitCandidate='e068a455370090f44c757946b8571bb3fb1f117e';
  const ledger={schema:'therabridge-com02-exhaustive-closure-evidence-v1',
  status:'NOT_LEGALLY_OR_TECHNICALLY_CLEARED_FOR_COMMERCIAL_RELEASE',
- counts:{npmExceptionVersions:44,definitelyTypedVersions:21,otherNpmVersions:23,nonPackageAssets:92,...GROUPS,
+ counts:{npmExceptionVersions:44,definitelyTypedVersions:21,otherNpmVersions:23,nonPackageAssets:117,...GROUPS,
  productionSaasImagesIndependentlyAuthenticated:0,enterpriseDeliverablesIndependentlyAuthenticated:0,
  packagePublicationLineagesIndependentlyAuthenticated:0,legallyApprovedComponents:0},
  sourceEvidenceSha256:{rights:a,correspondence:a,bulk:a,definitelyTyped:a,candidateRelease:a},
- packages:names,assets:Array.from({length:92},(_,i)=>({path:'assets/'+i,sha256:a,legalDecision:'UNRESOLVED',
+ packages:names,assets:Array.from({length:117},(_,i)=>({path:'assets/'+i,sha256:a,legalDecision:'UNRESOLVED',
  commercialApproval:false,independentlyVerifiedDistribution:false})),
  editions:['SAAS','ENTERPRISE'].map(edition=>({edition,commercialLicenseGranted:false,signedRegistryPublicationIndependentlyVerified:false})),
  commercialLicenseGranted:false,finalThirdPartyNoticesIssued:false,approvedCopyrightOwner:false,g2ClinicalApproved:false,g2bClinicalApproved:false};
@@ -68,7 +68,7 @@ function fixtures(){
 }
 test('joins the exact current evidence without authorizing legal rights',()=>{
  const result=qualify(...fixtures());
- assert.equal(result.counts.npmExceptions,44);assert.equal(result.counts.assetRightsPending,92);
+ assert.equal(result.counts.npmExceptions,44);assert.equal(result.counts.assetRightsPending,117);
  assert.equal(result.commercialApproval,false);
 });
 for(const [description,mutate] of [

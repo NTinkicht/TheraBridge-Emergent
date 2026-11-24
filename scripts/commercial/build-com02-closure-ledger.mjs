@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // COM-02: exhaustive source-vs-release evidence readiness, not rights approval.
 // Crosschecks all exact-version packages (population pinned in com02-nextjs-pins.mjs),
-// 92 tracked assets, and both editions.
+// 117 tracked assets, and both editions.
 import {readFileSync,statSync,writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {reviewReleaseScope} from './review-release-scope.mjs';
@@ -58,9 +58,9 @@ function reconcile(rights,correspondence,bulk,types,release){
     bulk?.schema!=='therabridge-com02-bulk-rights-review-v1'||
     types?.schema!=='therabridge-com02-definitelytyped-26-pinned-triage-v1'||
     release?.schema!=='therabridge-com02-release-file-evidence-v1'||
-    rights.counts?.exceptions!==N||rights.counts?.nonPackageAssets!==92||
+    rights.counts?.exceptions!==N||rights.counts?.nonPackageAssets!==117||
     correspondence.counts?.exceptions!==N||
-    bulk.counts?.packages!==N||bulk.counts?.nonPackageAssets!==92||
+    bulk.counts?.packages!==N||bulk.counts?.nonPackageAssets!==117||
     types.counts?.definitelyTypedVersions!==DT||
     types.counts?.publisherToSourceAttested!==0||
     rights.finalNoticesIssued!==false||bulk.finalNoticesIssued!==false||
@@ -82,7 +82,7 @@ function reconcile(rights,correspondence,bulk,types,release){
     .map(x=>x.name+'@'+x.version).sort();
  if(JSON.stringify(seenOther)!==JSON.stringify(mustOther))fail('NON_TYPES_VERSION_DRIFT');
  const scoped=reviewReleaseScope(bulk,release); // independently validates actual candidate file hashes
- if(scoped.counts.nonPackageAssets!==92||scoped.counts.packages!==N||
+ if(scoped.counts.nonPackageAssets!==117||scoped.counts.packages!==N||
     scoped.counts.independentlyAttestedReleaseImages!==0||
     scoped.counts.independentlyAttestedPackagePublicationLineages!==0||
     scoped.counts.legallyApproved!==0||scoped.commercialLicenseGranted!==false)
@@ -150,8 +150,8 @@ function reconcile(rights,correspondence,bulk,types,release){
     groups.MONOREPO_SOURCE_SUBPATH_NOT_ATTESTED!==3||
     groups.LEGACY_REPO_ORIGIN_UNTRUSTED!==3)fail('GROUP_COUNT_DRIFT');
  const assetByPath=new Map();
- if(rights.nonPackage.length!==92||bulk.nonPackageAssets.length!==92||
-    scoped.assets.length!==92)fail('ASSET_COUNT_DRIFT');
+ if(rights.nonPackage.length!==117||bulk.nonPackageAssets.length!==117||
+    scoped.assets.length!==117)fail('ASSET_COUNT_DRIFT');
  for(const a of rights.nonPackage){
   if(!a||typeof a.path!=='string'||assetByPath.has(a.path)||
      !hex.test(a.sha256||'')||!allowedAssetCategories.has(a.category)||
@@ -180,7 +180,7 @@ function reconcile(rights,correspondence,bulk,types,release){
     enterpriseRedistributionRights:'PENDING_COUNSEL_REVIEW',
     legalDecision:'UNRESOLVED',commercialApproval:false};
  });
- if(assetCounts.IMAGE_OR_ICON!==73||assetCounts.BRAND!==15||assetCounts.CONTAINER_BUILD!==4)
+ if(assetCounts.IMAGE_OR_ICON!==98||assetCounts.BRAND!==15||assetCounts.CONTAINER_BUILD!==4)
   fail('ASSET_CATEGORY_DRIFT');
  const editionIds=['SAAS','ENTERPRISE'];
  const editions=editionIds.map(edition=>{
@@ -201,7 +201,7 @@ function reconcile(rights,correspondence,bulk,types,release){
     bulk:sha(JSON.stringify(bulk)),definitelyTyped:sha(JSON.stringify(types)),
     candidateRelease:sha(JSON.stringify(release))},
   counts:{npmExceptionVersions:N,definitelyTypedVersions:DT,otherNpmVersions:expectedNonTypes.length,
-   ...groups,nonPackageAssets:92,assetCategories:assetCounts,
+   ...groups,nonPackageAssets:117,assetCategories:assetCounts,
    productionSaasImagesIndependentlyAuthenticated:0,
    enterpriseDeliverablesIndependentlyAuthenticated:0,
    packagePublicationLineagesIndependentlyAuthenticated:0,
