@@ -46,3 +46,18 @@ test('staff-only local preview, server verification before scanning, no guardian
     assert(!s.includes('GeneratedArtworkSelector'));
   }
 });
+
+import {verifyStagedArtworkPack} from './m5-pr-a-artwork-pack.mjs';
+test('custody verification denies a nonexistent source pack before touching host custody',async()=>{
+  await assert.rejects(verifyStagedArtworkPack({packDir:'/nonexistent-m5-source-pack',custodyRoot:'/nonexistent-m5-custody',journalPath:'/nonexistent-m5-journal'}));
+});
+test('host verification checks exact master and authenticated encrypted assets without public delivery',async()=>{
+  const source=await file('scripts/qa/m5-pr-a-artwork-pack.mjs');
+  assert.match(source,/rows.length!==pack.verifiedReferences/);
+  assert.match(source,/event.assetDigest!==row.manifestSha256/);
+  assert.match(source,/manifest.assets\?\.master\?\.sha256!==item.masterSha256/);
+  assert.match(source,/decipher.setAuthTag/);
+  assert.match(source,/bytes.fill\(0\)/);
+  assert.match(source,/verify-staged/);
+  assert(!/fetch\(|createServer\(/.test(source));
+});

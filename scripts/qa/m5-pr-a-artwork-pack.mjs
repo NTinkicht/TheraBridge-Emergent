@@ -4,10 +4,10 @@
  * originals; provider run, signed rights and clinical approvals stay absent.
  * No network, public Git image bytes, or client delivery.
  */
-import {createHash} from 'node:crypto';
+import {createHash,createHmac,createDecipheriv,timingSafeEqual} from 'node:crypto';
 import {open,lstat} from 'node:fs/promises';
 import {constants} from 'node:fs';
-import {join,resolve} from 'node:path';
+import {join,resolve,dirname} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {GENERATED_ARTWORK} from '../../apps/web/src/lib/generated-artwork.mjs';
 import {stagePrivateIllustrationOnHost} from './m5-wu2c-private-custody.mjs';
@@ -105,6 +105,90 @@ export async function stageArtworkPack({packDir,custodyRoot,evidence,operatorId,
     return {staged:count,status:'PRIVATE_QUARANTINED_NOT_RELEASED',published:false};
   }finally{await journal.close();}
 }
+// Verify an actual, completed host import. This exposes no decrypted bytes,
+// storage paths, key, or rights decision. A missing/partial journal is failure.
+const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/;
+const macFor=(key,prefix,record)=>createHmac('sha256',key).update(prefix+JSON.stringify(record)).digest('hex');
+function sameMac(actual,expected){
+  return typeof actual==='string'&&HEX.test(actual)&&timingSafeEqual(Buffer.from(actual,'hex'),Buffer.from(expected,'hex'));
+}
+function jsonLines(bytes){
+  const raw=bytes.toString('utf8');
+  if(!raw.endsWith('\n'))fail();
+  return raw.slice(0,-1).split('\n').map(line=>JSON.parse(line));
+}
+async function privateDir(path){
+  const stat=await lstat(path);
+  if(!stat.isDirectory()||stat.isSymbolicLink()||(stat.mode&0o077)!==0)fail();
+}
+function checkEncryptedAsset(ciphertext,key,bundleId,referenceId,kind,proof){
+  if(!proof||!HEX.test(proof.sha256)||!Number.isSafeInteger(proof.bytes)||
+    proof.bytes<60||proof.bytes>12*1024*1024||proof.scanner!=='ClamAV'||
+    typeof proof.signatureSetVersion!=='string'||!/^[A-Za-z0-9][A-Za-z0-9._-]{1,79}$/.test(proof.signatureSetVersion)||
+    ciphertext.length!==proof.bytes+32||ciphertext.subarray(0,4).toString('ascii')!=='TBC1')fail();
+  const decipher=createDecipheriv('aes-256-gcm',key,ciphertext.subarray(4,16));
+  decipher.setAAD(Buffer.from('WU2C:v1:'+bundleId+':'+referenceId+':'+kind+':'+proof.sha256));
+  decipher.setAuthTag(ciphertext.subarray(16,32));
+  const bytes=Buffer.concat([decipher.update(ciphertext.subarray(32)),decipher.final()]);
+  try{
+    if(sha(bytes)!==proof.sha256||bytes.length!==proof.bytes)fail();
+    const [w,h]=kind==='master'?[1600,1200]:kind==='square'?[1200,1200]:[400,300];
+    validatePngHeader(bytes,w,h);
+  }finally{bytes.fill(0);}
+}
+/** Operator-only verification against the original exact 25-reference pack. */
+export async function verifyStagedArtworkPack({packDir,custodyRoot,journalPath}){
+  const pack=await verifyArtworkPack(packDir);
+  const encoded=process.env.TB_PRIVATE_DATA_KEY_B64;
+  if(typeof encoded!=='string'||!/^[A-Za-z0-9+/]{43}=$/.test(encoded))fail();
+  const key=Buffer.from(encoded,'base64');
+  if(key.length!==32||key.toString('base64')!==encoded){key.fill(0);fail();}
+  try{
+    const root=resolve(custodyRoot),bundles=join(root,'bundles');
+    await privateDir(root);await privateDir(bundles);
+    const journal=resolve(journalPath);
+    const rows=jsonLines(await readBounded(dirname(journal),journal.split('/').pop(),64*1024));
+    if(rows.length!==pack.verifiedReferences)fail();
+    const audit=jsonLines(await readBounded(root,'custody-audit.jsonl',2*1024*1024));
+    let previous='0'.repeat(64);
+    const last=new Map();
+    for(const [i,row] of audit.entries()){
+      const {mac,...unsigned}=row;
+      if(row.seq!==i+1||row.previous!==previous||
+        !sameMac(mac,macFor(key,'WU2C_AUDIT_V1:',unsigned)))fail();
+      previous=mac;last.set(row.bundleId,row);
+    }
+    const references=new Set(),bundleIds=new Set();
+    for(const row of rows){
+      const item=pack.assets.find(a=>a.referenceId===row.referenceId);
+      if(!item||references.has(row.referenceId)||!UUID.test(row.bundleId)||
+        bundleIds.has(row.bundleId)||row.masterSha256!==item.masterSha256||
+        !HEX.test(row.manifestSha256)||row.status!=='PRIVATE_QUARANTINED'||row.published!==false)fail();
+      const event=last.get(row.bundleId);
+      if(!event||event.event!=='QUARANTINED'||event.assetDigest!==row.manifestSha256)fail();
+      const dir=join(bundles,row.bundleId);
+      await privateDir(dir);
+      const raw=await readBounded(dir,'manifest.json',12000);
+      if(sha(raw)!==row.manifestSha256)fail();
+      const {manifest,mac}=JSON.parse(raw.toString('utf8'));
+      if(!manifest||!sameMac(mac,macFor(key,'WU2C_MANIFEST_V1:',manifest))||
+        manifest.bundleId!==row.bundleId||manifest.referenceId!==row.referenceId||
+        manifest.schemaVersion!==1||manifest.styleVersion!=='m5-b-v1'||
+        manifest.status!=='PRIVATE_QUARANTINED'||manifest.legalHold!=='UNVERIFIED'||
+        manifest.rightsVerified!==false||manifest.independentSecurityApproved!==false||
+        manifest.published!==false||manifest.readEnabled!==false||manifest.guardianReadEnabled!==false||
+        manifest.clinicalGate!=='NO_GO_G2_G2b'||manifest.assets?.master?.sha256!==item.masterSha256)fail();
+      for(const kind of ['master','square','card']){
+        const encrypted=await readBounded(dir,kind+'.tbenc',12*1024*1024+32);
+        checkEncryptedAsset(encrypted,key,row.bundleId,row.referenceId,kind,manifest.assets[kind]);
+      }
+      references.add(row.referenceId);bundleIds.add(row.bundleId);
+    }
+    return Object.freeze({verifiedReferences:references.size,verifiedEncryptedFiles:references.size*3,
+      status:'PRIVATE_CUSTODY_INTEGRITY_VERIFIED',rightsVerified:false,independentSecurityApproved:false,
+      published:false,readEnabled:false,guardianReadEnabled:false,clinicalGate:'NO_GO_G2_G2b'});
+  }finally{key.fill(0);}
+}
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
   const [command,packDir,root,evidencePath,operatorId,journalPath]=process.argv.slice(2);
   try{
@@ -115,6 +199,8 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
     }else if(command==='stage'&&packDir&&root&&evidencePath&&operatorId&&journalPath){
       const evidence=JSON.parse(await readBounded(resolve(evidencePath,'..'),evidencePath.split('/').pop(),4096));
       console.log(JSON.stringify(await stageArtworkPack({packDir,custodyRoot:root,evidence,operatorId,journalPath})));
+    }else if(command==='verify-staged'&&packDir&&root&&evidencePath){
+      console.log(JSON.stringify(await verifyStagedArtworkPack({packDir,custodyRoot:root,journalPath:evidencePath})));
     }else fail();
   }catch{console.error('Artwork intake stopped. Check the pack and private scanner/rights configuration. No publication enabled.');process.exitCode=1;}
 }
