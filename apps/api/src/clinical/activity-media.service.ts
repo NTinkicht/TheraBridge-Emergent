@@ -1,4 +1,5 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { readPrivateR2 } from '../common/private-r2';
 import { openPrivateData } from '../common/private-envelope';
 import { verifyPngCandidate } from './activity-media-png-integrity';
 import { PrismaService } from '../prisma/prisma.service';
@@ -204,12 +205,16 @@ export class ActivityMediaService {
         where:{ id:current.candidateId, centerId, templateId, templateVersion:version,
           mediaDraftId:current.draftId, kind:'ACTIVITY_IMAGE', status:'QUARANTINED', revokedAt:null,
           digestSha256:current.digestSha256 },
-        select:{ encryptedBytes:true },
+        select:{ encryptedBytes:true,r2CipherSha256:true,r2CipherBytes:true },
       });
-      if (!stored || stored.encryptedBytes.length > MAX_PRIVATE_IMAGE_BYTES + 29) throw unavailable();
+      if (!stored) throw unavailable();
       let bytes: Buffer;
       try {
-        bytes = openPrivateData(stored.encryptedBytes,'activity-image-v1',centerId,templateId);
+        const remote=stored.r2CipherSha256!=null||stored.r2CipherBytes!=null;
+        const encrypted=remote ? await readPrivateR2({centerId,candidateId:current.candidateId,
+          digest:stored.r2CipherSha256??'',size:stored.r2CipherBytes??0}) : stored.encryptedBytes;
+        if(encrypted.length>MAX_PRIVATE_IMAGE_BYTES+29)throw unavailable();
+        bytes = openPrivateData(encrypted,'activity-image-v1',centerId,templateId);
         const receipt = verifyPngCandidate(bytes);
         if (receipt.sha256 !== current.digestSha256 || receipt.width !== current.width || receipt.height !== current.height)
           throw unavailable();

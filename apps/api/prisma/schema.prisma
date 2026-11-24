@@ -1159,6 +1159,9 @@ model PrivateMediaCandidate {
   mediaDraft      ActivityMediaDraft? @relation(fields: [mediaDraftId], references: [id], onDelete: Restrict)
   template        ActivityTemplate? @relation(fields: [templateId], references: [id], onDelete: Restrict)
 
+  // Optional verified ciphertext mirror; no client-supplied URL or object key.
+  r2CipherSha256 String? @map("r2_cipher_sha256") @db.VarChar(64)
+  r2CipherBytes Int? @map("r2_cipher_bytes")
   approvedArtwork ActivityArtworkApproval?
 
   @@index([centerId, childId, createdAt])
