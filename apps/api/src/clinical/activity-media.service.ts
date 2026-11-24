@@ -7,6 +7,7 @@ import { assertActor } from './governance-core';
 import type { Viewer } from '../operations/children.service';
 import type { ActivityMediaDraftDto, ActivityMediaRejectDto } from './activity-media.dto';
 import { ILLUSTRATION_STYLE_VERSION } from './illustration-style';
+import { assertGeneratedReferenceBytes, generatedReferenceDigest } from './generated-artwork-reference';
 
 @Injectable()
 export class ActivityMediaService {
@@ -66,6 +67,9 @@ export class ActivityMediaService {
     // Existing pre-lock drafts remain readable for audit, not publication.
     if (dto.styleVersion !== ILLUSTRATION_STYLE_VERSION)
       throw new UnprocessableEntityException('Unsupported illustration style version.');
+    const lockedDigest = generatedReferenceDigest(dto.sourceReference);
+    if (lockedDigest !== null && dto.sourceType !== 'GENERATED')
+      throw new UnprocessableEntityException('Locked artwork requires generated source type.');
     const now = this.trial.now();
     return this.prisma.$transaction(async tx => {
       await this.trial.assertWritable(tx, centerId, now);
@@ -115,20 +119,21 @@ export class ActivityMediaService {
       const template=await this.authorizedTemplate(tx,centerId,v,templateId);
       const draft=await tx.activityMediaDraft.findFirst({where:{
         id:draftId,centerId,templateId,templateVersion:template.version,state:'DRAFT',
-      },select:{id:true,templateVersion:true,createdById:true}});
+      },select:{id:true,templateVersion:true,createdById:true,sourceReference:true}});
       if(!draft)throw new ConflictException('Private image proposal changed. Reload.');
       if(v.role==='THERAPIST'&&draft.createdById!==v.userId)
         throw new ForbiddenException('Only the proposing author may supply the image.');
-      return {templateVersion:draft.templateVersion};
+      return {templateVersion:draft.templateVersion,sourceReference:draft.sourceReference};
     });
+    assertGeneratedReferenceBytes(prior.sourceReference,pngBase64);
     const ready=await this.preparePngCandidate(pngBase64,centerId,templateId);
     const row=await this.prisma.$transaction(async tx=>{
       await this.trial.assertWritable(tx,centerId,this.trial.now());
       const template=await this.authorizedTemplate(tx,centerId,v,templateId);
       const draft=await tx.activityMediaDraft.findFirst({where:{
         id:draftId,centerId,templateId,templateVersion:prior.templateVersion,state:'DRAFT',
-      },select:{id:true,createdById:true}});
-      if(!draft || template.version!==prior.templateVersion)
+      },select:{id:true,createdById:true,sourceReference:true}});
+      if(!draft || template.version!==prior.templateVersion || draft.sourceReference!==prior.sourceReference)
         throw new ConflictException('Activity or media draft changed during scanning.');
       if(v.role==='THERAPIST'&&draft.createdById!==v.userId)
         throw new ForbiddenException('Only the proposing author may supply the image.');
