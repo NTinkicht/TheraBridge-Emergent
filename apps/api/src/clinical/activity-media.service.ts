@@ -7,6 +7,7 @@ import { assertActor } from './governance-core';
 import type { Viewer } from '../operations/children.service';
 import type { ActivityMediaDraftDto, ActivityMediaRejectDto } from './activity-media.dto';
 import { ILLUSTRATION_STYLE_VERSION } from './illustration-style';
+import { verifiesArtworkApproval, type ArtworkContext } from './activity-artwork-approval';
 import { assertGeneratedReferenceBytes, assertGeneratedReferenceScope, generatedReferenceDigest } from './generated-artwork-reference';
 
 @Injectable()
@@ -98,6 +99,58 @@ export class ActivityMediaService {
         publishEnabled: false as const, clinicalReleaseEnabled: false as const,
       };
     }, { isolationLevel: 'RepeatableRead' });
+  }
+
+
+  /** Staff-only receipt inventory. No bytes or publication permission.
+   * A signed record cannot resurrect a revoked candidate or rejected draft.
+   */
+  async approvedArtwork(centerId: string, v: Viewer, templateId: string) {
+    return this.prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM activity_template WHERE id=${templateId}::uuid AND center_id=${centerId}::uuid FOR SHARE`;
+      const t = await this.authorizedTemplate(tx, centerId, v, templateId);
+      const rows = await tx.activityArtworkApproval.findMany({
+        where: { centerId, templateId, templateVersion: t.version },
+        take: 66, orderBy: { slot: 'asc' },
+        include: { candidate: { select: {
+          id: true, centerId: true, templateId: true, templateVersion: true, kind: true,
+          status: true, revokedAt: true, digestSha256: true, width: true, height: true,
+          scannerName: true, scannerVersion: true,
+          mediaDraft: { select: {
+            id: true, centerId: true, templateId: true, templateVersion: true, version: true,
+            state: true, stepNumber: true, service: true, sourceType: true, styleVersion: true,
+            sceneType: true, sourceReference: true, altText: true, license: true, providerTerms: true,
+          } },
+        } } },
+      });
+      const items = rows.flatMap(row => {
+        const c = row.candidate, d = c.mediaDraft;
+        if (!d || c.centerId !== centerId || c.templateId !== templateId || c.templateVersion !== t.version ||
+            c.kind !== 'ACTIVITY_IMAGE' || c.status !== 'QUARANTINED' || c.revokedAt !== null ||
+            c.scannerName !== 'ClamAV' || !c.scannerVersion || c.width !== 400 || c.height !== 300 ||
+            d.centerId !== centerId || d.templateId !== templateId || d.templateVersion !== t.version ||
+            d.state !== 'DRAFT' || d.service !== t.service || d.sourceType !== 'GENERATED' ||
+            d.styleVersion !== ILLUSTRATION_STYLE_VERSION || row.slot !== (d.stepNumber ?? 0) ||
+            row.slot < 0 || row.slot > 64 || (row.slot > 0 && !t.steps[row.slot - 1]?.trim())) return [];
+        try {
+          if (generatedReferenceDigest(d.sourceReference) !== c.digestSha256) return [];
+          assertGeneratedReferenceScope(d.sourceReference, t.service, d.sceneType);
+        } catch { return []; }
+        const context: ArtworkContext = {
+          candidateId:c.id, centerId, templateId, templateVersion:t.version, slot:row.slot,
+          digestSha256:c.digestSha256, draftId:d.id, draftVersion:d.version, service:d.service,
+          styleVersion:d.styleVersion, sceneType:d.sceneType, sourceReference:d.sourceReference,
+          altText:d.altText, license:d.license, providerTerms:d.providerTerms,
+          instruction:row.slot === 0 ? null : t.steps[row.slot - 1],
+          activityTitle:t.title, activitySteps:t.steps, activitySafety:t.safety, activityMaterials:t.materials,
+        };
+        if (!verifiesArtworkApproval(row, context)) return [];
+        return [{ stepNumber:row.slot || null, altText:d.altText, width:c.width, height:c.height }];
+      });
+      return { templateVersion:t.version, items:rows.length <= 65 ? items : [],
+        metadataOnly:true as const, readEnabled:false as const, publishEnabled:false as const,
+        clinicalReleaseEnabled:false as const };
+    }, { isolationLevel:'RepeatableRead' });
   }
 
   async propose(centerId: string, v: Viewer, templateId: string, dto: ActivityMediaDraftDto) {

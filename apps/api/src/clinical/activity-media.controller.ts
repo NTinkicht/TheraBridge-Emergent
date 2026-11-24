@@ -34,6 +34,12 @@ export class ActivityMediaController {
     @Req() req: TbRequest) {
     return this.media.mapping(centerId, viewer(req), templateId);
   }
+  @Get('approved-artwork')
+  @RequirePermission('center.activities.manage')
+  approvedArtwork(@Param('centerId', uuid()) centerId: string, @Param('templateId', uuid()) templateId: string,
+    @Req() req: TbRequest) {
+    return this.media.approvedArtwork(centerId, viewer(req), templateId);
+  }
   @Post()
   @RequirePermission('center.activities.manage')
   propose(@Param('centerId', uuid()) centerId: string, @Param('templateId', uuid()) templateId: string,

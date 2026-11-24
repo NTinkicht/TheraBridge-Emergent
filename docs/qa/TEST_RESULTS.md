@@ -1827,3 +1827,7 @@ From merged PR #489 main@0047280b, source candidate implements fixed 25-slot `m5
 
 ## 2026-11-24 — PR C private mapping integrity slice (qualification pending)
 Current-version staff snapshot now remounts on center/template/version changes, discards old in-flight results, rejects malformed or duplicate slot inventories and reports proposed/scanned slot coverage separately from approved illustration coverage. Mounted adversarial regressions added. This is a preparatory slice only: approved persistent references, secure retrieval, catalogue/guardian rendering, actual published inventory coverage, private host import and signed evidence remain outstanding. Exact-HEAD CI/review NOT RUN at commit creation. No release or read gate changed; G2/G2b NO-GO.
+
+
+## 2026-11-24 — PR C persistent signed artwork evidence foundation (qualification pending)
+Previous `242ece8` CI 45462902053 and focused Web 45462902555 PASS; Codex exact HEAD clean. Added additive Prisma approval evidence table/migration, independent purpose-bound Ed25519 signature verifier, current-version staff-only verified receipt metadata endpoint, and signature tampering/key configuration tests. No HTTP approval writer, private image byte read, guardian delivery, release authority or actual signature provisioning; trusted evidence onboarding and storage/derivative delivery remain outstanding. CI and review NOT RUN at commit creation. The new trust-key design is proposed engineering infrastructure, not verified legal/clinical identity or approval policy. G2/G2b NO-GO.
