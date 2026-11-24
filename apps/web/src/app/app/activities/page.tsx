@@ -5,6 +5,7 @@ import { HeartHandshake, LayoutGrid, List, Plus, Search, Sparkles } from 'lucide
 import { Field, FormAlert } from '@/components/auth/Field';
 import { PageTitle, SelectField, Workspace, errorText, useLoad } from '@/components/centers/kit';
 import { CenterArtworkCoveragePanel } from '@/components/clinical/CenterArtworkCoveragePanel';
+import { SharedIllustrationLibrary } from '@/components/clinical/SharedIllustration';
 import { ActivityCard } from '@/components/clinical/ActivityCard';
 import { GeneratedArtworkGallery, type LocalArtworkPreview } from '@/components/clinical/GeneratedArtworkGallery';
 import { LocalMappedArtworkReview } from '@/components/clinical/LocalMappedArtworkReview';
@@ -119,6 +120,7 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
   return (
     <div className="space-y-5">
       <PageTitle title="Activity library" body="Step-by-step home activities with safety guidance, ready to add to therapy plan drafts." testId="activities-title" />
+      <SharedIllustrationLibrary />
       {notice && <FormAlert tone="success" testId="template-saved">{notice}</FormAlert>}
       {canReviewArtwork && session.activeContext?.type==='center' && session.activeContext.role==='CLINICAL_SUPERVISOR' &&
         <CenterArtworkCoveragePanel key={JSON.stringify([centerId,session.user.id,session.activeContext.membershipId])} centerId={centerId}/>}
