@@ -801,6 +801,8 @@ jobs:
         run: node --test scripts/qa/m5-wu2d-production-assets.test.mjs
       - name: M5 WU2-E private staff steps, accessible fallback and no-publication cross-surface tests
         run: node --test scripts/qa/m5-wu2e-private-steps.test.mjs
+      - name: M5 WU2-F synthetic-db pilot integrity, 20-candidate matching and fail-closed published-coverage tests
+        run: node --test scripts/qa/m5-wu2f-pilot-readiness.test.mjs
       - name: M5-13 therapist-reported concept acceptance must remain non-publication evidence
         run: node --test scripts/qa/m5-wu2a-therapist-attestation.test.mjs
       - name: M5-13 concept pack pinned hashes and tamper-denial contract
