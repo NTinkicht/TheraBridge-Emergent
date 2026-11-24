@@ -18,7 +18,10 @@ export function GeneratedArtworkSelector({onSelect,service,disabled=false}:{
     urlRef.current=null;
     setPreview(null);
   };
-  useEffect(()=>()=>{generation.current++;if(urlRef.current)URL.revokeObjectURL(urlRef.current);urlRef.current=null;},[service]);
+  useEffect(()=>{
+    setId('');setPreview(null);setStatus('');setBusy(false);
+    return ()=>{generation.current++;if(urlRef.current)URL.revokeObjectURL(urlRef.current);urlRef.current=null;};
+  },[service]);
   const family=service==='feeding'?'occupational':service==='developmental'?'behavioral':service;
   const choices=GENERATED_ARTWORK.filter(item=>family===undefined||item.family===family);
   const asset=choices.some(item=>item.referenceId===id)?findGeneratedArtwork(id):null;
