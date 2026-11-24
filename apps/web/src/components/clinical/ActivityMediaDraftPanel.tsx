@@ -196,14 +196,25 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion,
                 onClick={()=>setAttaching(current=>current===draft.id?null:draft.id)}>
                 {attaching===draft.id?'Close private image intake':'Attach scanned private PNG'}
               </Button>
-              {attaching===draft.id&&<PrivatePngCandidatePicker
-                label="Stage a private illustration candidate (not published)"
-                onStage={async pngBase64=>{
-                  await activityMediaDrafts.uploadCandidate(centerId,templateId,draft.id,pngBase64);
-                  setNotice('Encrypted scanned illustration candidate is quarantined; independent rights and clinical review still required.');
-                  setAttaching(null);
-                  setCandidateRevision(value=>value+1);
-                }} />}
+              {attaching===draft.id&&(draft.sourceReference.startsWith('m5-b-v1:')?
+                <GeneratedArtworkSelector key={[centerId,templateId,templateVersion,draft.id].join(':')}
+                  service={service} lockedReference={draft.sourceReference}
+                  instruction={draft.stepNumber===null?'Whole activity — compare with all authored instructions.':steps[draft.stepNumber-1]??'Instruction unavailable; reload activity.'}
+                  disabled={draft.stepNumber!==null&&!steps[draft.stepNumber-1]?.trim()}
+                  onStage={async pngBase64=>{
+                    await activityMediaDrafts.uploadCandidate(centerId,templateId,draft.id,pngBase64);
+                    setNotice('Encrypted scanned illustration candidate is quarantined; independent rights and clinical review still required.');
+                    setAttaching(null);
+                    setCandidateRevision(value=>value+1);
+                  }} />:
+                <PrivatePngCandidatePicker
+                  label="Stage a private illustration candidate (not published)"
+                  onStage={async pngBase64=>{
+                    await activityMediaDrafts.uploadCandidate(centerId,templateId,draft.id,pngBase64);
+                    setNotice('Encrypted scanned illustration candidate is quarantined; independent rights and clinical review still required.');
+                    setAttaching(null);
+                    setCandidateRevision(value=>value+1);
+                  }} />)}
             </div>}
           <ActivityMediaCandidateHistory key={[draft.id, draft.version, draft.state, candidateRevision].join(':')}
             centerId={centerId} templateId={templateId} draftId={draft.id} />

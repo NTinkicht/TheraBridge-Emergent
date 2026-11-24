@@ -99,3 +99,38 @@ test('switching service while a verification is pending cannot reveal the earlie
  expect(tree.root.findAllByType('img')).toHaveLength(0);
  expect(onSelect).not.toHaveBeenCalled();
 });
+
+const lockedReference='m5-b-v1:WU2A-S1-SPEECH:sha256:'+'a'.repeat(64);
+test('locked persisted reference shows instruction, previews exact bytes, and stages only after explicit confirmation',async()=>{
+ const onStage=jest.fn().mockResolvedValue(undefined);
+ await act(async()=>{tree=create(React.createElement(GeneratedArtworkSelector,{service:'speech',lockedReference,onStage,instruction:'Match the red card.'}));});
+ expect(tree.root.findAllByType('select')).toHaveLength(0);
+ expect(tree.root.findByProps({'data-testid':'generated-artwork-instruction'}).children).toContain('Match the red card.');
+ verifyGeneratedReviewBytes.mockResolvedValueOnce(false);await upload(good());
+ expect(onStage).not.toHaveBeenCalled();expect(tree.root.findAllByType('button')).toHaveLength(0);
+ verifyGeneratedReviewBytes.mockResolvedValueOnce(true);await upload(good());
+ expect(onStage).not.toHaveBeenCalled();
+ await act(async()=>{tree.root.findByType('button').props.onClick();await Promise.resolve();});
+ expect(onStage).toHaveBeenCalledTimes(1);
+ expect(onStage).toHaveBeenCalledWith(Buffer.alloc(33).toString('base64'));
+ expect(revokeUrl).toHaveBeenCalledWith('blob:local-test');
+ expect(tree.root.findAllByType('img')).toHaveLength(0);
+ expect(tree.root.findByType('input').props.disabled).toBe(true);
+});
+test('locked reference with wrong hash or specialty offers no file or staging control',async()=>{
+ const onStage=jest.fn();
+ await act(async()=>{tree=create(React.createElement(GeneratedArtworkSelector,{service:'speech',lockedReference:lockedReference+'x',onStage}));});
+ expect(tree.root.findByProps({role:'alert'})).toBeTruthy();expect(tree.root.findAllByType('input')).toHaveLength(0);
+ await act(async()=>tree.update(React.createElement(GeneratedArtworkSelector,{service:'physical',lockedReference,onStage})));
+ expect(tree.root.findAllByType('input')).toHaveLength(0);expect(onStage).not.toHaveBeenCalled();
+});
+test('failed or ambiguous private staging clears bytes and requires history reconciliation instead of retry',async()=>{
+ const onStage=jest.fn().mockRejectedValue(Error('network'));
+ await act(async()=>{tree=create(React.createElement(GeneratedArtworkSelector,{service:'speech',lockedReference,onStage}));});
+ verifyGeneratedReviewBytes.mockResolvedValueOnce(true);await upload(good());
+ await act(async()=>{tree.root.findByType('button').props.onClick();await Promise.resolve();});
+ expect(JSON.stringify(tree.toJSON())).toContain('Close and inspect candidate history before retrying');
+ expect(tree.root.findAllByType('button')).toHaveLength(0);
+ expect(tree.root.findByType('input').props.disabled).toBe(true);
+ expect(revokeUrl).toHaveBeenCalled();
+});
