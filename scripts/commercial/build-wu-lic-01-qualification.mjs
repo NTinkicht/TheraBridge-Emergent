@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// WU-LIC-01: reconcile the exact 44-version, 92-asset blocked ledger with two
+// WU-LIC-01: reconcile the exact 44-version, 117-asset blocked ledger with two
 // independently re-fetched npm/source byte receipts. NEVER authorizes commercial use.
 import {createHash} from 'node:crypto';
 import {readFileSync,statSync,writeFileSync} from 'node:fs';
@@ -20,8 +20,8 @@ function qualify(ledger,emoji,tokenizer,comparison){
     ledger.counts?.npmExceptionVersions!==44||
     ledger.counts?.definitelyTypedVersions!==21||
     ledger.counts?.otherNpmVersions!==23||
-    ledger.counts?.nonPackageAssets!==92||
-    ledger.packages?.length!==44||ledger.assets?.length!==92||
+    ledger.counts?.nonPackageAssets!==117||
+    ledger.packages?.length!==44||ledger.assets?.length!==117||
     ledger.editions?.length!==2)fail('POPULATION_OR_SCHEMA_DRIFT');
  for(const [group,count] of Object.entries(GROUPS))
   if(ledger.counts[group]!==count)fail('GROUP_COUNT_DRIFT_'+group);
@@ -146,7 +146,7 @@ function qualify(ledger,emoji,tokenizer,comparison){
   evidenceSha256:{closureLedger:digest(ledger),emoji405:digest(emoji),tokenizer402:digest(tokenizer),sameRunRootComparison:digest(comparison),reconstructedQueue:queueSha,lockedDependency:lockSha},
   counts:{npmExceptions:44,definitelyTyped:21,nonDefinitelyTyped:23,
    ...groupCounts,sourceRootManifestsExact:matched+1,sourceRootManifestByteDifferences:differed,
-   independentlyAttestedPublisherBuildLineages:0,assetRightsPending:92,
+   independentlyAttestedPublisherBuildLineages:0,assetRightsPending:117,
    verifiedCommercialReleaseImages:0},
   remaining:{npmPublisherBuildLineages:'UNVERIFIED_FOR_ALL_44',
    sourceLicenseAndNotices:'REQUIRE_EXACT_VERSION_COUNSEL_DISPOSITION',

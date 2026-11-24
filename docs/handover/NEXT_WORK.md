@@ -1682,3 +1682,6 @@ Package only the 25 public-demo display WebP derivatives (606626 bytes total), e
 
 
 Codex P2 FIX_NOW: platform migration uses random UUIDs for four global samples. Portable matching requires exact title/service/steps plus synthetic library provenance (guardian sample route or API library marker); all other mappings require exact demo UUID. Regression test extracts the real migration records and gives them fresh UUIDs. No generic arbitrary clinical template mapping.
+
+
+2026-11-25 PR #497: explicitly enable visual cards on guardian Activities at home and pass verified sample/unreleased context for portable global sample matching. Commercial provenance failure was an exact source asset inventory increase from 92 to 117 (73 to 98 images/icons); reconcile all four ledger/qualification stages and tests without removing or approving any asset or changing clinical/commercial gates.

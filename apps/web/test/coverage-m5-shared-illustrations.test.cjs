@@ -123,3 +123,12 @@ test('fresh migration samples with generated UUIDs match only in synthetic libra
  expect(records).toHaveLength(4);
  for(const row of records){expect(lib.sharedIllustrationForActivity({...row,library:'synthetic'})?.family).toBe(row.service);expect(lib.sharedIllustrationForActivity(row,true)?.family).toBe(row.service);expect(lib.sharedIllustrationForActivity({...row,library:'center'})).toBeNull();expect(lib.sharedIllustrationForActivity({...row,steps:['modified']},true)).toBeNull();}
 });
+
+
+test('actual guardian catalogue cards render images for every current family sample',async()=>{
+ const {DEMO_ILLUSTRATION_MAP}=await import('../src/lib/demo-illustration-map.mjs');
+ const {ActivityCard}=require('../src/components/clinical/ActivityCard');
+ const family=DEMO_ILLUSTRATION_MAP.filter(x=>['Bubble breath and sounds','Snack-time choices','Playdough pinch and roll','Pillow path balance walk'].includes(x.title)||x.title.includes('(sample only)')||x.title.startsWith('Synthetic demo - '));
+ expect(family).toHaveLength(9);
+ for(const t of family){let tree;await act(async()=>{tree=create(React.createElement(ActivityCard,{t:{...t,materials:[],safety:[],minutes:10,ageBand:'sample'},tone:'family',visual:true,syntheticSample:true}))});expect(tree.root.findByType('img').props.src).toBe(lib.sharedIllustrationUrl(lib.sharedIllustrationForActivity(t,true)));await act(async()=>tree.unmount());}
+});

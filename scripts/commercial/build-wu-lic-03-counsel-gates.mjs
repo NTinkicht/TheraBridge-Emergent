@@ -19,11 +19,11 @@ function buildLaunchPackage(rights,decision) {
     rights.enterpriseReleaseApproved!==false||rights.g2ClinicalApproved!==false||
     rights.g2bClinicalApproved!==false||
     rights.counts?.npmExceptions!==44||rights.counts?.definitelyTyped!==21||
-    rights.counts?.nonDefinitelyTyped!==23||rights.counts?.trackedAssets!==92||
+    rights.counts?.nonDefinitelyTyped!==23||rights.counts?.trackedAssets!==117||
     rights.counts?.authenticPublisherBuildLineages!==0||
     rights.counts?.independentReleaseImages!==0||rights.counts?.legallyApproved!==0||
     !Array.isArray(rights.packages)||rights.packages.length!==44||
-    !Array.isArray(rights.assets)||rights.assets.length!==92||
+    !Array.isArray(rights.assets)||rights.assets.length!==117||
     !Array.isArray(rights.editions)||rights.editions.length!==2||
     !Array.isArray(rights.supplementalDistributionObligations)||
     rights.supplementalDistributionObligations.length!==4||
@@ -102,7 +102,7 @@ function buildLaunchPackage(rights,decision) {
   }
   return {path:a.path,sha256:a.sha256,category:a.category,editions:scope};
  });
- if(assetGroups.get('IMAGE_OR_ICON')!==73||assetGroups.get('BRAND')!==15||
+ if(assetGroups.get('IMAGE_OR_ICON')!==98||assetGroups.get('BRAND')!==15||
     assetGroups.get('CONTAINER_BUILD')!==4||assetGroups.size!==3)
     fail('ASSET_CATEGORY_DRIFT');
  const extra=new Set();
@@ -134,7 +134,7 @@ function buildLaunchPackage(rights,decision) {
   status:'COUNSEL_REVIEW_DRAFT_NOT_COMMERCIAL_OR_CLINICAL_AUTHORIZATION',
   sourceHashes:{rightsQueueSha256:sha(rights),decisionRegisterSha256:sha(decision)},
   counts:{npmExceptions:packages.length,assets:assets.length,unresolvedPublisherLineages:44,
-   unresolvedAssetRights:92,supplementalSystems:extra.size,
+   unresolvedAssetRights:117,supplementalSystems:extra.size,
    legallyApproved:0,independentlyAttestedReleaseImages:0},
   sourceWorkstreams:{ip:'COM-01 #312',provenance:'COM-02 #356/#360',
    repositoryNotices:'COM-03 #314',contracts:'COM-04 #315',

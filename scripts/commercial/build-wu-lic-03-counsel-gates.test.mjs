@@ -15,12 +15,12 @@ function fixture(){
  status:'EVIDENCE_QUEUE_PREPARED_EXTERNAL_ATTESTATIONS_AND_LEGAL_RIGHTS_REQUIRED',
  commercialApproval:false,saasReleaseApproved:false,enterpriseReleaseApproved:false,
  g2ClinicalApproved:false,g2bClinicalApproved:false,
- counts:{npmExceptions:44,definitelyTyped:21,nonDefinitelyTyped:23,trackedAssets:92,
+ counts:{npmExceptions:44,definitelyTyped:21,nonDefinitelyTyped:23,trackedAssets:117,
  authenticPublisherBuildLineages:0,independentReleaseImages:0,legallyApproved:0},
  sources:{closureLedgerSha256:H,wuLic01Sha256:H,releaseManifestSha256:H,
  root405Sha256:H,tokenizer402Sha256:H,sameRunComparisonSha256:H},
  packages:Array.from({length:44},(_,i)=>id(i<21?'@types/fixture-'+i:'fixture-'+i,'1.0.0',i<21?'DEFINITELYTYPED_HISTORICAL_RELEASE':'MISSING_IMMUTABLE_SOURCE_REVISION')),
- assets:Array.from({length:92},(_,i)=>({path:'assets/'+i,sha256:H,category:i<73?'IMAGE_OR_ICON':i<88?'BRAND':'CONTAINER_BUILD',
+ assets:Array.from({length:117},(_,i)=>({path:'assets/'+i,sha256:H,category:i<98?'IMAGE_OR_ICON':i<113?'BRAND':'CONTAINER_BUILD',
  legalDecision:'UNRESOLVED',commercialApproval:false,
  editions:Object.fromEntries(['SAAS','ENTERPRISE'].map(e=>[e,{
  authenticatedShippedScope:'UNKNOWN_NO_INDEPENDENT_PUBLISHED_RELEASE_IMAGE',
@@ -47,9 +47,9 @@ test('unattested local candidate is preserved but never becomes an approved rele
  assert.equal(r.editions.SAAS.status,'BLOCKED');
  assert.equal(r.commercialLicenseGranted,false);
 });
-test('all 44 packages and 92 assets remain separate SaaS/Enterprise BLOCKED decisions',()=>{
+test('all 44 packages and 117 assets remain separate SaaS/Enterprise BLOCKED decisions',()=>{
  const r=buildLaunchPackage(...fixture());
- assert.equal(r.counts.npmExceptions,44);assert.equal(r.counts.assets,92);
+ assert.equal(r.counts.npmExceptions,44);assert.equal(r.counts.assets,117);
  assert.deepEqual(Object.keys(r.editions).sort(),['ENTERPRISE','SAAS']);
  assert.equal(r.editions.SAAS.status,'BLOCKED');
  assert.equal(r.editions.ENTERPRISE.status,'BLOCKED');
