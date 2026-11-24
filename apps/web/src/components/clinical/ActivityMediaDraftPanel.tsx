@@ -5,6 +5,7 @@ import { FileImage, ShieldAlert } from 'lucide-react';
 import { Button, Card, Pill } from '@/components/design/ui';
 import { activityMediaDrafts, type ActivityMediaDraft as Draft, type ActivityMediaSource as SourceType } from '@/lib/activity-media';
 import { LocalActivityMediaReadiness } from './LocalActivityMediaReadiness';
+import { GeneratedArtworkSelector } from './GeneratedArtworkSelector';
 import { PrivateIllustrationStepPreview } from './PrivateIllustrationStepPreview';
 import { ActivityMediaCandidateHistory } from './ActivityMediaCandidateHistory';
 import { PrivatePngCandidatePicker } from '@/components/operations/PrivatePngCandidatePicker';
@@ -131,6 +132,12 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion,
       </p>
       <PrivateIllustrationStepPreview key={centerId + ':' + templateId + ':' + String(templateVersion ?? 'unversioned')}
         templateVersion={templateVersion} steps={steps} />
+      <GeneratedArtworkSelector key={centerId + ':' + templateId + ':' + String(templateVersion ?? 'unversioned')}
+        disabled={busy || !templateVersion}
+        onSelect={asset=>setForm(previous=>({...previous,sourceType:'GENERATED',
+          sceneType:asset.scene,altText:asset.alt,
+          sourceReference:'m5-b-v1:' + asset.referenceId + ':sha256:' + asset.reviewSha256,
+          license:'',providerTerms:''}))} />
       {/* Scope-coupled key invalidates pending local file checks when activity identity/version changes. */}
       <LocalActivityMediaReadiness key={centerId + ':' + templateId + ':' + String(templateVersion ?? 'unversioned')} />
       {error && <p role="alert" className="text-sm text-status-danger">{error}</p>}
