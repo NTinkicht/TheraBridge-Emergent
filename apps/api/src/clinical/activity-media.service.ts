@@ -1,12 +1,16 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { readPrivateR2 } from '../common/private-r2';
+import { openPrivateData } from '../common/private-envelope';
+import { verifyPngCandidate } from './activity-media-png-integrity';
 import { PrismaService } from '../prisma/prisma.service';
-import { preparePrivatePng } from '../common/private-image-candidate';
+import { MAX_PRIVATE_IMAGE_BYTES, preparePrivatePng } from '../common/private-image-candidate';
 import { TrialService } from '../operations/trial.service';
 import { logCenterEvent, type Tx } from '../centers/history';
 import { assertActor } from './governance-core';
 import type { Viewer } from '../operations/children.service';
 import type { ActivityMediaDraftDto, ActivityMediaRejectDto } from './activity-media.dto';
 import { ILLUSTRATION_STYLE_VERSION } from './illustration-style';
+import { verifiesArtworkApproval, type ArtworkContext } from './activity-artwork-approval';
 import { assertGeneratedReferenceBytes, assertGeneratedReferenceScope, generatedReferenceDigest } from './generated-artwork-reference';
 
 @Injectable()
@@ -98,6 +102,156 @@ export class ActivityMediaService {
         publishEnabled: false as const, clinicalReleaseEnabled: false as const,
       };
     }, { isolationLevel: 'RepeatableRead' });
+  }
+
+
+  /** Staff-only receipt inventory. No bytes or publication permission.
+   * A signed record cannot resurrect a revoked candidate or rejected draft.
+   */
+  async approvedArtwork(centerId: string, v: Viewer, templateId: string) {
+    return this.prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM activity_template WHERE id=${templateId}::uuid AND center_id=${centerId}::uuid FOR SHARE`;
+      const t = await this.authorizedTemplate(tx, centerId, v, templateId);
+      const verified = await this.verifiedArtwork(tx, centerId, templateId, t);
+      const items = verified.map(({ stepNumber, altText, width, height }) => ({ stepNumber, altText, width, height }));
+      const expectedSteps = t.steps.slice(0,64).flatMap((step,i)=>step.trim()?[i+1]:[]);
+      const verifiedSteps = items.filter(item=>item.stepNumber!==null).length;
+      return { templateVersion:t.version, items,
+        coverage:{ wholeActivityVerified:items.some(item=>item.stepNumber===null),
+          verifiedSteps, expectedSteps:expectedSteps.length,
+          stepCoveragePercent:expectedSteps.length===0?null:Math.floor(100*verifiedSteps/expectedSteps.length),
+          publishedCoveragePercent:null, publishedCoverageAvailable:false as const },
+        metadataOnly:true as const, readEnabled:false as const, publishEnabled:false as const,
+        clinicalReleaseEnabled:false as const };
+    }, { isolationLevel:'RepeatableRead' });
+  }
+
+
+  private async verifiedArtwork(tx: Tx, centerId: string, templateId: string,
+    t: Awaited<ReturnType<ActivityMediaService['authorizedTemplate']>>, slot?: number) {
+      const rows = await tx.activityArtworkApproval.findMany({
+        where: { centerId, templateId, templateVersion: t.version, ...(slot === undefined ? {} : { slot }) },
+        take: 66, orderBy: { slot: 'asc' },
+        include: { candidate: { select: {
+          id: true, centerId: true, templateId: true, templateVersion: true, kind: true,
+          status: true, revokedAt: true, digestSha256: true, width: true, height: true,
+          scannerName: true, scannerVersion: true,
+          mediaDraft: { select: {
+            id: true, centerId: true, templateId: true, templateVersion: true, version: true,
+            state: true, stepNumber: true, service: true, sourceType: true, styleVersion: true,
+            sceneType: true, sourceReference: true, altText: true, license: true, providerTerms: true,
+          } },
+        } } },
+      });
+      const items = rows.flatMap(row => {
+        const c = row.candidate, d = c.mediaDraft;
+        if (!d || c.centerId !== centerId || c.templateId !== templateId || c.templateVersion !== t.version ||
+            c.kind !== 'ACTIVITY_IMAGE' || c.status !== 'QUARANTINED' || c.revokedAt !== null ||
+            c.scannerName !== 'ClamAV' || !c.scannerVersion || c.width !== 400 || c.height !== 300 ||
+            d.centerId !== centerId || d.templateId !== templateId || d.templateVersion !== t.version ||
+            d.state !== 'DRAFT' || d.service !== t.service || d.sourceType !== 'GENERATED' ||
+            d.styleVersion !== ILLUSTRATION_STYLE_VERSION || row.slot !== (d.stepNumber ?? 0) ||
+            row.slot < 0 || row.slot > 64 || (row.slot > 0 && !t.steps[row.slot - 1]?.trim())) return [];
+        try {
+          if (generatedReferenceDigest(d.sourceReference) !== c.digestSha256) return [];
+          assertGeneratedReferenceScope(d.sourceReference, t.service, d.sceneType);
+        } catch { return []; }
+        const context: ArtworkContext = {
+          candidateId:c.id, centerId, templateId, templateVersion:t.version, slot:row.slot,
+          digestSha256:c.digestSha256, draftId:d.id, draftVersion:d.version, service:d.service,
+          styleVersion:d.styleVersion, sceneType:d.sceneType, sourceReference:d.sourceReference,
+          altText:d.altText, license:d.license, providerTerms:d.providerTerms,
+          instruction:row.slot === 0 ? null : t.steps[row.slot - 1],
+          activityTitle:t.title, activitySteps:t.steps, activitySafety:t.safety, activityMaterials:t.materials,
+        };
+        if (!verifiesArtworkApproval(row, context)) return [];
+        return [{ stepNumber:row.slot || null, altText:d.altText, width:c.width, height:c.height, candidateId:c.id, draftId:d.id, digestSha256:c.digestSha256 }];
+      });
+
+    return rows.length <= 65 ? items : [];
+  }
+
+  /** Staff preview only, with a fresh authorization and evidence check per
+   * request. Lock in draft -> candidate order, matching revocation/rejection.
+   * No public URL or guardian release is minted. */
+  async readApprovedArtwork(centerId: string, v: Viewer, templateId: string, version: number, slot: number) {
+    if (!Number.isSafeInteger(version) || version < 1 || !Number.isSafeInteger(slot) || slot < 0 || slot > 64)
+      throw new UnprocessableEntityException('Invalid illustration version or slot.');
+    return this.prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM activity_template WHERE id=${templateId}::uuid AND center_id=${centerId}::uuid FOR SHARE`;
+      const t = await this.authorizedTemplate(tx, centerId, v, templateId);
+      const { digestSha256: _digest, ...image } = await this.readVerifiedArtwork(tx,centerId,templateId,t,version,slot);
+      return { ...image, staffPreview:true as const, publishEnabled:false as const, clinicalReleaseEnabled:false as const };
+    }, { isolationLevel:'ReadCommitted' });
+  }
+
+
+  // Internal use by staff and the existing family-release service ONLY.
+  // The latter must first authorize the specific immutable release.
+  private async readVerifiedArtwork(tx:Tx,centerId:string,templateId:string,
+    t:Awaited<ReturnType<ActivityMediaService['authorizedTemplate']>>,version:number,slot:number,expectedDigest?:string) {
+      const unavailable = () => new NotFoundException('Signed illustration unavailable.');
+      if (t.version !== version) throw unavailable();
+      const [initial] = await this.verifiedArtwork(tx, centerId, templateId, t, slot);
+      if (!initial) throw unavailable();
+      await tx.$queryRaw`SELECT id FROM activity_media_draft WHERE id=${initial.draftId}::uuid
+        AND center_id=${centerId}::uuid AND template_id=${templateId}::uuid FOR SHARE`;
+      await tx.$queryRaw`SELECT id FROM private_media_candidate WHERE id=${initial.candidateId}::uuid
+        AND center_id=${centerId}::uuid AND template_id=${templateId}::uuid FOR SHARE`;
+      const [current] = await this.verifiedArtwork(tx, centerId, templateId, t, slot);
+      if (!current || current.candidateId !== initial.candidateId || current.draftId !== initial.draftId ||
+          (expectedDigest !== undefined && current.digestSha256 !== expectedDigest)) throw unavailable();
+      const stored = await tx.privateMediaCandidate.findFirst({
+        where:{ id:current.candidateId, centerId, templateId, templateVersion:version,
+          mediaDraftId:current.draftId, kind:'ACTIVITY_IMAGE', status:'QUARANTINED', revokedAt:null,
+          digestSha256:current.digestSha256 },
+        select:{ encryptedBytes:true,r2CipherSha256:true,r2CipherBytes:true },
+      });
+      if (!stored) throw unavailable();
+      let bytes: Buffer;
+      try {
+        const remote=stored.r2CipherSha256!=null||stored.r2CipherBytes!=null;
+        const encrypted=remote ? await readPrivateR2({centerId,candidateId:current.candidateId,
+          digest:stored.r2CipherSha256??'',size:stored.r2CipherBytes??0}) : stored.encryptedBytes;
+        if(encrypted.length>MAX_PRIVATE_IMAGE_BYTES+29)throw unavailable();
+        bytes = openPrivateData(encrypted,'activity-image-v1',centerId,templateId);
+        const receipt = verifyPngCandidate(bytes);
+        if (receipt.sha256 !== current.digestSha256 || receipt.width !== current.width || receipt.height !== current.height)
+          throw unavailable();
+      } catch { throw unavailable(); }
+      return { templateVersion:version, stepNumber:current.stepNumber, altText:current.altText,
+        width:current.width, height:current.height, pngBase64:bytes.toString('base64'),
+        digestSha256:current.digestSha256 };
+  }
+
+  /** Compare the entire server-captured activity snapshot before signing a
+   * family rendering. A changed or legacy template has no artwork binding. */
+  async familyArtworkBindings(tx:Tx,centerId:string,activity:unknown) {
+    const a = activity as {templateId?:unknown;snapshot?:Record<string,unknown>}|null;
+    const s=a?.snapshot;
+    if (!s || typeof a?.templateId!=='string' || s.id!==a.templateId ||
+        !/^[a-f0-9-]{36}$/.test(a.templateId) || !Number.isSafeInteger(s.version)) return [];
+    const templateId=a.templateId;
+    await tx.$queryRaw`SELECT id FROM activity_template WHERE id=${templateId}::uuid AND center_id=${centerId}::uuid FOR SHARE`;
+    const t=await tx.activityTemplate.findFirst({where:{id:templateId,centerId}});
+    if (!t || s.version!==t.version || s.title!==t.title || s.service!==t.service ||
+        s.ageBand!==t.ageBand || s.minutes!==t.minutes ||
+        JSON.stringify(s.steps)!==JSON.stringify(t.steps) || JSON.stringify(s.safety)!==JSON.stringify(t.safety) ||
+        JSON.stringify(s.materials)!==JSON.stringify(t.materials)) return [];
+    const rows=await this.verifiedArtwork(tx,centerId,templateId,t);
+    return rows.map(row=>({slot:row.stepNumber??0,digestSha256:row.digestSha256,altText:row.altText,
+      instruction:row.stepNumber===null?null:t.steps[row.stepNumber-1]}));
+  }
+
+  /** Called only after eligibleRead has authorized the recipient and release.
+   * Never substitute newly approved artwork into an existing release. */
+  async readFamilyArtwork(tx:Tx,centerId:string,activity:unknown,slot:number,digest:string) {
+    const bindings=await this.familyArtworkBindings(tx,centerId,activity);
+    if (!bindings.some(b=>b.slot===slot && b.digestSha256===digest)) throw new NotFoundException('Illustration unavailable.');
+    const a=activity as {templateId:string;snapshot:{version:number}};
+    const t=await tx.activityTemplate.findFirst({where:{id:a.templateId,centerId}});
+    if (!t) throw new NotFoundException('Illustration unavailable.');
+    return this.readVerifiedArtwork(tx,centerId,a.templateId,t,a.snapshot.version,slot,digest);
   }
 
   async propose(centerId: string, v: Viewer, templateId: string, dto: ActivityMediaDraftDto) {

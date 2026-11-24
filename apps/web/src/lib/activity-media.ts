@@ -16,9 +16,24 @@ export type ActivityMediaMapping = {
   slots: { stepNumber: number | null; proposed: number; staged: number }[];
   metadataOnly: true; readEnabled: false; publishEnabled: false; clinicalReleaseEnabled: false;
 };
+export type StaffArtworkInventory = {
+  templateVersion:number;
+  items:{stepNumber:number|null;altText:string;width:number;height:number}[];
+  coverage:{wholeActivityVerified:boolean;verifiedSteps:number;expectedSteps:number;stepCoveragePercent:number|null;
+    publishedCoveragePercent:null;publishedCoverageAvailable:false};
+  metadataOnly:true;readEnabled:false;publishEnabled:false;clinicalReleaseEnabled:false;
+};
+export type StaffArtworkPreview = {
+  templateVersion:number; stepNumber:number|null; altText:string; width:number; height:number; pngBase64:string;
+  staffPreview:true; publishEnabled:false; clinicalReleaseEnabled:false;
+};
 export const activityMediaDrafts = {
   endpoint: (centerId: string, templateId: string) =>
     `/api/centers/${encodeURIComponent(centerId)}/activities/${encodeURIComponent(templateId)}/media-drafts`,
+  approvedArtwork: (centerId:string,templateId:string) =>
+    rest.get<StaffArtworkInventory>(activityMediaDrafts.endpoint(centerId,templateId) + '/approved-artwork'),
+  readApprovedArtwork: (centerId:string, templateId:string, version:number, slot:number) =>
+    rest.get<StaffArtworkPreview>(activityMediaDrafts.endpoint(centerId,templateId) + '/approved-artwork/' + version + '/' + slot),
   mapping: (centerId: string, templateId: string) =>
     rest.get<ActivityMediaMapping>(activityMediaDrafts.endpoint(centerId, templateId) + '/mapping'),
   list: (centerId: string, templateId: string, cursor?: string, limit = 50) => {

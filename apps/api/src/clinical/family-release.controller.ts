@@ -51,11 +51,26 @@ export class FamilyReleaseController {
     return this.service.consent(centerId, viewer(req), dto, true);
   }
 
+  @Get('artwork-coverage') @RequirePermission('center.clinical.read') @Header('Cache-Control','private, no-store, max-age=0')
+  centerArtworkCoverage(@Param('centerId',uuid()) centerId:string,@Req() req:TbRequest) {
+    return this.service.centerArtworkCoverage(centerId,viewer(req));
+  }
+
   @Get('mine') @RequirePermission('family.portal.read') @Header('Cache-Control', 'private, no-store, max-age=0')
   mine(@Param('centerId', uuid()) centerId: string, @Req() req: TbRequest) {
     return this.service.mine(centerId, viewer(req));
   }
 
+  @Get('mine/:id/artwork/:index/:slot') @RequirePermission('family.portal.read') @Header('Cache-Control','private, no-store, max-age=0')
+  artwork(@Param('centerId',uuid()) centerId:string,@Param('id',uuid()) id:string,
+    @Param('index') index:string,@Param('slot') slot:string,@Req() req:TbRequest) {
+    if (!/^[0-9]$/.test(index) || !/^(0|[1-9][0-9]?)$/.test(slot)) return this.service.artworkRead(centerId,viewer(req),id,-1,-1);
+    return this.service.artworkRead(centerId,viewer(req),id,Number(index),Number(slot));
+  }
+  @Get('mine/:id/artwork-coverage') @RequirePermission('family.portal.read') @Header('Cache-Control','private, no-store, max-age=0')
+  artworkCoverage(@Param('centerId',uuid()) centerId:string,@Param('id',uuid()) id:string,@Req() req:TbRequest) {
+    return this.service.artworkCoverage(centerId,viewer(req),id);
+  }
   @Get('mine/:id') @RequirePermission('family.portal.read') @Header('Cache-Control', 'private, no-store, max-age=0')
   read(@Param('centerId', uuid()) centerId: string, @Param('id', uuid()) id: string, @Req() req: TbRequest) {
     return this.service.read(centerId, viewer(req), id);

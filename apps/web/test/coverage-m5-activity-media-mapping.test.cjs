@@ -33,3 +33,37 @@ test('disables during request and ignores completion after unmount',async()=>{
  expect(tree.root.findByType('button').props.disabled).toBe(true);
  await act(async()=>tree.unmount());tree=null;await act(async()=>resolve(good));
 });
+
+test.each([
+ [], [{stepNumber:1,proposed:1,staged:0}],
+ [{stepNumber:null,proposed:1,staged:2}],
+ [{stepNumber:null,proposed:-1,staged:0}],
+ [{stepNumber:null,proposed:1.5,staged:0}],
+ [{stepNumber:null,proposed:1,staged:0},{stepNumber:65,proposed:1,staged:0}],
+ [{stepNumber:null,proposed:1,staged:0},{stepNumber:1,proposed:0,staged:0},{stepNumber:1,proposed:1,staged:0}],
+ [{stepNumber:null,proposed:1,staged:0},{stepNumber:2,proposed:0,staged:0},{stepNumber:1,proposed:0,staged:0}],
+ [null],
+].map(slots=>[slots]))('rejects malformed slot inventory %j',async slots=>{
+ await render();activityMediaDrafts.mapping.mockResolvedValueOnce({...good,slots});await click();
+ expect(tree.root.findAllByType('li')).toHaveLength(0);expect(tree.root.findByProps({role:'alert'})).toBeTruthy();
+});
+test('counts covered slots, not number of duplicate proposals, and never claims approval',async()=>{
+ await render();activityMediaDrafts.mapping.mockResolvedValueOnce(good);await click();
+ const status=JSON.stringify(tree.root.findByProps({role:'status'}).props.children);
+ expect(status).toContain('Approved illustration coverage is not measured');
+ expect(tree.root.findAllByType('li')).toHaveLength(2);
+ expect(tree.root.findByProps({role:'status'}).props.children.filter(x=>typeof x==='number')).toEqual([1,2,1,2]);
+});
+test.each([{centerId:'other'},{templateId:'other'},{templateVersion:8}])('clears completed snapshot on scope change %j',async patch=>{
+ await render();activityMediaDrafts.mapping.mockResolvedValueOnce(good);await click();
+ await act(async()=>tree.update(React.createElement(ActivityMediaMappingStatus,{centerId:'c',templateId:'t',templateVersion:7,...patch})));
+ expect(tree.root.findAllByType('li')).toHaveLength(0);expect(activityMediaDrafts.mapping).toHaveBeenCalledTimes(1);
+});
+test('ignores old in-flight result after switching activity',async()=>{
+ await render();let resolve;activityMediaDrafts.mapping.mockReturnValueOnce(new Promise(r=>{resolve=r;}));await click();
+ await act(async()=>tree.update(React.createElement(ActivityMediaMappingStatus,{centerId:'c',templateId:'new',templateVersion:7})));
+ await act(async()=>resolve(good));expect(tree.root.findAllByType('li')).toHaveLength(0);
+ activityMediaDrafts.mapping.mockResolvedValueOnce(good);await click();
+ expect(activityMediaDrafts.mapping).toHaveBeenLastCalledWith('c','new');
+ expect(tree.root.findAllByType('li')).toHaveLength(2);
+});

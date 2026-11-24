@@ -50,7 +50,7 @@ test('child autocomplete is center-scoped, cancelable, and navigates only to ret
 
 test('activities render consistent action regions with explicit origin and one list thumbnail', () => {
   assert.match(activities, /className="flex h-full min-w-0 flex-col gap-2"/);
-  assert.match(activities, /<ActivityCard t=\{t\} visual compact layout=\{view\} \/>/);
+  assert.match(activities, /<ActivityCard t=\{t\} visual compact layout=\{view\} artworkScope=\{/);
   assert.match(activities, /activity-actions-zone-/);
   assert.match(activities, /activity-actions-menu-/);
   assert.match(activities, /Activity actions/);

@@ -12,7 +12,16 @@ test('M5-12 image-first staff preview fails closed until approved assets exist',
   assert.match(activity, /No approved illustration available/);
   assert.match(activity, /activity-media-placeholder-/);
   assert.doesNotMatch(activity, /<img\b|<Image\b|mediaDraft\.url|draft\.url|approve\(/);
-  assert.match(library, /<ActivityCard t=\{t\} visual compact layout=\{view\} \/>/);
+  assert.match(library, /<ActivityCard t=\{t\} visual compact layout=\{view\} artworkScope=\{/);
+  assert.match(library, /canReviewArtwork && t\.library === 'center' && t\.version/);
+  assert.match(library, /session\.activeContext\.role === 'CLINICAL_SUPERVISOR' \|\| t\.mine === true/);
+  assert.match(activity, /!fam && artworkScope \? <StaffArtworkImage/);
+  assert.match(activity, /!fam && artworkScope && i < 64/);
+  const preview = fs.readFileSync(path.join(root, 'src/components/clinical/StaffArtworkImage.tsx'), 'utf8');
+  assert.match(preview, /data\.staffPreview !== true/);
+  assert.match(preview, /data\.clinicalReleaseEnabled !== false/);
+  assert.match(preview, /URL\.revokeObjectURL/);
+  assert.doesNotMatch(preview, /https?:\/\/|draft\.url/);
   assert.match(activity, /compact = false/);
   assert.match(activity, /<details className=/);
   assert.match(activity, /activity-details-/);

@@ -1159,7 +1159,35 @@ model PrivateMediaCandidate {
   mediaDraft      ActivityMediaDraft? @relation(fields: [mediaDraftId], references: [id], onDelete: Restrict)
   template        ActivityTemplate? @relation(fields: [templateId], references: [id], onDelete: Restrict)
 
+  // Optional verified ciphertext mirror; no client-supplied URL or object key.
+  r2CipherSha256 String? @map("r2_cipher_sha256") @db.VarChar(64)
+  r2CipherBytes Int? @map("r2_cipher_bytes")
+  approvedArtwork ActivityArtworkApproval?
+
   @@index([centerId, childId, createdAt])
   @@index([centerId, templateId, createdAt])
   @@map("private_media_candidate")
+}
+
+
+// Immutable, independently signed approval evidence for ONE exact candidate.
+// No HTTP write endpoint; trusted evidence onboarding is a separate gate.
+// Candidate/draft revocation remains authoritative even with an approval row.
+model ActivityArtworkApproval {
+  candidateId       String   @id @map("candidate_id") @db.Uuid
+  centerId          String   @map("center_id") @db.Uuid
+  templateId        String   @map("template_id") @db.Uuid
+  templateVersion   Int      @map("template_version")
+  slot              Int
+  digestSha256      String   @map("digest_sha256") @db.VarChar(64)
+  contextSha256     String   @map("context_sha256") @db.VarChar(64)
+  rightsEvidenceSha256 String @map("rights_evidence_sha256") @db.VarChar(64)
+  clinicalEvidenceSha256 String @map("clinical_evidence_sha256") @db.VarChar(64)
+  rightsSignature   String   @map("rights_signature") @db.VarChar(88)
+  clinicalSignature String   @map("clinical_signature") @db.VarChar(88)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  candidate PrivateMediaCandidate @relation(fields: [candidateId], references: [id], onDelete: Restrict)
+
+  @@unique([centerId, templateId, templateVersion, slot], map: "activity_artwork_approval_slot_key")
+  @@map("activity_artwork_approval")
 }
