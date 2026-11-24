@@ -378,6 +378,75 @@ export class FamilyReleaseService {
     },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
   }
 
+
+  /** Supervisor-only, centre-wide report for current ACTIVE synthetic grants.
+   * Evaluate the existing recipient policy for each grant, not as an HTTP
+   * impersonation or a document read. Return aggregate counts only. A template
+   * version counts as covered only if EVERY eligible released occurrence has
+   * its pinned whole-activity image and that image is still readable.
+   */
+  async centerArtworkCoverage(centerId:string,v:Viewer) {
+    return this.prisma.$transaction(async tx=>{
+      await assertActor(tx,centerId,v,['CLINICAL_SUPERVISOR']);
+      await this.synthetic(tx,centerId);
+      if (!this.artwork || process.env.TB_FAMILY_ARTWORK_SYNTHETIC!=='true') throw new NotFoundException();
+      const grants=await tx.syntheticFamilyGrant.findMany({
+        where:{centerId,purpose:'FAMILY_PLAN',status:'ACTIVE'},
+        orderBy:{id:'asc'},take:51,
+        select:{id:true,childId:true,guardianLinkId:true},
+      });
+      const scope='CENTER_ACTIVE_SYNTHETIC_PLAN_GRANTS' as const;
+      // Never report a partial sample as full-centre coverage.
+      if (grants.length>50) return {scope,complete:false as const,reason:'INVENTORY_LIMIT' as const,
+        eligibleGrants:null,total:null,covered:null,percent:null,synthetic:true as const};
+      let eligibleGrants=0;
+      const seenApprovals=new Set<string>(), coveredByVersion=new Map<string,boolean>();
+      for (const g of grants) {
+        const link=await tx.guardianLink.findFirst({where:{id:g.guardianLinkId,centerId,childId:g.childId,
+          removedAt:null,familyReleaseRestriction:'CLEAR',child:{status:'ACTIVE'}},select:{userId:true}});
+        if (!link?.userId) continue;
+        const member=await tx.membership.findFirst({where:{centerId,userId:link.userId,status:'ACTIVE',
+          user:{status:'ACTIVE'},roles:{some:{role:'GUARDIAN'}}},select:{id:true}});
+        if (!member) continue;
+        let authorized: Awaited<ReturnType<FamilyReleaseService['eligibleRead']>>;
+        try {
+          authorized=await this.eligibleRead(tx,centerId,{userId:link.userId,membershipId:member.id,role:'GUARDIAN'},g.id);
+        } catch(e) {
+          if(e instanceof NotFoundException || e instanceof ForbiddenException) continue;
+          throw e;
+        }
+        const {release,approval,snap}=authorized;
+        if(release.status!=='ACTIVE'||release.guardianLinkId!==g.guardianLinkId||approval.kind!=='PLAN') continue;
+        eligibleGrants++;
+        if(seenApprovals.has(approval.id)) continue;
+        seenApprovals.add(approval.id);
+        const content=snap.content as Record<string,unknown>;
+        if(!Array.isArray(content.homeActivities)||content.homeActivities.length>10)
+          return {scope,complete:false as const,reason:'INVALID_SOURCE' as const,
+            eligibleGrants:null,total:null,covered:null,percent:null,synthetic:true as const};
+        for(const [index,a] of content.homeActivities.entries()) {
+          const x=a as {templateId?:string;snapshot?:{version?:number}};
+          const key=typeof x?.templateId==='string'&&Number.isSafeInteger(x.snapshot?.version)
+            ? JSON.stringify([x.templateId,x.snapshot?.version]) : JSON.stringify(['legacy',approval.id,index]);
+          // An earlier missing occurrence cannot be repaired by another release.
+          if(coveredByVersion.get(key)===false) continue;
+          const binding=this.artworkSlots(approval.rendering,index).find(s=>s.slot===0);
+          let readable=false;
+          if(binding) {
+            try {
+              const image=await this.artwork.readFamilyArtwork(tx,centerId,a,0,binding.digestSha256);
+              readable=image.altText===binding.altText;
+            } catch(e) { if(!(e instanceof NotFoundException)) throw e; }
+          }
+          coveredByVersion.set(key,readable);
+        }
+      }
+      const total=coveredByVersion.size,covered=[...coveredByVersion.values()].filter(Boolean).length;
+      return {scope,complete:true as const,reason:null,eligibleGrants,total,covered,
+        percent:total?Math.floor(100*covered/total):null,synthetic:true as const};
+    },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable,timeout:30000});
+  }
+
   async mine(centerId: string, v: Viewer) {
     return this.prisma.$transaction(async tx => {
       await this.synthetic(tx, centerId);

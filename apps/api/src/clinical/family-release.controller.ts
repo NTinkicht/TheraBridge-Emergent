@@ -51,6 +51,11 @@ export class FamilyReleaseController {
     return this.service.consent(centerId, viewer(req), dto, true);
   }
 
+  @Get('artwork-coverage') @RequirePermission('center.clinical.read') @Header('Cache-Control','private, no-store, max-age=0')
+  centerArtworkCoverage(@Param('centerId',uuid()) centerId:string,@Req() req:TbRequest) {
+    return this.service.centerArtworkCoverage(centerId,viewer(req));
+  }
+
   @Get('mine') @RequirePermission('family.portal.read') @Header('Cache-Control', 'private, no-store, max-age=0')
   mine(@Param('centerId', uuid()) centerId: string, @Req() req: TbRequest) {
     return this.service.mine(centerId, viewer(req));
