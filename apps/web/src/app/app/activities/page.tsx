@@ -5,6 +5,7 @@ import { HeartHandshake, LayoutGrid, List, Plus, Search, Sparkles } from 'lucide
 import { Field, FormAlert } from '@/components/auth/Field';
 import { PageTitle, SelectField, Workspace, errorText, useLoad } from '@/components/centers/kit';
 import { ActivityCard } from '@/components/clinical/ActivityCard';
+import { GeneratedArtworkGallery } from '@/components/clinical/GeneratedArtworkGallery';
 import { ActivityMediaDraftPanel } from '@/components/clinical/ActivityMediaDraftPanel';
 import { TemplateActions } from '@/components/clinical/TemplateActions';
 import { Button, Card } from '@/components/design/ui';
@@ -62,6 +63,7 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
   const centerId = session.activeContext?.type === 'center' ? session.activeContext.centerId : '';
   const [notice, setNotice] = useState('');
   const [creating, setCreating] = useState(false);
+  const [showArtwork, setShowArtwork] = useState(false);
   const [search, setSearch] = useState('');
   const [specialty, setSpecialty] = useState('all');
   const [ownership, setOwnership] = useState('all');
@@ -119,6 +121,14 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
             <Plus size={16} aria-hidden="true" />{creating ? 'Close activity form' : 'Create activity'}
           </Button>
           {creating && <NewTemplate centerId={centerId} onError={onError} onDone={() => { setCreating(false); setNotice('Activity created.'); setAdditional(null); void reload(); }} />}
+        </div>
+      )}
+      {session.permissions.includes('center.activities.manage') && session.activeContext?.type === 'center' &&
+        ['THERAPIST','CLINICAL_SUPERVISOR'].includes(session.activeContext.role) && (
+        <div className="space-y-3">
+          <Button variant="secondary" aria-expanded={showArtwork} data-testid="artwork-gallery-toggle"
+            onClick={() => setShowArtwork(value => !value)}>{showArtwork ? 'Close original illustration collection' : 'Review original illustration collection'}</Button>
+          {showArtwork && <GeneratedArtworkGallery key={centerId + ':' + session.activeContext.role} />}
         </div>
       )}
       {failed && <ErrorState onRetry={() => void reload()} testId="activities-error" />}

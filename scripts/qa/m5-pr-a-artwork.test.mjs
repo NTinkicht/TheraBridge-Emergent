@@ -79,3 +79,14 @@ test('isolated operator runtime does not change or expose the application image'
   const denied=spawnSync('bash',['-c',script,'artwork-custody','invalid'],{encoding:'utf8'});
   assert.notEqual(denied.status,0);assert.match(denied.stderr,/preflight failed/);
 });
+
+test('complete local gallery stays on the authorized staff branch, not family activity cards',async()=>{
+ const page=await file('apps/web/src/app/app/activities/page.tsx');
+ const gallery=await file('apps/web/src/components/clinical/GeneratedArtworkGallery.tsx');
+ assert.match(page,/\['THERAPIST','CLINICAL_SUPERVISOR'\]\.includes\(session.activeContext.role\)/);
+ assert(page.indexOf('<GeneratedArtworkGallery')<page.indexOf('function FamilyActivities'));
+ assert(!page.slice(page.indexOf('function FamilyActivities')).includes('<GeneratedArtworkGallery'));
+ assert.match(gallery,/files.length!==GENERATED_ARTWORK.length/);
+ assert.match(gallery,/verifyGeneratedReviewBytes/);
+ assert(!/fetch\(|localStorage|sessionStorage|dangerouslySetInnerHTML/.test(gallery));
+});
