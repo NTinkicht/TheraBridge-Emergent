@@ -437,6 +437,8 @@ jobs:
         run: |
           node --check scripts/qa/m5-wu2f-pilot-readiness.mjs
           node --check scripts/qa/m5-wu2f-pilot-readiness.test.mjs
+      - name: Fail fast on M5 WU2-F isolated synthetic pilot assertions before browser install
+        run: node --test scripts/qa/m5-wu2f-pilot-readiness.test.mjs
       - name: Verify Smart CI classifier, policy gate and workflow wiring
         run: node --test scripts/ci/smart-ci.test.mjs scripts/ci/smart-ci-workflow.test.mjs
       - name: M5-01 source-only route, role and viewport audit with adversarial tests
