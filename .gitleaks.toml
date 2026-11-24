@@ -82,3 +82,13 @@ condition = "AND"
 regexTarget = "secret"
 paths = ['''^apps/api/test/m4-final-bootstrap-owner-guard\.e2e-spec\.ts$''']
 regexes = ['''^fictional$''']
+
+# PR #496 historical scanner false positive: ternary selecting the NAME of
+# an environment variable, never its value. Only this exact rule/path/name.
+[[allowlists]]
+targetRules = ["therabridge-credential-assignment"]
+description = "Shared illustration runtime R2 environment variable name"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''^apps/web/src/lib/shared-illustration-storage\.mjs$''']
+regexes = ['''^TB_R2_SECRET_ACCESS_KEY$''']

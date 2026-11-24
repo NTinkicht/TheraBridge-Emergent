@@ -1444,3 +1444,6 @@ Exact prior HEAD 8dedc236 full CI 45477498405 and focused Web 45477498224 PASS; 
 
 ### 2026-11-25 — shared generic M5 reference illustrations
 Owner-directed simplification: the 25 existing non-patient fictional reference thumbnails are stored under a separate content-addressed R2 prefix. All 25 uploads and full byte-for-byte read-backs succeeded; manifest and scan verified earlier. Same-origin WebP route is restricted to the synthetic preview environment and fixed IDs/digests; no private clinical data, credentials or object selectors exposed. Generic gallery and exact pegboard activity matching are implemented. Other activity-specific mappings, independent rights qualification and actual released-plan coverage remain unclaimed. G2/G2b unchanged. Full CI, Codex and live verification pending for this branch.
+
+
+2026-11-25 PR #496: fixed Gitleaks false positive on historical R2 environment-variable NAME at storage.mjs line 11. Current source uses direct env property access; the exact rule/path/literal exception is limited to the historical nonsecret name. Pinned Gitleaks 8.30.1 local all-ref history (2381 commits) and Web source scans PASS. No actual credential was committed; full corrected-HEAD CI and review remain required.

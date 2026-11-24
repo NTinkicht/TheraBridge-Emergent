@@ -8,7 +8,7 @@ export function sharedObjectKey(asset) {
 export function sharedR2Config(env=process.env,write=false) {
   const endpoint=env.TB_R2_ENDPOINT??'',bucket=env.TB_R2_BUCKET??'';
   const id=env[write?'TB_R2_IMPORT_ACCESS_KEY_ID':'TB_R2_ACCESS_KEY_ID']??'';
-  const secret=env[write?'TB_R2_IMPORT_SECRET_ACCESS_KEY':'TB_R2_SECRET_ACCESS_KEY']??'';
+  const secret=(write?env.TB_R2_IMPORT_SECRET_ACCESS_KEY:env.TB_R2_SECRET_ACCESS_KEY)??'';
   if(!/^https:\/\/[a-f0-9]{32}(?:\.(?:eu|fedramp))?\.r2\.cloudflarestorage\.com\/?$/.test(endpoint)||
      !/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(bucket)||env.TB_R2_REGION!=='auto'||
      !/^[a-f0-9]{32}$/i.test(id)||!/^[a-f0-9]{64}$/i.test(secret))throw Error('Shared artwork storage unavailable');
