@@ -9,7 +9,7 @@ beforeAll(async()=>{
  assets=(await import('../src/lib/shared-illustration-manifest.mjs')).SHARED_ILLUSTRATIONS;
 });
 const env={DEPLOYMENT_ENV:'preview',DEMO_SEED_CONFIRM:'CHILDRENS_HOME_SYNTHETIC_ONLY',TB_R2_ENDPOINT:'https://'+'a'.repeat(32)+'.r2.cloudflarestorage.com/',TB_R2_BUCKET:'demo-bucket',TB_R2_REGION:'auto',TB_R2_ACCESS_KEY_ID:'b'.repeat(32),TB_R2_SECRET_ACCESS_KEY:'c'.repeat(64),TB_R2_IMPORT_ACCESS_KEY_ID:'d'.repeat(32),TB_R2_IMPORT_SECRET_ACCESS_KEY:'e'.repeat(64)};
-const peg={title:'Ahmed Demo - Pegboard Grip',service:'occupational',steps:['Offer a stable pegboard and large pegs.','Record independent placements.']};
+const peg={id:'732827e6-da45-45c5-8142-36c9d0609367',title:'Ahmed Demo - Pegboard Grip',service:'occupational',steps:['Offer a stable pegboard and large pegs.','Record independent placements.']};
 test('locked 25 references have distinct content-addressed URLs and explicit matching only',()=>{
  expect(assets).toHaveLength(25);
  expect(new Set(assets.map(lib.sharedIllustrationUrl)).size).toBe(25);
@@ -21,7 +21,7 @@ test('locked 25 references have distinct content-addressed URLs and explicit mat
  }
  expect(lib.sharedIllustration('__proto__')).toBeNull();
  expect(lib.sharedIllustrationForActivity(peg).id).toBe('WU2A-S1-OCCUPATIONAL');
- expect(lib.sharedIllustrationForActivity({...peg,title:peg.title+' (sample only)'})).not.toBeNull();
+ expect(lib.sharedIllustrationForActivity({...peg,id:'ba4cab59-da4f-459a-8fb1-55e8f83877ad',title:peg.title+' (sample only)'})).not.toBeNull();
  for(const wrong of [{...peg,service:'speech'},{...peg,title:'Pegboard'},{...peg,steps:null},{...peg,steps:['one']},{...peg,steps:['different',peg.steps[1]]},{...peg,steps:[peg.steps[0],'different']}])
    expect(lib.sharedIllustrationForActivity(wrong)).toBeNull();
 });
@@ -111,6 +111,15 @@ test('all 67 frozen demo catalogue identities use relevant specialty artwork; mo
   expect(lib.sharedIllustrationForActivity(t)?.family).toBe(t.service);
   expect(lib.sharedIllustrationForActivity({...t, title:'Unrelated custom activity'})).toBeNull();
   expect(lib.sharedIllustrationForActivity({...t, steps:['Changed clinical instructions']})).toBeNull();
-  if(!t.title.startsWith('Ahmed Demo - Pegboard Grip'))expect(lib.sharedIllustrationForActivity({...t,id:'not-a-demo-id'})).toBeNull();
+  expect(lib.sharedIllustrationForActivity({...t,id:'not-a-demo-id'})).toBeNull();
  }
+});
+
+
+test('fresh migration samples with generated UUIDs match only in synthetic library contexts',async()=>{
+ const {readFileSync}=require('node:fs');const {resolve}=require('node:path');const {randomUUID}=require('node:crypto');
+ const sql=readFileSync(resolve(__dirname,'../../api/prisma/migrations/20261025090000_tb_em_008_clinical_workspace/migration.sql'),'utf8');
+ const records=[...sql.matchAll(/\(gen_random_uuid\(\), NULL, '([^']+)', '([^']+)', '[^']+', \d+, ARRAY\[[^\]]*\], ARRAY\[([^\]]*)\]/g)].map(m=>({id:randomUUID(),title:m[1],service:m[2],steps:[...m[3].matchAll(/'((?:''|[^'])*)'/g)].map(x=>x[1].replaceAll("''","'"))}));
+ expect(records).toHaveLength(4);
+ for(const row of records){expect(lib.sharedIllustrationForActivity({...row,library:'synthetic'})?.family).toBe(row.service);expect(lib.sharedIllustrationForActivity(row,true)?.family).toBe(row.service);expect(lib.sharedIllustrationForActivity({...row,library:'center'})).toBeNull();expect(lib.sharedIllustrationForActivity({...row,steps:['modified']},true)).toBeNull();}
 });
