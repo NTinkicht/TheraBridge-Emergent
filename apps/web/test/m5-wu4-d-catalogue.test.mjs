@@ -7,7 +7,7 @@ const root = path.resolve(import.meta.dirname, '..');
 const activity = fs.readFileSync(path.join(root, 'src/components/clinical/ActivityCard.tsx'), 'utf8');
 const library = fs.readFileSync(path.join(root, 'src/app/app/activities/page.tsx'), 'utf8');
 
-test('M5-12 image-first staff preview fails closed until approved assets exist', () => {
+test('M5-12 synthetic reference cards stay distinct from fail-closed private staff artwork', () => {
   assert.match(activity, /visual = false/);
   assert.match(activity, /No approved illustration available/);
   assert.match(activity, /activity-media-placeholder-/);
@@ -25,7 +25,14 @@ test('M5-12 image-first staff preview fails closed until approved assets exist',
   assert.match(activity, /compact = false/);
   assert.match(activity, /<details className=/);
   assert.match(activity, /activity-details-/);
-  assert.match(library, /<ActivityCard key=\{t.id\} t=\{t\} tone="family" \/>/);
+  // Generic synthetic reference art is distinct from private clinical media.
+  // Guardian cards must be visual, but portable matching requires the server's
+  // explicit sample/unreleased flags and never supplies a staff artwork scope.
+  assert.match(library, /<ActivityCard key=\{t\.id\} t=\{t\} tone="family" visual syntheticSample=\{data\.sample === true && data\.released === false\} \/>/);
+  assert.match(activity, /sharedIllustrationForActivity\(t, syntheticSample\)/);
+  assert.match(activity, /shared \? <SharedIllustration asset=\{shared\}/);
+  const family = library.slice(library.indexOf('function FamilyActivities'), library.indexOf('export default function ActivitiesPage'));
+  assert.doesNotMatch(family, /artworkScope=|StaffArtworkImage|FamilyArtworkPreview/);
   assert.match(library, /session\.permissions\.includes\('center\.activities\.manage'\) && t\.library === 'center'/);
 });
 
