@@ -1,6 +1,8 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { openPrivateData } from '../common/private-envelope';
+import { verifyPngCandidate } from './activity-media-png-integrity';
 import { PrismaService } from '../prisma/prisma.service';
-import { preparePrivatePng } from '../common/private-image-candidate';
+import { MAX_PRIVATE_IMAGE_BYTES, preparePrivatePng } from '../common/private-image-candidate';
 import { TrialService } from '../operations/trial.service';
 import { logCenterEvent, type Tx } from '../centers/history';
 import { assertActor } from './governance-core';
@@ -109,8 +111,19 @@ export class ActivityMediaService {
     return this.prisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT id FROM activity_template WHERE id=${templateId}::uuid AND center_id=${centerId}::uuid FOR SHARE`;
       const t = await this.authorizedTemplate(tx, centerId, v, templateId);
+      const verified = await this.verifiedArtwork(tx, centerId, templateId, t);
+      const items = verified.map(({ stepNumber, altText, width, height }) => ({ stepNumber, altText, width, height }));
+      return { templateVersion:t.version, items,
+        metadataOnly:true as const, readEnabled:false as const, publishEnabled:false as const,
+        clinicalReleaseEnabled:false as const };
+    }, { isolationLevel:'RepeatableRead' });
+  }
+
+
+  private async verifiedArtwork(tx: Tx, centerId: string, templateId: string,
+    t: Awaited<ReturnType<ActivityMediaService['authorizedTemplate']>>, slot?: number) {
       const rows = await tx.activityArtworkApproval.findMany({
-        where: { centerId, templateId, templateVersion: t.version },
+        where: { centerId, templateId, templateVersion: t.version, ...(slot === undefined ? {} : { slot }) },
         take: 66, orderBy: { slot: 'asc' },
         include: { candidate: { select: {
           id: true, centerId: true, templateId: true, templateVersion: true, kind: true,
@@ -145,12 +158,49 @@ export class ActivityMediaService {
           activityTitle:t.title, activitySteps:t.steps, activitySafety:t.safety, activityMaterials:t.materials,
         };
         if (!verifiesArtworkApproval(row, context)) return [];
-        return [{ stepNumber:row.slot || null, altText:d.altText, width:c.width, height:c.height }];
+        return [{ stepNumber:row.slot || null, altText:d.altText, width:c.width, height:c.height, candidateId:c.id, draftId:d.id, digestSha256:c.digestSha256 }];
       });
-      return { templateVersion:t.version, items:rows.length <= 65 ? items : [],
-        metadataOnly:true as const, readEnabled:false as const, publishEnabled:false as const,
-        clinicalReleaseEnabled:false as const };
-    }, { isolationLevel:'RepeatableRead' });
+
+    return rows.length <= 65 ? items : [];
+  }
+
+  /** Staff preview only, with a fresh authorization and evidence check per
+   * request. Lock in draft -> candidate order, matching revocation/rejection.
+   * No public URL or guardian release is minted. */
+  async readApprovedArtwork(centerId: string, v: Viewer, templateId: string, version: number, slot: number) {
+    if (!Number.isSafeInteger(version) || version < 1 || !Number.isSafeInteger(slot) || slot < 0 || slot > 64)
+      throw new UnprocessableEntityException('Invalid illustration version or slot.');
+    return this.prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM activity_template WHERE id=${templateId}::uuid AND center_id=${centerId}::uuid FOR SHARE`;
+      const t = await this.authorizedTemplate(tx, centerId, v, templateId);
+      const unavailable = () => new NotFoundException('Signed illustration unavailable.');
+      if (t.version !== version) throw unavailable();
+      const [initial] = await this.verifiedArtwork(tx, centerId, templateId, t, slot);
+      if (!initial) throw unavailable();
+      await tx.$queryRaw`SELECT id FROM activity_media_draft WHERE id=${initial.draftId}::uuid
+        AND center_id=${centerId}::uuid AND template_id=${templateId}::uuid FOR SHARE`;
+      await tx.$queryRaw`SELECT id FROM private_media_candidate WHERE id=${initial.candidateId}::uuid
+        AND center_id=${centerId}::uuid AND template_id=${templateId}::uuid FOR SHARE`;
+      const [current] = await this.verifiedArtwork(tx, centerId, templateId, t, slot);
+      if (!current || current.candidateId !== initial.candidateId || current.draftId !== initial.draftId) throw unavailable();
+      const stored = await tx.privateMediaCandidate.findFirst({
+        where:{ id:current.candidateId, centerId, templateId, templateVersion:version,
+          mediaDraftId:current.draftId, kind:'ACTIVITY_IMAGE', status:'QUARANTINED', revokedAt:null,
+          digestSha256:current.digestSha256 },
+        select:{ encryptedBytes:true },
+      });
+      if (!stored || stored.encryptedBytes.length > MAX_PRIVATE_IMAGE_BYTES + 29) throw unavailable();
+      let bytes: Buffer;
+      try {
+        bytes = openPrivateData(stored.encryptedBytes,'activity-image-v1',centerId,templateId);
+        const receipt = verifyPngCandidate(bytes);
+        if (receipt.sha256 !== current.digestSha256 || receipt.width !== current.width || receipt.height !== current.height)
+          throw unavailable();
+      } catch { throw unavailable(); }
+      return { templateVersion:version, stepNumber:current.stepNumber, altText:current.altText,
+        width:current.width, height:current.height, pngBase64:bytes.toString('base64'),
+        staffPreview:true as const, publishEnabled:false as const, clinicalReleaseEnabled:false as const };
+    }, { isolationLevel:'ReadCommitted' });
   }
 
   async propose(centerId: string, v: Viewer, templateId: string, dto: ActivityMediaDraftDto) {

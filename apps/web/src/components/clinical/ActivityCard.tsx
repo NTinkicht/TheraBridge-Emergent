@@ -1,6 +1,7 @@
 'use client';
 
 import { Activity, Brain, Clock, Hand, ImageOff, MessageCircle, ShieldCheck, Users } from 'lucide-react';
+import { StaffArtworkImage, type StaffArtworkScope } from './StaffArtworkImage';
 import { Card, type Tone } from '@/components/design/ui';
 import { isRecognizedSpecialty, specialtyDisplayName, specialtyIdentity, type SpecialtyFamily } from '@/styles/specialty-identity';
 import type { Template } from '@/lib/clinical';
@@ -18,8 +19,8 @@ const specialtySurface = (family: SpecialtyFamily, tint: boolean) =>
 // Presentation-only. The current template API assigns ONE service. The
 // optional services array supports future multi-specialty cards without
 // inventing permissions or changing the stored clinical activity.
-export function ActivityCard({ t, tone = 'clinical', extra, visual = false, compact = false, layout = 'grid' }: {
-  t: Template; tone?: Tone; extra?: string; visual?: boolean; compact?: boolean; layout?: 'grid' | 'list';
+export function ActivityCard({ t, tone = 'clinical', extra, visual = false, compact = false, layout = 'grid', artworkScope }: {
+  t: Template; tone?: Tone; extra?: string; visual?: boolean; compact?: boolean; layout?: 'grid' | 'list'; artworkScope?: StaffArtworkScope;
 }) {
   const fam = tone === 'family';
   const candidateServices = (t as Template & { services?: readonly string[] }).services;
@@ -46,10 +47,11 @@ export function ActivityCard({ t, tone = 'clinical', extra, visual = false, comp
         {visual && <div className={`flex aspect-[4/3] min-w-0 items-center justify-center rounded-control border border-border-light bg-surface-white ${showList ? 'w-full sm:w-44 sm:shrink-0 sm:self-start' : 'max-h-48 w-full'}`}
           data-testid={`activity-media-placeholder-${t.id}`}
           data-illustration-style={ILLUSTRATION_STYLE_VERSION}>
+          {!fam && artworkScope ? <StaffArtworkImage scope={artworkScope} slot={0} /> :
           <div className="flex flex-col items-center gap-2 px-3 text-center text-[13px] text-brand-inkMuted">
             <ImageOff size={24} aria-hidden="true" />
             <span>No approved illustration available</span>
-          </div>
+          </div>}
         </div>}
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex flex-wrap items-start justify-between gap-2">
@@ -73,14 +75,14 @@ export function ActivityCard({ t, tone = 'clinical', extra, visual = false, comp
             <ol className="mt-3 space-y-2" aria-label="Steps">{t.steps.map((step, i) => (
               <li key={i} className="flex gap-3 text-[14px]">
                 <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[12px] font-bold ${fam ? 'bg-fam-accentTint text-fam-accent' : 'bg-brand-actionTint text-brand-action'}`}>{i + 1}</span>
-                <span>{step}</span>
+                <div className="min-w-0 flex-1"><span>{step}</span>{!fam && artworkScope && i < 64 && <StaffArtworkImage scope={artworkScope} slot={i + 1} />}</div>
               </li>
             ))}</ol>
           </details>}
           {(!compact || t.steps.length === 0) && <ol className="mt-3 space-y-2" aria-label="Steps">
             {t.steps.map((step, i) => <li key={i} className="flex gap-3 text-[14px]">
               <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[12px] font-bold ${fam ? 'bg-fam-accentTint text-fam-accent' : 'bg-brand-actionTint text-brand-action'}`}>{i + 1}</span>
-              <span>{step}</span>
+              <div className="min-w-0 flex-1"><span>{step}</span>{!fam && artworkScope && i < 64 && <StaffArtworkImage scope={artworkScope} slot={i + 1} />}</div>
             </li>)}
           </ol>}
           <div className="mt-auto pt-4">

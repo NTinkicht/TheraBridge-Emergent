@@ -21,3 +21,6 @@ CREATE TABLE "activity_artwork_approval" (
     )
 );
 CREATE UNIQUE INDEX "activity_artwork_approval_slot_key" ON "activity_artwork_approval"("center_id", "template_id", "template_version", "slot");
+
+-- Preserve signed evidence even when its underlying candidate is revoked.
+CREATE TRIGGER "activity_artwork_approval_immutable" BEFORE UPDATE OR DELETE ON "activity_artwork_approval" FOR EACH ROW EXECUTE FUNCTION governance_immutable();

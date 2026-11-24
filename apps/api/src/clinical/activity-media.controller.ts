@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Req, BadRequestException } from '@nestjs/common';
+import { Body, Controller, Get, Header, Param, ParseUUIDPipe, Post, Query, Req, BadRequestException } from '@nestjs/common';
 import { RequirePermission, TbRequest } from '../auth/access';
 import type { Viewer } from '../operations/children.service';
 import { ActivityMediaDraftDto, ActivityMediaRejectDto, ActivityPrivatePngCandidateDto } from './activity-media.dto';
@@ -39,6 +39,15 @@ export class ActivityMediaController {
   approvedArtwork(@Param('centerId', uuid()) centerId: string, @Param('templateId', uuid()) templateId: string,
     @Req() req: TbRequest) {
     return this.media.approvedArtwork(centerId, viewer(req), templateId);
+  }
+  @Get('approved-artwork/:version/:slot')
+  @Header('Cache-Control', 'private, no-store, max-age=0')
+  @RequirePermission('center.activities.manage')
+  readApprovedArtwork(@Param('centerId', uuid()) centerId: string, @Param('templateId', uuid()) templateId: string,
+    @Param('version') version: string, @Param('slot') slot: string, @Req() req: TbRequest) {
+    if (!/^[1-9]\\d{0,8}$/.test(version) || !/^(0|[1-9]\\d?)$/.test(slot))
+      throw new BadRequestException('Invalid illustration version or slot.');
+    return this.media.readApprovedArtwork(centerId, viewer(req), templateId, Number(version), Number(slot));
   }
   @Post()
   @RequirePermission('center.activities.manage')

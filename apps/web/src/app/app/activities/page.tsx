@@ -213,7 +213,13 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
           body="Try another keyword or clear your filters. Your saved activities are unchanged." /></div>}
       {first && templates.length > 0 && <div className={view === 'grid' ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3' : 'grid grid-cols-1 gap-4'} data-testid="activities-list" data-layout={view}>{templates.map(t => (
         <div key={t.id} className="flex h-full min-w-0 flex-col gap-2">
-          <ActivityCard t={t} visual compact layout={view} />
+          <ActivityCard t={t} visual compact layout={view} artworkScope={
+            canReviewArtwork && t.library === 'center' && t.version && session.activeContext?.type === 'center' &&
+              (session.activeContext.role === 'CLINICAL_SUPERVISOR' || t.mine === true)
+              ? { centerId, templateId:t.id, version:t.version,
+                  actorKey:JSON.stringify([session.user.id,session.activeContext.membershipId,session.activeContext.role]) }
+              : undefined
+          } />
           {canReviewArtwork && showArtwork && localArtwork.length > 0 && t.library === 'center' &&
             (session.activeContext?.type === 'center' && (session.activeContext.role === 'CLINICAL_SUPERVISOR' || t.mine === true)) &&
             <LocalMappedArtworkReview key={[centerId,t.id,t.version,session.activeContext.role].join(':')}
