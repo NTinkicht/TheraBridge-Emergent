@@ -61,6 +61,45 @@ export class ActivityMediaService {
     });
   }
 
+  /** Read-only current-version mapping of private proposals and scanned candidates.
+   * No image bytes, identifiers, rights approval or release authority are returned.
+   * Group at the database to bound results by the existing 64 instruction slots.
+   */
+  async mapping(centerId: string, v: Viewer, templateId: string) {
+    return this.prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM activity_template WHERE id=${templateId}::uuid AND center_id=${centerId}::uuid FOR SHARE`;
+      const t = await this.authorizedTemplate(tx, centerId, v, templateId);
+      const numbers = t.steps.slice(0, 64).flatMap((step, i) => step.trim() ? [i + 1] : []);
+      const where = {
+        centerId, templateId, templateVersion: t.version, service: t.service,
+        state: 'DRAFT', styleVersion: ILLUSTRATION_STYLE_VERSION,
+        OR: [{ stepNumber: null }, { stepNumber: { in: numbers } }],
+      };
+      const proposals = await tx.activityMediaDraft.groupBy({
+        by: ['stepNumber'], where, _count: { _all: true },
+      });
+      const staged = await tx.activityMediaDraft.groupBy({
+        by: ['stepNumber'], where: {
+          ...where, mediaCandidates: { some: {
+            centerId, templateId, templateVersion: t.version, kind: 'ACTIVITY_IMAGE',
+            status: 'QUARANTINED', revokedAt: null,
+          } },
+        }, _count: { _all: true },
+      });
+      const proposed = new Map(proposals.map(row => [row.stepNumber, row._count._all]));
+      const scanned = new Map(staged.map(row => [row.stepNumber, row._count._all]));
+      return {
+        templateVersion: t.version,
+        slots: [null, ...numbers].map(stepNumber => ({
+          stepNumber, proposed: proposed.get(stepNumber) ?? 0,
+          staged: scanned.get(stepNumber) ?? 0,
+        })),
+        metadataOnly: true as const, readEnabled: false as const,
+        publishEnabled: false as const, clinicalReleaseEnabled: false as const,
+      };
+    }, { isolationLevel: 'RepeatableRead' });
+  }
+
   async propose(centerId: string, v: Viewer, templateId: string, dto: ActivityMediaDraftDto) {
     // The service boundary must reject alternate/legacy visual styles even
     // when invoked outside class-validator or by a future internal caller.

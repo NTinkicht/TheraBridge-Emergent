@@ -24,3 +24,8 @@ The latter requires a host with working ClamAV UNIX socket, encryption key and a
 
 ## Remaining delivery
 Pack generated and locally verified. App private-reference intake implemented. Actual host ClamAV/KMS custody execution, signed asset-specific rights/clinical review, persistent approved-media read model, activity-version mappings to released images/steps, translated alt, catalogue/family rendering and full M5 qualification remain NOT VERIFIED / NOT IMPLEMENTED as applicable. Do not claim all 25 are in the deployed app or 100% released coverage. G2/G2b remains NO-GO. This PR is not yet fully qualified; final exact-head CI, review and human acceptance must be observed. No release permission is changed.
+
+## 2026-11-24 — PR #493 current-version artwork mapping (qualification pending)
+
+Added staff-manager-only current-version persisted mapping endpoint and opt-in UI snapshot for whole activity and numbered steps. Counts distinguish non-rejected proposals and proposals with an unrevoked scanned candidate; no image bytes, approval, release, or guardian access. Uses existing tenant/role/ownership checks and a repeatable-read transaction; tests added for query scope, denial, version and permission changes, stale/failure states. Full exact-head CI, eight coverage floors and independent review NOT RUN on this change. Host custody, asset-specific signed rights/clinical evidence, actual approved media delivery and M5 closure remain pending; G2/G2b remains NO-GO.
+

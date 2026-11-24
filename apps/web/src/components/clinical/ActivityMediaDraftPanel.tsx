@@ -5,6 +5,7 @@ import { FileImage, ShieldAlert } from 'lucide-react';
 import { Button, Card, Pill } from '@/components/design/ui';
 import { activityMediaDrafts, type ActivityMediaDraft as Draft, type ActivityMediaSource as SourceType } from '@/lib/activity-media';
 import { LocalActivityMediaReadiness } from './LocalActivityMediaReadiness';
+import { ActivityMediaMappingStatus } from './ActivityMediaMappingStatus';
 import { GeneratedArtworkSelector } from './GeneratedArtworkSelector';
 import { PrivateIllustrationStepPreview } from './PrivateIllustrationStepPreview';
 import { ActivityMediaCandidateHistory } from './ActivityMediaCandidateHistory';
@@ -130,6 +131,8 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion,
         Only private scanned PNG candidate staging is available after a metadata draft. No image publication is available.
         Human clinical/design approval and verified storage are separate mandatory gates.
       </p>
+      <ActivityMediaMappingStatus key={[centerId, templateId, templateVersion, candidateRevision].join(':')}
+        centerId={centerId} templateId={templateId} templateVersion={templateVersion} />
       <PrivateIllustrationStepPreview key={centerId + ':' + templateId + ':' + String(templateVersion ?? 'unversioned')}
         templateVersion={templateVersion} steps={steps} />
       <GeneratedArtworkSelector key={centerId + ':' + templateId + ':' + String(templateVersion ?? 'unversioned')}

@@ -1,3 +1,7 @@
+## 2026-11-24 — PR #493 current-version artwork mapping (qualification pending)
+
+Added staff-manager-only current-version persisted mapping endpoint and opt-in UI snapshot for whole activity and numbered steps. Counts distinguish non-rejected proposals and proposals with an unrevoked scanned candidate; no image bytes, approval, release, or guardian access. Uses existing tenant/role/ownership checks and a repeatable-read transaction; tests added for query scope, denial, version and permission changes, stale/failure states. Full exact-head CI, eight coverage floors and independent review NOT RUN on this change. Host custody, asset-specific signed rights/clinical evidence, actual approved media delivery and M5 closure remain pending; G2/G2b remains NO-GO.
+
 ## 2026-11-22 — PR3 clinical-workflow feedback qualification and continuation
 
 1. Run exact-HEAD six-job CI, browser/Compose/source/SBOM/Smart CI and eight unrounded >=90% API/Web metrics; investigate any regressions without relaxing gates.

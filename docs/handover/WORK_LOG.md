@@ -1,3 +1,7 @@
+## 2026-11-24 — PR #493 current-version artwork mapping (qualification pending)
+
+Added staff-manager-only current-version persisted mapping endpoint and opt-in UI snapshot for whole activity and numbered steps. Counts distinguish non-rejected proposals and proposals with an unrevoked scanned candidate; no image bytes, approval, release, or guardian access. Uses existing tenant/role/ownership checks and a repeatable-read transaction; tests added for query scope, denial, version and permission changes, stale/failure states. Full exact-head CI, eight coverage floors and independent review NOT RUN on this change. Host custody, asset-specific signed rights/clinical evidence, actual approved media delivery and M5 closure remain pending; G2/G2b remains NO-GO.
+
 ## 2026-11-22 — M5 UX PR3 engineering slice
 
 Created branch from merged #462 main. Refined `/app/clinical` into task-first authorized child selection, separated `IN_PROGRESS` session editors from `COMPLETED` notes, and added a keyboard-accessible collapsed-by-default historical-session toggle. Active editors remain mounted; completed session editing remains governed by existing `SessionEditor` controls. Added mounted cross-role history-toggle tests. Not deployed, accepted, or clinical-released. Remaining PR3 observations tracked for implementation; final CI/reviews/owner acceptance outstanding.

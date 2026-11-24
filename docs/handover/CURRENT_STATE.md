@@ -1,3 +1,7 @@
+## 2026-11-24 — PR #493 current-version artwork mapping (qualification pending)
+
+Added staff-manager-only current-version persisted mapping endpoint and opt-in UI snapshot for whole activity and numbered steps. Counts distinguish non-rejected proposals and proposals with an unrevoked scanned candidate; no image bytes, approval, release, or guardian access. Uses existing tenant/role/ownership checks and a repeatable-read transaction; tests added for query scope, denial, version and permission changes, stale/failure states. Full exact-head CI, eight coverage floors and independent review NOT RUN on this change. Host custody, asset-specific signed rights/clinical evidence, actual approved media delivery and M5 closure remain pending; G2/G2b remains NO-GO.
+
 ## 2026-11-22 — M5 owner feedback PR3 therapist workspace (PARTIAL, NOT QUALIFIED)
 
 After #462 merged, PR3 work begins with observation 16 task-oriented clinical caseload entrance and observation 17 completed historical sessions collapsed by default. Active `IN_PROGRESS` SessionEditor instances stay mounted so unresolved local drafts/autosave/conflicts are not discarded when history is toggled. History is rendered only after an explicit accessible control. No clinical schema or access policy changed. Other PR3 observations 15, 18–24 remain OPEN; owner visual/AT and all qualification gates remain NOT_RUN/UNVERIFIED. G2/G2b NO-GO unchanged.
