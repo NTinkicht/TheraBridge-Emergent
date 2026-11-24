@@ -43,7 +43,7 @@ export function GeneratedArtworkGallery({onVerified}: {onVerified?:(previews:rea
         verified.push({asset,bytes});
       }
       const next=verified.map(({asset,bytes})=>{
-        const url=URL.createObjectURL(new Blob([bytes],{type:'image/png'}));
+        const url=URL.createObjectURL(new Blob([Uint8Array.from(bytes).buffer],{type:'image/png'}));
         pending.push(url);return {asset,url};
       });
       urls.current=pending.splice(0);

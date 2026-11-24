@@ -1,5 +1,7 @@
 'use client';
 
+import { SharedIllustration } from '@/components/clinical/SharedIllustration';
+import { sharedIllustrationForActivity } from '@/lib/shared-illustrations.mjs';
 import { useState } from 'react';
 import { ChevronDown, Clock, ImageOff, Package, ShieldCheck } from 'lucide-react';
 import { Pill } from '@/components/design/ui';
@@ -12,15 +14,16 @@ export function SlotChip({ slot, onRecord, testId }: { slot: Slot; onRecord?: ()
 
 export function ActivityCard({ a, slots, onRecord, testId }: { a: PracticeActivity; slots: Slot[]; onRecord?: (s: Slot) => void; testId: string }) {
   const [open, setOpen] = useState(false);
+  const shared = sharedIllustrationForActivity(a);
   return (
     <article className="overflow-hidden rounded-card border border-fam-border bg-fam-surface p-3 sm:p-4" data-testid={testId}>
       <div className="flex items-start gap-3">
         <div className="flex aspect-[4/3] w-24 shrink-0 items-center justify-center rounded-control bg-fam-tile sm:w-28"
           data-testid={`${testId}-illustration-placeholder`}>
-          <span className="space-y-1 px-1 text-center text-[11px] text-fam-muted">
+          {shared ? <SharedIllustration asset={shared}/> : <span className="space-y-1 px-1 text-center text-[11px] text-fam-muted">
             <ImageOff size={19} className="mx-auto" aria-hidden="true"/>
             <span className="block">No approved image</span>
-          </span>
+          </span>}
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[11px] font-bold uppercase tracking-wide text-fam-caution">Sample activity</p>
