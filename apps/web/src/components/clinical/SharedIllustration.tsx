@@ -13,7 +13,7 @@ function Image({asset}:{asset:Asset}) {
       // eslint-disable-next-line @next/next/no-img-element
       <img src={sharedIllustrationUrl(asset)} alt={asset.alt} width={400} height={300} loading="lazy" decoding="async"
         className="block aspect-[4/3] max-h-48 w-full object-contain" onError={()=>setFailed(true)}/>}
-    <figcaption className="absolute bottom-0 left-0 rounded-tr-control bg-surface-white px-1 py-0.5 text-[10px]">Generic reference illustration</figcaption>
+    <figcaption className="absolute bottom-0 left-0 rounded-tr-control bg-surface-white px-1 py-0.5 text-[10px]">Specialty reference art (not instructions)</figcaption>
   </figure>;
 }
 export function SharedIllustrationLibrary() {

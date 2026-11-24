@@ -1671,3 +1671,17 @@ Owner-directed simplification: the 25 existing non-patient fictional reference t
 
 
 2026-11-25 PR #496: fixed Gitleaks false positive on historical R2 environment-variable NAME at storage.mjs line 11. Current source uses direct env property access; the exact rule/path/literal exception is limited to the historical nonsecret name. Pinned Gitleaks 8.30.1 local all-ref history (2381 commits) and Web source scans PASS. No actual credential was committed; full corrected-HEAD CI and review remain required.
+
+
+### 2026-11-25 — synthetic catalogue illustration coverage correction
+Hosted PR #496 build live; all 25 digest URLs returned 503, so delivery was not verified. Exact 67 synthetic activity identity/title/service/steps associations added, with specialty reference captions (not treatment instructions); unknown or edited entries retain the private-media path. Add bounded nonsecret failure codes for runtime configuration/HTTP/length/integrity/transport diagnosis. No production publication, signing or release change. Hosted delivery remains unverified until successful deployment and 25 byte-for-byte live checks.
+
+
+### 2026-11-25 — remove demo image storage dependency
+Package only the 25 public-demo display WebP derivatives (606626 bytes total), each verified against the original locked manifest. No masters, archives, credentials or clinical media included. The allowlisted synthetic-preview route reads digest-checked packaged files first, with existing R2 read fallback only for missing files. Production and private media gates remain unchanged. Add all-25 real-byte serving tests without R2 credentials and missing/corrupt/unknown asset tests. The owner-requested demo display is not a general rights or clinical approval receipt. Fresh CI and review required.
+
+
+Codex P2 FIX_NOW: platform migration uses random UUIDs for four global samples. Portable matching requires exact title/service/steps plus synthetic library provenance (guardian sample route or API library marker); all other mappings require exact demo UUID. Regression test extracts the real migration records and gives them fresh UUIDs. No generic arbitrary clinical template mapping.
+
+
+2026-11-25 PR #497: explicitly enable visual cards on guardian Activities at home and pass verified sample/unreleased context for portable global sample matching. Commercial provenance failure was an exact source asset inventory increase from 92 to 117 (73 to 98 images/icons); reconcile all four ledger/qualification stages and tests without removing or approving any asset or changing clinical/commercial gates.

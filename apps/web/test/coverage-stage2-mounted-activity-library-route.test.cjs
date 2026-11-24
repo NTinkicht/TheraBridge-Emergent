@@ -11,7 +11,7 @@ jest.mock('@/components/centers/kit',()=>{
  },options.map(o=>h('option',{value:o.value,key:o.value},o.label)))};
 });
 jest.mock('@/components/clinical/ActivityCard',()=>({
- ActivityCard:({t})=>h('article',{'data-testid':'sample-activity-'+t.id},t.title)
+ ActivityCard:({t,visual,syntheticSample})=>h('article',{'data-testid':'sample-activity-'+t.id,'data-visual':visual,'data-synthetic-sample':syntheticSample},t.title)
 }));
 jest.mock('@/components/clinical/TemplateActions',()=>({
  TemplateActions:({template})=>h('aside',{'data-testid':'template-actions-'+template.id},'Synthetic actions')
@@ -120,14 +120,15 @@ describe('real activity library source scoping and synthetic family safety',()=>
  });
  it('renders family samples with explicit no-private-plan release notice',async()=>{
   mockSession.permissions=['family.activities.read'];
-  clinicalApi.family.mockResolvedValue({children:[{
+  clinicalApi.family.mockResolvedValue({sample:true,released:false,children:[{
    id:'child-a',name:'Fictional Alex',activities:[template('family-a')]
   }]});
   await mount();
   expect(clinicalApi.family).toHaveBeenCalledWith('center-a');
   expect(get('family-activities-sample-note')).toBeTruthy();
   expect(get('family-activities-child-child-a')).toBeTruthy();
-  expect(get('sample-activity-family-a')).toBeTruthy();
+  expect(get('sample-activity-family-a').props['data-visual']).toBe(true);
+  expect(get('sample-activity-family-a').props['data-synthetic-sample']).toBe(true);
   expect(find('template-form-toggle')).toHaveLength(0);
   expect(JSON.stringify(tree.toJSON())).toContain('sharing plans is switched off');
  });
