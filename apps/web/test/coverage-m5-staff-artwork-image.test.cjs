@@ -29,3 +29,16 @@ test('actor change discards pending response',async()=>{
  await act(async()=>resolve(good));expect(createUrl).not.toHaveBeenCalled();
  expect(tree.root.findAllByType('img')).toHaveLength(0);
 });
+
+test.each([{height:299},{altText:''},{altText:'x'.repeat(601)},{altText:null},{pngBase64:null},{pngBase64:'A'.repeat(699056)},{pngBase64:'AAA'},{pngBase64:'AAAA'},{pngBase64:Buffer.alloc(33).toString('base64')}])('rejects further invalid image metadata %j',async patch=>{
+ await render();activityMediaDrafts.readApprovedArtwork.mockResolvedValueOnce({...good,...patch});await click();
+ expect(tree.root.findAllByType('img')).toHaveLength(0);expect(createUrl).not.toHaveBeenCalled();
+});
+test('numbered step shows a loading state then image failure and cleanup',async()=>{
+ await act(async()=>{tree=create(React.createElement(StaffArtworkImage,{scope,slot:1}));});
+ let resolve;activityMediaDrafts.readApprovedArtwork.mockReturnValueOnce(new Promise(r=>{resolve=r;}));await click();
+ expect(JSON.stringify(tree.toJSON())).toContain('Checking illustration');
+ await act(async()=>resolve({...good,stepNumber:1}));expect(tree.root.findByType('img')).toBeTruthy();
+ await act(async()=>tree.root.findByType('img').props.onError());expect(tree.root.findAllByType('img')).toHaveLength(0);
+ await click();expect(revokeUrl).toHaveBeenCalledWith('blob:private-test');
+});

@@ -43,6 +43,23 @@ describe('independent artwork evidence binding', () => {
     expect(verifiesArtworkApproval({...row,rightsSignature:'bad'},context)).toBe(false);
     expect(verifiesArtworkApproval({...row,clinicalEvidenceSha256:row.rightsEvidenceSha256},context)).toBe(false);
   });
+  it.each([
+    {candidateId:'bad'},{templateId:'bad'},{draftId:'bad'},{templateVersion:0},{templateVersion:1.5},
+    {slot:-1},{slot:65},{slot:1.5},{draftVersion:0},{draftVersion:1.5},{digestSha256:'bad'},
+  ])('rejects invalid signed context %j',patch=>expect(verifiesArtworkApproval(receipt(),{...context,...patch})).toBe(false));
+  it.each([
+    {candidateId:'different'},{centerId:'different'},{templateId:'different'},{templateVersion:99},
+    {slot:0},{digestSha256:'e'.repeat(64)},{contextSha256:'e'.repeat(64)},
+    {rightsEvidenceSha256:'bad'},{clinicalEvidenceSha256:'bad'},
+    {rightsSignature:'A'.repeat(85)+'B=='},{rightsSignature:'A'.repeat(86)+'=='},
+  ])('rejects substituted approval fields %j',patch=>expect(verifiesArtworkApproval({...receipt(),...patch},context)).toBe(false));
+  it('rejects non-Ed25519 trust keys and absent clinical key',()=>{
+    const rsa=generateKeyPairSync('rsa',{modulusLength:2048}).publicKey.export({type:'spki',format:'pem'}).toString();
+    process.env[env[0]]=rsa;expect(verifiesArtworkApproval(receipt(),context)).toBe(false);
+    process.env[env[0]]=rights.publicKey.export({type:'spki',format:'pem'}).toString();
+    process.env[env[1]]=rsa;expect(verifiesArtworkApproval(receipt(),context)).toBe(false);
+    delete process.env[env[1]];expect(verifiesArtworkApproval(receipt(),context)).toBe(false);
+  });
   it('denies unconfigured or shared signing authority',()=>{
     delete process.env[env[0]];
     expect(verifiesArtworkApproval(receipt(),context)).toBe(false);

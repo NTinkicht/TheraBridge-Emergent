@@ -31,6 +31,25 @@ describe('staff signed illustration read boundary',()=>{
     expect(verified).toHaveBeenCalledTimes(2);expect(tx.$queryRaw).toHaveBeenCalledTimes(3);
     expect(tx.privateMediaCandidate.findFirst).not.toHaveBeenCalled();
   });
+  it('rejects an absent signed binding and replacement while locking',async()=>{
+    const {service,verified,tx}=setup();
+    verified.mockResolvedValueOnce([]);
+    await expect(service.readApprovedArtwork('c',viewer,'t',7,0)).rejects.toBeInstanceOf(NotFoundException);
+    verified.mockResolvedValueOnce([{candidateId:'one',draftId:'draft'}]).mockResolvedValueOnce([{candidateId:'two',draftId:'draft'}]);
+    await expect(service.readApprovedArtwork('c',viewer,'t',7,0)).rejects.toBeInstanceOf(NotFoundException);
+    verified.mockResolvedValueOnce([{candidateId:'one',draftId:'draft'}]).mockResolvedValueOnce([{candidateId:'one',draftId:'different'}]);
+    await expect(service.readApprovedArtwork('c',viewer,'t',7,0)).rejects.toBeInstanceOf(NotFoundException);
+    expect(tx.privateMediaCandidate.findFirst).not.toHaveBeenCalled();
+  });
+  it('refuses oversized encrypted input',async()=>{
+    const {service,tx}=setup();tx.privateMediaCandidate.findFirst.mockResolvedValueOnce({encryptedBytes:Buffer.alloc(512*1024+30)});
+    await expect(service.readApprovedArtwork('c',viewer,'t',7,0)).rejects.toBeInstanceOf(NotFoundException);
+  });
+  it('rejects negative and fractional slot and version',async()=>{
+    const {service,auth}=setup();
+    for(const [version,slot] of [[7,-1],[7,1.5],[1.5,0]])await expect(service.readApprovedArtwork('c',viewer,'t',version,slot)).rejects.toBeInstanceOf(UnprocessableEntityException);
+    expect(auth).not.toHaveBeenCalled();
+  });
   it('rejects missing storage and malformed encrypted bytes',async()=>{
     const {service,tx}=setup();
     tx.privateMediaCandidate.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({encryptedBytes:Buffer.alloc(50)});
