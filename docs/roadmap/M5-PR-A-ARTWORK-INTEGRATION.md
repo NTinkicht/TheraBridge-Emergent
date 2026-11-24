@@ -44,3 +44,20 @@ After a successful stage, verify from the same private host with the same server
 node scripts/qa/m5-pr-a-artwork-pack.mjs verify-staged /private/illustrations /private/custody /private/m5-artwork-intake.jsonl
 ```
 A complete run must report 25 references and 75 authenticated encrypted files. This is storage integrity, not an independent scanner/rights/clinical approval. Do not run on an active staging/purge host; reconcile in an exclusive operator maintenance window.
+
+## 2026-11-24 — PR #493 isolated actual-custody runtime (qualification pending)
+
+Previous `eea68c1` exact-head six mandatory CI, Smart CI and focused coverage all PASS (45417719257/45417718401). Fresh local recovery verification of the original archive: pinned archive/manifest SHA, ZIP CRC, 25 references/100 exact file digests and Pillow decode PASS. Added separate non-web `Dockerfile.artwork-custody` and explicit `compose.artwork-custody.yaml`: non-root UID 1000, no network, no published ports, read-only root/input/evidence/signature mounts, durable 0700 custody state, real local ClamAV UNIX socket, mandatory signature age preflight and same-host verify-staged; separate from the constrained 512 MiB application preview. Shell syntax/negative command/source contracts added to existing required source tests. No paid Render service or real deployment created. New CI/review, actual container build, trusted updated signature database, signed/factual provider evidence, private host custody execution and approved rendering NOT RUN/NOT OBTAINED; G2/G2b NO-GO. This is a deployable operator recipe, not a live deployment or independent qualification.
+
+### Isolated operator runtime (not the application image)
+
+On an authorized Linux Docker host with at least 3 GiB reserved for the one-shot custody process, prepare four separate directories outside the source repository. The state directory must be owned by UID 1000 and mode 0700 on durable encrypted storage, with private backup/retention controls. Extract the pinned archive into the input directory. Supply actual rights/provider evidence in provider-evidence.json, and a trusted host-maintained ClamAV signature directory updated before use (main, daily and bytecode databases). The scanner does not fetch updates during the run; independently verify official signature provenance and freshness. Supply TB_PRIVATE_DATA_KEY_B64 and TB_ARTWORK_OPERATOR_ID from the authorized secret store/interactive private shell, never Git or command arguments. Set TB_ARTWORK_PACK_DIR, TB_ARTWORK_EVIDENCE_DIR, TB_ARTWORK_SIGNATURE_DIR, TB_ARTWORK_STATE_DIR to the actual absolute host paths. All inputs must be readable by UID 1000. Do not use the public demo host's ephemeral filesystem. Build only this separate operator image; review its upstream package provenance, SBOM and licensing before distributing or deploying it. The existing public preview and release images are untouched.
+
+```sh
+docker compose -f compose.artwork-custody.yaml build
+docker compose -f compose.artwork-custody.yaml run --rm artwork-custody verify
+docker compose -f compose.artwork-custody.yaml run --rm artwork-custody stage
+docker compose -f compose.artwork-custody.yaml run --rm artwork-custody verify-staged
+```
+
+Run in an exclusive maintenance window. A failed or partial run requires reconciliation; do not delete the journal or blindly rerun. No approval is implied by a successful custody receipt.

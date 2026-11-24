@@ -61,3 +61,21 @@ test('host verification checks exact master and authenticated encrypted assets w
   assert.match(source,/verify-staged/);
   assert(!/fetch\(|createServer\(/.test(source));
 });
+
+import {spawnSync} from 'node:child_process';
+test('isolated operator runtime does not change or expose the application image',async()=>{
+  const docker=await file('Dockerfile.artwork-custody');
+  const compose=await file('compose.artwork-custody.yaml');
+  const script=await file('scripts/qa/artwork-custody-entrypoint.sh');
+  assert.match(docker,/clamav-daemon/);assert.match(docker,/USER node/);
+  assert(!/EXPOSE|COPY \. \/|COPY \. \./.test(docker));
+  assert.match(compose,/network_mode: none/);assert.match(compose,/read_only: true/);
+  assert.match(compose,/cap_drop: \[ALL\]/);assert.match(compose,/no-new-privileges:true/);
+  assert.equal((compose.match(/create_host_path: false/g)||[]).length,4);
+  assert(!/^\s*ports:/m.test(compose));
+  assert.match(script,/StreamMaxLength 16M/);assert.match(script,/LocalSocketMode 0600/);
+  assert.match(script,/mmin -2880/);assert.match(script,/verify-staged/);
+  assert.equal(spawnSync('bash',['-n'],{input:script}).status,0);
+  const denied=spawnSync('bash',['-c',script,'artwork-custody','invalid'],{encoding:'utf8'});
+  assert.notEqual(denied.status,0);assert.match(denied.stderr,/preflight failed/);
+});
