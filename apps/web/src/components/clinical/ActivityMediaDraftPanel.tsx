@@ -19,8 +19,8 @@ const cls = 'min-h-[44px] w-full rounded-control border border-border-strong bg-
 
 // Metadata-only workflow. No image upload/preview or approval exists until the
 // separate private-byte verifier, rights sign-off and clinical gates are ready.
-export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion, steps = [] }: {
-  centerId: string; templateId: string; templateVersion?: number; steps?: readonly string[];
+export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion, service, steps = [] }: {
+  centerId: string; templateId: string; templateVersion?: number; service?: string; steps?: readonly string[];
 }) {
   const [open, setOpen] = useState(false);
   // Invalidate previous-page and initial-list responses whenever panel lifetime changes.
@@ -133,7 +133,7 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion,
       <PrivateIllustrationStepPreview key={centerId + ':' + templateId + ':' + String(templateVersion ?? 'unversioned')}
         templateVersion={templateVersion} steps={steps} />
       <GeneratedArtworkSelector key={centerId + ':' + templateId + ':' + String(templateVersion ?? 'unversioned')}
-        disabled={busy || !templateVersion}
+        service={service} disabled={busy || !templateVersion}
         onSelect={asset=>setForm(previous=>({...previous,sourceType:'GENERATED',
           sceneType:asset.scene,altText:asset.alt,
           sourceReference:'m5-b-v1:' + asset.referenceId + ':sha256:' + asset.reviewSha256,
