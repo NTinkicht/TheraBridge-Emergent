@@ -8,8 +8,7 @@ import { generatedReferenceDigest,assertGeneratedReferenceScope } from '../clini
 // Only promote already scanned, encrypted and exact-reference synthetic
 // candidates. Does not create a draft/candidate/approval or release anything.
 // DB ciphertext retained as a controlled backup until a separate retention decision.
-async function main(){
-  const args=process.argv.slice(2);
+export async function stageArtworkR2(args:string[]=process.argv.slice(2)){
   if(args.length!==1||!/^[a-f0-9-]{36}$/.test(args[0])||
     process.env.TB_ARTWORK_R2_IMPORT_ALLOWED!=='true'||
     !['local','development','demo','test'].includes(process.env.DEPLOYMENT_ENV??''))
@@ -56,4 +55,4 @@ async function main(){
     console.log('Private encrypted candidate staged and read-back verified. No approval or release.');
   }finally{await prisma.$disconnect();}
 }
-if(require.main===module)main().catch(()=>{console.error('Private R2 import failed; reconcile candidate and object before retry.');process.exitCode=1;});
+if(require.main===module)stageArtworkR2().catch(()=>{console.error('Private R2 import failed; reconcile candidate and object before retry.');process.exitCode=1;});

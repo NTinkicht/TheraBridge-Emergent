@@ -8,6 +8,14 @@ const config=privateR2Config(env);
 const response=(b:Buffer=bytes,status=200,length=String(b.length))=>new Response(Uint8Array.from(b),{status,headers:{'content-length':length}});
 describe('private R2 ciphertext boundary',()=>{
  afterEach(()=>jest.restoreAllMocks());
+ it('fails closed with entirely missing configuration and partial operator credentials',()=>{
+  expect(()=>privateR2Config({})).toThrow();
+  expect(()=>privateR2Config({...env,TB_R2_BUCKET:undefined})).toThrow();
+  expect(()=>privateR2Config({...env,TB_R2_ACCESS_KEY_ID:undefined})).toThrow();
+  expect(()=>privateR2Config({...env,TB_R2_SECRET_ACCESS_KEY:undefined})).toThrow();
+  expect(()=>privateR2Config({...env,TB_R2_IMPORT_ACCESS_KEY_ID:undefined},true)).toThrow();
+  expect(()=>privateR2Config({...env,TB_R2_IMPORT_SECRET_ACCESS_KEY:undefined},true)).toThrow();
+ });
  it('separates credentials and accepts canonical R2 endpoint only',()=>{
   expect(privateR2Config(env,true).accessKey).toBe(env.TB_R2_IMPORT_ACCESS_KEY_ID);
   expect(privateR2Config({...env,TB_R2_ENDPOINT:env.TB_R2_ENDPOINT+'/'}).endpoint).toBe(env.TB_R2_ENDPOINT);
@@ -44,6 +52,7 @@ describe('private R2 ciphertext boundary',()=>{
   await stagePrivateR2(p,bytes,config);await stagePrivateR2(p,bytes,config);
   expect(call.mock.calls[0][1]).toMatchObject({method:'PUT',headers:{'if-none-match':'*'},redirect:'error'});
   await expect(stagePrivateR2(p,Buffer.alloc(50,9),config)).rejects.toThrow();
+  await expect(stagePrivateR2(p,Buffer.alloc(49,7),config)).rejects.toThrow();
   call.mockResolvedValueOnce(new Response(null,{status:403}));
   await expect(stagePrivateR2(p,bytes,config)).rejects.toThrow();
   call.mockResolvedValueOnce(new Response(null,{status:412})).mockResolvedValueOnce(response(Buffer.alloc(50,8)));

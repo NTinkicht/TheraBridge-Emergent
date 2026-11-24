@@ -55,3 +55,7 @@ From apps/api with dependencies installed and Prisma generated:
 pnpm exec ts-node --transpile-only src/cli/stage-artwork-r2.ts <existing-scanned-candidate-uuid>
 ```
 This copies only the already scanned encrypted review PNG, not the 25-source master pack. The operator must first stage the exact pack through the existing private ClamAV custody flow and register reviewed candidates through scoped app intake. On failure reconcile the deterministic ciphertext object and DB pointer before retry; no automatic delete. Runtime reads enforce existing receipt, authorization and revocation checks and fail closed on remote storage errors. Remove/revoke temporary write credentials after verification. Database ciphertext retained pending separate retention/backup policy.
+
+
+## 2026-11-24 — R2 CI branch-coverage remediation (qualification pending)
+Exact 0309151 CI 45471907227 failed solely at measured API branch floor 89.07% (minimum 90%); all 1,908 API tests and 2,072 web tests passed, other eight-metric results except API branches passed, focused Web 45471907251 passed. Smart CI gate failed downstream. Exported the existing guarded operator entrypoint for direct testing without changing its checks. Added precondition, scope, scan, digest/dimension, credential separation, success, idempotence, concurrent revocation/pointer conflict and storage outage regressions with mocked DB/storage boundaries; expanded missing-config tests. No threshold/CI policy changes, no live import. Exact-head CI/review pending.
