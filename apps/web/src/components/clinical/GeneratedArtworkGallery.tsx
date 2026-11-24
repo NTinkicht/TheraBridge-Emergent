@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { GENERATED_ARTWORK, verifyGeneratedReviewBytes, type GeneratedArtwork } from '@/lib/generated-artwork.mjs';
 
-type Preview = { asset: GeneratedArtwork; url: string };
+export type LocalArtworkPreview = { asset: GeneratedArtwork; url: string };
+type Preview = LocalArtworkPreview;
 
 /** Local reference board, never a clinical publication or activity mapping. */
-export function GeneratedArtworkGallery() {
+export function GeneratedArtworkGallery({onVerified}: {onVerified?:(previews:readonly LocalArtworkPreview[])=>void} = {}) {
   const [previews,setPreviews]=useState<Preview[]>([]);
   const [status,setStatus]=useState('');
   const [busy,setBusy]=useState(false);
@@ -18,7 +19,7 @@ export function GeneratedArtworkGallery() {
   };
   useEffect(()=>()=>{generation.current++;release();},[]);
   const clear=()=>{
-    generation.current++;release();setPreviews([]);setBusy(false);setStatus('');
+    generation.current++;release();setPreviews([]);onVerified?.([]);setBusy(false);setStatus('');
   };
   const load=async(files:File[])=>{
     clear();
@@ -46,7 +47,7 @@ export function GeneratedArtworkGallery() {
         pending.push(url);return {asset,url};
       });
       urls.current=pending.splice(0);
-      setPreviews(next);setStatus('Complete original reference collection verified locally. Nothing uploaded or approved.');
+      setPreviews(next);onVerified?.(next);setStatus('Complete original reference collection verified locally. Nothing uploaded or approved.');
     }catch{
       if(n===generation.current)setStatus('Collection rejected: missing, incorrect or altered review copy. No artwork displayed.');
     }finally{

@@ -90,3 +90,13 @@ test('complete local gallery stays on the authorized staff branch, not family ac
  assert.match(gallery,/verifyGeneratedReviewBytes/);
  assert(!/fetch\(|localStorage|sessionStorage|dangerouslySetInnerHTML/.test(gallery));
 });
+
+test('mapped local references are staff-only and do not read quarantined candidate bytes',async()=>{
+ const page=await file('apps/web/src/app/app/activities/page.tsx');
+ const component=await file('apps/web/src/components/clinical/LocalMappedArtworkReview.tsx');
+ assert(page.indexOf('<LocalMappedArtworkReview')<page.indexOf('function FamilyActivities'));
+ assert(!page.slice(page.indexOf('function FamilyActivities')).includes('<LocalMappedArtworkReview'));
+ assert.match(component,/activityMediaDrafts.list/);
+ assert.match(component,/row.templateVersion!==template.version/);
+ assert(!/fetch\(|\.candidates\(|uploadCandidate|localStorage|sessionStorage/.test(component));
+});
