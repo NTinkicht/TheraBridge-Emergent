@@ -11,9 +11,16 @@ export type PrivateActivityCandidateStatus = {
   id: string; status: string; width: number; height: number;
   templateVersion: number | null; createdAt: string; revokedAt: string | null;
 };
+export type ActivityMediaMapping = {
+  templateVersion: number;
+  slots: { stepNumber: number | null; proposed: number; staged: number }[];
+  metadataOnly: true; readEnabled: false; publishEnabled: false; clinicalReleaseEnabled: false;
+};
 export const activityMediaDrafts = {
   endpoint: (centerId: string, templateId: string) =>
     `/api/centers/${encodeURIComponent(centerId)}/activities/${encodeURIComponent(templateId)}/media-drafts`,
+  mapping: (centerId: string, templateId: string) =>
+    rest.get<ActivityMediaMapping>(activityMediaDrafts.endpoint(centerId, templateId) + '/mapping'),
   list: (centerId: string, templateId: string, cursor?: string, limit = 50) => {
     const query = new URLSearchParams({ limit: String(limit) });
     if (cursor) query.set('cursor', cursor);

@@ -25,11 +25,11 @@ function fixtures(){
  t.sourceCommitCandidate='e068a455370090f44c757946b8571bb3fb1f117e';
  const ledger={schema:'therabridge-com02-exhaustive-closure-evidence-v1',
  status:'NOT_LEGALLY_OR_TECHNICALLY_CLEARED_FOR_COMMERCIAL_RELEASE',
- counts:{npmExceptionVersions:44,definitelyTypedVersions:21,otherNpmVersions:23,nonPackageAssets:91,...GROUPS,
+ counts:{npmExceptionVersions:44,definitelyTypedVersions:21,otherNpmVersions:23,nonPackageAssets:92,...GROUPS,
  productionSaasImagesIndependentlyAuthenticated:0,enterpriseDeliverablesIndependentlyAuthenticated:0,
  packagePublicationLineagesIndependentlyAuthenticated:0,legallyApprovedComponents:0},
  sourceEvidenceSha256:{rights:a,correspondence:a,bulk:a,definitelyTyped:a,candidateRelease:a},
- packages:names,assets:Array.from({length:91},(_,i)=>({path:'assets/'+i,sha256:a,legalDecision:'UNRESOLVED',
+ packages:names,assets:Array.from({length:92},(_,i)=>({path:'assets/'+i,sha256:a,legalDecision:'UNRESOLVED',
  commercialApproval:false,independentlyVerifiedDistribution:false})),
  editions:['SAAS','ENTERPRISE'].map(edition=>({edition,commercialLicenseGranted:false,signedRegistryPublicationIndependentlyVerified:false})),
  commercialLicenseGranted:false,finalThirdPartyNoticesIssued:false,approvedCopyrightOwner:false,g2ClinicalApproved:false,g2bClinicalApproved:false};
@@ -85,13 +85,13 @@ function editionFixtures(){
  comparison.inputSha256.queue=queueSha;
  return [ledger,root,token,comparison,qualify(ledger,root,token,comparison),release];
 }
-test('complete 44-package and 91-asset dual-edition unresolved evidence queue',()=>{
+test('complete 44-package and 92-asset dual-edition unresolved evidence queue',()=>{
  const result=makeQueue(...editionFixtures());
  assert.equal(result.counts.npmExceptions,44);
- assert.equal(result.counts.trackedAssets,91);
+ assert.equal(result.counts.trackedAssets,92);
  assert.equal(result.counts.authenticPublisherBuildLineages,0);
  assert.equal(result.packages.length,44);
- assert.equal(result.assets.length,91);
+ assert.equal(result.assets.length,92);
  assert.deepEqual(result.editions.map(x=>x.edition),['SAAS','ENTERPRISE']);
  assert.ok(result.assets.every(x=>Object.values(x.editions).every(e=>e.decision==='BLOCKED')));
  assert.equal(result.saasReleaseApproved,false);

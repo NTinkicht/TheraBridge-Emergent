@@ -5,6 +5,8 @@ import { FileImage, ShieldAlert } from 'lucide-react';
 import { Button, Card, Pill } from '@/components/design/ui';
 import { activityMediaDrafts, type ActivityMediaDraft as Draft, type ActivityMediaSource as SourceType } from '@/lib/activity-media';
 import { LocalActivityMediaReadiness } from './LocalActivityMediaReadiness';
+import { ActivityMediaMappingStatus } from './ActivityMediaMappingStatus';
+import { GeneratedArtworkSelector } from './GeneratedArtworkSelector';
 import { PrivateIllustrationStepPreview } from './PrivateIllustrationStepPreview';
 import { ActivityMediaCandidateHistory } from './ActivityMediaCandidateHistory';
 import { PrivatePngCandidatePicker } from '@/components/operations/PrivatePngCandidatePicker';
@@ -18,8 +20,8 @@ const cls = 'min-h-[44px] w-full rounded-control border border-border-strong bg-
 
 // Metadata-only workflow. No image upload/preview or approval exists until the
 // separate private-byte verifier, rights sign-off and clinical gates are ready.
-export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion, steps = [] }: {
-  centerId: string; templateId: string; templateVersion?: number; steps?: readonly string[];
+export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion, service, steps = [] }: {
+  centerId: string; templateId: string; templateVersion?: number; service?: string; steps?: readonly string[];
 }) {
   const [open, setOpen] = useState(false);
   // Invalidate previous-page and initial-list responses whenever panel lifetime changes.
@@ -129,8 +131,16 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion,
         Only private scanned PNG candidate staging is available after a metadata draft. No image publication is available.
         Human clinical/design approval and verified storage are separate mandatory gates.
       </p>
+      <ActivityMediaMappingStatus key={[centerId, templateId, templateVersion, candidateRevision].join(':')}
+        centerId={centerId} templateId={templateId} templateVersion={templateVersion} />
       <PrivateIllustrationStepPreview key={centerId + ':' + templateId + ':' + String(templateVersion ?? 'unversioned')}
         templateVersion={templateVersion} steps={steps} />
+      <GeneratedArtworkSelector key={centerId + ':' + templateId + ':' + String(templateVersion ?? 'unversioned')}
+        service={service} disabled={busy || !templateVersion}
+        onSelect={asset=>setForm(previous=>({...previous,sourceType:'GENERATED',
+          sceneType:asset.scene,altText:asset.alt,
+          sourceReference:'m5-b-v1:' + asset.referenceId + ':sha256:' + asset.reviewSha256,
+          license:'',providerTerms:''}))} />
       {/* Scope-coupled key invalidates pending local file checks when activity identity/version changes. */}
       <LocalActivityMediaReadiness key={centerId + ':' + templateId + ':' + String(templateVersion ?? 'unversioned')} />
       {error && <p role="alert" className="text-sm text-status-danger">{error}</p>}
@@ -186,14 +196,25 @@ export function ActivityMediaDraftPanel({ centerId, templateId, templateVersion,
                 onClick={()=>setAttaching(current=>current===draft.id?null:draft.id)}>
                 {attaching===draft.id?'Close private image intake':'Attach scanned private PNG'}
               </Button>
-              {attaching===draft.id&&<PrivatePngCandidatePicker
-                label="Stage a private illustration candidate (not published)"
-                onStage={async pngBase64=>{
-                  await activityMediaDrafts.uploadCandidate(centerId,templateId,draft.id,pngBase64);
-                  setNotice('Encrypted scanned illustration candidate is quarantined; independent rights and clinical review still required.');
-                  setAttaching(null);
-                  setCandidateRevision(value=>value+1);
-                }} />}
+              {attaching===draft.id&&(draft.sourceReference.startsWith('m5-b-v1:')?
+                <GeneratedArtworkSelector key={[centerId,templateId,templateVersion,draft.id].join(':')}
+                  service={service} lockedReference={draft.sourceReference}
+                  instruction={draft.stepNumber===null?'Whole activity — compare with all authored instructions.':steps[draft.stepNumber-1]??'Instruction unavailable; reload activity.'}
+                  disabled={draft.stepNumber!==null&&!steps[draft.stepNumber-1]?.trim()}
+                  onStage={async pngBase64=>{
+                    await activityMediaDrafts.uploadCandidate(centerId,templateId,draft.id,pngBase64);
+                    setNotice('Encrypted scanned illustration candidate is quarantined; independent rights and clinical review still required.');
+                    setAttaching(null);
+                    setCandidateRevision(value=>value+1);
+                  }} />:
+                <PrivatePngCandidatePicker
+                  label="Stage a private illustration candidate (not published)"
+                  onStage={async pngBase64=>{
+                    await activityMediaDrafts.uploadCandidate(centerId,templateId,draft.id,pngBase64);
+                    setNotice('Encrypted scanned illustration candidate is quarantined; independent rights and clinical review still required.');
+                    setAttaching(null);
+                    setCandidateRevision(value=>value+1);
+                  }} />)}
             </div>}
           <ActivityMediaCandidateHistory key={[draft.id, draft.version, draft.state, candidateRevision].join(':')}
             centerId={centerId} templateId={templateId} draftId={draft.id} />

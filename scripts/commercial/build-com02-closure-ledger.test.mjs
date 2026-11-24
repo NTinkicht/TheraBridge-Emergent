@@ -41,8 +41,8 @@ function buildInputs(){
   publisherTarballSha256:hash,verifiedPublisherToSourceArtifact:false,
   sourceVersionCorrespondence:'NOT_INDEPENDENTLY_ATTESTED',
   releaseImagePresence:'NOT_VERIFIED_AGAINST_RELEASE_IMAGE',...rightsField}));
- const assets=Array.from({length:91},(_,i)=>({
-  path:'test/category_'+i+'.svg',sha256:hash,category:i<73?'IMAGE_OR_ICON':i<88?'BRAND':'CONTAINER_BUILD',
+ const assets=Array.from({length:92},(_,i)=>({
+  path:i===91?'Dockerfile.artwork-custody':'test/category_'+i+'.svg',sha256:hash,category:i<73?'IMAGE_OR_ICON':i<88?'BRAND':'CONTAINER_BUILD',
   ...rightsField
  }));
  const bulkAssets=assets.map(x=>({
@@ -58,13 +58,13 @@ function buildInputs(){
    commercialApproval:false}));
  return [
   {schema:'therabridge-com02-exact-version-rights-queue-v1',
-   counts:{exceptions:44,nonPackageAssets:91},exceptions,nonPackage:assets,
+   counts:{exceptions:44,nonPackageAssets:92},exceptions,nonPackage:assets,
    finalNoticesIssued:false,commercialLicenseGranted:false},
   {schema:'therabridge-com02-githead-source-corroboration-candidates-v1',
    counts:{exceptions:44},records:correspondence,
    finalNoticesIssued:false,commercialLicenseGranted:false},
   {schema:'therabridge-com02-bulk-rights-review-v1',
-   counts:{packages:44,nonPackageAssets:91,packagesStillRequiringIndependentAttestation:44,
+   counts:{packages:44,nonPackageAssets:92,packagesStillRequiringIndependentAttestation:44,
     legallyApproved:0},packages:bulkPackages,nonPackageAssets:bulkAssets,
    finalNoticesIssued:false,commercialLicenseGranted:false},
   {schema:'therabridge-com02-definitelytyped-26-pinned-triage-v1',
@@ -82,8 +82,8 @@ test('comprehensive exact-version, asset and two-edition zero-approval report',(
  assert.equal(r.counts.MISSING_IMMUTABLE_SOURCE_REVISION,7);
  assert.equal(r.counts.MONOREPO_SOURCE_SUBPATH_NOT_ATTESTED,3);
  assert.equal(r.counts.LEGACY_REPO_ORIGIN_UNTRUSTED,3);
- assert.deepEqual(r.counts.assetCategories,{IMAGE_OR_ICON:73,BRAND:15,CONTAINER_BUILD:3});
- assert.equal(r.assets.length,91);
+ assert.deepEqual(r.counts.assetCategories,{IMAGE_OR_ICON:73,BRAND:15,CONTAINER_BUILD:4});
+ assert.equal(r.assets.length,92);
  assert.deepEqual(r.editions.map(x=>x.edition),['SAAS','ENTERPRISE']);
  assert.ok(r.editions.every(x=>x.candidateOCIImageDigest===null&&
    x.readiness.startsWith('BLOCKED')&&!x.commercialLicenseGranted));
@@ -171,4 +171,12 @@ test('independent local candidate file bytes do not authenticate production',()=
  assert.equal(r.editions[1].signedRegistryPublicationIndependentlyVerified,false);
  assert.equal(r.editions[1].authenticatedProductionDeploymentOrCustomerDelivery,false);
  assert.equal(r.editions[1].commercialLicenseGranted,false);
+});
+
+test('custody Dockerfile cannot be omitted or replaced while maintaining the total asset count',()=>{
+ const input=buildInputs();
+ const row=input[0].nonPackage.find(a=>a.path==='Dockerfile.artwork-custody');
+ const bulk=input[2].nonPackageAssets.find(a=>a.path===row.path);
+ row.path='Dockerfile.unrelated';bulk.path=row.path;
+ assert.throws(()=>reconcile(...input),/ARTWORK_CUSTODY_BUILD_INPUT_MISSING/);
 });

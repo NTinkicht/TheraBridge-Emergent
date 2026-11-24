@@ -439,6 +439,22 @@ jobs:
           node --check scripts/qa/m5-wu2f-pilot-readiness.test.mjs
       - name: Fail fast on M5 WU2-F isolated synthetic pilot assertions before browser install
         run: node --test scripts/qa/m5-wu2f-pilot-readiness.test.mjs
+      - name: M5 PR A generated artwork manifest and private intake integrity
+        run: node --test scripts/qa/m5-pr-a-artwork.test.mjs
+      - name: M5 PR A build and exercise the isolated real ClamAV custody runtime
+        timeout-minutes: 5
+        run: |
+          docker build -f Dockerfile.artwork-custody -t tb-artwork-custody:ci .
+          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
+            --memory 3g --pids-limit 128 \
+            --tmpfs /run/clamav:rw,noexec,nosuid,nodev,uid=1000,gid=1000,mode=0700,size=128m \
+            --tmpfs /tmp:rw,noexec,nosuid,nodev,uid=1000,gid=1000,mode=0700,size=64m \
+            --mount "type=bind,source=$PWD/scripts/qa/artwork-custody-container-smoke.sh,target=/repo/custody-smoke.sh,readonly" \
+            --entrypoint /bin/bash tb-artwork-custody:ci /repo/custody-smoke.sh
+          if docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges tb-artwork-custody:ci stage; then
+            echo 'ERROR: stage unexpectedly accepted missing private host configuration' >&2
+            exit 1
+          fi
       - name: Verify Smart CI classifier, policy gate and workflow wiring
         run: node --test scripts/ci/smart-ci.test.mjs scripts/ci/smart-ci-workflow.test.mjs
       - name: M5-01 source-only route, role and viewport audit with adversarial tests

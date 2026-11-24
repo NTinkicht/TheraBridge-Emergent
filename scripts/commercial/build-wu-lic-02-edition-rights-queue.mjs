@@ -10,7 +10,7 @@ const sha=x=>createHash('sha256').update(JSON.stringify(x)).digest('hex');
 const id=x=>JSON.stringify([x.name,x.version]);
 const fail=x=>{throw Error('WU_LIC_02_'+x)};
 const EDITIONS=['SAAS','ENTERPRISE'];
-const ASSET_CLASSES={IMAGE_OR_ICON:73,BRAND:15,CONTAINER_BUILD:3};
+const ASSET_CLASSES={IMAGE_OR_ICON:73,BRAND:15,CONTAINER_BUILD:4};
 const SUPPLEMENTAL=[
  {category:'OS_RUNTIME_CONTAINER',requirement:'Immutable base image OS packages, native libraries, distribution obligations and exact SBOM'},
  {category:'POSTGRES_REDIS',requirement:'Exact deployed/redistributed server versions, notice and hosting or redistribution scope'},
@@ -115,7 +115,7 @@ function makeQueue(ledger,root,token,comparison,wu1,release){
   return {path:a.path,sha256:a.sha256,category:a.category,
    editions,legalDecision:'UNRESOLVED',commercialApproval:false};
  });
- if(assets.length!==91||packages.length!==44||
+ if(assets.length!==92||packages.length!==44||
     Object.entries(ASSET_CLASSES).some(([k,n])=>categories[k]!==n))
     fail('RIGHTS_POPULATION_DRIFT');
  const editions=EDITIONS.map(edition=>{
@@ -142,7 +142,7 @@ function makeQueue(ledger,root,token,comparison,wu1,release){
    tokenizer402Sha256:sha(token),sameRunComparisonSha256:sha(comparison)},
   counts:{npmExceptions:44,definitelyTyped:21,nonDefinitelyTyped:23,
    sourceRootCandidates:10,rootRawMatches:9,rootByteDifferences:1,
-   authenticPublisherBuildLineages:0,trackedAssets:91,
+   authenticPublisherBuildLineages:0,trackedAssets:92,
    assetCategories:categories,independentReleaseImages:0,legallyApproved:0},
   editions,packages,assets,
   supplementalDistributionObligations:SUPPLEMENTAL.map(x=>({...x,

@@ -5,6 +5,8 @@ import { HeartHandshake, LayoutGrid, List, Plus, Search, Sparkles } from 'lucide
 import { Field, FormAlert } from '@/components/auth/Field';
 import { PageTitle, SelectField, Workspace, errorText, useLoad } from '@/components/centers/kit';
 import { ActivityCard } from '@/components/clinical/ActivityCard';
+import { GeneratedArtworkGallery, type LocalArtworkPreview } from '@/components/clinical/GeneratedArtworkGallery';
+import { LocalMappedArtworkReview } from '@/components/clinical/LocalMappedArtworkReview';
 import { ActivityMediaDraftPanel } from '@/components/clinical/ActivityMediaDraftPanel';
 import { TemplateActions } from '@/components/clinical/TemplateActions';
 import { Button, Card } from '@/components/design/ui';
@@ -62,6 +64,10 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
   const centerId = session.activeContext?.type === 'center' ? session.activeContext.centerId : '';
   const [notice, setNotice] = useState('');
   const [creating, setCreating] = useState(false);
+  const [showArtwork, setShowArtwork] = useState(false);
+  const [localArtwork,setLocalArtwork] = useState<readonly LocalArtworkPreview[]>([]);
+  const canReviewArtwork = session.permissions.includes('center.activities.manage') && session.activeContext?.type === 'center' &&
+    ['THERAPIST','CLINICAL_SUPERVISOR'].includes(session.activeContext.role);
   const [search, setSearch] = useState('');
   const [specialty, setSpecialty] = useState('all');
   const [ownership, setOwnership] = useState('all');
@@ -119,6 +125,14 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
             <Plus size={16} aria-hidden="true" />{creating ? 'Close activity form' : 'Create activity'}
           </Button>
           {creating && <NewTemplate centerId={centerId} onError={onError} onDone={() => { setCreating(false); setNotice('Activity created.'); setAdditional(null); void reload(); }} />}
+        </div>
+      )}
+      {session.permissions.includes('center.activities.manage') && session.activeContext?.type === 'center' &&
+        ['THERAPIST','CLINICAL_SUPERVISOR'].includes(session.activeContext.role) && (
+        <div className="space-y-3">
+          <Button variant="secondary" aria-expanded={showArtwork} data-testid="artwork-gallery-toggle"
+            onClick={() => { setLocalArtwork([]); setShowArtwork(value => !value); }}>{showArtwork ? 'Close original illustration collection' : 'Review original illustration collection'}</Button>
+          {showArtwork && <GeneratedArtworkGallery key={centerId + ':' + session.activeContext.role} onVerified={setLocalArtwork} />}
         </div>
       )}
       {failed && <ErrorState onRetry={() => void reload()} testId="activities-error" />}
@@ -200,6 +214,10 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
       {first && templates.length > 0 && <div className={view === 'grid' ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3' : 'grid grid-cols-1 gap-4'} data-testid="activities-list" data-layout={view}>{templates.map(t => (
         <div key={t.id} className="flex h-full min-w-0 flex-col gap-2">
           <ActivityCard t={t} visual compact layout={view} />
+          {canReviewArtwork && showArtwork && localArtwork.length > 0 && t.library === 'center' &&
+            (session.activeContext?.type === 'center' && (session.activeContext.role === 'CLINICAL_SUPERVISOR' || t.mine === true)) &&
+            <LocalMappedArtworkReview key={[centerId,t.id,t.version,session.activeContext.role].join(':')}
+              centerId={centerId} template={t} previews={localArtwork} />}
           <div className="mt-auto flex flex-col gap-2" data-testid={`activity-actions-zone-${t.id}`}>
             <p className="text-[12px] font-semibold text-brand-inkMuted" data-testid={`activity-ownership-${t.id}`}>
               {t.mine === true ? 'My activity' : t.library === 'synthetic' ? 'Sample activity' : 'Shared activity'}
@@ -215,7 +233,7 @@ function StaffLibrary({ session, onError }: { session: SessionInfo; onError: (e:
                 {session.permissions.includes('center.activities.manage') && t.library === 'center' &&
                   (session.activeContext?.type === 'center' && (session.activeContext.role === 'CLINICAL_SUPERVISOR' ||
                     (session.activeContext.role === 'THERAPIST' && t.mine === true))) &&
-                  <ActivityMediaDraftPanel key={centerId + ':' + t.id} centerId={centerId} templateId={t.id} templateVersion={t.version} steps={t.steps} />}
+                  <ActivityMediaDraftPanel key={centerId + ':' + t.id} centerId={centerId} templateId={t.id} templateVersion={t.version} service={t.service} steps={t.steps} />}
               </div>
             </details>}
           </div>
@@ -256,7 +274,7 @@ function FamilyActivities({ session, onError }: { session: SessionInfo; onError:
 export default function ActivitiesPage() {
   return (
     <Workspace active="activities" permission="center.activities.read|family.activities.read" deniedText="Activities are available to center staff and connected families.">
-      {(s, onError) => (s.permissions.includes('family.activities.read') ? <FamilyActivities session={s} onError={onError} /> : <StaffLibrary session={s} onError={onError} />)}
+      {(s, onError) => (s.permissions.includes('family.activities.read') ? <FamilyActivities session={s} onError={onError} /> : <StaffLibrary key={JSON.stringify(s.activeContext)} session={s} onError={onError} />)}
     </Workspace>
   );
 }

@@ -28,6 +28,12 @@ export class ActivityMediaController {
     if (limit > 100) throw new BadRequestException('Invalid media page size.');
     return this.media.list(centerId, viewer(req), templateId, cursor, limit);
   }
+  @Get('mapping')
+  @RequirePermission('center.activities.manage')
+  mapping(@Param('centerId', uuid()) centerId: string, @Param('templateId', uuid()) templateId: string,
+    @Req() req: TbRequest) {
+    return this.media.mapping(centerId, viewer(req), templateId);
+  }
   @Post()
   @RequirePermission('center.activities.manage')
   propose(@Param('centerId', uuid()) centerId: string, @Param('templateId', uuid()) templateId: string,
