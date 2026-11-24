@@ -61,3 +61,8 @@ docker compose -f compose.artwork-custody.yaml run --rm artwork-custody verify-s
 ```
 
 Run in an exclusive maintenance window. A failed or partial run requires reconciliation; do not delete the journal or blindly rerun. No approval is implied by a successful custody receipt.
+
+## 2026-11-24 — PR #493 commercial inventory reconciliation (CI pending)
+
+Full CI 45422135409 on `e41f7b6` failed in commercial-provenance (`COM02_FULL_SCOPE_UNSAFE_INPUT_ENVELOPE`); Smart CI correctly propagated that failure. The new standalone `Dockerfile.artwork-custody` is automatically inventoried as a fourth container build input: 92 non-package assets (73 image/icon, 15 brand, 4 container build), up from 91. Updated the exact population across COM-02 closure, WU-LIC-01/02/03 and fixtures, with explicit custody Dockerfile presence and substitution regression. 44 npm exception versions unchanged; new build input remains legally unresolved and both editions BLOCKED. No gate weakened, no notice issued, no rights or clinical authorization inferred. Prior six mandatory jobs and focused Web coverage 45422135465 passed; replacement exact-head CI pending. Operator container deployment and its separate OS-package SBOM/licensing review remain unqualified.
+
