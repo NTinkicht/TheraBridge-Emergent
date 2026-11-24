@@ -13,7 +13,7 @@ const WIDTHS = new Set(VIEWPORTS);
 const OUTPUT = '/tmp/therabridge-m5-wu1-cross-screen-shell.json';
 const REQUIRED = Object.freeze([
   'persona', 'width', 'route', 'theme', 'surfaces', 'contrast',
-  'overflow', 'keyboard', 'mobileDrawer', 'desktopRail', 'persisted',
+  'overflow', 'keyboard', 'mobileDrawer', 'desktopRail', 'persisted', 'rtlReflow',
 ]);
 const exact = (object, keys) =>
   object !== null && typeof object === 'object' && !Array.isArray(object) &&
@@ -47,7 +47,8 @@ export function validateSharedShellReceipt(receipt) {
         record.overflow !== 'NONE' || record.keyboard !== 'PASS' ||
         record.mobileDrawer !== (record.width < 768 ? 'PASS' : 'NOT_APPLICABLE') ||
         record.desktopRail !== (record.width >= 768 ? 'PASS' : 'NOT_APPLICABLE') ||
-        record.persisted !== (record.width === 390 ? 'PASS' : 'NOT_APPLICABLE')) {
+        record.persisted !== (record.width === 390 ? 'PASS' : 'NOT_APPLICABLE') ||
+        record.rtlReflow !== ([390,1440].includes(record.width) ? 'PASS' : 'NOT_APPLICABLE')) {
       throw new Error('Unknown, incomplete, sensitive or failed WU1 shell observation');
     }
     const key = record.persona + ':' + record.width;
@@ -294,6 +295,7 @@ export async function observeSharedShell(page, persona, width) {
     // Real keyboard-only dialog exit and return to the original invoker.
     await page.keyboard.press('Escape');
     await sheet.waitFor({state: 'detached'});
+    await page.waitForFunction(()=>document.activeElement?.getAttribute('data-testid')==='mobile-more-button',null,{timeout:5000});
     assert(await button.evaluate(element => document.activeElement === element),
       'Mobile More must restore keyboard focus after Escape');
     assert(await page.evaluate(()=>!document.getElementById('main')?.inert && !document.querySelector('[data-testid="product-top-bar"]')?.inert && !document.querySelector('[data-testid="mobile-bottom-nav"]')?.inert),'Modal background interaction must be restored on close');
@@ -321,11 +323,34 @@ export async function observeSharedShell(page, persona, width) {
       document.querySelector('[data-testid="product-shell"]')?.getAttribute('data-theme') === 'dark',
       null, {timeout:7000,polling:100});
   }
+  // Exercise actual RTL layout, not translation or human RTL approval. At desktop
+  // also reduce CSS viewport to half width (reflow equivalent, NOT browser zoom).
+  if([390,1440].includes(width)){
+    const original=await page.evaluate(()=>document.documentElement.getAttribute('dir'));
+    try{
+      await page.evaluate(()=>document.documentElement.setAttribute('dir','rtl'));
+      if(width===1440) await page.setViewportSize({width:720,height:850});
+      const result=await page.evaluate(()=>({dir:getComputedStyle(document.documentElement).direction,
+        viewport:window.innerWidth,documentWidth:document.documentElement.scrollWidth,
+        main:document.querySelectorAll('main#main').length}));
+      assert.equal(result.dir,'rtl');assert.equal(result.main,1);
+      assert(result.documentWidth<=result.viewport+1,'RTL/reflow shell creates horizontal overflow');
+      const more=page.getByTestId('mobile-more-button');
+      await more.focus();await page.keyboard.press('Enter');
+      await page.getByRole('dialog',{name:'All navigation'}).waitFor({state:'visible'});
+      await page.keyboard.press('Escape');
+      await page.getByTestId('mobile-more-sheet').waitFor({state:'detached'});
+      await page.waitForFunction(()=>document.activeElement?.getAttribute('data-testid')==='mobile-more-button',null,{timeout:5000});
+    }finally{
+      await page.evaluate(value=>{if(value===null)document.documentElement.removeAttribute('dir');else document.documentElement.setAttribute('dir',value);},original);
+      if(width===1440)await page.setViewportSize({width,height:850});
+    }
+  }
   return {persona,width,route:'/app',theme:'LIGHT_AND_DARK_VERIFIED',
     surfaces:'PASS',contrast:'PASS',overflow:'NONE',keyboard:'PASS',
     mobileDrawer:width<768?'PASS':'NOT_APPLICABLE',
     desktopRail:width>=768?'PASS':'NOT_APPLICABLE',
-    persisted:width===390?'PASS':'NOT_APPLICABLE'};
+    persisted:width===390?'PASS':'NOT_APPLICABLE',rtlReflow:[390,1440].includes(width)?'PASS':'NOT_APPLICABLE'};
 }
 
 export const SHARED_SHELL_OUTPUT = OUTPUT;

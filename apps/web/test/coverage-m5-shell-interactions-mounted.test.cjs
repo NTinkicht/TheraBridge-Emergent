@@ -249,3 +249,22 @@ test('shared mobile modal makes all background regions inert and restores them a
  expect(get('desktop-destination-search').props.value).toBe('');
  expect(get('product-sidebar').props.inert).toBe(false);expect(focusLog).toContain('desktop');
 });
+
+test('same-role same-centre membership or actor change clears scoped navigation state',async()=>{
+ await mount();await click('mobile-more-button');await change('mobile-destination-search','schedule');
+ const replacement={...center,membershipId:'other-membership'};
+ await act(async()=>tree.update(h(ProductShell,{session:s({activeContext:replacement,contexts:[replacement]}),active:'children',planned:[],children:'Synthetic workspace'})));
+ expect(all('mobile-more-sheet')).toHaveLength(0);expect(get('desktop-destination-search').props.value).toBe('');
+ await click('mobile-more-button');await change('mobile-destination-search','children');
+ await act(async()=>tree.update(h(ProductShell,{session:s({user:{id:'actor-2',displayName:'Other fictional actor'},activeContext:replacement,contexts:[replacement]}),active:'children',planned:[],children:'Synthetic workspace'})));
+ expect(all('mobile-more-sheet')).toHaveLength(0);expect(get('desktop-destination-search').props.value).toBe('');
+});
+test('selecting an existing destination or workspace link clears the mobile search',async()=>{
+ await mount(s({contexts:[center,guardian]}));await click('mobile-more-button');await change('mobile-destination-search','children');
+ await act(async()=>get('mobile-more-children').props.onClick());expect(all('mobile-more-sheet')).toHaveLength(0);
+ expect(get('desktop-destination-search').props.value).toBe('');
+ await click('mobile-more-button');await change('mobile-destination-search','schedule');
+ const link=tree.root.findAllByType('a').find(a=>a.props.href==='/select-context'&&typeof a.props.onClick==='function');
+ await act(async()=>link.props.onClick());expect(all('mobile-more-sheet')).toHaveLength(0);
+ expect(get('desktop-destination-search').props.value).toBe('');
+});

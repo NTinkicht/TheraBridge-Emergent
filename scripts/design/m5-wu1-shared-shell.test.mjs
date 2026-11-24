@@ -10,6 +10,7 @@ const data=()=>PERSONAS.flatMap(({id})=>VIEWPORTS.map(width=>({
   mobileDrawer:width<768?'PASS':'NOT_APPLICABLE',
   desktopRail:width>=768?'PASS':'NOT_APPLICABLE',
   persisted:width===390?'PASS':'NOT_APPLICABLE',
+  rtlReflow:[390,1440].includes(width)?'PASS':'NOT_APPLICABLE',
 })));
 test('WU1 role shell enforces 7 authorized personas at 5 widths, two themes and pending human status',()=>{
   const evidence=buildSharedShellReceipt(data());
@@ -33,6 +34,8 @@ test('WU1 rejects missing, duplicated, incorrect mobile/desktop and falsified th
     r=>{r.observations[4].desktopRail='NOT_APPLICABLE';},
     r=>{r.observations[1].persisted='NOT_APPLICABLE';},
     r=>{r.observations[0].keyboard='FAIL';},
+    r=>{r.observations[1].rtlReflow='NOT_APPLICABLE';},
+    r=>{r.observations[0].rtlReflow='PASS';},
   ]){const r=buildSharedShellReceipt(data());mutation(r);assert.throws(()=>validateSharedShellReceipt(r));}
 });
 test('WU1 rejects unauthorized private data and invented screen-reader, owner, task or clinical approval',()=>{

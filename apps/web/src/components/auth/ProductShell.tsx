@@ -87,9 +87,10 @@ export function ProductShell({ session, active, planned, children }: { session: 
   const navSurface = family ? 'border-fam-border bg-fam-surface text-fam-ink' : 'border-border-light bg-surface-white text-brand-ink';
   const navMuted = family ? 'text-fam-muted' : 'text-brand-inkMuted';
   const contextId = ctx?.type === 'center' ? ctx.centerId : 'platform';
+  const scopeIdentity=JSON.stringify([session.user.id,ctx?.role,contextId,ctx?.type==='center'?ctx.membershipId:null]);
 
   // Never persist a menu or drawer state across a role/tenant context switch.
-  useEffect(() => { setMoreOpen(false); setNavQuery(''); setExpandedGroups({}); }, [ctx?.role, contextId]);
+  useEffect(() => { setMoreOpen(false); setNavQuery(''); setExpandedGroups({}); }, [scopeIdentity]);
   useEffect(() => {
     if (activeGroupKey) setExpandedGroups(previous => previous[activeGroupKey] ? previous : { ...previous, [activeGroupKey]: true });
   }, [activeGroupKey]);
@@ -273,7 +274,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
             {session.contexts.length > 1 && <option value="/select-context">Switch workspace</option>}
           </select>
         </nav>
-        <main inert={moreOpen} id="main" tabIndex={-1} className="mx-auto w-full max-w-[1160px] flex-1 px-4 pb-32 pt-6 md:px-8 md:pb-14 md:pt-8">{children}</main>
+        <main id="main" tabIndex={-1} inert={moreOpen} className="mx-auto w-full max-w-[1160px] flex-1 px-4 pb-32 pt-6 md:px-8 md:pb-14 md:pt-8">{children}</main>
         <nav inert={moreOpen} aria-label="Quick navigation" data-testid="mobile-bottom-nav"
           className={`fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 gap-1 border-t px-2 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 shadow-[0_-4px_18px_rgba(20,33,61,0.08)] md:hidden ${navSurface}`}>
           {mobileQuick.map(n => <Link key={n.key + ':' + (n.permission ?? '')} href={n.href}
@@ -288,7 +289,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
           </button>
         </nav>
         {moreOpen && <div className="fixed inset-0 z-50 md:hidden" data-testid="mobile-more-sheet">
-          <button type="button" tabIndex={-1} aria-hidden="true" aria-label="Dismiss navigation" onMouseDown={event=>event.preventDefault()} onClick={closeMore} className="absolute inset-0 bg-black/50 touch-none" />
+          <button type="button" tabIndex={-1} aria-hidden={true} aria-label="Dismiss navigation" onMouseDown={event=>event.preventDefault()} onClick={closeMore} className="absolute inset-0 bg-black/50 touch-none" />
           <div role="dialog" aria-modal="true" aria-label="All navigation" id="mobile-more-panel"
             ref={morePanelRef} onKeyDown={handleMoreKeyDown}
             className={`absolute inset-x-0 bottom-0 max-h-[84dvh] overflow-y-auto overscroll-y-contain rounded-t-2xl px-4 pb-[max(env(safe-area-inset-bottom),24px)] pt-4 shadow-xl ${navSurface}`}>
@@ -308,13 +309,13 @@ export function ProductShell({ session, active, planned, children }: { session: 
               <h3 className={`mb-1 px-2 text-[12px] font-semibold uppercase tracking-wide ${family ? 'text-fam-muted' : 'text-brand-inkMuted'}`}>{group.label}</h3>
               <div className="space-y-1">{group.items.map(n => <Link
                 key={n.key + ':' + (n.permission ?? '')} href={n.href}
-                onClick={() => { setNavQuery(''); setMoreOpen(false); }} data-testid={`mobile-more-${n.key}`}
+                onClick={closeMore} data-testid={`mobile-more-${n.key}`}
                 aria-current={active === n.key ? 'page' : undefined}
                 className={`flex min-h-[44px] items-center gap-3 rounded-control px-3 text-[14px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action ${active === n.key ? (family ? 'bg-fam-accentTint text-fam-accent' : 'bg-brand-actionTint text-brand-action') : (family ? 'text-fam-ink' : 'text-brand-ink')}`}>
                 <n.icon size={18} aria-hidden="true" />{n.label}
               </Link>)}</div>
             </section>)}
-            {session.contexts.length > 1 && <Link href="/select-context" onClick={() => setMoreOpen(false)}
+            {session.contexts.length > 1 && <Link href="/select-context" onClick={closeMore}
               className="mt-2 flex min-h-[44px] items-center gap-2 rounded-control border border-border-light px-3 text-[14px] font-medium">
               <ArrowLeftRight size={18} aria-hidden="true" />Switch workspace
             </Link>}
