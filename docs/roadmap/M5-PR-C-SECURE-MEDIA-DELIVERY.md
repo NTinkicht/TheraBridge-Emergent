@@ -15,3 +15,7 @@ The existing ActivityMediaService persists private proposals and encrypted scann
 
 ## Qualification
 Implementation, tests, CI, independent review, hosted import and human acceptance are NOT RUN at draft creation. Keep roadmap issues open until their actual definitions of done are satisfied. No claim of 100% published image coverage.
+
+
+## 2026-11-24 — PR C private mapping integrity slice (qualification pending)
+Current-version staff snapshot now remounts on center/template/version changes, discards old in-flight results, rejects malformed or duplicate slot inventories and reports proposed/scanned slot coverage separately from approved illustration coverage. Mounted adversarial regressions added. This is a preparatory slice only: approved persistent references, secure retrieval, catalogue/guardian rendering, actual published inventory coverage, private host import and signed evidence remain outstanding. Exact-HEAD CI/review NOT RUN at commit creation. No release or read gate changed; G2/G2b NO-GO.
