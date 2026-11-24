@@ -87,3 +87,16 @@ test('route wrapper awaits Next params',async()=>{
  const {GET}=require('../src/app/illustrations/m5-b-v1/[id]/[file]/route');
  expect((await GET(new Request('https://example.org'),{params:Promise.resolve({id:'invalid',file:'invalid'})})).status).toBe(404);
 });
+
+
+test('all 67 frozen demo catalogue identities use relevant specialty artwork; modified or unknown entries stay unmapped', async()=>{
+ const {DEMO_ILLUSTRATION_MAP}=await import('../src/lib/demo-illustration-map.mjs');
+ expect(DEMO_ILLUSTRATION_MAP).toHaveLength(67);
+ expect(new Set(DEMO_ILLUSTRATION_MAP.map(x=>x.id)).size).toBe(67);
+ for(const t of DEMO_ILLUSTRATION_MAP){
+  expect(lib.sharedIllustrationForActivity(t)?.family).toBe(t.service);
+  expect(lib.sharedIllustrationForActivity({...t, title:'Unrelated custom activity'})).toBeNull();
+  expect(lib.sharedIllustrationForActivity({...t, steps:['Changed clinical instructions']})).toBeNull();
+  if(!t.title.startsWith('Ahmed Demo - Pegboard Grip'))expect(lib.sharedIllustrationForActivity({...t,id:'not-a-demo-id'})).toBeNull();
+ }
+});

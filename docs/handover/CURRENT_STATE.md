@@ -1447,3 +1447,7 @@ Owner-directed simplification: the 25 existing non-patient fictional reference t
 
 
 2026-11-25 PR #496: fixed Gitleaks false positive on historical R2 environment-variable NAME at storage.mjs line 11. Current source uses direct env property access; the exact rule/path/literal exception is limited to the historical nonsecret name. Pinned Gitleaks 8.30.1 local all-ref history (2381 commits) and Web source scans PASS. No actual credential was committed; full corrected-HEAD CI and review remain required.
+
+
+### 2026-11-25 — synthetic catalogue illustration coverage correction
+Hosted PR #496 build live; all 25 digest URLs returned 503, so delivery was not verified. Exact 67 synthetic activity identity/title/service/steps associations added, with specialty reference captions (not treatment instructions); unknown or edited entries retain the private-media path. Add bounded nonsecret failure codes for runtime configuration/HTTP/length/integrity/transport diagnosis. No production publication, signing or release change. Hosted delivery remains unverified until successful deployment and 25 byte-for-byte live checks.

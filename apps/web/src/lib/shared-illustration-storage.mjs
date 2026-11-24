@@ -11,7 +11,7 @@ export function sharedR2Config(env=process.env,write=false) {
   const secret=(write?env.TB_R2_IMPORT_SECRET_ACCESS_KEY:env.TB_R2_SECRET_ACCESS_KEY)??'';
   if(!/^https:\/\/[a-f0-9]{32}(?:\.(?:eu|fedramp))?\.r2\.cloudflarestorage\.com\/?$/.test(endpoint)||
      !/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(bucket)||env.TB_R2_REGION!=='auto'||
-     !/^[a-f0-9]{32}$/i.test(id)||!/^[a-f0-9]{64}$/i.test(secret))throw Error('Shared artwork storage unavailable');
+     !/^[a-f0-9]{32}$/i.test(id)||!/^[a-f0-9]{64}$/i.test(secret))throw Error('shared_config_invalid');
   return {endpoint:endpoint.replace(/\/$/,''),bucket,id,secret};
 }
 export function signSharedRequest(config,asset,method,body,now=new Date()) {
@@ -33,7 +33,7 @@ export async function readSharedObject(asset,config=sharedR2Config(),fetcher=fet
   const {url,headers}=signSharedRequest(config,asset,'GET',Buffer.alloc(0));
   const response=await fetcher(url,{headers,redirect:'error',cache:'no-store',signal:AbortSignal.timeout(5000)});
   if(!response.ok||!response.body||response.headers.get('content-length')!==String(asset.bytes)){
-    await response.body?.cancel();throw Error('Shared artwork unavailable');
+    await response.body?.cancel();throw Error(response.ok?'shared_response_length':'shared_http_'+response.status);
   }
   const reader=response.body.getReader(),chunks=[];let size=0;
   try{
@@ -41,7 +41,7 @@ export async function readSharedObject(asset,config=sharedR2Config(),fetcher=fet
       if(size>asset.bytes)throw Error('Shared artwork unavailable');chunks.push(value);}
   }finally{await reader.cancel().catch(()=>{});reader.releaseLock();}
   const bytes=Buffer.concat(chunks);
-  if(!verifySharedBytes(asset,bytes))throw Error('Shared artwork unavailable');
+  if(!verifySharedBytes(asset,bytes))throw Error('shared_integrity');
   return bytes;
 }
 export async function sharedIllustrationResponse(id,file,env=process.env,read=readSharedObject) {
@@ -54,5 +54,10 @@ export async function sharedIllustrationResponse(id,file,env=process.env,read=re
     const bytes=await read(asset,sharedR2Config(env));
     return new Response(new Uint8Array(bytes),{headers:{'Content-Type':'image/webp','Content-Length':String(bytes.length),
       'Cache-Control':'public, max-age=86400, immutable','X-Content-Type-Options':'nosniff'}});
-  }catch{return new Response(null,{status:503,headers:{'Cache-Control':'no-store'}});}
+  }catch(error){
+    const detail=error instanceof Error?error.message:'';
+    const code=/^shared_(config_invalid|response_length|integrity|http_[1-5][0-9]{2})$/.test(detail)?detail:'shared_transport';
+    console.warn('[shared-illustration]',code,asset.id);
+    return new Response(null,{status:503,headers:{'Cache-Control':'no-store'}});
+  }
 }
