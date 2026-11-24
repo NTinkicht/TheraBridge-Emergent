@@ -65,6 +65,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const moreCloseRef = useRef<HTMLButtonElement>(null);
   const morePanelRef = useRef<HTMLDivElement>(null);
+  const restoreMoreFocus = useRef<'mobile'|'desktop'|null>(null);
   const ctx = session.activeContext;
   const where = ctx ? `${contextLabel(ctx)} · ${ROLE_LABELS[ctx.role]}` : 'No workspace selected';
   // Client-side grouping is display-only; server session permissions still control every route.
@@ -86,14 +87,20 @@ export function ProductShell({ session, active, planned, children }: { session: 
   const navSurface = family ? 'border-fam-border bg-fam-surface text-fam-ink' : 'border-border-light bg-surface-white text-brand-ink';
   const navMuted = family ? 'text-fam-muted' : 'text-brand-inkMuted';
   const contextId = ctx?.type === 'center' ? ctx.centerId : 'platform';
+  const scopeIdentity=JSON.stringify([session.user.id,ctx?.role,contextId,ctx?.type==='center'?ctx.membershipId:null]);
 
   // Never persist a menu or drawer state across a role/tenant context switch.
-  useEffect(() => { setMoreOpen(false); setNavQuery(''); setExpandedGroups({}); }, [ctx?.role, contextId]);
+  useEffect(() => { setMoreOpen(false); setNavQuery(''); setExpandedGroups({}); }, [scopeIdentity]);
   useEffect(() => {
     if (activeGroupKey) setExpandedGroups(previous => previous[activeGroupKey] ? previous : { ...previous, [activeGroupKey]: true });
   }, [activeGroupKey]);
   useEffect(() => {
-    if (moreOpen) moreCloseRef.current?.focus();
+    if (moreOpen) { moreCloseRef.current?.focus(); return; }
+    // Background inert is removed by the same React commit before restoration.
+    const destination=restoreMoreFocus.current;
+    restoreMoreFocus.current=null;
+    if(destination==='mobile') moreButtonRef.current?.focus();
+    if(destination==='desktop') document.querySelector<HTMLElement>('[data-testid="sidebar-collapse-toggle"]')?.focus();
   }, [moreOpen]);
 
   // A mobile More dialog must not remain logically open after it is hidden at
@@ -108,8 +115,9 @@ export function ProductShell({ session, active, planned, children }: { session: 
     const desktop = window.matchMedia('(min-width: 768px)');
     const closeOnDesktop = () => {
       if (!desktop.matches) return;
+      restoreMoreFocus.current='desktop';
+      setNavQuery('');
       setMoreOpen(false);
-      document.querySelector<HTMLElement>('[data-testid="sidebar-collapse-toggle"]')?.focus();
     };
     desktop.addEventListener('change', closeOnDesktop);
     closeOnDesktop();
@@ -121,9 +129,9 @@ export function ProductShell({ session, active, planned, children }: { session: 
   }, [moreOpen]);
 
   function closeMore() {
+    restoreMoreFocus.current='mobile';
     setNavQuery('');
     setMoreOpen(false);
-    moreButtonRef.current?.focus();
   }
 
   function handleMoreKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -159,11 +167,11 @@ export function ProductShell({ session, active, planned, children }: { session: 
 
   return (
     <div className={`flex min-h-screen ${family ? 'theme-family-auto bg-fam-canvas text-fam-ink' : 'theme-clinical-auto bg-canvas-clinical text-brand-ink'}`} data-testid="product-shell" data-theme={theme}>
-      <a href="#main" data-testid="skip-to-main"
+      <a inert={moreOpen} href="#main" data-testid="skip-to-main"
         className="sr-only focus:not-sr-only fixed focus:fixed left-3 top-3 z-[100] rounded-control bg-brand-action px-4 py-3 text-sm font-semibold text-white shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-action">
         Skip to main content
       </a>
-      <aside className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r transition-[width] md:flex ${navSurface} ${railCollapsed ? 'w-[76px]' : 'w-sidebar'}`} data-testid="product-sidebar" data-collapsed={railCollapsed}>
+      <aside inert={moreOpen} className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r transition-[width] md:flex ${navSurface} ${railCollapsed ? 'w-[76px]' : 'w-sidebar'}`} data-testid="product-sidebar" data-collapsed={railCollapsed}>
         <SignatureBand />
         <div className={`flex h-16 items-center ${railCollapsed ? 'justify-center px-2' : 'gap-2 px-5'}`}>
           <span data-testid="shell-logo-chip" className="inline-flex items-center gap-2">
@@ -234,8 +242,8 @@ export function ProductShell({ session, active, planned, children }: { session: 
         </nav>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="md:hidden"><SignatureBand /></div>
-        <header className={`sticky top-0 z-20 flex min-h-16 flex-wrap items-center gap-3 border-b px-4 py-2 md:px-8 ${navSurface}`} data-testid="product-top-bar">
+        <div inert={moreOpen} className="md:hidden"><SignatureBand /></div>
+        <header inert={moreOpen} className={`sticky top-0 z-20 flex min-h-16 flex-wrap items-center gap-3 border-b px-4 py-2 md:px-8 ${navSurface}`} data-testid="product-top-bar">
           <span data-testid="shell-logo-chip" className="md:hidden"><BrandMark variant="symbol" height={24} /></span>
           <p className={`min-w-0 flex-1 break-words text-[14px] ${navMuted}`} data-testid="active-context-label">{where}</p>
           <span className="hidden items-center gap-2 lg:flex"><Avatar name={session.user.displayName} size={32} /><span className="text-[14px] font-medium">{session.user.displayName}</span></span>
@@ -250,13 +258,13 @@ export function ProductShell({ session, active, planned, children }: { session: 
             <LogOut size={16} aria-hidden="true" /> {signingOut ? 'Signing out…' : 'Sign out'}
           </button>
         </header>
-        {signOutError && <p role="alert" className="bg-status-dangerSurface px-4 py-2 text-[14px] font-medium text-status-danger md:px-8" data-testid="sign-out-error">{signOutError}</p>}
-        <nav aria-label="Breadcrumb" data-testid="shell-breadcrumb" className={`flex min-h-[36px] items-center gap-2 px-4 pt-2 text-[12px] md:px-8 ${family ? 'text-fam-muted' : 'text-brand-inkMuted'}`}>
+        {signOutError && <p inert={moreOpen} role="alert" className="bg-status-dangerSurface px-4 py-2 text-[14px] font-medium text-status-danger md:px-8" data-testid="sign-out-error">{signOutError}</p>}
+        <nav inert={moreOpen} aria-label="Breadcrumb" data-testid="shell-breadcrumb" className={`flex min-h-[36px] items-center gap-2 px-4 pt-2 text-[12px] md:px-8 ${family ? 'text-fam-muted' : 'text-brand-inkMuted'}`}>
           {activeNav?.key !== 'home' && <><Link href="/app" className="underline-offset-2 hover:underline">Home</Link><ChevronRight size={13} aria-hidden="true" /></>}
           {activeNav?.key !== 'home' && activeGroup && <><span>{activeGroup.label}</span><ChevronRight size={13} aria-hidden="true" /></>}
           <span aria-current="page" className={`font-semibold ${family ? 'text-fam-ink' : 'text-brand-ink'}`}>{activeNav?.label ?? 'Workspace'}</span>
         </nav>
-        <nav aria-label="Primary" className={`border-b px-4 py-3 md:hidden ${navSurface}`} data-testid="mobile-nav">
+        <nav inert={moreOpen} aria-label="Primary" className={`border-b px-4 py-3 md:hidden ${navSurface}`} data-testid="mobile-nav">
           <label htmlFor="mobile-workspace-navigation" className={`mb-1 block text-[12px] font-semibold ${family ? 'text-fam-muted' : 'text-brand-inkMuted'}`}>Navigate to</label>
           <select id="mobile-workspace-navigation" data-testid="mobile-nav-select"
             value={nav.find(n => n.key === active)?.href ?? '/app'}
@@ -266,8 +274,8 @@ export function ProductShell({ session, active, planned, children }: { session: 
             {session.contexts.length > 1 && <option value="/select-context">Switch workspace</option>}
           </select>
         </nav>
-        <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1160px] flex-1 px-4 pb-32 pt-6 md:px-8 md:pb-14 md:pt-8">{children}</main>
-        <nav aria-label="Quick navigation" data-testid="mobile-bottom-nav"
+        <main id="main" tabIndex={-1} inert={moreOpen} className="mx-auto w-full max-w-[1160px] flex-1 px-4 pb-32 pt-6 md:px-8 md:pb-14 md:pt-8">{children}</main>
+        <nav inert={moreOpen} aria-label="Quick navigation" data-testid="mobile-bottom-nav"
           className={`fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 gap-1 border-t px-2 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 shadow-[0_-4px_18px_rgba(20,33,61,0.08)] md:hidden ${navSurface}`}>
           {mobileQuick.map(n => <Link key={n.key + ':' + (n.permission ?? '')} href={n.href}
             data-testid={`mobile-quick-${n.key}`} aria-current={active === n.key ? 'page' : undefined}
@@ -281,7 +289,7 @@ export function ProductShell({ session, active, planned, children }: { session: 
           </button>
         </nav>
         {moreOpen && <div className="fixed inset-0 z-50 md:hidden" data-testid="mobile-more-sheet">
-          <button type="button" aria-label="Dismiss navigation" onClick={closeMore} className="absolute inset-0 bg-black/50 touch-none" />
+          <button type="button" tabIndex={-1} aria-hidden={true} aria-label="Dismiss navigation" onMouseDown={event=>event.preventDefault()} onClick={closeMore} className="absolute inset-0 bg-black/50 touch-none" />
           <div role="dialog" aria-modal="true" aria-label="All navigation" id="mobile-more-panel"
             ref={morePanelRef} onKeyDown={handleMoreKeyDown}
             className={`absolute inset-x-0 bottom-0 max-h-[84dvh] overflow-y-auto overscroll-y-contain rounded-t-2xl px-4 pb-[max(env(safe-area-inset-bottom),24px)] pt-4 shadow-xl ${navSurface}`}>
@@ -301,13 +309,13 @@ export function ProductShell({ session, active, planned, children }: { session: 
               <h3 className={`mb-1 px-2 text-[12px] font-semibold uppercase tracking-wide ${family ? 'text-fam-muted' : 'text-brand-inkMuted'}`}>{group.label}</h3>
               <div className="space-y-1">{group.items.map(n => <Link
                 key={n.key + ':' + (n.permission ?? '')} href={n.href}
-                onClick={() => { setNavQuery(''); setMoreOpen(false); }} data-testid={`mobile-more-${n.key}`}
+                onClick={closeMore} data-testid={`mobile-more-${n.key}`}
                 aria-current={active === n.key ? 'page' : undefined}
                 className={`flex min-h-[44px] items-center gap-3 rounded-control px-3 text-[14px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-action ${active === n.key ? (family ? 'bg-fam-accentTint text-fam-accent' : 'bg-brand-actionTint text-brand-action') : (family ? 'text-fam-ink' : 'text-brand-ink')}`}>
                 <n.icon size={18} aria-hidden="true" />{n.label}
               </Link>)}</div>
             </section>)}
-            {session.contexts.length > 1 && <Link href="/select-context" onClick={() => setMoreOpen(false)}
+            {session.contexts.length > 1 && <Link href="/select-context" onClick={closeMore}
               className="mt-2 flex min-h-[44px] items-center gap-2 rounded-control border border-border-light px-3 text-[14px] font-medium">
               <ArrowLeftRight size={18} aria-hidden="true" />Switch workspace
             </Link>}
