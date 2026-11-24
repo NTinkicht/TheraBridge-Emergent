@@ -92,44 +92,64 @@ function assertCounts(x,names,expectedTotal){
 }
 /** Validate *structure and fail-closed truth*, not authenticity or ownership. */
 export function validateBlockedPilotReceipt(x){
-  shape(x,RECEIPT_FIELDS);
-  if(own(x,'schemaVersion')!==1||own(x,'source')!=='SYNTHETIC_DB_AND_OPERATOR_REPORTS'||
-    own(x,'status')!=='BLOCKED_FOR_EXTERNAL_APPROVAL'||
-    own(x,'styleVersion')!==ILLUSTRATION_STYLE_VERSION||
-    typeof own(x,'referenceBatchRevision')!=='string'||
-    !SHA.test(own(x,'referenceBatchRevision'))||
-    typeof own(x,'sourceInventoryDigestSha256')!=='string'||
-    !SHA.test(own(x,'sourceInventoryDigestSha256'))||
-    own(x,'publishedActivityCount')!==null||
-    own(x,'publishedIllustrationCount')!==null||
-    own(x,'publishedIllustrationCoveragePercent')!==null||
-    own(x,'publishedActivityStatusAvailable')!==false||
-    own(x,'approvedReleaseModelPresent')!==false||
-    own(x,'pilotCandidateMinimum')!==20||own(x,'pilotCandidateMaximum')!==30||
-    own(x,'reportedPilotEligibleActivityCount')!==null||
-    own(x,'canStartClinicalPilot')!==false||
-    own(x,'allActualMastersIndependentlyVerified')!==false||
-    own(x,'humanClinicalDesignRightsAcceptance')!=='NOT_VERIFIED'||
-    own(x,'independentMediaSecurityAcceptance')!=='NOT_VERIFIED'||
-    own(x,'manualAccessibilityAndFiveWidthAcceptance')!=='NOT_RUN'||
-    own(x,'imageUrl')!==null||own(x,'guardianReadEnabled')!==false||
-    own(x,'publishEnabled')!==false||own(x,'clinicalGate')!=='NO_GO_G2_G2b'||
-    own(x,'digestIsSignature')!==false)deny();
-  const n=own(x,'counts');shape(n,countFields);
+  // Take a fixed-field data-only snapshot first: no accessor, toJSON or
+  // prototype method on an untrusted receipt may run while hashing it.
+  const validated=snapshotPlain(x,RECEIPT_FIELDS);
+  const cleanCounts=snapshotPlain(validated.counts,countFields);
+  const cleanFamilies=snapshotPlain(validated.families,[...ILLUSTRATION_FAMILIES]);
+  const cleanScenes=snapshotPlain(validated.scenes,[...ILLUSTRATION_SCENE_ARCHETYPES]);
+  const blockerArray=validated.blockers;
+  if(!Array.isArray(blockerArray)||
+    Object.getPrototypeOf(blockerArray)!==Array.prototype||
+    blockerArray.length!==BLOCKERS.length)deny();
+  const bdesc=Object.getOwnPropertyDescriptors(blockerArray);
+  if(Reflect.ownKeys(blockerArray).length!==BLOCKERS.length+1)deny();
+  const cleanBlockers=Object.freeze(BLOCKERS.map((_,i)=>{
+    const k=String(i);
+    if(!Object.hasOwn(bdesc,k)||!Object.hasOwn(bdesc[k],'value'))deny();
+    return bdesc[k].value;
+  }));
+  // Canonical ordered payload exactly matches the serialization of the
+  // trusted builder; the digest is INTEGRITY ONLY, not a reviewer signature.
+  const x2={...validated,counts:cleanCounts,families:cleanFamilies,
+    scenes:cleanScenes,blockers:cleanBlockers};
+  if(own(x2,'schemaVersion')!==1||own(x2,'source')!=='SYNTHETIC_DB_AND_OPERATOR_REPORTS'||
+    own(x2,'status')!=='BLOCKED_FOR_EXTERNAL_APPROVAL'||
+    own(x2,'styleVersion')!==ILLUSTRATION_STYLE_VERSION||
+    typeof own(x2,'referenceBatchRevision')!=='string'||
+    !SHA.test(own(x2,'referenceBatchRevision'))||
+    typeof own(x2,'sourceInventoryDigestSha256')!=='string'||
+    !SHA.test(own(x2,'sourceInventoryDigestSha256'))||
+    own(x2,'publishedActivityCount')!==null||
+    own(x2,'publishedIllustrationCount')!==null||
+    own(x2,'publishedIllustrationCoveragePercent')!==null||
+    own(x2,'publishedActivityStatusAvailable')!==false||
+    own(x2,'approvedReleaseModelPresent')!==false||
+    own(x2,'pilotCandidateMinimum')!==20||own(x2,'pilotCandidateMaximum')!==30||
+    own(x2,'reportedPilotEligibleActivityCount')!==null||
+    own(x2,'canStartClinicalPilot')!==false||
+    own(x2,'allActualMastersIndependentlyVerified')!==false||
+    own(x2,'humanClinicalDesignRightsAcceptance')!=='NOT_VERIFIED'||
+    own(x2,'independentMediaSecurityAcceptance')!=='NOT_VERIFIED'||
+    own(x2,'manualAccessibilityAndFiveWidthAcceptance')!=='NOT_RUN'||
+    own(x2,'imageUrl')!==null||own(x2,'guardianReadEnabled')!==false||
+    own(x2,'publishEnabled')!==false||own(x2,'clinicalGate')!=='NO_GO_G2_G2b'||
+    own(x2,'digestIsSignature')!==false)deny();
+  const n=cleanCounts;
   for(const k of countFields)assertNonnegative(own(n,k));
   if(n.operatorReportedPrivateMasters>25||
     n.remainingMasterSlots!==25-n.operatorReportedPrivateMasters||
     n.proposedDistinctStoredActivities>Math.min(MAX_PILOT,n.storedCenterTemplates)||
     n.privateQuarantineProposals>n.proposedDistinctStoredActivities+MAX_TEMPLATES ||
-    own(x,'reportedPilotProposalCount')!==n.proposedDistinctStoredActivities)deny();
-  assertCounts(own(x,'families'),[...ILLUSTRATION_FAMILIES],n.proposedDistinctStoredActivities);
-  assertCounts(own(x,'scenes'),[...ILLUSTRATION_SCENE_ARCHETYPES],n.proposedDistinctStoredActivities);
-  const blockers=own(x,'blockers');
+    own(x2,'reportedPilotProposalCount')!==n.proposedDistinctStoredActivities)deny();
+  assertCounts(cleanFamilies,[...ILLUSTRATION_FAMILIES],n.proposedDistinctStoredActivities);
+  assertCounts(cleanScenes,[...ILLUSTRATION_SCENE_ARCHETYPES],n.proposedDistinctStoredActivities);
+  const blockers=cleanBlockers;
   if(!Array.isArray(blockers)||blockers.length!==BLOCKERS.length||
     blockers.some((v,i)=>v!==BLOCKERS[i]))deny();
-  const digest=own(x,'receiptSha256');
+  const digest=own(x2,'receiptSha256');
   if(typeof digest!=='string'||!SHA.test(digest))deny();
-  const {receiptSha256:ignored,...body}=x;
+  const {receiptSha256:ignored,...body}=x2;
   if(sha(JSON.stringify(body))!==digest)deny();
   return true;
 }
