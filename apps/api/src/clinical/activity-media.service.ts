@@ -7,7 +7,7 @@ import { assertActor } from './governance-core';
 import type { Viewer } from '../operations/children.service';
 import type { ActivityMediaDraftDto, ActivityMediaRejectDto } from './activity-media.dto';
 import { ILLUSTRATION_STYLE_VERSION } from './illustration-style';
-import { assertGeneratedReferenceBytes, generatedReferenceDigest } from './generated-artwork-reference';
+import { assertGeneratedReferenceBytes, assertGeneratedReferenceScope, generatedReferenceDigest } from './generated-artwork-reference';
 
 @Injectable()
 export class ActivityMediaService {
@@ -87,6 +87,7 @@ export class ActivityMediaService {
       )) {
         throw new UnprocessableEntityException('Illustration step must refer to an existing activity instruction.');
       }
+      assertGeneratedReferenceScope(dto.sourceReference,t.service,dto.sceneType);
       // The client may not claim an approved asset, uploaded bytes or public URL.
       // The future storage adapter and independent reviewer must attest those.
       if (dto.sourceType === 'GENERATED' && !dto.providerTerms?.trim()) {
