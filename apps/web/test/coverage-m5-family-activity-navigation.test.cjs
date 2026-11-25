@@ -19,6 +19,15 @@ describe('M5 guardian feedback 28: accessible compact activity cards',()=>{
   await act(async()=>toggle.props.onClick());
   expect(tree.root.findByProps({'data-testid':'family-activity-a-details'})).toBeTruthy();
  });
+ it('places each date on the left and its record action at the right edge, including multiple days',async()=>{
+  const record=jest.fn(),second={...slot,date:'2026-11-25'};
+  await act(async()=>{tree=create(React.createElement(ActivityCard,{a,slots:[slot,second],onRecord:record,testId:'aligned'}));});
+  const list=tree.root.findByProps({'aria-label':'Planned days'});
+  expect(list.props.className).toContain('flex-col');
+  const rows=list.findAllByType('li');expect(rows).toHaveLength(2);
+  for(const row of rows){expect(row.props.className).toContain('w-full');expect(row.props.className).toContain('justify-between');expect(row.findByType('button').props.className).toContain('shrink-0');}
+  await act(async()=>rows[1].findByType('button').props.onClick());expect(record).toHaveBeenCalledWith(second);
+ });
  it('renders a keyboard-safe record button only when the slot and server-demo gate permit it',async()=>{
   const record=jest.fn();
   await act(async()=>{tree=create(React.createElement(SlotChip,{slot,onRecord:record,testId:'slot'}));});
