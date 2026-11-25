@@ -1,7 +1,7 @@
 const React=require('react');
 const {act,create}=require('react-test-renderer');
 jest.mock('@/lib/activity-media',()=>({activityMediaDrafts:{readApprovedArtwork:jest.fn()}}));
-jest.mock('@/components/design/ui',()=>({Button:({children,...p})=>React.createElement('button',p,children)}));
+jest.mock('@/components/design/ui',()=>({...jest.requireActual('@/components/design/ui'),Button:({children,...p})=>React.createElement('button',p,children)}));
 const {StaffArtworkImage}=require('../src/components/clinical/StaffArtworkImage');
 const {activityMediaDrafts}=require('@/lib/activity-media');
 const scope={centerId:'c',templateId:'t',version:7,actorKey:'actor'};
@@ -41,4 +41,22 @@ test('numbered step shows a loading state then image failure and cleanup',async(
  await act(async()=>resolve({...good,stepNumber:1}));expect(tree.root.findByType('img')).toBeTruthy();
  await act(async()=>tree.root.findByType('img').props.onError());expect(tree.root.findAllByType('img')).toHaveLength(0);
  await click();expect(revokeUrl).toHaveBeenCalledWith('blob:private-test');
+});
+
+test.each(['grid','list'])('catalogue %s private artwork expands without clipping its controls or notice',async layout=>{
+ const {ActivityCard}=require('../src/components/clinical/ActivityCard');
+ const t={id:'t',title:'Private synthetic test',service:'speech',ageBand:'sample',minutes:10,materials:[],steps:[],safety:[]};
+ await act(async()=>{tree=create(React.createElement(ActivityCard,{t,visual:true,compact:true,layout,artworkScope:scope}));});
+ const media=tree.root.findByProps({'data-testid':'activity-media-placeholder-t'});
+ expect(media.props.className).not.toMatch(/overflow-hidden|max-h-|aspect-\[/);
+ expect(media.props.className).toContain('p-3');
+ expect(activityMediaDrafts.readApprovedArtwork).not.toHaveBeenCalled();
+ activityMediaDrafts.readApprovedArtwork.mockResolvedValueOnce(good);
+ await act(async()=>{media.findByType('button').props.onClick();await Promise.resolve();});
+ expect(media.findByType('img').props.alt).toBe('Signed art');
+ expect(media.findByType('button').props.children).toBe('Close illustration');
+ expect(JSON.stringify(tree.toJSON())).toContain('Private staff preview · not released to families');
+ await act(async()=>media.findByType('button').props.onClick());
+ expect(media.findAllByType('img')).toHaveLength(0);
+ expect(revokeUrl).toHaveBeenCalledWith('blob:private-test');
 });

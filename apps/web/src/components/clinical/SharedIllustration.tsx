@@ -8,12 +8,11 @@ export function SharedIllustration({asset}:{asset:Asset}) {
 }
 function Image({asset}:{asset:Asset}) {
   const [failed,setFailed]=useState(false);
-  return <figure className="relative w-full min-w-0 overflow-hidden rounded-control" data-testid="shared-reference-image">
+  return <figure className="m-0 w-full min-w-0 overflow-hidden rounded-control" data-testid="shared-reference-image">
     {failed ? <p role="status" className="p-2 text-xs">Reference image unavailable</p> :
       // eslint-disable-next-line @next/next/no-img-element
       <img src={sharedIllustrationUrl(asset)} alt={asset.alt} width={400} height={300} loading="lazy" decoding="async"
-        className="block aspect-[4/3] max-h-48 w-full object-contain" onError={()=>setFailed(true)}/>}
-    <figcaption className="absolute bottom-0 left-0 rounded-tr-control bg-surface-white px-1 py-0.5 text-[10px]">Specialty reference art (not instructions)</figcaption>
+        className="block aspect-[4/3] h-auto w-full" onError={()=>setFailed(true)}/>}
   </figure>;
 }
 export function SharedIllustrationLibrary() {
