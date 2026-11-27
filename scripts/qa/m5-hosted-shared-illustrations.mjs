@@ -39,14 +39,15 @@ async function checkAsset(asset, fetcher) {
 async function checkDenied(path,fetcher) {
   const response=await fetcher(ORIGIN+path,opts());
   const cache=(response.headers.get('cache-control')??'').toLowerCase().split(',').map(x=>x.trim());
-  try {
-    if(response.status!==404 || !cache.includes('no-store'))return 'response_contract';
-    // The denial response must not carry image bytes or any other body.
-    if(!response.body)return 'pass';
-    const reader=response.body.getReader();
-    try {for(;;){const {done,value}=await reader.read();if(done)return 'pass';if(value.byteLength)return 'denial_body';}}
-    finally {await reader.cancel().catch(()=>{});reader.releaseLock();}
-  } finally { /* body is either absent or owned by the reader */ }
+  if(response.status!==404 || !cache.includes('no-store')) {
+    await discard(response);
+    return 'response_contract';
+  }
+  // The denial response must not carry image bytes or any other body.
+  if(!response.body)return 'pass';
+  const reader=response.body.getReader();
+  try {for(;;){const {done,value}=await reader.read();if(done)return 'pass';if(value.byteLength)return 'denial_body';}}
+  finally {await reader.cancel().catch(()=>{});reader.releaseLock();}
 }
 export async function verifyHostedIllustrations(fetcher=fetch) {
   const safe=async fn=>{try{return await fn();}catch{return 'transport';}};
