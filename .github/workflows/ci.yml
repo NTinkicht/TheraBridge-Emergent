@@ -441,6 +441,8 @@ jobs:
         run: node --test scripts/qa/m5-wu2f-pilot-readiness.test.mjs
       - name: M5 PR A generated artwork manifest and private intake integrity
         run: node --test scripts/qa/m5-pr-a-artwork.test.mjs
+      - name: M5 hosted shared illustration verification contracts (offline fixtures)
+        run: node --test scripts/qa/m5-hosted-shared-illustrations.test.mjs
       - name: M5 PR A build and exercise the isolated real ClamAV custody runtime
         timeout-minutes: 5
         run: |
