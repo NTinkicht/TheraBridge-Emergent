@@ -441,6 +441,39 @@ jobs:
         run: node --test scripts/qa/m5-wu2f-pilot-readiness.test.mjs
       - name: M5 PR A generated artwork manifest and private intake integrity
         run: node --test scripts/qa/m5-pr-a-artwork.test.mjs
+      - name: M5 hosted shared illustration verification contracts (offline fixtures)
+        run: node --test scripts/qa/m5-hosted-shared-illustrations.test.mjs
+      # One-time, read-only M5 closeout observation of the existing deployed demo.
+      # It is deliberately not a required engineering gate on external uptime.
+      - name: M5 live public synthetic artwork observation (not offline CI qualification)
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 499 && github.event.pull_request.head.repo.full_name == github.repository
+        continue-on-error: true
+        timeout-minutes: 4
+        shell: bash
+        run: |
+          set +e
+          timeout 180s node scripts/qa/m5-hosted-shared-illustrations.mjs > /tmp/therabridge-m5-live-artwork.json
+          result=$?
+          set -e
+          if [ "$result" -ne 0 ] && [ "$result" -ne 1 ]; then
+            printf '{"ok":false,"status":"not_completed","exitCode":%s}\n' "$result" > /tmp/therabridge-m5-live-artwork.json
+          elif [ ! -s /tmp/therabridge-m5-live-artwork.json ]; then
+            printf '{"ok":false,"status":"no_receipt"}\n' > /tmp/therabridge-m5-live-artwork.json
+            result=1
+          fi
+          cat /tmp/therabridge-m5-live-artwork.json
+          if [ "$result" -ne 0 ]; then
+            echo "::warning::Hosted artwork observation did not pass; M5 live delivery is NOT VERIFIED."
+            exit 1
+          fi
+      - name: Archive M5 live public synthetic artwork observation (not clinical approval)
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.number == 499 && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-live-public-artwork-${{ github.sha }}
+          path: /tmp/therabridge-m5-live-artwork.json
+          if-no-files-found: error
+          retention-days: 30
       - name: M5 PR A build and exercise the isolated real ClamAV custody runtime
         timeout-minutes: 5
         run: |

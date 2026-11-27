@@ -3,6 +3,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { PrismaClient } from '@prisma/client';
 import { chromium } from 'playwright';
+import { SHARED_ILLUSTRATIONS } from '../../apps/web/src/lib/shared-illustration-manifest.mjs';
+import { DEMO_ILLUSTRATION_MAP } from '../../apps/web/src/lib/demo-illustration-map.mjs';
+import { sharedIllustrationForActivity, sharedIllustrationUrl } from '../../apps/web/src/lib/shared-illustrations.mjs';
+import { verifySharedBytes } from '../../apps/web/src/lib/shared-illustration-storage.mjs';
 
 const base = process.env.DEMO_WEB_ORIGIN ?? 'http://127.0.0.1:3000';
 if (process.env.DEPLOYMENT_ENV !== 'ci' || new URL(base).hostname !== '127.0.0.1') throw new Error('Demo browser journey is CI-only on loopback');
@@ -12,6 +16,27 @@ const creds = process.env.DEMO_PASSWORDS_JSON
 const db = new PrismaClient();
 const center = await db.center.findUniqueOrThrow({ where: { slug: 'childrens-home-demo' } });
 const child = await db.child.findFirstOrThrow({ where: { centerId: center.id, firstName: 'Yusuf', lastName: 'Ahmed' } });
+// Reconcile the actual fresh CI seed before other browser cases create/edit rows.
+// Historical hosted records can exceed the fresh seed; never infer hosted counts.
+const seededActivities = await db.activityTemplate.findMany({
+  where: { OR: [{ centerId: center.id }, { centerId: null }] },
+  select: { id: true, centerId: true, title: true, service: true, steps: true },
+});
+const seedById = new Map(seededActivities.map(t => [t.id,t]));
+assert.equal(DEMO_ILLUSTRATION_MAP.length,67);
+assert.equal(new Set(DEMO_ILLUSTRATION_MAP.map(t=>t.id)).size,67);
+for(const t of DEMO_ILLUSTRATION_MAP) assert.equal(sharedIllustrationForActivity(t)?.family,t.service);
+assert(seededActivities.length>0,'Fresh synthetic catalogue must not be empty');
+for(const t of seededActivities) {
+  const art=sharedIllustrationForActivity({...t,library:t.centerId===null?'synthetic':'center'});
+  assert(art && art.family===t.service,'Fresh synthetic catalogue contains an unmapped or changed activity');
+}
+console.log('M5 synthetic catalogue mapping: '+seededActivities.length+'/'+seededActivities.length+' fresh database rows; 67 frozen identities verified separately');
+const sharedBytes = new Map(SHARED_ILLUSTRATIONS.map(asset=>{
+  const bytes=readFileSync(new URL('../../apps/web/reference-assets/m5-b-v1/'+asset.id+'/'+asset.digest+'.webp',import.meta.url));
+  assert(verifySharedBytes(asset,bytes),'Bundled reference digest mismatch');
+  return [sharedIllustrationUrl(asset),bytes];
+}));
 const browserInstance = await chromium.launch({ args: ['--disable-dev-shm-usage'] });
 async function role(email, expectedRole, verify) {
   const record = creds.find(a => a.email === email);
@@ -1673,6 +1698,17 @@ try {
     assert.equal(practice.status, 200);
     assert(practice.body.children.length === 3 && practice.body.children.some(c => c.id === child.id && c.activities.length > 0), 'Guardian must see three Ahmed siblings and Yusuf practice');
     assert.equal(practice.body.released, false);
+    // CI must deny the preview-only HTTP route. Supply only the locked, verified
+    // local WebP bytes to this isolated Chromium context for actual DOM geometry.
+    // This is NOT a hosted delivery receipt or a production gate change.
+    const deniedArt=await page.request.get(base+sharedIllustrationUrl(SHARED_ILLUSTRATIONS[0]));
+    assert.equal(deniedArt.status(),404,'CI must not serve preview-only artwork');
+    await page.route('**/illustrations/m5-b-v1/**',async route=>{
+      const url=new URL(route.request().url());
+      const bytes=url.origin===base && !url.search ? sharedBytes.get(url.pathname):undefined;
+      if(!bytes)return route.abort();
+      await route.fulfill({status:200,contentType:'image/webp',body:bytes});
+    });
     // Hosted-QA follow-up: the family view switches are ordinary buttons,
     // not broken composite ARIA tabs. Validate five actual Chromium widths.
     await page.goto(base + '/app/practice');
@@ -1695,6 +1731,21 @@ try {
     assert.equal((await read(page, centerBase + '/clinical/home-plan-requests')).status, 403);
     await page.getByTestId('practice-view-week').click();
     assert.equal(await page.getByTestId('practice-view-week').getAttribute('aria-pressed'), 'true');
+    // Actual layout, not a Tailwind string check: right-aligned record actions
+    // must remain inside each full-width date row at every supported width.
+    const weekGrid=page.getByTestId('practice-week');
+    await weekGrid.waitFor();
+    for(const width of [320,390,768,1024,1440]) {
+      await page.setViewportSize({width,height:900});
+      const rows=await weekGrid.locator('ul[aria-label="Planned days"] li').evaluateAll(nodes=>nodes.flatMap(row=>{
+        const button=row.querySelector('button');
+        if(!button)return [];
+        const r=row.getBoundingClientRect(),b=button.getBoundingClientRect(),d=row.firstElementChild.getBoundingClientRect();
+        return [{rightGap:Math.abs(r.right-b.right),leftGap:Math.abs(r.left-d.left),height:b.height,nonOverlap:d.right<=b.left+1,inside:b.left>=r.left-1}];
+      }));
+      if(practice.body.gates.practiceDemo) assert(rows.length>0,'Expected recordable sample rows');
+      assert(rows.every(x=>x.rightGap<=2&&x.leftGap<=2&&x.height>=43&&x.nonOverlap&&x.inside),'Record action geometry at '+width+'px');
+    }
     await page.getByTestId('practice-view-history').click();
     assert.equal(await page.getByTestId('practice-view-history').getAttribute('aria-pressed'), 'true');
     for (const width of [320, 390, 768, 1024, 1440]) {
@@ -1708,6 +1759,36 @@ try {
     }
     await page.goto(base + '/app/activities');
     await page.getByTestId('family-activities').waitFor();
+    await page.locator('[data-testid^="activity-media-placeholder-"]').first().waitFor();
+    const media=page.locator('[data-testid="family-activities"] [data-testid^="activity-media-placeholder-"]');
+    const cards=await media.evaluateAll(nodes=>nodes.map(node=>node.getAttribute('data-testid').slice('activity-media-placeholder-'.length)));
+    assert(cards.length>0,'Family sample cards must be present');
+    for(const id of cards) {
+      const t=seedById.get(id);
+      assert(t,'Unknown family sample identity');
+      const expected=sharedIllustrationForActivity(t,true);
+      assert(expected,'Family sample must have an exact reference');
+      const matches=page.getByTestId('activity-media-placeholder-'+id);
+      for(const card of await matches.all()) {
+        const image=card.locator('img');
+        await image.waitFor({state:'attached'});
+        assert.equal(await image.getAttribute('src'),sharedIllustrationUrl(expected));
+        await image.evaluate(img=>{img.loading='eager';});
+        await image.evaluate(img=>img.decode());
+        assert.equal(await card.locator('figcaption').count(),0,'No per-image caption');
+      }
+    }
+    for(const width of [320,390,768,1024,1440]) {
+      await page.setViewportSize({width,height:900});
+      const geometry=await media.evaluateAll(nodes=>nodes.map(node=>{
+        const image=node.querySelector('img'),r=image?.getBoundingClientRect(),style=image&&getComputedStyle(image);
+        return {valid:!!image&&image.complete&&image.naturalWidth===400&&image.naturalHeight===300&&!!image.alt,
+          fullWidth:!!r&&Math.abs(r.width-node.clientWidth)<=2,ratio:!!r&&Math.abs(r.width/r.height-4/3)<=0.03,
+          clipped:!!r&&r.height>node.clientHeight+2,contain:style?.objectFit==='contain'};
+      }));
+      assert(geometry.length===cards.length&&geometry.every(x=>x.valid&&x.fullWidth&&x.ratio&&!x.clipped&&!x.contain),
+        'Family full-width artwork geometry at '+width+'px');
+    }
     // The original defect had correct Tailwind class names but undefined
     // --fam-* variables. Assert rendered Chromium colors, not class strings.
     for (const width of [320, 390, 768, 1024, 1440]) {
